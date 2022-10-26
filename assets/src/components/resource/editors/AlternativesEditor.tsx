@@ -1,14 +1,28 @@
 import React from 'react';
-import { GroupContent, ResourceContent } from 'data/content/resource';
+import {
+  AlternativeContent,
+  AlternativesContent,
+  ResourceContent,
+  ResourceGroup,
+} from 'data/content/resource';
 import { GroupBlock } from './GroupBlock';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
+import {
+  Description,
+  ExpandToggle,
+  OutlineItem,
+  OutlineItemProps,
+  OutlineGroup,
+  OutlineGroupProps,
+  resourceGroupTitle,
+} from './OutlineItem';
 
-interface GroupEditorProps extends EditorProps {
-  contentItem: GroupContent;
+interface AlternativesEditorProps extends EditorProps {
+  contentItem: AlternativesContent;
 }
 
-export const GroupEditor = ({
+export const AlternativesEditor = ({
   resourceContext,
   editMode,
   projectSlug,
@@ -31,8 +45,8 @@ export const GroupEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
-}: GroupEditorProps) => {
-  const onEditChild = (child: ResourceContent) => {
+}: AlternativesEditorProps) => {
+  const onEditChild = (child: AlternativeContent) => {
     const updatedContent = {
       ...contentItem,
       children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
@@ -54,7 +68,8 @@ export const GroupEditor = ({
       onEdit={onEdit}
       contentBreaksExist={contentBreaksExist}
     >
-      {contentItem.children.map((c, childIndex) => {
+      Alternatives Editor
+      {/* {contentItem.children.map((c, childIndex) => {
         const onRemoveChild = () =>
           onEdit({
             ...contentItem,
@@ -110,7 +125,47 @@ export const GroupEditor = ({
         featureFlags={featureFlags}
         onAddItem={onAddItem}
         onRegisterNewObjective={onRegisterNewObjective}
-      />
+      /> */}
     </GroupBlock>
   );
 };
+
+interface AlternativesOutlineItemProps extends OutlineItemProps {
+  contentItem: AlternativesContent;
+  expanded: boolean;
+  toggleCollapsibleGroup: (id: string) => void;
+}
+
+export const AlternativesOutlineItem = (props: AlternativesOutlineItemProps) => {
+  const { id, contentItem, expanded, toggleCollapsibleGroup } = props;
+
+  return (
+    <OutlineItem {...props}>
+      <ExpandToggle expanded={expanded} onClick={() => toggleCollapsibleGroup(id)} />
+      <Description title={resourceGroupTitle(contentItem)}>
+        {contentItem.children.size} items
+      </Description>
+    </OutlineItem>
+  );
+};
+
+interface AlternativeOutlineItemProps extends OutlineGroupProps {
+  contentItem: AlternativeContent;
+  expanded: boolean;
+  toggleCollapsibleGroup: (id: string) => void;
+}
+
+export const AlternativeOutlineItem = (props: AlternativeOutlineItemProps) => {
+  const { id, contentItem, expanded, toggleCollapsibleGroup } = props;
+
+  return (
+    <OutlineGroup {...props}>
+      <ExpandToggle expanded={expanded} onClick={() => toggleCollapsibleGroup(id)} />
+      <Description title={alternatveGroupTitle(contentItem)}>
+        {contentItem.children.size} items
+      </Description>
+    </OutlineGroup>
+  );
+};
+
+const alternatveGroupTitle = (alternative: AlternativeContent) => alternative.value;

@@ -24,32 +24,28 @@ export type ResourceContent =
   | StructuredContent
   | ActivityReference
   | ActivityBankSelection
-  | GroupContent
+  | PurposeGroupContent
   | SurveyContent
+  | AlternativesContent
+  | AlternativeContent
   | Break;
 
-export type NestableContainer = GroupContent | SurveyContent;
+// Items that can be present as elements in a resource content array and contain
+// other resource content as children
+export type ResourceGroup = PurposeGroupContent | SurveyContent | AlternativesContent;
 
-export const isNestableContainer = (content: ResourceContent) => {
+export const isResourceGroup = (content: ResourceContent) => {
   switch (content.type) {
     case 'group':
       return true;
     case 'survey':
       return true;
+    case 'alternatives':
+      return true;
     default:
       return false;
   }
 };
-
-interface NestableContainerCaseOf {
-  nestable: (nc: NestableContainer) => any;
-  other: (c: ResourceContent) => any;
-}
-
-export const maybeNestableContainer = <V>(content: ResourceContent) => ({
-  caseOf: ({ nestable, other }: NestableContainerCaseOf) =>
-    isNestableContainer(content) ? nestable(content as NestableContainer) : other(content),
-});
 
 export const getResourceContentName = (content: ResourceContent): string => {
   switch (content.type) {
@@ -61,6 +57,10 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Group';
     case 'survey':
       return 'Survey';
+    case 'alternatives':
+      return 'Alternatives';
+    case 'alternative':
+      return 'Alternative';
     case 'break':
       return 'Page Break';
     case 'selection':
@@ -81,6 +81,10 @@ export const canInsert = (content: ResourceContent, parents: ResourceContent[]):
       );
     case 'survey':
       return parents.every((p) => !isSurvey(p));
+    case 'alternatives':
+      return true;
+    case 'alternative':
+      return false;
     case 'break':
       return true;
     case 'selection':
@@ -96,8 +100,8 @@ export const groupOrDescendantHasPurpose = (c: ResourceContent): boolean => {
     return true;
   }
 
-  return isNestableContainer(c)
-    ? (c as NestableContainer).children.some(groupOrDescendantHasPurpose)
+  return isResourceGroup(c)
+    ? (c as ResourceGroup).children.some(groupOrDescendantHasPurpose)
     : false;
 };
 
@@ -150,12 +154,32 @@ export const createDefaultStructuredContent = (
 
 export const createGroup = (
   children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
-): GroupContent => ({
+): PurposeGroupContent => ({
   type: 'group',
   id: guid(),
   children,
   layout: 'vertical',
   purpose: 'didigetthis',
+});
+
+export const createAlternatives = (
+  strategy: AlternativesStrategy = 'user_section_preference',
+  children: Immutable.List<AlternativeContent> = Immutable.List(),
+): AlternativesContent => ({
+  type: 'alternatives',
+  id: guid(),
+  children,
+  strategy,
+});
+
+export const createAlternative = (
+  value: string,
+  children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
+): AlternativeContent => ({
+  type: 'alternative',
+  id: guid(),
+  children,
+  value,
 });
 
 export const createSurvey = (
@@ -204,14 +228,30 @@ export interface ActivityReference {
 
 export type GroupLayout = 'vertical' | 'deck';
 
+export type AlternativesStrategy = 'select_all' | 'user_section_preference';
+
 export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
 
-export interface GroupContent {
+export interface PurposeGroupContent {
   type: 'group';
   id: string;
   layout: GroupLayout; // TODO define layout types
   purpose: string;
   paginationMode?: PaginationMode;
+  children: Immutable.List<ResourceContent>;
+}
+
+export interface AlternativesContent {
+  type: 'alternatives';
+  id: string;
+  strategy: AlternativesStrategy;
+  children: Immutable.List<AlternativeContent>;
+}
+
+export interface AlternativeContent {
+  type: 'alternative';
+  id: string;
+  value: string;
   children: Immutable.List<ResourceContent>;
 }
 

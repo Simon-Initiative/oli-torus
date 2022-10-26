@@ -121,21 +121,27 @@
   .group {
     display: flex;
     flex-direction: column;
+    margin-bottom: 4px;
 
     &:last-child {
       margin-bottom: 0;
     }
   }
 
-  .groupLink {
+  .groupContainer {
     display: flex;
     flex-direction: row;
-    flex: 1;
     background: authoring.$body-bg;
     overflow: hidden;
     padding: 6px 0px 6px 12px;
     border-radius: 4px;
     min-height: 60px;
+  }
+
+  .groupLink {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
     cursor: pointer;
   }
 
@@ -184,26 +190,6 @@
     text-align: center;
     margin-top: 10px;
     margin-right: 10px;
-  }
-
-  .contentBreak {
-    min-height: 20px;
-
-    .contentLink {
-      display: flex;
-      flex-direction: row;
-    }
-  }
-
-  .contentBreakLabel {
-    font-size: 12px;
-    color: authoring.$gray-600;
-  }
-
-  .contentBreakDashed {
-    flex-grow: 1;
-    border-bottom: 1px dashed authoring.$gray-600;
-    margin: 0 10px 8px 10px;
   }
 }
 

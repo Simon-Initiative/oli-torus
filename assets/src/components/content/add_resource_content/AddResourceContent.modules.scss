@@ -104,7 +104,6 @@
 }
 
 .addResourcePopoverContent {
-  height: 215px;
   width: 375px;
   padding: 4px 2px;
   overflow-y: auto;
@@ -153,6 +152,21 @@
     &:active {
       transform: translateY(4px);
     }
+
+    &[disabled] {
+      color: authoring.$gray-500;
+
+      .type-label {
+        color: authoring.$gray-500;
+      }
+
+      &:hover {
+        color: authoring.$gray-500;
+      }
+      &:active {
+        transform: none;
+      }
+    }
   }
 
   :global(.resource-choice-icon) {
@@ -163,7 +177,6 @@
     border-left-color: authoring.$light;
     border-left-width: 1px;
     border-left-style: solid;
-    max-height: 170px;
   }
 
   :global(.resource-choices-tip) {
@@ -180,11 +193,9 @@
 
   :global(.non-activities) {
     max-width: 140px;
-    max-height: 170px;
   }
   :global(.activities) {
     max-width: 210px;
-    max-height: 170px;
   }
   :global(.type-description) {
     color: authoring.$body-color;

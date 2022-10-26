@@ -10,11 +10,12 @@ import { AddCallback } from 'components/content/add_resource_content/AddResource
 import { ContentEditor } from './ContentEditor';
 import { ActivityEditor } from './ActivityEditor';
 import { SelectionEditor } from './SelectionEditor';
-import { GroupEditor } from './GroupEditor';
+import { PurposeGroupEditor } from './PurposeGroupEditor';
 import { SurveyEditor } from './SurveyEditor';
-import { ContentBreak } from './ContentBreak';
+import { ContentBreakEditor } from './ContentBreak';
 import { EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { FeatureFlags } from 'apps/page-editor/types';
+import { AlternativesEditor } from './AlternativesEditor';
 
 export type EditorProps = {
   resourceContext: ResourceContext;
@@ -54,11 +55,13 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
     case 'selection':
       return <SelectionEditor {...editorProps} contentItem={contentItem} />;
     case 'group':
-      return <GroupEditor {...editorProps} contentItem={contentItem} />;
+      return <PurposeGroupEditor {...editorProps} contentItem={contentItem} />;
     case 'survey':
       return <SurveyEditor {...editorProps} contentItem={contentItem} />;
+    case 'alternatives':
+      return <AlternativesEditor {...editorProps} contentItem={contentItem} />;
     case 'break':
-      return <ContentBreak {...editorProps} contentItem={contentItem} />;
+      return <ContentBreakEditor {...editorProps} contentItem={contentItem} />;
     default:
       return <EditorError />;
   }
@@ -66,7 +69,7 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
 
 export const EditorError = () => {
   return (
-    <div className="alert alert-danger">
+    <div className="alert alert-danger mx-4">
       There was a problem rendering this content block. The content type may not be supported.
     </div>
   );

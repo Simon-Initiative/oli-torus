@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as Immutable from 'immutable';
 import isHotkey from 'is-hotkey';
 import { throttle } from 'lodash';
@@ -7,21 +7,15 @@ import styles from './ContentOutline.modules.scss';
 import {
   ActivityReference,
   ResourceContent,
-  PurposeTypes,
-  NestableContainer,
-  isNestableContainer,
+  ResourceGroup,
   canInsert,
 } from 'data/content/resource';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ActivityEditContext } from 'data/content/activity';
-import { ActivityBankSelection } from 'data/content/resource';
-import { getContentDescription } from 'data/content/utils';
-import { DragHandle } from 'components/resource/DragHandle';
 import { focusHandler } from './dragndrop/handlers/focus';
 import { moveHandler } from './dragndrop/handlers/move';
 import { dragEndHandler } from './dragndrop/handlers/dragEnd';
 import { dropHandler } from './dragndrop/handlers/drop';
-import { scrollToResourceEditor } from './dragndrop/utils';
 import { getDragPayload } from './dragndrop/utils';
 import { dragStartHandler } from './dragndrop/handlers/dragStart';
 import { DropTarget } from './dragndrop/DropTarget';
@@ -29,18 +23,14 @@ import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug } from 'data/types';
 import { getViewportHeight } from 'utils/browser';
 import { useStateFromLocalStorage } from 'utils/useStateFromLocalStorage';
-
-const getActivityDescription = (activity: ActivityEditContext) => {
-  return activity.model.authoring?.previewText || <i>No content</i>;
-};
-
-const getActivitySelectionTitle = (_selection: ActivityBankSelection) => {
-  return 'Activity Bank Selection';
-};
-
-const getActivitySelectionDescription = (selection: ActivityBankSelection) => {
-  return `${selection.count} selection${selection.count > 1 ? 's' : ''}`;
-};
+import { ContentOutlineItem } from './ContentEditor';
+import { SelectionOutlineItem } from './ActivityBankSelectionEditor';
+import { ActivityEditorContentOutlineItem } from './ActivityEditor';
+import { OutlineItemError, UnknownItem } from './OutlineItem';
+import { ContentBreakOutlineItem } from './ContentBreak';
+import { SurveyOutlineItem } from './SurveyEditor';
+import { AlternativesOutlineItem, AlternativeOutlineItem } from './AlternativesEditor';
+import { PurposeGroupOutlineItem } from './PurposeGroupEditor';
 
 const calculateOutlineHeight = (scrollOffset: number) => {
   const topMargin = 420;
@@ -125,7 +115,7 @@ export const ContentOutline = ({
           setAssistive,
         );
 
-        const handleKeyDown = (id: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const onKeyDown = (id: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
           if (isShiftArrowDown(e.nativeEvent)) {
             onMove(id, false);
             setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
@@ -147,8 +137,6 @@ export const ContentOutline = ({
             projectSlug={projectSlug}
             activeDragId={activeDragId}
             setActiveDragId={setActiveDragId}
-            handleKeyDown={handleKeyDown}
-            onFocus={onFocus}
             assistive={assistive}
             contentItem={contentItem}
             activityContexts={activityContexts}
@@ -156,9 +144,11 @@ export const ContentOutline = ({
             activeDragIndex={activeDragIndex}
             parentDropIndex={[]}
             content={content}
-            onEditContent={onEditContent}
             collapsedGroupMap={collapsedGroupMap}
             setCollapsedGroupMap={setCollapsedGroupMap}
+            onEditContent={onEditContent}
+            onFocus={onFocus}
+            onKeyDown={onKeyDown}
           />
         );
       }),
@@ -220,7 +210,7 @@ type OutlineItemProps = {
   collapsedGroupMap: Immutable.Map<string, boolean>;
   onEditContent: (content: PageEditorContent) => void;
   setActiveDragId: (id: string) => void;
-  handleKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
+  onKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
   onFocus: (id: string) => void;
   setCollapsedGroupMap: (map: Immutable.Map<string, boolean>) => void;
 };
@@ -244,10 +234,10 @@ const OutlineItem = ({
   collapsedGroupMap,
   onEditContent,
   setActiveDragId,
-  handleKeyDown,
+  onKeyDown,
   onFocus,
   setCollapsedGroupMap,
-}: OutlineItemProps) => {
+}: OutlineItemProps): JSX.Element => {
   const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
   const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
   const onDragEnd = dragEndHandler(setActiveDragId);
@@ -265,207 +255,200 @@ const OutlineItem = ({
     index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
   const canDropHere = canDrop(activeDragId, parents, content);
 
-  if (isNestableContainer(contentItem)) {
-    const containerItem = contentItem as NestableContainer;
+  const expanded = !collapsedGroupMap.get(id);
+  const toggleCollapsibleGroup = (id: string) =>
+    setCollapsedGroupMap(collapsedGroupMap.set(id, expanded));
 
-    const expanded = !collapsedGroupMap.get(id);
-    const toggleCollapsableGroup = (id: string) =>
-      setCollapsedGroupMap(collapsedGroupMap.set(id, expanded));
+  const props = {
+    className,
+    id,
+    level,
+    parents,
+    editMode,
+    projectSlug,
+    activeDragId,
+    assistive,
+    content,
+    contentItem,
+    activityContexts,
+    isReorderMode,
+    activeDragIndex,
+    collapsedGroupMap,
+    canDropHere,
+    dropIndex,
+    expanded,
+    toggleCollapsibleGroup,
+    onEditContent,
+    setActiveDragId,
+    onFocus,
+    setCollapsedGroupMap,
+    onDragStart,
+    onDragEnd,
+    onDrop,
+    onDropLast,
+    onKeyDown,
+  };
 
-    const icon =
-      contentItem.type === 'survey' ? (
-        <Icon iconName="las la-poll" />
-      ) : (
-        <ExpandToggle expanded={expanded} onClick={() => toggleCollapsableGroup(id)} />
+  switch (contentItem.type) {
+    // ResourceContent types
+    case 'content':
+      return <ContentOutlineItem {...props} contentItem={contentItem} />;
+
+    case 'break':
+      return <ContentBreakOutlineItem {...props} />;
+
+    case 'selection':
+      return <SelectionOutlineItem {...props} contentItem={contentItem} />;
+
+    case 'activity-reference':
+      const activity = props.activityContexts.get(
+        (props.contentItem as ActivityReference).activitySlug,
       );
 
-    return (
-      <>
-        {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+      if (activity) {
+        return <ActivityEditorContentOutlineItem {...props} activity={activity} />;
+      } else {
+        return <OutlineItemError />;
+      }
 
-        <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
-          <div
-            className={classNames(styles.groupLink, !expanded && 'mb-1')}
-            onClick={(e) =>
-              // only scroll to the resource editor if this event was not a expand toggle event
-              !(e as any).isExpandToggleEvent ? scrollToResourceEditor(id) : undefined
-            }
-            role="button"
-            draggable={editMode}
-            tabIndex={0}
-            onDragStart={(e) => onDragStart(e, id)}
-            onDragEnd={onDragEnd}
-            onKeyDown={handleKeyDown(id)}
-            onFocus={(_e) => onFocus(id)}
-            aria-label={assistive}
-          >
-            <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-            {icon}
-            <Description title={getContainerTitle(containerItem)}>
-              {containerItem.children.size} items
-            </Description>
-          </div>
-          {expanded && (
-            <div className={styles.groupedOutline}>
-              {containerItem.children
-                .filter((containerItem: ResourceContent) => containerItem.id !== activeDragId)
-                .map((c, i) => {
-                  return (
-                    <OutlineItem
-                      key={id}
-                      className={className}
-                      id={c.id}
-                      level={level + 1}
-                      index={i}
-                      parents={[...parents, containerItem]}
-                      editMode={editMode}
-                      projectSlug={projectSlug}
-                      activeDragId={activeDragId}
-                      setActiveDragId={setActiveDragId}
-                      handleKeyDown={handleKeyDown}
-                      onFocus={onFocus}
-                      assistive={assistive}
-                      contentItem={c}
-                      activityContexts={activityContexts}
-                      isReorderMode={isReorderMode}
-                      activeDragIndex={activeDragIndex}
-                      parentDropIndex={dropIndex}
-                      content={content}
-                      onEditContent={onEditContent}
-                      collapsedGroupMap={collapsedGroupMap}
-                      setCollapsedGroupMap={setCollapsedGroupMap}
-                    />
-                  );
-                })}
-              {isReorderMode && canDrop(activeDragId, [...parents, containerItem], content) && (
-                <DropTarget
-                  id="last"
-                  index={[...dropIndex, containerItem.children.size]}
-                  onDrop={onDropLast}
-                />
-              )}
-            </div>
-          )}
-        </div>
-      </>
-    );
+    case 'alternative':
+      return <AlternativeOutlineItem {...props} contentItem={contentItem} />;
+
+    // ResourceGroup types
+    case 'group':
+      return (
+        <ResourceGroupItem {...props} contentItem={contentItem}>
+          <PurposeGroupOutlineItem {...props} contentItem={contentItem} />
+        </ResourceGroupItem>
+      );
+
+    case 'survey':
+      return (
+        <ResourceGroupItem {...props} contentItem={contentItem}>
+          <SurveyOutlineItem {...props} contentItem={contentItem} />
+        </ResourceGroupItem>
+      );
+
+    case 'alternatives':
+      return (
+        <ResourceGroupItem {...props} contentItem={contentItem}>
+          <AlternativesOutlineItem {...props} contentItem={contentItem} />
+        </ResourceGroupItem>
+      );
+
+    default:
+      return <UnknownItem />;
   }
+};
 
-  if (contentItem.type === 'break') {
-    return (
-      <>
-        {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+type ResourceGroupItemProps = {
+  className?: ClassName;
+  id: string;
+  level: number;
+  parents: ResourceContent[];
+  editMode: boolean;
+  projectSlug: string;
+  activeDragId: string | null;
+  assistive: string;
+  contentItem: ResourceGroup;
+  activityContexts: Immutable.Map<string, ActivityEditContext>;
+  isReorderMode: boolean;
+  activeDragIndex: number[];
+  content: PageEditorContent;
+  collapsedGroupMap: Immutable.Map<string, boolean>;
+  canDropHere: boolean;
+  dropIndex: number[];
+  children: React.ReactNode;
+  expanded: boolean;
+  toggleCollapsibleGroup: (id: string) => void;
+  onEditContent: (content: PageEditorContent) => void;
+  setActiveDragId: (id: string) => void;
+  onFocus: (id: string) => void;
+  setCollapsedGroupMap: (map: Immutable.Map<string, boolean>) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>, index: number[]) => void;
+  onDropLast: (e: React.DragEvent<HTMLDivElement>, index: number[]) => void;
+  onKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
+};
 
-        <div
-          id={`content-item-${id}`}
-          className={classNames(styles.item, styles.contentBreak, className)}
-          onClick={() => scrollToResourceEditor(id)}
-          draggable={editMode}
-          tabIndex={0}
-          onDragStart={(e) => onDragStart(e, id)}
-          onDragEnd={onDragEnd}
-          onKeyDown={handleKeyDown(id)}
-          onFocus={(_e) => onFocus(id)}
-          aria-label={assistive}
-        >
-          <div
-            className={styles.contentLink}
-            onClick={() => scrollToResourceEditor(id)}
-            role="button"
-          >
-            <div className={styles.contentBreakDashed}></div>
-            <div className={styles.contentBreakLabel}>CONTENT BREAK</div>
-            <div className={styles.contentBreakDashed}></div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
+const ResourceGroupItem = ({
+  className,
+  id,
+  level,
+  parents,
+  editMode,
+  projectSlug,
+  activeDragId,
+  assistive,
+  content,
+  contentItem,
+  activityContexts,
+  isReorderMode,
+  activeDragIndex,
+  collapsedGroupMap,
+  canDropHere,
+  dropIndex,
+  children,
+  expanded,
+  onEditContent,
+  setActiveDragId,
+  onFocus,
+  setCollapsedGroupMap,
+  onDrop,
+  onDropLast,
+  onKeyDown,
+}: ResourceGroupItemProps) => {
   return (
     <>
       {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
 
-      <div
-        id={`content-item-${id}`}
-        className={classNames(styles.item, className)}
-        onClick={() => scrollToResourceEditor(id)}
-        draggable={editMode}
-        tabIndex={0}
-        onDragStart={(e) => onDragStart(e, id)}
-        onDragEnd={onDragEnd}
-        onKeyDown={handleKeyDown(id)}
-        onFocus={(_e) => onFocus(id)}
-        aria-label={assistive}
-      >
-        <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-        <div
-          className={styles.contentLink}
-          onClick={() => scrollToResourceEditor(id)}
-          role="button"
-        >
-          {renderItem(id, contentItem, activityContexts)}
-        </div>
+      <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
+        {children}
+
+        {expanded && (
+          <div className={styles.groupedOutline}>
+            {contentItem.children
+              .filter((containerItem: ResourceContent) => containerItem.id !== activeDragId)
+              .map((c, i) => {
+                return (
+                  <OutlineItem
+                    key={id}
+                    className={className}
+                    id={c.id}
+                    level={level + 1}
+                    index={i}
+                    parents={[...parents, contentItem]}
+                    editMode={editMode}
+                    projectSlug={projectSlug}
+                    activeDragId={activeDragId}
+                    setActiveDragId={setActiveDragId}
+                    onKeyDown={onKeyDown}
+                    onFocus={onFocus}
+                    assistive={assistive}
+                    contentItem={c}
+                    activityContexts={activityContexts}
+                    isReorderMode={isReorderMode}
+                    activeDragIndex={activeDragIndex}
+                    parentDropIndex={dropIndex}
+                    content={content}
+                    onEditContent={onEditContent}
+                    collapsedGroupMap={collapsedGroupMap}
+                    setCollapsedGroupMap={setCollapsedGroupMap}
+                  />
+                );
+              })}
+            {isReorderMode && canDrop(activeDragId, [...parents, contentItem], content) && (
+              <DropTarget
+                id="last"
+                index={[...dropIndex, contentItem.children.size]}
+                onDrop={onDropLast}
+              />
+            )}
+          </div>
+        )}
       </div>
     </>
   );
 };
-
-const renderItem = (
-  id: string,
-  item: ResourceContent,
-  activityContexts: Immutable.Map<string, ActivityEditContext>,
-) => {
-  switch (item.type) {
-    case 'content':
-      return (
-        <>
-          <Icon iconName="las la-paragraph" />
-          <Description title="Paragraph">{getContentDescription(item)}</Description>
-        </>
-      );
-
-    case 'selection':
-      return (
-        <>
-          <Icon iconName="las la-cogs" />
-          <Description title={getActivitySelectionTitle(item)}>
-            {getActivitySelectionDescription(item)}
-          </Description>
-        </>
-      );
-
-    case 'activity-reference':
-      const activity = activityContexts.get((item as ActivityReference).activitySlug);
-
-      if (activity) {
-        return (
-          <>
-            <Icon iconName="las la-shapes" />
-            <Description title={activity?.title}>{getActivityDescription(activity)}</Description>
-          </>
-        );
-      } else {
-        return <div className="text-danger">An Unknown Error Occurred</div>;
-      }
-
-    default:
-      return <>Unknown</>;
-  }
-};
-
-function getContainerTitle(contentItem: NestableContainer) {
-  if (contentItem.type === 'group') {
-    switch (contentItem.purpose) {
-      case 'none':
-        return 'Group';
-      default:
-        return PurposeTypes.find(({ value }) => value === contentItem.purpose)?.label;
-    }
-  } else if (contentItem.type === 'survey') {
-    return contentItem.title ?? 'Survey';
-  }
-}
 
 function canDrop(
   activeDragId: string | null,
@@ -485,43 +468,5 @@ const ContentOutlineToolbar = ({ onHideOutline }: ContentOutlineToolbarProps) =>
     <button className={classNames(styles.toolbarButton)} onClick={onHideOutline}>
       <i className="fa fa-angle-left"></i>
     </button>
-  </div>
-);
-
-interface IconProps {
-  iconName: string;
-}
-
-const Icon = ({ iconName }: IconProps) => (
-  <div className={styles.icon}>
-    <i className={classNames(iconName, 'la-lg')}></i>
-  </div>
-);
-
-interface ExpandToggleProps {
-  expanded: boolean;
-  onClick: () => void;
-}
-
-const ExpandToggle = ({ expanded, onClick }: ExpandToggleProps) => (
-  <div
-    className={styles.expandToggle}
-    onClick={(e) => {
-      (e as any).isExpandToggleEvent = true;
-      onClick();
-    }}
-  >
-    {expanded ? <i className="las la-chevron-down"></i> : <i className="las la-chevron-right"></i>}
-  </div>
-);
-
-interface DescriptionProps {
-  title?: string;
-}
-
-const Description = ({ title, children }: PropsWithChildren<DescriptionProps>) => (
-  <div className={styles.description}>
-    <div className={styles.title}>{title}</div>
-    <div className={styles.descriptionContent}>{children}</div>
   </div>
 );

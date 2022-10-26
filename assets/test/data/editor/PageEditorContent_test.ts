@@ -6,7 +6,6 @@ import {
   createGroup,
 } from 'data/content/resource';
 import { Model } from 'data/content/model/elements/factories';
-import util from 'util';
 import guid from 'utils/guid';
 
 describe('PageEditorContent', () => {

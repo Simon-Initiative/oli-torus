@@ -1,13 +1,13 @@
 import React from 'react';
 import * as Immutable from 'immutable';
-import { ActivityBankSelection as Selection } from 'data/content/resource';
+import { ActivityBankSelection, ActivityBankSelection as Selection } from 'data/content/resource';
 import { LogicBuilder } from 'components/logic/LogicBuilder';
 import { TextInput } from 'components/common/TextInput';
 import { Tag } from 'data/content/tags';
 import * as Bank from 'data/content/bank';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
-
+import { Icon, Description, OutlineItemProps, OutlineItem } from './OutlineItem';
 import './ActivityBankSelectionEditor.scss';
 
 export type ActivityBankSelectionEditorProps = {
@@ -133,4 +133,23 @@ export const ActivityBankSelectionEditor = (props: ActivityBankSelectionEditorPr
       </button>
     </div>
   );
+};
+
+interface SelectionOutlineItemProps extends OutlineItemProps {
+  contentItem: ActivityBankSelection;
+}
+export const SelectionOutlineItem = (props: SelectionOutlineItemProps) => {
+  const { contentItem } = props;
+  return (
+    <OutlineItem {...props}>
+      <Icon iconName="las la-cogs" />
+      <Description title="Activity Bank Selection">
+        {getActivitySelectionDescription(contentItem)}
+      </Description>
+    </OutlineItem>
+  );
+};
+
+const getActivitySelectionDescription = (selection: ActivityBankSelection) => {
+  return `${selection.count} selection${selection.count > 1 ? 's' : ''}`;
 };

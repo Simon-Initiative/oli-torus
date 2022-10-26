@@ -1,5 +1,9 @@
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
-import { createDefaultStructuredContent, createGroup } from 'data/content/resource';
+import {
+  createAlternatives,
+  createDefaultStructuredContent,
+  createGroup,
+} from 'data/content/resource';
 
 import {
   createDefaultSelection,
@@ -88,6 +92,17 @@ export const NonActivities: React.FC<Props> = ({
           onClick={() => addSurvey(onAddItem, index)}
         />
         <ResourceChoice
+          icon="window-restore"
+          label="Alt"
+          onHoverStart={() =>
+            onSetTip('Alternative materials which will be displayed based on student preference')
+          }
+          onHoverEnd={() => onResetTip()}
+          key={'group'}
+          disabled={false}
+          onClick={() => addAlternatives(onAddItem, index)}
+        />
+        <ResourceChoice
           icon="vial"
           label="A/B Test"
           onHoverStart={() => onSetTip('A/B Testing is not yet supported')}
@@ -118,5 +133,10 @@ const addPageBreak = (onAddItem: AddCallback, index: number[]) => {
 
 const addSurvey = (onAddItem: AddCallback, index: number[]) => {
   onAddItem(createSurvey(), index);
+  document.body.click();
+};
+
+const addAlternatives = (onAddItem: AddCallback, index: number[]) => {
+  onAddItem(createAlternatives(), index);
   document.body.click();
 };
