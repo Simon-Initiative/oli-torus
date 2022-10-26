@@ -115,9 +115,7 @@ defmodule OliWeb.PageDeliveryView do
   def container_title(
         %HierarchyNode{
           numbering: %Numbering{
-            level: level,
-            index: index,
-            labels: labels
+            index: index
           },
           revision: revision
         } = h,

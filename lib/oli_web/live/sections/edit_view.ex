@@ -67,9 +67,7 @@ defmodule OliWeb.Sections.EditView do
         <Group label="Settings" description="Manage the course section settings">
           <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
         </Group>
-        <Group label="Labels" description="Custom labels">
-          <CustomLabelsForm labels={@labels} save="save_labels"/>
-        </Group>
+
         {#if @section.open_and_free}
           <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
         {#else}
@@ -79,6 +77,11 @@ defmodule OliWeb.Sections.EditView do
         <ContentSettings changeset={@changeset}/>
       </Groups>
     </Form>
+    <Groups>
+      <Group label="Labels" description="Custom labels">
+        <CustomLabelsForm labels={@labels} save="save_labels"/>
+      </Group>
+    </Groups>
     """
   end
 

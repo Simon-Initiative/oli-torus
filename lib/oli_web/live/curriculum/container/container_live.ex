@@ -80,13 +80,21 @@ defmodule OliWeb.Curriculum.ContainerLive do
               "Basic"
           end
 
+        numberings = case project.customizations do
+          nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
+          custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
+          |> Enum.reduce(%{}, fn {k, val}, acc ->
+            Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
+          end)
+        end
+
         {:ok,
          assign(socket,
            context: context,
            children: children,
            active: :curriculum,
            breadcrumbs:
-             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver),
+             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver, project.customizations),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
@@ -96,7 +104,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            view: view_pref,
            selected: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
+           numberings: numberings,
            dragging: nil,
            page_title: "Curriculum | " <> project.title
          )}
@@ -439,10 +447,17 @@ defmodule OliWeb.Curriculum.ContainerLive do
           |> put_flash(:error, "Could not duplicate page")
       end
 
+    numbering = case socket.assigns.project.customizations do
+      nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+      custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+      |> Enum.reduce(%{}, fn {k, val}, acc ->
+        Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
+      end)
+    end
+
     {:noreply,
      assign(socket,
-       numberings:
-         Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+       numberings: numbering
      )}
   end
 
@@ -550,14 +565,22 @@ defmodule OliWeb.Curriculum.ContainerLive do
            socket.assigns.project,
            socket.assigns.numberings
          ) do
+
       {:ok, _} ->
+        numberings = case socket.assigns.project.customizations do
+          nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+          custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+          |> Enum.reduce(%{}, fn {k, val}, acc ->
+            Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
+          end)
+        end
         {:noreply,
          assign(socket,
-           numberings:
-             Numbering.number_full_tree(
-               Oli.Publishing.AuthoringResolver,
-               socket.assigns.project.slug
-             )
+           numberings: numberings
+            #  Numbering.number_full_tree(
+            #    Oli.Publishing.AuthoringResolver,
+            #    socket.assigns.project.slug
+            #  )
          )}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
@@ -709,8 +732,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-      numberings =
-        Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+      # numberings =
+      #   Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+      numberings = case socket.assigns.project.customizations do
+        nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+        custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+        |> Enum.reduce(%{}, fn {k, val}, acc ->
+          Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
+        end)
+      end
 
       selected =
         case socket.assigns.selected do

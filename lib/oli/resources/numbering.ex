@@ -51,15 +51,7 @@ defmodule Oli.Resources.Numbering do
   defstruct level: 0,
             index: 0,
             labels: Map.from_struct(CustomLabels.default())
-
-  def container_type(level) do
-    case level do
-      1 -> "Unit"
-      2 -> "Module"
-      _ -> "Section"
-    end
-  end
-
+  
   def container_type_label(numbering) do
     case numbering.level do
       1 -> Map.get(numbering.labels, :unit)

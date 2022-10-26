@@ -65,7 +65,7 @@ defmodule OliWeb.Common.Breadcrumb do
      [%Breadcrumb{ curriculum }, %Breadcrumb{ container_1 }, ..., %Breadcrumb{ revision_slug }]
 
   """
-  def trail_to(project_or_section_slug, revision_slug, resolver) do
+  def trail_to(project_or_section_slug, revision_slug, resolver, custom_labels) do
     with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug),
          numbering <-
            Numbering.path_from_root_to(
@@ -73,8 +73,14 @@ defmodule OliWeb.Common.Breadcrumb do
              project_or_section_slug,
              revision_slug
            ) do
-            IO.inspect("----- #{inspect(numberings)} -------")
-            # Enum.reduce(Map.keys(numberings), numberings, fn (k, acc) -> Map.update(acc, k, ) end)
+      numberings = case custom_labels do
+         nil -> numberings
+         labels ->
+          numberings |> Enum.reduce(%{}, fn {k, val}, acc ->
+            Map.put(acc, k, %Numbering{val | labels: Map.from_struct(labels)})
+          end)
+      end
+
       case numbering do
         {:ok, [_root | path]} ->
           trail =
@@ -105,7 +111,6 @@ defmodule OliWeb.Common.Breadcrumb do
     with resource_type <- Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id),
          link <- Links.resource_path(revision, [], project_or_section_slug),
          numbering <- Map.get(numberings, revision.id) do
-          IO.inspect(numbering)
       case resource_type do
         "container" ->
           new(%{

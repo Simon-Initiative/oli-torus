@@ -60,7 +60,7 @@
       </div>
     <% end %>
 
-    <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
+    <%= submit "Save", class: "float-left btn btn-md btn-primary mt-2" %>
   </div>
 </div>
 

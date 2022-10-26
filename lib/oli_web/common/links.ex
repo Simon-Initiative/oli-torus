@@ -79,17 +79,18 @@ defmodule OliWeb.Common.Links do
 
           title =
             if numbering do
-              case project.customizations do
-                nil -> Numbering.prefix(numbering) <> ": " <> revision.title
-                labels -> label_map = Map.from_struct(labels)
-                  level = String.downcase(Numbering.container_type_label(numbering))
-                  level_name = Map.get(label_map, String.to_existing_atom(level))
-                  if level_name == nil do
-                    Numbering.prefix(numbering) <> ": " <> revision.title
-                  else
-                    "#{String.capitalize(level_name)} #{numbering.index}: " <> revision.title
-                  end
-              end
+              Numbering.prefix(numbering) <> ": " <> revision.title
+              # case project.customizations do
+              #   nil -> Numbering.prefix(numbering) <> ": " <> revision.title
+              #   labels -> label_map = Map.from_struct(labels)
+              #     level = String.downcase(Numbering.container_type_label(numbering))
+              #     level_name = Map.get(label_map, String.to_existing_atom(level))
+              #     if level_name == nil do
+              #       Numbering.prefix(numbering) <> ": " <> revision.title
+              #     else
+              #       "#{String.capitalize(level_name)} #{numbering.index}: " <> revision.title
+              #     end
+              # end
             else
               revision.title
             end

@@ -71,9 +71,13 @@ defmodule Oli.Authoring.Editing.Utils do
 
     if numbering do
       Numbering.container_type_label(%Numbering{numbering | level: numbering.level + 1})
-      # Numbering.container_type(numbering.level + 1)
     else
-      "Unit"
+      random_numbering = Map.get(numberings, List.first(Map.keys(numberings)))
+      if random_numbering do
+        Numbering.container_type_label(%Numbering{random_numbering | level: 1})
+      else
+        "Unit"
+      end
     end
   end
 end
