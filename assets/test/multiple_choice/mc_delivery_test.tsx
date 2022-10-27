@@ -79,7 +79,5 @@ describe('multiple choice delivery', () => {
 
     // expect results to be displayed after submission
     expect(await screen.findAllByLabelText('result')).toHaveLength(1);
-    expect(screen.getByLabelText('score')).toHaveTextContent('1');
-    expect(screen.getByLabelText('out of')).toHaveTextContent('1');
   });
 });

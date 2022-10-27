@@ -28,8 +28,8 @@ defmodule OliWeb.ObjectivesLive.DeleteModal do
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 <button
-                  :on-click="delete"
-                  :values={slug: @slug}
+                  phx-click="delete"
+                  phx-value-slug={@slug}
                   phx-key="enter"
                   class="btn btn-warning">
                   Delete

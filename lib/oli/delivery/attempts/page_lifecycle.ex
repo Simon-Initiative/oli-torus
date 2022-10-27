@@ -268,7 +268,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
       #     -If no open graded attempts, we proceed in a way that allows the student to access this as ungraded
 
       if resource_attempt.revision.graded == true do
-        if is_nil(resource_attempt.date_evaluated) do
+        if resource_attempt.lifecycle_state == :active do
           # Returning true here allows their active graded attempt to continue
           {true, resource_attempt}
         else
@@ -279,17 +279,19 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         # We want to handle:
         #
         # 1. If it was ungraded and now is graded:
-        #     -There may be some historical “ungraded” attempts, delete all of them to provide a clean slate for the graded attempts
+        #     -There may be some historical “ungraded” attempts, finalize all of them to provide a clean slate for the graded attempts
         #
 
-        if is_nil(resource_attempt.date_evaluated) do
+        if resource_attempt.lifecycle_state == :active do
           # There is an open ungraded attempt that we need to finalize to allow the student
           # to start a new one in this graded context
           {:ok, updated_attempt} =
             update_resource_attempt(resource_attempt, %{
               score: 0,
               out_of: 0,
-              date_evaluated: DateTime.utc_now()
+              date_evaluated: DateTime.utc_now(),
+              date_submitted: DateTime.utc_now(),
+              lifecycle_state: :evaluated
             })
 
           {true, updated_attempt}

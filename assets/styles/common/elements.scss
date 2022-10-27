@@ -42,16 +42,51 @@ span.term {
     margin-bottom: 14px;
   }
 
+  .dl-title {
+    color: $green;
+    font-size: 1.3em;
+    font-weight: bold;
+  }
+
+  dl dt {
+    margin-left: 10px;
+    margin-bottom: 0px;
+    margin-top: 8px;
+    p {
+      margin-bottom: 0;
+    }
+  }
+
+  dl dd {
+    margin-left: 18px;
+    margin-bottom: 0;
+    p {
+      margin-bottom: 0;
+    }
+  }
+
   table {
     @extend .table-bordered;
     @extend .table;
+    width: auto;
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    margin: auto;
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto;
     word-wrap: break-word;
     overflow: hidden;
 
     th {
       background-color: rgba($blue, 15%);
+    }
+
+    th,
+    td {
+      p:last-of-type {
+        margin-bottom: 0;
+      }
     }
 
     caption {
@@ -137,7 +172,7 @@ span.term {
   .definition {
     .term {
       color: $green;
-      font-size: 2em;
+      font-size: 1.3em;
       font-weight: bold;
     }
 
@@ -207,7 +242,6 @@ span.term {
   .callout-inline,
   .formula-inline {
     display: inline-block;
-    background-color: darken($body-bg, 5%);
     margin: 0px 0.5em;
     padding: 2px 0.5em;
     vertical-align: middle;
@@ -217,13 +251,17 @@ span.term {
     }
   }
 
+  .callout-inline,
+  .callout {
+    background-color: darken($body-bg, 5%);
+  }
+
   .callout-block,
   .formula {
     display: block;
-    background-color: darken($body-bg, 5%);
-    text-align: center;
     margin: 8px;
     padding: 12px;
+    text-align: center;
 
     blockquote,
     ol,
@@ -234,10 +272,6 @@ span.term {
     mjx-container[display='true'] {
       pointer-events: none;
     }
-  }
-
-  table {
-    table-layout: auto;
   }
 
   .dialog {

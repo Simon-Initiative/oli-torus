@@ -62,13 +62,13 @@ defmodule OliWeb.Insights do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <ul class="nav nav-pills">
       <li class="nav-item my-2 mr-2">
-        <button <%= is_disabled(@selected, :by_activity) %> class="btn btn-primary" phx-click="by-activity">By Activity</button>
+        <button {is_disabled(@selected, :by_activity)} class="btn btn-primary" phx-click="by-activity">By Activity</button>
       </li>
       <li class="nav-item my-2 mr-2">
-        <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">
+        <button {is_disabled(@selected, :by_page)} class="btn btn-primary" phx-click="by-page">
           <%= if is_loading?(assigns) and @selected == :by_page do %>
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <% end %>
@@ -76,7 +76,7 @@ defmodule OliWeb.Insights do
         </button>
       </li>
       <li class="nav-item my-2 mr-2">
-        <button <%= is_disabled(@selected, :by_objective) %> class="btn btn-primary" phx-click="by-objective">
+        <button {is_disabled(@selected, :by_objective)} class="btn btn-primary" phx-click="by-objective">
           <%= if is_loading?(assigns) and @selected == :by_objective do %>
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <% end %>
@@ -87,7 +87,7 @@ defmodule OliWeb.Insights do
     <div class="card">
       <div class="card-header">
         <form phx-change="search">
-          <input type="text" class="form-control" name="query" value="<%= @query %>" placeholder="Search by title..." />
+          <input type="text" class="form-control" name="query" value={@query} placeholder="Search by title..." />
         </form>
       </div>
       <div class="card-body">
@@ -320,9 +320,9 @@ defmodule OliWeb.Insights do
 
   defp is_disabled(selected, title) do
     if selected == title do
-      "disabled"
+      [disabled: true]
     else
-      ""
+      []
     end
   end
 

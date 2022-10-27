@@ -71,7 +71,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
                Publishing.get_published_revision(publication.id, resource.id)
                |> trap_nil(),
              {:ok, revision} <-
-              append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
+               append_to_container(
+                 container_slug,
+                 publication,
+                 revision_to_attach,
+                 project_slug,
+                 author
+               ) do
           revision
         else
           error -> Repo.rollback(error)
@@ -83,7 +89,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         Broadcaster.broadcast_revision(revision, project_slug)
         {:ok, revision}
 
-      e -> e
+      e ->
+        e
     end
   end
 
@@ -188,6 +195,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
             project
           )
         end
+
         revision
       else
         error -> Repo.rollback(error)
@@ -195,18 +203,22 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end)
   end
 
-  def remove_sub_objective_from_parent(revision_slug, %Author{} = author, %Project{} = project, parent_objective) do
+  def remove_sub_objective_from_parent(
+        revision_slug,
+        %Author{} = author,
+        %Project{} = project,
+        parent_objective
+      ) do
     resource = Resources.get_resource_from_slug(revision_slug)
 
     edit(
-        parent_objective.slug,
-        %{
-          children:
-            Enum.filter(parent_objective.children, fn id -> id != resource.id end)
-        },
-        author,
-        project
-      )
+      parent_objective.slug,
+      %{
+        children: Enum.filter(parent_objective.children, fn id -> id != resource.id end)
+      },
+      author,
+      project
+    )
   end
 
   @doc """

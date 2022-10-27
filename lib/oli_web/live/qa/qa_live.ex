@@ -139,7 +139,7 @@ defmodule OliWeb.Qa.QaLive do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <div class="container review">
       <div class="row">
         <div class="col-12">

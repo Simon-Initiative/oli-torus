@@ -147,39 +147,39 @@ defmodule OliWeb.PublisherLive.ShowView do
           )
       end
 
-    {:noreply, socket |> hide_modal()}
+    {:noreply, socket |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("validate_name_for_deletion", %{"publisher" => %{"name" => name}}, socket) do
     delete_enabled = name == socket.assigns.publisher.name
-    %{modal: modal} = socket.assigns
+    %{modal_assigns: modal_assigns} = socket.assigns
 
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | delete_enabled: delete_enabled
-        }
+    modal_assigns = %{
+      modal_assigns
+      | delete_enabled: delete_enabled
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
   def handle_event("show_delete_modal", _, socket) do
-    modal = %{
-      component: DeleteModal,
-      assigns: %{
-        id: "delete_publisher_modal",
-        description: "",
-        entity_name: socket.assigns.publisher.name,
-        entity_type: "publisher",
-        delete_enabled: false,
-        validate: "validate_name_for_deletion",
-        delete: "delete"
-      }
+    modal_assigns = %{
+      id: "delete_publisher_modal",
+      description: "",
+      entity_name: socket.assigns.publisher.name,
+      entity_type: "publisher",
+      delete_enabled: false,
+      validate: "validate_name_for_deletion",
+      delete: "delete"
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <DeleteModal {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("show_set_default_modal", _, socket) do

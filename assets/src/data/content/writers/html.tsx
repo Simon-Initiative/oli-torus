@@ -48,6 +48,9 @@ import {
   TableConjugation as TableConjugationModel,
   Foreign,
   CommandButton as CommandButtonModel,
+  DescriptionList as DescriptionListModel,
+  DescriptionListDefinition,
+  DescriptionListTerm,
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import React from 'react';
@@ -70,6 +73,7 @@ import { Conjugation } from '../../../components/common/Conjugation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
 import { Popup } from '../../../components/common/Popup';
 import { CommandButton } from '../../../components/common/CommandButton';
+import { DescriptionList } from '../../../components/common/DescriptionList';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -148,6 +152,22 @@ export class HtmlParser implements WriterImpl {
         {next()}
       </FigureElement>
     );
+  }
+
+  dl(context: WriterContext, next: Next, element: DescriptionListModel) {
+    return (
+      <DescriptionList context={context} description={element}>
+        {next()}
+      </DescriptionList>
+    );
+  }
+
+  dd(context: WriterContext, next: Next, _element: DescriptionListDefinition) {
+    return <dd>{next()}</dd>;
+  }
+
+  dt(context: WriterContext, next: Next, _element: DescriptionListTerm) {
+    return <dt>{next()}</dt>;
   }
 
   conjugation(context: WriterContext, next: Next, element: ConjugationModel) {
@@ -414,12 +434,17 @@ export class HtmlParser implements WriterImpl {
     const { inputRefContext } = context;
     const inputData = inputRefContext?.inputs.get(inputRef.id);
     if (!inputRefContext || !inputData) {
-      return <TextInput onChange={() => {}} value="" disabled />;
+      return <TextInput onKeyUp={() => {}} onChange={() => {}} value="" disabled />;
     }
 
     const shared = {
       onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
       onBlur: () => inputRefContext.onBlur(inputRef.id),
+      onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        if (e.key === 'Enter') {
+          inputRefContext.onPressEnter(inputRef.id);
+        }
+      },
       value: valueOr(inputData.value, ''),
       disabled: inputRefContext.disabled,
       placeholder: inputData.placeholder || '',

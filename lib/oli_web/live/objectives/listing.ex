@@ -20,8 +20,8 @@ defmodule OliWeb.ObjectivesLive.Listing do
                 data-target={"#collapse#{index}"}
                 aria-expanded="true"
                 aria-controls={"collapse#{index}"}
-                :on-click="set_selected"
-                :values={slug: item.slug}>
+                phx-click="set_selected"
+                phx-value-slug={item.slug}>
                 {item.title}
               </button>
               <div class="d-flex flex-column font-weight-light small bg-secondary p-2 rounded mr-2">
@@ -41,14 +41,15 @@ defmodule OliWeb.ObjectivesLive.Listing do
                         <div class="w-75">{sub_objective.title}</div>
                         <div class="ml-2 sub-actions">
                           <button
-                            :on-click="display_edit_modal"
-                            :values={slug: sub_objective.slug}
+                            phx-click="display_edit_modal"
+                            phx-value-slug={sub_objective.slug}
                             class="ml-1 btn btn-sm btn-light">
                             <i class="las la-i-cursor"></i>
                           </button>
                           <button
-                            :on-click="delete"
-                            :values={slug: sub_objective.slug, parent_slug: item.slug}
+                            phx-click="delete"
+                            phx-value-slug={sub_objective.slug}
+                            phx-value-parent_slug={item.slug}
                             class="ml-1 btn btn-sm btn-danger">
                               <i class="fas fa-trash-alt fa-lg"></i>
                           </button>

@@ -11,14 +11,18 @@ defmodule OliWeb.ObjectivesLive.Attachments do
   prop locked_by, :any
   prop parent_pages, :list
 
-  def update(%{
-    attachment_summary: %{
-      attachments: {pages, activities},
-      locked_by: locked_by,
-      parent_pages: parent_pages
-    }
-  } = assigns, socket) do
+  def update(
+        %{
+          attachment_summary: %{
+            attachments: {pages, activities},
+            locked_by: locked_by,
+            parent_pages: parent_pages
+          }
+        } = assigns,
+        socket
+      ) do
     all = pages ++ activities
+
     is_locked? = fn id ->
       case Map.get(parent_pages, id) do
         nil -> Map.get(locked_by, id) != nil
@@ -27,15 +31,14 @@ defmodule OliWeb.ObjectivesLive.Attachments do
     end
 
     {:ok,
-      assign(socket,
-        id: assigns.id,
-        project: assigns.project,
-        parent_pages: parent_pages,
-        locked_by: locked_by,
-        resources_locked: Enum.filter(all, fn r -> is_locked?.(r.resource_id) end),
-        resources_not_locked: Enum.filter(all, fn r -> !is_locked?.(r.resource_id) end)
-      )
-    }
+     assign(socket,
+       id: assigns.id,
+       project: assigns.project,
+       parent_pages: parent_pages,
+       locked_by: locked_by,
+       resources_locked: Enum.filter(all, fn r -> is_locked?.(r.resource_id) end),
+       resources_not_locked: Enum.filter(all, fn r -> !is_locked?.(r.resource_id) end)
+     )}
   end
 
   def render(assigns) do
