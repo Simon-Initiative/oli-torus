@@ -4,7 +4,7 @@ defmodule OliWeb.Common.Components do
   """
   use Phoenix.Component
 
-  def trash_icon_button(assigns) do
+  def materials_icon_button(assigns) do
     assigns =
       assigns
       |> assign(
@@ -17,13 +17,13 @@ defmodule OliWeb.Common.Components do
       |> assign(
         :class,
         case assigns[:class] do
-          nil -> "btn trash-icon-button"
-          c -> "btn trash-icon-button #{c}"
+          nil -> "btn icon-button"
+          c -> "btn icon-button #{c}"
         end
       )
 
     ~H"""
-      <button class={@class} phx-click={@on_click} {@values}><span class="material-icons">delete</span></button>
+      <button class={@class} phx-click={@on_click} {@values}><span class="material-icons"><%= @icon %></span></button>
     """
   end
 end

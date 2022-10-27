@@ -6,13 +6,13 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
   import Oli.Utils, only: [uuid: 0]
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesGroupsEditor.GroupOption
+  import OliWeb.Common.Modal.{FormModal, DeleteModal}
 
   alias Oli.Resources.ResourceType
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Common.Modal.{CreateModal, DeleteModal}
 
   @alternatives_type_id ResourceType.get_id_by_type("alternatives")
 
@@ -62,11 +62,9 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
         </div>
         <div class="d-flex flex-column my-4">
         <%= if Enum.count(@alternatives) > 0 do %>
-          <div>
-            <%= for group <- @alternatives do %>
-              <.group group={group} />
-            <% end %>
-          </div>
+          <%= for group <- @alternatives do %>
+            <.group group={group} />
+          <% end %>
         <% else %>
           <div class="text-center"><em>There are no alternatives groups</em></div>
         <% end %>
@@ -77,7 +75,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def group(assigns) do
     ~H"""
-      <div class="border p-3 my-2">
+      <div class="alternatives-group border p-3 my-2">
         <div class="d-flex flex-row align-items-center">
           <div><b><%= @group.title %></b></div>
           <div class="flex-grow-1"></div>
@@ -142,19 +140,23 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
       """
     end
 
-    modal = %{
-      component: CreateModal,
-      assigns: %{
-        id: "create_modal",
-        title: "Create Alternative",
-        changeset: changeset,
-        form_body_fn: form_body_fn,
-        on_validate: "validate_group",
-        on_create: "create_group"
-      }
+    modal_assigns = %{
+      id: "create_modal",
+      title: "Create Alternative",
+      submit_label: "Create",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_group",
+      on_submit: "create_group"
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~H"""
+        <.form_modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("validate_group", %{"params" => %{"name" => _}}, socket) do
@@ -189,26 +191,30 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
           <%= text_input @form,
             :name,
             class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-            placeholder: "Enter a name for the option",
+            placeholder: "Enter a name",
             phx_hook: "InputAutoSelect",
             required: true %>
         </div>
       """
     end
 
-    modal = %{
-      component: CreateModal,
-      assigns: %{
-        id: "create_modal",
-        title: "Create Option",
-        changeset: changeset,
-        form_body_fn: form_body_fn,
-        on_validate: "validate_option",
-        on_create: "create_option"
-      }
+    modal_assigns = %{
+      id: "create_modal",
+      title: "Create Option",
+      submit_label: "Create",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_option",
+      on_submit: "create_option"
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~H"""
+        <.form_modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("validate_option", %{"params" => %{"name" => _}}, socket) do
@@ -217,7 +223,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def handle_event(
         "create_option",
-        %{"params" => %{"id" => option_id, "name" => name, "resource_id" => resource_id}},
+        %{"params" => %{"id" => option_id, "name" => name, "resource-id" => resource_id}},
         socket
       ) do
     %{project: project, author: author, alternatives: alternatives} = socket.assigns
@@ -246,7 +252,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def handle_event(
         "show_delete_group_modal",
-        %{"resource_id" => resource_id},
+        %{"resource-id" => resource_id},
         socket
       ) do
     %{alternatives: alternatives} = socket.assigns
@@ -258,20 +264,23 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
       """
     end
 
-    modal = %{
-      component: DeleteModal,
-      assigns: %{
-        id: "delete_modal",
-        title: "Delete Group",
-        message: "Are you sure you want to delete this alternatives group?",
-        preview_fn: preview_fn,
-        group: find_group(alternatives, resource_id),
-        on_delete: "delete_group",
-        phx_values: ["phx-value-resource-id": resource_id]
-      }
+    modal_assigns = %{
+      id: "delete_modal",
+      title: "Delete Group",
+      message: "Are you sure you want to delete this alternatives group?",
+      preview_fn: preview_fn,
+      group: find_group(alternatives, resource_id),
+      on_delete: "delete_group",
+      phx_values: ["phx-value-resource-id": resource_id]
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~H"""
+        <.delete_modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("delete_group", %{"resource-id" => resource_id}, socket) do
@@ -285,6 +294,95 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
      |> assign(
        alternatives: Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
      )}
+  end
+
+  def handle_event(
+        "show_edit_option_modal",
+        %{"resource-id" => resource_id, "option-id" => option_id},
+        socket
+      ) do
+    %{alternatives: alternatives} = socket.assigns
+
+    resource_id = ensure_integer(resource_id)
+    option = find_group_option(alternatives, resource_id, option_id)
+
+    changeset =
+      {%{resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
+      |> Ecto.Changeset.cast(option, [:id, :resource_id, :name])
+
+    form_body_fn = fn assigns ->
+      ~H"""
+        <div class="form-group">
+          <%= hidden_input @form, :id %>
+          <%= hidden_input @form, :resource_id %>
+
+          <%= text_input @form,
+            :name,
+            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+            placeholder: "Enter a name",
+            phx_hook: "InputAutoSelect",
+            required: true %>
+        </div>
+      """
+    end
+
+    modal_assigns = %{
+      id: "edit_modal",
+      title: "Edit Option",
+      submit_label: "Save",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_option",
+      on_submit: "edit_option"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+        <.form_modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "edit_option",
+        %{"params" => %{"resource_id" => resource_id, "id" => option_id, "name" => name}} =
+          params,
+        socket
+      ) do
+    IO.inspect(params)
+
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+
+    %{content: %{"options" => options} = content} =
+      Enum.find(alternatives, fn g -> g.resource_id == resource_id end)
+
+    # new_options = Enum.filter(options, fn o -> o["id"] != option_id end)
+    updated_options =
+      Enum.map(options, fn o ->
+        if o["id"] == option_id do
+          %{o | "name" => name}
+        else
+          o
+        end
+      end)
+
+    case edit_group_options(
+           project.slug,
+           author,
+           alternatives,
+           resource_id,
+           content,
+           updated_options
+         ) do
+      {:ok, alternatives, _group} ->
+        {:noreply, hide_modal(socket) |> assign(alternatives: alternatives)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
   end
 
   def handle_event(
@@ -305,21 +403,24 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
       """
     end
 
-    modal = %{
-      component: DeleteModal,
-      assigns: %{
-        id: "delete_modal",
-        title: "Delete Option",
-        message: "Are you sure you want to delete this option?",
-        preview_fn: preview_fn,
-        group: find_group(alternatives, resource_id),
-        option: option,
-        on_delete: "delete_option",
-        phx_values: ["phx-value-resource-id": resource_id, "phx-value-option-id": option_id]
-      }
+    modal_assigns = %{
+      id: "delete_modal",
+      title: "Delete Option",
+      message: "Are you sure you want to delete this option?",
+      preview_fn: preview_fn,
+      group: find_group(alternatives, resource_id),
+      option: option,
+      on_delete: "delete_option",
+      phx_values: ["phx-value-resource-id": resource_id, "phx-value-option-id": option_id]
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~H"""
+        <.delete_modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event(

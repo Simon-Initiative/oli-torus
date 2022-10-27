@@ -5,7 +5,7 @@ defmodule OliWeb.Common.Modal.DeleteModal do
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
-  def render(assigns) do
+  def delete_modal(assigns) do
     ~H"""
     <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
@@ -38,7 +38,7 @@ defmodule OliWeb.Common.Modal.DeleteModal do
     """
   end
 
-  def preview(assigns) do
+  defp preview(assigns) do
     assigns.preview_fn.(assigns)
   end
 end

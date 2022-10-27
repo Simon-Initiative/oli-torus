@@ -37,7 +37,13 @@ a.form-control {
   color: $blue;
 }
 
-button.trash-icon-button {
+button.icon-button {
+  &:hover {
+    color: var(--authoring-primary);
+  }
+}
+
+button.danger-icon-button {
   &:hover {
     color: var(--authoring-danger);
   }
