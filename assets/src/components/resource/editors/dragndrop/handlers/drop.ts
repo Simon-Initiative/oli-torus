@@ -20,8 +20,6 @@ export const dropHandler =
   (e: React.DragEvent<HTMLDivElement>, index: number[]) => {
     onDragEnd();
 
-    console.log('onDragEnd');
-
     if (editMode) {
       const data = e.dataTransfer.getData('application/x-oli-resource-content');
 
@@ -30,7 +28,7 @@ export const dropHandler =
 
         const sourceIndex = content.findIndex((k) => k.id === droppedContent.id);
 
-        if (sourceIndex === []) {
+        if (sourceIndex.length === 0) {
           // This is a cross window drop, we insert it but have to have to
           // ensure that for activities that we create a new activity for
           // tied to this project

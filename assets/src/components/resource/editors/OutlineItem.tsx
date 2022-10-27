@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from 'react';
+import React, { PropsWithChildren, useRef } from 'react';
 import * as Immutable from 'immutable';
 import { ClassName, classNames } from 'utils/classNames';
 import { PurposeTypes, ResourceGroup, ResourceContent } from 'data/content/resource';
@@ -41,29 +41,50 @@ export const OutlineItem = ({
   onDragEnd,
   onDrop,
   onKeyDown,
-}: PropsWithChildren<OutlineItemProps>) => (
-  <>
-    {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+}: PropsWithChildren<OutlineItemProps>) => {
+  const ref = useRef<HTMLDivElement>(null);
 
-    <div
-      id={`content-item-${id}`}
-      className={classNames(styles.item, className)}
-      onClick={() => scrollToResourceEditor(id)}
-      draggable={editMode}
-      tabIndex={0}
-      onDragStart={(e) => onDragStart(e, id)}
-      onDragEnd={onDragEnd}
-      onKeyDown={onKeyDown(id)}
-      onFocus={(_e) => onFocus(id)}
-      aria-label={assistive}
-    >
-      <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-      <div className={styles.contentLink} onClick={() => scrollToResourceEditor(id)} role="button">
-        {children}
+  // react prop onDragEnd doesn't seem to work correctly so here we
+  // manually set the dragstart handler to listen for dragend event
+  // so we can properly trigger the necessary callback
+  const dragStartHandler: React.DragEventHandler<HTMLDivElement> = (e) => {
+    const dragEndListener = () => {
+      ref.current?.removeEventListener('dragend', dragEndListener);
+      onDragEnd();
+    };
+
+    ref.current?.addEventListener('dragend', dragEndListener);
+    onDragStart(e, id);
+  };
+
+  return (
+    <>
+      {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+      <div
+        ref={ref}
+        id={`content-item-${id}`}
+        className={classNames(styles.item, className)}
+        onClick={() => scrollToResourceEditor(id)}
+        draggable={editMode}
+        tabIndex={0}
+        onDragStart={dragStartHandler}
+        onKeyDown={onKeyDown(id)}
+        onFocus={(_e) => onFocus(id)}
+        aria-label={assistive}
+      >
+        <DragHandle style={{ margin: '10px 10px 10px 0' }} />
+        <div
+          className={styles.contentLink}
+          onClick={() => scrollToResourceEditor(id)}
+          role="button"
+        >
+          {children}
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 export interface OutlineGroupProps {
   className?: ClassName;
