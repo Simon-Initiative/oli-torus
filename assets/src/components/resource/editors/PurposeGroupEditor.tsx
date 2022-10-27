@@ -1,5 +1,4 @@
 import React, { PropsWithChildren } from 'react';
-import { GroupBlock } from './GroupBlock';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
 import {
@@ -21,6 +20,7 @@ import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
 import { PaginationModes } from './PaginationModes';
+import { GroupEditor } from './GroupEditor';
 
 interface PurposeGroupEditorProps extends EditorProps {
   contentItem: PurposeGroupContent;
@@ -50,86 +50,40 @@ export const PurposeGroupEditor = ({
   onRegisterNewObjective,
   onRegisterNewTag,
 }: PurposeGroupEditorProps) => {
-  const onEditChild = (child: ResourceContent) => {
-    const updatedContent = {
-      ...contentItem,
-      children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
-    };
-    onEdit(updatedContent);
-  };
-
-  const contentBreaksExist = contentItem.children
-    .toArray()
-    .some((v: ResourceContent) => v.type === 'break');
-
   return (
-    <GroupBlock
+    <PurposeGroupBlock
       editMode={editMode}
       contentItem={contentItem}
       parents={parents}
       canRemove={canRemove}
       onRemove={onRemove}
       onEdit={onEdit}
-      contentBreaksExist={contentBreaksExist}
     >
-      {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
-        return (
-          <div key={c.id}>
-            <AddResource
-              index={[...index, childIndex]}
-              parents={[...parents, contentItem]}
-              editMode={editMode}
-              editorMap={editorMap}
-              resourceContext={resourceContext}
-              featureFlags={featureFlags}
-              onAddItem={onAddItem}
-              onRegisterNewObjective={onRegisterNewObjective}
-            />
-            {createEditor({
-              resourceContext,
-              contentItem: c,
-              index: [...index, childIndex],
-              parents: [...parents, contentItem],
-              activities,
-              editMode,
-              resourceSlug,
-              projectSlug,
-              graded,
-              objectivesMap,
-              allObjectives,
-              allTags,
-              editorMap,
-              canRemove,
-              featureFlags,
-              contentBreaksExist,
-              onEdit: onEditChild,
-              onEditActivity,
-              onRemove: onRemoveChild,
-              onPostUndoable,
-              onRegisterNewObjective,
-              onRegisterNewTag,
-              onAddItem,
-            })}
-          </div>
-        );
-      })}
-      <AddResource
-        index={[...index, contentItem.children.size + 1]}
-        parents={[...parents, contentItem]}
-        editMode={editMode}
-        editorMap={editorMap}
+      <GroupEditor
         resourceContext={resourceContext}
+        editMode={editMode}
+        projectSlug={projectSlug}
+        resourceSlug={resourceSlug}
+        contentItem={contentItem}
+        index={index}
+        parents={parents}
+        activities={activities}
+        allObjectives={allObjectives}
+        allTags={allTags}
+        canRemove={canRemove}
+        editorMap={editorMap}
+        objectivesMap={objectivesMap}
+        graded={graded}
         featureFlags={featureFlags}
+        onEdit={onEdit}
+        onEditActivity={onEditActivity}
         onAddItem={onAddItem}
+        onRemove={onRemove}
+        onPostUndoable={onPostUndoable}
         onRegisterNewObjective={onRegisterNewObjective}
+        onRegisterNewTag={onRegisterNewTag}
       />
-    </GroupBlock>
+    </PurposeGroupBlock>
   );
 };
 
@@ -157,7 +111,6 @@ interface PurposeGroupBlockProps {
   contentItem: PurposeGroupContent;
   parents: ResourceContent[];
   canRemove: boolean;
-  contentBreaksExist: boolean;
   onEdit: (contentItem: PurposeGroupContent) => void;
   onRemove: () => void;
 }
@@ -166,7 +119,6 @@ export const PurposeGroupBlock = ({
   contentItem,
   parents,
   canRemove,
-  contentBreaksExist,
   children,
   onEdit,
   onRemove,
@@ -179,6 +131,8 @@ export const PurposeGroupBlock = ({
   const canEditPurpose =
     parents.every((p) => !isGroupWithPurpose(p)) &&
     !contentItem.children.some((c) => groupOrDescendantHasPurpose(c));
+
+  const contentBreaksExist = contentItem.children.some((v: ResourceContent) => v.type === 'break');
 
   return (
     <div

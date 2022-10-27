@@ -401,7 +401,7 @@ const ResourceGroupItem = ({
     <>
       {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
 
-      <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
+      <div className={classNames(styles.group, className)}>
         {children}
 
         {expanded && (
@@ -411,7 +411,7 @@ const ResourceGroupItem = ({
               .map((c, i) => {
                 return (
                   <OutlineItem
-                    key={id}
+                    key={c.id}
                     className={className}
                     id={c.id}
                     level={level + 1}

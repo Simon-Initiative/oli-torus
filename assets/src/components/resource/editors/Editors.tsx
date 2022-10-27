@@ -74,11 +74,6 @@ export const Editors = (props: EditorsProps) => {
       props.onEdit(content.updateContentItem(contentItem.id, contentItem));
     const onRemove = () => props.onRemove(contentItem.id);
 
-    const contentBreaksExist =
-      (contentItem as any).children !== undefined
-        ? (contentItem as any).children.some((v: ResourceContent) => v.type === 'break')
-        : false;
-
     const editor = createEditor({
       resourceContext: resourceContext,
       contentItem,
@@ -95,7 +90,6 @@ export const Editors = (props: EditorsProps) => {
       editorMap,
       canRemove,
       featureFlags,
-      contentBreaksExist,
       onEdit,
       onEditActivity,
       onPostUndoable,

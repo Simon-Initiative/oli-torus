@@ -1,0 +1,33 @@
+.alternativesEditor {
+}
+
+.groupBlockHeader {
+  display: flex;
+  flex-direction: row;
+
+  .options {
+    display: flex;
+    flex-direction: row;
+
+    .option {
+      margin-right: 10px;
+
+      &.add {
+        border-radius: 50%;
+      }
+
+      &.active {
+        color: var(--authoring-white);
+        background-color: var(--authoring-primary);
+
+        &:hover {
+          background-color: var(--authoring-primary);
+        }
+      }
+
+      &:hover {
+        background-color: var(--authoring-gray-200);
+      }
+    }
+  }
+}

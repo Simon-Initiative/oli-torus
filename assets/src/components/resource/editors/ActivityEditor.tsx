@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityReference } from 'data/content/resource';
+import { ActivityReference, ResourceContent } from 'data/content/resource';
 import { ActivityBlock } from './ActivityBlock';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Undoable } from 'components/activities/types';
@@ -19,7 +19,6 @@ export const ActivityEditor = ({
   allObjectives,
   allTags,
   canRemove,
-  contentBreaksExist,
   onEditActivity,
   onRemove,
   onPostUndoable,
@@ -27,6 +26,10 @@ export const ActivityEditor = ({
   onRegisterNewTag,
 }: ActivityEditorProps) => {
   const activity = activities.get(contentItem.activitySlug);
+
+  const contentBreaksExist = (contentItem as any).children.some(
+    (v: ResourceContent) => v.type === 'break',
+  );
 
   if (activity !== undefined) {
     return (

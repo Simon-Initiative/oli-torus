@@ -32,7 +32,11 @@ export type ResourceContent =
 
 // Items that can be present as elements in a resource content array and contain
 // other resource content as children
-export type ResourceGroup = PurposeGroupContent | SurveyContent | AlternativesContent;
+export type ResourceGroup =
+  | PurposeGroupContent
+  | SurveyContent
+  | AlternativesContent
+  | AlternativeContent;
 
 export const isResourceGroup = (content: ResourceContent) => {
   switch (content.type) {
@@ -41,6 +45,8 @@ export const isResourceGroup = (content: ResourceContent) => {
     case 'survey':
       return true;
     case 'alternatives':
+      return true;
+    case 'alternative':
       return true;
     default:
       return false;

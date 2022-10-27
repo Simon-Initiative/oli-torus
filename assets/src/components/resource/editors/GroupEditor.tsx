@@ -1,21 +1,13 @@
 import React from 'react';
-import { ResourceContent, SurveyContent } from 'data/content/resource';
-import { SurveyBlock } from './SurveyBlock';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
-import {
-  Description,
-  Icon,
-  OutlineGroup,
-  OutlineGroupProps,
-  resourceGroupTitle,
-} from './OutlineItem';
+import { ResourceContent, ResourceGroup } from 'data/content/resource';
 
-interface SurveyEditorProps extends EditorProps {
-  contentItem: SurveyContent;
+interface GroupEditorProps extends EditorProps {
+  contentItem: ResourceGroup;
 }
 
-export const SurveyEditor = ({
+export const GroupEditor = ({
   resourceContext,
   editMode,
   projectSlug,
@@ -34,38 +26,32 @@ export const SurveyEditor = ({
   onEdit,
   onEditActivity,
   onAddItem,
-  onRemove,
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
-}: SurveyEditorProps) => {
+}: GroupEditorProps) => {
   const onEditChild = (child: ResourceContent) => {
     const updatedContent = {
       ...contentItem,
       children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
     };
-    onEdit(updatedContent);
+    onEdit(updatedContent as ResourceContent);
+  };
+
+  const onRemoveChild = (child: ResourceContent) => {
+    const updatedContent = {
+      ...contentItem,
+      children: contentItem.children.filter((i) => i.id !== child.id),
+    };
+    onEdit(updatedContent as ResourceContent);
   };
 
   return (
-    <SurveyBlock
-      editMode={editMode}
-      contentItem={contentItem}
-      canRemove={canRemove}
-      onRemove={onRemove}
-      onEdit={onEdit}
-    >
+    <>
       {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
         return (
           <div key={c.id}>
             <AddResource
-              onRegisterNewObjective={onRegisterNewObjective}
               index={[...index, childIndex]}
               parents={[...parents, contentItem]}
               editMode={editMode}
@@ -73,6 +59,7 @@ export const SurveyEditor = ({
               resourceContext={resourceContext}
               featureFlags={featureFlags}
               onAddItem={onAddItem}
+              onRegisterNewObjective={onRegisterNewObjective}
             />
             {createEditor({
               resourceContext,
@@ -92,7 +79,7 @@ export const SurveyEditor = ({
               featureFlags,
               onEdit: onEditChild,
               onEditActivity,
-              onRemove: onRemoveChild,
+              onRemove: () => onRemoveChild(c),
               onPostUndoable,
               onRegisterNewObjective,
               onRegisterNewTag,
@@ -111,23 +98,6 @@ export const SurveyEditor = ({
         onAddItem={onAddItem}
         onRegisterNewObjective={onRegisterNewObjective}
       />
-    </SurveyBlock>
-  );
-};
-
-interface SurveyOutlineItemProps extends OutlineGroupProps {
-  contentItem: SurveyContent;
-}
-
-export const SurveyOutlineItem = (props: SurveyOutlineItemProps) => {
-  const { contentItem } = props;
-
-  return (
-    <OutlineGroup {...props}>
-      <Icon iconName="las la-poll" />
-      <Description title={resourceGroupTitle(contentItem)}>
-        {contentItem.children.size} items
-      </Description>
-    </OutlineGroup>
+    </>
   );
 };

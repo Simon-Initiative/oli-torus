@@ -1,13 +1,11 @@
-import React from 'react';
+import React, { PropsWithChildren, useState } from 'react';
 import {
   AlternativeContent,
   AlternativesContent,
+  createAlternative,
   ResourceContent,
-  ResourceGroup,
 } from 'data/content/resource';
-import { GroupBlock } from './GroupBlock';
-import { AddResource } from './AddResource';
-import { EditorProps, createEditor } from './createEditor';
+import { EditorProps } from './createEditor';
 import {
   Description,
   ExpandToggle,
@@ -17,117 +15,88 @@ import {
   OutlineGroupProps,
   resourceGroupTitle,
 } from './OutlineItem';
+import styles from './AlternativesEditor.modules.scss';
+import contentBlockStyles from './ContentBlock.modules.scss';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import { classNames } from 'utils/classNames';
+import { Maybe } from 'tsmonad';
+import { GroupEditor } from './GroupEditor';
 
 interface AlternativesEditorProps extends EditorProps {
   contentItem: AlternativesContent;
 }
 
-export const AlternativesEditor = ({
-  resourceContext,
-  editMode,
-  projectSlug,
-  resourceSlug,
-  contentItem,
-  index,
-  parents,
-  activities,
-  allObjectives,
-  allTags,
-  canRemove,
-  editorMap,
-  objectivesMap,
-  graded,
-  featureFlags,
-  onEdit,
-  onEditActivity,
-  onAddItem,
-  onRemove,
-  onPostUndoable,
-  onRegisterNewObjective,
-  onRegisterNewTag,
-}: AlternativesEditorProps) => {
-  const onEditChild = (child: AlternativeContent) => {
-    const updatedContent = {
+export const AlternativesEditor = (props: AlternativesEditorProps) => {
+  const { editMode, contentItem, index, parents, canRemove, onEdit, onRemove } = props;
+
+  const [activeOptionId, setActiveOptionId] = useState(
+    Maybe.maybe(contentItem.children.first<AlternativeContent>()).caseOf({
+      just: (a) => a.id,
+      nothing: () => '',
+    }),
+  );
+
+  const activeOptionIndex = contentItem.children.findIndex((c) => c.id == activeOptionId);
+
+  const onCreateAlternative = () => {
+    const newAlt = createAlternative('new-alt');
+    const update = {
       ...contentItem,
-      children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
+      children: contentItem.children.push(newAlt),
     };
-    onEdit(updatedContent);
+
+    onEdit(update);
   };
 
-  const contentBreaksExist = contentItem.children
-    .toArray()
-    .some((v: ResourceContent) => v.type === 'break');
-
   return (
-    <GroupBlock
+    <AlternativesGroupBlock
       editMode={editMode}
       contentItem={contentItem}
+      activeOptionId={activeOptionId}
+      setActiveOptionId={setActiveOptionId}
       parents={parents}
       canRemove={canRemove}
       onRemove={onRemove}
-      onEdit={onEdit}
-      contentBreaksExist={contentBreaksExist}
+      onCreateAlternative={onCreateAlternative}
     >
-      Alternatives Editor
-      {/* {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
-        return (
-          <div key={c.id}>
-            <AddResource
-              index={[...index, childIndex]}
-              parents={[...parents, contentItem]}
-              editMode={editMode}
-              editorMap={editorMap}
-              resourceContext={resourceContext}
-              featureFlags={featureFlags}
-              onAddItem={onAddItem}
-              onRegisterNewObjective={onRegisterNewObjective}
+      <div className={styles.alternativesEditor}>
+        {Maybe.maybe(contentItem.children.get(activeOptionIndex)).caseOf({
+          just: (activeOption) => (
+            <AlternativeEditor
+              {...props}
+              contentItem={activeOption}
+              index={[...index, activeOptionIndex]}
+              parents={[...parents, activeOption]}
             />
-            {createEditor({
-              resourceContext,
-              contentItem: c,
-              index: [...index, childIndex],
-              parents: [...parents, contentItem],
-              activities,
-              editMode,
-              resourceSlug,
-              projectSlug,
-              graded,
-              objectivesMap,
-              allObjectives,
-              allTags,
-              editorMap,
-              canRemove,
-              featureFlags,
-              contentBreaksExist,
-              onEdit: onEditChild,
-              onEditActivity,
-              onRemove: onRemoveChild,
-              onPostUndoable,
-              onRegisterNewObjective,
-              onRegisterNewTag,
-              onAddItem,
-            })}
-          </div>
-        );
-      })}
-      <AddResource
-        index={[...index, contentItem.children.size + 1]}
-        parents={[...parents, contentItem]}
-        editMode={editMode}
-        editorMap={editorMap}
-        resourceContext={resourceContext}
-        featureFlags={featureFlags}
-        onAddItem={onAddItem}
-        onRegisterNewObjective={onRegisterNewObjective}
-      /> */}
-    </GroupBlock>
+          ),
+          nothing: () => (
+            <div className={styles.alternativesEditor}>
+              <div className="text-secondary text-center m-4">
+                <div>No alternative content exists.</div>
+                <div>
+                  <button
+                    className="btn btn-link btn-sm p-0 align-bottom"
+                    onClick={onCreateAlternative}
+                  >
+                    Create{' '}
+                  </button>{' '}
+                  an alternative item to get started.
+                </div>
+              </div>
+            </div>
+          ),
+        })}
+      </div>
+    </AlternativesGroupBlock>
   );
+};
+
+interface AlternativeEditorProps extends EditorProps {
+  contentItem: AlternativeContent;
+}
+
+const AlternativeEditor = (props: AlternativeEditorProps) => {
+  return <GroupEditor {...props} contentItem={props.contentItem} />;
 };
 
 interface AlternativesOutlineItemProps extends OutlineItemProps {
@@ -169,3 +138,60 @@ export const AlternativeOutlineItem = (props: AlternativeOutlineItemProps) => {
 };
 
 const alternatveGroupTitle = (alternative: AlternativeContent) => alternative.value;
+
+interface AlternativesGroupBlockProps {
+  editMode: boolean;
+  contentItem: AlternativesContent;
+  activeOptionId: string;
+  parents: ResourceContent[];
+  canRemove: boolean;
+  onCreateAlternative: () => void;
+  onRemove: () => void;
+  setActiveOptionId: (id: string) => void;
+}
+export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGroupBlockProps>) => {
+  const {
+    editMode,
+    contentItem,
+    activeOptionId,
+    canRemove,
+    children,
+    onRemove,
+    onCreateAlternative,
+    setActiveOptionId,
+  } = props;
+
+  const options = contentItem.children.map((option) => (
+    <button
+      key={option.id}
+      className={classNames(
+        'btn btn-sm',
+        styles.option,
+        option.id == activeOptionId && styles.active,
+      )}
+      onClick={() => setActiveOptionId(option.id)}
+    >
+      {option.value}
+    </button>
+  ));
+
+  return (
+    <div id={`resource-editor-${contentItem.id}`} className={contentBlockStyles.groupBlock}>
+      <div className={styles.groupBlockHeader}>
+        <div className={styles.options}>
+          {options}
+          <button
+            key="add"
+            className={classNames('btn btn-sm', styles.option, styles.add)}
+            onClick={onCreateAlternative}
+          >
+            <i className="las la-plus"></i>
+          </button>
+        </div>
+        <div className="flex-grow-1"></div>
+        <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
+      </div>
+      {children}
+    </div>
+  );
+};
