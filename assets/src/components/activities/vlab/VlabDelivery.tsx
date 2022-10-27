@@ -217,9 +217,12 @@ export const VlabComponent: React.FC = () => {
   const writerContext = defaultWriterContext({
     sectionSlug: context.sectionSlug,
     bibParams: context.bibParams,
+    graded: context.graded,
     inputRefContext: {
       toggleHints,
       onChange,
+      onBlur: (_id: string) => true,
+      onPressEnter: (_id: string) => true,
       // TODO: This 'as any' cast was necessary as the types do not align
       // Is the right fix for this to add 'input: MultiInputDelivery | VlabDelivery' to context.ts?
       inputs: inputs as any,

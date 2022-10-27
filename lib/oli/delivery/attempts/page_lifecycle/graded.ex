@@ -34,8 +34,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         user_id: user_id
       }) do
     # There is no "active" attempt if there has never been an attempt or if the latest
-    # attempt has been finalized.
-    if is_nil(latest_resource_attempt) or !is_nil(latest_resource_attempt.date_evaluated) do
+    # attempt has been finalized or submitted
+    if is_nil(latest_resource_attempt) or
+         latest_resource_attempt.lifecycle_state == :submitted or
+         latest_resource_attempt.lifecycle_state == :evaluated do
       # Graded pages must be started explicitly by the student, giving them to chance to
       # see how many attempts, etc.
 

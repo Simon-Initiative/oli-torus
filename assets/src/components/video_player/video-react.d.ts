@@ -201,6 +201,23 @@ declare module 'video-react' {
     subscribeToStateChange: (listener: StateListener) => void;
   }
 
+  export interface VideoProps {
+    actions?: any;
+    player?: any;
+    children?: any;
+    startTime?: number;
+    loop?: boolean;
+    order?: number;
+    muted?: boolean;
+    autoPlay?: boolean;
+    playsInline?: boolean;
+    src?: string;
+    poster?: string;
+    className?: string;
+    preload?: 'auto' | 'metadata' | '';
+    crossOrigin?: string;
+  }
+
   export interface PlayerProps {
     ref?: LegacyRef<PlayerReference> | undefined;
     /**
@@ -275,6 +292,8 @@ declare module 'video-react' {
     startTime?: number;
 
     children?: React.ReactNode;
+
+    crossOrigin: string;
   }
 
   export interface ShortcutItem {
@@ -401,6 +420,8 @@ declare module 'video-react' {
    * https://video-react.js.org/components/player
    */
   export function Player(props: PlayerProps): JSX.Element;
+
+  export function Video(props: VideoProps): JSX.Element;
 
   /**
    * ### Component - Shortcut

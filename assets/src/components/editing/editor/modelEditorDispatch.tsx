@@ -30,6 +30,7 @@ import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
 import { TcEditor } from '../elements/table/TcElement';
 import { ForeignEditor } from '../elements/foreign/ForeignEditor';
 import { CommandButtonEditor } from '../elements/command_button/CommandButtonEditor';
+import { DescriptionListEditor } from '../elements/description/DescriptionListEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -78,6 +79,15 @@ export function editorFor(
       );
     case 'li':
       return <li {...attributes}>{children}</li>;
+
+    case 'dl':
+      return (
+        <DescriptionListEditor {...(editorProps as EditorProps<ContentModel.DescriptionList>)} />
+      );
+    case 'dt':
+      return <dt {...attributes}>{children}</dt>;
+    case 'dd':
+      return <dd {...attributes}>{children}</dd>;
     case 'callout':
       return <CalloutEditor {...(editorProps as EditorProps<ContentModel.Callout>)} />;
     case 'callout_inline':

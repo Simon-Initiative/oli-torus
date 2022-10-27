@@ -2,6 +2,7 @@ defmodule Oli.EditingTest do
   use Oli.DataCase
 
   alias Oli.Resources
+  alias Oli.Resources.Revision
   alias Oli.Authoring.Editing.{PageEditor, ActivityEditor}
   alias Oli.Publishing
   alias Oli.Accounts.Author
@@ -13,7 +14,23 @@ defmodule Oli.EditingTest do
 
   describe "editing" do
     setup do
-      Seeder.base_project_with_resource2()
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.add_objective("sub objective 1", :subobjective12A)
+        |> Seeder.add_objective("sub objective 2", :subobjective2B)
+        |> Seeder.add_objective_with_children("objective 1",[:subobjective12A], :objective1)
+        |> Seeder.add_objective_with_children("objective 2", [:subobjective12A, :subobjective2B], :objective2)
+
+      %{
+        map: map,
+        author: map.author,
+        author2: map.author2,
+        project: map.project,
+        publication: map.publication,
+        page1: map.page1,
+        revision1: map.revision1,
+        revision2: map.revision2
+      }
     end
 
     test "edit/4 creates a new revision when no lock in place", %{
@@ -469,6 +486,24 @@ defmodule Oli.EditingTest do
       html = PageEditor.render_page_html(project.slug, revision.content, author)
 
       assert html == [["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]]
+    end
+
+    test "construct_parent_references/1", %{
+      map: %{
+        objective1: %{revision: %Revision{resource_id: objective1_resource_id, title: objective1_title} = objective1},
+        objective2: %{revision: %Revision{resource_id: objective2_resource_id, title: objective2_title} = objective2},
+        subobjective12A: %{revision: %Revision{resource_id: subobjective12A_resource_id, title: subobjective12A_title} = subobjective12A},
+        subobjective2B: %{revision: %Revision{resource_id: subobjective2B_resource_id, title: subobjective2B_title} = subobjective2B}
+      }
+    } do
+      assert [
+        %{id: subobjective2B_resource_id, parentId: objective2_resource_id, title: subobjective2B_title},
+        %{id: subobjective12A_resource_id, parentId: objective1_resource_id, title: subobjective12A_title},
+        %{id: subobjective12A_resource_id, parentId: objective2_resource_id, title: subobjective12A_title},
+        %{id: objective2_resource_id, parentId: nil, title: objective2_title},
+        %{id: objective1_resource_id, parentId: nil, title: objective1_title}
+      ] ==
+        PageEditor.construct_parent_references([objective1, objective2, subobjective12A, subobjective2B])
     end
   end
 end

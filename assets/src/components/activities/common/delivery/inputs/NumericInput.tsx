@@ -7,6 +7,7 @@ interface Props {
   placeholder?: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
+  onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 export const NumericInput: React.FC<Props> = (props) => {
   const numericInputRef = createRef<HTMLInputElement>();
@@ -20,6 +21,7 @@ export const NumericInput: React.FC<Props> = (props) => {
       className="form-control"
       onChange={(e) => props.onChange(e.target.value)}
       onBlur={props.onBlur}
+      onKeyUp={props.onKeyUp}
       value={props.value}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
       onWheel={disableScrollWheelChange(numericInputRef)}

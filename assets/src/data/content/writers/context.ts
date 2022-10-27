@@ -3,12 +3,14 @@ import { VlabInputDelivery } from 'components/activities/vlab/schema';
 import { ID } from 'data/content/model/other';
 
 export interface WriterContext {
+  graded?: boolean;
   sectionSlug?: string;
   projectSlug?: string;
   bibParams?: any;
   learningLanguage?: string;
   inputRefContext?: {
     onBlur: (id: string) => void;
+    onPressEnter: (id: string) => void;
     onChange: (id: string, value: string) => void;
     toggleHints: (id: string) => void;
     inputs: Map<

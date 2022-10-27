@@ -9,12 +9,8 @@ defmodule OliWeb.Common.Modal do
   use OliWeb.Common.Modal
   ```
 
-  2. Initialize `modal` assign and add `render_modal(assigns)` to the rendered output:
+  2. Add `render_modal(assigns)` to the rendered output:
   ```
-  mount(_, _, socket) do
-    {:ok, assign(socket, modal: nil)}
-  end
-
   def render(assigns) do
     ...
     <%= render_modal(assigns) %>
@@ -22,18 +18,37 @@ defmodule OliWeb.Common.Modal do
   end
   ```
 
-  3. Create your modal by setting the 'modal' assign
+  3. Create your modal by defining a modal functional component and then
+  calling 'show_modal' with the socket, component and any additional assigns.
   ```
+
   def handle_event("show_modal", _, socket) do
-    {:noreply, assign(socket, modal: %{component: MyModal, assigns: %{...}})}
+
+    modal_assigns = %{
+      id: "my_modal",
+      message: "Hello from Modal",
+      on_confirm: "some_confirm_action"
+    }
+
+    modal = fn assigns ->
+      ~H\"\"\"
+        <div>
+          <%= @modal_assigns.message %>
+          <button phx-click={@modal_assigns.on_confirm}>Ok</button>
+        </div>
+      \"\"\"
+    end
+
+    {:noreply, assign(socket, modal, modal_assigns: modal_assigns)}
   end
   ```
 
   4. Dismiss modal using bootstrap javascript (data-dismiss="modal", escape key, etc...)
-  or using the hide_modal(socket) function
+  or using the `hide_modal(socket, assigns)` function. Hide modal can optionally take any
+  cleanup assigns to be set after the modal has disappeared and is no longer being rendered.
   ```
   def handle_event("close_modal", _, socket) do
-    {:noreply, socket |> hide_modal()}
+    {:noreply, socket |> hide_modal(modal_assigns: nil)}
   end
   ```
   """
@@ -41,21 +56,40 @@ defmodule OliWeb.Common.Modal do
   defmacro __using__([]) do
     quote do
       def render_modal(assigns) do
-        case assigns[:modal] do
+        case assigns[:__modal__] do
           nil ->
             nil
 
-          %{component: component, assigns: assigns} ->
-            live_component(component, assigns)
+          component when is_function(component) ->
+            component.(assigns)
         end
       end
 
       def handle_event("_bsmodal.unmount", _, socket) do
-        {:noreply, assign(socket, modal: nil)}
+        case socket.assigns do
+          %{__modal_assigns_after_hide__: assigns_after_hide}
+          when not is_nil(assigns_after_hide) ->
+            {:noreply,
+             assign(
+               socket,
+               Keyword.merge(assigns_after_hide, __modal__: nil, __modal_assigns_after_hide__: nil)
+             )}
+
+          _ ->
+            {:noreply, assign(socket, __modal__: nil)}
+        end
       end
 
-      def hide_modal(socket) do
-        push_event(socket, "_bsmodal.hide", %{})
+      def show_modal(socket, modal, assigns \\ []) when is_function(modal) do
+        socket
+        |> assign(:__modal__, modal)
+        |> assign(assigns)
+      end
+
+      def hide_modal(socket, assigns_after_hide \\ []) do
+        socket
+        |> push_event("_bsmodal.hide", %{})
+        |> assign(:__modal_assigns_after_hide__, assigns_after_hide)
       end
     end
   end

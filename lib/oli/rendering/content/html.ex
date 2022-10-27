@@ -206,6 +206,25 @@ defmodule Oli.Rendering.Content.Html do
     ["<ol>", next.(), "</ol>\n"]
   end
 
+  def dl(%Context{}, next, title, %{}) do
+    [
+      "<h4 class=\"dl-title\">",
+      title.(),
+      "</h4>\n",
+      "<dl>",
+      next.(),
+      "</dl>\n"
+    ]
+  end
+
+  def dt(%Context{}, next, %{}) do
+    ["<dt>", next.(), "</dt>\n"]
+  end
+
+  def dd(%Context{}, next, %{}) do
+    ["<dd>", next.(), "</dd>\n"]
+  end
+
   def ul(%Context{} = _context, next, %{"style" => style}) do
     ["<ul class=\"list-#{style}\">", next.(), "</ul>\n"]
   end
@@ -337,7 +356,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp maybePronunciationHeader(%{"pronunciation" => pronunciation}) do
-    if pronunciation do
+    if Oli.Activities.ParseUtils.has_content?(pronunciation) do
       "Pronunciation: "
     else
       ""
@@ -391,6 +410,15 @@ defmodule Oli.Rendering.Content.Html do
   def formula_class(true), do: "formula-inline"
 
   def formula(context, next, properties, inline \\ false)
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        _next,
+        %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
+        true
+      ) do
+    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  end
 
   def formula(
         %Oli.Rendering.Context{} = _context,

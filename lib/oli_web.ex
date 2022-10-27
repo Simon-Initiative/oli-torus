@@ -41,6 +41,8 @@ defmodule OliWeb do
       import Phoenix.Controller,
         only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
 
+      import Phoenix.Component
+
       unquote(view_helpers())
     end
   end
@@ -99,6 +101,7 @@ defmodule OliWeb do
       import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
+      import Phoenix.Component
     end
   end
 

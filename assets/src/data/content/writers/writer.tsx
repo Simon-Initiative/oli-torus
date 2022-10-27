@@ -41,6 +41,9 @@ export interface WriterImpl {
   ol: ElementWriter;
   ul: ElementWriter;
   li: ElementWriter;
+  dd: ElementWriter;
+  dl: ElementWriter;
+  dt: ElementWriter;
   math: ElementWriter;
   mathLine: ElementWriter;
   code: ElementWriter;
@@ -165,6 +168,12 @@ export class ContentWriter {
         return impl.ul(context, next, content);
       case 'li':
         return impl.li(context, next, content);
+      case 'dt':
+        return impl.dt(context, next, content);
+      case 'dd':
+        return impl.dd(context, next, content);
+      case 'dl':
+        return impl.dl(context, next, content);
       case 'math':
         return impl.math(context, next, content);
       case 'math_line':

@@ -55,6 +55,22 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
+  def dl(%Context{}, next, title, %{}) do
+    [
+      title.(),
+      "\n",
+      next.()
+    ]
+  end
+
+  def dt(%Context{}, next, %{}) do
+    [next.(), "\n"]
+  end
+
+  def dd(%Context{}, next, %{}) do
+    [next.(), "\n"]
+  end
+
   def img(%Context{} = _context, _, %{"src" => src}) do
     ["[image with src #{src}] "]
   end

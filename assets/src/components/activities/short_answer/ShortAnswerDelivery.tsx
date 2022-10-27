@@ -49,6 +49,7 @@ const Input = (props: InputProps) => {
     value,
     disabled: props.isEvaluated || props.isSubmitted,
     onBlur: props.onBlur,
+    onKeyUp: () => {},
   };
 
   switch (props.inputType) {

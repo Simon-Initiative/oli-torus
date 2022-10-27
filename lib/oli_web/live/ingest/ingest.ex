@@ -55,11 +55,16 @@ defmodule OliWeb.Admin.Ingest do
 
   @impl Phoenix.LiveView
   def handle_event("ingest", _params, socket) do
+    socket = clear_flash(socket)
     %{author: author} = socket.assigns
 
     with path_upload <-
            consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end),
-         {:ok, project} <- Ingest.ingest(hd(path_upload), author) do
+         {:ok, project} <-
+           Ingest.ingest(
+             List.first(path_upload),
+             author
+           ) do
       {:noreply, redirect(socket, to: Routes.project_path(OliWeb.Endpoint, :overview, project))}
     else
       error ->
