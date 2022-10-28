@@ -916,6 +916,8 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
+    live("/collaborative_space", Admin.CollaborativeSpace)
+
     get("/activity_review", ActivityReviewController, :index)
 
     # General

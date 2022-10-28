@@ -33,6 +33,7 @@ defmodule OliWeb.Admin.AdminView do
           <li><a href={Routes.institution_path(OliWeb.Endpoint, :index)}>Manage Institutions {badge(assigns, (Oli.Institutions.count_pending_registrations() |> Oli.Utils.positive_or_nil))}</a></li>
           <li><a href={Routes.invite_path(OliWeb.Endpoint, :index)}>Invite New Authors</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}>Manage Communities</a></li>
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.ChatView)}>Chat</a></li>
         </ul>
       </Group>
       <Group label="Content Management" description="Access and manage created content">
