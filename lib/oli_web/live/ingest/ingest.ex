@@ -59,7 +59,7 @@ defmodule OliWeb.Admin.Ingest do
     %{author: author} = socket.assigns
 
     with path_upload <-
-           consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end),
+           consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> {:ok, path} end),
          {:ok, project} <-
            Ingest.ingest(
              List.first(path_upload),

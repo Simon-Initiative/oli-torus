@@ -96,7 +96,7 @@ jobs:
     steps:
       - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
         id: check_token
-        run: echo "::set-output name=available::$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)"
+        run: echo "available=$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
 
   auto-format:
     name: Auto format and lint
