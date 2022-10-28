@@ -80,14 +80,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
               "Basic"
           end
 
-        numberings = case project.customizations do
-          nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
-          custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
-          |> Enum.reduce(%{}, fn {k, val}, acc ->
-            Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
-          end)
-        end
-
         {:ok,
          assign(socket,
            context: context,
@@ -104,7 +96,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
            view: view_pref,
            selected: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: numberings,
+           numberings: Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            project_slug,
+            project.customizations
+            ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title
          )}
@@ -447,17 +443,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
           |> put_flash(:error, "Could not duplicate page")
       end
 
-    numbering = case socket.assigns.project.customizations do
-      nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-      custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-      |> Enum.reduce(%{}, fn {k, val}, acc ->
-        Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
-      end)
-    end
-
     {:noreply,
      assign(socket,
-       numberings: numbering
+       numberings: Numbering.number_full_tree(
+        Oli.Publishing.AuthoringResolver,
+        socket.assigns.project.slug,
+        socket.assigns.project.customizations
+        )
      )}
   end
 
@@ -567,20 +559,14 @@ defmodule OliWeb.Curriculum.ContainerLive do
          ) do
 
       {:ok, _} ->
-        numberings = case socket.assigns.project.customizations do
-          nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-          custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-          |> Enum.reduce(%{}, fn {k, val}, acc ->
-            Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
-          end)
-        end
+
         {:noreply,
          assign(socket,
-           numberings: numberings
-            #  Numbering.number_full_tree(
-            #    Oli.Publishing.AuthoringResolver,
-            #    socket.assigns.project.slug
-            #  )
+           numberings: Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            socket.assigns.project.slug,
+            socket.assigns.project.customizations
+            )
          )}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
@@ -732,16 +718,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-      # numberings =
-      #   Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-      numberings = case socket.assigns.project.customizations do
-        nil -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-        custom_labels -> Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-        |> Enum.reduce(%{}, fn {k, val}, acc ->
-          Map.put(acc, k, %Numbering{val | labels: Map.from_struct(custom_labels)})
-        end)
-      end
-
       selected =
         case socket.assigns.selected do
           nil -> nil
@@ -753,7 +729,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
         container: revision,
         children: children,
         rollup: rollup,
-        numberings: numberings
+        numberings: Numbering.number_full_tree(
+          Oli.Publishing.AuthoringResolver,
+          socket.assigns.project.slug,
+          socket.assigns.project.customizations
+          )
       )
     else
       socket

@@ -51,7 +51,7 @@ defmodule Oli.Resources.Numbering do
   defstruct level: 0,
             index: 0,
             labels: Map.from_struct(CustomLabels.default())
-  
+
   def container_type_label(numbering) do
     case numbering.level do
       1 -> Map.get(numbering.labels, :unit)
@@ -197,16 +197,22 @@ defmodule Oli.Resources.Numbering do
 
   This method returns a map of revision id to %Numbering structs.
   """
-  @spec number_full_tree(resolver, project_or_section_slug) :: %{revision_id => %__MODULE__{}}
-  def number_full_tree(resolver, project_or_section_slug) do
+  @spec number_full_tree(resolver, project_or_section_slug, %CustomLabels{}) :: %{revision_id => %__MODULE__{}}
+  def number_full_tree(resolver, project_or_section_slug, labels) do
     number_tree_from(
       resolver.root_container(project_or_section_slug),
       resolver.all_revisions_in_hierarchy(project_or_section_slug)
     )
+    |> Enum.reduce(%{}, fn {k, val}, acc ->
+      case labels do
+         nil -> acc
+         new_labels -> Map.put(acc, k, %__MODULE__{val | labels: Map.from_struct(new_labels)})
+      end
+    end)
   end
 
   @spec number_tree_from(%Revision{}, [%Revision{}]) :: %{revision_id => %__MODULE__{}}
-  def number_tree_from(revision, revisions) do
+  defp number_tree_from(revision, revisions) do
     # for all revisions, map them by their ids
     by_id =
       Enum.filter(revisions, fn r ->
@@ -297,7 +303,7 @@ defmodule Oli.Resources.Numbering do
        ) do
     {numbering_index, numbering_tracker} = next_index(numbering_tracker, level, node.revision)
 
-    numbering = %__MODULE__{level: level, index: numbering_index}
+    numbering = %__MODULE__{level: level, index: numbering_index, labels: node.numbering.labels}
     numberings = Map.put(numberings, node.revision.id, numbering)
 
     {children, numbering_tracker, numberings} =

@@ -66,21 +66,13 @@ defmodule OliWeb.Common.Breadcrumb do
 
   """
   def trail_to(project_or_section_slug, revision_slug, resolver, custom_labels) do
-    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug),
+    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug, custom_labels),
          numbering <-
            Numbering.path_from_root_to(
              resolver,
              project_or_section_slug,
              revision_slug
            ) do
-      numberings = case custom_labels do
-         nil -> numberings
-         labels ->
-          numberings |> Enum.reduce(%{}, fn {k, val}, acc ->
-            Map.put(acc, k, %Numbering{val | labels: Map.from_struct(labels)})
-          end)
-      end
-
       case numbering do
         {:ok, [_root | path]} ->
           trail =
