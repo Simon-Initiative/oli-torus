@@ -98,11 +98,6 @@ export const MultipleChoiceComponent: React.FC = () => {
           }
           onSelect={(id) => saveOrSubmit(id)}
         />
-        <ResetButtonConnected
-          onReset={() =>
-            dispatch(resetAction(onResetActivity, { [activityState.parts[0].partId]: [] }))
-          }
-        />
         <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
       </div>
