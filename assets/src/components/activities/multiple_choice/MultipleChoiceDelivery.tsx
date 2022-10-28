@@ -12,20 +12,20 @@ import {
   setSelection,
   activityDeliverySlice,
   isEvaluated,
-  resetAction,
+  resetAndSubmitActivity,
   submit,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
   listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
+import { ActivityModelSchema, HasChoices } from 'components/activities/types';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
-import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { castPartId } from '../common/utils';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
@@ -48,6 +48,7 @@ export const MultipleChoiceComponent: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
   const { surveyId } = context;
+  const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
@@ -73,10 +74,25 @@ export const MultipleChoiceComponent: React.FC = () => {
             setSelection(castPartId(activityState.parts[0].partId), id, onSaveActivity, 'single'),
           )
       : (input: string) => {
-          dispatch(
-            setSelection(castPartId(activityState.parts[0].partId), input, noOpSave, 'single'),
-          );
-          dispatch(submit(onSubmitActivity));
+          if (uiState.attemptState.dateEvaluated !== null) {
+            dispatch(
+              setSelection(castPartId(activityState.parts[0].partId), input, noOpSave, 'single'),
+            );
+
+            dispatch(
+              resetAndSubmitActivity(
+                uiState.attemptState.attemptGuid,
+                [{ input }],
+                onResetActivity,
+                onSubmitActivity,
+              ),
+            );
+          } else {
+            dispatch(
+              setSelection(castPartId(activityState.parts[0].partId), input, noOpSave, 'single'),
+            );
+            dispatch(submit(onSubmitActivity));
+          }
         };
 
   return (
@@ -84,11 +100,10 @@ export const MultipleChoiceComponent: React.FC = () => {
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
-        <ChoicesDeliveryConnected
-          partId={castPartId(activityState.parts[0].partId)}
-          unselectedIcon={<Radio.Unchecked disabled={isEvaluated(uiState)} />}
+        <ChoicesDelivery
+          unselectedIcon={<Radio.Unchecked disabled={isEvaluated(uiState) && context.graded} />}
           selectedIcon={
-            !isEvaluated(uiState) ? (
+            !isEvaluated(uiState) || !context.graded ? (
               <Radio.Checked />
             ) : isCorrect(uiState.attemptState) ? (
               <Radio.Correct />
@@ -96,7 +111,11 @@ export const MultipleChoiceComponent: React.FC = () => {
               <Radio.Incorrect />
             )
           }
+          choices={(uiState.model as HasChoices).choices}
+          selected={uiState.partState[activityState.parts[0].partId]?.studentInput || []}
           onSelect={(id) => saveOrSubmit(id)}
+          isEvaluated={isEvaluated(uiState) && context.graded}
+          context={writerContext}
         />
         <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
