@@ -9,12 +9,14 @@ defmodule OliWeb.IngestLiveTest do
   @live_view_ingest_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)
 
   defp simulate_open_zip(path) do
-    {:ok, zip} =
-      path
-      |> to_charlist()
-      |> :zip.zip_open([:memory])
+    tmp_dir = System.tmp_dir!()
+    zip_tmp_filepath = Path.join([tmp_dir, "digest.zip"])
 
-    :zip.zip_close(zip)
+    files = File.ls!(path) |> Enum.map(&String.to_charlist/1)
+
+    {:ok, _filename} = :zip.create(zip_tmp_filepath, files, cwd: path)
+
+    zip_tmp_filepath
   end
 
   describe "user cannot access when is not logged in" do
@@ -49,19 +51,18 @@ defmodule OliWeb.IngestLiveTest do
     test "show error message when attaching an invalid file", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
-      path = "./test/support/assets/attachments_1.zip"
-      simulate_open_zip(path)
+      path = simulate_open_zip("./test/support/digests/digest_1")
 
       file_zip_1 =
         file_input(view, "#json-upload", :digest, [
           %{
-            name: "attachments_1.zip",
+            name: "digest_1.zip",
             content: File.read!(path),
             type: "zip"
           }
         ])
 
-      render_upload(file_zip_1, "attachments_1.zip")
+      render_upload(file_zip_1, "digest_1.zip")
 
       view
       |> element("form[phx-submit=\"ingest\"")
@@ -78,19 +79,18 @@ defmodule OliWeb.IngestLiveTest do
     test "show error message when attaching a file with invalid data", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
-      path = "./test/support/assets/attachments_2.zip"
-      simulate_open_zip(path)
+      path = simulate_open_zip("./test/support/digests/digest_2")
 
       file_zip_2 =
         file_input(view, "#json-upload", :digest, [
           %{
-            name: "attachments_2.zip",
+            name: "digest_2.zip",
             content: File.read!(path),
             type: "zip"
           }
         ])
 
-      render_upload(file_zip_2, "attachments_2.zip")
+      render_upload(file_zip_2, "digest_2.zip")
 
       view
       |> element("form[phx-submit=\"ingest\"")
@@ -107,19 +107,18 @@ defmodule OliWeb.IngestLiveTest do
     test "show error message when attaching a file with invalid title of project", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
-      path = "./test/support/assets/attachments_3.zip"
-      simulate_open_zip(path)
+      path = simulate_open_zip("./test/support/digests/digest_3")
 
       file_zip_3 =
         file_input(view, "#json-upload", :digest, [
           %{
-            name: "attachments_3.zip",
+            name: "digest_3.zip",
             content: File.read!(path),
             type: "zip"
           }
         ])
 
-      render_upload(file_zip_3, "attachments_3.zip")
+      render_upload(file_zip_3, "digest_3.zip")
 
       view
       |> element("form[phx-submit=\"ingest\"")
