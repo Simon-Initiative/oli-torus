@@ -23,10 +23,10 @@ jobs:
       - name: 🧾 Build info
         id: info
         run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::$(echo tokamak.oli.cmu.edu)"
-          echo "::set-output name=workspace::$GITHUB_WORKSPACE"
+          echo "name=sha_short::$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+          echo "name=deploy_host::$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
+          echo "name=workspace::$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
 
       - name: 📦 Package
         uses: ./.github/actions/torus-builder
