@@ -36,6 +36,7 @@
 
     <!-- Janus Part Component external CSS Files -->
     <link rel="stylesheet" href="/css/janus_image_carousel_delivery.css"/>
+    <link id="vendor-css" rel="stylesheet" href="/css/vendor.css" />
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 
@@ -46,6 +47,7 @@
 
     <%= OliWeb.Common.MathJaxScript.render(@conn) %>
 
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 
     <%= additional_stylesheets(assigns) %>

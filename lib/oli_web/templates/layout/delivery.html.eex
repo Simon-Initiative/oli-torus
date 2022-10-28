@@ -13,6 +13,7 @@
 
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
     <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
+    <link id="vendor-css" rel="stylesheet" href="/css/vendor.css" />
 
     <%= if dev_mode?() do %>
       <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
@@ -54,6 +55,7 @@
     <%= OliWeb.Common.MathJaxScript.render(@conn) %>
 
     <%= csrf_meta_tag() %>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
     <%= unless Plug.Conn.get_session(@conn, "browser_timezone") do %>
