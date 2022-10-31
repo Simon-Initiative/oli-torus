@@ -87,6 +87,7 @@ export class VariableEditorOrNot extends React.Component<
         {
           id: guid(),
           operation: 'variable_substitution',
+          firstAttemptOnly: false,
           data: [
             {
               type: 'variable',
