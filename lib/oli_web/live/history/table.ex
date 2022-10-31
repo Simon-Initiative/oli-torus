@@ -52,7 +52,7 @@ defmodule OliWeb.RevisionHistory.Table do
       </thead>
       <tbody id="revisions">
       {#for rev <- to_display }
-        <tr id="{ rev.id }" {...tr_props.(rev.id)}>
+        <tr id={"revision-#{rev.id}"} {...tr_props.(rev.id)}>
           <td>{ rev.id }</td>
           <td>{ Map.get(@tree, rev.id).project_id }</td>
           <td>{ Utils.render_date(rev, :inserted_at, @context) }</td>
