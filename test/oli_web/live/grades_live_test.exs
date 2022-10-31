@@ -10,8 +10,6 @@ defmodule OliWeb.ObjectivesLiveTest do
   alias Oli.Test.MockHTTP
   alias OliWeb.Router.Helpers, as: Routes
 
-  @expected_headers %{"Content-Type" => "application/x-www-form-urlencoded"}
-
   defp live_view_grades_route(section_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, section_slug)
   end
@@ -28,7 +26,29 @@ defmodule OliWeb.ObjectivesLiveTest do
       })
 
     deployment = insert(:lti_deployment, %{registration: registration})
-    section = insert(:section, %{lti_1p3_deployment: deployment})
+
+    section =
+      insert(:section, %{
+        lti_1p3_deployment: deployment,
+        line_items_service_url: "https://lineitems.com"
+      })
+
+    [section: section]
+  end
+
+  defp create_section_with_invalid_registration(_conn) do
+    registration =
+      insert(:lti_registration, %{
+        client_id: "error"
+      })
+
+    deployment = insert(:lti_deployment, %{registration: registration})
+
+    section =
+      insert(:section, %{
+        lti_1p3_deployment: deployment,
+        line_items_service_url: "https://lineitems.com"
+      })
 
     [section: section]
   end
@@ -64,20 +84,21 @@ defmodule OliWeb.ObjectivesLiveTest do
     end
   end
 
-  describe "test connection" do
+  describe "fetching valid access token" do
     setup [:admin_conn, :create_section]
 
-    test "returns success when the connection to the LMS is successful", %{
+    test "shows success message when the connection to the LMS is successful", %{
       conn: conn,
       section: section
     } do
-      url = section.lti_1p3_deployment.registration.auth_token_url
+      url_line_items = section.line_items_service_url <> "?limit=1000"
 
-      MockHTTP
-      |> expect(:post, fn ^url, _body, @expected_headers ->
+      expect(MockHTTP, :get, fn ^url_line_items, _headers ->
         {:ok,
          %HTTPoison.Response{
-           status_code: 200
+           status_code: 200,
+           body:
+             "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
          }}
       end)
 
@@ -90,13 +111,174 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert has_element?(view, "samp", "Starting test")
       assert has_element?(view, "samp", "Requesting access token...")
       assert has_element?(view, "samp", "Received access token")
+      assert has_element?(view, "samp", "Requesting line items...")
+      assert has_element?(view, "samp", "Received line items")
+      assert has_element?(view, "samp", "Success!")
+    end
+
+    test "shows error message on failure to obtain line items in the connection to the LMS", %{
+      conn: conn,
+      section: section
+    } do
+      url_line_items = section.line_items_service_url <> "?limit=1000"
+
+      expect(MockHTTP, :get, fn ^url_line_items, _headers ->
+        {:error, "Error retrieving all line items"}
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element("button[phx-click=\"test_connection\"]")
+      |> render_click()
+
+      assert has_element?(view, "samp", "Starting test")
+      assert has_element?(view, "samp", "Requesting access token...")
+      assert has_element?(view, "samp", "Received access token")
+      assert has_element?(view, "samp", "Requesting line items...")
+      assert has_element?(view, "samp", "Error retrieving all line items")
+    end
+
+    test "shows an info message when LMS line items are already up to date", %{
+      conn: conn,
+      section: section
+    } do
+      url_line_items = section.line_items_service_url <> "?limit=1000"
+
+      expect(MockHTTP, :get, fn ^url_line_items, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
+         }}
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element(
+        "a[phx-click=\"send_line_items\"]",
+        "Update LMS Line Items"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert.alert-info", "LMS line items already up to date")
+    end
+
+    test "shows an error message when failure to obtain line items for update LMS line items", %{
+      conn: conn,
+      section: section
+    } do
+      url_line_items = section.line_items_service_url <> "?limit=1000"
+
+      expect(MockHTTP, :get, fn ^url_line_items, _headers ->
+        {:error, "Error retrieving all line items"}
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element(
+        "a[phx-click=\"send_line_items\"]",
+        "Update LMS Line Items"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert.alert-danger", "Error accessing LMS line items")
+    end
+  end
+
+  describe "fetching invalid access token" do
+    setup [:admin_conn, :create_section_with_invalid_registration]
+
+    test "shows error on failure to obtain access token to test connection", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element("button[phx-click=\"test_connection\"]")
+      |> render_click()
+
+      assert has_element?(view, "samp", "Starting test")
+      assert has_element?(view, "samp", "Requesting access token...")
+      assert has_element?(view, "samp", "error fetching access token")
+    end
+
+    test "shows an error message when the LMS access token is not getting trying update LMS line items",
+         %{
+           conn: conn,
+           section: section
+         } do
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element(
+        "a[phx-click=\"send_line_items\"]",
+        "Update LMS Line Items"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert.alert-danger", "Error getting LMS access token")
+    end
+  end
+
+  describe "sync grades" do
+    setup [:admin_conn, :section_with_assessment]
+
+    test "shows the results to synchronization successfully", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element(
+        "a[phx-click=\"send_grades\"]",
+        "Synchronize Grades"
+      )
+      |> render_click()
+
+      assert has_element?(view, "p", "Pending grade updates: 0")
+      assert has_element?(view, "p", "Succeeded: 0")
+      assert has_element?(view, "p", "Failed: 0")
     end
   end
 
   describe "export grades" do
     setup [:admin_conn, :section_with_assessment]
+    @out_of 120.0
 
-    test "download grades file without grades succesfully", %{conn: conn, section: section} do
+    test "download file with grades succesfully", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      user_1 = insert(:user, name: "User1")
+      user_2 = insert(:user, name: "User2")
+      enroll_user_to_section(user_1, section, :context_learner)
+      enroll_user_to_section(user_2, section, :context_learner)
+
+      resource_access_1 =
+        insert(:resource_access,
+          user: user_1,
+          section: section,
+          resource: page_revision.resource,
+          score: 90.1,
+          out_of: @out_of
+        )
+
+      resource_access_2 =
+        insert(:resource_access,
+          user: user_2,
+          section: section,
+          resource: page_revision.resource,
+          score: 120,
+          out_of: @out_of
+        )
+
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 
       view
@@ -112,31 +294,36 @@ defmodule OliWeb.ObjectivesLiveTest do
           Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, section.slug)
         )
 
-      assert response(conn, 200) =~ "Student,Progress test revision\r\n    Points Possible\r\n"
+      assert response(conn, 200) =~
+               "Student,Progress test revision\r\n    Points Possible,#{@out_of}\r\n#{user_1.name} (#{user_1.email}),#{resource_access_1.score}\r\n#{user_2.name} (#{user_2.email}),#{resource_access_2.score}\r\n"
+    end
+
+    test "download file without grades succesfully", %{
+      conn: conn,
+      section: section
+    } do
+      user_1 = insert(:user, name: "User1")
+      user_2 = insert(:user, name: "User2")
+      enroll_user_to_section(user_1, section, :context_learner)
+      enroll_user_to_section(user_2, section, :context_learner)
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element(
+        "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, section.slug)}\"]",
+        "Download Gradebook"
+      )
+      |> render_click()
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, section.slug)
+        )
+
+      assert response(conn, 200) =~
+               "Student,Progress test revision\r\n    Points Possible,\r\n#{user_1.name} (#{user_1.email}),\r\n#{user_2.name} (#{user_2.email}),\r\n"
     end
   end
-
-  # describe "update line items" do
-  #   setup [:admin_conn, :create_section]
-
-  #   test "fails when cant update line items", %{conn: conn, section: section} do
-
-  #     MockHTTP
-  #     |> expect(:post, fn ^auth_token_url, _body, @expected_headers ->
-  #       {:ok,
-  #        %HTTPoison.Response{
-  #          status_code: 200
-  #        }}
-  #     end)
-
-  #     {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
-
-  #     view
-  #     |> element(
-  #       "a[phx-click=\"send_line_items\"]",
-  #       "Update LMS Line Items"
-  #     )
-  #     |> render_click()
-  #   end
-  # end
 end
