@@ -11,7 +11,8 @@ defmodule Oli.Resources.ResourceType do
     %{id: 4, type: "objective"},
     %{id: 5, type: "secondary"},
     %{id: 6, type: "tag"},
-    %{id: 7, type: "bibentry"}
+    %{id: 7, type: "bibentry"},
+    %{id: 8, type: "collabspace"}
   ]
   @by_id Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, id, t) end)
   @by_type Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, t, id) end)
@@ -35,6 +36,7 @@ defmodule Oli.Resources.ResourceType do
   def get_id_by_type("secondary"), do: Map.get(@by_type, "secondary")
   def get_id_by_type("tag"), do: Map.get(@by_type, "tag")
   def get_id_by_type("bibentry"), do: Map.get(@by_type, "bibentry")
+  def get_id_by_type("collabspace"), do: Map.get(@by_type, "collabspace")
 
   defp is_type(revision, type), do: get_type_by_id(revision.resource_type_id) == type
   def is_page(revision), do: is_type(revision, "page")
@@ -44,6 +46,7 @@ defmodule Oli.Resources.ResourceType do
   def is_secondary(revision), do: is_type(revision, "secondary")
   def is_tag(revision), do: is_type(revision, "tag")
   def is_bibentry(revision), do: is_type(revision, "bibentry")
+  def is_collabspace(revision), do: is_type(revision, "collabspace")
   def is_non_adaptive_page(revision), do: is_type(revision, "page") and !is_adaptive_page(revision)
   def is_adaptive_page(%{content: %{"advancedAuthoring" => true}}), do: true
   def is_adaptive_page(_), do: false
