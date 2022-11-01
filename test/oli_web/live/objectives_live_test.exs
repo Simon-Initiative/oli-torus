@@ -257,7 +257,7 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       assert has_element?(view, "##{obj.slug}")
       assert has_element?(view, "##{obj.slug}", "Sub-Objectives 2")
-      refute has_element?(view, "##{obj.slug}", "Pages 2")
+      assert has_element?(view, "##{obj.slug}", "Pages 2")
       assert has_element?(view, "##{obj.slug}", "Activities 0")
       assert has_element?(view, ".collapse.show", "Sub-Objectives")
       assert has_element?(view, ".collapse.show", "#{sub_obj.title}")
