@@ -18,6 +18,7 @@ import { ResourceChoice } from './ResourceChoice';
 import { FeatureFlags } from 'apps/page-editor/types';
 import { modalActions } from 'actions/modal';
 import { SelectModal } from 'components/modal/SelectModal';
+import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
 
 interface Props {
   index: number[];
@@ -151,6 +152,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
       <SelectModal
         title="Select Alternatives Group"
         description="Select an Alternatives Group"
+        additionalControls={<ManageAlternativesLink projectSlug={projectSlug} />}
         onFetchOptions={() =>
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {

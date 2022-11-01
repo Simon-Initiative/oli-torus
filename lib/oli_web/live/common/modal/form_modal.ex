@@ -12,7 +12,7 @@ defmodule OliWeb.Common.Modal.FormModal do
   attr(:title, :string, required: true)
   attr(:submit_label, :string, default: "Submit")
 
-  def form_modal(assigns) do
+  def modal(assigns) do
     ~H"""
     <div class="modal fade show" tabindex="-1" id={@id} role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">

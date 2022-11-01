@@ -1,6 +1,3 @@
-.alternativesEditor {
-}
-
 .groupBlockHeader {
   display: flex;
   flex-direction: row;
@@ -16,12 +13,10 @@
         border-radius: 50%;
       }
 
-      .edit,
-      .delete {
-        color: var(--authoring-white);
-        padding: 0;
-        margin-left: 10px;
-        vertical-align: baseline;
+      &.warn {
+        font-size: 20px;
+        font-weight: 600;
+        padding: 0 4px;
       }
 
       &.active {
@@ -35,6 +30,18 @@
 
       &:hover {
         background-color: var(--authoring-gray-200);
+      }
+
+      .edit {
+        color: var(--authoring-white);
+        border-radius: 4px;
+        padding: 0 4px;
+        margin-left: 10px;
+        vertical-align: baseline;
+
+        &:hover {
+          background-color: var(--authoring-hover);
+        }
       }
     }
   }

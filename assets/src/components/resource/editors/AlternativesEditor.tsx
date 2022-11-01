@@ -27,14 +27,26 @@ import * as Persistence from 'data/persistence/resource';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { makePageUndoable } from 'apps/page-editor/types';
 import { useAlternatives, AlternativesTypes } from 'components/hooks/useAlternatives';
+import { Tooltip } from 'components/common/Tooltip';
+import { stringFormat } from 'utils/format';
+import { access } from 'fs';
 
 interface AlternativesEditorProps extends EditorProps {
   contentItem: AlternativesContent;
 }
 
 export const AlternativesEditor = (props: AlternativesEditorProps) => {
-  const { editMode, contentItem, index, parents, canRemove, onEdit, onRemove, onPostUndoable } =
-    props;
+  const {
+    editMode,
+    projectSlug,
+    contentItem,
+    index,
+    parents,
+    canRemove,
+    onEdit,
+    onRemove,
+    onPostUndoable,
+  } = props;
   const alternativesContext = useAlternatives();
 
   const [activeOptionId, setActiveOptionId] = useState(
@@ -69,6 +81,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
           <SelectModal
             title="Select Alternative"
             description="Select Alternative"
+            additionalControls={<ManageAlternativesLink projectSlug={projectSlug} />}
             onFetchOptions={() => {
               return Promise.resolve(
                 alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
@@ -176,6 +189,23 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
   }
 };
 
+interface ManageAlternativesLinkProps {
+  projectSlug: string;
+}
+
+export const ManageAlternativesLink = ({ projectSlug }: ManageAlternativesLinkProps) => (
+  <>
+    <a
+      className="btn btn-link"
+      href={`/authoring/project/${projectSlug}/alternatives`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      Manage Alternatives <i className="las la-external-link-alt"></i>
+    </a>
+  </>
+);
+
 interface AlternativeEditorProps extends EditorProps {
   contentItem: AlternativeContent;
 }
@@ -258,39 +288,27 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
       ),
     );
 
-  const options = contentItem.children.map((option) =>
-    option.id == activeOptionId ? (
-      <div
-        key={option.id}
-        className={classNames(
-          'btn btn-sm',
-          styles.option,
-          option.id == activeOptionId && styles.active,
-        )}
-      >
-        {alternativeOptionsTitles[option.value]}
-        {option.id == activeOptionId && (
-          <>
-            <button className={classNames('btn btn-sm', styles.edit)} onClick={showEditAlternative}>
-              <i className="las la-pen"></i>
-            </button>
-          </>
-        )}
-      </div>
-    ) : (
-      <button
-        key={option.id}
-        className={classNames(
-          'btn btn-sm',
-          styles.option,
-          option.id == activeOptionId && styles.active,
-        )}
-        onClick={() => setActiveOptionId(option.id)}
-      >
-        {alternativeOptionsTitles[option.value]}
-      </button>
-    ),
+  const optionIdCount = contentItem.children.reduce(
+    (acc, option) => ({
+      ...acc,
+      [option.value]: acc[option.value] ? acc[option.value] + 1 : 1,
+    }),
+    {} as Record<string, number>,
   );
+
+  console.log('optionIdCount', optionIdCount);
+
+  const options = contentItem.children.map((option) => (
+    <OptionPill
+      key={option.id}
+      option={option}
+      activeOptionId={activeOptionId}
+      alternativeOptionsTitles={alternativeOptionsTitles}
+      isDuplicate={optionIdCount[option.value] > 1}
+      onSetActiveOptionId={setActiveOptionId}
+      onEditAlternativeClick={showEditAlternative}
+    />
+  ));
 
   return (
     <div id={`resource-editor-${contentItem.id}`} className={contentBlockStyles.groupBlock}>
@@ -310,6 +328,66 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
       </div>
       {children}
     </div>
+  );
+};
+
+type OptionPillProps = {
+  option: AlternativeContent;
+  activeOptionId: string;
+  alternativeOptionsTitles: Record<string, string>;
+  isDuplicate: boolean;
+  onSetActiveOptionId: (id: string) => void;
+  onEditAlternativeClick: () => void;
+};
+
+const OptionPill = ({
+  option,
+  activeOptionId,
+  alternativeOptionsTitles,
+  isDuplicate,
+  onSetActiveOptionId,
+  onEditAlternativeClick,
+}: OptionPillProps): JSX.Element => {
+  const title = alternativeOptionsTitles[option.value];
+
+  const titleOrWarning = title ?? (
+    <Tooltip title="This alternative value no longer exists and should be changed or removed">
+      <i className="las la-exclamation-circle text-danger"></i>
+    </Tooltip>
+  );
+
+  const maybeDuplicateWarning = isDuplicate && (
+    <Tooltip title="This alternative has the same value as another. One or the other should be changed or removed">
+      <i className="las la-exclamation-triangle text-warning mx-1"></i>
+    </Tooltip>
+  );
+
+  if (option.id == activeOptionId) {
+    return (
+      <div key={option.id} className={classNames('btn btn-sm', styles.option, styles.active)}>
+        {maybeDuplicateWarning}
+        {titleOrWarning}
+        <>
+          <button
+            className={classNames('btn btn-sm', styles.edit)}
+            onClick={onEditAlternativeClick}
+          >
+            <i className="las la-ellipsis-h"></i>
+          </button>
+        </>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      key={option.id}
+      className={classNames('btn btn-sm', styles.option, !title && styles.warn)}
+      onClick={() => onSetActiveOptionId(option.id)}
+    >
+      {maybeDuplicateWarning}
+      {titleOrWarning}
+    </button>
   );
 };
 

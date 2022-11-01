@@ -5,7 +5,13 @@ defmodule OliWeb.Common.Modal.DeleteModal do
   use Phoenix.Component
   use Phoenix.HTML
 
-  def delete_modal(assigns) do
+  attr :title, :string, required: true
+  attr :message, :any, required: true
+  attr :preview_fn, :any, required: true
+  attr :on_delete, :string, required: true
+  attr :phx_values, :map, required: true
+
+  def modal(assigns) do
     ~H"""
     <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">

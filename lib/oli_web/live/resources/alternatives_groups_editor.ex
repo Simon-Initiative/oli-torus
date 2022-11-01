@@ -6,14 +6,15 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
   import Oli.Utils, only: [uuid: 0]
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesGroupsEditor.GroupOption
-  import OliWeb.Common.Modal.{FormModal, DeleteModal}
 
   alias Oli.Resources.ResourceType
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Course
+  alias OliWeb.Common.Modal.{FormModal, DeleteModal}
   alias OliWeb.Resources.AlternativesGroupsEditor.PreventDeletionModal
+  alias OliWeb.Router.Helpers, as: Routes
 
   @alternatives_type_id ResourceType.get_id_by_type("alternatives")
 
@@ -153,7 +154,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
     modal = fn assigns ->
       ~H"""
-        <.form_modal {@modal_assigns} />
+        <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -211,7 +212,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
     modal = fn assigns ->
       ~H"""
-        <.form_modal {@modal_assigns} />
+        <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -281,7 +282,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
         modal = fn assigns ->
           ~H"""
-            <.delete_modal {@modal_assigns} />
+            <DeleteModal.modal {@modal_assigns} />
           """
         end
 
@@ -359,7 +360,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
     modal = fn assigns ->
       ~H"""
-        <.form_modal {@modal_assigns} />
+        <FormModal.modal {@modal_assigns} />
       """
     end
 
@@ -434,7 +435,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
     modal = fn assigns ->
       ~H"""
-        <.delete_modal {@modal_assigns} />
+        <DeleteModal.modal {@modal_assigns} />
       """
     end
 
