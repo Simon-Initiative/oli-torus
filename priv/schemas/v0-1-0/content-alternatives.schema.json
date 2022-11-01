@@ -27,7 +27,7 @@
       }
     },
     "group_id": {
-      "type": "string"
+      "type": "integer"
     },
     "default": {
       "type": "string"

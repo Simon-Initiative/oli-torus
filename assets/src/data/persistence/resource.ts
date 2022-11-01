@@ -58,7 +58,11 @@ export function pages(project: ProjectSlug, current?: string) {
 }
 
 export type AlternativesGroupOption = { id: string; name: string };
-export type AlternativesGroup = { id: number; title: string; options: AlternativesGroupOption[] };
+export type AlternativesGroup = {
+  id: number;
+  title: string;
+  options: AlternativesGroupOption[];
+};
 export type AlternativesGroupsReceived = { type: 'success'; alternatives: AlternativesGroup[] };
 
 // Requests all alternative groups

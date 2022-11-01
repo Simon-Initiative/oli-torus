@@ -13,6 +13,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
   alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Course
+  alias OliWeb.Resources.AlternativesGroupsEditor.PreventDeletionModal
 
   @alternatives_type_id ResourceType.get_id_by_type("alternatives")
 
@@ -223,7 +224,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def handle_event(
         "create_option",
-        %{"params" => %{"id" => option_id, "name" => name, "resource-id" => resource_id}},
+        %{"params" => %{"id" => option_id, "name" => name, "resource_id" => resource_id}},
         socket
       ) do
     %{project: project, author: author, alternatives: alternatives} = socket.assigns
@@ -252,35 +253,55 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def handle_event(
         "show_delete_group_modal",
-        %{"resource-id" => resource_id},
+        %{"resource_id" => resource_id},
         socket
       ) do
-    %{alternatives: alternatives} = socket.assigns
+    %{project: project, alternatives: alternatives} = socket.assigns
     resource_id = ensure_integer(resource_id)
 
-    preview_fn = fn assigns ->
-      ~H"""
-        <div class="text-center mt-3"><b><%= @group.title %></b></div>
-      """
+    publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
+
+    case Oli.Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id) do
+      [] ->
+        preview_fn = fn assigns ->
+          ~H"""
+            <div class="text-center mt-3"><b><%= @group.title %></b></div>
+          """
+        end
+
+        modal_assigns = %{
+          id: "delete_modal",
+          title: "Delete Group",
+          message: "Are you sure you want to delete this alternatives group?",
+          preview_fn: preview_fn,
+          group: find_group(alternatives, resource_id),
+          on_delete: "delete_group",
+          phx_values: ["phx-value-resource-id": resource_id]
+        }
+
+        modal = fn assigns ->
+          ~H"""
+            <.delete_modal {@modal_assigns} />
+          """
+        end
+
+        {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+
+      references ->
+        modal_assigns = %{
+          id: "prevent_deletion_modal",
+          references: references,
+          project_slug: project.slug
+        }
+
+        modal = fn assigns ->
+          ~H"""
+            <PreventDeletionModal.modal {@modal_assigns} />
+          """
+        end
+
+        {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
     end
-
-    modal_assigns = %{
-      id: "delete_modal",
-      title: "Delete Group",
-      message: "Are you sure you want to delete this alternatives group?",
-      preview_fn: preview_fn,
-      group: find_group(alternatives, resource_id),
-      on_delete: "delete_group",
-      phx_values: ["phx-value-resource-id": resource_id]
-    }
-
-    modal = fn assigns ->
-      ~H"""
-        <.delete_modal {@modal_assigns} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("delete_group", %{"resource-id" => resource_id}, socket) do
@@ -347,12 +368,9 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def handle_event(
         "edit_option",
-        %{"params" => %{"resource_id" => resource_id, "id" => option_id, "name" => name}} =
-          params,
+        %{"params" => %{"resource_id" => resource_id, "id" => option_id, "name" => name}},
         socket
       ) do
-    IO.inspect(params)
-
     %{project: project, author: author, alternatives: alternatives} = socket.assigns
     resource_id = ensure_integer(resource_id)
 

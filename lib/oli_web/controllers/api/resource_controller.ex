@@ -86,7 +86,7 @@ defmodule OliWeb.Api.ResourceController do
         alternatives =
           Enum.map(alternatives, fn a ->
             %{
-              id: a.id,
+              id: a.resource_id,
               title: a.title,
               options: a.content["options"]
             }
