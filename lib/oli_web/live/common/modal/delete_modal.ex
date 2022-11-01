@@ -2,7 +2,7 @@ defmodule OliWeb.Common.Modal.DeleteModal do
   @moduledoc """
   LiveView modal for confirming a deletion action
   """
-  use Phoenix.LiveComponent
+  use Phoenix.Component
   use Phoenix.HTML
 
   def delete_modal(assigns) do

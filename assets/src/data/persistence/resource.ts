@@ -57,6 +57,20 @@ export function pages(project: ProjectSlug, current?: string) {
   return makeRequest<PagesReceived>(params);
 }
 
+export type AlternativesGroupOption = { id: string; name: string };
+export type AlternativesGroup = { id: number; title: string; options: AlternativesGroupOption[] };
+export type AlternativesGroupsReceived = { type: 'success'; alternatives: AlternativesGroup[] };
+
+// Requests all alternative groups
+export function alternatives(project: ProjectSlug) {
+  const params = {
+    method: 'GET',
+    url: `/project/${project}/alternatives`,
+  };
+
+  return makeRequest<AlternativesGroupsReceived>(params);
+}
+
 function traverseContent(o: any, func: any) {
   for (const i in o) {
     func.apply(this, [i, o[i]]);

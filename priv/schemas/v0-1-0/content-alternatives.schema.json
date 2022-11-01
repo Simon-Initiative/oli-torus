@@ -21,9 +21,12 @@
       ]
     },
     "children": {
-      "$ref": "#/$defs/alternative"
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/alternative"
+      }
     },
-    "preference_name": {
+    "group_id": {
       "type": "string"
     },
     "default": {

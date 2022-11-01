@@ -116,6 +116,33 @@ describe('PageEditorContent', () => {
     expect(pageEditorContent.findIndex((c) => c.id === last.id)).toEqual([3]);
   });
 
+  it('replaceAt', () => {
+    const defaultPageEditorContent = createDefaultPageEditorContent();
+    const { exampleContent, exampleGroup, doesntExist } = defaultPageEditorContent;
+    let { pageEditorContent } = defaultPageEditorContent;
+
+    pageEditorContent = pageEditorContent.replaceAt([0], doesntExist);
+
+    const replacedWith = doesntExist;
+
+    expect(pageEditorContent.findIndex((c) => c.id === replacedWith.id)).toEqual([0]);
+    expect(pageEditorContent.findIndex((c) => c.id === exampleContent.id)).toEqual([]);
+
+    // replace an item with an index that doesnt exist, item should not be added
+    // at all
+    const newItem = createDefaultStructuredContent([Model.h1('new item 1')]);
+
+    pageEditorContent = pageEditorContent.replaceAt([0, 1, 2, 3], newItem);
+
+    expect(pageEditorContent.findIndex((c) => c.id === newItem.id)).toEqual([]);
+
+    // try to replace another item that is out of bounds
+    const last = createDefaultStructuredContent([Model.h1('last item')]);
+    pageEditorContent = pageEditorContent.replaceAt([3], last);
+
+    expect(pageEditorContent.findIndex((c) => c.id === last.id)).toEqual([]);
+  });
+
   it('updateContentItem', () => {
     const defaultPageEditorContent = createDefaultPageEditorContent();
     const { exampleContent } = defaultPageEditorContent;

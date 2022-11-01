@@ -74,6 +74,19 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
   }
 
   /**
+   * Replaces the resource content item at the specified index, where index is an array
+   * of indices for each level in the hierarchy.
+   *
+   * If an item does not exist at a given index then the operation is a no-op.
+   * @param index
+   * @param toInsert
+   * @return page editor content with the inserted item
+   */
+  replaceAt(index: number[], toReplace: ResourceContent) {
+    return this.with({ model: replaceAt(this.model, index, toReplace) });
+  }
+
+  /**
    *
    * Updates the content item with the given id
    * @param id Identifier of the item to update
@@ -233,6 +246,35 @@ function insertAt(
   }
 
   return items.insert(currentIndex, toInsert);
+}
+
+function replaceAt(
+  items: Immutable.List<ResourceContent>,
+  index: number[],
+  toReplace: ResourceContent,
+): Immutable.List<ResourceContent> {
+  const currentIndex = index[0];
+  const currentItem = items.get(currentIndex);
+
+  if (index.length > 1 && currentItem && isResourceGroup(currentItem)) {
+    return items.update(currentIndex, createGroup(), (item) => {
+      (item as ResourceGroup).children = replaceAt(
+        (item as ResourceGroup).children,
+        index.slice(1),
+        toReplace,
+      );
+
+      return item;
+    });
+  }
+
+  if (index.length === 1 && currentItem) {
+    // this is the exact item at the index we are looking for so replace it
+    return items.set(currentIndex, toReplace);
+  }
+
+  // an item could not be found at the specified index so nothing is changed
+  return items;
 }
 
 function updateContentItem(

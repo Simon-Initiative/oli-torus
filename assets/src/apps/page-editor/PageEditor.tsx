@@ -338,9 +338,17 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     if (item !== undefined) {
       if (item.undoable.type === 'PageUndoable') {
-        this.update({
-          content: this.state.content.insertAt(item.undoable.index, item.undoable.item),
-        });
+        if (this.state.content.find(item.contentKey)) {
+          // undoable content item exists, replace it with the undoable state
+          this.update({
+            content: this.state.content.replaceAt(item.undoable.index, item.undoable.item),
+          });
+        } else {
+          // undoable content item does not exist, so insert it
+          this.update({
+            content: this.state.content.insertAt(item.undoable.index, item.undoable.item),
+          });
+        }
       } else {
         const context = this.state.activityContexts.get(item.contentKey);
         if (context !== undefined) {

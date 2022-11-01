@@ -2,7 +2,7 @@ defmodule OliWeb.Common.Modal.FormModal do
   @moduledoc """
   LiveView modal for creating an entity from a changeset
   """
-  use Phoenix.LiveComponent
+  use Phoenix.Component
   use Phoenix.HTML
 
   attr(:id, :string, required: true)

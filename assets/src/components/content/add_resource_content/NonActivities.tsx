@@ -3,6 +3,7 @@ import {
   createAlternatives,
   createDefaultStructuredContent,
   createGroup,
+  ResourceContext,
 } from 'data/content/resource';
 
 import {
@@ -11,15 +12,19 @@ import {
   createSurvey,
   ResourceContent,
 } from 'data/content/resource';
+import * as Persistence from 'data/persistence/resource';
 import React from 'react';
 import { ResourceChoice } from './ResourceChoice';
 import { FeatureFlags } from 'apps/page-editor/types';
+import { modalActions } from 'actions/modal';
+import { SelectModal } from 'components/modal/SelectModal';
 
 interface Props {
   index: number[];
   onAddItem: AddCallback;
   parents: ResourceContent[];
   featureFlags: FeatureFlags;
+  resourceContext: ResourceContext;
   onSetTip: (tip: string) => void;
   onResetTip: () => void;
 }
@@ -31,6 +36,7 @@ export const NonActivities: React.FC<Props> = ({
   index,
   parents,
   featureFlags,
+  resourceContext,
 }) => {
   return (
     <div className="d-flex flex-column">
@@ -100,7 +106,7 @@ export const NonActivities: React.FC<Props> = ({
           onHoverEnd={() => onResetTip()}
           key={'group'}
           disabled={false}
-          onClick={() => addAlternatives(onAddItem, index)}
+          onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
         />
         <ResourceChoice
           icon="vial"
@@ -136,7 +142,32 @@ const addSurvey = (onAddItem: AddCallback, index: number[]) => {
   document.body.click();
 };
 
-const addAlternatives = (onAddItem: AddCallback, index: number[]) => {
-  onAddItem(createAlternatives(), index);
+const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
+  // hide insert menu
   document.body.click();
+
+  window.oliDispatch(
+    modalActions.display(
+      <SelectModal
+        title="Select Alternatives Group"
+        description="Select an Alternatives Group"
+        onFetchOptions={() =>
+          Persistence.alternatives(projectSlug).then((result) => {
+            if (result.type === 'success') {
+              return Promise.resolve(
+                result.alternatives.map((a) => ({ value: a.id, title: a.title })),
+              );
+            } else {
+              return Promise.reject(result.message);
+            }
+          })
+        }
+        onDone={(groupId: number) => {
+          window.oliDispatch(modalActions.dismiss());
+          onAddItem(createAlternatives(groupId), index);
+        }}
+        onCancel={() => window.oliDispatch(modalActions.dismiss())}
+      />,
+    ),
+  );
 };

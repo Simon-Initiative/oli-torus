@@ -169,6 +169,7 @@ export const createGroup = (
 });
 
 export const createAlternatives = (
+  groupId: number,
   strategy: AlternativesStrategy = 'user_section_preference',
   children: Immutable.List<AlternativeContent> = Immutable.List(),
 ): AlternativesContent => ({
@@ -176,6 +177,7 @@ export const createAlternatives = (
   id: guid(),
   children,
   strategy,
+  groupId,
 });
 
 export const createAlternative = (
@@ -252,6 +254,7 @@ export interface AlternativesContent {
   id: string;
   strategy: AlternativesStrategy;
   children: Immutable.List<AlternativeContent>;
+  groupId: number;
 }
 
 export interface AlternativeContent {

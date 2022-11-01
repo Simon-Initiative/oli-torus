@@ -5,6 +5,8 @@ defmodule OliWeb.Api.ResourceController do
   alias Oli.Authoring.Course
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Resources.ResourceType
+  alias Oli.Authoring.Editing.ResourceEditor
 
   def index(conn, %{"project" => project_slug}) do
     case Course.get_project_by_slug(project_slug) do
@@ -62,6 +64,35 @@ defmodule OliWeb.Api.ResourceController do
 
         conn
         |> send_resp(500, msg)
+    end
+  end
+
+  def alternatives(conn, %{"project" => project_slug}) do
+    project = Course.get_project_by_slug(project_slug)
+    author = conn.assigns[:current_author]
+
+    case project do
+      nil ->
+        error(conn, 404, "not found")
+
+      project ->
+        {:ok, alternatives} =
+          ResourceEditor.list(
+            project.slug,
+            author,
+            ResourceType.get_id_by_type("alternatives")
+          )
+
+        alternatives =
+          Enum.map(alternatives, fn a ->
+            %{
+              id: a.id,
+              title: a.title,
+              options: a.content["options"]
+            }
+          end)
+
+        json(conn, %{"type" => "success", "alternatives" => alternatives})
     end
   end
 

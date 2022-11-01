@@ -16,6 +16,14 @@
         border-radius: 50%;
       }
 
+      .edit,
+      .delete {
+        color: var(--authoring-white);
+        padding: 0;
+        margin-left: 10px;
+        vertical-align: baseline;
+      }
+
       &.active {
         color: var(--authoring-white);
         background-color: var(--authoring-primary);

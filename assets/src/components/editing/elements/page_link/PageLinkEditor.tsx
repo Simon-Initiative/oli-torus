@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import { PageLinkModal } from './PageLinkModal';
 import { modalActions } from 'actions/modal';
 import styles from './PageLink.modules.scss';
 import { classNames } from 'utils/classNames';
@@ -12,6 +11,7 @@ import { PurposeTypes } from 'data/content/resource';
 import { useElementSelected } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { SelectModal } from 'components/modal/SelectModal';
 
 export interface Props extends EditorProps<ContentModel.PageLink> {}
 export const PageLinkEditor = ({ model, commandContext, attributes, children }: Props) => {
@@ -38,10 +38,22 @@ export const PageLinkEditor = ({ model, commandContext, attributes, children }: 
   const showModal = () =>
     window.oliDispatch(
       modalActions.display(
-        <PageLinkModal
-          model={model}
-          commandContext={commandContext}
-          onDone={({ idref }: Partial<ContentModel.PageLink>) => {
+        <SelectModal
+          title="Select a Page"
+          description="Select a Page"
+          onFetchOptions={() =>
+            Persistence.pages(commandContext.projectSlug).then((result) => {
+              if (result.type === 'success') {
+                return Promise.resolve({
+                  options: result.pages.map((p) => ({ value: p.id, title: p.title })),
+                  selectedValue: model?.idref,
+                });
+              } else {
+                return Promise.reject(result.message);
+              }
+            })
+          }
+          onDone={(idref: number) => {
             window.oliDispatch(modalActions.dismiss());
             onEdit({ idref });
           }}

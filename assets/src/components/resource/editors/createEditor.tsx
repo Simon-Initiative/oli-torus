@@ -3,7 +3,7 @@ import { ResourceContent, ResourceContext } from 'data/content/resource';
 import * as Immutable from 'immutable';
 import { ActivityEditContext } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
-import { Undoable } from 'components/activities/types';
+import { Undoable } from 'apps/page-editor/types';
 import { Tag } from 'data/content/tags';
 import { ActivityEditorMap } from 'data/content/editors';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
