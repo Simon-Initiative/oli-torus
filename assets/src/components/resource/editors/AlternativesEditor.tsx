@@ -28,8 +28,6 @@ import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpi
 import { makePageUndoable } from 'apps/page-editor/types';
 import { useAlternatives, AlternativesTypes } from 'components/hooks/useAlternatives';
 import { Tooltip } from 'components/common/Tooltip';
-import { stringFormat } from 'utils/format';
-import { access } from 'fs';
 
 interface AlternativesEditorProps extends EditorProps {
   contentItem: AlternativesContent;

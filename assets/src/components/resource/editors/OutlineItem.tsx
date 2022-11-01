@@ -57,6 +57,10 @@ export const OutlineItem = ({
     onDragStart(e, id);
   };
 
+  const maybeScrollToEditor: React.MouseEventHandler<HTMLDivElement> = (e) =>
+    // only scroll to the resource editor if this event was not a expand toggle event
+    !(e as any).isExpandToggleEvent ? scrollToResourceEditor(id) : undefined;
+
   return (
     <>
       {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
@@ -65,7 +69,7 @@ export const OutlineItem = ({
         ref={ref}
         id={`content-item-${id}`}
         className={classNames(styles.item, className)}
-        onClick={() => scrollToResourceEditor(id)}
+        onClick={maybeScrollToEditor}
         draggable={editMode}
         tabIndex={0}
         onDragStart={dragStartHandler}
@@ -74,11 +78,7 @@ export const OutlineItem = ({
         aria-label={assistive}
       >
         <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-        <div
-          className={styles.contentLink}
-          onClick={() => scrollToResourceEditor(id)}
-          role="button"
-        >
+        <div className={styles.contentLink} onClick={maybeScrollToEditor} role="button">
           {children}
         </div>
       </div>
@@ -120,32 +120,35 @@ export const OutlineGroup = ({
   onDragEnd,
   onDrop,
   onKeyDown,
-}: PropsWithChildren<OutlineGroupProps>) => (
-  <>
-    {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+}: PropsWithChildren<OutlineGroupProps>) => {
+  const maybeScrollToEditor: React.MouseEventHandler<HTMLDivElement> = (e) =>
+    // only scroll to the resource editor if this event was not a expand toggle event
+    !(e as any).isExpandToggleEvent ? scrollToResourceEditor(id) : undefined;
 
-    <div
-      className={classNames(styles.groupContainer, !expanded && 'mb-1')}
-      onClick={(e) =>
-        // only scroll to the resource editor if this event was not a expand toggle event
-        !(e as any).isExpandToggleEvent ? scrollToResourceEditor(id) : undefined
-      }
-      role="button"
-      draggable={editMode}
-      tabIndex={0}
-      onDragStart={(e) => onDragStart(e, id)}
-      onDragEnd={onDragEnd}
-      onKeyDown={onKeyDown(id)}
-      onFocus={(_e) => onFocus(id)}
-      aria-label={assistive}
-    >
-      <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-      <div className={styles.groupLink} onClick={() => scrollToResourceEditor(id)} role="button">
-        {children}
+  return (
+    <>
+      {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+      <div
+        className={classNames(styles.groupContainer, !expanded && 'mb-1')}
+        onClick={maybeScrollToEditor}
+        role="button"
+        draggable={editMode}
+        tabIndex={0}
+        onDragStart={(e) => onDragStart(e, id)}
+        onDragEnd={onDragEnd}
+        onKeyDown={onKeyDown(id)}
+        onFocus={(_e) => onFocus(id)}
+        aria-label={assistive}
+      >
+        <DragHandle style={{ margin: '10px 10px 10px 0' }} />
+        <div className={styles.groupLink} onClick={maybeScrollToEditor} role="button">
+          {children}
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 interface IconProps {
   iconName: string;
