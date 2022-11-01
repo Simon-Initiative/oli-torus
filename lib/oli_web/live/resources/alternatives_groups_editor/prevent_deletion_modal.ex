@@ -16,7 +16,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor.PreventDeletionModal do
             </div>
             <div class="modal-body">
               <p class="mb-4">
-                This alternatives group is used in the following pages. You must remove the references
+                This alternatives group is used by the following pages. Remove the references
                 from these pages before deleting this group.
               </p>
               <ul>
