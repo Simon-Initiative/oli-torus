@@ -175,7 +175,7 @@ export const ExpandToggle = ({ expanded, onClick }: ExpandToggleProps) => (
 );
 
 interface DescriptionProps {
-  title?: string;
+  title?: React.ReactNode;
 }
 
 export const Description = ({ title, children }: PropsWithChildren<DescriptionProps>) => (

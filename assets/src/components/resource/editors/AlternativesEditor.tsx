@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useState } from 'react';
+import React, { PropsWithChildren, useState } from 'react';
 import {
   AlternativeContent,
   AlternativesContent,
@@ -26,56 +26,23 @@ import { SelectModal } from 'components/modal/SelectModal';
 import * as Persistence from 'data/persistence/resource';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { makePageUndoable } from 'apps/page-editor/types';
+import { useAlternatives, AlternativesTypes } from 'components/hooks/useAlternatives';
 
 interface AlternativesEditorProps extends EditorProps {
   contentItem: AlternativesContent;
 }
 
 export const AlternativesEditor = (props: AlternativesEditorProps) => {
-  const {
-    editMode,
-    projectSlug,
-    contentItem,
-    index,
-    parents,
-    canRemove,
-    onEdit,
-    onRemove,
-    onPostUndoable,
-  } = props;
+  const { editMode, contentItem, index, parents, canRemove, onEdit, onRemove, onPostUndoable } =
+    props;
+  const alternativesContext = useAlternatives();
 
-  const [alternativeOptions, setAlternativeOptions] = useState<
-    Maybe<Persistence.AlternativesGroupOption[]>
-  >(Maybe.nothing());
-  const [alternativeOptionsError, setAlternativeOptionsError] = useState<Maybe<string>>(
-    Maybe.nothing(),
-  );
   const [activeOptionId, setActiveOptionId] = useState(
     Maybe.maybe(contentItem.children.first<AlternativeContent>()).caseOf({
       just: (a) => a.id,
       nothing: () => '',
     }),
   );
-
-  useEffect(() => {
-    Persistence.alternatives(projectSlug).then((result) => {
-      if (result.type === 'success') {
-        const group = result.alternatives.find((g) => g.id === contentItem.groupId);
-
-        if (group) {
-          setAlternativeOptions(Maybe.just(group.options));
-        } else {
-          setAlternativeOptionsError(
-            Maybe.just('Options for alternative group could not be found'),
-          );
-        }
-      } else {
-        setAlternativeOptionsError(
-          Maybe.just(`Failed to fetch options for alternative group: ${result.message}`),
-        );
-      }
-    });
-  }, []);
 
   const renderLoading = () => (
     <LoadingSpinner size={LoadingSpinnerSize.Medium}>Loading...</LoadingSpinner>
@@ -90,7 +57,10 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     </div>
   );
 
-  const renderAlternatives = (alternativeOptions: Persistence.AlternativesGroupOption[]) => {
+  const renderAlternatives = (
+    alternativeOptions: Persistence.AlternativesGroupOption[],
+    alternativeOptionsTitles: Record<string, string>,
+  ) => {
     const activeOptionIndex = contentItem.children.findIndex((c) => c.id == activeOptionId);
 
     const showCreateAlternativeModal = () =>
@@ -147,6 +117,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
         activeOptionId={activeOptionId}
         setActiveOptionId={setActiveOptionId}
         alternativeOptions={alternativeOptions}
+        alternativeOptionsTitles={alternativeOptionsTitles}
         parents={parents}
         canRemove={canRemove}
         onRemove={onRemove}
@@ -186,14 +157,23 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     );
   };
 
-  return alternativeOptionsError.caseOf({
-    just: (errorMsg) => renderFailed(errorMsg),
-    nothing: () =>
-      alternativeOptions.caseOf({
-        just: (alternativeOptions) => renderAlternatives(alternativeOptions),
-        nothing: () => renderLoading(),
-      }),
-  });
+  switch (alternativesContext.type) {
+    case AlternativesTypes.REQUEST:
+      return renderLoading();
+    case AlternativesTypes.FAILURE:
+      return renderFailed(alternativesContext.error);
+    case AlternativesTypes.SUCCESS:
+      const group = alternativesContext.alternatives.find((g) => g.id === contentItem.groupId);
+      const alternativeOptionsTitles =
+        alternativesContext.alternativesOptionsTitles[contentItem.groupId];
+
+      switch (group) {
+        case undefined:
+          return renderFailed('Options for alternative group could not be found');
+        default:
+          return renderAlternatives(group.options, alternativeOptionsTitles);
+      }
+  }
 };
 
 interface AlternativeEditorProps extends EditorProps {
@@ -211,6 +191,7 @@ interface AlternativesGroupBlockProps {
   parents: ResourceContent[];
   canRemove: boolean;
   alternativeOptions: Persistence.AlternativesGroupOption[];
+  alternativeOptionsTitles: Record<string, string>;
   onCreateAlternative: () => void;
   onEditAlternative: (update: AlternativeContent) => void;
   onDeleteAlternative: (optionId: string) => void;
@@ -225,6 +206,7 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
     canRemove,
     children,
     alternativeOptions,
+    alternativeOptionsTitles,
     onRemove,
     onCreateAlternative,
     onEditAlternative,
@@ -233,11 +215,6 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
   } = props;
 
   const selectedOption = contentItem.children.find((o) => o.id === activeOptionId);
-
-  const alternativeOptionsTitles = alternativeOptions.reduce(
-    (acc, val) => ({ ...acc, [val.id]: val.name }),
-    {} as Record<string, string>,
-  );
 
   const showEditAlternative = () =>
     window.oliDispatch(
@@ -358,20 +335,45 @@ export const AlternativesOutlineItem = (props: AlternativesOutlineItemProps) => 
 interface AlternativeOutlineItemProps extends OutlineGroupProps {
   contentItem: AlternativeContent;
   expanded: boolean;
+  parents: ResourceContent[];
   toggleCollapsibleGroup: (id: string) => void;
 }
 
 export const AlternativeOutlineItem = (props: AlternativeOutlineItemProps) => {
-  const { id, contentItem, expanded, toggleCollapsibleGroup } = props;
+  const { id, contentItem, expanded, parents, toggleCollapsibleGroup } = props;
+  const alternativesContext = useAlternatives();
 
-  const alternativeGroupTitle = (alternative: AlternativeContent) => alternative.value;
+  switch (alternativesContext.type) {
+    case AlternativesTypes.REQUEST:
+      return (
+        <OutlineGroup {...props}>
+          <ExpandToggle expanded={expanded} onClick={() => toggleCollapsibleGroup(id)} />
+          <Description
+            title={<LoadingSpinner size={LoadingSpinnerSize.Medium} align="left"></LoadingSpinner>}
+          >
+            {contentItem.children.size} items
+          </Description>
+        </OutlineGroup>
+      );
+    case AlternativesTypes.FAILURE:
+      return (
+        <OutlineGroup {...props}>
+          <ExpandToggle expanded={expanded} onClick={() => toggleCollapsibleGroup(id)} />
+          <Description>
+            <Description title="An error occurred"></Description>
+          </Description>
+        </OutlineGroup>
+      );
+    case AlternativesTypes.SUCCESS:
+      const parent = parents[parents.length - 1] as AlternativesContent;
+      const alternativeGroupTitle =
+        alternativesContext.alternativesOptionsTitles[parent.groupId][contentItem.value];
 
-  return (
-    <OutlineGroup {...props}>
-      <ExpandToggle expanded={expanded} onClick={() => toggleCollapsibleGroup(id)} />
-      <Description title={alternativeGroupTitle(contentItem)}>
-        {contentItem.children.size} items
-      </Description>
-    </OutlineGroup>
-  );
+      return (
+        <OutlineGroup {...props}>
+          <ExpandToggle expanded={expanded} onClick={() => toggleCollapsibleGroup(id)} />
+          <Description title={alternativeGroupTitle}>{contentItem.children.size} items</Description>
+        </OutlineGroup>
+      );
+  }
 };

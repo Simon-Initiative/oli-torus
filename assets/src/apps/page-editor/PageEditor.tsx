@@ -42,6 +42,7 @@ import { empty, PageUndoable, Undoables, FeatureFlags } from './types';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import '../ResourceEditor.scss';
+import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -559,32 +560,34 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
             </Objectives>
 
             <div className="d-flex flex-row">
-              <ContentOutline
-                editMode={this.state.editMode}
-                content={this.state.content}
-                activityContexts={this.state.activityContexts}
-                editorMap={props.editorMap}
-                projectSlug={projectSlug}
-                resourceSlug={resourceSlug}
-                onEditContent={onEdit}
-              />
-              <Editors
-                {...props}
-                editMode={this.state.editMode}
-                objectives={this.state.allObjectives}
-                allTags={this.state.allTags}
-                childrenObjectives={this.state.childrenObjectives}
-                onRegisterNewObjective={onRegisterNewObjective}
-                onRegisterNewTag={onRegisterNewTag}
-                activityContexts={this.state.activityContexts}
-                onRemove={(key: string) => this.onRemove(key)}
-                onEdit={onEdit}
-                onEditActivity={this.onEditActivity}
-                onPostUndoable={this.onPostUndoable}
-                content={this.state.content}
-                onAddItem={onAddItem}
-                resourceContext={props}
-              />
+              <AlternativesContextProvider projectSlug={projectSlug}>
+                <ContentOutline
+                  editMode={this.state.editMode}
+                  content={this.state.content}
+                  activityContexts={this.state.activityContexts}
+                  editorMap={props.editorMap}
+                  projectSlug={projectSlug}
+                  resourceSlug={resourceSlug}
+                  onEditContent={onEdit}
+                />
+                <Editors
+                  {...props}
+                  editMode={this.state.editMode}
+                  objectives={this.state.allObjectives}
+                  allTags={this.state.allTags}
+                  childrenObjectives={this.state.childrenObjectives}
+                  onRegisterNewObjective={onRegisterNewObjective}
+                  onRegisterNewTag={onRegisterNewTag}
+                  activityContexts={this.state.activityContexts}
+                  onRemove={(key: string) => this.onRemove(key)}
+                  onEdit={onEdit}
+                  onEditActivity={this.onEditActivity}
+                  onPostUndoable={this.onPostUndoable}
+                  content={this.state.content}
+                  onAddItem={onAddItem}
+                  resourceContext={props}
+                />
+              </AlternativesContextProvider>
             </div>
           </div>
         </div>

@@ -311,9 +311,6 @@ const OutlineItem = ({
         return <OutlineItemError />;
       }
 
-    case 'alternative':
-      return <AlternativeOutlineItem {...props} contentItem={contentItem} />;
-
     // ResourceGroup types
     case 'group':
       return (
@@ -333,6 +330,13 @@ const OutlineItem = ({
       return (
         <ResourceGroupItem {...props} contentItem={contentItem}>
           <AlternativesOutlineItem {...props} contentItem={contentItem} />
+        </ResourceGroupItem>
+      );
+
+    case 'alternative':
+      return (
+        <ResourceGroupItem {...props} contentItem={contentItem}>
+          <AlternativeOutlineItem {...props} contentItem={contentItem} />
         </ResourceGroupItem>
       );
 
