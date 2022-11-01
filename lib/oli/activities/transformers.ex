@@ -80,7 +80,12 @@ defmodule Oli.Activities.Transformers do
           {model_repository, errors_by_id}
 
         revision_id_transform_pairs ->
-          run_one_operation(model_repository, module, revision_id_transform_pairs, errors_by_id)
+          run_one_operation(
+            model_repository,
+            module,
+            revision_id_transform_pairs,
+            errors_by_id
+          )
       end
     end)
   end
@@ -93,7 +98,12 @@ defmodule Oli.Activities.Transformers do
   #
   # Returns a tuple with first element being the new model_repository, and second being a map of
   # revision ids to errors, for those that errored
-  defp run_one_operation(model_repository, module, revision_id_transform_pairs, errors_by_id) do
+  defp run_one_operation(
+         model_repository,
+         module,
+         revision_id_transform_pairs,
+         errors_by_id
+       ) do
     transformers = Enum.map(revision_id_transform_pairs, fn {_, t} -> t end)
 
     # Generate the batch context
@@ -104,7 +114,11 @@ defmodule Oli.Activities.Transformers do
         Enum.zip(batch_context, revision_id_transform_pairs)
         |> Enum.reduce({model_repository, errors_by_id}, fn {context, {id, t}},
                                                             {model_repository, errors_by_id} ->
-          case apply(module, :transform, [Map.get(model_repository, id), t, context]) do
+          case apply(module, :transform, [
+                 Map.get(model_repository, id),
+                 t,
+                 context
+               ]) do
             {:ok, model} ->
               {Map.put(model_repository, id, model), errors_by_id}
 

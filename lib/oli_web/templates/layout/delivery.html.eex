@@ -15,11 +15,11 @@
     <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
 
     <%= if dev_mode?() do %>
-      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
-      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"></script>
     <% else %>
-      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
-      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
     <% end %>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->

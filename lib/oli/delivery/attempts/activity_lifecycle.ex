@@ -13,10 +13,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   alias Oli.Activities.State.PartState
   alias Oli.Activities.Model
   alias Oli.Activities.Transformers
-
+  alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Page.ModelPruner
-
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
   import Oli.Delivery.Attempts.Core
 
   @doc """
@@ -122,15 +122,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           # Resolve the revision to pick up the latest
           revision = DeliveryResolver.from_resource_id(section_slug, activity_attempt.resource_id)
 
-          {model_to_store, working_model} =
-            case Transformers.apply_transforms([revision]) do
-              [{:ok, nil}] -> {nil, revision.content}
-              [{:ok, transformed_model}] -> {transformed_model, transformed_model}
-              _ -> {nil, nil}
-            end
-
           # parse and transform
           with {:ok, model} <- Model.parse(revision.content),
+               {:ok, model_to_store, working_model} <-
+                 maybe_transform_model(activity_attempt, revision, model),
                {:ok, new_activity_attempt} <-
                  create_activity_attempt(%{
                    attempt_guid: UUID.uuid4(),
@@ -178,6 +173,38 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         end
       end
     end)
+  end
+
+  defp maybe_transform_model(
+         %ActivityAttempt{revision: previous_revision, transformed_model: transformed_model},
+         %Revision{} = current_revision,
+         %Model{} = parsed_model
+       ) do
+    transform = fn revision ->
+      case Transformers.apply_transforms([revision]) do
+        [{:ok, nil}] -> {:ok, nil, revision.content}
+        [{:ok, transformed_model}] -> {:ok, transformed_model, transformed_model}
+        _ -> {:ok, nil, nil}
+      end
+    end
+
+    cond do
+      # The revisions have changed, we must attempt a transform
+      previous_revision.id != current_revision.id ->
+        transform.(current_revision)
+
+      # Revision has not changed, we transform if all transformations do not specificy 'first_attempt_only'
+      Enum.all?(parsed_model.transformations, fn t -> !t.first_attempt_only end) ->
+        transform.(current_revision)
+
+      # There was at least one transform that specified 'first_attempt_only', so we do not transform again.
+      # But we must now be careful to return back the correct previous transformed model and model to store
+      is_nil(transformed_model) ->
+        {:ok, nil, previous_revision.content}
+
+      true ->
+        {:ok, transformed_model, transformed_model}
+    end
   end
 
   @doc """
