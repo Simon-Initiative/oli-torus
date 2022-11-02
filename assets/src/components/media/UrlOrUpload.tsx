@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MediaItem } from 'types/media';
 import { classNames } from 'utils/classNames';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 import { MediaManager, SELECTION_TYPES } from './manager/MediaManager.controller';
 
 type Source = 'library' | 'url';
@@ -45,13 +46,15 @@ export const UrlOrUpload = (props: Props) => {
           role="tabpanel"
           aria-labelledby="home-tab"
         >
-          <MediaManager
-            projectSlug={props.projectSlug}
-            mimeFilter={props.mimeFilter}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={props.initialSelectionPaths}
-            onSelectionChange={props.onMediaSelectionChange}
-          />
+          <ErrorBoundary errorMessage={<MediaManagerError />}>
+            <MediaManager
+              projectSlug={props.projectSlug}
+              mimeFilter={props.mimeFilter}
+              selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={props.initialSelectionPaths}
+              onSelectionChange={props.onMediaSelectionChange}
+            />
+          </ErrorBoundary>
         </div>
         <div
           className={classNames('tab-pane fade', whenActive('url', 'show active'))}
@@ -76,3 +79,13 @@ export const UrlOrUpload = (props: Props) => {
     </>
   );
 };
+
+const MediaManagerError = () => (
+  <>
+    <p className="mb-4">Something went wrong accessing the media manager, please try again.</p>
+
+    <hr />
+
+    <p>If the problem persists, contact support with the following details:</p>
+  </>
+);

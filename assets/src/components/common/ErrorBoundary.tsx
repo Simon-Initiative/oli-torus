@@ -2,10 +2,24 @@ import React, { ErrorInfo } from 'react';
 import guid from 'utils/guid';
 import { Collapse } from 'components/common/Collapse';
 
+const DefaultErrorMessage = () => (
+  <>
+    <p className="mb-4">Something went wrong. Please refresh the page and try again.</p>
+
+    <hr />
+
+    <p>If the problem persists, contact support with the following details:</p>
+  </>
+);
+
 export class ErrorBoundary extends React.Component<
-  any,
+  { errorMessage?: React.ReactNode; children: React.ReactNode },
   { hasError: boolean; error: Error | null; info: ErrorInfo | null; id: string }
 > {
+  static defaultProps = {
+    errorMessage: <DefaultErrorMessage />,
+  };
+
   constructor(props: any) {
     super(props);
     this.state = { hasError: false, error: null, info: null, id: guid() };
@@ -23,11 +37,7 @@ export class ErrorBoundary extends React.Component<
       if (this.state.hasError) {
         return (
           <div className="alert alert-warning" role="alert">
-            <p className="mb-4">Something went wrong. Please refresh the page and try again.</p>
-
-            <hr />
-
-            <p>If the problem persists, contact support with the following details:</p>
+            {this.props.errorMessage}
 
             <Collapse caption="Show error message">
               <div
