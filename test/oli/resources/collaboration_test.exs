@@ -6,10 +6,11 @@ defmodule Oli.Resources.CollaborationTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources
   alias Oli.Resources.Collaboration
-  alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
   alias Oli.Resources.ResourceType
 
-  defp create_project_with_collab_space() do
+  defp create_project_with_collab_space_and_posts() do
+    user = insert(:user)
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -117,6 +118,12 @@ defmodule Oli.Resources.CollaborationTest do
       revision: collab_space_revision
     })
 
+    section = insert(:section, base_project: project)
+    {:ok, _root_section_resource} = Sections.create_section_resources(section, publication)
+
+    first_post = insert(:post, section: section, resource: page_resource_cs, user: user)
+    second_post = insert(:post, status: :submitted, content: "Other post", section: section, resource: page_resource_cs, user: user)
+
     {:ok,
       %{
         project: project,
@@ -124,14 +131,16 @@ defmodule Oli.Resources.CollaborationTest do
         page_revision: page_revision,
         page_revision_cs: page_revision_cs,
         collab_space_revision: collab_space_revision,
-        author: author
+        author: author,
+        section: section,
+        posts: [first_post, second_post]
       }}
   end
 
   describe "collaborative spaces" do
     test "create_collaborative_space/4 with valid data creates a collaborative space" do
       {:ok, %{project: project, page_revision: page_revision, author: author}} =
-        create_project_with_collab_space()
+        create_project_with_collab_space_and_posts()
 
       attrs = %{collab_space_config: attrs_collab_space_config} = params_with_assocs(:revision)
 
@@ -172,7 +181,7 @@ defmodule Oli.Resources.CollaborationTest do
     end
 
     test "create_collaborative_space/4 with invalid data rollback changes correctly" do
-      {:ok, %{project: project, author: author}} = create_project_with_collab_space()
+      {:ok, %{project: project, author: author}} = create_project_with_collab_space_and_posts()
       attrs = params_with_assocs(:revision)
 
       assert {:error, {:error, {:not_found}}} ==
@@ -193,7 +202,7 @@ defmodule Oli.Resources.CollaborationTest do
           page_revision_cs: page_revision_cs,
           collab_space_revision: collab_space_revision,
           author: author
-        }} = create_project_with_collab_space()
+        }} = create_project_with_collab_space_and_posts()
 
       new_attrs = %{
         collab_space_config: %{
@@ -236,7 +245,7 @@ defmodule Oli.Resources.CollaborationTest do
 
     test "update_collaborative_space/4 with invalid data rollback changes correctly" do
       {:ok, %{project: project, collab_space_revision: collab_space_revision, author: author}} =
-        create_project_with_collab_space()
+        create_project_with_collab_space_and_posts()
 
       new_attrs = %{
         collab_space_config: %{
@@ -275,25 +284,88 @@ defmodule Oli.Resources.CollaborationTest do
       assert [] == Collaboration.search_collaborative_spaces(section.slug)
     end
 
-    test "search_collaborative_spaces/1 returns collab spaces correctly" do
+    test "search_collaborative_spaces/1 returns collab spaces correctly with posts" do
       {:ok,
         %{
-          project: project,
           page_revision_cs: page_revision_cs,
           collab_space_revision: collab_space_revision,
-          publication: publication
-        }} = create_project_with_collab_space()
-
-      section = insert(:section, base_project: project)
-      {:ok, _section} = Sections.create_section_resources(section, publication)
+          section: section
+        }} = create_project_with_collab_space_and_posts()
 
       assert [%{
         collab_space: collab_space,
-        page: page
+        page: page,
+        number_of_posts: 2,
+        number_of_posts_pending_approval: 1,
+        most_recent_post: %DateTime{}
       }] = Collaboration.search_collaborative_spaces(section.slug)
 
       assert collab_space.resource_id == collab_space_revision.resource_id
       assert page.resource_id == page_revision_cs.resource_id
+    end
+  end
+
+  describe "posts" do
+    test "create_post/1 with valid data creates a post" do
+      params = params_with_assocs(:post)
+      assert {:ok, %Post{} = post} = Collaboration.create_post(params)
+
+      assert post.content == params.content
+      assert post.status == params.status
+      assert post.user_id == params.user_id
+      assert post.section_id == params.section_id
+      assert post.resource_id == params.resource_id
+    end
+
+    test "create_post/1 with existing name returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Collaboration.create_post(%{status: :testing})
+    end
+
+    test "get_post_by/1 returns a post when the id exists" do
+      post = insert(:post)
+
+      returned_post = Collaboration.get_post_by(%{id: post.id})
+
+      assert post.id == returned_post.id
+      assert post.content == returned_post.content
+    end
+
+    test "get_post_by/1 returns nil if the post does not exist" do
+      assert nil == Collaboration.get_post_by(%{id: -1})
+    end
+
+    test "update_post/2 updates the post successfully" do
+      post = insert(:post)
+
+      {:ok, updated_post} = Collaboration.update_post(post, %{status: :archived})
+
+      assert post.id == updated_post.id
+      assert updated_post.status == :archived
+    end
+
+    test "update_post/2 does not update the post when there is an invalid field" do
+      post = insert(:post)
+
+      {:error, changeset} = Collaboration.update_post(post, %{status: :testing})
+      {error, _} = changeset.errors[:status]
+
+      refute changeset.valid?
+      assert error =~ "is invalid"
+    end
+
+    test "change_post/1 returns a post changeset" do
+      post = insert(:post)
+      assert %Ecto.Changeset{} = Collaboration.change_post(post)
+    end
+
+    test "search_posts/1 returns all posts meeting the criteria" do
+      [post | _] = insert_pair(:post, status: :archived)
+      insert(:post, status: :approved)
+
+      assert [returned_post | _] = Collaboration.search_posts(%{status: :archived})
+
+      assert returned_post.id == post.id
+      assert returned_post.replies_count == 0
     end
   end
 end
