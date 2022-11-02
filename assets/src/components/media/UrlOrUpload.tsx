@@ -19,7 +19,7 @@ interface Props {
 export const UrlOrUpload = (props: Props) => {
   const { onUrlChange } = props;
   const [source, setSource] = useState<Source>('library');
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(props.initialSelectionPaths?.[0] ?? '');
 
   const whenActive = (s: Source, c: string) => s === source && c;
 
