@@ -6,7 +6,7 @@ import { createButtonCommandDesc } from '../commands/commandFactories';
 import { CommandContext } from '../commands/interfaces';
 import { modalActions } from 'actions/modal';
 import * as Persistence from 'data/persistence/resource';
-import { SelectModal } from 'components/modal/SelectModal';
+import { Option, SelectModal } from 'components/modal/SelectModal';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -20,9 +20,9 @@ export function selectPage(commandContext: CommandContext): Promise<{ idref: num
         onFetchOptions={() =>
           Persistence.pages(commandContext.projectSlug).then((result) => {
             if (result.type === 'success') {
-              return Promise.resolve(result.pages.map((p) => ({ value: p.id, title: p.title })));
+              return result.pages.map((p) => ({ value: p.id, title: p.title } as Option));
             } else {
-              return Promise.reject(result.message);
+              throw result.message;
             }
           })
         }

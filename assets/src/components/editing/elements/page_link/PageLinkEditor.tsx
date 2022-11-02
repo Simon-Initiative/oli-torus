@@ -44,12 +44,12 @@ export const PageLinkEditor = ({ model, commandContext, attributes, children }: 
           onFetchOptions={() =>
             Persistence.pages(commandContext.projectSlug).then((result) => {
               if (result.type === 'success') {
-                return Promise.resolve({
+                return {
                   options: result.pages.map((p) => ({ value: p.id, title: p.title })),
                   selectedValue: model?.idref,
-                });
+                };
               } else {
-                return Promise.reject(result.message);
+                throw result.message;
               }
             })
           }
