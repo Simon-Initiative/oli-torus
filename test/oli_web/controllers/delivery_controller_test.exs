@@ -79,7 +79,12 @@ defmodule OliWeb.DeliveryControllerTest do
       lti_param_ids: lti_param_ids,
       user: user
     } do
-      {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
+      author_id =
+        Accounts.list_authors()
+        |> hd()
+        |> Map.get(:id, 1)
+
+      {:ok, _user} = Accounts.update_user(user, %{author_id: author_id})
 
       conn =
         conn
