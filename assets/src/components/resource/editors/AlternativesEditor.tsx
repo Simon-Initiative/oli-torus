@@ -170,9 +170,11 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     case AlternativesTypes.FAILURE:
       return renderFailed(alternativesContext.error);
     case AlternativesTypes.SUCCESS:
-      const group = alternativesContext.alternatives.find((g) => g.id === contentItem.group_id);
+      const group = alternativesContext.alternatives.find(
+        (a) => a.id === contentItem.alternatives_id,
+      );
       const alternativeOptionsTitles =
-        alternativesContext.alternativesOptionsTitles[contentItem.group_id];
+        alternativesContext.alternativesOptionsTitles[contentItem.alternatives_id];
 
       switch (group) {
         case undefined:
@@ -443,7 +445,7 @@ export const AlternativeOutlineItem = (props: AlternativeOutlineItemProps) => {
     case AlternativesTypes.SUCCESS:
       const parent = parents[parents.length - 1] as AlternativesContent;
       const alternativeGroupTitle =
-        alternativesContext.alternativesOptionsTitles[parent.group_id][contentItem.value];
+        alternativesContext.alternativesOptionsTitles[parent.alternatives_id][contentItem.value];
 
       return (
         <OutlineGroup {...props}>

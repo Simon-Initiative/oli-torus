@@ -164,9 +164,9 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
             }
           })
         }
-        onDone={(groupId: number) => {
+        onDone={(alternativesId: string) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(createAlternatives(groupId), index);
+          onAddItem(createAlternatives(alternativesId), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,

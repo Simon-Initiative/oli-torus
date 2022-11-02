@@ -308,7 +308,7 @@ defmodule Oli.PublishingTest do
                 "value" => "LrKibaPUfZdcfi5yi9YLc8"
               }
             ],
-            "group_id" => alt_group_revision_one.resource_id,
+            "alternatives_id" => alt_group_revision_one.resource_id,
             "id" => "3353873708",
             "strategy" => "user_section_preference",
             "type" => "alternatives"

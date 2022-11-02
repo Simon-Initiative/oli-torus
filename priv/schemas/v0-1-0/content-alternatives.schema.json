@@ -26,7 +26,7 @@
         "$ref": "#/$defs/alternative"
       }
     },
-    "group_id": {
+    "alternatives_id": {
       "type": "integer"
     }
   },

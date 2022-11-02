@@ -6,14 +6,14 @@ import { InfoTip } from 'components/misc/InfoTip';
 
 export interface AlternativesPreferenceSelectorProps {
   sectionSlug?: string;
-  groupId: number;
+  alternativesId: number;
   options: AlternativesGroupOption[];
   selected?: string;
 }
 
 export const AlternativesPreferenceSelector = ({
   sectionSlug,
-  groupId,
+  alternativesId,
   options,
   selected,
 }: AlternativesPreferenceSelectorProps) => {
@@ -25,22 +25,22 @@ export const AlternativesPreferenceSelector = ({
       Events.Registry.AlternativesPreferenceSelection,
       (e: CustomEvent<Events.AlternativesPreferenceSelection>) => {
         // check if this alternatives selector belongs to the preference group being selected
-        if (e.detail.groupId === groupId) {
+        if (e.detail.alternativesId === alternativesId) {
           setSelectedValue(e.detail.value);
         }
       },
     );
   }, []);
 
-  const onChangeSelection = (groupId: number, value: string) => {
+  const onChangeSelection = (alternativesId: number, value: string) => {
     if (sectionSlug) {
-      updateAlternativesPreference(sectionSlug, groupId, value);
+      updateAlternativesPreference(sectionSlug, alternativesId, value);
     }
 
     // notify all other selectors in the page to update their selection values
     Events.dispatch(
       Events.Registry.AlternativesPreferenceSelection,
-      Events.makeAlternativesPreferenceSelectionEvent({ groupId: groupId, value }),
+      Events.makeAlternativesPreferenceSelectionEvent({ alternativesId, value }),
     );
 
     // update all alternative elements on the current page
@@ -56,7 +56,7 @@ export const AlternativesPreferenceSelector = ({
           value={selectedValue}
           onChange={({ target: { value } }) => {
             setSelectedValue(value);
-            onChangeSelection(groupId, value);
+            onChangeSelection(alternativesId, value);
           }}
           style={{ minWidth: '300px' }}
         >

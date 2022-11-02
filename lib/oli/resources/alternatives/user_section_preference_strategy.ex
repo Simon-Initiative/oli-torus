@@ -18,10 +18,10 @@ defmodule Oli.Resources.Alternatives.UserSectionPreferenceStrategy do
         %AlternativesStrategyContext{user: user, section_slug: section_slug, mode: :delivery},
         %{
           "children" => children,
-          "group_id" => group_id
+          "alternatives_id" => alternatives_id
         }
       ) do
-    pref_key = ExtrinsicState.Key.alternatives_preference(group_id)
+    pref_key = ExtrinsicState.Key.alternatives_preference(alternatives_id)
 
     case ExtrinsicState.read_section(
            user.id,

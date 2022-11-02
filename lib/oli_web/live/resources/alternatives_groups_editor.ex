@@ -14,7 +14,6 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
   alias Oli.Authoring.Course
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
   alias OliWeb.Resources.AlternativesGroupsEditor.PreventDeletionModal
-  alias OliWeb.Router.Helpers, as: Routes
 
   @alternatives_type_id ResourceType.get_id_by_type("alternatives")
 

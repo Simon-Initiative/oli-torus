@@ -30,7 +30,7 @@ export interface CommandInventory {
 }
 
 export interface AlternativesPreferenceSelection {
-  groupId: number;
+  alternativesId: number;
   value: string;
 }
 

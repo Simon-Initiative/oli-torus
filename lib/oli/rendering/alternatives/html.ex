@@ -43,7 +43,7 @@ defmodule Oli.Rendering.Alternatives.Html do
           mode: mode
         },
         %{
-          "group_id" => group_id
+          "alternatives_id" => alternatives_id
         }
       ) do
     {:ok, groups} =
@@ -56,7 +56,7 @@ defmodule Oli.Rendering.Alternatives.Html do
       end
 
     options =
-      case Enum.find(groups, &(&1.id == group_id)) do
+      case Enum.find(groups, &(&1.id == alternatives_id)) do
         nil ->
           []
 
@@ -67,14 +67,14 @@ defmodule Oli.Rendering.Alternatives.Html do
     {:safe, preference_selector} =
       ReactPhoenix.ClientSide.react_component("Components.AlternativesPreferenceSelector", %{
         sectionSlug: section_slug,
-        groupId: group_id,
+        alternativesId: alternatives_id,
         options: options,
         selected:
           user_section_preference(
             mode,
             user,
             section_slug,
-            group_id,
+            alternatives_id,
             extrinsic_read_section_fn
           )
       })
@@ -86,10 +86,10 @@ defmodule Oli.Rendering.Alternatives.Html do
          :delivery,
          user,
          section_slug,
-         group_id,
+         alternatives_id,
          extrinsic_read_section_fn
        ) do
-    alt_pref_key = Oli.Delivery.ExtrinsicState.Key.alternatives_preference(group_id)
+    alt_pref_key = Oli.Delivery.ExtrinsicState.Key.alternatives_preference(alternatives_id)
 
     case extrinsic_read_section_fn.(
            user.id,

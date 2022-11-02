@@ -1236,7 +1236,7 @@ defmodule Oli.Publishing do
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
   end
 
-  def find_alternatives_group_references_in_pages(group_resource_id, publication_id) do
+  def find_alternatives_group_references_in_pages(alternatives_resource_id, publication_id) do
     page_id = ResourceType.get_id_by_type("page")
 
     sql = """
@@ -1248,8 +1248,8 @@ defmodule Oli.Publishing do
       and rev.resource_type_id = #{page_id}
       and rev.deleted is false
       and (
-        jsonb_path_exists(rev.content, '$.model[*] ? (@.type == "alternatives").group_id ? (@ == #{group_resource_id})')
-        or jsonb_path_exists(rev.content, '$.**.children[*] ? (@.type == "alternatives").group_id ? (@ == #{group_resource_id})')
+        jsonb_path_exists(rev.content, '$.model[*] ? (@.type == "alternatives").alternatives_id ? (@ == #{alternatives_resource_id})')
+        or jsonb_path_exists(rev.content, '$.**.children[*] ? (@.type == "alternatives").alternatives_id ? (@ == #{alternatives_resource_id})')
       )
     """
 
