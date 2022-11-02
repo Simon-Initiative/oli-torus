@@ -146,37 +146,35 @@ defmodule Oli.Resources.AlternativesTest do
                },
                @select_all_el
              ) == [
-               %{
-                 "type" => "alternative",
-                 "id" => "22345",
-                 "value" => "one",
-                 "children" => [
-                   %{
-                     "children" => [
-                       %{
-                         "text" => "this is an example of one alternative"
-                       }
-                     ],
-                     "id" => "1805793799",
-                     "type" => "p"
-                   }
-                 ]
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [%{"text" => "this is an example of one alternative"}],
+                       "id" => "1805793799",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22345",
+                   "type" => "alternative",
+                   "value" => "one"
+                 },
+                 hidden: false
                },
-               %{
-                 "type" => "alternative",
-                 "id" => "22346",
-                 "value" => "two",
-                 "children" => [
-                   %{
-                     "children" => [
-                       %{
-                         "text" => "this is an example of a second alternative"
-                       }
-                     ],
-                     "id" => "18057937800",
-                     "type" => "p"
-                   }
-                 ]
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [%{"text" => "this is an example of a second alternative"}],
+                       "id" => "18057937800",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22346",
+                   "type" => "alternative",
+                   "value" => "two"
+                 },
+                 hidden: false
                }
              ]
     end
@@ -197,21 +195,52 @@ defmodule Oli.Resources.AlternativesTest do
                },
                @user_section_preference_el
              ) == [
-               %{
-                 "type" => "alternative",
-                 "id" => "22346",
-                 "value" => "two",
-                 "children" => [
-                   %{
-                     "children" => [
-                       %{
-                         "text" => "this is an example of a second alternative"
-                       }
-                     ],
-                     "id" => "18057937800",
-                     "type" => "p"
-                   }
-                 ]
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [%{"text" => "this is an example of one alternative"}],
+                       "id" => "1805793799",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22345",
+                   "type" => "alternative",
+                   "value" => "one"
+                 },
+                 hidden: false
+               },
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [%{"text" => "this is an example of a second alternative"}],
+                       "id" => "18057937800",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22346",
+                   "type" => "alternative",
+                   "value" => "two"
+                 },
+                 hidden: true
+               },
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [
+                         %{"text" => "this is an example of a default third alternative"}
+                       ],
+                       "id" => "18057937800",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22346",
+                   "type" => "alternative",
+                   "value" => "three"
+                 },
+                 hidden: true
                }
              ]
     end
@@ -229,21 +258,52 @@ defmodule Oli.Resources.AlternativesTest do
                },
                @user_section_preference_el
              ) == [
-               %{
-                 "type" => "alternative",
-                 "id" => "22346",
-                 "value" => "three",
-                 "children" => [
-                   %{
-                     "children" => [
-                       %{
-                         "text" => "this is an example of a default third alternative"
-                       }
-                     ],
-                     "id" => "18057937800",
-                     "type" => "p"
-                   }
-                 ]
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [%{"text" => "this is an example of one alternative"}],
+                       "id" => "1805793799",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22345",
+                   "type" => "alternative",
+                   "value" => "one"
+                 },
+                 hidden: false
+               },
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [%{"text" => "this is an example of a second alternative"}],
+                       "id" => "18057937800",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22346",
+                   "type" => "alternative",
+                   "value" => "two"
+                 },
+                 hidden: true
+               },
+               %Oli.Resources.Alternatives.Selection{
+                 alternative: %{
+                   "children" => [
+                     %{
+                       "children" => [
+                         %{"text" => "this is an example of a default third alternative"}
+                       ],
+                       "id" => "18057937800",
+                       "type" => "p"
+                     }
+                   ],
+                   "id" => "22346",
+                   "type" => "alternative",
+                   "value" => "three"
+                 },
+                 hidden: true
                }
              ]
     end
