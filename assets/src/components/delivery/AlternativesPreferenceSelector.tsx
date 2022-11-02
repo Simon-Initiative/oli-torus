@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { updateAlternativesPreference } from 'data/persistence/alternatives';
 import { AlternativesGroupOption } from 'data/persistence/resource';
 import * as Events from 'data/events';
+import { InfoTip } from 'components/misc/InfoTip';
 
 export interface AlternativesPreferenceSelectorProps {
   sectionSlug?: string;
@@ -48,23 +49,29 @@ export const AlternativesPreferenceSelector = ({
   };
 
   return (
-    <div className="d-inline-block">
-      <select
-        className="form-control mr-2"
-        value={selectedValue}
-        onChange={({ target: { value } }) => {
-          setSelectedValue(value);
-          onChangeSelection(groupId, value);
-        }}
-        style={{ minWidth: '300px' }}
-      >
-        <option key="none" value="" hidden>
-          Select an alternative preference
-        </option>
-        {options.map((o) => (
-          <Option key={o.id} value={o.id} title={o.name} />
-        ))}
-      </select>
+    <div className="form-inline">
+      <div className="form-group mb-2">
+        <select
+          className="form-control mr-2"
+          value={selectedValue}
+          onChange={({ target: { value } }) => {
+            setSelectedValue(value);
+            onChangeSelection(groupId, value);
+          }}
+          style={{ minWidth: '300px' }}
+        >
+          <option key="none" value="" hidden>
+            Select an alternative preference
+          </option>
+          {options.map((o) => (
+            <Option key={o.id} value={o.id} title={o.name} />
+          ))}
+        </select>
+        <InfoTip
+          className="text-secondary"
+          title="Alternative versions are available, use this selector to switch"
+        />
+      </div>
     </div>
   );
 };
