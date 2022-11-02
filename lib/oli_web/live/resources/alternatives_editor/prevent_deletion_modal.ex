@@ -1,4 +1,4 @@
-defmodule OliWeb.Resources.AlternativesGroupsEditor.PreventDeletionModal do
+defmodule OliWeb.Resources.AlternativesEditor.PreventDeletionModal do
   use Phoenix.Component
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -12,7 +12,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor.PreventDeletionModal do
         <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Cannot Delete Alternatives Group</h5>
+              <h5 class="modal-title">Cannot Delete Alternatives</h5>
             </div>
             <div class="modal-body">
               <p class="mb-4">

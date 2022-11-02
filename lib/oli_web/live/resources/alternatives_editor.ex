@@ -1,11 +1,12 @@
-defmodule OliWeb.Resources.AlternativesGroupsEditor do
+defmodule OliWeb.Resources.AlternativesEditor do
   use OliWeb, :live_view
   use Phoenix.HTML
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]
   import OliWeb.ErrorHelpers
-  import OliWeb.Resources.AlternativesGroupsEditor.GroupOption
+  import OliWeb.Resources.AlternativesEditor.GroupOption
+  import OliWeb.Common.Components
 
   alias Oli.Resources.ResourceType
   alias Oli.Authoring.Broadcaster.Subscriber
@@ -13,7 +14,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Course
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
-  alias OliWeb.Resources.AlternativesGroupsEditor.PreventDeletionModal
+  alias OliWeb.Resources.AlternativesEditor.PreventDeletionModal
 
   @alternatives_type_id ResourceType.get_id_by_type("alternatives")
 
@@ -36,8 +37,8 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
        context: context,
        project: project,
        author: context.author,
-       title: "Alternatives Groups | " <> project.title,
-       breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives Groups"})],
+       title: "Alternatives | " <> project.title,
+       breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives"})],
        alternatives: Enum.reverse(alternatives),
        subscriptions: subscriptions
      )}
@@ -80,6 +81,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
         <div class="d-flex flex-row align-items-center">
           <div><b><%= @group.title %></b></div>
           <div class="flex-grow-1"></div>
+          <.materials_icon_button class="mr-1" icon="edit" on_click="show_edit_group_modal" values={["phx-value-resource-id": @group.resource_id]} />
           <button class="btn btn-danger btn-sm mr-2" phx-click="show_delete_group_modal" phx-value-resource_id={@group.resource_id}>Delete</button>
         </div>
         <div class="mt-3">
@@ -318,6 +320,82 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
   end
 
   def handle_event(
+        "show_edit_group_modal",
+        %{"resource-id" => resource_id},
+        socket
+      ) do
+    %{alternatives: alternatives} = socket.assigns
+
+    resource_id = ensure_integer(resource_id)
+    group = find_group(alternatives, resource_id)
+
+    # {%{resource_id: resource_id}, %{id: :string, resource_id: :int, title: :string}}
+    # |> Ecto.Changeset.cast(group, [:id, :resource_id, :title])
+    changeset = Oli.Resources.Revision.changeset(group)
+
+    form_body_fn = fn assigns ->
+      ~H"""
+        <div class="form-group">
+          <%= hidden_input @form, :id %>
+          <%= hidden_input @form, :resource_id %>
+
+          <%= text_input @form,
+            :title,
+            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+            placeholder: "Enter a title",
+            phx_hook: "InputAutoSelect",
+            required: true %>
+        </div>
+      """
+    end
+
+    modal_assigns = %{
+      id: "edit_modal",
+      title: "Edit",
+      submit_label: "Save",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_group",
+      on_submit: "edit_group"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+        <FormModal.modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("validate_group", %{"params" => %{"title" => _}}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "edit_group",
+        %{"params" => %{"resource_id" => resource_id, "title" => title}},
+        socket
+      ) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+
+    case edit_group_title(
+           project.slug,
+           author,
+           alternatives,
+           resource_id,
+           title
+         ) do
+      {:ok, alternatives, _group} ->
+        {:noreply, hide_modal(socket) |> assign(alternatives: alternatives)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event(
         "show_edit_option_modal",
         %{"resource-id" => resource_id, "option-id" => option_id},
         socket
@@ -472,6 +550,34 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def handle_event("cancel_modal", _, socket) do
     {:noreply, hide_modal(socket)}
+  end
+
+  defp edit_group_title(
+         project_slug,
+         author,
+         alternatives,
+         resource_id,
+         title
+       ) do
+    case ResourceEditor.edit(project_slug, resource_id, author, %{
+           title: title
+         }) do
+      {:ok, updated_group} ->
+        # update groups list to reflect latest update
+        alternatives =
+          Enum.map(alternatives, fn g ->
+            if g.resource_id == updated_group.resource_id do
+              updated_group
+            else
+              g
+            end
+          end)
+
+        {:ok, alternatives, updated_group}
+
+      error ->
+        error
+    end
   end
 
   defp edit_group_options(

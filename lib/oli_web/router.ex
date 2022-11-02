@@ -371,7 +371,7 @@ defmodule OliWeb.Router do
     delete("/:project_id", ProjectController, :delete)
 
     # Alternatives Groups
-    live("/:project_id/alternatives", Resources.AlternativesGroupsEditor)
+    live("/:project_id/alternatives", Resources.AlternativesEditor)
 
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)

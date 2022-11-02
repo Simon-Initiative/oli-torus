@@ -1,4 +1,4 @@
-defmodule OliWeb.Resources.AlternativesGroupsEditor.GroupOption do
+defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
   use Phoenix.Component
 
   import OliWeb.Common.Components
