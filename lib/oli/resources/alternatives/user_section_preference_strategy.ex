@@ -1,6 +1,7 @@
 defmodule Oli.Resources.Alternatives.UserSectionPreferenceStrategy do
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Delivery.ExtrinsicState
+  alias Oli.Resources.Alternatives.Selection
 
   require Logger
 
@@ -9,23 +10,18 @@ defmodule Oli.Resources.Alternatives.UserSectionPreferenceStrategy do
   @doc """
   Selects the first alternative that matches a given user preference.
 
-  If a preference is not set for a user, then the first alternative marked
-  by 'default: true' is selected.
-
-  If none of the alternatives are marked as default, then the first alternative
-  is selected.
+  If a preference is not set for a user, then the first alternative is selected.
 
   In the rare case when there are no alternatives set, this will return an empty list `[]]`.
   """
   def select(
-        %AlternativesStrategyContext{user: user, section_slug: section_slug},
+        %AlternativesStrategyContext{user: user, section_slug: section_slug, mode: :delivery},
         %{
           "children" => children,
-          "preference_name" => preference_name,
-          "default" => default
+          "group_id" => group_id
         }
       ) do
-    pref_key = ExtrinsicState.Key.alternatives_preference(preference_name)
+    pref_key = ExtrinsicState.Key.alternatives_preference(group_id)
 
     case ExtrinsicState.read_section(
            user.id,
@@ -33,47 +29,33 @@ defmodule Oli.Resources.Alternatives.UserSectionPreferenceStrategy do
            MapSet.new([pref_key])
          ) do
       {:ok, %{^pref_key => pref}} ->
-        Enum.find(children, fn alt -> alt["value"] == pref end)
-        |> case do
-          nil ->
-            Logger.error(
-              "Alternatives user preference '#{pref}' did not match any of the alternative values"
-            )
-
-            select_default(children, default)
-
-          found ->
-            [found]
-        end
+        # return all children with display: :none except for the alternative that matches the selected preference
+        Enum.map(children, fn alt ->
+          if alt["value"] == pref do
+            %Selection{alternative: alt}
+          else
+            %Selection{alternative: alt, hidden: true}
+          end
+        end)
 
       _ ->
-        select_default(children, default)
+        display_first(children)
     end
   end
 
-  def select_default(children, default) do
-    Enum.find(children, fn alt -> alt["value"] == default end)
-    |> case do
-      nil ->
-        Logger.error(
-          "Alternatives default '#{default}' did not match any of the alternative values"
-        )
+  def select(_, %{"children" => children}), do: display_first(children)
 
-        select_first(children)
-
-      found ->
-        [found]
-    end
-  end
-
-  def select_first(children) do
-    case Enum.at(children, 0) do
-      nil ->
+  defp display_first(children) do
+    case children do
+      [] ->
         Logger.error("Alternatives element does not have any alternatives specified")
         []
 
-      first ->
-        [first]
+      [first | rest] ->
+        [
+          %Selection{alternative: first}
+          | Enum.map(rest, fn alt -> %Selection{alternative: alt, hidden: true} end)
+        ]
     end
   end
 end

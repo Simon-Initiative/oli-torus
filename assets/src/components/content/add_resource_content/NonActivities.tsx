@@ -105,7 +105,7 @@ export const NonActivities: React.FC<Props> = ({
             onSetTip('Alternative materials which will be displayed based on student preference')
           }
           onHoverEnd={() => onResetTip()}
-          key={'group'}
+          key={'alternatives'}
           disabled={false}
           onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
         />

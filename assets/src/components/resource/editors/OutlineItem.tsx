@@ -203,6 +203,6 @@ export const resourceGroupTitle = (contentItem: ResourceGroup) => {
   } else if (contentItem.type === 'survey') {
     return contentItem.title ?? 'Survey';
   } else if (contentItem.type === 'alternatives') {
-    return 'Alternatives';
+    return 'Alternative Content';
   }
 };

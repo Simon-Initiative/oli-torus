@@ -1,5 +1,6 @@
 defmodule Oli.Resources.Alternatives.SelectAllStrategy do
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
+  alias Oli.Resources.Alternatives.Selection
 
   @behaviour Oli.Resources.Alternatives.AlternativesStrategy
 
@@ -7,6 +8,6 @@ defmodule Oli.Resources.Alternatives.SelectAllStrategy do
   Selects all alternatives
   """
   def select(%AlternativesStrategyContext{}, %{"children" => children}) do
-    children
+    Enum.map(children, fn alt -> %Selection{alternative: alt} end)
   end
 end

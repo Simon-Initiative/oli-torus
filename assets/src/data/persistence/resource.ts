@@ -65,11 +65,11 @@ export type AlternativesGroup = {
 };
 export type AlternativesGroupsReceived = { type: 'success'; alternatives: AlternativesGroup[] };
 
-// Requests all alternative groups
-export function alternatives(project: ProjectSlug) {
+// Requests all alternative groups for a given project or section
+export function alternatives(projectSlug: ProjectSlug) {
   const params = {
     method: 'GET',
-    url: `/project/${project}/alternatives`,
+    url: `/project/${projectSlug}/alternatives`,
   };
 
   return makeRequest<AlternativesGroupsReceived>(params);

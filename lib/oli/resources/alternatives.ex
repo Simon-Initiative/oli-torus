@@ -4,7 +4,9 @@ defmodule Oli.Resources.Alternatives do
   alias Oli.Resources.Alternatives.UserSectionPreferenceStrategy
 
   @doc """
-  Selects one or more alternatives using the element's specified strategy
+  Selects one or more alternatives using the element's specified strategy.
+
+  Returns a list of `Oli.Resources.Alternatives.Selection` structs.
   """
   def select(
         %AlternativesStrategyContext{} = context,

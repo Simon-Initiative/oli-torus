@@ -28,9 +28,6 @@
     },
     "group_id": {
       "type": "integer"
-    },
-    "default": {
-      "type": "string"
     }
   },
   "required": [

@@ -139,7 +139,11 @@ defmodule Oli.Resources.AlternativesTest do
       section: section
     } do
       assert Alternatives.select(
-               %AlternativesStrategyContext{user: student1, section_slug: section.slug},
+               %AlternativesStrategyContext{
+                 user: student1,
+                 section_slug: section.slug,
+                 mode: :delivery
+               },
                @select_all_el
              ) == [
                %{
@@ -186,7 +190,11 @@ defmodule Oli.Resources.AlternativesTest do
       })
 
       assert Alternatives.select(
-               %AlternativesStrategyContext{user: student1, section_slug: section.slug},
+               %AlternativesStrategyContext{
+                 user: student1,
+                 section_slug: section.slug,
+                 mode: :delivery
+               },
                @user_section_preference_el
              ) == [
                %{
@@ -214,7 +222,11 @@ defmodule Oli.Resources.AlternativesTest do
            section: section
          } do
       assert Alternatives.select(
-               %AlternativesStrategyContext{user: student1, section_slug: section.slug},
+               %AlternativesStrategyContext{
+                 user: student1,
+                 section_slug: section.slug,
+                 mode: :delivery
+               },
                @user_section_preference_el
              ) == [
                %{

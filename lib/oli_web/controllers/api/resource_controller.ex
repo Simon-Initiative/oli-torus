@@ -5,8 +5,7 @@ defmodule OliWeb.Api.ResourceController do
   alias Oli.Authoring.Course
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
-  alias Oli.Resources.ResourceType
-  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Resources
 
   def index(conn, %{"project" => project_slug}) do
     case Course.get_project_by_slug(project_slug) do
@@ -68,31 +67,15 @@ defmodule OliWeb.Api.ResourceController do
   end
 
   def alternatives(conn, %{"project" => project_slug}) do
-    project = Course.get_project_by_slug(project_slug)
-    author = conn.assigns[:current_author]
-
-    case project do
-      nil ->
-        error(conn, 404, "not found")
-
-      project ->
-        {:ok, alternatives} =
-          ResourceEditor.list(
-            project.slug,
-            author,
-            ResourceType.get_id_by_type("alternatives")
-          )
-
-        alternatives =
-          Enum.map(alternatives, fn a ->
-            %{
-              id: a.resource_id,
-              title: a.title,
-              options: a.content["options"]
-            }
-          end)
-
+    case Resources.alternatives_groups(
+           project_slug,
+           Oli.Publishing.AuthoringResolver
+         ) do
+      {:ok, alternatives} ->
         json(conn, %{"type" => "success", "alternatives" => alternatives})
+
+      _ ->
+        error(conn, 404, "failed to resolve alternatives groups")
     end
   end
 

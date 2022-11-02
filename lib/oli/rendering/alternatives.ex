@@ -6,8 +6,9 @@ defmodule Oli.Rendering.Alternatives do
 
   alias Oli.Rendering.Context
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
+  alias Oli.Resources.Alternatives.Selection
 
-  @callback alternatives(%Context{}, %{}) :: [any()]
+  @callback alternative(%Context{}, %Selection{}) :: [any()]
   @callback preference_selector(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
@@ -22,17 +23,18 @@ defmodule Oli.Rendering.Alternatives do
         %Context{
           user: user,
           section_slug: section_slug,
+          mode: mode,
           alternatives_selector_fn: alternatives_selector_fn
         } = context,
         %{"type" => "alternatives"} = element,
         writer
       ) do
     alternatives_selector_fn.(
-      %AlternativesStrategyContext{user: user, section_slug: section_slug},
+      %AlternativesStrategyContext{user: user, section_slug: section_slug, mode: mode},
       element
     )
     |> render_selected_alternatives(context, writer)
-    |> maybe_render_preference_selector(element, writer)
+    |> maybe_render_preference_selector(context, element, writer)
   end
 
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
@@ -49,24 +51,22 @@ defmodule Oli.Rendering.Alternatives do
 
   defp render_selected_alternatives(selected_alternatives, context, writer) do
     selected_alternatives
-    |> Enum.flat_map(fn %{
-                          "type" => "alternative",
-                          "children" => children
-                        } ->
-      writer.alternatives(
+    |> Enum.flat_map(fn alternative ->
+      writer.alternative(
         %Context{context | pagination_mode: "normal"},
-        children
+        alternative
       )
     end)
   end
 
   defp maybe_render_preference_selector(
          rendered,
-         %{"strategy" => "user_section_preference"},
+         context,
+         %{"strategy" => "user_section_preference"} = element,
          writer
        ) do
-    [writer.preference_selector() | rendered]
+    [writer.preference_selector(context, element) | rendered]
   end
 
-  defp maybe_render_preference_selector(rendered, _, _writer), do: rendered
+  defp maybe_render_preference_selector(rendered, _, _, _writer), do: rendered
 end

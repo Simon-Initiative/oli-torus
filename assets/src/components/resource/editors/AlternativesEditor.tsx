@@ -47,12 +47,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
   } = props;
   const alternativesContext = useAlternatives();
 
-  const [activeOptionId, setActiveOptionId] = useState(
-    Maybe.maybe(contentItem.children.first<AlternativeContent>()).caseOf({
-      just: (a) => a.id,
-      nothing: () => '',
-    }),
-  );
+  const [activeOption, setActiveOption] = useState(contentItem.children.first());
 
   const renderLoading = () => (
     <LoadingSpinner size={LoadingSpinnerSize.Medium}>Loading...</LoadingSpinner>
@@ -71,7 +66,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     alternativeOptions: Persistence.AlternativesGroupOption[],
     alternativeOptionsTitles: Record<string, string>,
   ) => {
-    const activeOptionIndex = contentItem.children.findIndex((c) => c.id == activeOptionId);
+    const activeOptionIndex = contentItem.children.findIndex((c) => c.id == activeOption.id);
 
     const showCreateAlternativeModal = () =>
       window.oliDispatch(
@@ -95,7 +90,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
               };
 
               onEdit(update);
-              setActiveOptionId(newAlt.id);
+              setActiveOption(newAlt);
             }}
             onCancel={() => window.oliDispatch(modalActions.dismiss())}
           />,
@@ -119,14 +114,15 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
 
       onEdit(update);
       onPostUndoable(contentItem.id, makePageUndoable('Removed alternative', index, contentItem));
+      setActiveOption(contentItem.children.first());
     };
 
     return (
       <AlternativesGroupBlock
         editMode={editMode}
         contentItem={contentItem}
-        activeOptionId={activeOptionId}
-        setActiveOptionId={setActiveOptionId}
+        activeOption={activeOption}
+        setActiveOption={setActiveOption}
         alternativeOptions={alternativeOptions}
         alternativeOptionsTitles={alternativeOptionsTitles}
         parents={parents}
@@ -215,7 +211,7 @@ const AlternativeEditor = (props: AlternativeEditorProps) => {
 interface AlternativesGroupBlockProps {
   editMode: boolean;
   contentItem: AlternativesContent;
-  activeOptionId: string;
+  activeOption: AlternativeContent;
   parents: ResourceContent[];
   canRemove: boolean;
   alternativeOptions: Persistence.AlternativesGroupOption[];
@@ -224,13 +220,13 @@ interface AlternativesGroupBlockProps {
   onEditAlternative: (update: AlternativeContent) => void;
   onDeleteAlternative: (optionId: string) => void;
   onRemove: () => void;
-  setActiveOptionId: (id: string) => void;
+  setActiveOption: (option: AlternativeContent) => void;
 }
 export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGroupBlockProps>) => {
   const {
     editMode,
     contentItem,
-    activeOptionId,
+    activeOption,
     canRemove,
     children,
     alternativeOptions,
@@ -239,10 +235,10 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
     onCreateAlternative,
     onEditAlternative,
     onDeleteAlternative,
-    setActiveOptionId,
+    setActiveOption,
   } = props;
 
-  const selectedOption = contentItem.children.find((o) => o.id === activeOptionId);
+  const selectedOption = contentItem.children.find((o) => o.id === activeOption.id);
 
   const showEditAlternative = () =>
     window.oliDispatch(
@@ -257,7 +253,7 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
                 className="btn btn-danger"
                 onClick={() => {
                   window.oliDispatch(modalActions.dismiss());
-                  onDeleteAlternative(activeOptionId);
+                  onDeleteAlternative(activeOption.id);
                 }}
               >
                 Delete
@@ -273,7 +269,7 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
           onDone={(optionId: string) => {
             window.oliDispatch(modalActions.dismiss());
 
-            const update = contentItem.children.find((o) => o.id === activeOptionId);
+            const update = contentItem.children.find((o) => o.id === activeOption.id);
             if (update) {
               onEditAlternative({
                 ...update,
@@ -294,16 +290,14 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
     {} as Record<string, number>,
   );
 
-  console.log('optionIdCount', optionIdCount);
-
   const options = contentItem.children.map((option) => (
     <OptionPill
       key={option.id}
       option={option}
-      activeOptionId={activeOptionId}
+      activeOption={activeOption}
       alternativeOptionsTitles={alternativeOptionsTitles}
       isDuplicate={optionIdCount[option.value] > 1}
-      onSetActiveOptionId={setActiveOptionId}
+      onSetActiveOption={setActiveOption}
       onEditAlternativeClick={showEditAlternative}
     />
   ));
@@ -331,19 +325,19 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
 
 type OptionPillProps = {
   option: AlternativeContent;
-  activeOptionId: string;
+  activeOption: AlternativeContent;
   alternativeOptionsTitles: Record<string, string>;
   isDuplicate: boolean;
-  onSetActiveOptionId: (id: string) => void;
+  onSetActiveOption: (option: AlternativeContent) => void;
   onEditAlternativeClick: () => void;
 };
 
 const OptionPill = ({
   option,
-  activeOptionId,
+  activeOption,
   alternativeOptionsTitles,
   isDuplicate,
-  onSetActiveOptionId,
+  onSetActiveOption,
   onEditAlternativeClick,
 }: OptionPillProps): JSX.Element => {
   const title = alternativeOptionsTitles[option.value];
@@ -360,7 +354,7 @@ const OptionPill = ({
     </Tooltip>
   );
 
-  if (option.id == activeOptionId) {
+  if (option.id == activeOption.id) {
     return (
       <div key={option.id} className={classNames('btn btn-sm', styles.option, styles.active)}>
         {maybeDuplicateWarning}
@@ -381,7 +375,7 @@ const OptionPill = ({
     <button
       key={option.id}
       className={classNames('btn btn-sm', styles.option, !title && styles.warn)}
-      onClick={() => onSetActiveOptionId(option.id)}
+      onClick={() => onSetActiveOption(option)}
     >
       {maybeDuplicateWarning}
       {titleOrWarning}
@@ -436,7 +430,13 @@ export const AlternativeOutlineItem = (props: AlternativeOutlineItemProps) => {
         <OutlineGroup {...props}>
           <ExpandToggle expanded={expanded} onClick={() => toggleCollapsibleGroup(id)} />
           <Description>
-            <Description title="An error occurred"></Description>
+            <Description
+              title={
+                <LoadingSpinner failed size={LoadingSpinnerSize.Medium} align="left">
+                  An error occurred
+                </LoadingSpinner>
+              }
+            ></Description>
           </Description>
         </OutlineGroup>
       );

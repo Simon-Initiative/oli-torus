@@ -43,31 +43,38 @@ export const AlternativesContextProvider = ({
   });
 
   useEffect(() => {
-    Persistence.alternatives(projectSlug).then((result) => {
-      if (result.type === 'success') {
-        const alternativesOptionsTitles = result.alternatives.reduce(
-          (acc, group) => ({
-            ...acc,
-            [group.id]: group.options.reduce(
-              (acc, options) => ({ ...acc, [options.id]: options.name }),
-              {} as Record<string, string>,
-            ),
-          }),
-          {} as Record<number, Record<string, string>>,
-        );
+    Persistence.alternatives(projectSlug)
+      .then((result) => {
+        if (result.type === 'success') {
+          const alternativesOptionsTitles = result.alternatives.reduce(
+            (acc, group) => ({
+              ...acc,
+              [group.id]: group.options.reduce(
+                (acc, options) => ({ ...acc, [options.id]: options.name }),
+                {} as Record<string, string>,
+              ),
+            }),
+            {} as Record<number, Record<string, string>>,
+          );
 
-        setAlternativesState({
-          type: AlternativesTypes.SUCCESS,
-          alternatives: result.alternatives,
-          alternativesOptionsTitles,
-        });
-      } else {
+          setAlternativesState({
+            type: AlternativesTypes.SUCCESS,
+            alternatives: result.alternatives,
+            alternativesOptionsTitles,
+          });
+        } else {
+          setAlternativesState({
+            type: AlternativesTypes.FAILURE,
+            error: result.message,
+          });
+        }
+      })
+      .catch(({ message }) =>
         setAlternativesState({
           type: AlternativesTypes.FAILURE,
-          error: result.message,
-        });
-      }
-    });
+          error: message,
+        }),
+      );
   }, []);
 
   return (

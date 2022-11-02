@@ -269,6 +269,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            mode: mode,
            activity_map: activities,
            resource_summary_fn: &Resources.resource_summary(&1, project_slug, AuthoringResolver),
+           alternatives_groups_fn: &Resources.alternatives_groups(&1, AuthoringResolver),
            alternatives_selector_fn: &Resources.Alternatives.select/2,
            extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
            project_slug: project_slug,
@@ -557,6 +558,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
       case Map.get(parents, revision.resource_id) do
         nil ->
           concatenate_to_revision_parent_result(revision, nil, result)
+
         parents ->
           Enum.reduce(parents, result, fn parent_id, result ->
             concatenate_to_revision_parent_result(revision, parent_id, result)
@@ -566,11 +568,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   defp concatenate_to_revision_parent_result(revision, parent_id, result) do
-    [%{
-      id: revision.resource_id,
-      title: revision.title,
-      parentId: parent_id
-    } | result]
+    [
+      %{
+        id: revision.resource_id,
+        title: revision.title,
+        parentId: parent_id
+      }
+      | result
+    ]
   end
 
   # Retrieve the latest (current) revision for a resource given the
