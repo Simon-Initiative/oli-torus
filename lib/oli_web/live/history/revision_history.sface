@@ -15,7 +15,7 @@
             { live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size }
           </div>
           { live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: @page_size }
-          { live_component Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: @page_size, context: @context }
+          <Table id="table" tree={@tree} publication={@publication} mappings={@mappings} revisions={@revisions} selected={@selected} page_offset={@page_offset} page_size={@page_size} context={@context} />
         </div>
       </div>
     </div>
