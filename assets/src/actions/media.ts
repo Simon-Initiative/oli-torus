@@ -179,7 +179,9 @@ export const fetchMediaItemByPath =
     return persistence.fetchMedia(courseId, offset, limit, undefined, url).then((response) => {
       if (response.type === 'success') {
         const data = Map<string, MediaItem>(response.results.map((item) => [item.guid, item]));
-        return Maybe.just<MediaItem>(data.first() as any);
+        if (data.size > 0) {
+          return Maybe.just<MediaItem>(data.first() as any);
+        }
       }
       return Maybe.nothing<MediaItem>();
     });
