@@ -6,8 +6,10 @@ defmodule OliWeb.Resources.PagesView do
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   import Oli.Authoring.Editing.Utils
+  import OliWeb.Curriculum.Utils
 
   alias Oli.Accounts
+  alias Oli.Resources
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
   alias Oli.Resources.PageBrowse
@@ -279,6 +281,8 @@ defmodule OliWeb.Resources.PagesView do
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{project: project} = socket.assigns
 
+    revision = Enum.find(socket.assigns.table_model.rows, fn r -> r.slug == slug end)
+
     modal_assigns = %{
       id: "options_#{slug}",
       redirect_url:
@@ -293,7 +297,8 @@ defmodule OliWeb.Resources.PagesView do
             text_search: socket.assigns.options.text_search
           }
         ),
-      revision: Enum.find(socket.assigns.table_model.rows, fn r -> r.slug == slug end),
+      revision: revision,
+      changeset: Resources.change_revision(revision),
       project: project
     }
 
@@ -309,6 +314,45 @@ defmodule OliWeb.Resources.PagesView do
        modal,
        modal_assigns: modal_assigns
      )}
+  end
+
+  def handle_event("validate-options", %{"revision" => revision_params}, socket) do
+    %{modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+
+    changeset =
+      revision
+      |> Resources.change_revision(revision_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, modal_assigns: %{modal_assigns | changeset: changeset})}
+  end
+
+  def handle_event("save-options", %{"revision" => revision_params}, socket) do
+    %{modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+      socket.assigns
+
+    revision_params =
+      case revision_params do
+        %{"explanation_strategy" => %{"type" => "none"}} ->
+          Map.put(revision_params, "explanation_strategy", nil)
+
+        _ ->
+          revision_params
+      end
+
+    case ContainerEditor.edit_page(project, revision.slug, revision_params) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :info,
+           "#{resource_type_label(revision) |> String.capitalize()} options saved"
+         )
+         |> push_redirect(to: redirect_url)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :changeset, changeset)}
+    end
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
