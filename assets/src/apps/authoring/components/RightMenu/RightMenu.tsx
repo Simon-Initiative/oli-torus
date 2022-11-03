@@ -3,7 +3,7 @@ import { UiSchema } from '@rjsf/core';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { JSONSchema7 } from 'json-schema';
 import { debounce, isEqual } from 'lodash';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, ButtonGroup, ButtonToolbar, Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
@@ -88,6 +88,12 @@ const RightMenu: React.FC<any> = () => {
   const [questionBankData, setBankData] = useState<any>();
   const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+
+  const selectedPartDef = useMemo(
+    () => findPartByIdInActivity(currentActivity, currentPartSelection),
+    [currentActivity, currentPartSelection],
+  );
+
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -119,9 +125,8 @@ const RightMenu: React.FC<any> = () => {
   };
   const handleCopyComponent = useCallback(() => {
     if (currentActivity && currentPartSelection) {
-      const partDef = currentActivity.content?.partsLayout.find(
-        (part: any) => part.id === currentPartSelection,
-      );
+      const partDef = findPartByIdInActivity(currentActivity, currentPartSelection);
+
       if (!partDef) {
         console.warn(`Part with id ${currentPartSelection} not found on this screen`);
         return;
@@ -492,11 +497,13 @@ const RightMenu: React.FC<any> = () => {
                 <Button>
                   <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
                 </Button>
-                <CompJsonEditor
-                  onChange={handleEditComponentJson}
-                  jsonValue={currentComponentData}
-                  existingPartIds={existingIds}
-                />
+                {selectedPartDef && (
+                  <CompJsonEditor
+                    onChange={handleEditComponentJson}
+                    jsonValue={selectedPartDef}
+                    existingPartIds={existingIds}
+                  />
+                )}
                 <Button variant="danger" onClick={() => setShowConfirmDelete(true)}>
                   <i className="fas fa-trash mr-2" />
                 </Button>
@@ -524,4 +531,10 @@ const RightMenu: React.FC<any> = () => {
     </Tabs>
   );
 };
+
+const findPartByIdInActivity = (currentActivity: any, targetPartId: string) => {
+  if (!currentActivity || !targetPartId) return null;
+  return currentActivity.content?.partsLayout.find((part: any) => part.id === targetPartId);
+};
+
 export default RightMenu;
