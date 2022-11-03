@@ -278,6 +278,72 @@ defmodule OliWeb.Resources.PagesView do
      )}
   end
 
+  def handle_event("DeleteModal.delete", %{"slug" => slug}, socket) do
+    %{
+      modal_assigns: %{
+        container: container,
+        project: project,
+        author: author,
+        revision: revision,
+        redirect_url: redirect_url
+      }
+    } = socket.assigns
+
+    case container do
+      nil ->
+        result =
+          Oli.Repo.transaction(fn ->
+            revision =
+              Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, revision.slug)
+
+            Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
+          end)
+
+        case result do
+          {:ok, _} ->
+            {:noreply,
+             socket
+             |> put_flash(
+               :info,
+               "#{resource_type_label(revision) |> String.capitalize()} deleted"
+             )
+             |> push_patch(to: redirect_url)
+             |> hide_modal(modal_assigns: nil)}
+
+          _ ->
+            {:noreply,
+             socket
+             |> put_flash(
+               :error,
+               "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
+             )
+             |> hide_modal(modal_assigns: nil)}
+        end
+
+      container ->
+        case ContainerEditor.remove_child(container, project, author, slug) do
+          {:ok, _} ->
+            {:noreply,
+             socket
+             |> put_flash(
+               :info,
+               "#{resource_type_label(revision) |> String.capitalize()} deleted"
+             )
+             |> push_patch(to: redirect_url)
+             |> hide_modal(modal_assigns: nil)}
+
+          {:error, _} ->
+            {:noreply,
+             socket
+             |> put_flash(
+               :error,
+               "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
+             )
+             |> hide_modal(modal_assigns: nil)}
+        end
+    end
+  end
+
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{project: project} = socket.assigns
 
@@ -402,7 +468,7 @@ defmodule OliWeb.Resources.PagesView do
 
   def handle_event(
         "MoveModal.move_item",
-        %{"from_uuid" => from_uuid, "to_uuid" => to_uuid},
+        %{"to_uuid" => to_uuid} = params,
         socket
       ) do
     %{
@@ -414,9 +480,15 @@ defmodule OliWeb.Resources.PagesView do
     %{revision: revision} = node
 
     from_container =
-      case Hierarchy.find_parent_in_hierarchy(hierarchy, from_uuid) do
-        %{revision: from_container} -> from_container
-        _ -> nil
+      case params["from_uuid"] do
+        nil ->
+          nil
+
+        from_uuid ->
+          case Hierarchy.find_parent_in_hierarchy(hierarchy, from_uuid) do
+            %{revision: from_container} -> from_container
+            _ -> nil
+          end
       end
 
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
