@@ -2,11 +2,14 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing
-  alias Oli.Publishing.Publication
-  alias Oli.Resources
-  alias Oli.Resources.{Collaboration.Post, ResourceType, Revision}
-  alias Oli.Repo
+  alias Oli.Publishing.{DeliveryResolver, Publication}
+  alias Oli.Delivery
+  alias Oli.Delivery.{DeliverySetting, Sections}
   alias Oli.Delivery.Sections.{Section, SectionResource}
+  alias Oli.Resources
+  alias Oli.Resources.{ResourceType, Revision}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
+  alias Oli.Repo
 
   import Ecto.Query, warn: false
   import Oli.Utils
@@ -116,6 +119,7 @@ defmodule Oli.Resources.Collaboration do
       iex> search_collaborative_spaces("invalid")
       []
   """
+  @spec search_collaborative_spaces(String.t()) :: list(%CollabSpaceConfig{})
   def search_collaborative_spaces(section_slug) do
     collab_space_type_id = ResourceType.get_id_by_type("collabspace")
 
@@ -155,6 +159,43 @@ defmodule Oli.Resources.Collaboration do
         }
       )
     )
+  end
+
+  @doc """
+  Returns the collaborative space config for a specific page in a section.
+  Prioritize the config present in the "delivery_settings" relation and fallback to
+  the config present in the page revision.
+
+  ## Examples
+
+      iex> get_collab_space_config_for_page("section_slug", "page_slug")
+      {:ok, %CollabSpaceConfig{}}
+      or
+      {:ok, nil}
+
+      iex> get_collab_space_config_for_page("invalid_slug", "invalid_slug")
+      {:error, :not_found}
+  """
+  @spec get_collab_space_config_for_page(String.t(), String.t()) ::
+    {:ok, %CollabSpaceConfig{}} | {:error, atom()}
+  def get_collab_space_config_for_page(section_slug, page_slug) do
+    with %Section{id: section_id} <- Sections.get_section_by(slug: section_slug),
+        %Revision{
+          resource_id: resource_id,
+          collab_space_config: revision_collab_space_config
+        } <- DeliveryResolver.from_revision_slug(section_slug, page_slug) do
+      {:ok,
+        case Delivery.get_delivery_setting_by(%{
+          section_id: section_id,
+          resource_id: resource_id
+        }) do
+          nil -> revision_collab_space_config
+          %DeliverySetting{collab_space_config: ds_collab_space_config} ->
+            ds_collab_space_config
+        end}
+    else
+      _ -> {:error, :not_found}
+    end
   end
 
   # ------------------------------------------------------------
