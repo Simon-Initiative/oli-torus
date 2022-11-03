@@ -187,7 +187,8 @@ defmodule OliWeb.Products.DetailsView do
         image_file_name = "#{entry.uuid}.#{ext(entry)}"
         upload_path = "#{section_path}/#{image_file_name}"
 
-        S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
+        {:ok, uploaded_file} = S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
+        {:ok, uploaded_file}
       end)
 
     with uploaded_path <- Enum.at(uploaded_files, 0),

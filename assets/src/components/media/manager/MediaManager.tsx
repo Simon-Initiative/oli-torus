@@ -500,9 +500,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const { media } = this.props;
     const { selection, showDetails } = this.state;
 
-    const selectedMediaItems = selection.map((guid) =>
-      media.data.get(guid),
-    ) as Immutable.List<MediaItem>;
+    const selectedMediaItems = selection
+      .map((guid) => media.data.get(guid))
+      .filter((item) => !!item) as Immutable.List<MediaItem>;
 
     if (selectedMediaItems.size > 1) {
       return (

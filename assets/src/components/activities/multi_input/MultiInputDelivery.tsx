@@ -5,11 +5,7 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  PartActivityResponse,
-} from 'components/activities/DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { MultiInputSchema, MultiInput } from 'components/activities/multi_input/schema';
 import { Manifest, PartId } from 'components/activities/types';

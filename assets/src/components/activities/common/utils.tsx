@@ -18,7 +18,9 @@ export const toggleAnswerChoiceShuffling = () => {
       ? (model.authoring.transformations = transformations.filter(
           (xform) => xform.operation !== Transform.shuffle,
         ))
-      : model.authoring.transformations.push(makeTransformation('choices', Transform.shuffle));
+      : model.authoring.transformations.push(
+          makeTransformation('choices', Transform.shuffle, true),
+        );
   };
 };
 

@@ -51,7 +51,7 @@ export const defaultModel = (): VlabSchema => {
     authoring: {
       parts: [makePart(Responses.forNumericInput(), [makeHint('')], '1')],
       targeted: [],
-      transformations: [makeTransformation('choices', Transform.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: 'Example question with a fill in the blank',
     },
   };

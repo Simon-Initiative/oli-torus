@@ -30,7 +30,7 @@ export const defaultMCModel: () => MCSchema = () => {
         ),
       ],
       targeted: [],
-      transformations: [makeTransformation('choices', Transform.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: '',
     },
   };
