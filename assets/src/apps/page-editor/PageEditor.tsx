@@ -42,6 +42,7 @@ import { empty, PageUndoable, Undoables, FeatureFlags } from './types';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import '../ResourceEditor.scss';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -523,63 +524,71 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     return (
       <React.StrictMode>
-        <div className="resource-editor row">
-          <div className="col-12">
-            <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+        <ErrorBoundary>
+          <div className="resource-editor row">
+            <div className="col-12">
+              <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
-            <Banner
-              dismissMessage={(msg: any) =>
-                this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
-              }
-              executeAction={(message: any, action: any) => action.execute(message)}
-              messages={this.state.messages}
-            />
-            <TitleBar title={state.title} onTitleEdit={onTitleEdit} editMode={this.state.editMode}>
-              <PersistenceStatus persistence={this.state.persistence} />
+              <Banner
+                dismissMessage={(msg: any) =>
+                  this.setState({
+                    messages: this.state.messages.filter((m) => msg.guid !== m.guid),
+                  })
+                }
+                executeAction={(message: any, action: any) => action.execute(message)}
+                messages={this.state.messages}
+              />
+              <TitleBar
+                title={state.title}
+                onTitleEdit={onTitleEdit}
+                editMode={this.state.editMode}
+              >
+                <PersistenceStatus persistence={this.state.persistence} />
 
-              <PreviewButton />
-            </TitleBar>
-            <Objectives>
-              <ObjectivesSelection
-                editMode={this.state.editMode}
-                projectSlug={this.props.projectSlug}
-                objectives={this.state.allObjectives.toArray()}
-                selected={this.state.objectives.toArray()}
-                onEdit={(objectives) => this.update({ objectives: Immutable.List(objectives) })}
-                onRegisterNewObjective={onRegisterNewObjective}
-              />
-            </Objectives>
+                <PreviewButton />
+              </TitleBar>
+              <Objectives>
+                <ObjectivesSelection
+                  editMode={this.state.editMode}
+                  projectSlug={this.props.projectSlug}
+                  objectives={this.state.allObjectives.toArray()}
+                  selected={this.state.objectives.toArray()}
+                  onEdit={(objectives) => this.update({ objectives: Immutable.List(objectives) })}
+                  onRegisterNewObjective={onRegisterNewObjective}
+                />
+              </Objectives>
 
-            <div className="d-flex flex-row">
-              <ContentOutline
-                editMode={this.state.editMode}
-                content={this.state.content}
-                activityContexts={this.state.activityContexts}
-                editorMap={props.editorMap}
-                projectSlug={projectSlug}
-                resourceSlug={resourceSlug}
-                onEditContent={onEdit}
-              />
-              <Editors
-                {...props}
-                editMode={this.state.editMode}
-                objectives={this.state.allObjectives}
-                allTags={this.state.allTags}
-                childrenObjectives={this.state.childrenObjectives}
-                onRegisterNewObjective={onRegisterNewObjective}
-                onRegisterNewTag={onRegisterNewTag}
-                activityContexts={this.state.activityContexts}
-                onRemove={(key: string) => this.onRemove(key)}
-                onEdit={onEdit}
-                onEditActivity={this.onEditActivity}
-                onPostUndoable={this.onPostUndoable}
-                content={this.state.content}
-                onAddItem={onAddItem}
-                resourceContext={props}
-              />
+              <div className="d-flex flex-row">
+                <ContentOutline
+                  editMode={this.state.editMode}
+                  content={this.state.content}
+                  activityContexts={this.state.activityContexts}
+                  editorMap={props.editorMap}
+                  projectSlug={projectSlug}
+                  resourceSlug={resourceSlug}
+                  onEditContent={onEdit}
+                />
+                <Editors
+                  {...props}
+                  editMode={this.state.editMode}
+                  objectives={this.state.allObjectives}
+                  allTags={this.state.allTags}
+                  childrenObjectives={this.state.childrenObjectives}
+                  onRegisterNewObjective={onRegisterNewObjective}
+                  onRegisterNewTag={onRegisterNewTag}
+                  activityContexts={this.state.activityContexts}
+                  onRemove={(key: string) => this.onRemove(key)}
+                  onEdit={onEdit}
+                  onEditActivity={this.onEditActivity}
+                  onPostUndoable={this.onPostUndoable}
+                  content={this.state.content}
+                  onAddItem={onAddItem}
+                  resourceContext={props}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </ErrorBoundary>
       </React.StrictMode>
     );
   }
