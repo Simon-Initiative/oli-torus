@@ -10,8 +10,8 @@ mix deps.get --only prod
 MIX_ENV=prod SHA=$RELEASE_SHA mix compile
 
 yarn --cwd ./assets
-npm run deploy --prefix ./assets
-npm run deploy-node --prefix ./assets
+NODE_ENV=production npm run deploy --prefix ./assets
+NODE_ENV=production npm run deploy-node --prefix ./assets
 
 MIX_ENV=prod mix phx.digest
 MIX_ENV=prod SHA=$RELEASE_SHA mix release
