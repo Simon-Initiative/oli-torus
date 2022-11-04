@@ -70,7 +70,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
     const filteredCombo: ConditionTypeOperatorCombo[] = conditionTypeOperatorCombos.filter(
       (combo) => combo.type === targetType,
     );
-    filteredCombo[0].operators.forEach((comboOperator) => {
+    filteredCombo[0]?.operators.forEach((comboOperator) => {
       conditionOperatorOptions.forEach((conditionOperator) => {
         if (conditionOperator.key === comboOperator) {
           filteredConditionOperatorOptions.push(conditionOperator);

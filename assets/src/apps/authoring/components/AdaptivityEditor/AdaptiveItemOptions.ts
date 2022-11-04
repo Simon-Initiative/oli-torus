@@ -220,6 +220,10 @@ export const inferTypeFromOperatorAndValue = (operator: string, value: any): Cap
     const supportedTypes = typeCombos.map((combo) => combo.type);
     if (!supportedTypes.includes(valueType)) {
       // in this case then ignore the value type and use the first type combo
+      if (!typeCombos[0]) {
+        console.warn(`Could not infer type for operator ${operator}`);
+        return CapiVariableTypes.STRING;
+      }
       return typeCombos[0].type;
     }
     // TODO: figure out how to tell that a STRING is an ENUM or a MATH_EXPR
