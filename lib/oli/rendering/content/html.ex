@@ -179,7 +179,7 @@ defmodule Oli.Rendering.Content.Html do
   def tc(%Context{} = _context, next, attrs) do
     [click_class, audio_element, play_code, _] =
       case attrs["audioSrc"] do
-        nil -> ["", "", ""]
+        nil -> ["", "", "", ""]
         src -> ["clickable" | audio_player(src)]
       end
 
