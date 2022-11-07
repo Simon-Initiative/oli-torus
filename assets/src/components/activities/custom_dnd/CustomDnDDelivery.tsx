@@ -128,7 +128,7 @@ export const CustomDnDComponent: React.FC = () => {
           onRegisterResetCallback={(listener) => {
             setResetListener(() => listener);
           }}
-          onSubmitPart={onSubmit.bind(this)}
+          onSubmitPart={onSubmit}
           onFocusChange={(partId) => setFocusedPart(partId)}
         />
         <GradedPointsConnected />
