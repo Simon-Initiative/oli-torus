@@ -5,6 +5,7 @@
   "repository": {},
   "license": "MIT",
   "scripts": {
+    "analyze-bundle": "BUNDLE_ANALYZER_ENABLED=true node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js --mode production",
     "deploy": "node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js --mode production",
     "deploy-node": "webpack --mode production --config webpack.config.node.js",
     "watch": "webpack --mode development --watch",
@@ -142,6 +143,7 @@
     "ts-loader": "^9.2.1",
     "type-coverage": "^2.18.0",
     "webpack": "^5.36.0",
+    "webpack-bundle-analyzer": "^4.7.0",
     "webpack-cli": "^4.7.0"
   },
   "typeCoverage": {
