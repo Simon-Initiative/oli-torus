@@ -576,7 +576,8 @@ defmodule Oli.TestHelpers do
   end
 
   def section_with_assessment(_context) do
-    project = insert(:project)
+    author = insert(:author)
+    project = insert(:project, authors: [author])
 
     # Graded page revision
     page_revision =
@@ -653,7 +654,15 @@ defmodule Oli.TestHelpers do
       revision: page_revision
     })
 
-    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true, type: :enrollable)
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
