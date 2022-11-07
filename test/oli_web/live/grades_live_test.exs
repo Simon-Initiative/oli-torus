@@ -1,4 +1,4 @@
-defmodule OliWeb.ObjectivesLiveTest do
+defmodule OliWeb.GradesLiveTest do
   use ExUnit.Case
   use OliWeb.ConnCase
 
