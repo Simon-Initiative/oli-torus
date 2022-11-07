@@ -13,7 +13,7 @@ defmodule OliWeb.Common.CustomLabelsForm do
         {#for {k, v} <- @labels}
           <Field name={k} class="form-group">
             <Label text={k}/>
-            <TextInput class="form-control" opts={placeholder: v}/>
+            <TextInput class="form-control"  opts={placeholder: v, value: v}/>
           </Field>
         {/for}
         <button class="float-left btn btn-md btn-primary mt-2" type="submit">Save</button>

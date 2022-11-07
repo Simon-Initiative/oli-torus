@@ -18,8 +18,7 @@ defmodule OliWeb.Progress.ResourceTitle do
       <div>
         <small class="text-muted">
           {#for {ancestor, index} <- Enum.with_index(@node.ancestors)}
-            {n = %Oli.Resources.Numbering{numbering | level: ancestor.section_resource.numbering_level, index: ancestor.section_resource.numbering_index}}
-            <span>{Oli.Resources.Numbering.container_type_label(n)} {ancestor.section_resource.numbering_index}</span>
+            <span>{Oli.Resources.Numbering.container_type_label(%Oli.Resources.Numbering{numbering | level: ancestor.section_resource.numbering_level, index: ancestor.section_resource.numbering_index})} {ancestor.section_resource.numbering_index}</span>
             {#if index + 1 < length}
               <span> / </span>
             {/if}
