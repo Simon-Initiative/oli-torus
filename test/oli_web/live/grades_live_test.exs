@@ -1,5 +1,5 @@
 defmodule OliWeb.GradesLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -142,6 +142,7 @@ defmodule OliWeb.GradesLiveTest do
       assert has_element?(view, "samp", "Success!")
     end
 
+    @tag capture_log: true
     test "shows error message on failure to obtain line items in the connection to the LMS", %{
       conn: conn,
       section: section
@@ -192,6 +193,7 @@ defmodule OliWeb.GradesLiveTest do
       assert has_element?(view, "div.alert.alert-info", "LMS line items already up to date")
     end
 
+    @tag capture_log: true
     test "shows an error message when failure to obtain line items for update LMS line items", %{
       conn: conn,
       section: section
