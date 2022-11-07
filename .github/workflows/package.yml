@@ -99,8 +99,9 @@ jobs:
 
   deployment:
     runs-on: ubuntu-latest
+    environment: tokamak.oli.cmu.edu
     needs: package
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && secrets.AUTO_DEPLOY_ENABLED == 'TRUE'
 
     environment:
       name: ${{ needs.package.outputs.deploy_host }}
