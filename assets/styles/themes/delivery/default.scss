@@ -265,13 +265,13 @@ html.authoring.dark .content-block .delivery {
   $choice-selected-border-color: $primary;
 
   $feedback-correct-bg: lighten($green, 35%);
-  $feedback-correct-color: $green;
+  $feedback-correct-color: $black;
   $feedback-incorrect-bg: lighten($red, 30%);
-  $feedback-incorrect-color: $red;
+  $feedback-incorrect-color: $black;
   $feedback-explanation-bg: lighten($blue, 45%);
-  $feedback-explanation-color: $blue;
+  $feedback-explanation-color: $black;
   $feedback-error-bg: lighten($orange, 32%);
-  $feedback-error-color: $orange;
+  $feedback-error-color: $black;
 
   // Dialog colors
   $speaker1: #051b11;

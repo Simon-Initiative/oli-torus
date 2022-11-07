@@ -17,15 +17,20 @@ $choice-selected-color: $primary !default;
 $choice-selected-border-color: $primary !default;
 
 $feedback-correct-bg: lighten($green, 45%) !default;
-$feedback-correct-color: $green !default;
+$feedback-correct-graphic-color: $green !default;
+$feedback-correct-color: $black !default;
 $feedback-partially-correct-bg: lighten($yellow, 45%) !default;
-$feedback-partially-correct-color: $yellow !default;
+$feedback-partially-correct-graphic-color: $yellow !default;
+$feedback-partially-correct-color: $black !default;
 $feedback-incorrect-bg: lighten($red, 40%) !default;
-$feedback-incorrect-color: $red !default;
+$feedback-incorrect-graphic-color: $red !default;
+$feedback-incorrect-color: $black !default;
 $feedback-explanation-bg: lighten($blue, 45%) !default;
-$feedback-explanation-color: $blue !default;
+$feedback-explanation-graphic-color: $blue !default;
+$feedback-explanation-color: $black !default;
 $feedback-error-bg: lighten($orange, 42%) !default;
-$feedback-error-color: $orange !default;
+$feedback-error-graphic-color: $orange !default;
+$feedback-error-color: $black !default;
 
 $hints-color: $gray-700 !default;
 $hints-bg: $gray-200 !default;
