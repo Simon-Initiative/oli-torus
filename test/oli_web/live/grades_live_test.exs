@@ -9,6 +9,8 @@ defmodule OliWeb.ObjectivesLiveTest do
 
   alias Oli.Test.MockHTTP
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
 
   defp live_view_grades_route(section_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, section_slug)
@@ -53,15 +55,24 @@ defmodule OliWeb.ObjectivesLiveTest do
     [section: section]
   end
 
+  defp create_section_with_graded_pages(_conn) do
+    {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+      section_with_assessment(%{})
+
+    {:ok, section_1} =
+      section
+      |> Sections.update_section(%{line_items_service_url: "https://lineitems.com"})
+
+    {:ok, section: section_1, page_revision: page_revision}
+  end
+
   describe "user cannot access when is not logged in" do
     setup [:create_section]
 
     test "redirects to new session when accessing manage LMS grades view", %{
       conn: conn,
-      section: section
+      section: %Section{slug: section_slug}
     } do
-      section_slug = section.slug
-
       redirect_path =
         "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fgrades%2Flms&section=#{section_slug}"
 
@@ -71,16 +82,31 @@ defmodule OliWeb.ObjectivesLiveTest do
   end
 
   describe "user cannot access when is logged in as an author but is not a system admin" do
-    setup [:author_conn, :create_section]
+    setup [:author_conn, :section_with_assessment]
 
-    test "redirects to ", %{conn: conn, section: section} do
-      section_slug = section.slug
-      conn = get(conn, live_view_grades_route(section_slug))
+    test "redirects to section enroll page when accessing the manage LMS gradebook view", %{
+      conn: conn,
+      section: section
+    } do
+      redirect_path = "/sections/#{section.slug}/enroll"
 
-      redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fgrades%2Flms&section=#{section_slug}"
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, live_view_grades_route(section.slug))
+    end
+  end
 
-      assert redirected_to(conn, 302) =~ redirect_path
+  describe "user can access when is logged in as an LMS instructor" do
+    setup [:lms_instructor_conn, :section_with_assessment]
+
+    test "successful access as an LMS instructor ", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      enroll_user_to_section(instructor, section, :context_instructor)
+      conn = get(conn, live_view_grades_route(section.slug))
+
+      assert response(conn, 200)
     end
   end
 
@@ -225,13 +251,57 @@ defmodule OliWeb.ObjectivesLiveTest do
     end
   end
 
-  describe "sync grades" do
-    setup [:admin_conn, :section_with_assessment]
+  describe "update LMS line items" do
+    setup [:admin_conn, :create_section_with_graded_pages]
 
-    test "shows the results to synchronization successfully", %{
+    test "shows an info message when LMS line items are updated", %{
       conn: conn,
       section: section
     } do
+      url_line_items = section.line_items_service_url <> "?limit=1000"
+      line_items_service_url = section.line_items_service_url
+
+      expect(MockHTTP, :get, fn ^url_line_items, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
+         }}
+      end)
+
+      expect(MockHTTP, :post, fn ^line_items_service_url, _body, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             "{\"id\": \"1\", \"label\":\"Progress test revision\", \"resourceId\":\"oli-torus-1744\", \"scoreMaximum\":1.0}"
+         }}
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element(
+        "a[phx-click=\"send_line_items\"]",
+        "Update LMS Line Items"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert.alert-info", "LMS up to date")
+    end
+  end
+
+  describe "sync grades" do
+    setup [:admin_conn, :create_section_with_graded_pages]
+
+    test "shows results when no grade updates are pending", %{
+      conn: conn,
+      section: section
+    } do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 
       view
@@ -242,6 +312,39 @@ defmodule OliWeb.ObjectivesLiveTest do
       |> render_click()
 
       assert has_element?(view, "p", "Pending grade updates: 0")
+      assert has_element?(view, "p", "Succeeded: 0")
+      assert has_element?(view, "p", "Failed: 0")
+    end
+
+    test "shows the results when there are pending grade updates", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
+      resource_access =
+        insert(:resource_access,
+          user: user,
+          resource: page_revision.resource,
+          section: section,
+          score: 100,
+          out_of: 120
+        )
+
+      insert(:resource_attempt, resource_access: resource_access)
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      view
+      |> element(
+        "a[phx-click=\"send_grades\"]",
+        "Synchronize Grades"
+      )
+      |> render_click()
+
+      assert has_element?(view, "p", "Pending grade updates: 1")
       assert has_element?(view, "p", "Succeeded: 0")
       assert has_element?(view, "p", "Failed: 0")
     end

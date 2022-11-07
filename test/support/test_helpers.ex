@@ -583,7 +583,8 @@ defmodule Oli.TestHelpers do
       insert(:revision,
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Progress test revision",
-        graded: true
+        graded: true,
+        content: %{"advancedDelivery" => true}
       )
 
     # Associate nested graded page to the project
