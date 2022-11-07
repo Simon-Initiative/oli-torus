@@ -5,28 +5,17 @@ defmodule Oli.Features do
   alias Oli.Features.{FeatureState, Feature}
 
   @features [
-    %Feature{id: 1, label: "adaptivity", description: "Adaptive lesson authoring"},
-    %Feature{id: 2, label: "equity", description: "Equity qa check"}
+    %Feature{label: "adaptivity", description: "Adaptive lesson authoring"},
+    %Feature{label: "equity", description: "Equity qa check"}
   ]
-
-  @by_id Enum.reduce(@features, %{}, fn f, m -> Map.put(m, f.id, f) end)
-  @by_label Enum.reduce(@features, %{}, fn f, m -> Map.put(m, f.label, f) end)
 
   def features, do: @features
 
-  # By defining these functions like this we get a level of compile time
-  # safety since a client could not do something like call get_by_label("something wrong")
-  def get_by_id(1), do: Map.get(@by_id, 1)
-  def get_by_id(2), do: Map.get(@by_id, 2)
+  def enabled?("adaptivity"), do: get_state("adaptivity") == :enabled
+  def enabled?("equity"), do: get_state("equity") == :enabled
 
-  def get_by_label("adaptivity"), do: Map.get(@by_label, "adaptivity")
-  def get_by_label("equity"), do: Map.get(@by_label, "equity")
-
-  def enabled?("adaptivity"), do: get_state(get_by_label("adaptivity").id) == :enabled
-  def enabled?("equity"), do: get_state(get_by_label("equity").id) == :enabled
-
-  defp get_state(id) do
-    Repo.get!(FeatureState, id).state
+  defp get_state(label) do
+    Repo.get!(FeatureState, label).state
   end
 
   @doc """
@@ -36,46 +25,41 @@ defmodule Oli.Features do
       [{%Feature{}, state}, ...]
   """
   def list_features_and_states do
-    query = from(s in FeatureState, select: s.state, order_by: :id)
+    query = from(s in FeatureState, select: s.state, order_by: :label)
 
     Enum.zip(@features, Repo.all(query))
   end
 
-  def change_state(label, state),
-    do: update_feature_state(get_by_label(label).id, state)
+  def change_state(label, state) do
+    Repo.get!(FeatureState, label)
+    |> FeatureState.changeset(%{state: state})
+    |> Repo.update()
+  end
 
   def bootstrap_feature_states() do
     Repo.transaction(fn ->
-      # delete any feature flags that are no longer defined
-      Repo.all(FeatureState)
-      |> Enum.each(fn %FeatureState{id: id} ->
-        if id not in @features do
-          from(f in FeatureState, where: f.id == ^id)
-          |> Repo.delete_all()
-        end
-      end)
+      # capture existing states
+      states_by_label =
+        Repo.all(FeatureState)
+        |> Enum.reduce(%{}, fn %FeatureState{label: label, state: state}, acc ->
+          Map.put_new(acc, label, state)
+        end)
 
-      Enum.map(@features, fn %Feature{id: id} ->
-        case Repo.get(FeatureState, id) do
-          nil -> create_feature_state(%{id: id, state: :disabled})
-          e -> e
-        end
-      end)
+      # delete all existing features states
+      from(f in FeatureState)
+      |> Repo.delete_all()
+
+      # create new feature states, merging with existing states
+      feature_states =
+        @features
+        |> Enum.map(fn %Feature{label: label} ->
+          case Map.get(states_by_label, label) do
+            nil -> %{label: label, state: :disabled}
+            state -> %{label: label, state: state}
+          end
+        end)
+
+      Repo.insert_all(FeatureState, feature_states)
     end)
-  end
-
-  @doc """
-  Creates a feature state.
-  """
-  def create_feature_state(attrs \\ %{}) do
-    %FeatureState{}
-    |> FeatureState.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  defp update_feature_state(id, state) do
-    Repo.get!(FeatureState, id)
-    |> FeatureState.changeset(%{state: state})
-    |> Repo.update()
   end
 end
