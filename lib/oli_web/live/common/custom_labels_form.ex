@@ -3,7 +3,7 @@ defmodule OliWeb.Common.CustomLabelsForm do
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, TextInput, Label}
 
-  prop labels, :map, default: %{unit: "unit", module: "module", section: "section"}
+  prop labels, :map, default: %{unit: "Unit", module: "Module", section: "Section"}
   prop(save, :event, required: true)
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()

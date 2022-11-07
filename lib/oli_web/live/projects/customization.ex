@@ -36,7 +36,7 @@ defmodule OliWeb.Projects.CustomizationLive do
   def handle_event("save_labels", %{"view" => params}, socket) do
     socket = clear_flash(socket)
 
-    params = Map.merge(%{"unit" => "unit", "module" => "module", "section" => "section"}, params, fn _k, v1, v2 ->
+    params = Map.merge(%{"unit" => "Unit", "module" => "Module", "section" => "Section"}, params, fn _k, v1, v2 ->
       if v2 == nil || String.length(String.trim v2) == 0 do v1 else v2 end
     end)
 
