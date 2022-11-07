@@ -8,8 +8,8 @@ defmodule Oli.Lti.AccessTokenTest do
   @behaviour AccessTokenAdapter
 
   @doc """
-    Mock implementation of the refresh adapter,
-    the refresh operation is ran synchronously to simplify testing
+    Mock implementation of the access token adapter,
+    The operation returns a value for the access token to simplify testing.
   """
   @impl AccessTokenAdapter
   @spec fetch_access_token(%Registration{}, list(), String.t()) :: access_token
