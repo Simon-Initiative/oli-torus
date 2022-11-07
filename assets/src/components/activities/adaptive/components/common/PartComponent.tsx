@@ -259,6 +259,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   useEffect(() => {
     const wcEventHandler = async (e: any) => {
+      if (!e.detail) {
+        return;
+      }
       const { payload, callback } = e.detail;
       if (payload.id !== props.id) {
         // because we need to listen to document we'll get all part component events
