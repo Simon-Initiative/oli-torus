@@ -389,7 +389,7 @@ const RightMenu: React.FC<any> = () => {
         currentPartSelection,
       );
     },
-    [currentActivity, currentPartInstance, currentPartSelection],
+    [currentActivity, currentPartInstance, currentPartSelection, debouncePartPropertyChanges],
   );
 
   const handleEditComponentJson = (newJson: any) => {
