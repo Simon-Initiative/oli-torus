@@ -99,12 +99,9 @@ jobs:
 
   deployment:
     runs-on: ubuntu-latest
+    environment: tokamak.oli.cmu.edu
     needs: package
-    if: github.ref == 'refs/heads/master'
-
-    environment:
-      name: ${{ needs.package.outputs.deploy_host }}
-      url: ${{ needs.package.outputs.deploy_host }}
+    if: github.ref == 'refs/heads/master' && secrets.AUTO_DEPLOY_ENABLED == 'TRUE'
 
     steps:
       - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.package.outputs.deploy_host }}"
