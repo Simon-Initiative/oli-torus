@@ -110,7 +110,9 @@ jobs:
   deployment:
     runs-on: ubuntu-latest
     environment: tokamak.oli.cmu.edu
-    needs: package
+    needs:
+      - package
+      - check-auto-deploy
     if: github.ref == 'refs/heads/master' && needs.check-auto-deploy.outputs.enabled == 'true'
 
     steps:
