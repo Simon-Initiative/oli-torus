@@ -3,7 +3,7 @@ import { Button } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { selectProjectSlug } from '../../../store/app/slice';
-import { ImagePickerModal } from '../../Modal/ImagePickerModal';
+import { MediaPickerModal } from '../../Modal/MediaPickerModal';
 
 interface Props {
   id: string;
@@ -50,7 +50,7 @@ export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange,
       </Button>
 
       {pickerOpen && (
-        <ImagePickerModal
+        <MediaPickerModal
           onUrlChanged={onChange}
           initialSelection={value}
           projectSlug={projectSlug}
