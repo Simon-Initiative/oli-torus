@@ -100,6 +100,7 @@ jobs:
   check-auto-deploy:
     name: Check AUTO_DEPLOY_ENABLED config
     runs-on: ubuntu-latest
+    environment: tokamak.oli.cmu.edu
     outputs:
       enabled: ${{ steps.check_auto_deploy_enabled.outputs.enabled }}
     steps:
