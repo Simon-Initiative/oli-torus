@@ -27,7 +27,6 @@ jobs:
           echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
           echo "deploy_host=$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
           echo "workspace=$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
-          echo "AUTO_DEPLOY_ENABLED=${{ secrets.AUTO_DEPLOY_ENABLED }}" >> $GITHUB_OUTPUT
 
       - name: 📦 Package
         uses: ./.github/actions/torus-builder
@@ -98,11 +97,21 @@ jobs:
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: doc # The folder the action should deploy.
 
+  check-auto-deploy:
+    name: Check AUTO_DEPLOY_ENABLED config
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check_auto_deploy_enabled.outputs.enabled }}
+    steps:
+      - name: Check whether AUTO_DEPLOY_ENABLED is set to TRUE
+        id: check_auto_deploy_enabled
+        run: echo "enabled=$(if [ "${{ secrets.AUTO_DEPLOY_ENABLED }}" == "TRUE" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
+
   deployment:
     runs-on: ubuntu-latest
     environment: tokamak.oli.cmu.edu
     needs: package
-    if: github.ref == 'refs/heads/master' && needs.package.outputs.AUTO_DEPLOY_ENABLED == 'TRUE'
+    if: github.ref == 'refs/heads/master' && needs.check-auto-deploy.outputs.enabled == 'true'
 
     steps:
       - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.package.outputs.deploy_host }}"
