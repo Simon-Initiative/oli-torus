@@ -69,6 +69,7 @@ export const TorusAudioBrowser: React.FC<Props> = ({ id, label, value, onChange,
           onOK={commitSelection}
           onCancel={closePicker}
           mimeFilter={MIMETYPE_FILTERS.AUDIO}
+          title="Select Audio File"
         />
       )}
     </span>
