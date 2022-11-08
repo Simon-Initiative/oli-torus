@@ -575,7 +575,7 @@ defmodule Oli.TestHelpers do
     %{publication: publication, project: project, unit_one_revision: unit_one_revision}
   end
 
-  def section_with_assessment(_context) do
+  def section_with_assessment(_context, deployment \\ nil) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -637,31 +637,44 @@ defmodule Oli.TestHelpers do
     insert(:published_resource, %{
       publication: publication,
       resource: container_resource,
-      revision: container_revision
+      revision: container_revision,
+      author: author
     })
 
     # Publish nested container resource
     insert(:published_resource, %{
       publication: publication,
       resource: unit_one_resource,
-      revision: unit_one_revision
+      revision: unit_one_revision,
+      author: author
     })
 
     # Publish nested page resource
     insert(:published_resource, %{
       publication: publication,
       resource: page_revision.resource,
-      revision: page_revision
+      revision: page_revision,
+      author: author
     })
 
     section =
-      insert(:section,
-        base_project: project,
-        context_id: UUID.uuid4(),
-        open_and_free: true,
-        registration_open: true,
-        type: :enrollable
-      )
+      if deployment do
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          lti_1p3_deployment: deployment,
+          registration_open: true,
+          type: :enrollable
+        )
+      else
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+      end
 
     {:ok, section} = Sections.create_section_resources(section, publication)
 
