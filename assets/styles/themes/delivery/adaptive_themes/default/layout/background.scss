@@ -1,0 +1,16 @@
+.background {
+  height: auto;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: -1000;
+  background-repeat: no-repeat;
+  background-position: top center;
+  transform: translateZ(0);
+}
+
+.background-scaled {
+  background-size: 100% 100%;
+}
