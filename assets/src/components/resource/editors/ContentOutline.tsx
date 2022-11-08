@@ -152,7 +152,9 @@ export const ContentOutline = ({
           />
         );
       }),
-    isReorderMode && <DropTarget id="last" index={[content.model.size + 1]} onDrop={onDropLast} />,
+    isReorderMode && (
+      <DropTarget key="last" id="last" index={[content.model.size + 1]} onDrop={onDropLast} />
+    ),
   ];
 
   return (
@@ -403,7 +405,9 @@ const ResourceGroupItem = ({
 }: ResourceGroupItemProps) => {
   return (
     <>
-      {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+      {isReorderMode && canDropHere && (
+        <DropTarget key={`drop-target-${id}`} id={id} index={dropIndex} onDrop={onDrop} />
+      )}
 
       <div className={classNames(styles.group, className)}>
         {children}
@@ -442,6 +446,7 @@ const ResourceGroupItem = ({
               })}
             {isReorderMode && canDrop(activeDragId, [...parents, contentItem], content) && (
               <DropTarget
+                key="last"
                 id="last"
                 index={[...dropIndex, contentItem.children.size]}
                 onDrop={onDropLast}

@@ -30,6 +30,18 @@ export type ResourceContent =
   | AlternativeContent
   | Break;
 
+export const isResourceContent = (content: any) =>
+  [
+    'content',
+    'activity-reference',
+    'selection',
+    'group',
+    'survey',
+    'alternatives',
+    'alternative',
+    'break',
+  ].some((t) => t == content.type);
+
 // Items that can be present as elements in a resource content array and contain
 // other resource content as children
 export type ResourceGroup =
@@ -38,20 +50,8 @@ export type ResourceGroup =
   | AlternativesContent
   | AlternativeContent;
 
-export const isResourceGroup = (content: ResourceContent) => {
-  switch (content.type) {
-    case 'group':
-      return true;
-    case 'survey':
-      return true;
-    case 'alternatives':
-      return true;
-    case 'alternative':
-      return true;
-    default:
-      return false;
-  }
-};
+export const isResourceGroup = (content: ResourceContent) =>
+  ['group', 'survey', 'alternatives', 'alternative'].some((t) => t == content.type);
 
 export const getResourceContentName = (content: ResourceContent): string => {
   switch (content.type) {
@@ -74,27 +74,52 @@ export const getResourceContentName = (content: ResourceContent): string => {
   }
 };
 
-export const canInsert = (content: ResourceContent, parents: ResourceContent[]): boolean => {
+export const allElements = [
+  'content',
+  'activity-reference',
+  'group',
+  'survey',
+  'alternatives',
+  'break',
+  'selection',
+];
+
+export const allowedContentItems = (content: ResourceContent): string[] => {
   switch (content.type) {
-    case 'activity-reference':
-      return true;
-    case 'content':
-      return true;
+    case 'group':
+      return allElements;
+    case 'survey':
+      return allElements;
+    case 'alternatives':
+      return ['alternative'];
+    case 'alternative':
+      return allElements;
+    default:
+      return [];
+  }
+};
+
+export const canInsert = (content: ResourceContent, parents: ResourceContent[]): boolean => {
+  if (parents.length === 0) {
+    // top level root
+    return allElements.some((t) => t === content.type);
+  }
+
+  const parent = parents[parents.length - 1];
+  switch (content.type) {
     case 'group':
       return (
+        allowedContentItems(parent).some((t) => t === content.type) &&
         parents.every((p) => !isGroupWithPurpose(p)) &&
         !content.children.some((c) => groupOrDescendantHasPurpose(c))
       );
     case 'survey':
-      return parents.every((p) => !isSurvey(p));
-    case 'alternatives':
-      return true;
-    case 'alternative':
-      return false;
-    case 'break':
-      return true;
-    case 'selection':
-      return true;
+      return (
+        allowedContentItems(parent).some((t) => t === content.type) &&
+        parents.every((p) => !isSurvey(p))
+      );
+    default:
+      return allowedContentItems(parent).some((t) => t === content.type);
   }
 };
 

@@ -1,4 +1,4 @@
-import { ActivityReference, StructuredContent } from 'data/content/resource';
+import { ActivityReference, ResourceContent } from 'data/content/resource';
 import { ProjectSlug } from 'data/types';
 import { ActivityEditContext } from 'data/content/activity';
 
@@ -16,4 +16,4 @@ export interface UnknownPayload {
   data: any;
 }
 
-export type DragPayload = StructuredContent | ActivityPayload | UnknownPayload;
+export type DragPayload = ResourceContent | ActivityPayload | UnknownPayload;

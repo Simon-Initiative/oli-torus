@@ -332,7 +332,7 @@ function toPersistence(items: Immutable.List<ResourceContent>): any[] {
   }, []);
 }
 
-function fromPersistence(items: any[]): Immutable.List<ResourceContent> {
+export function fromPersistence(items: any[]): Immutable.List<ResourceContent> {
   return items.reduce((acc, val) => {
     const children = isResourceGroup(val) ? fromPersistence(val.children) : val.children;
 

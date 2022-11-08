@@ -63,10 +63,13 @@ export const OutlineItem = ({
 
   return (
     <>
-      {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+      {isReorderMode && canDropHere && (
+        <DropTarget key={`drop-target-${id}`} id={id} index={dropIndex} onDrop={onDrop} />
+      )}
 
       <div
         ref={ref}
+        key={`content-item-${id}`}
         id={`content-item-${id}`}
         className={classNames(styles.item, className)}
         onClick={maybeScrollToEditor}
@@ -121,21 +124,40 @@ export const OutlineGroup = ({
   onDrop,
   onKeyDown,
 }: PropsWithChildren<OutlineGroupProps>) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // react prop onDragEnd doesn't seem to work correctly so here we
+  // manually set the dragstart handler to listen for dragend event
+  // so we can properly trigger the necessary callback
+  const dragStartHandler: React.DragEventHandler<HTMLDivElement> = (e) => {
+    const dragEndListener = () => {
+      ref.current?.removeEventListener('dragend', dragEndListener);
+      onDragEnd();
+    };
+
+    ref.current?.addEventListener('dragend', dragEndListener);
+    onDragStart(e, id);
+  };
+
   const maybeScrollToEditor: React.MouseEventHandler<HTMLDivElement> = (e) =>
     // only scroll to the resource editor if this event was not a expand toggle event
     !(e as any).isExpandToggleEvent ? scrollToResourceEditor(id) : undefined;
 
   return (
     <>
-      {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+      {isReorderMode && canDropHere && (
+        <DropTarget key={`drop-target-${id}`} id={id} index={dropIndex} onDrop={onDrop} />
+      )}
 
       <div
+        ref={ref}
+        key={`content-item-${id}`}
         className={classNames(styles.groupContainer, !expanded && 'mb-1')}
         onClick={maybeScrollToEditor}
         role="button"
         draggable={editMode}
         tabIndex={0}
-        onDragStart={(e) => onDragStart(e, id)}
+        onDragStart={dragStartHandler}
         onDragEnd={onDragEnd}
         onKeyDown={onKeyDown(id)}
         onFocus={(_e) => onFocus(id)}

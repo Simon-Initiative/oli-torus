@@ -2,7 +2,7 @@ import { ActivityReference, ResourceContent } from 'data/content/resource';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import * as Immutable from 'immutable';
-import { DragPayload, ActivityPayload, UnknownPayload } from './interfaces';
+import { DragPayload, ActivityPayload } from './interfaces';
 
 export const getFriendlyName = (
   item: ActivityReference,
@@ -18,9 +18,6 @@ export const getDragPayload = (
   activities: Immutable.Map<string, ActivityEditContext>,
   projectSlug: string,
 ): DragPayload => {
-  if (contentItem.type === 'content') {
-    return contentItem;
-  }
   if (activities.has((contentItem as ActivityReference).activitySlug)) {
     const activity = activities.get((contentItem as ActivityReference).activitySlug);
     return {
@@ -31,11 +28,8 @@ export const getDragPayload = (
       project: projectSlug,
     } as ActivityPayload;
   }
-  return {
-    type: 'UnknownPayload',
-    data: contentItem,
-    id: contentItem.id,
-  } as UnknownPayload;
+
+  return contentItem;
 };
 
 export const scrollToResourceEditor = (contentId: string) => {
