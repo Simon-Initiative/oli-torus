@@ -37,6 +37,19 @@ defmodule OliWeb.CollaboratorControllerTest do
       assert assert get_flash(conn, :info) == "Collaborator invitations sent!"
     end
 
+    test "allows capital letters in emails", %{conn: conn, project: project} do
+      expect_recaptcha_http_post()
+
+      conn =
+        post(conn, Routes.collaborator_path(conn, :create, project),
+          collaborator_emails: "Invite@Example.COM",
+          "g-recaptcha-response": "any"
+        )
+
+      assert html_response(conn, 302) =~ "/project/"
+      assert assert get_flash(conn, :info) == "Collaborator invitations sent!"
+    end
+
     test "some emails succeed, some fail", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 

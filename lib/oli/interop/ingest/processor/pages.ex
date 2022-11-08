@@ -12,6 +12,16 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     )
   end
 
+  defp get_explanation_strategy(graded)
+
+  defp get_explanation_strategy(true) do
+    %Oli.Resources.ExplanationStrategy{type: :after_max_resource_attempts_exhausted}
+  end
+
+  defp get_explanation_strategy(false) do
+    %Oli.Resources.ExplanationStrategy{type: :after_set_num_attempts, set_num_attempts: 2}
+  end
+
   defp mapper(state, resource_id, resource) do
     legacy_id = Map.get(resource, "legacyId", nil)
     legacy_path = Map.get(resource, "legacyPath", nil)
@@ -54,6 +64,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       resource_type_id: {:placeholder, :resource_type_id},
       activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+      explanation_strategy: get_explanation_strategy(graded),
       graded: graded,
       max_attempts:
         if graded do
