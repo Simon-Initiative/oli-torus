@@ -27,6 +27,7 @@ jobs:
           echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
           echo "deploy_host=$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
           echo "workspace=$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
+          echo "AUTO_DEPLOY_ENABLED=${{ secrets.AUTO_DEPLOY_ENABLED }}" >> $GITHUB_OUTPUT
 
       - name: 📦 Package
         uses: ./.github/actions/torus-builder
@@ -101,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: tokamak.oli.cmu.edu
     needs: package
-    if: github.ref == 'refs/heads/master' && secrets.AUTO_DEPLOY_ENABLED == 'TRUE'
+    if: github.ref == 'refs/heads/master' && needs.package.outputs.AUTO_DEPLOY_ENABLED == 'TRUE'
 
     steps:
       - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.package.outputs.deploy_host }}"
