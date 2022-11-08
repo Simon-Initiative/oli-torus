@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { MediaItem } from 'types/media';
 import { classNames } from 'utils/classNames';
 import { ErrorBoundary } from '../common/ErrorBoundary';
@@ -21,7 +21,17 @@ export const UrlOrUpload = (props: Props) => {
   const [source, setSource] = useState<Source>('library');
   const [url, setUrl] = useState(props.initialSelectionPaths?.[0] ?? '');
 
-  const whenActive = (s: Source, c: string) => s === source && c;
+  const whenActive = useCallback((s: Source, c: string) => s === source && c, [source]);
+
+  const onNotFound = useCallback(() => {
+    /* If the existing url is not found, it was probably entered in as a string to an external asset.
+       In those cases, we should present the url interface ininitially instead of the media library.
+       BUT... if the url is set to "/images/placeholder-image.svg" don't do this since it's just
+       the default placeholder. */
+    if (url && url !== '/images/placeholder-image.svg') {
+      setSource('url');
+    }
+  }, [url]);
 
   return (
     <>
@@ -48,6 +58,7 @@ export const UrlOrUpload = (props: Props) => {
         >
           <ErrorBoundary errorMessage={<MediaManagerError />}>
             <MediaManager
+              onNotFound={onNotFound}
               projectSlug={props.projectSlug}
               mimeFilter={props.mimeFilter}
               selectionType={SELECTION_TYPES.SINGLE}
