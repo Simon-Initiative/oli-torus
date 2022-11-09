@@ -175,3 +175,24 @@
   left: 3px;
   display: inline-block;
 }
+
+.truncate-left {
+  /* Gives us ellipses at the beginning of a string so we can see the end of it.
+     ex: a long string like http://www.google.com/this/is/a/long/string/that/should/be/truncated
+     Will result in something like ".../string/that/should/be/truncated"
+  */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 200px;
+
+  direction: rtl;
+  text-align: left;
+  margin-bottom: 3px;
+}
+
+.image-preview {
+  max-width: 200px;
+  max-height: 200px;
+  overflow: hidden;
+}

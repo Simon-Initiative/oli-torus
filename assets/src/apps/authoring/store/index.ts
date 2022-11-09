@@ -6,7 +6,12 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['history/createUndoAction', 'history/undo', 'history/redo'],
+        ignoredActions: [
+          'history/createUndoAction',
+          'history/undo',
+          'history/redo',
+          'media/RECEIVE_MEDIA_PAGE',
+        ],
         ignoreState: true,
       },
     }),

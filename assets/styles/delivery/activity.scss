@@ -29,6 +29,10 @@
       background-color: $feedback-correct-bg;
       color: $feedback-correct-color;
 
+      .graphic {
+        color: $feedback-correct-graphic-color;
+      }
+
       .result {
         border-color: $feedback-correct-color;
         color: $feedback-correct-color;
@@ -42,6 +46,10 @@
     &.partially-correct {
       background-color: $feedback-partially-correct-bg;
       color: $feedback-partially-correct-color;
+
+      .graphic {
+        color: $feedback-partially-correct-graphic-color;
+      }
 
       .result {
         border-color: $feedback-partially-correct-color;
@@ -57,6 +65,10 @@
       background-color: $feedback-incorrect-bg;
       color: $feedback-incorrect-color;
 
+      .graphic {
+        color: $feedback-incorrect-graphic-color;
+      }
+
       .result {
         border-color: $feedback-incorrect-color;
         color: $feedback-incorrect-color;
@@ -70,6 +82,10 @@
     &.explanation {
       background-color: $feedback-explanation-bg;
       color: $feedback-explanation-color;
+
+      .graphic {
+        color: $feedback-explanation-graphic-color;
+      }
     }
 
     &.error {

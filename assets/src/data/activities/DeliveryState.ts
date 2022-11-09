@@ -170,13 +170,15 @@ export const activityDeliverySlice = createSlice({
       }
     },
     partResetRecieved(state, action: PayloadAction<PartActivityResponse>) {
-      const parts = state.attemptState.parts.filter(
-        (p) => p.partId !== action.payload.attemptState.partId,
-      );
-
+      const parts = state.attemptState.parts.map((p: WritableDraft<PartState>) => {
+        if (action.payload.attemptState.partId === p.partId) {
+          return action.payload.attemptState;
+        }
+        return p;
+      });
       state.attemptState = {
         ...state.attemptState,
-        parts: [...parts, action.payload.attemptState],
+        parts,
       };
     },
     initializePartState(state, action: PayloadAction<ActivityState>) {
