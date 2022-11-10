@@ -123,7 +123,7 @@ defmodule Oli.Resources.CollaborationTest do
     {:ok, _root_section_resource} = Sections.create_section_resources(section, publication)
 
     first_post = insert(:post, section: section, resource: page_resource_cs, user: user)
-    second_post = insert(:post, status: :submitted, content: "Other post", section: section, resource: page_resource_cs, user: user)
+    second_post = insert(:post, status: :submitted, content: %{message: "Other post"}, section: section, resource: page_resource_cs, user: user)
 
     {:ok,
       %{
@@ -381,7 +381,7 @@ defmodule Oli.Resources.CollaborationTest do
       returned_post = Collaboration.get_post_by(%{id: post.id})
 
       assert post.id == returned_post.id
-      assert post.content == returned_post.content
+      assert post.content.message == returned_post.content["message"]
     end
 
     test "get_post_by/1 returns nil if the post does not exist" do

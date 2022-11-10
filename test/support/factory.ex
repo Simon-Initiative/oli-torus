@@ -325,7 +325,7 @@ defmodule Oli.Factory do
 
   def post_factory() do
     %Post{
-      content: "Example Post",
+      content: %{message: "Example Post"},
       status: :approved,
       user: anonymous_build(:user),
       section: anonymous_build(:section),

@@ -3,7 +3,7 @@ defmodule Oli.Repo.Migrations.AddPostsTable do
 
   def change do
     create table(:posts) do
-      add :content, :string, null: false
+      add :content, :map
       add :status, :string, default: "approved", null: false
 
       add :user_id, references(:users)

@@ -4,7 +4,7 @@ defmodule Oli.Resources.Collaboration.Post do
   import Ecto.Changeset
 
   schema "posts" do
-    field :content, :string, null: false
+    field :content, :map, default: %{}
     field :status, Ecto.Enum, values: [:submitted, :approved, :deleted, :archived], default: :approved
 
     belongs_to :user, Oli.Accounts.User
