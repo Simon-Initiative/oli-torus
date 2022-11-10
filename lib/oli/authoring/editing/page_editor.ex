@@ -203,7 +203,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
            construct_parent_references(objectives) |> trap_nil(),
-         {:ok, tags} <- Oli.Authoring.Editing.TagEditor.list(project_slug, author),
+         {:ok, tags} <-
+           Oli.Authoring.Editing.ResourceEditor.list(
+             project_slug,
+             author,
+             Oli.Resources.ResourceType.get_id_by_type("tag")
+           ),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
@@ -264,6 +269,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
            mode: mode,
            activity_map: activities,
            resource_summary_fn: &Resources.resource_summary(&1, project_slug, AuthoringResolver),
+           alternatives_groups_fn: &Resources.alternatives_groups(&1, AuthoringResolver),
+           alternatives_selector_fn: &Resources.Alternatives.select/2,
+           extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
            project_slug: project_slug,
            bib_app_params: Keyword.get(options, :bib_app_params, []),
            learning_language: attributes.learning_language
@@ -550,6 +558,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
       case Map.get(parents, revision.resource_id) do
         nil ->
           concatenate_to_revision_parent_result(revision, nil, result)
+
         parents ->
           Enum.reduce(parents, result, fn parent_id, result ->
             concatenate_to_revision_parent_result(revision, parent_id, result)
@@ -559,11 +568,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   defp concatenate_to_revision_parent_result(revision, parent_id, result) do
-    [%{
-      id: revision.resource_id,
-      title: revision.title,
-      parentId: parent_id
-    } | result]
+    [
+      %{
+        id: revision.resource_id,
+        title: revision.title,
+        parentId: parent_id
+      }
+      | result
+    ]
   end
 
   # Retrieve the latest (current) revision for a resource given the

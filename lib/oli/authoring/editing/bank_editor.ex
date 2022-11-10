@@ -26,7 +26,12 @@ defmodule Oli.Authoring.Editing.BankEditor do
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
            PageEditor.construct_parent_references(objectives) |> trap_nil(),
-         {:ok, tags} <- Oli.Authoring.Editing.TagEditor.list(project_slug, author),
+         {:ok, tags} <-
+           Oli.Authoring.Editing.ResourceEditor.list(
+             project_slug,
+             author,
+             Oli.Resources.ResourceType.get_id_by_type("tag")
+           ),
          {:ok, %Result{totalCount: totalCount}} <-
            Query.execute(
              %Logic{conditions: nil},

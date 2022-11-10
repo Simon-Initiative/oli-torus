@@ -185,7 +185,177 @@ defmodule Oli.PublishingTest do
 
       results = Publishing.find_objective_in_selections(one.resource.id, publication.id)
       assert length(results) == 2
-      assert length(Publishing.find_objective_in_selections(two.resource.id, publication.id)) == 0
+      assert Enum.empty?(Publishing.find_objective_in_selections(two.resource.id, publication.id))
+
+      assert Enum.at(results, 0).title != Enum.at(results, 1).title
+
+      assert Enum.at(results, 0).title == "resource 1" or
+               Enum.at(results, 1).title == "resource 1"
+
+      assert Enum.at(results, 0).title == "resource 2" or
+               Enum.at(results, 1).title == "resource 2"
+    end
+
+    test "find_alternatives_group_references_in_pages/2 finds the group references", %{
+      author: author,
+      project: project,
+      publication: publication
+    } do
+      # create alternatives group
+      {:ok, %{revision: alt_group_revision_one}} =
+        Course.create_and_attach_resource(project, %{
+          objectives: %{},
+          children: [],
+          content: %{
+            "options" => [
+              %{"id" => "abc123", title: "alt 1 option 1"},
+              %{"id" => "abc124", title: "alt 1 option 2"}
+            ]
+          },
+          title: "alternatives group 1",
+          resource_type_id: ResourceType.get_id_by_type("alternatives"),
+          author_id: author.id
+        })
+
+      Publishing.upsert_published_resource(publication, alt_group_revision_one)
+
+      # create alternatives group
+      {:ok, %{revision: alt_group_revision_two}} =
+        Course.create_and_attach_resource(project, %{
+          objectives: %{},
+          children: [],
+          content: %{
+            "options" => [
+              %{"id" => "abc125", title: "alt 2 option 1"},
+              %{"id" => "abc126", title: "alt 2 option 2"}
+            ]
+          },
+          title: "alternatives group 2",
+          resource_type_id: ResourceType.get_id_by_type("alternatives"),
+          author_id: author.id
+        })
+
+      Publishing.upsert_published_resource(publication, alt_group_revision_two)
+
+      content = %{
+        "model" => [
+          %{
+            "children" => [
+              %{
+                "children" => [
+                  %{
+                    "children" => [
+                      %{
+                        "children" => [
+                          %{
+                            "text" => ""
+                          }
+                        ],
+                        "id" => "525920519",
+                        "type" => "p"
+                      }
+                    ],
+                    "id" => "2356581862",
+                    "type" => "content"
+                  }
+                ],
+                "id" => "1166618130",
+                "type" => "alternative",
+                "value" => "yPai54qGVbuRjEbQZEbEVN"
+              },
+              %{
+                "children" => [
+                  %{
+                    "children" => [
+                      %{
+                        "children" => [
+                          %{
+                            "text" => ""
+                          }
+                        ],
+                        "id" => "2607062372",
+                        "type" => "p"
+                      }
+                    ],
+                    "id" => "109635996",
+                    "type" => "content"
+                  }
+                ],
+                "id" => "2441342374",
+                "type" => "alternative",
+                "value" => "irVPEkH8RWCNtHdWwAaSBZ"
+              },
+              %{
+                "children" => [
+                  %{
+                    "children" => [
+                      %{
+                        "children" => [
+                          %{
+                            "text" => ""
+                          }
+                        ],
+                        "id" => "1761794908",
+                        "type" => "p"
+                      }
+                    ],
+                    "id" => "1049547669",
+                    "type" => "content"
+                  }
+                ],
+                "id" => "917336567",
+                "type" => "alternative",
+                "value" => "LrKibaPUfZdcfi5yi9YLc8"
+              }
+            ],
+            "alternatives_id" => alt_group_revision_one.resource_id,
+            "id" => "3353873708",
+            "strategy" => "user_section_preference",
+            "type" => "alternatives"
+          }
+        ]
+      }
+
+      # Create two new pages, both that reference alternative group one
+
+      {:ok, %{revision: revision}} =
+        Course.create_and_attach_resource(project, %{
+          objectives: %{},
+          children: [],
+          content: content,
+          title: "resource 1",
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          author_id: author.id
+        })
+
+      Publishing.upsert_published_resource(publication, revision)
+
+      {:ok, %{revision: revision2}} =
+        Course.create_and_attach_resource(project, %{
+          objectives: %{},
+          children: [],
+          content: content,
+          title: "resource 2",
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          author_id: author.id
+        })
+
+      Publishing.upsert_published_resource(publication, revision2)
+
+      results =
+        Publishing.find_alternatives_group_references_in_pages(
+          alt_group_revision_one.resource_id,
+          publication.id
+        )
+
+      assert length(results) == 2
+
+      assert Enum.empty?(
+               Publishing.find_alternatives_group_references_in_pages(
+                 alt_group_revision_two.resource_id,
+                 publication.id
+               )
+             )
 
       assert Enum.at(results, 0).title != Enum.at(results, 1).title
 
@@ -298,12 +468,13 @@ defmodule Oli.PublishingTest do
       assert Map.has_key?(parent_pages, activity4.resource_id)
     end
 
-    test "find_attached_objectives/1 returns all the revisions with objectives attached for a publication", %{
-      author: author,
-      project: project,
-      publication: publication,
-      revision1: revision
-    } do
+    test "find_attached_objectives/1 returns all the revisions with objectives attached for a publication",
+         %{
+           author: author,
+           project: project,
+           publication: publication,
+           revision1: revision
+         } do
       {:ok, %{revision: obj1}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
       {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
       {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
@@ -377,12 +548,29 @@ defmodule Oli.PublishingTest do
 
       assert length(results) == 8
 
-      assert length(Enum.filter(results, fn res -> res.attached_objective == obj1.resource_id end)) == 5
-      assert length(Enum.filter(results, fn res -> res.attached_objective == obj2.resource_id end)) == 2
-      assert length(Enum.filter(results, fn res -> res.attached_objective == obj3.resource_id end)) == 1
+      assert length(
+               Enum.filter(results, fn res -> res.attached_objective == obj1.resource_id end)
+             ) == 5
 
-      assert length(Enum.filter(results, fn res -> res.resource_type_id == ResourceType.get_id_by_type("page") end)) == 1
-      assert length(Enum.filter(results, fn res -> res.resource_type_id == ResourceType.get_id_by_type("activity") end)) == 7
+      assert length(
+               Enum.filter(results, fn res -> res.attached_objective == obj2.resource_id end)
+             ) == 2
+
+      assert length(
+               Enum.filter(results, fn res -> res.attached_objective == obj3.resource_id end)
+             ) == 1
+
+      assert length(
+               Enum.filter(results, fn res ->
+                 res.resource_type_id == ResourceType.get_id_by_type("page")
+               end)
+             ) == 1
+
+      assert length(
+               Enum.filter(results, fn res ->
+                 res.resource_type_id == ResourceType.get_id_by_type("activity")
+               end)
+             ) == 7
     end
   end
 

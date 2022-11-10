@@ -370,6 +370,9 @@ defmodule OliWeb.Router do
     put("/:project_id", ProjectController, :update)
     delete("/:project_id", ProjectController, :delete)
 
+    # Alternatives Groups
+    live("/:project_id/alternatives", Resources.AlternativesEditor)
+
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)
 
@@ -467,6 +470,8 @@ defmodule OliWeb.Router do
 
     post("/:project/lock/:resource", Api.LockController, :acquire)
     delete("/:project/lock/:resource", Api.LockController, :release)
+
+    get("/:project/alternatives", Api.ResourceController, :alternatives)
   end
 
   # Storage Service

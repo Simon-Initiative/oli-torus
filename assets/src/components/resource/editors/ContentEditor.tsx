@@ -4,7 +4,9 @@ import { StructuredContentEditor } from 'components/content/StructuredContentEdi
 import { ContentBlock } from './ContentBlock';
 import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 import { EditorProps } from './createEditor';
-import { useBlueprintCommandDescriptions, useBlueprints } from './useBlueprints';
+import { Icon, Description, OutlineItemProps, OutlineItem } from './OutlineItem';
+import { getContentDescription } from 'data/content/utils';
+import { useBlueprintCommandDescriptions } from './useBlueprints';
 
 interface ContentEditorProps extends EditorProps {
   contentItem: StructuredContent;
@@ -46,5 +48,20 @@ export const ContentEditor = (editorProps: ContentEditorProps) => {
         ]}
       />
     </ContentBlock>
+  );
+};
+
+interface ContentOutlineItemProps extends OutlineItemProps {
+  contentItem: StructuredContent;
+}
+
+export const ContentOutlineItem = (props: ContentOutlineItemProps) => {
+  const { contentItem } = props;
+
+  return (
+    <OutlineItem {...props}>
+      <Icon iconName="las la-paragraph" />
+      <Description title="Paragraph">{getContentDescription(contentItem)}</Description>
+    </OutlineItem>
   );
 };

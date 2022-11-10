@@ -5,13 +5,13 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.AGS.LineItem
   alias Lti_1p3.Tool.Services.NRPS
-  alias Lti_1p3.Tool.Services.AccessToken
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias Oli.Repo
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias Oli.Lti.AccessTokenLibrary
 
   def mount(
         _params,
@@ -188,7 +188,12 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   defp access_token_provider(registration) do
-    AccessToken.fetch_access_token(registration, Grading.ags_scopes(), host())
+    provider =
+      :oli
+      |> Application.get_env(:lti_access_token_provider)
+      |> Keyword.get(:provider, AccessTokenLibrary)
+
+    provider.fetch_access_token(registration, Grading.ags_scopes(), host())
   end
 
   defp fetch_students(access_token, section) do

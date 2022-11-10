@@ -9,6 +9,7 @@ defmodule Oli.Utils.SchemaResolver do
     "activity.schema.json" => "0.1.0",
     "adaptive-activity-content.schema.json" => "0.1.0",
     "adaptive-activity.schema.json" => "0.1.0",
+    "content-alternatives.schema.json" => "0.1.0",
     "content-block.schema.json" => "0.1.0",
     "content-break.schema.json" => "0.1.0",
     "content-element.schema.json" => "0.1.0",

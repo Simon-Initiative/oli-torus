@@ -42,6 +42,7 @@ import { empty, PageUndoable, Undoables, FeatureFlags } from './types';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import '../ResourceEditor.scss';
+import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
 export interface PageEditorProps extends ResourceContext {
@@ -339,9 +340,17 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     if (item !== undefined) {
       if (item.undoable.type === 'PageUndoable') {
-        this.update({
-          content: this.state.content.insertAt(item.undoable.index, item.undoable.item),
-        });
+        if (this.state.content.find(item.contentKey)) {
+          // undoable content item exists, replace it with the undoable state
+          this.update({
+            content: this.state.content.replaceAt(item.undoable.index, item.undoable.item),
+          });
+        } else {
+          // undoable content item does not exist, so insert it
+          this.update({
+            content: this.state.content.insertAt(item.undoable.index, item.undoable.item),
+          });
+        }
       } else {
         const context = this.state.activityContexts.get(item.contentKey);
         if (context !== undefined) {
@@ -559,32 +568,34 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
               </Objectives>
 
               <div className="d-flex flex-row">
-                <ContentOutline
-                  editMode={this.state.editMode}
-                  content={this.state.content}
-                  activityContexts={this.state.activityContexts}
-                  editorMap={props.editorMap}
-                  projectSlug={projectSlug}
-                  resourceSlug={resourceSlug}
-                  onEditContent={onEdit}
-                />
-                <Editors
-                  {...props}
-                  editMode={this.state.editMode}
-                  objectives={this.state.allObjectives}
-                  allTags={this.state.allTags}
-                  childrenObjectives={this.state.childrenObjectives}
-                  onRegisterNewObjective={onRegisterNewObjective}
-                  onRegisterNewTag={onRegisterNewTag}
-                  activityContexts={this.state.activityContexts}
-                  onRemove={(key: string) => this.onRemove(key)}
-                  onEdit={onEdit}
-                  onEditActivity={this.onEditActivity}
-                  onPostUndoable={this.onPostUndoable}
-                  content={this.state.content}
-                  onAddItem={onAddItem}
-                  resourceContext={props}
-                />
+                <AlternativesContextProvider projectSlug={projectSlug}>
+                  <ContentOutline
+                    editMode={this.state.editMode}
+                    content={this.state.content}
+                    activityContexts={this.state.activityContexts}
+                    editorMap={props.editorMap}
+                    projectSlug={projectSlug}
+                    resourceSlug={resourceSlug}
+                    onEditContent={onEdit}
+                  />
+                  <Editors
+                    {...props}
+                    editMode={this.state.editMode}
+                    objectives={this.state.allObjectives}
+                    allTags={this.state.allTags}
+                    childrenObjectives={this.state.childrenObjectives}
+                    onRegisterNewObjective={onRegisterNewObjective}
+                    onRegisterNewTag={onRegisterNewTag}
+                    activityContexts={this.state.activityContexts}
+                    onRemove={(key: string) => this.onRemove(key)}
+                    onEdit={onEdit}
+                    onEditActivity={this.onEditActivity}
+                    onPostUndoable={this.onPostUndoable}
+                    content={this.state.content}
+                    onAddItem={onAddItem}
+                    resourceContext={props}
+                  />
+                </AlternativesContextProvider>
               </div>
             </div>
           </div>

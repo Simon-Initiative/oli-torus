@@ -12,6 +12,7 @@ export interface LoadingSpinnerProps {
   className?: string;
   failed?: boolean;
   size?: LoadingSpinnerSize;
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface LoadingSpinnerState {}
@@ -21,17 +22,24 @@ export class LoadingSpinner extends React.PureComponent<LoadingSpinnerProps, Loa
   }
 
   render() {
-    const { className, failed, children, size } = this.props;
+    const { className, failed, children, size, align } = this.props;
 
     const sizeClass =
       size === LoadingSpinnerSize.Small
-        ? 'ls-small'
+        ? styles.lsSmall
         : size === LoadingSpinnerSize.Large
-        ? 'ls-large'
-        : 'ls-medium';
+        ? styles.lsLarge
+        : styles.lsMedium;
+
+    const alignClass =
+      align === 'left'
+        ? styles.alignLeft
+        : align === 'right'
+        ? styles.alignRight
+        : styles.alignCenter;
 
     return (
-      <div className={classNames(styles.loadingSpinner, sizeClass, className)}>
+      <div className={classNames(styles.loadingSpinner, sizeClass, alignClass, className)}>
         {failed ? (
           <i className="fa fa-times-circle text-danger" />
         ) : (

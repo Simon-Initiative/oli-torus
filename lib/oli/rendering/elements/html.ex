@@ -9,6 +9,7 @@ defmodule Oli.Rendering.Elements.Html do
   alias Oli.Rendering.Activity
   alias Oli.Rendering.Group
   alias Oli.Rendering.Survey
+  alias Oli.Rendering.Alternatives
   alias Oli.Rendering.Break
   alias Oli.Rendering.Error
 
@@ -26,6 +27,10 @@ defmodule Oli.Rendering.Elements.Html do
 
   def survey(%Context{} = context, element) do
     Survey.render(context, element, Survey.Html)
+  end
+
+  def alternatives(%Context{} = context, element) do
+    Alternatives.render(context, element, Alternatives.Html)
   end
 
   def break(%Context{} = context, element) do
