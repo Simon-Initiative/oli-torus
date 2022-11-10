@@ -45,16 +45,10 @@ export const SurveyEditor = ({
       editMode={editMode}
       contentItem={contentItem}
       canRemove={canRemove}
-      onRemove={onRemove}
+      onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
     >
       {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
         return (
           <div key={c.id}>
             <AddResource
@@ -86,7 +80,7 @@ export const SurveyEditor = ({
               contentBreaksExist: false,
               onEdit: onEditChild,
               onEditActivity,
-              onRemove: onRemoveChild,
+              onRemove,
               onPostUndoable,
               onRegisterNewObjective,
               onRegisterNewTag,

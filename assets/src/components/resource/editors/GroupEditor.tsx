@@ -50,17 +50,11 @@ export const GroupEditor = ({
       contentItem={contentItem}
       parents={parents}
       canRemove={canRemove}
-      onRemove={onRemove}
+      onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
       contentBreaksExist={contentBreaksExist}
     >
       {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
         return (
           <div key={c.id}>
             <AddResource
@@ -92,7 +86,7 @@ export const GroupEditor = ({
               contentBreaksExist,
               onEdit: onEditChild,
               onEditActivity,
-              onRemove: onRemoveChild,
+              onRemove,
               onPostUndoable,
               onRegisterNewObjective,
               onRegisterNewTag,
