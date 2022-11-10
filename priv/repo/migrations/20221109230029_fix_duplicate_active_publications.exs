@@ -40,8 +40,7 @@ defmodule Oli.Repo.Migrations.FixDuplicateActivePublications do
       |> Repo.all()
 
     Logger.info(
-      "Identified #{Enum.count(duplicate_active_publications)} projects with duplicate active publications",
-      duplicate_active_publications
+      "Identified #{Enum.count(duplicate_active_publications)} projects with duplicate active publications: #{Kernel.inspect(duplicate_active_publications)}"
     )
 
     if Enum.count(duplicate_active_publications) > 0 do
@@ -63,11 +62,20 @@ defmodule Oli.Repo.Migrations.FixDuplicateActivePublications do
       # to simplify the query, reuse the count already computed to determine limit
       duplicate_count = count - 1
 
+      # delete_all doesn't support limit operator, so we perform this action in two separate steps
+      publication_ids_to_remove =
+        from(
+          pub in "publications",
+          where: pub.project_id == ^project_id and is_nil(pub.published),
+          order_by: [asc: pub.id],
+          limit: ^duplicate_count,
+          select: pub.id
+        )
+        |> Repo.all()
+
       from(
         pub in "publications",
-        where: pub.project_id == ^project_id and is_nil(pub.published),
-        order_by: [asc: pub.id],
-        limit: ^duplicate_count
+        where: pub.id in ^publication_ids_to_remove
       )
       |> Repo.delete_all()
     end)
