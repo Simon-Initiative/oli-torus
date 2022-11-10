@@ -27,7 +27,7 @@ export const ActivityEditor = ({
 }: ActivityEditorProps) => {
   const activity = activities.get(contentItem.activitySlug);
 
-  const contentBreaksExist = (contentItem as any).children.some(
+  const contentBreaksExist = (contentItem as any).children?.some(
     (v: ResourceContent) => v.type === 'break',
   );
 
