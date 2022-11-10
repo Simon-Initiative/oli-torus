@@ -16,7 +16,14 @@ defmodule Oli.Resources.Collaboration.CollabSpaceConfig do
     field :participation_min_posts, :integer, default: 0
   end
 
-  def changeset(collab_space_config, attrs \\ %{}) do
+  def changeset(collab_space_config, attrs \\ %{})
+
+  def changeset(collab_space_config, %Oli.Resources.Collaboration.CollabSpaceConfig{} = attrs) do
+    # if attrs is given as a struct, then convert it to a map in order to process
+    changeset(collab_space_config, Map.from_struct(attrs))
+  end
+
+  def changeset(collab_space_config, attrs) do
     collab_space_config
     |> cast(attrs, [
       :status,

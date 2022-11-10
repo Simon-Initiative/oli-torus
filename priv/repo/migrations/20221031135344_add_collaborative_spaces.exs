@@ -3,7 +3,6 @@ defmodule Oli.Repo.Migrations.AddCollaborativeSpaces do
 
   def change do
     alter table(:revisions) do
-      add :collab_space_id, references(:resources)
       add :collab_space_config, :map
     end
   end

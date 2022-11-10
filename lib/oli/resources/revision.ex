@@ -41,7 +41,6 @@ defmodule Oli.Resources.Revision do
     field :tags, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
-    belongs_to :collab_space, Oli.Resources.Resource
 
     # 0 represents "unlimited" attempts
     field :max_attempts, :integer, default: 0
@@ -93,8 +92,7 @@ defmodule Oli.Resources.Revision do
       :retake_mode,
       :parameters,
       :scoring_strategy_id,
-      :activity_type_id,
-      :collab_space_id
+      :activity_type_id
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)

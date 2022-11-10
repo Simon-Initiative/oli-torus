@@ -314,7 +314,8 @@ defmodule Oli.Resources do
           parameters: previous_revision.parameters,
           legacy: previous_revision.legacy |> convert_legacy,
           tags: previous_revision.tags,
-          explanation_strategy: previous_revision.explanation_strategy
+          explanation_strategy: previous_revision.explanation_strategy,
+          collab_space_config: previous_revision.collab_space_config
         },
         convert_strings_to_atoms(attrs)
       )
