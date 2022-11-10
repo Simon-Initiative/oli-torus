@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { Button } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
+import { MIMETYPE_FILTERS } from '../../../../../components/media/manager/MediaManager';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
 
@@ -13,7 +14,7 @@ interface Props {
   onBlur: (id: string, url: string) => void;
 }
 
-export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange, onBlur }) => {
+export const TorusVideoBrowser: React.FC<Props> = ({ id, label, value, onChange, onBlur }) => {
   const [pickerOpen, , openPicker, closePicker] = useToggle();
   const projectSlug: string = useSelector(selectProjectSlug);
 
@@ -22,31 +23,23 @@ export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange,
     closePicker();
   }, [closePicker, id, onBlur, value]);
 
-  const hasImage = value && value !== '/images/placeholder-image.svg';
+  const hasVideo = !!value;
 
   return (
     <span>
       <label className="form-label">{label}</label>
-      {hasImage && (
-        <>
-          <div className="truncate-left">{value}</div>
 
-          <div className="image-preview">
-            <img className="img-fluid" src={value} />
-          </div>
-        </>
-      )}
-
-      {hasImage || <div className="truncate-left">No Image</div>}
+      {hasVideo && <div className="truncate-left">{value}</div>}
+      {hasVideo || <div className="truncate-left">No Video</div>}
 
       <Button
         onClick={openPicker}
         type="button"
         variant="secondary"
         size="sm"
-        aria-label="Select Image"
+        aria-label="Select Video File"
       >
-        <span className="material-icons-outlined">image</span>
+        <span className="material-icons-outlined">video_library</span>
       </Button>
 
       {pickerOpen && (
@@ -56,6 +49,8 @@ export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange,
           projectSlug={projectSlug}
           onOK={commitSelection}
           onCancel={closePicker}
+          mimeFilter={MIMETYPE_FILTERS.VIDEO}
+          title="Select Video File"
         />
       )}
     </span>

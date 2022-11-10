@@ -8,6 +8,8 @@ import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
+import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
+import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -22,6 +24,8 @@ const widgets: any = {
   CheckboxWidget: CustomCheckbox,
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,
+  TorusAudioBrowser: TorusAudioBrowser,
+  TorusVideoBrowser: TorusVideoBrowser,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({

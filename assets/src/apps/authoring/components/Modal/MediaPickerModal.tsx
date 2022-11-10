@@ -13,36 +13,43 @@ interface Props {
   onOK: () => void;
   projectSlug: string;
   onUrlChanged: (url: string) => void;
+  mimeFilter?: string[] | undefined;
+  title?: string;
 }
 
 /**
  * Media manager component wrapped in a react-bootstrap modal, initially for advanced authoring environment usage.
  **/
 
-export const ImagePickerModal: React.FC<Props> = ({
+export const MediaPickerModal: React.FC<Props> = ({
   projectSlug,
   initialSelection,
   onCancel,
   onOK,
   onUrlChanged,
+  mimeFilter,
+  title,
 }) => {
-  const onMediaSelected = useCallback((items: MediaItem[]) => {
-    if (items.length > 0) {
-      onUrlChanged(items[0].url);
-    }
-  }, []);
+  const onMediaSelected = useCallback(
+    (items: MediaItem[]) => {
+      if (items.length > 0) {
+        onUrlChanged(items[0].url);
+      }
+    },
+    [onUrlChanged],
+  );
 
   return (
     <Modal show={true} size={'xl'} onHide={onCancel}>
       <Modal.Header closeButton={true}>
-        <h3 className="modal-title">Select Image</h3>
+        <h3 className="modal-title">{title}</h3>
       </Modal.Header>
       <Modal.Body>
         <UrlOrUpload
           onUrlChange={onUrlChanged}
           onMediaSelectionChange={onMediaSelected}
           projectSlug={projectSlug}
-          mimeFilter={MIMETYPE_FILTERS.IMAGE}
+          mimeFilter={mimeFilter}
           selectionType={SELECTION_TYPES.SINGLE}
           initialSelectionPaths={initialSelection ? [initialSelection] : []}
         />
@@ -57,4 +64,9 @@ export const ImagePickerModal: React.FC<Props> = ({
       </Modal.Footer>
     </Modal>
   );
+};
+
+MediaPickerModal.defaultProps = {
+  mimeFilter: MIMETYPE_FILTERS.IMAGE,
+  title: 'Select Image',
 };

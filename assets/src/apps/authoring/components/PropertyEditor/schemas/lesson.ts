@@ -126,6 +126,9 @@ export const lessonUiSchema: UiSchema = {
     Appearance: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Lesson Appearance',
+      backgroundImageURL: {
+        'ui:widget': 'TorusImageBrowser',
+      },
     },
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
