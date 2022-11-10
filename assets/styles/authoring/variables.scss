@@ -67,6 +67,8 @@ $speaker3: #cff4fc !default;
 $speaker4: #fff3cd !default;
 $speaker5: #ffe5d0 !default;
 
+$alternatives-group-background-color: $gray-100 !default;
+
 // Export all theme SASS variables to CSS
 & {
   // Custom variable values only support SassScript inside `#{}`.
@@ -144,4 +146,6 @@ $speaker5: #ffe5d0 !default;
   --authoring-toolbar-border-color: #{$toolbar-border-color};
   --authoring-toolbar-active-bg: #{$toolbar-active-bg};
   --authoring-toolbar-active-color: #{$toolbar-active-color};
+
+  --authoring-alternatives-group-background-color: #{$alternatives-group-background-color};
 }

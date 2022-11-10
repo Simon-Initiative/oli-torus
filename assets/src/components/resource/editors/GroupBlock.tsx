@@ -1,94 +1,26 @@
 import React, { PropsWithChildren } from 'react';
 import { DeleteButton } from 'components/misc/DeleteButton';
-import {
-  PurposeTypes,
-  GroupContent,
-  ResourceContent,
-  isGroupWithPurpose,
-  groupOrDescendantHasPurpose,
-} from 'data/content/resource';
-import { Purpose } from 'components/content/Purpose';
-import { classNames } from 'utils/classNames';
+import { ResourceGroup, ResourceContent } from 'data/content/resource';
 import styles from './ContentBlock.modules.scss';
-import { PaginationModes } from './PaginationModes';
 
 interface GroupBlockProps {
   editMode: boolean;
-  contentItem: GroupContent;
+  contentItem: ResourceGroup;
   parents: ResourceContent[];
   canRemove: boolean;
-  contentBreaksExist: boolean;
-  onEdit: (contentItem: GroupContent) => void;
+  onEdit: (contentItem: ResourceGroup) => void;
   onRemove: () => void;
 }
-export const GroupBlock = ({
-  editMode,
-  contentItem,
-  parents,
-  canRemove,
-  contentBreaksExist,
-  children,
-  onEdit,
-  onRemove,
-}: PropsWithChildren<GroupBlockProps>) => {
-  const onEditPurpose = (purpose: string) => {
-    onEdit(Object.assign(contentItem, { purpose }));
-  };
-
-  // a purpose can only be set if no parents have a purpose or no children have purpose
-  const canEditPurpose =
-    parents.every((p) => !isGroupWithPurpose(p)) &&
-    !contentItem.children.some((c) => groupOrDescendantHasPurpose(c));
+export const GroupBlock = (props: PropsWithChildren<GroupBlockProps>) => {
+  const { editMode, contentItem, canRemove, children, onRemove } = props;
 
   return (
-    <div
-      id={`resource-editor-${contentItem.id}`}
-      className={classNames(styles.groupBlock, `purpose-${contentItem.purpose}`)}
-    >
+    <div id={`resource-editor-${contentItem.id}`} className={styles.groupBlock}>
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
-        {contentBreaksExist ? (
-          <PaginationModes
-            onEdit={(paginationMode) => onEdit(Object.assign(contentItem, { paginationMode }))}
-            editMode={editMode}
-            mode={contentItem.paginationMode === undefined ? 'normal' : contentItem.paginationMode}
-          />
-        ) : null}
-        <Purpose
-          purpose={contentItem.purpose}
-          editMode={editMode}
-          canEditPurpose={canEditPurpose}
-          onEdit={onEditPurpose}
-        />
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
-      <MaybeDeliveryPurposeContainer contentItem={contentItem}>
-        {children}
-      </MaybeDeliveryPurposeContainer>
-    </div>
-  );
-};
-
-type PurposeContainerProps = {
-  contentItem: GroupContent;
-};
-
-const MaybeDeliveryPurposeContainer = ({
-  contentItem,
-  children,
-}: PropsWithChildren<PurposeContainerProps>) => {
-  const purposeLabel = PurposeTypes.find((p) => p.value === contentItem.purpose)?.label;
-
-  if (contentItem.purpose === 'none') {
-    return <>{children}</>;
-  }
-
-  return (
-    <div className={styles.purposeContainer}>
-      <div className={`content-purpose ${contentItem.purpose}`}>
-        <div className="content-purpose-label">{purposeLabel}</div>
-        <div className="content-purpose-content">{children}</div>
-      </div>
+      {children}
     </div>
   );
 };

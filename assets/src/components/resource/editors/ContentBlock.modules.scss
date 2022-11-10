@@ -17,6 +17,8 @@
 
 .groupBlock {
   margin: 20px;
+  padding: 20px;
+  border: 1px dashed #aaa;
 
   // handle the special case when purpose type is none, apply the
   // padding styles to slate editor itself. this allows slate to utilize
@@ -90,7 +92,8 @@
 
 .surveyBlock {
   margin: 20px;
-  padding: 0 calc(50% - 400px);
+  padding: 20px;
+  border: 1px dashed #aaa;
 
   :global(i.las.la-poll) {
     font-size: 32px;
@@ -102,10 +105,4 @@
   margin: 0 auto;
   display: flex;
   flex-direction: row;
-}
-
-.surveyBlockBorder {
-  border: 1px solid authoring.$gray-500;
-  border-radius: 6px;
-  padding: 20px;
 }

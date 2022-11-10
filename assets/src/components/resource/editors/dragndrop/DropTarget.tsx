@@ -7,7 +7,7 @@ interface DropTargetProps {
   index: number[];
   onDrop: (e: React.DragEvent<HTMLDivElement>, index: number[]) => void;
 }
-export const DropTarget = ({ id, index, onDrop }: DropTargetProps) => {
+export const DropTarget = ({ index, onDrop }: DropTargetProps) => {
   const [hovered, setHovered] = useState(false);
 
   const handleDragEnter = (_e: React.DragEvent<HTMLDivElement>) => setHovered(true);
@@ -24,7 +24,6 @@ export const DropTarget = ({ id, index, onDrop }: DropTargetProps) => {
 
   return (
     <div
-      key={id + '-drop'}
       className={classNames(styles.dropTarget, hovered && styles.hovered)}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}

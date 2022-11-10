@@ -1,7 +1,7 @@
-defmodule Oli.TagEditorTest do
+defmodule Oli.Editing.ResourceEditorTest do
   use Oli.DataCase
 
-  alias Oli.Authoring.Editing.TagEditor
+  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Repo
 
@@ -13,7 +13,12 @@ defmodule Oli.TagEditorTest do
     end
 
     test "list/2 lists both tags", %{author: author, project: project, easy: easy, hard: hard} do
-      {:ok, revisions} = TagEditor.list(project.slug, author)
+      {:ok, revisions} =
+        ResourceEditor.list(
+          project.slug,
+          author,
+          Oli.Resources.ResourceType.get_id_by_type("tag")
+        )
 
       assert length(revisions) == 2
       assert Enum.at(revisions, 0).resource_id == easy.revision.resource_id
@@ -23,7 +28,12 @@ defmodule Oli.TagEditorTest do
     test "list/2 fails when project does not exist", %{
       author: author
     } do
-      assert {:error, {:not_found}} == TagEditor.list("does_not_exist", author)
+      assert {:error, {:not_found}} ==
+               ResourceEditor.list(
+                 "does_not_exist",
+                 author,
+                 Oli.Resources.ResourceType.get_id_by_type("tag")
+               )
     end
 
     test "list/2 fails when author does not have access", %{
@@ -39,7 +49,12 @@ defmodule Oli.TagEditorTest do
         })
         |> Repo.insert()
 
-      assert {:error, {:not_authorized}} == TagEditor.list(project.slug, author)
+      assert {:error, {:not_authorized}} ==
+               ResourceEditor.list(
+                 project.slug,
+                 author,
+                 Oli.Resources.ResourceType.get_id_by_type("tag")
+               )
     end
 
     test "edit/4 fails when project does not exist", %{
@@ -47,7 +62,7 @@ defmodule Oli.TagEditorTest do
       easy: easy
     } do
       assert {:error, {:not_found}} ==
-               TagEditor.edit("does_not_exist", easy.revision.resource_id, author, %{
+               ResourceEditor.edit("does_not_exist", easy.revision.resource_id, author, %{
                  "title" => "test"
                })
     end
@@ -57,7 +72,7 @@ defmodule Oli.TagEditorTest do
       project: project
     } do
       assert {:error, {:not_found}} ==
-               TagEditor.edit(project.slug, 22222, author, %{
+               ResourceEditor.edit(project.slug, 22222, author, %{
                  "title" => "test"
                })
     end
@@ -77,14 +92,14 @@ defmodule Oli.TagEditorTest do
         |> Repo.insert()
 
       assert {:error, {:not_authorized}} ==
-               TagEditor.edit(project.slug, easy.revision.resource_id, author, %{
+               ResourceEditor.edit(project.slug, easy.revision.resource_id, author, %{
                  "title" => "test"
                })
     end
 
     test "edit/4 allows title editing", %{author: author, project: project, easy: easy} do
       {:ok, _} =
-        TagEditor.edit(project.slug, easy.revision.resource_id, author, %{
+        ResourceEditor.edit(project.slug, easy.revision.resource_id, author, %{
           "title" => "updated title"
         })
 
@@ -94,7 +109,13 @@ defmodule Oli.TagEditorTest do
       refute revision.id == easy.revision.id
       assert revision.title == "updated title"
 
-      {:ok, revisions} = TagEditor.list(project.slug, author)
+      {:ok, revisions} =
+        ResourceEditor.list(
+          project.slug,
+          author,
+          Oli.Resources.ResourceType.get_id_by_type("tag")
+        )
+
       assert length(revisions) == 2
       assert Enum.at(revisions, 0).resource_id == easy.revision.resource_id
     end
@@ -106,7 +127,7 @@ defmodule Oli.TagEditorTest do
       hard: hard
     } do
       {:ok, _} =
-        TagEditor.edit(project.slug, easy.revision.resource_id, author, %{
+        ResourceEditor.edit(project.slug, easy.revision.resource_id, author, %{
           "deleted" => true
         })
 
@@ -116,7 +137,13 @@ defmodule Oli.TagEditorTest do
       refute revision.id == easy.revision.id
       assert revision.deleted == true
 
-      {:ok, revisions} = TagEditor.list(project.slug, author)
+      {:ok, revisions} =
+        ResourceEditor.list(
+          project.slug,
+          author,
+          Oli.Resources.ResourceType.get_id_by_type("tag")
+        )
+
       assert length(revisions) == 1
       assert Enum.at(revisions, 0).resource_id == hard.revision.resource_id
     end

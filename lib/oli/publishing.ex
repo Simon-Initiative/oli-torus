@@ -1093,7 +1093,8 @@ defmodule Oli.Publishing do
         AND jsonb_array_length(revision.objectives->part) > 0;
     """
 
-    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [publication_id, page_id, activity_id])
+    {:ok, %{rows: results}} =
+      Ecto.Adapters.SQL.query(Oli.Repo, sql, [publication_id, page_id, activity_id])
 
     Enum.map(results, fn [slug, title, resource_type_id, attached_objective] ->
       %{
@@ -1228,6 +1229,28 @@ defmodule Oli.Publishing do
       and rev.resource_type_id = #{page_id}
       and rev.deleted is false
       and jsonb_path_exists(rev.content, '$.**.conditions.** ? (@.fact == "objectives").value ? (@ == #{objective_id})')
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
+  end
+
+  def find_alternatives_group_references_in_pages(alternatives_resource_id, publication_id) do
+    page_id = ResourceType.get_id_by_type("page")
+
+    sql = """
+    select rev.slug, rev.title
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id = #{publication_id}
+      and rev.resource_type_id = #{page_id}
+      and rev.deleted is false
+      and (
+        jsonb_path_exists(rev.content, '$.model[*] ? (@.type == "alternatives").alternatives_id ? (@ == #{alternatives_resource_id})')
+        or jsonb_path_exists(rev.content, '$.**.children[*] ? (@.type == "alternatives").alternatives_id ? (@ == #{alternatives_resource_id})')
+      )
     """
 
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])

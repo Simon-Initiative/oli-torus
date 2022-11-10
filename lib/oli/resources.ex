@@ -356,4 +356,27 @@ defmodule Oli.Resources do
       %ResourceSummary{title: title, slug: slug}
     end)
   end
+
+  @doc """
+  Returns a list of alternatives groups for a given project or section slug and resolver.
+  """
+  def alternatives_groups(project_or_section_slug, resolver) do
+    case resolver.revisions_of_type(
+           project_or_section_slug,
+           ResourceType.get_id_by_type("alternatives")
+         ) do
+      alternatives when is_list(alternatives) ->
+        {:ok,
+         Enum.map(alternatives, fn a ->
+           %{
+             id: a.resource_id,
+             title: a.title,
+             options: a.content["options"]
+           }
+         end)}
+
+      error ->
+        error
+    end
+  end
 end

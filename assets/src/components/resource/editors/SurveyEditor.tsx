@@ -3,6 +3,13 @@ import { ResourceContent, SurveyContent } from 'data/content/resource';
 import { SurveyBlock } from './SurveyBlock';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
+import {
+  Description,
+  Icon,
+  OutlineGroup,
+  OutlineGroupProps,
+  resourceGroupTitle,
+} from './OutlineItem';
 
 interface SurveyEditorProps extends EditorProps {
   contentItem: SurveyContent;
@@ -83,7 +90,6 @@ export const SurveyEditor = ({
               editorMap,
               canRemove,
               featureFlags,
-              contentBreaksExist: false,
               onEdit: onEditChild,
               onEditActivity,
               onRemove: onRemoveChild,
@@ -106,5 +112,22 @@ export const SurveyEditor = ({
         onRegisterNewObjective={onRegisterNewObjective}
       />
     </SurveyBlock>
+  );
+};
+
+interface SurveyOutlineItemProps extends OutlineGroupProps {
+  contentItem: SurveyContent;
+}
+
+export const SurveyOutlineItem = (props: SurveyOutlineItemProps) => {
+  const { contentItem } = props;
+
+  return (
+    <OutlineGroup {...props}>
+      <Icon iconName="las la-poll" />
+      <Description title={resourceGroupTitle(contentItem)}>
+        {contentItem.children.size} items
+      </Description>
+    </OutlineGroup>
   );
 };
