@@ -106,14 +106,6 @@ defmodule Oli.Resources.CollaborationTest do
     first_post = insert(:post, section: section, resource: page_resource_cs, user: user)
     second_post = insert(:post, status: :submitted, content: %{message: "Other post"}, section: section, resource: page_resource_cs, user: user)
 
-    {:ok, next_page_revision} =
-      Oli.Resources.create_revision_from_previous(page_revision_cs, %{
-        title: "other",
-        author_id: author.id
-      })
-
-    {:ok, _} = Oli.Publishing.upsert_published_resource(publication, next_page_revision)
-
     {:ok,
       %{
         project: project,
