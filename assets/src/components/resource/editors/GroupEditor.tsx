@@ -2,6 +2,7 @@ import React from 'react';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
 import { ResourceContent, ResourceGroup } from 'data/content/resource';
+import { GroupBlock } from './GroupBlock';
 
 interface GroupEditorProps extends EditorProps {
   contentItem: ResourceGroup;
@@ -26,6 +27,7 @@ export const GroupEditor = ({
   onEdit,
   onEditActivity,
   onAddItem,
+  onRemove,
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
@@ -38,16 +40,15 @@ export const GroupEditor = ({
     onEdit(updatedContent as ResourceContent);
   };
 
-  const onRemoveChild = (child: ResourceContent) => {
-    const updatedContent = {
-      ...contentItem,
-      children: contentItem.children.filter((i) => i.id !== child.id),
-    };
-    onEdit(updatedContent as ResourceContent);
-  };
-
   return (
-    <>
+    <GroupBlock
+      editMode={editMode}
+      contentItem={contentItem}
+      parents={parents}
+      canRemove={canRemove}
+      onRemove={() => onRemove(contentItem.id)}
+      onEdit={onEdit}
+    >
       {contentItem.children.map((c, childIndex) => {
         return (
           <div key={c.id}>
@@ -79,7 +80,7 @@ export const GroupEditor = ({
               featureFlags,
               onEdit: onEditChild,
               onEditActivity,
-              onRemove: () => onRemoveChild(c),
+              onRemove: onRemove,
               onPostUndoable,
               onRegisterNewObjective,
               onRegisterNewTag,
@@ -98,6 +99,6 @@ export const GroupEditor = ({
         onAddItem={onAddItem}
         onRegisterNewObjective={onRegisterNewObjective}
       />
-    </>
+    </GroupBlock>
   );
 };

@@ -34,7 +34,7 @@ export type EditorProps = {
   editorMap: ActivityEditorMap;
   featureFlags: FeatureFlags;
   onEdit: (content: ResourceContent) => void;
-  onRemove: () => void;
+  onRemove: (id: string) => void;
   onEditActivity: (key: string, update: EditorUpdate) => void;
   onPostUndoable: (key: string, undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;

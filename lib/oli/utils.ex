@@ -25,6 +25,8 @@ defmodule Oli.Utils do
   def log_error(msg, metadata \\ nil) do
     error_id = uuid() |> String.upcase()
 
+    Oli.Utils.Appsignal.capture_error(msg, metadata)
+
     metadata_str =
       case metadata do
         nil ->
