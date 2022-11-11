@@ -96,7 +96,9 @@ defmodule Oli.Rendering.Activity.Html do
 
   defp render_historical_attempts(activity_id, historical_attempts, section_slug) do
     case historical_attempts do
-      nil -> []
+      nil ->
+        []
+
       _ ->
         case Map.get(historical_attempts, activity_id) do
           nil ->
@@ -116,7 +118,10 @@ defmodule Oli.Rendering.Activity.Html do
                       attemptNumber: a.attempt_number,
                       attemptGuid: a.attempt_guid,
                       date:
-                        Timex.format!(a.updated_at, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}")
+                        Timex.format!(
+                          a.updated_at,
+                          "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}"
+                        )
                     }
                   end),
                 sectionSlug: section_slug
@@ -175,6 +180,18 @@ defmodule Oli.Rendering.Activity.Html do
     ]
   end
 
+  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: nil}),
+    do: activity_html
+
+  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: ordinal}) do
+    [
+      "<div class=\"d-flex flex-row justify-content-start align-items-start\">",
+      "<div class=\"mt-3 mr-3\">#{ordinal}.</div>",
+      activity_html,
+      "</div></div>"
+    ]
+  end
+
   defp possibly_wrap_in_purpose(activity_html, activity) do
     case activity["purpose"] do
       nil ->
@@ -201,6 +218,7 @@ defmodule Oli.Rendering.Activity.Html do
          activity
        ) do
     render_activity_html(context, summary, activity)
+    |> possibly_wrap_with_numbering(summary)
     |> possibly_wrap_in_purpose(activity)
   end
 
