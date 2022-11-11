@@ -115,16 +115,15 @@ defmodule OliWeb.PageDeliveryView do
   def container_title(
         %HierarchyNode{
           numbering: %Numbering{
-            level: level,
             index: index
           },
           revision: revision
-        },
+        } = h,
         display_curriculum_item_numbering \\ true
       ) do
     if display_curriculum_item_numbering,
-      do: "#{Numbering.container_type(level)} #{index}: #{revision.title}",
-      else: "#{Numbering.container_type(level)}: #{revision.title}"
+      do: "#{Numbering.container_type_label(h.numbering)} #{index}: #{revision.title}",
+      else: "#{Numbering.container_type_label(h.numbering)}: #{revision.title}"
   end
 
   def has_submitted_attempt?(resource_access) do

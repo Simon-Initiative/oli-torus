@@ -86,7 +86,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            children: children,
            active: :curriculum,
            breadcrumbs:
-             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver),
+             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver, project.customizations),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
@@ -96,7 +96,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
            view: view_pref,
            selected: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
+           numberings: Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            project_slug,
+            project.customizations
+            ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title
          )}
@@ -441,8 +445,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       numberings:
-         Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+       numberings: Numbering.number_full_tree(
+        Oli.Publishing.AuthoringResolver,
+        socket.assigns.project.slug,
+        socket.assigns.project.customizations
+        )
      )}
   end
 
@@ -550,14 +557,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
            socket.assigns.project,
            socket.assigns.numberings
          ) do
+
       {:ok, _} ->
+
         {:noreply,
          assign(socket,
-           numberings:
-             Numbering.number_full_tree(
-               Oli.Publishing.AuthoringResolver,
-               socket.assigns.project.slug
-             )
+           numberings: Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            socket.assigns.project.slug,
+            socket.assigns.project.customizations
+            )
          )}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
@@ -709,9 +718,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-      numberings =
-        Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-
       selected =
         case socket.assigns.selected do
           nil -> nil
@@ -723,7 +729,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
         container: revision,
         children: children,
         rollup: rollup,
-        numberings: numberings
+        numberings: Numbering.number_full_tree(
+          Oli.Publishing.AuthoringResolver,
+          socket.assigns.project.slug,
+          socket.assigns.project.customizations
+          )
       )
     else
       socket

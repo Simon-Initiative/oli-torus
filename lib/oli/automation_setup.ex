@@ -189,6 +189,11 @@ defmodule Oli.AutomationSetup do
   end
 
   defp create_section(true, publication, project, educator) do
+    customizations = case project.customizations do
+      nil -> nil
+      labels -> Map.from_struct(labels)
+    end
+    
     {:ok, section} =
       Oli.Delivery.Sections.create_section(%{
         title: "Automation test section",
@@ -196,7 +201,8 @@ defmodule Oli.AutomationSetup do
         start_date: Timex.now(),
         end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
         base_project_id: project.id,
-        open_and_free: true
+        open_and_free: true,
+        customizations: customizations
       })
 
     Oli.Delivery.Sections.create_section_resources(section, publication)

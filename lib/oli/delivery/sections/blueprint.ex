@@ -127,7 +127,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   This creates the "section" record and "section resource" records to mirror
   the current published structure of the course project hierarchy.
   """
-  def create_blueprint(base_project_slug, title, hierarchy_definition \\ nil) do
+  def create_blueprint(base_project_slug, title, custom_labels, hierarchy_definition \\ nil) do
     Repo.transaction(fn _ ->
       case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
         nil ->
@@ -150,7 +150,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "registration_open" => false,
             "grace_period_days" => 1,
             "amount" => Money.new(:USD, "25.00"),
-            "publisher_id" => project.publisher_id
+            "publisher_id" => project.publisher_id,
+            "customizations" => custom_labels
           }
 
           case Sections.create_section(new_blueprint) do
@@ -195,6 +196,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   defp dupe_section(%Section{} = section, attrs) do
+    custom_labels = if section.customizations == nil, do: nil, else: Map.from_struct(section.customizations)
     params =
       Map.merge(
         %{
@@ -212,7 +214,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
           lti_1p3_deployment_id: nil,
           institution_id: nil,
           brand_id: nil,
-          delivery_policy_id: nil
+          delivery_policy_id: nil,
+          customizations: custom_labels
         },
         attrs
       )
