@@ -1,12 +1,15 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.{DeliverySetting, Sections}
   alias Oli.Delivery.Sections.Section
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
   alias Oli.Publishing
   alias Oli.Repo
+
+  import Ecto.Query, warn: false
+  import Oli.Utils
 
   @deployment_claims "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
   @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
@@ -119,5 +122,84 @@ defmodule Oli.Delivery do
     lti_roles = lti_params[@roles_claims]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
     Sections.enroll(user_id, section_id, context_roles)
+  end
+
+  # ------------------------------------------------------------
+  # Delivery Settings
+
+  @doc """
+  Returns the list of delivery settings that meets the criteria passed in the filter.
+
+  ## Examples
+
+      iex> search_delivery_settings(%{section_id: 1, resource_id: 1})
+      [%Post{section_id: 1, resource_id: 1}, ...]
+
+      iex> search_delivery_settings(%{resource_id: 123})
+      []
+  """
+  def search_delivery_settings(filter) do
+    from(ds in DeliverySetting, where: ^filter_conditions(filter))
+    |> Repo.all()
+  end
+
+  @doc """
+  Creates a delivery setting.
+
+  ## Examples
+
+      iex> create_delivery_setting(%{field: new_value})
+      {:ok, %DeliverySetting{}}
+
+      iex> create_delivery_setting(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_delivery_setting(attrs \\ %{}) do
+    %DeliverySetting{}
+    |> DeliverySetting.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a delivery setting that meets the criteria passed in the clauses.
+
+  ## Examples
+
+      iex> get_delivery_setting_by(%{id: 1})
+      %DeliverySetting{}
+
+      iex> get_delivery_setting_by(%{id: 123})
+      nil
+  """
+  def get_delivery_setting_by(clauses),
+    do: Repo.get_by(DeliverySetting, clauses)
+
+  @doc """
+  Updates a delivery setting.
+
+  ## Examples
+
+      iex> update_delivery_setting(delivery_setting, %{field: new_value})
+      {:ok, %DeliverySetting{}}
+
+      iex> update_delivery_setting(delivery_setting, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_delivery_setting(%DeliverySetting{} = delivery_setting, attrs) do
+    delivery_setting
+    |> DeliverySetting.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking delivery setting changes.
+
+  ## Examples
+
+      iex> change_delivery_setting(delivery_setting)
+      %Ecto.Changeset{data: %DeliverySetting{}}
+  """
+  def change_delivery_setting(%DeliverySetting{} = delivery_setting, attrs \\ %{}) do
+    DeliverySetting.changeset(delivery_setting, attrs)
   end
 end
