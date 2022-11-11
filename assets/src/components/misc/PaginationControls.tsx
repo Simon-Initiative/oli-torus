@@ -45,10 +45,8 @@ export const PaginationControls = (props: PaginationControlsProps) => {
       const children = parentElement.querySelector('.elements')?.children;
 
       if (children) {
-        console.log('here');
         let pages = List<Page>();
         for (let i = 0; i < children.length; i++) {
-          console.log(children[i]);
           if (children[i].classList.contains('content-break')) {
             pages = pages.push(List<Element>());
           } else {
@@ -68,7 +66,6 @@ export const PaginationControls = (props: PaginationControlsProps) => {
           }
           return c;
         }, 0);
-        console.log(pages);
         setActive(maxItem);
         setPages(pages);
       }

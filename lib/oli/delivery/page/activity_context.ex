@@ -34,7 +34,6 @@ defmodule Oli.Delivery.Page.ActivityContext do
       # the activity type this revision pertains to
       type = Map.get(reg_map, revision.activity_type_id)
       state = Map.get(activity_states, id)
-      IO.inspect(id)
 
       {id,
        %ActivitySummary{
