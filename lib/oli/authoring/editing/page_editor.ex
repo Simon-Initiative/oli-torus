@@ -296,7 +296,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
     ordinal_map =
       Enum.with_index(found_activities, 1)
       |> Enum.reduce(%{}, fn {id, ordinal}, map ->
-        Map.put(map, id, ordinal)
+        if graded do
+          Map.put(map, id, ordinal)
+        else
+          Map.put(map, id, nil)
+        end
       end)
 
     # Get a mapping of the activities to their parent groups. We need to set this

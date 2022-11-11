@@ -185,10 +185,10 @@ defmodule Oli.Rendering.Activity.Html do
 
   defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: ordinal}) do
     [
-      "<div class=\"d-flex flex-row justify-content-start align-items-start\">",
-      "<div class=\"mt-3 mr-3\">#{ordinal}.</div>",
-      activity_html,
-      "</div></div>"
+      "<div class=\"activity-numbering\">",
+      "Question ##{ordinal}",
+      "</div>",
+      activity_html
     ]
   end
 
