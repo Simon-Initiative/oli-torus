@@ -5,6 +5,7 @@ defmodule OliWeb.Api.ResourceController do
   alias Oli.Authoring.Course
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Resources
 
   def index(conn, %{"project" => project_slug}) do
     case Course.get_project_by_slug(project_slug) do
@@ -62,6 +63,19 @@ defmodule OliWeb.Api.ResourceController do
 
         conn
         |> send_resp(500, msg)
+    end
+  end
+
+  def alternatives(conn, %{"project" => project_slug}) do
+    case Resources.alternatives_groups(
+           project_slug,
+           Oli.Publishing.AuthoringResolver
+         ) do
+      {:ok, alternatives} ->
+        json(conn, %{"type" => "success", "alternatives" => alternatives})
+
+      _ ->
+        error(conn, 404, "failed to resolve alternatives groups")
     end
   end
 

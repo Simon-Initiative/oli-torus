@@ -50,7 +50,7 @@ export const AddResource = (props: AddResourceProps) => {
         <div className="resource-choices-divider" />
         <AddActivity {...props} onSetTip={onChangeTip} onResetTip={onResetTip} />
       </div>
-      <div className="mt-2 ml-2" style={{ lineHeight: 0.8 }}>
+      <div className="mt-2 ml-2" style={{ lineHeight: 0.8, height: 24 }}>
         <small className="resource-choices-tip">{tip}</small>
       </div>
     </AddResourceContent>

@@ -1,0 +1,48 @@
+.groupBlockHeader {
+  display: flex;
+  flex-direction: row;
+
+  .options {
+    display: flex;
+    flex-direction: row;
+
+    .option {
+      margin-right: 10px;
+
+      &.add {
+        border-radius: 50%;
+      }
+
+      &.warn {
+        font-size: 20px;
+        font-weight: 600;
+        padding: 0 4px;
+      }
+
+      &.active {
+        color: var(--authoring-white);
+        background-color: var(--authoring-primary);
+
+        &:hover {
+          background-color: var(--authoring-primary);
+        }
+      }
+
+      &:hover {
+        background-color: var(--authoring-gray-200);
+      }
+
+      .edit {
+        color: var(--authoring-white);
+        border-radius: 4px;
+        padding: 0 4px;
+        margin-left: 10px;
+        vertical-align: baseline;
+
+        &:hover {
+          background-color: var(--authoring-hover);
+        }
+      }
+    }
+  }
+}

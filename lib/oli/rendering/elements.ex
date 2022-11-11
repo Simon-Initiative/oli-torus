@@ -12,6 +12,7 @@ defmodule Oli.Rendering.Elements do
   @callback activity(%Context{}, %{}) :: [any()]
   @callback group(%Context{}, %{}) :: [any()]
   @callback survey(%Context{}, %{}) :: [any()]
+  @callback alternatives(%Context{}, %{}) :: [any()]
   @callback break(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
   @callback paginate(%Context{}, {[], Integer.t()}) :: [any()]
@@ -44,6 +45,9 @@ defmodule Oli.Rendering.Elements do
 
         %{"type" => "survey"} ->
           {output ++ writer.survey(context, element), br_count}
+
+        %{"type" => "alternatives"} ->
+          {output ++ writer.alternatives(context, element), br_count}
 
         %{"type" => "break"} ->
           {output ++ writer.break(context, element), br_count + 1}

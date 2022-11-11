@@ -398,6 +398,7 @@ export const makeFeedback: (text: string) => Feedback = makeContent;
 export interface Transformation extends Identifiable {
   path: string;
   operation: Transform;
+  firstAttemptOnly: boolean;
 }
 /**
  * Marker interface for an entity that has transformations.
@@ -418,10 +419,15 @@ export interface HasPerPartSubmissionOption {
  * @param operation The transformation operation
  * @returns
  */
-export const makeTransformation = (path: string, operation: Transform): Transformation => ({
+export const makeTransformation = (
+  path: string,
+  operation: Transform,
+  firstAttemptOnly: boolean,
+): Transformation => ({
   id: guid(),
   path,
   operation,
+  firstAttemptOnly,
 });
 
 /**

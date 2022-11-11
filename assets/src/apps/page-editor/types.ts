@@ -9,8 +9,21 @@ export type PageUndoable = {
   item: ResourceContent;
 };
 
+export const makePageUndoable = (
+  description: string,
+  index: number[],
+  item: ResourceContent,
+): PageUndoable => ({
+  type: 'PageUndoable',
+  description,
+  index,
+  item,
+});
+
+export type Undoable = ActivityUndoable | PageUndoable;
+
 export type UndoAction = {
-  undoable: ActivityUndoable | PageUndoable;
+  undoable: Undoable;
   contentKey: string;
   guid: string;
 };

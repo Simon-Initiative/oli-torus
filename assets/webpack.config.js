@@ -6,8 +6,12 @@ const { ESBuildMinifyPlugin } = require('esbuild-loader');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 const MONACO_DIR = path.resolve(__dirname, './node_modules/monaco-editor');
 const SHADOW_DOM_ENABLED = [path.resolve(__dirname, './src/components/parts/janus-fill-blanks')];
+
+const BUNDLE_ANALYZER_ENABLED = process.env.BUNDLE_ANALYZER_ENABLED === 'true';
 
 // Determines the entry points for the webpack by looking at activity
 // implementations in src/components/activities folder
@@ -121,8 +125,23 @@ module.exports = (env, options) => ({
   },
   devtool: 'source-map',
   optimization: {
-    minimize: process.env.NODE_ENV == 'production',
+    minimize: options.mode == 'production',
     minimizer: [new ESBuildMinifyPlugin({ css: true })],
+    sideEffects: true,
+    splitChunks: {
+      chunks: 'async',
+      cacheGroups: {
+        vendor: {
+          /* Goal of this chunk is to get all our node_modules shared code into a single vendor.js chunk that any entry point can use.
+             It's going to be bigger than any single entry needs, but having a single one will allow them all to share the same emitted
+             code. A future improvement might be to split this into an authoring and a delivery chunk, but that gets complicated quick.
+             */
+          test: /([\\/]node_modules[\\/])/,
+          name: 'vendor',
+          chunks: 'all',
+        },
+      },
+    },
   },
   entry: populateEntries(),
   output: {
@@ -213,7 +232,7 @@ module.exports = (env, options) => ({
           {
             loader: 'css-loader',
             options: {
-              sourceMap: true,
+              sourceMap: options.mode !== 'production',
             },
           },
           {
@@ -223,7 +242,7 @@ module.exports = (env, options) => ({
                 includePaths: [path.join(__dirname, 'styles')],
                 quietDeps: true,
               },
-              sourceMap: true,
+              sourceMap: options.mode !== 'production',
             },
           },
         ],
@@ -242,7 +261,7 @@ module.exports = (env, options) => ({
                 auto: true,
                 localIdentName: '[local]_[hash:base64:8]',
               },
-              sourceMap: true,
+              sourceMap: options.mode !== 'production',
             },
           },
           {
@@ -252,12 +271,13 @@ module.exports = (env, options) => ({
                 includePaths: [path.join(__dirname, 'styles')],
                 quietDeps: true,
               },
-              sourceMap: true,
+              sourceMap: options.mode !== 'production',
             },
           },
         ],
       },
       {
+        // Thie one EXCLUDES monaco & src, so it includes things like css insidenode_modules
         test: /\.[s]?css$/,
         exclude: [MONACO_DIR, path.resolve(__dirname, 'src')],
         use: [
@@ -265,7 +285,7 @@ module.exports = (env, options) => ({
           {
             loader: 'css-loader',
             options: {
-              sourceMap: true,
+              sourceMap: options.mode !== 'production',
             },
           },
           {
@@ -275,7 +295,7 @@ module.exports = (env, options) => ({
                 includePaths: [path.join(__dirname, 'styles')],
                 quietDeps: true,
               },
-              sourceMap: true,
+              sourceMap: options.mode !== 'production',
             },
           },
         ],
@@ -287,10 +307,19 @@ module.exports = (env, options) => ({
     ],
   },
   plugins: [
+    BUNDLE_ANALYZER_ENABLED ? new BundleAnalyzerPlugin() : undefined,
     new MiniCssExtractPlugin({
       filename: '../css/[name].css',
     }),
-    new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'static/',
+          to: '../',
+          filter: async (path) => path.indexOf('.map') == -1, // these were causing a duplicate file error on a production build
+        },
+      ],
+    }),
     new MonacoWebpackPlugin(),
-  ],
+  ].filter((plugin) => plugin !== undefined),
 });

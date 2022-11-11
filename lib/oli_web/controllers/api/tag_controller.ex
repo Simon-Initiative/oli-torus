@@ -3,7 +3,7 @@ defmodule OliWeb.Api.TagController do
   Endpoints to provide access to and mutation of tags.
   """
 
-  alias Oli.Authoring.Editing.TagEditor
+  alias Oli.Authoring.Editing.ResourceEditor
   import OliWeb.Api.Helpers
 
   use OliWeb, :controller
@@ -11,7 +11,11 @@ defmodule OliWeb.Api.TagController do
   def index(conn, %{"project" => project_slug}) do
     author = conn.assigns[:current_author]
 
-    case TagEditor.list(project_slug, author) do
+    case ResourceEditor.list(
+           project_slug,
+           author,
+           Oli.Resources.ResourceType.get_id_by_type("tag")
+         ) do
       {:ok, revisions} ->
         json(conn, %{"result" => "success", "tags" => Enum.map(revisions, &serialize_revision/1)})
 
@@ -29,7 +33,12 @@ defmodule OliWeb.Api.TagController do
   def new(conn, %{"project" => project_slug, "title" => title}) do
     author = conn.assigns[:current_author]
 
-    case TagEditor.create(project_slug, author, %{"title" => title, "author_id" => author.id}) do
+    case ResourceEditor.create(
+           project_slug,
+           author,
+           Oli.Resources.ResourceType.get_id_by_type("tag"),
+           %{"title" => title, "author_id" => author.id}
+         ) do
       {:ok, revision} ->
         json(conn, %{"result" => "success", "tag" => serialize_revision(revision)})
 

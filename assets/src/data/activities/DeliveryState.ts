@@ -170,13 +170,15 @@ export const activityDeliverySlice = createSlice({
       }
     },
     partResetRecieved(state, action: PayloadAction<PartActivityResponse>) {
-      const parts = state.attemptState.parts.filter(
-        (p) => p.partId !== action.payload.attemptState.partId,
-      );
-
+      const parts = state.attemptState.parts.map((p: WritableDraft<PartState>) => {
+        if (action.payload.attemptState.partId === p.partId) {
+          return action.payload.attemptState;
+        }
+        return p;
+      });
       state.attemptState = {
         ...state.attemptState,
-        parts: [...parts, action.payload.attemptState],
+        parts,
       };
     },
     initializePartState(state, action: PayloadAction<ActivityState>) {
@@ -410,6 +412,42 @@ export const resetAndSubmitPart =
       studentResponse,
     );
     dispatch(slice.actions.partSubmissionReceived(response));
+  };
+
+export const resetAndSubmitActivity =
+  (
+    attemptGuid: string,
+    responses: StudentResponse[],
+    onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+    onSubmitActivity: (
+      attemptGuid: string,
+      partResponses: PartResponse[],
+    ) => Promise<EvaluationResponse>,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    const response = await onResetActivity(attemptGuid);
+    dispatch(slice.actions.hideAllHints());
+    dispatch(slice.actions.updateModel(response.model));
+    dispatch(slice.actions.setAttemptState(response.attemptState));
+    getState().attemptState.parts.forEach((partState) =>
+      dispatch(
+        slice.actions.setHasMoreHintsForPart({
+          partId: String(partState.partId),
+          hasMoreHints: partState.hasMoreHints,
+        }),
+      ),
+    );
+
+    const partResponses = [];
+    for (let i = 0; i < responses.length; i++) {
+      partResponses.push({
+        attemptGuid: response.attemptState.parts[i].attemptGuid,
+        response: responses[i],
+      } as PartResponse);
+    }
+
+    const submitResponse = await onSubmitActivity(response.attemptState.attemptGuid, partResponses);
+    dispatch(slice.actions.activitySubmissionReceived(submitResponse));
   };
 
 export const submitFiles =

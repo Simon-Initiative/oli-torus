@@ -1,11 +1,10 @@
 import React from 'react';
-import { GroupContent, ResourceContent } from 'data/content/resource';
-import { GroupBlock } from './GroupBlock';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
+import { ResourceContent, ResourceGroup } from 'data/content/resource';
 
 interface GroupEditorProps extends EditorProps {
-  contentItem: GroupContent;
+  contentItem: ResourceGroup;
 }
 
 export const GroupEditor = ({
@@ -27,7 +26,6 @@ export const GroupEditor = ({
   onEdit,
   onEditActivity,
   onAddItem,
-  onRemove,
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
@@ -37,30 +35,20 @@ export const GroupEditor = ({
       ...contentItem,
       children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
     };
-    onEdit(updatedContent);
+    onEdit(updatedContent as ResourceContent);
   };
 
-  const contentBreaksExist = contentItem.children
-    .toArray()
-    .some((v: ResourceContent) => v.type === 'break');
+  const onRemoveChild = (child: ResourceContent) => {
+    const updatedContent = {
+      ...contentItem,
+      children: contentItem.children.filter((i) => i.id !== child.id),
+    };
+    onEdit(updatedContent as ResourceContent);
+  };
 
   return (
-    <GroupBlock
-      editMode={editMode}
-      contentItem={contentItem}
-      parents={parents}
-      canRemove={canRemove}
-      onRemove={onRemove}
-      onEdit={onEdit}
-      contentBreaksExist={contentBreaksExist}
-    >
+    <>
       {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
         return (
           <div key={c.id}>
             <AddResource
@@ -89,10 +77,9 @@ export const GroupEditor = ({
               editorMap,
               canRemove,
               featureFlags,
-              contentBreaksExist,
               onEdit: onEditChild,
               onEditActivity,
-              onRemove: onRemoveChild,
+              onRemove: () => onRemoveChild(c),
               onPostUndoable,
               onRegisterNewObjective,
               onRegisterNewTag,
@@ -111,6 +98,6 @@ export const GroupEditor = ({
         onAddItem={onAddItem}
         onRegisterNewObjective={onRegisterNewObjective}
       />
-    </GroupBlock>
+    </>
   );
 };

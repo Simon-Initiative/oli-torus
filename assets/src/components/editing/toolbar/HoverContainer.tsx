@@ -50,15 +50,18 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
 
         if (mousedown) return position;
 
+        const HEADER_OFFSET = 150;
         const newPosition = positionRect(
           {
             ...state,
             position: props.position || 'bottom',
             align: props.align || 'start',
             childRect,
+            padding: 16,
           },
           props.reposition,
           ReactEditor.toDOMNode(editor, editor),
+          HEADER_OFFSET,
         );
 
         // setting state in render is bad practice, but react-tiny-popover nudges the popover

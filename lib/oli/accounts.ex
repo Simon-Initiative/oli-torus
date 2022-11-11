@@ -463,6 +463,8 @@ defmodule Oli.Accounts do
   Gets a single author with the given email
   """
   def get_author_by_email(email) do
+    email = String.downcase(email)
+
     Repo.get_by(Author, email: email)
   end
 
@@ -493,6 +495,8 @@ defmodule Oli.Accounts do
   Returns true if a author exists
   """
   def author_with_email_exists?(email) do
+    email = String.downcase(email)
+
     case Repo.get_by(Author, email: email) do
       nil -> false
       _author -> true

@@ -1,6 +1,12 @@
-import { DragPayload } from '../interfaces';
+import { DragPayload, UnknownPayload } from '../interfaces';
 import * as Persistence from 'data/persistence/activity';
-import { PageEditorContent } from 'data/editor/PageEditorContent';
+import { fromPersistence, PageEditorContent } from 'data/editor/PageEditorContent';
+import {
+  isResourceContent,
+  isResourceGroup,
+  ResourceContent,
+  ResourceGroup,
+} from 'data/content/resource';
 
 function adjustIndex(src: number[], dest: number[]) {
   return dest.map((destIndex, level) => {
@@ -20,8 +26,6 @@ export const dropHandler =
   (e: React.DragEvent<HTMLDivElement>, index: number[]) => {
     onDragEnd();
 
-    console.log('onDragEnd');
-
     if (editMode) {
       const data = e.dataTransfer.getData('application/x-oli-resource-content');
 
@@ -30,7 +34,7 @@ export const dropHandler =
 
         const sourceIndex = content.findIndex((k) => k.id === droppedContent.id);
 
-        if (sourceIndex === []) {
+        if (sourceIndex.length === 0) {
           // This is a cross window drop, we insert it but have to have to
           // ensure that for activities that we create a new activity for
           // tied to this project
@@ -47,10 +51,10 @@ export const dropHandler =
             } else {
               onEditContent(content.insertAt(index, droppedContent.reference));
             }
-          } else if (droppedContent.type === 'content') {
-            onEditContent(content.insertAt(index, droppedContent));
+          } else if (isResourceContent(droppedContent)) {
+            onEditContent(content.insertAt(index, droppedContent as ResourceContent));
           } else {
-            onEditContent(content.insertAt(index, droppedContent.data));
+            onEditContent(content.insertAt(index, (droppedContent as UnknownPayload).data));
           }
 
           return;
@@ -61,10 +65,17 @@ export const dropHandler =
           let toInsert;
           if (droppedContent.type === 'ActivityPayload') {
             toInsert = droppedContent.reference;
-          } else if (droppedContent.type === 'content') {
-            toInsert = droppedContent;
+          } else if (isResourceContent(droppedContent)) {
+            toInsert = droppedContent as ResourceContent;
+
+            if (isResourceGroup(toInsert)) {
+              toInsert = {
+                ...toInsert,
+                children: fromPersistence((toInsert as any).children),
+              } as ResourceGroup;
+            }
           } else {
-            toInsert = droppedContent.data;
+            toInsert = (droppedContent as UnknownPayload).data;
           }
 
           const reordered = content.delete(droppedContent.id).insertAt(adjustedIndex, toInsert);

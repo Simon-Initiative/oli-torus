@@ -6,7 +6,10 @@ import { at } from 'lodash';
 import React, { Fragment, useEffect, useState } from 'react';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
+import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
+import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
+import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -20,6 +23,9 @@ const widgets: any = {
   ColorPicker: ColorPickerWidget,
   CheckboxWidget: CustomCheckbox,
   ScreenDropdownTemplate: ScreenDropdownTemplate,
+  TorusImageBrowser: TorusImageBrowser,
+  TorusAudioBrowser: TorusAudioBrowser,
+  TorusVideoBrowser: TorusVideoBrowser,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({

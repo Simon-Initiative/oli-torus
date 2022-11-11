@@ -36,3 +36,15 @@
 a.form-control {
   color: $blue;
 }
+
+button.icon-button {
+  &:hover {
+    color: var(--authoring-primary);
+  }
+}
+
+button.danger-icon-button {
+  &:hover {
+    color: var(--authoring-danger);
+  }
+}

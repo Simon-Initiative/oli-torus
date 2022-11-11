@@ -2,10 +2,9 @@ import * as Immutable from 'immutable';
 import {
   createDefaultStructuredContent,
   createGroup,
-  GroupContent,
   ResourceContent,
-  isNestableContainer,
-  NestableContainer,
+  isResourceGroup,
+  ResourceGroup,
 } from 'data/content/resource';
 import guid from 'utils/guid';
 
@@ -72,6 +71,19 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
    */
   insertAt(index: number[], toInsert: ResourceContent) {
     return this.with({ model: insertAt(this.model, index, toInsert) });
+  }
+
+  /**
+   * Replaces the resource content item at the specified index, where index is an array
+   * of indices for each level in the hierarchy.
+   *
+   * If an item does not exist at a given index then the operation is a no-op.
+   * @param index
+   * @param toInsert
+   * @return page editor content with the inserted item
+   */
+  replaceAt(index: number[], toReplace: ResourceContent) {
+    return this.with({ model: replaceAt(this.model, index, toReplace) });
   }
 
   /**
@@ -182,9 +194,7 @@ function findContentItem(
   return items.reduce((acc, c) => {
     if (c.id === id) return c;
 
-    return isNestableContainer(c)
-      ? findContentItem((c as NestableContainer).children, id, acc)
-      : acc;
+    return isResourceGroup(c) ? findContentItem((c as ResourceGroup).children, id, acc) : acc;
   }, acc);
 }
 
@@ -197,8 +207,8 @@ function findIndex(
   return items.reduce((acc, c, index) => {
     if (fn(c)) return [...parentIndices, index];
 
-    return isNestableContainer(c)
-      ? findIndex((c as NestableContainer).children, fn, [...parentIndices, index], acc)
+    return isResourceGroup(c)
+      ? findIndex((c as ResourceGroup).children, fn, [...parentIndices, index], acc)
       : acc;
   }, acc);
 }
@@ -210,8 +220,8 @@ function filterContentItem(
   return items.reduce((acc, c) => {
     if (c.id === id) return acc;
 
-    if (isNestableContainer(c)) {
-      (c as NestableContainer).children = filterContentItem((c as NestableContainer).children, id);
+    if (isResourceGroup(c)) {
+      (c as ResourceGroup).children = filterContentItem((c as ResourceGroup).children, id);
     }
     return acc.push(c);
   }, Immutable.List<ResourceContent>());
@@ -224,10 +234,10 @@ function insertAt(
 ): Immutable.List<ResourceContent> {
   const currentIndex = index[0];
   const currentItem = items.get(currentIndex);
-  if (index.length > 1 && currentItem && isNestableContainer(currentItem)) {
+  if (index.length > 1 && currentItem && isResourceGroup(currentItem)) {
     return items.update(currentIndex, createGroup(), (item) => {
-      (item as GroupContent).children = insertAt(
-        (item as GroupContent).children,
+      (item as ResourceGroup).children = insertAt(
+        (item as ResourceGroup).children,
         index.slice(1),
         toInsert,
       );
@@ -236,6 +246,35 @@ function insertAt(
   }
 
   return items.insert(currentIndex, toInsert);
+}
+
+function replaceAt(
+  items: Immutable.List<ResourceContent>,
+  index: number[],
+  toReplace: ResourceContent,
+): Immutable.List<ResourceContent> {
+  const currentIndex = index[0];
+  const currentItem = items.get(currentIndex);
+
+  if (index.length > 1 && currentItem && isResourceGroup(currentItem)) {
+    return items.update(currentIndex, createGroup(), (item) => {
+      (item as ResourceGroup).children = replaceAt(
+        (item as ResourceGroup).children,
+        index.slice(1),
+        toReplace,
+      );
+
+      return item;
+    });
+  }
+
+  if (index.length === 1 && currentItem) {
+    // this is the exact item at the index we are looking for so replace it
+    return items.set(currentIndex, toReplace);
+  }
+
+  // an item could not be found at the specified index so nothing is changed
+  return items;
 }
 
 function updateContentItem(
@@ -248,12 +287,8 @@ function updateContentItem(
       return updated;
     }
 
-    if (isNestableContainer(c)) {
-      (c as NestableContainer).children = updateContentItem(
-        (c as NestableContainer).children,
-        id,
-        updated,
-      );
+    if (isResourceGroup(c)) {
+      (c as ResourceGroup).children = updateContentItem((c as ResourceGroup).children, id, updated);
     }
 
     return c;
@@ -265,8 +300,8 @@ function updateAll(
   fn: (item: ResourceContent) => ResourceContent,
 ): Immutable.List<ResourceContent> {
   return items.map((i) => {
-    if (isNestableContainer(i)) {
-      (i as NestableContainer).children = updateAll((i as NestableContainer).children, fn);
+    if (isResourceGroup(i)) {
+      (i as ResourceGroup).children = updateAll((i as ResourceGroup).children, fn);
     }
 
     return fn(i);
@@ -277,8 +312,8 @@ function flatten(items: Immutable.List<ResourceContent>) {
   return items.reduce((acc, item) => {
     acc = acc.push(item);
 
-    if (isNestableContainer(item)) {
-      acc = acc.concat(flatten((item as NestableContainer).children));
+    if (isResourceGroup(item)) {
+      acc = acc.concat(flatten((item as ResourceGroup).children));
     }
 
     return acc;
@@ -287,8 +322,8 @@ function flatten(items: Immutable.List<ResourceContent>) {
 
 function toPersistence(items: Immutable.List<ResourceContent>): any[] {
   return items.reduce((acc, val) => {
-    const children = isNestableContainer(val)
-      ? toPersistence((val as NestableContainer).children)
+    const children = isResourceGroup(val)
+      ? toPersistence((val as ResourceGroup).children)
       : val.type === 'break'
       ? undefined
       : val.children;
@@ -297,9 +332,9 @@ function toPersistence(items: Immutable.List<ResourceContent>): any[] {
   }, []);
 }
 
-function fromPersistence(items: any[]): Immutable.List<ResourceContent> {
+export function fromPersistence(items: any[]): Immutable.List<ResourceContent> {
   return items.reduce((acc, val) => {
-    const children = isNestableContainer(val) ? fromPersistence(val.children) : val.children;
+    const children = isResourceGroup(val) ? fromPersistence(val.children) : val.children;
 
     return acc.push({ ...val, children });
   }, Immutable.List<ResourceContent>());

@@ -197,7 +197,8 @@ defmodule Oli.Factory do
       brand: anonymous_build(:brand),
       publisher: anonymous_build(:publisher),
       lti_1p3_deployment: deployment,
-      has_grace_period: false
+      has_grace_period: false,
+      line_items_service_url: "http://default.com"
     }
   end
 
