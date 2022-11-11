@@ -57,7 +57,7 @@ export const ActivityEditor = ({
           banked={false}
           contentBreaksExist={contentBreaksExist}
           canRemove={canRemove}
-          onRemove={onRemove}
+          onRemove={() => onRemove(contentItem.id)}
           onEdit={(update: EditorUpdate) => onEditActivity(activity.activitySlug, update)}
           onPostUndoable={(undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable)}
           onRegisterNewObjective={onRegisterNewObjective}

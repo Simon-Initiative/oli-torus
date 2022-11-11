@@ -72,7 +72,8 @@ export const Editors = (props: EditorsProps) => {
   const editors = content.model.map((contentItem, index) => {
     const onEdit = (contentItem: ResourceContent) =>
       props.onEdit(content.updateContentItem(contentItem.id, contentItem));
-    const onRemove = () => props.onRemove(contentItem.id);
+
+    const onRemove = props.onRemove;
 
     const editor = createEditor({
       resourceContext: resourceContext,
