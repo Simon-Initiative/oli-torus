@@ -1,6 +1,8 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
 
+  import Oli.Utils, only: [trap_nil: 1, log_error: 2]
+
   alias Oli.Accounts
   alias Oli.Utils
   alias Oli.Authoring.Course
@@ -121,6 +123,7 @@ defmodule OliWeb.ProjectController do
       # publish
       unpublished: active_publication_changes == nil,
       latest_published_publication: latest_published_publication,
+      active_publication_id: active_publication.id,
       active_publication_changes: active_publication_changes,
       version_change: version_change,
       has_changes: has_changes,
@@ -145,13 +148,32 @@ defmodule OliWeb.ProjectController do
 
   def publish_active(conn, params) do
     project = conn.assigns.project
-    description = params["description"]
 
-    Publishing.publish_project(project, description)
+    with {:ok, description} <- params["description"] |> trap_nil(),
+         {active_publication_id, ""} <- params["active_publication_id"] |> Integer.parse(),
+         {:ok} <- check_active_publication_id(project.slug, active_publication_id),
+         {:ok, _pub} <- Publishing.publish_project(project, description) do
+      conn
+      |> put_flash(:info, "Publish Successful!")
+      |> redirect(to: Routes.project_path(conn, :publish, project))
+    else
+      e ->
+        {_id, msg} = log_error("Publish failed", e)
 
-    conn
-    |> put_flash(:info, "Publish Successful!")
-    |> redirect(to: Routes.project_path(conn, :publish, project))
+        conn
+        |> put_flash(:error, msg)
+        |> redirect(to: Routes.project_path(conn, :publish, project))
+    end
+  end
+
+  defp check_active_publication_id(project_slug, active_publication_id) do
+    active_publication = Publishing.project_working_publication(project_slug)
+
+    if active_publication.id == active_publication_id do
+      {:ok}
+    else
+      {:error, "publication id does not match the active publication"}
+    end
   end
 
   def insights(conn, _project_params) do
