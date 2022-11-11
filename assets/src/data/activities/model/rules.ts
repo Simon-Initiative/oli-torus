@@ -326,8 +326,9 @@ const matchBetweenRule = (rule: string): Maybe<InputRange> =>
 
 // Look for a range match, possibly with a precision
 // e.g. `input = {[123.4,123.5]}` or`input = {(123.4,123.5)#3}`
+
 const matchRangeRule = (rule: string): Maybe<InputRange> =>
-  parseRegex(rule, /{([[(])\s*(-?[.\d]+)\s*,\s*(-?[.\d]+)\s*[\])]#?(\d+)?}/)
+  parseRegex(rule, /{([[(])\s*(-?[\d.]+(?:e-?\d+)?)\s*,\s*(-?[\d.]+(?:e-?\d+)?)\s*[\])]#?(\d+)?}/)
     .lift((matches) => ({
       bracketOrBrace: matches[1],
       matches: matches.slice(2, 5).map(maybeAsNumber),
