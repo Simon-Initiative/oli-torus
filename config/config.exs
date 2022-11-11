@@ -112,6 +112,7 @@ config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
+config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenLibrary
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,

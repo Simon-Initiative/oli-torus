@@ -1,11 +1,11 @@
 import React from 'react';
-import { GroupContent, ResourceContent } from 'data/content/resource';
-import { GroupBlock } from './GroupBlock';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
+import { ResourceContent, ResourceGroup } from 'data/content/resource';
+import { GroupBlock } from './GroupBlock';
 
 interface GroupEditorProps extends EditorProps {
-  contentItem: GroupContent;
+  contentItem: ResourceGroup;
 }
 
 export const GroupEditor = ({
@@ -37,12 +37,8 @@ export const GroupEditor = ({
       ...contentItem,
       children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
     };
-    onEdit(updatedContent);
+    onEdit(updatedContent as ResourceContent);
   };
-
-  const contentBreaksExist = contentItem.children
-    .toArray()
-    .some((v: ResourceContent) => v.type === 'break');
 
   return (
     <GroupBlock
@@ -50,17 +46,10 @@ export const GroupEditor = ({
       contentItem={contentItem}
       parents={parents}
       canRemove={canRemove}
-      onRemove={onRemove}
+      onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
-      contentBreaksExist={contentBreaksExist}
     >
       {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
         return (
           <div key={c.id}>
             <AddResource
@@ -89,10 +78,9 @@ export const GroupEditor = ({
               editorMap,
               canRemove,
               featureFlags,
-              contentBreaksExist,
               onEdit: onEditChild,
               onEditActivity,
-              onRemove: onRemoveChild,
+              onRemove: onRemove,
               onPostUndoable,
               onRegisterNewObjective,
               onRegisterNewTag,

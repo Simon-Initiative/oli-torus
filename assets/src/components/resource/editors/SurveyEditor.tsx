@@ -3,6 +3,13 @@ import { ResourceContent, SurveyContent } from 'data/content/resource';
 import { SurveyBlock } from './SurveyBlock';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
+import {
+  Description,
+  Icon,
+  OutlineGroup,
+  OutlineGroupProps,
+  resourceGroupTitle,
+} from './OutlineItem';
 
 interface SurveyEditorProps extends EditorProps {
   contentItem: SurveyContent;
@@ -45,16 +52,10 @@ export const SurveyEditor = ({
       editMode={editMode}
       contentItem={contentItem}
       canRemove={canRemove}
-      onRemove={onRemove}
+      onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
     >
       {contentItem.children.map((c, childIndex) => {
-        const onRemoveChild = () =>
-          onEdit({
-            ...contentItem,
-            children: contentItem.children.filter((i) => i.id !== c.id),
-          });
-
         return (
           <div key={c.id}>
             <AddResource
@@ -83,10 +84,9 @@ export const SurveyEditor = ({
               editorMap,
               canRemove,
               featureFlags,
-              contentBreaksExist: false,
               onEdit: onEditChild,
               onEditActivity,
-              onRemove: onRemoveChild,
+              onRemove,
               onPostUndoable,
               onRegisterNewObjective,
               onRegisterNewTag,
@@ -106,5 +106,22 @@ export const SurveyEditor = ({
         onRegisterNewObjective={onRegisterNewObjective}
       />
     </SurveyBlock>
+  );
+};
+
+interface SurveyOutlineItemProps extends OutlineGroupProps {
+  contentItem: SurveyContent;
+}
+
+export const SurveyOutlineItem = (props: SurveyOutlineItemProps) => {
+  const { contentItem } = props;
+
+  return (
+    <OutlineGroup {...props}>
+      <Icon iconName="las la-poll" />
+      <Description title={resourceGroupTitle(contentItem)}>
+        {contentItem.children.size} items
+      </Description>
+    </OutlineGroup>
   );
 };

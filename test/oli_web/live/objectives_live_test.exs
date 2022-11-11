@@ -234,6 +234,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
+    @tag :skip
     test "show objective", %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
       {:ok, sub_obj_2} = create_objective(project, publication, "sub_obj_2", "Sub Objective 2")

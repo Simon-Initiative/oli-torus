@@ -70,22 +70,22 @@ export function makeRequest<SuccessType>(
             } catch (e) {
               message = text;
             }
-            reject({
+            return reject({
               status: response.status,
               statusText: response.statusText,
               message,
             });
           });
         } else {
-          resolve(hasTextResult ? response.text() : response.json());
+          return resolve(hasTextResult ? response.text() : response.json());
         }
       })
-      .catch((error: { status: string; statusText: string; message: string }) => {
+      .catch((error: { status: string; statusText: string; message: string }) =>
         reject({
           status: error.status,
           statusText: error.statusText,
           message: error.message,
-        });
-      });
+        }),
+      );
   });
 }

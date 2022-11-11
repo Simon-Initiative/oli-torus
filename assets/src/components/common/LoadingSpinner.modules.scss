@@ -1,7 +1,6 @@
 @import 'common/mixins';
 
 .loadingSpinner {
-  text-align: center;
   color: var(--authoring-gray-600);
   @include disable-select;
 
@@ -10,15 +9,27 @@
     animation-duration: 1s;
   }
 
-  &.ls-small {
+  &.lsSmall {
     font-size: 0.8em;
   }
 
-  &.ls-medium {
+  &.lsMedium {
     font-size: 1em;
   }
 
-  &.ls-large {
+  &.lsLarge {
     font-size: 1.2em;
+  }
+
+  &.alignLeft {
+    text-align: left;
+  }
+
+  &.alignCenter {
+    text-align: center;
+  }
+
+  &.alignRight {
+    text-align: right;
   }
 }
