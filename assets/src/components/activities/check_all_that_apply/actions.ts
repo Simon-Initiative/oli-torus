@@ -11,26 +11,47 @@ import {
 import { matchListRule } from 'data/activities/model/rules';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { Choice, ChoiceId, makeResponse, makeUndoable, PostUndoable, ResponseId } from '../types';
+import {
+  Choice,
+  ChoiceId,
+  ChoiceIdsToResponseId,
+  makeResponse,
+  makeUndoable,
+  Part,
+  PostUndoable,
+  ResponseId,
+} from '../types';
 import { CATASchema as CATA } from './schema';
+
+// interface to use actions with other activity's models (ImageHotspot)
+export interface CATACompatible {
+  choices: Choice[];
+  authoring: CATAAuthoring;
+}
+
+export interface CATAAuthoring {
+  parts: Part[];
+  correct: ChoiceIdsToResponseId;
+  targeted: ChoiceIdsToResponseId[];
+}
 
 export const CATAActions = {
   addChoice(choice: Choice) {
-    return (model: CATA, post: PostUndoable) => {
+    return (model: CATACompatible, post: PostUndoable) => {
       Choices.addOne(choice)(model);
       updateResponseRules(model);
     };
   },
 
   toggleChoiceCorrectness(choiceId: ChoiceId) {
-    return (model: CATA) => {
+    return (model: CATACompatible) => {
       addOrRemove(choiceId, getChoiceIds(model.authoring.correct));
       updateResponseRules(model);
     };
   },
 
   removeChoiceAndUpdateRules(id: string) {
-    return (model: CATA, post: PostUndoable) => {
+    return (model: CATACompatible, post: PostUndoable) => {
       post(
         makeUndoable('Removed choice', [
           Operations.replace('$.authoring', clone(model.authoring)),
@@ -48,7 +69,7 @@ export const CATAActions = {
   },
 
   addTargetedFeedback() {
-    return (model: CATA) => {
+    return (model: CATACompatible) => {
       const choiceIds = Choices.getAll(model).map((c) => c.id);
       const response = makeResponse(matchListRule(choiceIds, []), 0, '');
 
@@ -58,7 +79,7 @@ export const CATAActions = {
   },
 
   editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
-    return (model: CATA) => {
+    return (model: CATACompatible) => {
       const assoc = model.authoring.targeted.find(
         (assoc: any) => getResponseId(assoc) === responseId,
       );
@@ -71,7 +92,7 @@ export const CATAActions = {
 
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
-const updateResponseRules = (model: CATA) => {
+const updateResponseRules = (model: CATACompatible) => {
   getCorrectResponse(model, model.authoring.parts[0].id).rule = matchListRule(
     model.choices.map((c: any) => c.id),
     getCorrectChoiceIds(model),
