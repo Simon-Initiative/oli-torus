@@ -44,6 +44,9 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
   end
 
   test "evaluating ranges" do
+    # scientific notation inside the range, evaluates to true
+    assert eval("attemptNumber = {1} && input = {[3.0e5,4.0e5]}", "3.5e5") == true
+
     # float inside the range, evaluates to true
     assert eval("attemptNumber = {1} && input = {(3,4)}", "3.1") == true
     assert eval("attemptNumber = {1} && input = {(3.0,4)}", "3.1") == true
