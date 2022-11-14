@@ -85,7 +85,8 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
-    {:ok, collab_space_config} = Collaboration.get_collab_space_config_for_page(section_slug, page_revision.slug)
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page(section_slug, page_revision.slug)
 
     %PageContext{
       user: Attempts.get_user_from_attempt(resource_attempt),
@@ -180,7 +181,8 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
-    {:ok, collab_space_config} = Collaboration.get_collab_space_config_for_page(section_slug, page_revision.slug)
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page(section_slug, page_revision.slug)
 
     %PageContext{
       user: user,
@@ -205,8 +207,16 @@ defmodule Oli.Delivery.Page.PageContext do
   end
 
   defp assemble_final_context(state, resource_attempt, latest_attempts, page_revision) do
+    content_for_ordinal_assignment =
+      case resource_attempt.content do
+        nil -> page_revision.content
+        t -> t
+      end
+
     {state, [resource_attempt], latest_attempts,
-     ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+     ActivityContext.create_context_map(page_revision.graded, latest_attempts,
+       assign_ordinals_from: content_for_ordinal_assignment
+     )}
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)

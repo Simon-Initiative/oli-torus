@@ -25,6 +25,8 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
     activity_states = State.from_attempts(latest_attempts)
 
+    ordinal_assign_fn = create_ordinal_assignment_fn(graded, opts)
+
     Enum.map(latest_attempts, fn {id,
                                   {%ActivityAttempt{revision: revision} = activity_attempt, _}} ->
       model = Core.select_model(activity_attempt)
@@ -44,10 +46,32 @@ defmodule Oli.Delivery.Page.ActivityContext do
          authoring_element: type.authoring_element,
          script: type.delivery_script,
          graded: graded,
-         bib_refs: Map.get(model, "bibrefs", [])
+         bib_refs: Map.get(model, "bibrefs", []),
+         ordinal: ordinal_assign_fn.(id)
        }}
     end)
     |> Map.new()
+  end
+
+  defp create_ordinal_assignment_fn(false, _), do: fn _ -> nil end
+
+  defp create_ordinal_assignment_fn(true, opts) do
+    case Keyword.has_key?(opts, :assign_ordinals_from) do
+      true ->
+        {map, _} =
+          Keyword.get(opts, :assign_ordinals_from)
+          |> Oli.Resources.PageContent.flat_filter(fn e -> e["type"] == "activity-reference" end)
+          |> Enum.reduce({%{}, 1}, fn e, {m, ordinal} ->
+            {Map.put(m, e["activity_id"], ordinal), ordinal + 1}
+          end)
+
+        fn activity_id ->
+          Map.get(map, activity_id)
+        end
+
+      false ->
+        fn _ -> nil end
+    end
   end
 
   @doc """
