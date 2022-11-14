@@ -7,6 +7,8 @@ defmodule Oli.Resources.NumberingTest do
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
+  alias Oli.Authoring.Course
+  alias OliWeb.Common.Breadcrumb
 
   describe "container numbering" do
     setup do
@@ -48,7 +50,7 @@ defmodule Oli.Resources.NumberingTest do
       ])
     end
 
-    test "number_tree_from/2 numbers the containers correctly", %{
+    test "number_full_tree/2 numbers the containers correctly", %{
       project: project
     } do
       revisions_by_id =
@@ -57,8 +59,7 @@ defmodule Oli.Resources.NumberingTest do
 
       # do the numbering, then programatically compare it to the titles of the
       # containers, which contain the correct numbering and level names
-      # Numbering.number_tree_from(root, AuthoringResolver.all_revisions_in_hierarchy(project.slug))
-      Numbering.number_full_tree(AuthoringResolver, project.slug)
+      Numbering.number_full_tree(AuthoringResolver, project.slug, project.customizations)
       |> Enum.to_list()
       |> Enum.filter(fn {id, _n} ->
         !Regex.match?(~r|page|, revisions_by_id[id].slug) &&
@@ -167,6 +168,34 @@ defmodule Oli.Resources.NumberingTest do
       assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(2)).numbering.level == 3
       assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(2)).numbering.index == 6
 
+    end
+
+    test "custom labels", %{project: project, institution: institution} do
+      custom_labels = %{"unit" => "Volume", "module" => "Chapter", "section" => "Lesson"}
+      {:ok, project} = Course.update_project(project, %{customizations: custom_labels})
+
+      {:ok, pub1} = Publishing.publish_project(project, "some changes")
+
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id,
+          customizations: Map.from_struct(project.customizations)
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(pub1)
+
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert hierarchy.numbering.labels == %{unit: "Volume", module: "Chapter", section: "Lesson"}
+
+      page_2_crumb = Breadcrumb.trail_to(project.slug, "page_2", AuthoringResolver, project.customizations)
+      |> List.last()
+
+      assert page_2_crumb.full_title == "Lesson 1: Page 2"
     end
   end
 end

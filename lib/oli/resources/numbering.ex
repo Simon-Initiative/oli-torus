@@ -46,20 +46,22 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Resources.Revision
   alias Oli.Publishing.Resolver
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Branding.CustomLabels
 
   defstruct level: 0,
-            index: 0
+            index: 0,
+            labels: Map.from_struct(CustomLabels.default())
 
-  def container_type(level) do
-    case level do
-      1 -> "Unit"
-      2 -> "Module"
-      _ -> "Section"
+  def container_type_label(numbering) do
+    case numbering.level do
+      1 -> Map.get(numbering.labels, :unit)
+      2 -> Map.get(numbering.labels, :module)
+      _ -> Map.get(numbering.labels, :section)
     end
   end
 
   def prefix(numbering) do
-    container_type(numbering.level) <> " #{numbering.index}"
+    container_type_label(numbering) <> " #{numbering.index}"
   end
 
   @typep project_or_section_slug :: String.t()
@@ -195,16 +197,21 @@ defmodule Oli.Resources.Numbering do
 
   This method returns a map of revision id to %Numbering structs.
   """
-  @spec number_full_tree(resolver, project_or_section_slug) :: %{revision_id => %__MODULE__{}}
-  def number_full_tree(resolver, project_or_section_slug) do
-    number_tree_from(
+  @spec number_full_tree(resolver, project_or_section_slug, %CustomLabels{}) :: %{revision_id => %__MODULE__{}}
+  def number_full_tree(resolver, project_or_section_slug, labels) do
+    full_tree = number_tree_from(
       resolver.root_container(project_or_section_slug),
       resolver.all_revisions_in_hierarchy(project_or_section_slug)
     )
+    case labels do
+        nil -> full_tree
+        _ -> Enum.reduce(full_tree, %{}, fn {k, val}, acc ->
+          Map.put(acc, k, %__MODULE__{val | labels: Map.from_struct(labels)}) end)
+    end
   end
 
   @spec number_tree_from(%Revision{}, [%Revision{}]) :: %{revision_id => %__MODULE__{}}
-  def number_tree_from(revision, revisions) do
+  defp number_tree_from(revision, revisions) do
     # for all revisions, map them by their ids
     by_id =
       Enum.filter(revisions, fn r ->
@@ -295,7 +302,7 @@ defmodule Oli.Resources.Numbering do
        ) do
     {numbering_index, numbering_tracker} = next_index(numbering_tracker, level, node.revision)
 
-    numbering = %__MODULE__{level: level, index: numbering_index}
+    numbering = %__MODULE__{level: level, index: numbering_index, labels: node.numbering.labels}
     numberings = Map.put(numberings, node.revision.id, numbering)
 
     {children, numbering_tracker, numberings} =

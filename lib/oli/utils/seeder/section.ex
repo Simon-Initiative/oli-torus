@@ -14,6 +14,11 @@ defmodule Oli.Utils.Seeder.Section do
   def create_section(seeds, project, publication, institution, attrs \\ %{}, tags \\ []) do
     [project, publication, institution] = unpack(seeds, [project, publication, institution])
 
+    customizations = case project.customizations do
+      nil -> nil
+      labels -> Map.from_struct(labels)
+    end
+
     attrs =
       %{title: "Example Section", registration_open: true, context_id: UUID.uuid4()}
       |> Map.merge(attrs)
@@ -23,7 +28,8 @@ defmodule Oli.Utils.Seeder.Section do
             nil -> nil
             i -> i.id
           end,
-        base_project_id: project.id
+        base_project_id: project.id,
+        customizations: customizations
       })
 
     {:ok, section} =

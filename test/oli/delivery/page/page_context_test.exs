@@ -81,6 +81,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
 
       # verify objectives map
       assert context.objectives == ["objective one"]
+      refute context.collab_space_config
     end
   end
 end

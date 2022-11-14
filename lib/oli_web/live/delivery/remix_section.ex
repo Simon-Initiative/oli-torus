@@ -613,7 +613,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   ## used by add container button, disabled for now
   # defp new_container_name(%HierarchyNode{numbering: numbering} = _active) do
-  #   Numbering.container_type(numbering.level + 1)
+  #   Numbering.container_type_label(%Numbering{numbering | level: numbering.level + 1})
   # end
 
   defp render_breadcrumb(%{hierarchy: hierarchy, active: active} = assigns) do

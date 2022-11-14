@@ -14,6 +14,8 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
+  alias Oli.Branding.CustomLabels
+  alias Oli.Repo
 
   @doc """
   This method should be called after any hierarchy-changing operation
@@ -104,11 +106,17 @@ defmodule Oli.Delivery.Hierarchy do
     %PublishedResource{publication: pub} =
       published_resources_by_resource_id[revision.resource_id]
 
+    pub = Repo.preload(pub, :project)
+    labels = case pub.project.customizations do
+      nil -> Map.from_struct(CustomLabels.default())
+      l -> Map.from_struct(l)
+    end
     %HierarchyNode{
       uuid: uuid(),
       numbering: %Numbering{
         index: index,
-        level: level
+        level: level,
+        labels: labels
       },
       revision: revision,
       resource_id: revision.resource_id,
