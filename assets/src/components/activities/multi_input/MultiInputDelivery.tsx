@@ -222,13 +222,20 @@ export const MultiInputComponent: React.FC = () => {
     }
   };
 
+  const hasActualInput = (id: string) => {
+    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+    const partState = uiState.partState[input.partId];
+
+    return partState.studentInput[0].trim() !== '';
+  };
+
   // When inputs of type other than dropdown lose their focus:
   // 1. We flush pending changes, so we save their state if the student's next interaction is to navigate
   //    away to another page
   // 2. If submitPerPart is active, we then submit the part
   const onBlur = (id: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    if (input.inputType !== 'dropdown') {
+    if (input.inputType !== 'dropdown' && hasActualInput(id)) {
       deferredSaves.current[id].flushPendingChanges(false);
       if ((uiState.model as MultiInputSchema).submitPerPart) {
         handlePerPartSubmission(input.partId);
@@ -238,9 +245,11 @@ export const MultiInputComponent: React.FC = () => {
 
   const onPressEnter = (id: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    deferredSaves.current[id].flushPendingChanges(false);
-    if ((uiState.model as MultiInputSchema).submitPerPart) {
-      handlePerPartSubmission(input.partId);
+    if (hasActualInput(id)) {
+      deferredSaves.current[id].flushPendingChanges(false);
+      if ((uiState.model as MultiInputSchema).submitPerPart) {
+        handlePerPartSubmission(input.partId);
+      }
     }
   };
 
