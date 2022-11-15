@@ -1,4 +1,5 @@
-.cursor-pointer, .selectable {
+.cursor-pointer,
+.selectable {
   cursor: pointer;
 }
 
@@ -16,4 +17,16 @@
 
 .fs-button-download {
   font-size: 0.6em !important;
+}
+
+.border-post-forum {
+  border-left: 2.5px solid !important;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.w-85 {
+  width: 85%;
 }
