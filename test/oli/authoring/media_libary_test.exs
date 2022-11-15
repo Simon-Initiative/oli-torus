@@ -161,5 +161,13 @@ defmodule Oli.Authoring.MediaLibraryTest do
 
       assert hd(items).file_name == "100"
     end
+
+    test "upload_path/2 returns correct hashed path" do
+      assert MediaLibrary.upload_path("MyFile.txt", "here are the contents") ==
+               "/media/6B/6B43F3521620769F03BF4B1A1ECEA71F/MyFile.txt"
+
+      assert MediaLibrary.upload_path("MyFile2.txt", "here are some other contents") ==
+               "/media/8E/8E429C143925928F4DD1A659387DA90A/MyFile2.txt"
+    end
   end
 end

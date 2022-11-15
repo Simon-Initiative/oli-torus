@@ -74,7 +74,7 @@ defmodule Oli.Authoring.MediaLibrary do
       case check_for_duplicates(project.id, file_name, hash) do
         # Upload the file and insert the meta data
         {:no_duplicate_found, _} ->
-          upload(project_slug, file_name, file_contents)
+          upload(file_name, file_contents)
           |> insert(project.id, file_name, file_contents, hash)
 
         {:duplicate_name, _} ->
@@ -203,19 +203,27 @@ defmodule Oli.Authoring.MediaLibrary do
     end
   end
 
+  def upload_path(file_name, contents) do
+    hash = :crypto.hash(:md5, contents) |> Base.encode16()
+
+    subdir = hash |> String.slice(0..1)
+
+    "/media/#{subdir}/#{hash}/#{file_name}"
+  end
+
   defp upload_file(bucket, file_name, contents) do
     S3.put_object(bucket, file_name, contents, [{:acl, :public_read}]) |> ExAws.request()
   end
 
-  defp upload(project_slug, file_name, file_contents) do
-    path = "media/" <> project_slug <> "/" <> file_name
+  defp upload(file_name, file_contents) do
+    path = upload_path(file_name, file_contents)
 
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
     media_url = Application.fetch_env!(:oli, :media_url)
 
     case upload_file(bucket_name, path, file_contents) do
-      {:ok, %{status_code: 200}} -> {:ok, "https://#{media_url}/#{path}"}
+      {:ok, %{status_code: 200}} -> {:ok, "https://#{media_url}#{path}"}
       _ -> {:error, {:persistence}}
     end
   end
