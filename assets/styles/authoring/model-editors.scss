@@ -3,6 +3,12 @@
 
 .editors .structured-content,
 .rich-text-editor {
+  border: 2px solid var(--authoring-toolbar-border-color);
+
+  .slate-editor.fixed {
+    padding: 10px;
+  }
+
   .table-editor {
     .table-remove {
       position: absolute;
