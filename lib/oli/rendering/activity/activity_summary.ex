@@ -35,6 +35,9 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     # whether or not the activity is rendering in a graded context
     :graded,
     # bibliography references
-    :bib_refs
+    :bib_refs,
+
+    # The ordinal position of this activity within the page
+    :ordinal
   ]
 end
