@@ -247,7 +247,7 @@ defmodule Oli.Resources.CollaborationTest do
       assert page.resource_id == page_revision_cs.resource_id
     end
 
-    test "get_collab_space_config_for_page/2 returns nil when no collab space is present" do
+    test "get_collab_space_config_for_page_in_section/2 returns nil when no collab space is present" do
       {:ok,
         %{
           page_revision: page_revision,
@@ -255,15 +255,15 @@ defmodule Oli.Resources.CollaborationTest do
         }} = create_project_with_collab_space_and_posts()
 
       assert {:ok, nil} ==
-        Collaboration.get_collab_space_config_for_page(section.slug, page_revision.slug)
+        Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section.slug)
     end
 
-    test "get_collab_space_config_for_page/2 returns error when no section or page exists" do
+    test "get_collab_space_config_for_page_in_section/2 returns error when no section or page exists" do
       assert {:error, :not_found} ==
-        Collaboration.get_collab_space_config_for_page("section_slug", "page_revision")
+        Collaboration.get_collab_space_config_for_page_in_section("page_revision", "section_slug")
     end
 
-    test "get_collab_space_config_for_page/2 returns the page collab space when no delivery setting" do
+    test "get_collab_space_config_for_page_in_section/2 returns the page collab space when no delivery setting" do
       {:ok,
         %{
           page_revision_cs: page_revision_cs,
@@ -272,12 +272,12 @@ defmodule Oli.Resources.CollaborationTest do
         }} = create_project_with_collab_space_and_posts()
 
       assert {:ok, %CollabSpaceConfig{} = returned_cs} =
-        Collaboration.get_collab_space_config_for_page(section.slug, page_revision_cs.slug)
+        Collaboration.get_collab_space_config_for_page_in_section(page_revision_cs.slug, section.slug)
 
       assert collab_space_config == returned_cs
     end
 
-    test "get_collab_space_config_for_page/2 returns the delivery setting collab space when present" do
+    test "get_collab_space_config_for_page_in_section/2 returns the delivery setting collab space when present" do
       {:ok,
         %{
           page_revision_cs: page_revision_cs,
@@ -294,11 +294,41 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       assert {:ok, %CollabSpaceConfig{} = returned_cs} =
-        Collaboration.get_collab_space_config_for_page(section.slug, page_revision_cs.slug)
+        Collaboration.get_collab_space_config_for_page_in_section(page_revision_cs.slug, section.slug)
 
       refute collab_space_config == returned_cs
       refute collab_space_config.status == returned_cs.status
       assert ds_collab_space.status == returned_cs.status
+    end
+
+    test "get_collab_space_config_for_page_in_project/2 returns nil when no collab space is present" do
+      {:ok,
+        %{
+          page_revision: page_revision,
+          project: project
+        }} = create_project_with_collab_space_and_posts()
+
+      assert {:ok, nil} ==
+        Collaboration.get_collab_space_config_for_page_in_project(page_revision.slug, project.slug)
+    end
+
+    test "get_collab_space_config_for_page_in_project/2 returns error when no project or page exists" do
+      assert {:error, :not_found} ==
+        Collaboration.get_collab_space_config_for_page_in_project("page_revision", "project_slug")
+    end
+
+    test "get_collab_space_config_for_page_in_project/2 returns the page collab space" do
+      {:ok,
+        %{
+          page_revision_cs: page_revision_cs,
+          collab_space_config: collab_space_config,
+          project: project
+        }} = create_project_with_collab_space_and_posts()
+
+      assert {:ok, %CollabSpaceConfig{} = returned_cs} =
+        Collaboration.get_collab_space_config_for_page_in_project(page_revision_cs.slug, project.slug)
+
+      assert collab_space_config == returned_cs
     end
   end
 

@@ -86,7 +86,7 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     {:ok, collab_space_config} =
-      Collaboration.get_collab_space_config_for_page(section_slug, page_revision.slug)
+      Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
 
     %PageContext{
       user: Attempts.get_user_from_attempt(resource_attempt),
@@ -182,7 +182,7 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     {:ok, collab_space_config} =
-      Collaboration.get_collab_space_config_for_page(section_slug, page_revision.slug)
+      Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
 
     %PageContext{
       user: user,
