@@ -60,5 +60,34 @@ defmodule Oli.DeliveryTest do
       assert returned_delivery_setting.id == delivery_setting.id
       assert returned_delivery_setting.collab_space_config == %CollabSpaceConfig{}
     end
+
+    test "search_delivery_settings/1 returns empty when no delivery_setting meets the criteria" do
+      insert_pair(:delivery_setting)
+
+      assert [] == Delivery.search_delivery_settings(%{section_id: -1})
+    end
+
+    test "upsert_delivery_setting/1 with valid data creates a delivery_setting" do
+      params = params_with_assocs(:delivery_setting)
+      assert {:ok, %DeliverySetting{} = delivery_setting} =
+        Delivery.upsert_delivery_setting(params)
+
+      assert delivery_setting.collab_space_config.status == params.collab_space_config.status
+      assert delivery_setting.collab_space_config.threaded == params.collab_space_config.threaded
+      assert delivery_setting.user_id == params.user_id
+      assert delivery_setting.section_id == params.section_id
+      assert delivery_setting.resource_id == params.resource_id
+    end
+
+    test "upsert_delivery_setting/2 updates the delivery_setting successfully" do
+      delivery_setting = insert(:delivery_setting)
+      new_attrs = params_for(:collab_space_config, status: :archived)
+
+      {:ok, updated_delivery_setting} =
+        Delivery.upsert_delivery_setting(Map.merge(Map.from_struct(delivery_setting), %{collab_space_config: new_attrs}))
+
+      assert delivery_setting.id == updated_delivery_setting.id
+      assert updated_delivery_setting.collab_space_config.status == :archived
+    end
   end
 end

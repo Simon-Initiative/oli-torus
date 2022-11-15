@@ -394,5 +394,11 @@ defmodule Oli.Resources.CollaborationTest do
       assert returned_post.id == post.id
       assert returned_post.replies_count == 0
     end
+
+    test "search_posts/1 returns empty when no posts meets the criteria" do
+      insert_pair(:post)
+
+      assert [] == Collaboration.search_posts(%{status: :deleted})
+    end
   end
 end
