@@ -120,7 +120,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           style={props.style}
           className={classNames(
             'slate-editor',
-            props.fixedToolbar && 'fixed',
+            props.fixedToolbar && 'fixed-toolbar',
             props.className,
             !props.editMode && 'disabled',
           )}

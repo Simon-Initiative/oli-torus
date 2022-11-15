@@ -3,9 +3,11 @@
 
 .editors .structured-content,
 .rich-text-editor {
-  border: 2px solid var(--authoring-toolbar-border-color);
+  &.fixed-toolbar {
+    border: 2px solid var(--authoring-toolbar-border-color);
+  }
 
-  .slate-editor.fixed {
+  .slate-editor.fixed-toolbar {
     padding: 10px;
   }
 
