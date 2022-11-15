@@ -45,7 +45,10 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
     if (graded || isPreviewMode) {
       window.location.reload();
     } else {
-      window.location.href = overviewURL;
+      // FIXME: for hotfix purposes, just reverting the code
+      // going fwd however it should use a parameter sent from the backend instead
+      const newAttemptUrl = `/sections/${sectionSlug}/page/${revisionSlug}/attempt`;
+      window.location.href = newAttemptUrl;
     }
   };
 
