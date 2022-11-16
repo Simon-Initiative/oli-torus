@@ -43,7 +43,7 @@ export const RichTextEditor: React.FC<Props> = ({
   value = (value as any).model ? (value as any).model : value;
 
   return (
-    <div className={classNames('rich-text-editor', className)}>
+    <div className={classNames('rich-text-editor', fixedToolbar && 'fixed-toolbar', className)}>
       <ErrorBoundary>
         <Editor
           normalizerContext={normalizerContext}

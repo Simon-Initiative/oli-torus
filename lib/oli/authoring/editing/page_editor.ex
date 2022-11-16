@@ -260,10 +260,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
         :delivery
       end
 
+    graded = Keyword.get(options, :graded, false)
+
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, attributes} <- Course.get_project_attributes(project_slug) |> trap_nil(),
-         {:ok, activities} <- create_activity_summary_map(publication.id, content),
+         {:ok, activities} <- create_activity_summary_map(publication.id, content, graded),
          render_context <- %Rendering.Context{
            user: author,
            mode: mode,
@@ -282,13 +284,24 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  defp create_activity_summary_map(publication_id, content) do
+  defp create_activity_summary_map(publication_id, content, graded) do
     # Now see if we even have any activities that need to be mapped
     found_activities =
       Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
         type == "activity-reference"
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
+
+    # Assign ordinals into a map, keyed on resource (activity) id
+    ordinal_map =
+      Enum.with_index(found_activities, 1)
+      |> Enum.reduce(%{}, fn {id, ordinal}, map ->
+        if graded do
+          Map.put(map, id, ordinal)
+        else
+          Map.put(map, id, nil)
+        end
+      end)
 
     # Get a mapping of the activities to their parent groups. We need to set this
     # correctly so that client-side pagination automation works
@@ -306,8 +319,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
        |> Enum.map(fn %Revision{
                         resource_id: resource_id,
                         activity_type_id: activity_type_id,
-                        content: content,
-                        graded: graded
+                        content: content
                       } = revision ->
          # To support 'test mode' in the editor, we give the editor an initial transformed
          # version of the model that it can immediately use for display purposes. If it fails
@@ -345,7 +357,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            authoring_element: type.authoring_element,
            script: type.delivery_script,
            graded: graded,
-           bib_refs: Map.get(content, "bibrefs", [])
+           bib_refs: Map.get(content, "bibrefs", []),
+           ordinal: Map.get(ordinal_map, resource_id)
          }
        end)
        |> Enum.reduce(%{}, fn summary, acc -> Map.put(acc, summary.id, summary) end)}
