@@ -13,8 +13,30 @@
     -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.45);
 
     &.fixedToolbar {
+      border: none;
+      border-bottom: 2px solid var(--authoring-toolbar-border-color);
       border-radius: 0px;
-      margin-bottom: 2rem;
+      margin-bottom: 0;
+      box-shadow: none;
+      -webkit-box-shadow: none;
+
+      .toolbarGroup {
+        margin: 0;
+      }
+
+      .toolbarButton {
+        &:first-of-type {
+          margin-left: 0;
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+        }
+
+        &:last-of-type {
+          margin-right: 0;
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
     }
   }
 

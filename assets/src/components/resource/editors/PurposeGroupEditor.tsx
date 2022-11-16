@@ -56,7 +56,7 @@ export const PurposeGroupEditor = ({
       contentItem={contentItem}
       parents={parents}
       canRemove={canRemove}
-      onRemove={onRemove}
+      onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
     >
       <GroupEditor
