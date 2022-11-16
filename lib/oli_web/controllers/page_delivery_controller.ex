@@ -28,6 +28,7 @@ defmodule OliWeb.PageDeliveryController do
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
   def index(conn, %{"section_slug" => section_slug}) do
+    IO.puts("thie sis where whewre -----------")
     user = conn.assigns.current_user
     section = conn.assigns.section
 
@@ -39,6 +40,7 @@ defmodule OliWeb.PageDeliveryController do
 
         section ->
           hierarchy = Resolver.full_hierarchy(section.slug)
+          IO.inspect(hierarchy)
 
           render(conn, "index.html",
             title: section.title,
