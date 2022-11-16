@@ -126,12 +126,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
                 <div class="ml-4">
                   <Field name={:participation_min_replies} class="form-group mt-1">
                     <Label text="Minimum replies"/>
-                    <NumberInput class="form-control"/>
+                    <NumberInput class="form-control" opts={min: 0}/>
                   </Field>
 
                   <Field name={:participation_min_posts} class="form-group mt-1">
                     <Label text="Minimum posts" />
-                    <NumberInput class="form-control"/>
+                    <NumberInput class="form-control" opts={min: 0}/>
                   </Field>
                 </div>
               </Inputs>

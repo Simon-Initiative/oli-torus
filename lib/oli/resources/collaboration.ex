@@ -42,12 +42,12 @@ defmodule Oli.Resources.Collaboration do
           {:ok, page_resource} <- Resources.get_resource_from_slug(page_slug) |> trap_nil(),
           {:ok, page_revision} <-
             Publishing.get_published_revision(publication.id, page_resource.id) |> trap_nil(),
-          {:ok, next_page_revision} =
+          {:ok, next_page_revision} <-
             Resources.create_revision_from_previous(page_revision, %{
               collab_space_config: attrs,
               author_id: author_id
             }),
-          {:ok, _} = Publishing.upsert_published_resource(publication, next_page_revision) do
+          {:ok, _} <- Publishing.upsert_published_resource(publication, next_page_revision) do
         %{
           project: project,
           publication: publication,
