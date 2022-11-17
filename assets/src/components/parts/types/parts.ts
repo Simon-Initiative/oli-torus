@@ -84,7 +84,18 @@ export interface ColorPalette {
   lineThickness?: number;
 }
 
-export const defaultCapabilities = {
+export interface PartCapabilities {
+  move: boolean;
+  copy: boolean;
+  resize: boolean;
+  rotate: boolean;
+  select: boolean;
+  delete: boolean;
+  duplicate: boolean;
+  configure: boolean;
+}
+
+export const defaultCapabilities: PartCapabilities = {
   move: true,
   copy: true,
   resize: true,
