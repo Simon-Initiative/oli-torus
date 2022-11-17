@@ -5,9 +5,11 @@
   .options {
     display: flex;
     flex-direction: row;
+    overflow-x: scroll;
 
     .option {
       margin-right: 10px;
+      white-space: nowrap;
 
       &.add {
         border-radius: 50%;
