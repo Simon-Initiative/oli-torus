@@ -54,12 +54,13 @@ export const readGlobalUserState = async (
     }
     let refreshFromServer = false;
     if (keys) {
-      const cacheTimeThreshold = 100000;
+      const cacheTimeThreshold = 200000;
       const { timestamp: lastCacheTimeStamp } = userStateCache;
-      //If cache is not older than 1 min then lets fetch the data from cache
+      //If cache is not older than 2 min then lets fetch the data from cache
       if (Date.now() - lastCacheTimeStamp < cacheTimeThreshold) {
         keys.forEach((key) => {
-          if (!userStateCache[key]) {
+          const keyExists = userStateCache[key];
+          if (keyExists === undefined || keyExists === null) {
             //if cache does not have any of the requested keys, we should make the server call
             refreshFromServer = true;
           }
