@@ -33,5 +33,7 @@ defmodule Oli.Resources.Collaboration.CollabSpaceConfig do
       :participation_min_replies,
       :participation_min_posts
     ])
+    |> validate_number(:participation_min_replies, greater_than: 0)
+    |> validate_number(:participation_min_posts, greater_than: 0)
   end
 end

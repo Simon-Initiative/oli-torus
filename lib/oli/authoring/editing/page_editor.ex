@@ -9,7 +9,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   require Logger
 
   alias Oli.Authoring.{Locks, Course}
-  alias Oli.Resources.Revision
+  alias Oli.Resources.{Collaboration, Revision}
   alias Oli.Resources
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
@@ -219,6 +219,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
       activity_ids = activities_from_content(revision.content)
 
+      {:ok, collab_space_config} =
+        Collaboration.get_collab_space_config_for_page_in_project(revision_slug, project_slug)
+
       {:ok,
        %Oli.Authoring.Editing.ResourceContext{
          authorEmail: author.email,
@@ -241,7 +244,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            end),
          project: publication.project,
          previous_page: previous,
-         next_page: next
+         next_page: next,
+         collab_space_config: collab_space_config
        }}
     else
       _ -> {:error, :not_found}
