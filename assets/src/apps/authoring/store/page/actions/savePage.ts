@@ -11,6 +11,8 @@ import { RootState } from '../../rootReducer';
 import { PageState, selectRevisionSlug, selectState, setRevisionSlug, updatePage } from '../slice';
 import PageSlice from '../name';
 import { createUndoAction } from '../../history/slice';
+import { debounce } from 'lodash';
+import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
 
 export interface PagePayload extends Partial<PageState> {
   undoable?: boolean;
@@ -79,8 +81,6 @@ export const savePage = createAsyncThunk(
       customUpdate.totalScore = totalScore;
     }
 
-    dispatch(updatePage({ custom: customUpdate }));
-
     const update: ResourceUpdate = {
       title: payload.title || currentPage.title,
       objectives: payload.objectives || currentPage.objectives,
@@ -90,14 +90,14 @@ export const savePage = createAsyncThunk(
         advancedDelivery,
         displayApplicationChrome,
         custom: customUpdate,
-        customCss: payload.customCss || currentPage.customCss,
-        customScript: payload.customScript || currentPage.customScript,
-        additionalStylesheets: payload.additionalStylesheets || currentPage.additionalStylesheets,
+        customCss: payload.customCss ?? currentPage.customCss,
+        customScript: payload.customScript ?? currentPage.customScript,
+        additionalStylesheets: payload.additionalStylesheets ?? currentPage.additionalStylesheets,
       },
       releaseLock: false,
     };
 
-    const saveResult = await edit(projectSlug, revisionSlug, update, false);
+    dispatch(updatePage(update.content));
 
     if (undoable) {
       dispatch(
@@ -107,6 +107,19 @@ export const savePage = createAsyncThunk(
         }),
       );
     }
+
+    _edit(projectSlug, revisionSlug, update, dispatch);
+  },
+);
+
+const _edit = debounce(
+  async (
+    projectSlug: string,
+    revisionSlug: string,
+    update: any,
+    dispatch: (action: any) => void,
+  ) => {
+    const saveResult = await edit(projectSlug, revisionSlug, update, false);
 
     if (saveResult.type === 'ServerError') {
       throw new Error(saveResult.message);
@@ -118,4 +131,6 @@ export const savePage = createAsyncThunk(
       dispatch(setRevisionSlug({ revisionSlug: newSlug }));
     }
   },
+  SAVE_DEBOUNCE_TIMEOUT,
+  SAVE_DEBOUNCE_OPTIONS,
 );

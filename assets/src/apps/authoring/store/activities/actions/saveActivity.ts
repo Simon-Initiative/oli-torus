@@ -16,9 +16,14 @@ import { savePage } from '../../page/actions/savePage';
 import { selectResourceId, selectState as selectCurrentPage } from '../../page/slice';
 import { createUndoAction } from '../../history/slice';
 import cloneDeep from 'lodash/cloneDeep';
+import memoize from 'lodash/memoize';
+import debounce from 'lodash/debounce';
+
 import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 import { diff } from 'deep-object-diff';
+import { ProjectSlug, ResourceId } from '../../../../../data/types';
+import { SAVE_DEBOUNCE_TIMEOUT, SAVE_DEBOUNCE_OPTIONS } from '../../persistance-options';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
@@ -58,14 +63,11 @@ export const saveActivity = createAsyncThunk(
       };
 
       if (!isReadOnlyMode) {
-        /*console.log('going to save acivity: ', { changeData, activity });*/
-        const editResults = await edit(
-          projectSlug,
-          resourceId,
-          activity.resourceId as number,
-          changeData,
-          false,
-        );
+        console.log('going to save acivity: ', { changeData, activity });
+
+        const debouncedEdit = getDebouncedEdit(String(activity.id));
+
+        debouncedEdit(projectSlug, resourceId, activity.resourceId as number, changeData, false);
 
         // grab the activity before it's updated for the score check
         const oldActivityData = selectActivityById(rootState, activity.resourceId as number);
@@ -85,9 +87,6 @@ export const saveActivity = createAsyncThunk(
           await dispatch(savePage({}));
         }
 
-        console.log('EDIT SAVE RESULTS', { editResults });
-
-        /*console.log('EDIT SAVE RESULTS', { editResults });*/
         if (undoable) {
           dispatch(
             createUndoAction({
@@ -105,6 +104,51 @@ export const saveActivity = createAsyncThunk(
     }
   },
 );
+
+/**
+ * Debouncing the edit call here is slightly harder than a simple debounce(edit) because we want a unique debounced
+ * function for each activity id we might try to save. This way,
+ *
+ * This:
+ *  getDebouncedEdit(activity1.id)(activity1)
+ *  getDebouncedEdit(activity1.id)(activity1)
+ * Results in a single save.
+ *
+ * But this:
+ *  getDebouncedEdit(activity1.id)(activity1)
+ *  getDebouncedEdit(activity2.id)(activity2)
+ * Results in two saves.
+ *
+ * Example uncurried usage:
+ *   const debouncedEdit = getDebouncedEdit(activity1.id);
+ *   debouncedEdit(activity1);
+
+ */
+const wrapEdit = (activityId: string) =>
+  debounce(
+    async (
+      project: ProjectSlug,
+      resource: ResourceId,
+      activity: ResourceId,
+      pendingUpdate: ActivityUpdate,
+      releaseLock: boolean,
+    ) => {
+      console.log('Saving activity: ', {
+        activityId,
+        project,
+        resource,
+        activity,
+        pendingUpdate,
+        releaseLock,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const editResults = await edit(project, resource, activity, pendingUpdate, releaseLock);
+      console.log('EDIT SAVE RESULTS', { editResults });
+    },
+    SAVE_DEBOUNCE_TIMEOUT,
+    SAVE_DEBOUNCE_OPTIONS,
+  );
+const getDebouncedEdit = memoize(wrapEdit, (activityId) => activityId || 'default');
 
 export const bulkSaveActivity = createAsyncThunk(
   `${ActivitiesSlice}/bulkSaveActivity`,
