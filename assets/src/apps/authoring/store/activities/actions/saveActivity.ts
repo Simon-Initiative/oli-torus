@@ -27,7 +27,10 @@ import { SAVE_DEBOUNCE_TIMEOUT, SAVE_DEBOUNCE_OPTIONS } from '../../persistance-
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
-  async (payload: { activity: IActivity; undoable?: boolean }, { dispatch, getState }) => {
+  async (
+    payload: { activity: IActivity; undoable?: boolean; immediate?: boolean },
+    { dispatch, getState },
+  ) => {
     try {
       const { activity, undoable = true } = payload;
       const rootState = getState() as any;
@@ -68,6 +71,9 @@ export const saveActivity = createAsyncThunk(
         const debouncedEdit = getDebouncedEdit(String(activity.id));
 
         debouncedEdit(projectSlug, resourceId, activity.resourceId as number, changeData, false);
+        if (payload.immediate) {
+          await debouncedEdit.flush();
+        }
 
         // grab the activity before it's updated for the score check
         const oldActivityData = selectActivityById(rootState, activity.resourceId as number);

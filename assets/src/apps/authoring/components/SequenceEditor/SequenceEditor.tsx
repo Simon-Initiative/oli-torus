@@ -130,7 +130,7 @@ const SequenceEditor: React.FC<any> = () => {
       title: newTitle,
       tags: [],
     };
-    dispatch(saveActivity({ activity: reduxActivity, undoable: false }));
+    dispatch(saveActivity({ activity: reduxActivity, undoable: false, immediate: true }));
     await dispatch(upsertActivity({ activity: reduxActivity }));
     addNewSequence(newSequenceEntry, currentActivity?.activitySlug);
   };
@@ -329,7 +329,7 @@ const SequenceEditor: React.FC<any> = () => {
     copiedActivity.resourceId = newActivity.resourceId;
     copiedActivity.activitySlug = newActivity.activitySlug;
     copiedActivity.title = newTitle;
-    dispatch(saveActivity({ activity: copiedActivity, undoable: false }));
+    dispatch(saveActivity({ activity: copiedActivity, undoable: false, immediate: true }));
     await dispatch(upsertActivity({ activity: copiedActivity }));
     addNewSequence(newSequenceEntry, item.activitySlug);
   };

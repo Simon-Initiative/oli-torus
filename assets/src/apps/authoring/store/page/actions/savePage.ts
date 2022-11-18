@@ -16,6 +16,7 @@ import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-
 
 export interface PagePayload extends Partial<PageState> {
   undoable?: boolean;
+  immiediate?: boolean; // Do not debounce the save.
 }
 
 export const savePage = createAsyncThunk(
@@ -72,7 +73,7 @@ export const savePage = createAsyncThunk(
         if (sequenceItem.custom.isLayer || sequenceItem.custom.isBank) {
           return acc;
         }
-        const currActivity = allActivities.find((a) => a.id === sequenceItem.resourceId);
+        const currActivity: any = allActivities.find((a) => a.id === sequenceItem.resourceId);
         if (!currActivity) {
           return acc;
         }
@@ -109,6 +110,9 @@ export const savePage = createAsyncThunk(
     }
 
     _edit(projectSlug, revisionSlug, update, dispatch);
+    if (payload.immiediate) {
+      await _edit.flush();
+    }
   },
 );
 
