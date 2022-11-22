@@ -54,7 +54,7 @@ export const readGlobalUserState = async (
     }
     let refreshFromServer = false;
     if (keys) {
-      const cacheTimeThreshold = 500000;
+      const cacheTimeThreshold = 300000;
       const { timestamp: lastCacheTimeStamp } = userStateCache;
       //If cache is not older than 5 min then lets fetch the data from cache
       if (Date.now() - lastCacheTimeStamp < cacheTimeThreshold) {
