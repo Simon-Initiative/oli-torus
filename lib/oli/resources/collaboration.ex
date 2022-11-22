@@ -65,14 +65,14 @@ defmodule Oli.Resources.Collaboration do
 
   ## Examples
 
-      iex> search_collaborative_spaces("slug")
-      [%Revision{}, ...]
+      iex> search_collaborative_spaces_in_section("slug")
+      [%{collab_space_config, revision, ...}, ...]
 
-      iex> search_collaborative_spaces("invalid")
+      iex> search_collaborative_spaces_in_section("invalid")
       []
   """
-  @spec search_collaborative_spaces(String.t()) :: list(%CollabSpaceConfig{})
-  def search_collaborative_spaces(section_slug) do
+  @spec search_collaborative_spaces_in_section(String.t()) :: list(%CollabSpaceConfig{})
+  def search_collaborative_spaces_in_section(section_slug) do
     page_type_id = ResourceType.get_id_by_type("page")
 
     Repo.all(
@@ -109,6 +109,58 @@ defmodule Oli.Resources.Collaboration do
             fragment(
               "select max(inserted_at) from posts where section_id = ? and resource_id = ?",
               section.id,
+              page_revision.resource_id
+            )
+        }
+      )
+    )
+  end
+
+  @doc """
+  Returns a list of all pages that has a collab space config related.
+
+  ## Examples
+
+      iex> list_collaborative_spaces()
+      [%{collab_space_config, revision, ...}, ...]
+
+      iex> list_collaborative_spaces()
+      []
+  """
+  @spec list_collaborative_spaces() :: list(%CollabSpaceConfig{})
+  def list_collaborative_spaces() do
+    page_type_id = ResourceType.get_id_by_type("page")
+
+    Repo.all(
+      from(
+        publication in Publication,
+        join: project in Project,
+        on: publication.project_id == project.id,
+        join: published_resource in PublishedResource,
+        on: publication.id == published_resource.publication_id,
+        join: page_revision in Revision,
+        on: page_revision.id == published_resource.revision_id,
+        where: page_revision.resource_type_id == ^page_type_id
+          and not is_nil(page_revision.collab_space_config)
+          and is_nil(publication.published),
+        select: %{
+          id: fragment("concat(?, '_', ?)", project.id, page_revision.id),
+          project: project,
+          page: page_revision,
+          collab_space_config: page_revision.collab_space_config,
+          number_of_posts:
+            fragment(
+              "select count(*) from posts where resource_id = ?",
+              page_revision.resource_id
+            ),
+          number_of_posts_pending_approval:
+            fragment(
+              "select count(*) from posts where resource_id = ? and status = 'submitted'",
+              page_revision.resource_id
+            ),
+          most_recent_post:
+            fragment(
+              "select max(inserted_at) from posts where resource_id = ?",
               page_revision.resource_id
             )
         }
