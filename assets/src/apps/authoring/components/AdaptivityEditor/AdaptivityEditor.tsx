@@ -179,7 +179,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         rule,
       });*/
 
-      dispatch(saveActivity({ activity: activityClone, undoable: true }));
+      dispatch(saveActivity({ activity: activityClone, undoable: true, immediate: true }));
       // setTimeout(() => dispatch(setCurrentRule({ currentRule: rule })));
     }
   };

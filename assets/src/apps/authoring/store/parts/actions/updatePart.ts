@@ -80,6 +80,7 @@ export const updatePart = createAsyncThunk(
           }
         });
         if (activitiesToUpdate.length) {
+          console.info('Bulk saving', activitiesToUpdate.map((a) => a.id).join(', '));
           await dispatch(bulkSaveActivity({ activities: activitiesToUpdate, undoable: false }));
           undo.unshift(bulkSaveActivity({ activities: orig, undoable: false }));
           redo.unshift(bulkSaveActivity({ activities: activitiesToUpdate, undoable: false }));
