@@ -63,11 +63,17 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
 
   def render_status(assigns, %{collab_space_config: %{status: :enabled}}, _),
     do: SortableTableModel.render_span_column(assigns, "Enabled", "text-success")
+  def render_status(assigns, %{collab_space_config: %{"status" => "enabled"}}, _),
+    do: SortableTableModel.render_span_column(assigns, "Enabled", "text-success")
 
   def render_status(assigns, %{collab_space_config: %{status: :disabled}}, _),
     do: SortableTableModel.render_span_column(assigns, "Disabled", "text-danger")
+  def render_status(assigns, %{collab_space_config: %{"status" => "disabled"}}, _),
+    do: SortableTableModel.render_span_column(assigns, "Disabled", "text-danger")
 
   def render_status(assigns, %{collab_space_config: %{status: :archived}}, _),
+    do: SortableTableModel.render_span_column(assigns, "Archived", "text-info")
+  def render_status(assigns, %{collab_space_config: %{"status" => "archived"}}, _),
     do: SortableTableModel.render_span_column(assigns, "Archived", "text-info")
 
   def custom_sort(direction, %ColumnSpec{name: :project_title}),
@@ -77,5 +83,8 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
     do: {fn row -> row.page.title end, direction}
 
   def custom_sort(direction, %ColumnSpec{name: :status}),
-    do: {fn row -> Atom.to_string(row.collab_space_config.status) end, direction}
+    do: {fn row ->
+      status = Map.get(row.collab_space_config, "status") || Map.get(row.collab_space_config, :status)
+      if is_atom(status), do: Atom.to_string(status), else: status
+    end, direction}
 end

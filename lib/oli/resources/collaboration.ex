@@ -89,10 +89,20 @@ defmodule Oli.Resources.Collaboration do
         join: published_resource in PublishedResource,
         on: published_resource.publication_id == section_project_publication.publication_id
           and published_resource.revision_id == page_revision.id,
-        where: section.slug == ^section_slug and not is_nil(page_revision.collab_space_config),
+        left_join: delivery_setting in DeliverySetting,
+        on: delivery_setting.section_id == section.id and delivery_setting.resource_id == page_revision.resource_id,
+        where: section.slug == ^section_slug and
+          (not is_nil(page_revision.collab_space_config) or not is_nil(delivery_setting.collab_space_config)),
         select: %{
-          collab_space_config: page_revision.collab_space_config,
+          section: section,
           page: page_revision,
+          collab_space_config:
+            fragment(
+              "case when ? is null then ? else ? end",
+              delivery_setting.collab_space_config,
+              page_revision.collab_space_config,
+              delivery_setting.collab_space_config
+            ),
           number_of_posts:
             fragment(
               "select count(*) from posts where section_id = ? and resource_id = ?",

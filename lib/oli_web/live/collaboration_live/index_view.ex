@@ -5,7 +5,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
   alias Oli.Resources.Collaboration
   alias OliWeb.Admin.AdminView
   alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
-  alias OliWeb.CollaborationLive.AdminTableModel
+  alias OliWeb.CollaborationLive.{AdminTableModel, InstructorTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
   @title "Collaborative Spaces"
@@ -34,11 +34,13 @@ defmodule OliWeb.CollaborationLive.IndexView do
     end)
   end
 
-  def live_path(socket, params) do
-    Routes.collab_spaces_index_path(socket, socket.assigns.live_action, params)
-  end
+  def live_path(%{assigns: %{live_action: :admin}} = socket, params),
+    do: Routes.collab_spaces_index_path(socket, :admin, params)
 
-  def breadcrumb(:admin) do
+  def live_path(%{assigns: %{live_action: :instructor, section_slug: section_slug}} = socket, params),
+    do: Routes.collab_spaces_index_path(socket, :instructor, section_slug, params)
+
+  def breadcrumb(:admin, _) do
     AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
@@ -48,16 +50,29 @@ defmodule OliWeb.CollaborationLive.IndexView do
       ]
   end
 
-  def mount(_, session, socket) do
+  def breadcrumb(:instructor, section_slug) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(:instructor, %{slug: section_slug}) ++
+      [
+        Breadcrumb.new(%{
+          full_title: @title,
+          link: Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, section_slug)
+        })
+      ]
+  end
+
+  def mount(params, session, socket) do
+    section_slug = params["section_slug"]
     live_action = socket.assigns.live_action
     context = SessionContext.init(session)
 
-    collab_spaces = Collaboration.list_collaborative_spaces()
-    {:ok, table_model} = AdminTableModel.new(collab_spaces, context)
+    {collab_spaces, table_model} =
+      get_collab_spaces_and_table_model(live_action, context, section_slug)
 
     {:ok,
       assign(socket,
-        breadcrumbs: breadcrumb(live_action),
+        delivery_breadcrumb: true,
+        breadcrumbs: breadcrumb(live_action, section_slug),
+        section_slug: section_slug,
         collab_spaces: collab_spaces,
         table_model: table_model,
         total_count: length(collab_spaces)
@@ -87,5 +102,19 @@ defmodule OliWeb.CollaborationLive.IndexView do
           additional_table_class={@additional_table_class}/>
       </div>
     """
+  end
+
+  defp get_collab_spaces_and_table_model(:admin, context, _) do
+    collab_spaces = Collaboration.list_collaborative_spaces()
+    {:ok, table_model} = AdminTableModel.new(collab_spaces, context)
+
+    {collab_spaces, table_model}
+  end
+
+  defp get_collab_spaces_and_table_model(:instructor, context, section_slug) do
+    collab_spaces = Collaboration.search_collaborative_spaces_in_section(section_slug)
+    {:ok, table_model} = InstructorTableModel.new(collab_spaces, context)
+
+    {collab_spaces, table_model}
   end
 end
