@@ -529,8 +529,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           };
 
           const disableDrag =
-            part.id === configurePartId ||
-            (selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move);
+            selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
 
           return (
             <ResizeContainer
