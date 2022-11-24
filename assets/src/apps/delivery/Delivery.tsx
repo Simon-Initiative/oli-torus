@@ -123,7 +123,7 @@ const Delivery: React.FC<DeliveryProps> = ({
       {isLessonEnded ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
-      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={3} /> : null}
+      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={5} /> : null}
     </div>
   );
 };

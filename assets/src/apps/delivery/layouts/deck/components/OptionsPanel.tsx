@@ -26,7 +26,7 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
   };
 
   const handleRestartLesson = () => {
-    dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true }));
+    dispatch(setRestartLesson({ screenIdleTimeOut: true }));
   };
 
   return (

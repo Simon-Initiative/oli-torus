@@ -28,6 +28,7 @@ import {
   setIsGoodFeedback,
   setMutationTriggered,
   setNextActivityId,
+  setScreenIdleTimeOutTriggered,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
@@ -222,6 +223,21 @@ const DeckLayoutFooter: React.FC = () => {
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
   const [solutionButtonText, setSolutionButtonText] = useState('Show Solution');
   const [displaySolutionButton, setDisplaySolutionButton] = useState(false);
+  const [screenIdleInterval, setScreenIdleInterval] = useState(0);
+
+  useEffect(() => {
+    if (screenIdleInterval < 60) {
+      return;
+    }
+    dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true }));
+    setScreenIdleInterval(0);
+  }, [screenIdleInterval]);
+
+  const resetScreenIdleTimer = () => {
+    setInterval(() => {
+      setScreenIdleInterval((currentTimer) => currentTimer + 1);
+    }, 1000);
+  };
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -445,6 +461,8 @@ const DeckLayoutFooter: React.FC = () => {
   }, [lastCheckResults, isPreviewMode]);
 
   const checkHandler = () => {
+    setScreenIdleInterval(0);
+    resetScreenIdleTimer();
     setIsLoading(true);
     /* console.log('CHECK BUTTON CLICKED', {
       isGoodFeedback,
