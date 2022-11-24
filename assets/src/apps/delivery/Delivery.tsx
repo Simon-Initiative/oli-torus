@@ -5,11 +5,16 @@ import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import PreviewTools from './components/PreviewTools';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
+import ScreenIdleTimeOutDialog from './layouts/deck/IdleTimeOutDialog';
 import LessonFinishedDialog from './layouts/deck/LessonFinishedDialog';
 import RestartLessonDialog from './layouts/deck/RestartLessonDialog';
 import { LayoutProps } from './layouts/layouts';
 import store from './store';
-import { selectLessonEnd, selectRestartLesson } from './store/features/adaptivity/slice';
+import {
+  selectLessonEnd,
+  selectRestartLesson,
+  selectScreenIdleTimeOutTriggered,
+} from './store/features/adaptivity/slice';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
 
@@ -56,6 +61,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
   const restartLesson = useSelector(selectRestartLesson);
+  const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
   let LayoutView: React.FC<LayoutProps> = () => <div>Unknown Layout</div>;
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
@@ -117,6 +123,7 @@ const Delivery: React.FC<DeliveryProps> = ({
       {isLessonEnded ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
+      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={3} /> : null}
     </div>
   );
 };
