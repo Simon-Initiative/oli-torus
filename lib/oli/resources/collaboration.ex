@@ -61,18 +61,18 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Returns a list of collaborative spaces that belongs to a section.
+  Returns a list of all pages that has a collab space config related in a section.
 
   ## Examples
 
-      iex> search_collaborative_spaces_in_section("slug")
+      iex> list_collaborative_spaces_in_section("slug")
       [%{collab_space_config, revision, ...}, ...]
 
-      iex> search_collaborative_spaces_in_section("invalid")
+      iex> list_collaborative_spaces_in_section("invalid")
       []
   """
-  @spec search_collaborative_spaces_in_section(String.t()) :: list(%CollabSpaceConfig{})
-  def search_collaborative_spaces_in_section(section_slug) do
+  @spec list_collaborative_spaces_in_section(String.t()) :: list(%CollabSpaceConfig{})
+  def list_collaborative_spaces_in_section(section_slug) do
     page_type_id = ResourceType.get_id_by_type("page")
 
     Repo.all(
@@ -94,6 +94,7 @@ defmodule Oli.Resources.Collaboration do
         where: section.slug == ^section_slug and
           (not is_nil(page_revision.collab_space_config) or not is_nil(delivery_setting.collab_space_config)),
         select: %{
+          id: fragment("concat(?, '_', ?)", section.id, page_revision.id),
           section: section,
           page: page_revision,
           collab_space_config:

@@ -7,6 +7,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
   alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.CollaborationLive.{AdminTableModel, InstructorTableModel}
   alias OliWeb.Router.Helpers, as: Routes
+  alias alias OliWeb.Sections.Mount
 
   @title "Collaborative Spaces"
 
@@ -30,7 +31,8 @@ defmodule OliWeb.CollaborationLive.IndexView do
 
     Enum.filter(socket.assigns.collab_spaces, fn cs ->
       String.contains?(String.downcase(cs.page.title), query_str) or
-        String.contains?(String.downcase(cs.project.title), query_str)
+        (socket.assigns.live_action == :admin and
+          String.contains?(String.downcase(cs.project.title), query_str))
     end)
   end
 
@@ -61,22 +63,36 @@ defmodule OliWeb.CollaborationLive.IndexView do
   end
 
   def mount(params, session, socket) do
-    section_slug = params["section_slug"]
     live_action = socket.assigns.live_action
     context = SessionContext.init(session)
+    section_slug = params["section_slug"]
 
-    {collab_spaces, table_model} =
-      get_collab_spaces_and_table_model(live_action, context, section_slug)
+    do_mount = fn ->
+      {collab_spaces, table_model} =
+        get_collab_spaces_and_table_model(live_action, context, section_slug)
 
-    {:ok,
-      assign(socket,
-        delivery_breadcrumb: true,
-        breadcrumbs: breadcrumb(live_action, section_slug),
-        section_slug: section_slug,
-        collab_spaces: collab_spaces,
-        table_model: table_model,
-        total_count: length(collab_spaces)
-      )}
+      {:ok,
+        assign(socket,
+          delivery_breadcrumb: true,
+          breadcrumbs: breadcrumb(live_action, section_slug),
+          section_slug: section_slug,
+          collab_spaces: collab_spaces,
+          table_model: table_model,
+          total_count: length(collab_spaces)
+        )}
+    end
+
+    case live_action do
+      :instructor ->
+        case Mount.for(section_slug, session) do
+          {:error, e} ->
+            Mount.handle_error(socket, {:error, e})
+
+          {_type, _user, _section} ->
+            do_mount.()
+        end
+      :admin -> do_mount.()
+    end
   end
 
   def render(assigns) do
@@ -112,7 +128,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
   end
 
   defp get_collab_spaces_and_table_model(:instructor, context, section_slug) do
-    collab_spaces = Collaboration.search_collaborative_spaces_in_section(section_slug)
+    collab_spaces = Collaboration.list_collaborative_spaces_in_section(section_slug)
     {:ok, table_model} = InstructorTableModel.new(collab_spaces, context)
 
     {collab_spaces, table_model}
