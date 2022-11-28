@@ -1,7 +1,13 @@
 /* eslint-disable react/prop-types */
+import {
+  selectIsInstructor,
+  selectPageSlug,
+  selectPreviewMode,
+  selectSectionSlug,
+} from 'apps/delivery/store/features/page/slice';
 import TimeRemaining from 'components/common/TimeRemaining';
-import React, { Fragment, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { Fragment, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { setScreenIdleTimeOutTriggered } from '../../store/features/adaptivity/slice';
 
 interface ScreenIdleTimeOutDialogProps {
@@ -9,13 +15,32 @@ interface ScreenIdleTimeOutDialogProps {
 }
 const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remainingTime }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const projectSlug = useSelector(selectSectionSlug);
+  const resourceSlug = useSelector(selectPageSlug);
+  const [logOutButtonUrl, setLogOutButtonUrl] = useState('');
+  const [logOutButtonText, setLogOutButtonText] = useState('Back to Overview');
+  const isPreviewMode = useSelector(selectPreviewMode);
+  const isInstructor = useSelector(selectIsInstructor);
+
+  useEffect(() => {
+    if (isPreviewMode && !isInstructor) {
+      // return to authoring
+      setLogOutButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
+      setLogOutButtonText('Back to Authoring');
+    } else {
+      // return to Overview
+      setLogOutButtonUrl(window.location.href.split('/page')[0] + '/overview');
+      setLogOutButtonText('Back to Overview');
+    }
+  }, [isPreviewMode]);
   const handleCloseModalClick = () => {
     setIsOpen(false);
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: false }));
   };
   const dispatch = useDispatch();
-  const handleRestart = () => {
+  const handleSessionExpire = () => {
     setIsOpen(false);
+    (window as Window).location = `/authoring/project/${projectSlug}/resource/${resourceSlug}`;
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: false }));
   };
 
@@ -55,6 +80,7 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
                 <b>
                   {
                     <TimeRemaining
+                      onTimerEnd={handleSessionExpire}
                       liveUpdate={true}
                       remainingTimeInMinutes={remainingTime}
                     ></TimeRemaining>
@@ -68,9 +94,9 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
         <div className="modal-footer">
           <button className="btn">
             <a
-              onClick={handleRestart}
-              style={{ color: 'inherit', textDecoration: 'none' }}
-              title="OK, Logout Lesson"
+              href={logOutButtonUrl}
+              style={{ color: 'inherit', cursor: 'pointer', textDecoration: 'none' }}
+              title={logOutButtonText}
               aria-label="OK, Logout Lesson"
               data-dismiss="modal"
             >

@@ -6,6 +6,7 @@ interface TimeRemainingProps {
   remainingTimeInMinutes?: number;
   remainingTimeInSeconds?: number;
   liveUpdate: boolean;
+  onTimerEnd?: () => void;
 }
 
 const TimeRemaining: React.FC<TimeRemainingProps> = ({
@@ -13,6 +14,7 @@ const TimeRemaining: React.FC<TimeRemainingProps> = ({
   remainingTimeInMinutes,
   remainingTimeInSeconds,
   liveUpdate,
+  onTimerEnd,
 }) => {
   const defaultHoursTimer = remainingTimeInHours ? remainingTimeInHours : '00';
   const defaultMinutesTimer = remainingTimeInMinutes ? remainingTimeInMinutes : '00';
@@ -44,6 +46,8 @@ const TimeRemaining: React.FC<TimeRemainingProps> = ({
           ':' +
           (seconds > 9 ? seconds : '0' + seconds),
       );
+    } else {
+      if (onTimerEnd) onTimerEnd();
     }
   };
 
