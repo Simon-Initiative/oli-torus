@@ -112,4 +112,25 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
 
     mapped
   end
+
+  def rewire_alternatives_groups(content, legacy_to_resource_id_map) do
+    {mapped, _} =
+      PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
+        case e do
+          %{"type" => "alternatives", "group" => original} = ref ->
+            case Map.get(legacy_to_resource_id_map, original) do
+              nil ->
+                {ref, {:error, [original | invalid_refs]}}
+
+              retrieved ->
+                {Map.put(ref, "alternatives_id", retrieved), {status, invalid_refs}}
+            end
+
+          other ->
+            {other, {status, invalid_refs}}
+        end
+      end)
+
+    mapped
+  end
 end
