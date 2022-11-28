@@ -1,15 +1,5 @@
 defmodule Oli.Publishing.Updating.Airro do
-  @type id :: integer()
-  @type index :: integer()
-  @type id_at_index :: {id(), index()}
-
-  @type change ::
-          {:equal}
-          | {:append, list(id())}
-          | {:insert, list(id_at_index())}
-          | {:remove, list(id())}
-          | {:reorder}
-          | {:other}
+  use Oli.Publishing.Updating.Types
 
   @spec classify(list(id()), list(id())) :: change()
   def classify(a, b) do
