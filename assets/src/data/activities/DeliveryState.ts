@@ -117,6 +117,33 @@ function determineDateSubmitted(score: number | null, action: PayloadAction<Eval
   return null;
 }
 
+function handleAutomationInResponse(
+  state: WritableDraft<ActivityDeliveryState>,
+  action: PayloadAction<EvaluationResponse>,
+) {
+  const toShow: number[] = action.payload.actions
+    .filter((a: FeedbackAction) => a.show_page !== null)
+    .map((a: FeedbackAction) => a.show_page) as number[];
+
+  if (toShow.length > 0) {
+    const forId = state.attemptState.groupId as string;
+
+    toShow.forEach((index: number) =>
+      Events.dispatch(
+        Events.Registry.ShowContentPage,
+        Events.makeShowContentPage({ forId, index }),
+      ),
+    );
+
+    updatePaginationState(
+      state.activityContext.sectionSlug,
+      state.activityContext.pageAttemptGuid,
+      forId,
+      toShow,
+    );
+  }
+}
+
 export const activityDeliverySlice = createSlice({
   name: 'ActivityDelivery',
   initialState: {} as ActivityDeliveryState,
@@ -125,29 +152,7 @@ export const activityDeliverySlice = createSlice({
       if (action.payload.actions.length > 0) {
         const { score, out_of } = calculateNewScore(action);
 
-        if (action.payload.actions[0].type === 'FeedbackAction') {
-          const toShow: number[] = action.payload.actions
-            .filter((a: FeedbackAction) => a.show_page !== null)
-            .map((a: FeedbackAction) => a.show_page) as number[];
-
-          if (toShow.length > 0) {
-            const forId = state.attemptState.groupId as string;
-
-            toShow.forEach((index: number) =>
-              Events.dispatch(
-                Events.Registry.ShowContentPage,
-                Events.makeShowContentPage({ forId, index }),
-              ),
-            );
-
-            updatePaginationState(
-              state.activityContext.sectionSlug,
-              state.activityContext.pageAttemptGuid,
-              forId,
-              toShow,
-            );
-          }
-        }
+        handleAutomationInResponse(state, action);
 
         state.attemptState = {
           ...state.attemptState,
@@ -162,6 +167,9 @@ export const activityDeliverySlice = createSlice({
     partSubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
       if (action.payload.actions.length > 0) {
         const parts = updatePartsStates(state, action);
+
+        handleAutomationInResponse(state, action);
+
         state.attemptState = {
           ...state.attemptState,
           parts,
