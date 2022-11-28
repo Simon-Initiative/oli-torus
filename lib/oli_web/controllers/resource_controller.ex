@@ -89,7 +89,8 @@ defmodule OliWeb.ResourceController do
       activity_types: Activities.activities_for_project(project),
       part_component_types: PartComponents.part_components_for_project(project),
       graded: context.graded,
-      title: "Edit | " <> context.title
+      title: "Edit | " <> context.title,
+      collab_space_config: context.collab_space_config
     )
   end
 

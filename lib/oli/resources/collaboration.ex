@@ -1,7 +1,7 @@
 defmodule Oli.Resources.Collaboration do
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing
-  alias Oli.Publishing.{DeliveryResolver, Publication, PublishedResource}
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver, Publication, PublishedResource}
   alias Oli.Delivery
   alias Oli.Delivery.{DeliverySetting, Sections}
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
@@ -42,12 +42,12 @@ defmodule Oli.Resources.Collaboration do
           {:ok, page_resource} <- Resources.get_resource_from_slug(page_slug) |> trap_nil(),
           {:ok, page_revision} <-
             Publishing.get_published_revision(publication.id, page_resource.id) |> trap_nil(),
-          {:ok, next_page_revision} =
+          {:ok, next_page_revision} <-
             Resources.create_revision_from_previous(page_revision, %{
               collab_space_config: attrs,
               author_id: author_id
             }),
-          {:ok, _} = Publishing.upsert_published_resource(publication, next_page_revision) do
+          {:ok, _} <- Publishing.upsert_published_resource(publication, next_page_revision) do
         %{
           project: project,
           publication: publication,
@@ -123,17 +123,17 @@ defmodule Oli.Resources.Collaboration do
 
   ## Examples
 
-      iex> get_collab_space_config_for_page("section_slug", "page_slug")
+      iex> get_collab_space_config_for_page_in_section("page_slug", "section_slug")
       {:ok, %CollabSpaceConfig{}}
       or
       {:ok, nil}
 
-      iex> get_collab_space_config_for_page("invalid_slug", "invalid_slug")
+      iex> get_collab_space_config_for_page_in_section("invalid_slug", "invalid_slug")
       {:error, :not_found}
   """
-  @spec get_collab_space_config_for_page(String.t(), String.t()) ::
+  @spec get_collab_space_config_for_page_in_section(String.t(), String.t()) ::
     {:ok, %CollabSpaceConfig{}} | {:error, atom()}
-  def get_collab_space_config_for_page(section_slug, page_slug) do
+  def get_collab_space_config_for_page_in_section(page_slug, section_slug) do
     with %Section{id: section_id} <- Sections.get_section_by(slug: section_slug),
         %Revision{
           resource_id: resource_id,
@@ -149,6 +149,30 @@ defmodule Oli.Resources.Collaboration do
             ds_collab_space_config
         end}
     else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Returns the collaborative space config for a specific page in a project.
+
+  ## Examples
+
+      iex> get_collab_space_config_for_page_in_project("page_slug", "project_slug")
+      {:ok, %CollabSpaceConfig{}}
+      or
+      {:ok, nil}
+
+      iex> get_collab_space_config_for_page_in_project("invalid_slug", "invalid_slug")
+      {:error, :not_found}
+  """
+  @spec get_collab_space_config_for_page_in_project(String.t(), String.t()) ::
+    {:ok, %CollabSpaceConfig{}} | {:error, atom()}
+  def get_collab_space_config_for_page_in_project(page_slug, project_slug) do
+    case AuthoringResolver.from_revision_slug(project_slug, page_slug) do
+      %Revision{
+        collab_space_config: collab_space_config
+      } -> {:ok, collab_space_config}
       _ -> {:error, :not_found}
     end
   end

@@ -23,7 +23,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources
   alias Oli.Resources.Revision
   alias Oli.Utils.BibUtils
-  alias Oli.Resources.PageContent
+  alias Oli.Resources.{Collaboration, PageContent}
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -567,6 +567,9 @@ defmodule OliWeb.PageDeliveryController do
 
     html = Page.render(render_context, revision.content, Page.Html)
 
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page_in_section(revision.slug, section_slug)
+
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
     |> render(
@@ -591,7 +594,8 @@ defmodule OliWeb.PageDeliveryController do
         display_curriculum_item_numbering: section.display_curriculum_item_numbering,
         bib_app_params: %{
           bibReferences: bib_entrys
-        }
+        },
+        collab_space_config: collab_space_config
       }
     )
   end

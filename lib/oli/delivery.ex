@@ -202,4 +202,29 @@ defmodule Oli.Delivery do
   def change_delivery_setting(%DeliverySetting{} = delivery_setting, attrs \\ %{}) do
     DeliverySetting.changeset(delivery_setting, attrs)
   end
+
+  @doc """
+  Creates a new, or updates the existing delivery setting
+  for the given section and resource.
+
+  ## Examples
+
+      iex> upsert_delivery_setting(%{field: new_value})
+      {:ok, %DeliverySetting{}}
+
+      iex> upsert_delivery_setting(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def upsert_delivery_setting(attrs) do
+    section_id = attrs["section_id"] || attrs.section_id
+    resource_id = attrs["resource_id"] || attrs.resource_id
+
+    case get_delivery_setting_by(%{
+      section_id: section_id,
+      resource_id: resource_id
+    }) do
+      nil -> create_delivery_setting(attrs)
+      ds -> update_delivery_setting(ds, attrs)
+    end
+  end
 end
