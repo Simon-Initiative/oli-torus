@@ -92,7 +92,7 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
           </div>
         </div>
         <div className="modal-footer">
-          <button className="btn">
+          {/* <button className="btn">
             <a
               href={logOutButtonUrl}
               style={{ color: 'inherit', cursor: 'pointer', textDecoration: 'none' }}
@@ -102,7 +102,7 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
             >
               Logout
             </a>
-          </button>
+          </button> */}
           <button
             className="btn btn-primary"
             name="Keep My Session Active"
