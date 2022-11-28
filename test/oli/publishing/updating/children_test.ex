@@ -15,5 +15,9 @@ defmodule Oli.Publishing.Updating.ChildrenTest do
     # source: other
     # dest: append
     assert Children.update([1], [2], [1, 3]) == {:ok, [2, 3]}
+
+    # source: other
+    # dest: append
+    assert Children.update([1], [2], [1, 3]) == {:ok, [2, 3]}
   end
 end
