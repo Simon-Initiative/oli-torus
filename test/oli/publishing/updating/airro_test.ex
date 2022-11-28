@@ -22,5 +22,9 @@ defmodule Oli.Publishing.Updating.AirroTest do
     assert Airro.classify([1, 2, 3], [1, 8, 2, 3, 9]) == {:insert, [{8, 1}, {9, 4}]}
 
     assert Airro.classify([1, 2, 3], [2, 1, 3, 4, 5]) == {:other}
+
+    # The two cases when the length of a is greater than length of b:
+    assert Airro.classify([1, 2, 3], [1]) == {:remove, [2, 3]}
+    assert Airro.classify([1, 2, 3], [1, 4]) == {:other}
   end
 end
