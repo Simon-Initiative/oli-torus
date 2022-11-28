@@ -1,9 +1,7 @@
-import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import {
   selectCopiedPart,
   selectPartComponentTypes,
   selectPaths,
-  setCopiedPart,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
 

@@ -11,9 +11,12 @@ import { RootState } from '../../rootReducer';
 import { PageState, selectRevisionSlug, selectState, setRevisionSlug, updatePage } from '../slice';
 import PageSlice from '../name';
 import { createUndoAction } from '../../history/slice';
+import { debounce } from 'lodash';
+import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
 
 export interface PagePayload extends Partial<PageState> {
   undoable?: boolean;
+  immiediate?: boolean; // Do not debounce the save.
 }
 
 export const savePage = createAsyncThunk(
@@ -70,7 +73,7 @@ export const savePage = createAsyncThunk(
         if (sequenceItem.custom.isLayer || sequenceItem.custom.isBank) {
           return acc;
         }
-        const currActivity = allActivities.find((a) => a.id === sequenceItem.resourceId);
+        const currActivity: any = allActivities.find((a) => a.id === sequenceItem.resourceId);
         if (!currActivity) {
           return acc;
         }
@@ -78,8 +81,6 @@ export const savePage = createAsyncThunk(
       }, 0);
       customUpdate.totalScore = totalScore;
     }
-
-    dispatch(updatePage({ custom: customUpdate }));
 
     const update: ResourceUpdate = {
       title: payload.title || currentPage.title,
@@ -90,14 +91,14 @@ export const savePage = createAsyncThunk(
         advancedDelivery,
         displayApplicationChrome,
         custom: customUpdate,
-        customCss: payload.customCss || currentPage.customCss,
-        customScript: payload.customScript || currentPage.customScript,
-        additionalStylesheets: payload.additionalStylesheets || currentPage.additionalStylesheets,
+        customCss: payload.customCss ?? currentPage.customCss,
+        customScript: payload.customScript ?? currentPage.customScript,
+        additionalStylesheets: payload.additionalStylesheets ?? currentPage.additionalStylesheets,
       },
       releaseLock: false,
     };
 
-    const saveResult = await edit(projectSlug, revisionSlug, update, false);
+    dispatch(updatePage(update.content));
 
     if (undoable) {
       dispatch(
@@ -107,6 +108,22 @@ export const savePage = createAsyncThunk(
         }),
       );
     }
+
+    _edit(projectSlug, revisionSlug, update, dispatch);
+    if (payload.immiediate) {
+      await _edit.flush();
+    }
+  },
+);
+
+const _edit = debounce(
+  async (
+    projectSlug: string,
+    revisionSlug: string,
+    update: any,
+    dispatch: (action: any) => void,
+  ) => {
+    const saveResult = await edit(projectSlug, revisionSlug, update, false);
 
     if (saveResult.type === 'ServerError') {
       throw new Error(saveResult.message);
@@ -118,4 +135,6 @@ export const savePage = createAsyncThunk(
       dispatch(setRevisionSlug({ revisionSlug: newSlug }));
     }
   },
+  SAVE_DEBOUNCE_TIMEOUT,
+  SAVE_DEBOUNCE_OPTIONS,
 );

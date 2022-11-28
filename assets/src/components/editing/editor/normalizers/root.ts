@@ -11,9 +11,13 @@ export const normalize = (editor: Editor, node: Editor, _path: Path) => {
   const first = node.children[0];
   const last = node.children[node.children.length - 1];
   if (!isBlockText(first)) {
+    // Using a hard-coded path here instead of Editor.start(editor, []) to fix
+    // https://github.com/Simon-Initiative/oli-torus/issues/3082
+    // Editor.start(editor, []) was returning [0,0] which corresponded to the first
+    // text node in the first element, even if it was a void node.
     Transforms.insertNodes(editor, Model.p(), {
       mode: 'highest',
-      at: Editor.start(editor, []),
+      at: [0],
     });
     console.warn('Normalizing content: Inserted paragraph at start of document');
     return;

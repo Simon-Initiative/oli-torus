@@ -216,7 +216,7 @@ export const transformSchemaToModel = (schema: any) => {
     additionalStylesheets,
     title: schema.Properties.title,
     customCss: schema.Properties.customCSS || '',
-    customScript: schema.CustomLogic.customScript,
+    customScript: schema.CustomLogic.customScript || '',
   };
 };
 
