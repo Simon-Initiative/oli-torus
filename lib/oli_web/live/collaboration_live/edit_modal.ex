@@ -1,4 +1,4 @@
-defmodule OliWeb.Admin.CollaborativeSpace.EditModal do
+defmodule OliWeb.CollaborationLive.EditModal do
   use Surface.Component
 
   alias Surface.Components.Form

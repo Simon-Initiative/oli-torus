@@ -1,7 +1,7 @@
-defmodule OliWeb.Admin.CollaborativeSpace.Post do
+defmodule OliWeb.CollaborationLive.Post do
   use Surface.Component
 
-  alias OliWeb.Admin.CollaborativeSpace.Input
+  alias OliWeb.CollaborationLive.Input
 
   prop post, :struct, required: true
   prop selected, :string

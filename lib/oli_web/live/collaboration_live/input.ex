@@ -1,4 +1,4 @@
-defmodule OliWeb.Admin.CollaborativeSpace.Input do
+defmodule OliWeb.CollaborationLive.Input do
   use Surface.Component
 
   prop button_text, :string, required: true

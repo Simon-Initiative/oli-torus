@@ -1,13 +1,14 @@
-defmodule OliWeb.Admin.CollaborativeSpace do
+defmodule OliWeb.CollaborationLive.CollabSpaceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
   alias OliWeb.Presence
   alias Phoenix.PubSub
+  alias Oli.Accounts
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.Post
 
-  alias OliWeb.Admin.CollaborativeSpace.{
+  alias OliWeb.CollaborationLive.{
     Post,
     Input,
     EditModal
@@ -36,22 +37,28 @@ defmodule OliWeb.Admin.CollaborativeSpace do
     end)
   end
 
-  def mount(_, %{"current_author_id" => author_id} = _session, socket) do
+  def mount(_, %{
+    "collab_space_config" => collab_space_config,
+    "section_slug" => section_slug,
+    "page_slug" => page_slug,
+    "current_user_id" => current_user_id
+  } = session, socket) do
+    user = Accounts.get_user_by(%{id: current_user_id})
+
     PubSub.subscribe(Oli.PubSub, topic(123))
-    author = Oli.Accounts.get_author(author_id)
 
     posts = posts_with_replies(%{status: :approved})
 
     Presence.track_presence(
       self(),
       topic(123),
-      author_id,
-      default_user_presence_payload(author)
+      current_user_id,
+      default_user_presence_payload(user)
     )
 
     {:ok,
      assign(socket,
-       author: author,
+      user: user,
        users: Presence.list_presences(topic(123)),
        posts: posts,
        changeset: Collaboration.change_post(%Collaboration.Post{})

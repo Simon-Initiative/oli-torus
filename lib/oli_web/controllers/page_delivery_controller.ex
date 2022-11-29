@@ -426,7 +426,8 @@ defmodule OliWeb.PageDeliveryController do
         resource_slug: context.page.slug,
         bib_app_params: %{
           bibReferences: context.bib_revisions
-        }
+        },
+        collab_space_config: context.collab_space_config
       }
     )
   end
