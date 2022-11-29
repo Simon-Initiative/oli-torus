@@ -33,6 +33,7 @@ export type EditorProps = {
   allTags: Tag[];
   editorMap: ActivityEditorMap;
   featureFlags: FeatureFlags;
+  contentBreaksExist: boolean;
   onEdit: (content: ResourceContent) => void;
   onRemove: (id: string) => void;
   onEditActivity: (key: string, update: EditorUpdate) => void;
