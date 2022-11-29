@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { isFirefox } from 'utils/browser';
@@ -33,6 +33,8 @@ import {
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import { PageContext } from './types';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
+import { initAppSignal } from '../../utils/appsignal';
+import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -43,6 +45,7 @@ export interface AuthoringProps {
   partComponentTypes?: any[];
   resourceId?: number;
   paths: Record<string, string>;
+  appsignalKey: string | null;
 }
 
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
@@ -63,6 +66,17 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
 
   const alertSeverity = isAttemptDisableReadOnlyFailed || shouldShowLockError ? 'warning' : 'info';
+
+  const appsignal = useMemo(
+    () =>
+      initAppSignal(props.appsignalKey, 'Advanced Authoring', {
+        projectSlug: props.projectSlug,
+        revisionSlug: props.revisionSlug,
+        resourceId: String(props.resourceId),
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [props.appsignalKey],
+  );
 
   /* console.log('RENDER IT', {
     shouldShowEditor,
@@ -208,94 +222,96 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [props, hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
 
   return (
-    <>
-      {isLoading && (
-        <div id="aa-loading">
-          <div className="loader spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
+    <AppsignalContext.Provider value={appsignal}>
+      <ErrorBoundary>
+        {isLoading && (
+          <div id="aa-loading">
+            <div className="loader spinner-border text-primary" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
           </div>
-        </div>
-      )}
-      {shouldShowEditor && (
-        <div id="advanced-authoring" className={`advanced-authoring d-none`}>
-          <HeaderNav panelState={panelState} isVisible={panelState.top} />
-          <SidePanel
-            position="left"
-            panelState={panelState}
-            onToggle={() => handlePanelStateChange({ left: !panelState.left })}
-          >
-            <LeftMenu />
-          </SidePanel>
-          <EditingCanvas />
-          <BottomPanel
-            panelState={panelState}
-            onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
-          >
-            {currentRule === 'initState' && <InitStateEditor />}
-            {currentRule !== 'initState' && <AdaptivityEditor />}
-          </BottomPanel>
-          <SidePanel
-            position="right"
-            panelState={panelState}
-            onToggle={() => handlePanelStateChange({ right: !panelState.right })}
-          >
-            <RightMenu />
-          </SidePanel>
-        </div>
-      )}
-
-      {shouldShowReadOnlyWarning && (
-        <Alert variant={alertSeverity}>
-          <Alert.Heading>Opening in Read-Only Mode</Alert.Heading>
-          {!isAttemptDisableReadOnlyFailed && (
-            <p>
-              You are about to open this page in read-only mode. You are able to view the contents
-              of this page, but any changes you make will not be saved. You may instead attempt to
-              open in editing mode, or open a preview of the page.
-            </p>
-          )}
-          {isAttemptDisableReadOnlyFailed && (
-            <p>
-              Unfortunately, we were unable to disable read-only mode. Another author currently has
-              the page locked for editing. Please try again later. In the meantime, you may continue
-              in Read Only mode or open a preview of the page.
-            </p>
-          )}
-          <hr />
-          <div style={{ textAlign: 'center' }}>
-            <Button
-              variant={`outline-${alertSeverity}`}
-              className="text-dark"
-              onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
+        )}
+        {shouldShowEditor && (
+          <div id="advanced-authoring" className={`advanced-authoring d-none`}>
+            <HeaderNav panelState={panelState} isVisible={panelState.top} />
+            <SidePanel
+              position="left"
+              panelState={panelState}
+              onToggle={() => handlePanelStateChange({ left: !panelState.left })}
             >
-              Continue In Read-Only Mode
-            </Button>{' '}
+              <LeftMenu />
+            </SidePanel>
+            <EditingCanvas />
+            <BottomPanel
+              panelState={panelState}
+              onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
+            >
+              {currentRule === 'initState' && <InitStateEditor />}
+              {currentRule !== 'initState' && <AdaptivityEditor />}
+            </BottomPanel>
+            <SidePanel
+              position="right"
+              panelState={panelState}
+              onToggle={() => handlePanelStateChange({ right: !panelState.right })}
+            >
+              <RightMenu />
+            </SidePanel>
+          </div>
+        )}
+
+        {shouldShowReadOnlyWarning && (
+          <Alert variant={alertSeverity}>
+            <Alert.Heading>Opening in Read-Only Mode</Alert.Heading>
             {!isAttemptDisableReadOnlyFailed && (
-              <>
-                <Button
-                  variant={`outline-${alertSeverity}`}
-                  className="text-dark"
-                  onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
-                >
-                  Open In Edit Mode
-                </Button>{' '}
-              </>
+              <p>
+                You are about to open this page in read-only mode. You are able to view the contents
+                of this page, but any changes you make will not be saved. You may instead attempt to
+                open in editing mode, or open a preview of the page.
+              </p>
             )}
-            <Button
-              variant={`outline-${alertSeverity}`}
-              className="text-dark"
-              onClick={() => window.open(url, windowName)}
-            >
-              Open Preview <i className="las la-external-link-alt ml-1"></i>
-            </Button>
-          </div>
-        </Alert>
-      )}
+            {isAttemptDisableReadOnlyFailed && (
+              <p>
+                Unfortunately, we were unable to disable read-only mode. Another author currently
+                has the page locked for editing. Please try again later. In the meantime, you may
+                continue in Read Only mode or open a preview of the page.
+              </p>
+            )}
+            <hr />
+            <div style={{ textAlign: 'center' }}>
+              <Button
+                variant={`outline-${alertSeverity}`}
+                className="text-dark"
+                onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
+              >
+                Continue In Read-Only Mode
+              </Button>{' '}
+              {!isAttemptDisableReadOnlyFailed && (
+                <>
+                  <Button
+                    variant={`outline-${alertSeverity}`}
+                    className="text-dark"
+                    onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
+                  >
+                    Open In Edit Mode
+                  </Button>{' '}
+                </>
+              )}
+              <Button
+                variant={`outline-${alertSeverity}`}
+                className="text-dark"
+                onClick={() => window.open(url, windowName)}
+              >
+                Open Preview <i className="las la-external-link-alt ml-1"></i>
+              </Button>
+            </div>
+          </Alert>
+        )}
 
-      {showDiagnosticsWindow && <DiagnosticsWindow />}
+        {showDiagnosticsWindow && <DiagnosticsWindow />}
 
-      {showScoringOverview && <ScoringOverview />}
-    </>
+        {showScoringOverview && <ScoringOverview />}
+      </ErrorBoundary>
+    </AppsignalContext.Provider>
   );
 };
 

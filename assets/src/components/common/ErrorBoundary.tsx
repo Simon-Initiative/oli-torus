@@ -4,6 +4,7 @@ import { Collapse } from 'components/common/Collapse';
 import Appsignal from '@appsignal/javascript';
 
 export const AppsignalContext = React.createContext<Appsignal | null>(null);
+AppsignalContext.displayName = 'Appsignal';
 
 const DefaultErrorMessage = () => (
   <>

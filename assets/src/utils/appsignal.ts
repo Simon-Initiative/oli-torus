@@ -14,6 +14,7 @@ export const initAppSignal = (
 
   const client = new Appsignal({
     key: apiKey,
+    namespace: appName,
   });
   client.use(AppsignalConsoleBreadcrumbs.plugin());
   client.use(AppsignalNetworkBreadcrumbs.plugin());
