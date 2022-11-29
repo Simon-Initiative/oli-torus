@@ -5,10 +5,12 @@ defmodule OliWeb.Admin.CollaborativeSpace do
   alias OliWeb.Presence
   alias Phoenix.PubSub
   alias Oli.Resources.Collaboration
+  alias Oli.Resources.Collaboration.Post
 
-  alias OliWeb.Admin.{
+  alias OliWeb.Admin.CollaborativeSpace.{
     Post,
-    Input
+    Input,
+    EditModal
   }
 
   data selected, :string, default: ""
@@ -16,6 +18,8 @@ defmodule OliWeb.Admin.CollaborativeSpace do
   data author, :struct
   data users, :list
   data posts, :list
+  data modal, :any, default: nil
+  data changeset, :changeset, default: nil
 
   defp topic(space_id), do: "Space:#{space_id}"
 
@@ -49,12 +53,14 @@ defmodule OliWeb.Admin.CollaborativeSpace do
      assign(socket,
        author: author,
        users: Presence.list_presences(topic(123)),
-       posts: posts
+       posts: posts,
+       changeset: Collaboration.change_post(%Collaboration.Post{})
      )}
   end
 
   def render(assigns) do
     ~F"""
+    {render_modal(assigns)}
       <div class="chatroom col-12">
         <div class="row">
           <div class="col-8">
@@ -62,10 +68,10 @@ defmodule OliWeb.Admin.CollaborativeSpace do
             <div class="container mt-5">
               <div class="accordion" id="accordion">
                 {#for post <- @posts}
-                  <Post post={post} selected={@selected} selected_reply={@selected_reply} user={@author} set_selected="set_selected" set_selected_reply="set_selected_reply" typing="typing" stop_typing="stop_typing" create_post="create_post"/>
+                  <Post post={post} changeset={@changeset} selected={@selected} selected_reply={@selected_reply} user={@author} set_selected="set_selected" set_selected_reply="set_selected_reply" typing="typing" stop_typing="stop_typing" create_post="create_post"/>
                 {/for}
               </div>
-                <Input id="input_post" button_text={"Post"} typing="typing" stop_typing="stop_typing" create_post="create_post"/>
+                <Input id="input_post" changeset={@changeset} button_text={"Post"} typing="typing" stop_typing="stop_typing" create_post="create_post"/>
             </div>
           </div>
           <div class="col-4">
@@ -90,18 +96,18 @@ defmodule OliWeb.Admin.CollaborativeSpace do
   def handle_event(
         "create_post",
         %{
-          "message_form" => %{
-            "message_text" => message_text,
-            "id_parent" => id_parent,
-            "id_root" => id_root
+          "post" => %{
+            "content" => %{"message" => message},
+            "parent_post_id" => parent_post_id,
+            "thread_root_id" => thread_root_id
           }
         },
         socket
       ) do
     case Collaboration.create_post(%{
-           content: %{message: message_text},
-           parent_post_id: id_parent,
-           thread_root_id: id_root
+           content: %{message: message},
+           parent_post_id: parent_post_id,
+           thread_root_id: thread_root_id
          }) do
       {:ok, _} ->
         posts = {:updated_post, posts_with_replies(%{status: :approved})}
@@ -112,14 +118,69 @@ defmodule OliWeb.Admin.CollaborativeSpace do
           posts
         )
 
-        {:noreply, assign(socket, selected: id_root, selected_reply: "")}
+        {:noreply, assign(socket, selected: thread_root_id, selected_reply: "")}
 
-      {:error, _} ->
+      {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
          socket
          |> put_flash(
            :error,
            "Could not insert comment"
+         )}
+    end
+  end
+
+  def handle_event("display_edit_modal", %{"id_post" => id_post}, socket) do
+    post = Collaboration.get_post_by(%{id: id_post})
+
+    changeset =
+      post
+      |> Collaboration.change_post()
+
+    modal_assigns = %{
+      id: "edit_post_modal",
+      on_click: "edit_post",
+      changeset: changeset
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <EditModal {...@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns,
+       post: post
+     )}
+  end
+
+  def handle_event(
+        "edit_post",
+        %{"post" => %{"content" => %{"message" => message}}},
+        socket
+      ) do
+    case Collaboration.update_post(socket.assigns.post, %{"content" => %{"message" => message}}) do
+      {:ok, _} ->
+        posts = {:updated_post, posts_with_replies(%{status: :approved})}
+
+        PubSub.broadcast(
+          Oli.PubSub,
+          topic(123),
+          posts
+        )
+
+        {:noreply, hide_modal(socket, modal_assigns: nil)}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Could not edit comment"
          )}
     end
   end
