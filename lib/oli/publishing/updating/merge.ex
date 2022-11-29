@@ -1,12 +1,42 @@
-defmodule Oli.Publishing.Updating.Children do
+defmodule Oli.Publishing.Updating.Merge do
   use Oli.Publishing.Updating.Types
   alias Oli.Publishing.Updating.Airro
 
-  def update(src_original, src_current, dest) do
-    src_changes = Airro.classify(src_original, src_current)
-    dest_changes = Airro.classify(src_original, dest)
+  @doc """
+  Performs a three way merge of lists of resource identifiers, powered by AIRRO
+  classification of the type of change.
 
-    apply(src_changes, dest_changes, src_original, src_current, dest)
+  base: the original base list
+  src: a
+  dest: the (possibly) changed
+
+  Example:
+
+  (base)         (src)
+  [1, 2, 3] ---> [1, 2, 3, 4]
+    \                        \
+     [1]  ---------------------> [1, 4]
+     (target)                    (final)
+
+  In the above example, we see an original (base) list of [1, 2, 3]. An append
+  took place to generate (src) list.  Separately, removals were performed from
+  (base) to generate (target).  This three way merge will reapply the removals
+  that generated (target) to (src) to yield (final) of [1, 4].any()
+
+  This algorithm is case based, and relies heavily on the AIRRO (Append, Insert,
+  Removal, Reorder, Other) classification of the type of change between two lists.
+  The classification of change is determined between {base, src} and between
+  {base, target}.  Then, specific updates are made depending on the combination
+  of the two types of changes present.
+
+  Full details on the case combinations:
+  https://docs.google.com/spreadsheets/d/1T_06MlJZAUz12Wac4FtG37sgYK1dkN62g2hswxLGIcw/edit#gid=0
+  """
+  def merge(base, src, target) do
+    src_changes = Airro.classify(base, src)
+    dest_changes = Airro.classify(base, target)
+
+    apply(src_changes, dest_changes, base, src, target)
   end
 
   defp apply({:equal}, _, _, _, _), do: {:no_change}
