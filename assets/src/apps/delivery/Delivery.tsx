@@ -14,9 +14,14 @@ import {
   selectLessonEnd,
   selectRestartLesson,
   selectScreenIdleTimeOutTriggered,
+  setScreenIdleTimeOutTriggered,
 } from './store/features/adaptivity/slice';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
+import {
+  selectScreenIdleExpirationTime,
+  selectScreenIdleTimeOut,
+} from './store/features/page/slice';
 
 export interface DeliveryProps {
   resourceId: number;
@@ -37,6 +42,7 @@ export interface DeliveryProps {
   graded: boolean;
   overviewURL: string;
   finalizeGradedURL: string;
+  screenIdleTimeOut?: number;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -57,16 +63,37 @@ const Delivery: React.FC<DeliveryProps> = ({
   graded = false,
   overviewURL = '',
   finalizeGradedURL = '',
+  screenIdleTimeOut = 3,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
   const restartLesson = useSelector(selectRestartLesson);
+  const screenIdleExpirationTime = useSelector(selectScreenIdleExpirationTime);
+  const screenIdleTime = useSelector(selectScreenIdleTimeOut);
   const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
   let LayoutView: React.FC<LayoutProps> = () => <div>Unknown Layout</div>;
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
-
+  const setTimeoutTimer = () =>
+    setTimeout(
+      () => dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true })),
+      screenIdleTime,
+    );
+  const clearTimeoutFunc = () => {
+    clearTimeout(setTimeoutTimer());
+  };
+  const resetTimeout = () => {
+    clearTimeoutFunc();
+    setTimeoutTimer();
+  };
+  useEffect(() => {
+    if (!screenIdleExpirationTime) {
+      return;
+    }
+    resetTimeout();
+    setTimeoutTimer();
+  }, [screenIdleExpirationTime]);
   useEffect(() => {
     setInitialPageState();
   }, []);
@@ -101,6 +128,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         activeEverapp: 'none',
         overviewURL,
         finalizeGradedURL,
+        screenIdleTimeOut,
       }),
     );
   };
@@ -123,7 +151,7 @@ const Delivery: React.FC<DeliveryProps> = ({
       {isLessonEnded ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
-      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={5} /> : null}
+      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
     </div>
   );
 };

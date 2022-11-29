@@ -1,12 +1,10 @@
 /* eslint-disable react/prop-types */
 import {
-  selectIsInstructor,
-  selectPageSlug,
-  selectPreviewMode,
-  selectSectionSlug,
+  selectOverviewURL,
+  setScreenIdleExpirationTime,
 } from 'apps/delivery/store/features/page/slice';
 import TimeRemaining from 'components/common/TimeRemaining';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setScreenIdleTimeOutTriggered } from '../../store/features/adaptivity/slice';
 
@@ -15,37 +13,23 @@ interface ScreenIdleTimeOutDialogProps {
 }
 const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remainingTime }) => {
   const [isOpen, setIsOpen] = useState(true);
-  const projectSlug = useSelector(selectSectionSlug);
-  const resourceSlug = useSelector(selectPageSlug);
-  const [logOutButtonUrl, setLogOutButtonUrl] = useState('');
-  const [logOutButtonText, setLogOutButtonText] = useState('Back to Overview');
-  const isPreviewMode = useSelector(selectPreviewMode);
-  const isInstructor = useSelector(selectIsInstructor);
+  const overviewURL = useSelector(selectOverviewURL);
 
-  useEffect(() => {
-    if (isPreviewMode && !isInstructor) {
-      // return to authoring
-      setLogOutButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
-      setLogOutButtonText('Back to Authoring');
-    } else {
-      // return to Overview
-      setLogOutButtonUrl(window.location.href.split('/page')[0] + '/overview');
-      setLogOutButtonText('Back to Overview');
-    }
-  }, [isPreviewMode]);
   const handleCloseModalClick = () => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsOpen(false);
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: false }));
   };
   const dispatch = useDispatch();
   const handleSessionExpire = () => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsOpen(false);
-    (window as Window).location = `/authoring/project/${projectSlug}/resource/${resourceSlug}`;
+    (window as Window).location = overviewURL;
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: false }));
   };
 
   return (
-    <Fragment>
+    <>
       <div
         className="modal-backdrop in"
         style={{ display: isOpen ? 'block' : 'none', opacity: 0.5 }}
@@ -68,7 +52,7 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
           >
             ×
           </button>
-          <h3>You Have Been Idle!</h3>
+          <h3>Are you still working?</h3>
         </div>
 
         <div className="modal-body">
@@ -78,13 +62,13 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
               <p>
                 Your session will timeout in{' '}
                 <b>
-                  {
+                  {isOpen && (
                     <TimeRemaining
                       onTimerEnd={handleSessionExpire}
                       liveUpdate={true}
                       remainingTimeInMinutes={remainingTime}
                     ></TimeRemaining>
-                  }
+                  )}
                 </b>
                 . You want to continue?
               </p>
@@ -92,17 +76,6 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
           </div>
         </div>
         <div className="modal-footer">
-          {/* <button className="btn">
-            <a
-              href={logOutButtonUrl}
-              style={{ color: 'inherit', cursor: 'pointer', textDecoration: 'none' }}
-              title={logOutButtonText}
-              aria-label="OK, Logout Lesson"
-              data-dismiss="modal"
-            >
-              Logout
-            </a>
-          </button> */}
           <button
             className="btn btn-primary"
             name="Keep My Session Active"
@@ -112,7 +85,7 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
           </button>
         </div>
       </div>
-    </Fragment>
+    </>
   );
 };
 

@@ -28,7 +28,6 @@ import {
   setIsGoodFeedback,
   setMutationTriggered,
   setNextActivityId,
-  setScreenIdleTimeOutTriggered,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
@@ -44,6 +43,7 @@ import {
   selectPageContent,
   selectPreviewMode,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
@@ -211,7 +211,6 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
-
   const isPreviewMode = useSelector(selectPreviewMode);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -223,21 +222,6 @@ const DeckLayoutFooter: React.FC = () => {
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
   const [solutionButtonText, setSolutionButtonText] = useState('Show Solution');
   const [displaySolutionButton, setDisplaySolutionButton] = useState(false);
-  const [screenIdleInterval, setScreenIdleInterval] = useState(0);
-
-  useEffect(() => {
-    if (screenIdleInterval < 60) {
-      return;
-    }
-    dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true }));
-    setScreenIdleInterval(0);
-  }, [screenIdleInterval]);
-
-  const resetScreenIdleTimer = () => {
-    setInterval(() => {
-      setScreenIdleInterval((currentTimer) => currentTimer + 1);
-    }, 1000);
-  };
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -461,8 +445,7 @@ const DeckLayoutFooter: React.FC = () => {
   }, [lastCheckResults, isPreviewMode]);
 
   const checkHandler = () => {
-    setScreenIdleInterval(0);
-    resetScreenIdleTimer();
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsLoading(true);
     /* console.log('CHECK BUTTON CLICKED', {
       isGoodFeedback,

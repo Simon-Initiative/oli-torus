@@ -24,6 +24,8 @@ export interface PageState {
   activeEverapp: string;
   overviewURL: string;
   finalizeGradedURL: string;
+  screenIdleTimeOut: number;
+  screenIdleExpireTime?: number;
 }
 
 const initialState: PageState = {
@@ -47,6 +49,7 @@ const initialState: PageState = {
   activeEverapp: '',
   overviewURL: '',
   finalizeGradedURL: '',
+  screenIdleTimeOut: 2,
 };
 
 const pageSlice = createSlice({
@@ -74,13 +77,27 @@ const pageSlice = createSlice({
       state.graded = !!action.payload.graded;
       state.overviewURL = action.payload.overviewURL;
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
-
+      state.screenIdleTimeOut = action.payload.screenIdleTimeOut
+        ? action.payload.screenIdleTimeOut * 60 * 1000
+        : 30 * 60 * 1000;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
+      }
+      if (action.payload.screenIdleTimeOut) {
+        const screenIdleTimeOut = action.payload.screenIdleTimeOut * 60 * 1000;
+        const expireTime = Date.now() + screenIdleTimeOut;
+        state.screenIdleExpireTime = expireTime;
       }
     },
     setScore(state, action: PayloadAction<{ score: number }>) {
       state.score = action.payload.score;
+    },
+    setScreenIdleExpirationTime(state, action: PayloadAction<{ screenIdleExpireTime: number }>) {
+      if (state.screenIdleExpireTime) {
+        const screenIdleTimeOut = state.screenIdleExpireTime * 60 * 1000;
+        const expireTime = action.payload.screenIdleExpireTime + screenIdleTimeOut;
+        state.screenIdleExpireTime = expireTime;
+      }
     },
     setActiveEverapp(state, action: PayloadAction<{ id: string }>) {
       state.activeEverapp = action.payload.id;
@@ -91,7 +108,13 @@ const pageSlice = createSlice({
   },
 });
 
-export const { loadPageState, setActiveEverapp, setScore, setShowHistory } = pageSlice.actions;
+export const {
+  loadPageState,
+  setActiveEverapp,
+  setScore,
+  setShowHistory,
+  setScreenIdleExpirationTime,
+} = pageSlice.actions;
 
 export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
@@ -101,6 +124,14 @@ export const selectPageContent = createSelector(selectState, (state) => state.co
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
+export const selectScreenIdleTimeOut = createSelector(
+  selectState,
+  (state) => state.screenIdleTimeOut,
+);
+export const selectScreenIdleExpirationTime = createSelector(
+  selectState,
+  (state) => state.screenIdleExpireTime,
+);
 export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectResourceAttemptGuid = createSelector(
   selectState,
