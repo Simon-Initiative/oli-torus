@@ -287,7 +287,9 @@ defmodule OliWeb.PageDeliveryController do
             section.slug,
             context.page.slug,
             resource_attempt.attempt_guid
-          )
+          ),
+        # this needs to come from server
+        screenIdleTimeOut: 4
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions

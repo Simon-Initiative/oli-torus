@@ -49,7 +49,7 @@ const initialState: PageState = {
   activeEverapp: '',
   overviewURL: '',
   finalizeGradedURL: '',
-  screenIdleTimeOut: 2,
+  screenIdleTimeOut: 30,
 };
 
 const pageSlice = createSlice({
@@ -78,8 +78,8 @@ const pageSlice = createSlice({
       state.overviewURL = action.payload.overviewURL;
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
       state.screenIdleTimeOut = action.payload.screenIdleTimeOut
-        ? action.payload.screenIdleTimeOut * 60 * 1000
-        : 30 * 60 * 1000;
+        ? action.payload.screenIdleTimeOut
+        : 30;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }

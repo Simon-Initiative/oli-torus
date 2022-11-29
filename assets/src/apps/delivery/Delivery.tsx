@@ -63,7 +63,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   graded = false,
   overviewURL = '',
   finalizeGradedURL = '',
-  screenIdleTimeOut = 3,
+  screenIdleTimeOut = 30,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -75,10 +75,13 @@ const Delivery: React.FC<DeliveryProps> = ({
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
+
+  const screenIdleWarningTime = screenIdleTime - 2;
+  const idleTime = screenIdleWarningTime * 60 * 1000;
   const setTimeoutTimer = () =>
     setTimeout(
       () => dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true })),
-      screenIdleTime,
+      idleTime,
     );
   const clearTimeoutFunc = () => {
     clearTimeout(setTimeoutTimer());
