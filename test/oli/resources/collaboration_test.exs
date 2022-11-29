@@ -397,7 +397,7 @@ defmodule Oli.Resources.CollaborationTest do
       params = params_with_assocs(:post)
       assert {:ok, %Post{} = post} = Collaboration.create_post(params)
 
-      assert post.content == params.content
+      assert post.content.message == params.content.message
       assert post.status == params.status
       assert post.user_id == params.user_id
       assert post.section_id == params.section_id
@@ -414,7 +414,7 @@ defmodule Oli.Resources.CollaborationTest do
       returned_post = Collaboration.get_post_by(%{id: post.id})
 
       assert post.id == returned_post.id
-      assert post.content.message == returned_post.content["message"]
+      assert post.content.message == returned_post.content.message
     end
 
     test "get_post_by/1 returns nil if the post does not exist" do
