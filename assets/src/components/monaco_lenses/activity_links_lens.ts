@@ -24,8 +24,6 @@ export function activityLinksLens(
           const commandId = editor.addCommand(
             0,
             function () {
-              // services available in `ctx`
-              // alert('Open Activity ' + activityId);
               window.open(`/project/${projectSlug}/history/resource_id/${activityId}`, '_blank');
             },
             '',
