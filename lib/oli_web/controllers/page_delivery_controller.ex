@@ -288,7 +288,6 @@ defmodule OliWeb.PageDeliveryController do
             context.page.slug,
             resource_attempt.attempt_guid
           ),
-        # this needs to come from server
         screenIdleTimeOut: Application.fetch_env!(:oli, :screen_idle_timeout)
       },
       bib_app_params: %{
