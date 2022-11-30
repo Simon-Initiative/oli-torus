@@ -23,7 +23,7 @@ defmodule OliWeb.CollaborationLive.Post do
           <div class="d-flex align-items-center justify-content-between">
             <div class="my-2">{@post.content.message}</div>
           </div>
-          <div class="text-muted small mb-2">XXXX - {@post.inserted_at}</div>
+          <div class="text-muted small mb-2">{@post.user_id} - {@post.inserted_at}</div>
           <div class="d-flex align-items-center justify-content-between">
             <div class="d-flex">
               <div class="badge badge-light mr-1">#{@post.id}</div>
@@ -43,7 +43,7 @@ defmodule OliWeb.CollaborationLive.Post do
               <span class="badge badge-light">Replied to <strong>XXXX</strong> in <strong>#{reply.parent_post_id}</strong></span>
             {/if}
             <div class="my-2">{reply.content.message}</div>
-            <div class="text-muted small mb-2">XXXX - {reply.inserted_at}</div>
+            <div class="text-muted small mb-2">{@post.user_id} - {reply.inserted_at}</div>
             <div class="d-flex align-items-center justify-content-between">
               <div class="d-flex">
                 <div class="badge badge-light mr-1">#{reply.id}</div>
