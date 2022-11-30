@@ -289,7 +289,7 @@ defmodule OliWeb.PageDeliveryController do
             resource_attempt.attempt_guid
           ),
         # this needs to come from server
-        screenIdleTimeOut: 4
+        screenIdleTimeOut: Application.fetch_env!(:oli, :screen_idle_timeout)
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions

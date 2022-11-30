@@ -53,7 +53,8 @@ config :oli,
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
-  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2"))
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+  screen_idle_timeout: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT", "5"))
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do

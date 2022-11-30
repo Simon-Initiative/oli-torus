@@ -89,7 +89,8 @@ config :oli,
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
-  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2"))
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+  screen_idle_timeout: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT", "5"))
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
@@ -239,13 +240,14 @@ config :libcluster,
       case System.get_env("LIBCLUSTER_STRATEGY", "Cluster.Strategy.Gossip") do
         "ClusterEC2.Strategy.Tags" = ec2_strategy ->
           [
-            strategy:  Module.concat([ec2_strategy]),
+            strategy: Module.concat([ec2_strategy]),
             config: [
               ec2_tagname: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_NAME", ""),
               ec2_tagvalue: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_VALUE", ""),
               app_prefix: System.get_env("LIBCLUSTER_EC2_STRATEGY_APP_PREFIX", "oli")
             ]
           ]
+
         strategy ->
           [
             strategy: Module.concat([strategy])
