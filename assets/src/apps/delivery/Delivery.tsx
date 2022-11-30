@@ -91,7 +91,8 @@ const Delivery: React.FC<DeliveryProps> = ({
     setTimeoutTimer();
   };
   useEffect(() => {
-    if (!screenIdleExpirationTime) {
+    //if it's preview mode, we don't need to do anything
+    if (!screenIdleExpirationTime || previewMode) {
       return;
     }
     resetTimeout();
