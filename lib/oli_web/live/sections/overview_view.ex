@@ -134,6 +134,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <button type="button" class="p-0 btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button>
           </li>
+          <li><a href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}>Browse Collaborative Spaces</a></li>
         </ul>
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">
