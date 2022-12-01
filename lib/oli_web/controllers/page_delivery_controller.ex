@@ -3,6 +3,7 @@ defmodule OliWeb.PageDeliveryController do
   require Logger
 
   import OliWeb.Common.FormatDateTime
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -205,10 +206,10 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, {previous, next, current}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
 
-    {:ok, summary} = Oli.Delivery.Student.Summary.get_summary(section_slug, user)
+    resource_access = Core.get_resource_access(page.resource_id, section.slug, user.id)
 
     render(conn, "prologue.html", %{
-      summary: summary,
+      resource_access: resource_access,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
       preview_mode: preview_mode,
