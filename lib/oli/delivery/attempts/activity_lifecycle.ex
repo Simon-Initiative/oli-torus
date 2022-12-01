@@ -17,6 +17,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Evaluation.{Explanation, ExplanationContext}
+
   import Oli.Delivery.Attempts.Core
 
   @doc """
@@ -95,8 +97,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       ) do
     Repo.transaction(fn ->
       activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+      resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
 
-      if activity_attempt == nil do
+      if is_nil(activity_attempt) do
         Repo.rollback({:not_found})
       else
         # We cannot rely on the attempt number from the supplied activity attempt
@@ -153,8 +156,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
             new_part_attempts = get_latest_part_attempts(new_activity_attempt.attempt_guid)
 
-            {ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
-             ModelPruner.prune(working_model)}
+            {ActivityState.from_attempt(
+               new_activity_attempt,
+               new_part_attempts,
+               model,
+               resource_attempt,
+               resource_attempt.revision
+             ), ModelPruner.prune(working_model)}
           else
             {:error, error} -> Repo.rollback(error)
           end
@@ -176,6 +184,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         nil
       end
 
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
     %{
       part_id: previous_part_attempt.part_id,
       response: response,
@@ -183,16 +193,16 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       attempt_guid: UUID.uuid4(),
       datashop_session_id: datashop_session_id,
       attempt_number: 1,
-      inserted_at: DateTime.utc_now(),
-      updated_at: DateTime.utc_now(),
+      inserted_at: now,
+      updated_at: now,
       score: nil,
       out_of: nil,
       feedback: nil,
-      lifecycle_state: "active",
+      lifecycle_state: :active,
       date_evaluated: nil,
       date_submitted: nil,
       hints: [],
-      grading_approach: Atom.to_string(previous_part_attempt.grading_approach)
+      grading_approach: previous_part_attempt.grading_approach
     }
   end
 
@@ -260,6 +270,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           end
 
         part = Enum.find(parsed_model.parts, fn p -> p.id == part_attempt.part_id end)
+        resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
+
+        explanation_provider_fn = fn part, part_attempt ->
+          Explanation.get_explanation(%ExplanationContext{
+            part: part,
+            part_attempt: part_attempt,
+            activity_attempt: activity_attempt,
+            resource_attempt: resource_attempt,
+            resource_revision: resource_attempt.revision
+          })
+        end
 
         case create_part_attempt(%{
                attempt_guid: UUID.uuid4(),
@@ -270,8 +291,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                activity_attempt_id: activity_attempt.id,
                datashop_session_id: datashop_session_id
              }) do
-          {:ok, part_attempt} -> PartState.from_attempt(part_attempt, part)
-          {:error, changeset} -> Repo.rollback(changeset)
+          {:ok, part_attempt} ->
+            PartState.from_attempt(part_attempt, part, explanation_provider_fn)
+
+          {:error, changeset} ->
+            Repo.rollback(changeset)
         end
       end
     end)
