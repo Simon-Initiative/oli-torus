@@ -254,6 +254,7 @@ export const VlabComponent: React.FC = () => {
             key={partId}
             partId={partId}
             shouldShow={hintsShown.includes(partId)}
+            resetPartInputs={emptyPartInputs}
           />
         ))}
         <EvaluationConnected />

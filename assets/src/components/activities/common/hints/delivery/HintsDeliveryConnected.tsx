@@ -5,36 +5,116 @@ import {
   ActivityDeliveryState,
   isEvaluated,
   isSubmitted,
+  PartInputs,
   requestHint,
+  resetAction,
+  resetAndRequestHintAction,
 } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { isCorrect } from '../../../../../data/activities/utils';
 
 interface Props {
   partId: PartId;
   shouldShow?: boolean;
+  resetPartInputs?: PartInputs; // If we need to reset, what part inputs should we default to?
 }
+
+const shouldShow = (
+  uiState: ActivityDeliveryState,
+  graded: boolean,
+  surveyId: string | null,
+  correct: boolean,
+  shouldShow?: boolean,
+) => {
+  if (surveyId !== null) return false;
+  if (!correct) return true;
+
+  return (
+    (typeof shouldShow === 'undefined' || shouldShow) &&
+    !isEvaluated(uiState) &&
+    !isSubmitted(uiState)
+  );
+};
+
+const isRequestHintDisabled = (
+  uiState: ActivityDeliveryState,
+  hasMoreHints: boolean,
+  correct: boolean,
+  graded: boolean,
+) => {
+  if (!hasMoreHints) return false;
+  if (isEvaluated(uiState) && graded) return true;
+  if (!correct) return false;
+
+  return isEvaluated(uiState) || isSubmitted(uiState);
+};
+
+/*
+    Rules for requesting hints.
+
+    1. You can request hints before answering
+    2. You can see hints on incorrect
+    3. You can request additional hints on incorrect, but that implicitly resets (I'd suggest that for both question types).
+    4. Hints are hidden on correct
+    5. Once you see a hint, it remains revealed until you get it correct.
+*/
 export const HintsDeliveryConnected: React.FC<Props> = (props) => {
-  const { context, writerContext, onRequestHint } = useDeliveryElementContext<HasHints>();
+  const { context, writerContext, onRequestHint, onResetActivity } =
+    useDeliveryElementContext<HasHints>();
   const { graded, surveyId } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
+  const correct = isCorrect(uiState.attemptState);
+  const shouldShowHint = shouldShow(uiState, graded, surveyId, correct, props.shouldShow);
+  const hasMoreHints = uiState.partState[props.partId]?.hasMoreHints || false;
+  const requestHintDisabled = isRequestHintDisabled(uiState, hasMoreHints, correct, graded);
+
+  const onHint = () => {
+    if (isEvaluated(uiState)) {
+      // We continue to display hints on incorrect answers, so we need to reset before getting the next one.
+      dispatch(
+        resetAndRequestHintAction(
+          props.partId,
+          onRequestHint,
+          onResetActivity,
+          props.resetPartInputs,
+        ),
+      );
+    } else {
+      dispatch(requestHint(props.partId, onRequestHint));
+    }
+  };
+
   return (
-    <HintsDelivery
-      shouldShow={
-        (typeof props.shouldShow === 'undefined' || props.shouldShow) &&
-        !isEvaluated(uiState) &&
-        !isSubmitted(uiState) &&
-        !graded &&
-        surveyId === null
-      }
-      onClick={() => dispatch(requestHint(props.partId, onRequestHint))}
-      hints={uiState.partState[props.partId]?.hintsShown || []}
-      hasMoreHints={uiState.partState[props.partId]?.hasMoreHints || false}
-      isEvaluated={isEvaluated(uiState)}
-      isSubmitted={isSubmitted(uiState)}
-      context={writerContext}
-    />
+    <div>
+      {/* <pre>
+        {JSON.stringify(
+          {
+            hints: uiState.partState[props.partId]?.hintsShown || [],
+            correct,
+            isEvaluated: isEvaluated(uiState),
+            isSubmitted: isSubmitted(uiState),
+            shouldShowHint,
+            propsShouldShow: props.shouldShow,
+            hasMoreHints,
+            requestHintDisabled,
+            graded,
+            surveyId,
+          },
+          null,
+          2,
+        )}
+      </pre> */}
+      <HintsDelivery
+        shouldShow={shouldShowHint}
+        onClick={onHint}
+        hints={uiState.partState[props.partId]?.hintsShown || []}
+        hasMoreHints={hasMoreHints}
+        context={writerContext}
+        requestHintDisabled={requestHintDisabled}
+      />
+    </div>
   );
 };

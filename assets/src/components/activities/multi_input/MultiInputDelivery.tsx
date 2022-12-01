@@ -291,6 +291,7 @@ export const MultiInputComponent: React.FC = () => {
             key={partId}
             partId={partId}
             shouldShow={hintsShown.includes(partId)}
+            resetPartInputs={emptyPartInputs}
           />
         ))}
         <Evaluation
