@@ -139,31 +139,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             # simulate preloading of the revision
             new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
 
-            new_part_attempts =
-              case Enum.reduce_while(part_attempts, {:ok, []}, fn p, {:ok, acc} ->
-                     response =
-                       if seed_state_from_previous do
-                         p.response
-                       else
-                         nil
-                       end
+            raw_part_attempts =
+              Enum.map(part_attempts, fn p ->
+                create_raw_part_attempt(
+                  new_activity_attempt.id,
+                  p,
+                  seed_state_from_previous,
+                  datashop_session_id
+                )
+              end)
 
-                     case create_part_attempt(%{
-                            attempt_guid: UUID.uuid4(),
-                            attempt_number: 1,
-                            part_id: p.part_id,
-                            grading_approach: p.grading_approach,
-                            response: response,
-                            activity_attempt_id: new_activity_attempt.id,
-                            datashop_session_id: datashop_session_id
-                          }) do
-                       {:ok, part_attempt} -> {:cont, {:ok, acc ++ [part_attempt]}}
-                       {:error, changeset} -> {:halt, {:error, changeset}}
-                     end
-                   end) do
-                {:ok, new_part_attempts} -> new_part_attempts
-                {:error, error} -> Repo.rollback(error)
-              end
+            Repo.insert_all(PartAttempt, raw_part_attempts)
+
+            new_part_attempts = get_latest_part_attempts(new_activity_attempt.attempt_guid)
 
             {ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
              ModelPruner.prune(working_model)}
@@ -173,6 +161,39 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         end
       end
     end)
+  end
+
+  defp create_raw_part_attempt(
+         activity_attempt_id,
+         previous_part_attempt,
+         seed_state_from_previous,
+         datashop_session_id
+       ) do
+    response =
+      if seed_state_from_previous do
+        previous_part_attempt.response
+      else
+        nil
+      end
+
+    %{
+      part_id: previous_part_attempt.part_id,
+      response: response,
+      activity_attempt_id: activity_attempt_id,
+      attempt_guid: UUID.uuid4(),
+      datashop_session_id: datashop_session_id,
+      attempt_number: 1,
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now(),
+      score: nil,
+      out_of: nil,
+      feedback: nil,
+      lifecycle_state: "active",
+      date_evaluated: nil,
+      date_submitted: nil,
+      hints: [],
+      grading_approach: Atom.to_string(previous_part_attempt.grading_approach)
+    }
   end
 
   defp maybe_transform_model(
