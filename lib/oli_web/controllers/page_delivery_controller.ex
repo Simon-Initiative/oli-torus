@@ -28,7 +28,6 @@ defmodule OliWeb.PageDeliveryController do
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
   def index(conn, %{"section_slug" => section_slug}) do
-    IO.puts("thie sis where whewre -----------")
     user = conn.assigns.current_user
     section = conn.assigns.section
 
@@ -40,7 +39,6 @@ defmodule OliWeb.PageDeliveryController do
 
         section ->
           hierarchy = Resolver.full_hierarchy(section.slug)
-          IO.inspect(hierarchy)
 
           render(conn, "index.html",
             title: section.title,
@@ -96,11 +94,14 @@ defmodule OliWeb.PageDeliveryController do
           conn
           |> redirect(to: Routes.delivery_path(conn, :page, section_slug, revision_slug))
 
+
         # Render a container in the most efficient manner: A single resolver call for child
         # revisions based on retrieval of child data from the PreviousNextIndex cache
         %Revision{resource_type_id: ^container_type_id, title: title} = revision ->
           {:ok, {previous, next, current}, previous_next_index} =
             Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+
+          section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
           render(conn, "container.html",
             scripts: [],
@@ -112,6 +113,7 @@ defmodule OliWeb.PageDeliveryController do
             previous_page: previous,
             next_page: next,
             current_page: current,
+            page_number: section_resource.numbering_index,
             preview_mode: preview_mode,
             page_link_url: page_link_url,
             container_link_url: container_link_url,
@@ -209,6 +211,8 @@ defmodule OliWeb.PageDeliveryController do
 
     {:ok, summary} = Oli.Delivery.Student.Summary.get_summary(section_slug, user)
 
+    section_resource = Sections.get_section_resource(section.id, page.resource_id)
+
     render(conn, "prologue.html", %{
       summary: summary,
       section_slug: section_slug,
@@ -218,6 +222,7 @@ defmodule OliWeb.PageDeliveryController do
       previous_page: previous,
       next_page: next,
       current_page: current,
+      page_number: section_resource.numbering_index,
       title: context.page.title,
       allow_attempt?: allow_attempt?,
       message: message,
@@ -262,6 +267,8 @@ defmodule OliWeb.PageDeliveryController do
 
     activity_types = Activities.activities_for_section()
 
+    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
+
     render(conn, "advanced_delivery.html", %{
       app_params: %{
         activityTypes: activity_types,
@@ -301,6 +308,7 @@ defmodule OliWeb.PageDeliveryController do
       latest_attempts: %{},
       next_page: next,
       current_page: current,
+      page_number: section_resource.numbering_level,
       user_id: user.id,
       next_url: next_url,
       part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
@@ -330,6 +338,9 @@ defmodule OliWeb.PageDeliveryController do
   defp render_page(%PageContext{user: user} = context, conn, section_slug, _) do
     section = conn.assigns.section
 
+    #get_section_resource
+    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
+    
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
     base_project_attributes = Sections.get_section_attributes(section)
@@ -399,6 +410,7 @@ defmodule OliWeb.PageDeliveryController do
         previous_page: previous,
         next_page: next,
         current_page: current,
+        page_number: section_resource.numbering_index,
         title: context.page.title,
         graded: context.page.graded,
         activity_count: map_size(context.activities),
@@ -570,6 +582,8 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, collab_space_config} =
       Collaboration.get_collab_space_config_for_page_in_section(revision.slug, section_slug)
 
+    section_resource = Sections.get_section_resource(section.id, revision.resource_id)
+
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
     |> render(
@@ -582,6 +596,7 @@ defmodule OliWeb.PageDeliveryController do
         previous_page: previous,
         next_page: next,
         current_page: current,
+        page_number: section_resource.numbering_level,
         title: revision.title,
         html: html,
         objectives: [],
@@ -739,6 +754,8 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, {previous, next, current}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
 
+    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
+
     render(conn, "after_finalized.html",
       grade_message: grade_message,
       section_slug: section_slug,
@@ -748,6 +765,7 @@ defmodule OliWeb.PageDeliveryController do
       previous_page: previous,
       next_page: next,
       current_page: current,
+      page_number: section_resource.numbering_level,
       title: context.page.title,
       message: message,
       slug: context.page.slug,
