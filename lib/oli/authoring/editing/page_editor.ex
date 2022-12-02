@@ -245,7 +245,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
          project: publication.project,
          previous_page: previous,
          next_page: next,
-         collab_space_config: collab_space_config
+         collab_space_config: collab_space_config,
+         appsignalKey: Application.get_env(:appsignal, :client_key)
        }}
     else
       _ -> {:error, :not_found}

@@ -69,6 +69,8 @@ export const Editors = (props: EditorsProps) => {
   const allTags = props.allTags.toArray();
   const canRemove = editMode;
 
+  const contentBreaksExist = content.model.some((v: ResourceContent) => v.type === 'break');
+
   const editors = content.model.map((contentItem, index) => {
     const onEdit = (contentItem: ResourceContent) =>
       props.onEdit(content.updateContentItem(contentItem.id, contentItem));
@@ -91,6 +93,7 @@ export const Editors = (props: EditorsProps) => {
       editorMap,
       canRemove,
       featureFlags,
+      contentBreaksExist,
       onEdit,
       onEditActivity,
       onPostUndoable,

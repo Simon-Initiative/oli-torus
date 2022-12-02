@@ -210,7 +210,7 @@ export const MultiInputComponent: React.FC = () => {
           ]);
 
         if (input.inputType === 'dropdown') {
-          if ((uiState.model as MultiInputSchema).submitPerPart) {
+          if ((uiState.model as MultiInputSchema).submitPerPart && !context.graded) {
             handlePerPartSubmission(input.partId, value);
           } else {
             fn();
@@ -237,7 +237,7 @@ export const MultiInputComponent: React.FC = () => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
     if (input.inputType !== 'dropdown' && hasActualInput(id)) {
       deferredSaves.current[id].flushPendingChanges(false);
-      if ((uiState.model as MultiInputSchema).submitPerPart) {
+      if ((uiState.model as MultiInputSchema).submitPerPart && !context.graded) {
         handlePerPartSubmission(input.partId);
       }
     }
@@ -247,7 +247,7 @@ export const MultiInputComponent: React.FC = () => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
     if (hasActualInput(id)) {
       deferredSaves.current[id].flushPendingChanges(false);
-      if ((uiState.model as MultiInputSchema).submitPerPart) {
+      if ((uiState.model as MultiInputSchema).submitPerPart && !context.graded) {
         handlePerPartSubmission(input.partId);
       }
     }

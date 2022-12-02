@@ -24,6 +24,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.Revision
   alias Oli.Utils.BibUtils
   alias Oli.Resources.{Collaboration, PageContent}
+  alias Oli.Accounts
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -65,9 +66,10 @@ defmodule OliWeb.PageDeliveryController do
 
   def container(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
+    author = conn.assigns.current_author
     section = conn.assigns.section
 
-    if Sections.is_enrolled?(user.id, section_slug) do
+    if Accounts.is_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
       container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
       page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
@@ -464,43 +466,89 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
-    user = conn.assigns.current_user
-
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
-        activity_types = Activities.activities_for_section()
+        case conn.assigns.current_user do
+          nil ->
+            # instructor preview and user is nil, simply render a "preview unsupported" message for now
+            section = conn.assigns.section
 
-        conn
-        |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
-        |> put_view(OliWeb.ResourceView)
-        |> render("advanced_page_preview.html",
-          additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
-          activity_types: activity_types,
-          scripts: Activities.get_activity_scripts(:delivery_script),
-          part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-          user: user,
-          project_slug: section_slug,
-          title: revision.title,
-          preview_mode: true,
-          display_curriculum_item_numbering: true,
-          app_params: %{
-            activityTypes: activity_types,
-            resourceId: revision.resource_id,
-            sectionSlug: section_slug,
-            userId: user.id,
-            pageSlug: revision.slug,
-            pageTitle: revision.title,
-            content: revision.content,
-            graded: revision.graded,
-            resourceAttemptState: nil,
-            resourceAttemptGuid: nil,
-            activityGuidMapping: nil,
-            previousPageURL: nil,
-            nextPageURL: nil,
-            previewMode: true,
-            isInstructor: true
-          }
-        )
+            {:ok, {previous, next, current}, _} =
+              Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+
+            html =
+              ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
+
+            {:ok, collab_space_config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                revision.slug,
+                section_slug
+              )
+
+            conn
+            |> put_root_layout({OliWeb.LayoutView, "page.html"})
+            |> render(
+              "instructor_preview.html",
+              %{
+                summary: %{title: section.title},
+                section_slug: section_slug,
+                scripts: [],
+                preview_mode: true,
+                previous_page: previous,
+                next_page: next,
+                current_page: current,
+                title: revision.title,
+                html: html,
+                objectives: [],
+                section: section,
+                revision: revision,
+                page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+                container_link_url:
+                  &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
+                resource_slug: revision.slug,
+                display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+                bib_app_params: %{
+                  bibReferences: []
+                },
+                collab_space_config: collab_space_config
+              }
+            )
+
+          user ->
+            activity_types = Activities.activities_for_section()
+
+            conn
+            |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
+            |> put_view(OliWeb.ResourceView)
+            |> render("advanced_page_preview.html",
+              additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+              activity_types: activity_types,
+              scripts: Activities.get_activity_scripts(:delivery_script),
+              part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+              user: user,
+              project_slug: section_slug,
+              title: revision.title,
+              preview_mode: true,
+              display_curriculum_item_numbering: true,
+              app_params: %{
+                activityTypes: activity_types,
+                resourceId: revision.resource_id,
+                sectionSlug: section_slug,
+                userId: user.id,
+                pageSlug: revision.slug,
+                pageTitle: revision.title,
+                content: revision.content,
+                graded: revision.graded,
+                resourceAttemptState: nil,
+                resourceAttemptGuid: nil,
+                activityGuidMapping: nil,
+                previousPageURL: nil,
+                nextPageURL: nil,
+                previewMode: true,
+                isInstructor: true
+              }
+            )
+        end
 
       revision ->
         render_page_preview(conn, section_slug, revision)

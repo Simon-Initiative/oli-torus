@@ -50,7 +50,8 @@ defmodule OliWeb.ResourceController do
           images: Routes.static_path(conn, "/images")
         },
         activityTypes: activity_types,
-        partComponentTypes: PartComponents.part_components_for_project(project)
+        partComponentTypes: PartComponents.part_components_for_project(project),
+        appsignalKey: Application.get_env(:appsignal, :client_key)
       },
       active: :curriculum,
       activity_types: activity_types,
