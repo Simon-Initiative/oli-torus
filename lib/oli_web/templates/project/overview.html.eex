@@ -38,6 +38,8 @@
         <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}), class: "form-control", required: true %>
       </div>
 
+      <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
+
     </div>
   </div>
 
@@ -59,15 +61,13 @@
 
         </div>
       <% end %>
-
-    <%= submit "Save", class: "float-left btn btn-md btn-primary mt-2" %>
-      <div class="d-flex flex-row">
-        <div class="flex-grow-1"></div>
-        <%= submit "Save", class: "float-left btn btn-md btn-primary mt-2" %>
-      </div>
     </div>
 
-    <div class="mt-4">
+    <div>
+      <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
+    </div>
+
+    <div>
       <div><a type="button" class="btn btn-link pl-0" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesEditor, @project.slug) %>">Manage Alternatives</a></div>
       <small>Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.</small>
     </div>
