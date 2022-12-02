@@ -195,6 +195,8 @@ config :mnesia,
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 
+config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
+
 config :surface, :components, [
   {
     Surface.Components.Form.ErrorTag,

@@ -7,6 +7,7 @@
 ### Enhancements
 
 - Add tab for authoring 'explanation' feedback to all activities
+- Add client side reporting to appsignal for core and adaptive authoring.
 
 ## 0.21.5 (2022-09-01)
 
