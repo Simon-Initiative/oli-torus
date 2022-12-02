@@ -15,6 +15,7 @@ defmodule OliWeb.Common.MonacoEditor do
   prop on_mount, :event
   prop on_change, :event
   prop get_value, :event
+  prop use_code_lenses, :list
 
   def render(assigns) do
     ~F"""
@@ -34,7 +35,8 @@ defmodule OliWeb.Common.MonacoEditor do
       data-set-options={encode_attr(@set_options)}
       data-set-width-height={encode_attr(@set_width_height)}
       data-set-value={encode_attr(@set_value)}
-      data-get-value={encode_attr(@get_value)}>
+      data-get-value={encode_attr(@get_value)}
+      data-use-code-lenses={if @use_code_lenses, do: encode_attr(@use_code_lenses)}>
       <div class="text-center">
         <div class="spinner-border text-secondary" role="status">
           <span class="sr-only">Loading...</span>
