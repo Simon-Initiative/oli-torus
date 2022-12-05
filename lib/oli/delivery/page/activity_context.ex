@@ -17,13 +17,18 @@ defmodule Oli.Delivery.Page.ActivityContext do
   off of the supplied list of activity ids and a map of resource ids to
   resolved revisions.
   """
-  @spec create_context_map(boolean(), %{}) :: %{}
-  def create_context_map(graded, latest_attempts, opts \\ []) do
+  @spec create_context_map(
+          boolean(),
+          %{},
+          Oli.Delivery.Attempts.Core.ResourceAttempt.t(),
+          Oli.Resources.Revision.t()
+        ) :: %{}
+  def create_context_map(graded, latest_attempts, resource_attempt, page_revision, opts \\ []) do
     # get a view of all current registered activity types
     registrations = Activities.list_activity_registrations()
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
-    activity_states = State.from_attempts(latest_attempts)
+    activity_states = State.from_attempts(latest_attempts, resource_attempt, page_revision)
 
     ordinal_assign_fn = create_ordinal_assignment_fn(graded, opts)
 
