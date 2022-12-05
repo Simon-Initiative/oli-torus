@@ -101,7 +101,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                     post={post}
                     index={index}
                     selected={@selected}
-                    user={@user} />
+                    user={@user}
+                    is_threaded={@collab_space_config.threaded}/>
                 {/for}
               </div>
             </div>
@@ -140,7 +141,9 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   def handle_event("create_post", %{"post" => attrs} = _params, socket) do
     socket = clear_flash(socket)
 
-    case Collaboration.create_post(attrs) do
+    case Collaboration.create_post(
+           get_attrs_to_create_post(attrs, socket.assigns.collab_space_config.auto_accept)
+         ) do
       {:ok, _post} ->
         socket = put_flash(socket, :info, "Post successfully created")
 
@@ -334,4 +337,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp show_collab_space?(nil), do: false
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
+
+  defp get_attrs_to_create_post(attrs, true), do: attrs
+  defp get_attrs_to_create_post(attrs, false), do: Map.put(attrs, "status", :submitted)
 end

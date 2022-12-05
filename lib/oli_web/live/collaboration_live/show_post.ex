@@ -5,12 +5,17 @@ defmodule OliWeb.CollaborationLive.ShowPost do
   prop index, :integer, required: true
   prop user, :struct
   prop selected, :string, default: ""
+  prop is_threaded, :boolean, required: true
 
   def render(assigns) do
     ~F"""
       <div class="accordion-item">
         <div class="accordion-header" id={"heading_#{@post.id}"}>
           <div class="border-post-forum border-success p-2 my-4">
+            {#if Enum.member?([:submitted, :archived], @post.status)}
+              <span class={"badge" <> if @post.status == :submitted, do: " badge-success", else: " badge-danger"}>{@post.status}</span>
+            {/if}
+
             <div class="my-2">{@post.content.message}</div>
 
             <div class="text-muted small mb-2">{@post.user.name} - {@post.inserted_at}</div>
@@ -22,38 +27,50 @@ defmodule OliWeb.CollaborationLive.ShowPost do
             {/if}
 
             {#if @post.user_id == @user.id}
-              <button type="button" :on-click="display_edit_modal" phx-value-id={@post.id} class="btn btn-link"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={@post.id} disabled={make_disabled?(@post.status)}><i class="fas fa-edit"></i></button>
             {/if}
 
-            <button class="btn btn-link" :on-click="set_selected" phx-value-id={@post.id} data-toggle="collapse" data-target={"#collapse_#{@post.id}"} aria-expanded="true" aria-controls={"collapse_#{@post.id}"}><i class="fa fa-angle-down mr-1"></i></button>
+            {#if @is_threaded}
+              <button class="btn btn-link" type="button" :on-click="display_reply_to_post_modal" phx-value-parent_id={@post.id} disabled={make_disabled?(@post.status)}><i class="fas fa-reply"></i></button>
+              {#if @post.replies_count > 0}
+                <button class="btn btn-link" :on-click="set_selected" phx-value-id={@post.id} data-toggle="collapse" data-target={"#collapse_#{@post.id}"} aria-expanded="true" aria-controls={"collapse_#{@post.id}"} disabled={make_disabled?(@post.status)}><i class="fa fa-angle-down mr-1"></i></button>
+              {/if}
+            {/if}
           </div>
         </div>
+        {#if @is_threaded}
+          <div id={"collapse_#{@post.id}"} class={"collapse w-85 ml-auto" <> if Integer.to_string(@post.id) == @selected, do: " show", else: ""} aria-labelledby={"heading_#{@post.id}"} data-parent="#post-accordion">
+            <div class="accordion-body">
 
-        <div id={"collapse_#{@post.id}"} class={"collapse w-85 ml-auto" <> if Integer.to_string(@post.id) == @selected, do: " show", else: ""} aria-labelledby={"heading_#{@post.id}"} data-parent="#post-accordion">
-          <div class="accordion-body">
+              {#for {reply, reply_index} <- @post.replies}
+                <div class="border-post-forum border-danger mb-3 p-2">
 
-            {#for {reply, reply_index} <- @post.replies}
-              <div class="border-post-forum border-danger mb-3 p-2">
-                {#if reply.parent_post_id != @post.id}
-                  <span class="badge badge-light">{reply_parent_post_text(assigns, @post.replies, @index, reply.parent_post_id)}</span>
-                {/if}
+                  {#if Enum.member?([:submitted, :archived], reply.status)}
+                    <span class={"badge" <> if reply.status == :submitted, do: " badge-success", else: " badge-danger"}>{reply.status}</span>
+                  {/if}
 
-                <div class="my-2">{reply.content.message}</div>
-                <div class="text-muted small mb-2">{reply.user.name} - {reply.inserted_at}</div>
+                  {#if reply.parent_post_id != @post.id}
+                    <span class="badge badge-light">{reply_parent_post_text(assigns, @post.replies, @index, reply.parent_post_id)}</span>
+                  {/if}
 
-                <div class="badge badge-light mr-1">#{@index}.{reply_index}</div>
+                  <div class="my-2">{reply.content.message}</div>
+                  <div class="text-muted small mb-2">{reply.user.name} - {reply.inserted_at}</div>
 
-                {#if reply.replies_count > 0}
-                  <div class="font-weight-light small ml-1"><i class="fa fa-reply-all mr-1"></i>{reply.replies_count}</div>
-                {/if}
+                  <div class="badge badge-light mr-1">#{@index}.{reply_index}</div>
 
-                {#if reply.user_id == @user.id}
-                  <button type="button" :on-click="display_edit_modal" phx-value-id={reply.id} class="btn btn-link"><i class="fas fa-edit"></i></button>
-                {/if}
-              </div>
-            {/for}
+                  {#if reply.replies_count > 0}
+                    <div class="font-weight-light small ml-1"><i class="fa fa-reply-all mr-1"></i>{reply.replies_count}</div>
+                  {/if}
+
+                  {#if reply.user_id == @user.id}
+                    <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={reply.id} disabled={make_disabled?(reply.status)}><i class="fas fa-edit"></i></button>
+                  {/if}
+                  <button class="btn btn-link" type="button" :on-click="display_reply_to_reply_modal" phx-value-parent_id={reply.id} phx-value-root_id={@post.id} disabled={make_disabled?(reply.status)}><i class="fas fa-reply"></i></button>
+                </div>
+              {/for}
+            </div>
           </div>
-        </div>
+        {/if}
       </div>
     """
   end
@@ -65,4 +82,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
       Replied to {parent_post.user.name} in #{thread_index}.{index}
     """
   end
+
+  defp make_disabled?(:archived), do: true
+  defp make_disabled?(_), do: false
 end

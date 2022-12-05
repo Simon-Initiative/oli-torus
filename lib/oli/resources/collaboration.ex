@@ -276,7 +276,7 @@ defmodule Oli.Resources.Collaboration do
         select_merge: %{
           replies_count: fragment("select count(*) from posts where thread_root_id = ?", post.id)
         },
-        order_by: [desc: :inserted_at],
+        order_by: [asc: :inserted_at],
         preload: [:user]
       )
     )
