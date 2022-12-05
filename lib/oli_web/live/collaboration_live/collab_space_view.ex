@@ -157,6 +157,66 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     end
   end
 
+  def handle_event("display_reply_to_post_modal", %{"parent_id" => parent_id}, socket) do
+    changeset_post_reply =
+      Ecto.Changeset.put_change(socket.assigns.post_changeset, :parent_post_id, parent_id)
+      |> Ecto.Changeset.put_change(:thread_root_id, parent_id)
+
+    modal_assigns = %{
+      id: "create_reply_modal",
+      on_submit: "create_post",
+      on_change: "typing",
+      on_blur: "stop_typing",
+      changeset: changeset_post_reply,
+      title: "Create reply"
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <PostModal {...@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     socket
+     |> show_modal(
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event(
+        "display_reply_to_reply_modal",
+        %{"parent_id" => parent_id, "root_id" => root_id},
+        socket
+      ) do
+    changeset_post_reply =
+      Ecto.Changeset.put_change(socket.assigns.post_changeset, :parent_post_id, parent_id)
+      |> Ecto.Changeset.put_change(:thread_root_id, root_id)
+
+    modal_assigns = %{
+      id: "create_reply_modal",
+      on_submit: "create_post",
+      on_change: "typing",
+      on_blur: "stop_typing",
+      changeset: changeset_post_reply,
+      title: "Create reply"
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <PostModal {...@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     socket
+     |> show_modal(
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
   def handle_event("display_edit_modal", %{"id" => id}, socket) do
     post = Collaboration.get_post_by(%{id: id})
     changeset = Collaboration.change_post(post)
