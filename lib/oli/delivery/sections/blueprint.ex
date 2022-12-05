@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectVisibility
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   alias Oli.Groups.CommunityVisibility
@@ -134,16 +134,14 @@ defmodule Oli.Delivery.Sections.Blueprint do
           {:error, {:invalid_project}}
 
         project ->
-          now = DateTime.utc_now()
-
           new_blueprint = %{
             "type" => :blueprint,
             "status" => :active,
             "base_project_id" => project.id,
             "open_and_free" => false,
             "context_id" => UUID.uuid4(),
-            "start_date" => now,
-            "end_date" => now,
+            "start_date" => nil,
+            "end_date" => nil,
             "title" => title,
             "requires_payment" => false,
             "pay_by_institution" => false,
@@ -196,7 +194,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   defp dupe_section(%Section{} = section, attrs) do
-    custom_labels = if section.customizations == nil, do: nil, else: Map.from_struct(section.customizations)
+    custom_labels =
+      if section.customizations == nil, do: nil, else: Map.from_struct(section.customizations)
+
     params =
       Map.merge(
         %{

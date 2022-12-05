@@ -12,7 +12,7 @@ defmodule Oli.Groups do
   alias Oli.Delivery.Sections.Section
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.Institution
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
 
   # ------------------------------------------------------------
   # Communities

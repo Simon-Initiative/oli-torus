@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
 
   import OliWeb.Delivery.Updates.Utils
 
+  alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Delivery.Updates.Worker
@@ -111,7 +112,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
     current_publication = Sections.get_current_publication(section.id, project_id)
     newest_publication = Publishing.get_publication!(publication_id)
 
-    {_version_change, changes} =
+    %PublicationDiff{changes: changes} =
       Publishing.diff_publications(current_publication, newest_publication)
 
     modal_assigns = %{

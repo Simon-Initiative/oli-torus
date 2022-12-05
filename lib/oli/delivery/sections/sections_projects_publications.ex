@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Sections.SectionsProjectsPublications do
 
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
 
   @primary_key false
   schema "sections_projects_publications" do

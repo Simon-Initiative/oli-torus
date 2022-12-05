@@ -33,7 +33,8 @@ defmodule Oli.Factory do
   alias Oli.Inventories.Publisher
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Notifications.SystemMessage
-  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Publishing.{PublishedResource}
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
 

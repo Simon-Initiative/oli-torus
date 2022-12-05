@@ -3,6 +3,7 @@ defmodule OliWeb.ProjectController do
 
   import Oli.Utils, only: [trap_nil: 1, log_error: 2]
 
+  alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Accounts
   alias Oli.Utils
   alias Oli.Authoring.Course
@@ -75,11 +76,11 @@ defmodule OliWeb.ProjectController do
           {true, nil, %{}}
 
         _ ->
-          {version_change, changes} =
+          %PublicationDiff{classification: classification, changes: changes} =
             Publishing.diff_publications(latest_published_publication, active_publication)
 
           parent_pages =
-            case version_change do
+            case classification do
               {:no_changes, _} ->
                 %{}
 
@@ -95,7 +96,7 @@ defmodule OliWeb.ProjectController do
                 )
             end
 
-          {version_change, changes, parent_pages}
+          {classification, changes, parent_pages}
       end
 
     base_url = Oli.Utils.get_base_url()

@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Lti.LtiParams
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
@@ -27,6 +27,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
+  alias Oli.Publishing.Publications.DiffAgent
+  alias Oli.Publishing.Publications.{PublicationDiff, PublicationDiffKey}
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
@@ -1126,10 +1128,24 @@ defmodule Oli.Delivery.Sections do
     current_publication = get_current_publication(section_id, project_id)
     current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
-    # generate a diff between the old and new publication
+    # fetch diff from cache if one is available. If not, compute one on the fly
+    diff =
+      case DiffAgent.get(PublicationDiffKey.key(current_publication.id, new_publication.id)) do
+        nil ->
+          Logger.info(
+            "No cached diff found for the publication_id delta #{current_publication.id} to #{new_publication.id}. Generating one JIT."
+          )
+
+          # generate a diff between the old and new publication
+          Publishing.diff_publications(current_publication, new_publication)
+
+        diff ->
+          diff
+      end
+
     result =
-      case Publishing.diff_publications(current_publication, new_publication) do
-        {{:minor, _version}, _diff} ->
+      case diff do
+        %PublicationDiff{classification: :minor} ->
           # changes are minor, all we need to do is update the spp record and
           # rebuild the section curriculum based on the current hierarchy
           update_section_project_publication(section, project_id, publication_id)
@@ -1139,9 +1155,9 @@ defmodule Oli.Delivery.Sections do
 
           {:ok}
 
-        {{:major, _version}, diff} ->
+        %PublicationDiff{classification: :major, changes: changes} ->
           Repo.transaction(fn ->
-            # changes are major, update the spp record and use the diff to take a "best guess"
+            # changes are major, update the spp record and use the changes to take a "best guess"
             # strategy for applying structural updates to an existing section's curriculum.
             # new items will in a container be appended to the container's children
             update_section_project_publication(section, project_id, publication_id)
@@ -1165,7 +1181,7 @@ defmodule Oli.Delivery.Sections do
                   maybe_process_added_or_changed_node(
                     {hierarchy, processed_resource_ids},
                     node,
-                    diff,
+                    changes,
                     new_hierarchy
                   )
                 end
@@ -1176,6 +1192,8 @@ defmodule Oli.Delivery.Sections do
             # rebuild the section curriculum based on the updated hierarchy
             project_publications = get_pinned_project_publications(section_id)
             rebuild_section_curriculum(section, updated_hierarchy, project_publications)
+
+            Oli.Delivery.PreviousNextIndex.rebuild(section)
           end)
       end
 

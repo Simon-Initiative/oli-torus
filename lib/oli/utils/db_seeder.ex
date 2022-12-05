@@ -11,7 +11,7 @@ defmodule Oli.Seeder do
   alias Oli.Activities.Model.Part
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -425,7 +425,8 @@ defmodule Oli.Seeder do
         :parent4
       )
 
-      customizations = case map.project.customizations do
+    customizations =
+      case map.project.customizations do
         nil -> nil
         labels -> Map.from_struct(labels)
       end
