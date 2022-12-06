@@ -19,12 +19,12 @@
   font-size: 0.6em !important;
 }
 
-.border-post-forum {
-  border-left: 2.5px solid !important;
+.border-post {
+  border-left: 2.5px solid #63a372 !important;
+}
 
-  &:hover {
-    cursor: pointer;
-  }
+.border-reply {
+  border-left: 2.5px solid #dc3545 !important;
 }
 
 .w-85 {

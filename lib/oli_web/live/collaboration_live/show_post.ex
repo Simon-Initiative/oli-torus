@@ -11,7 +11,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
     ~F"""
       <div class={"accordion-item" <> if @post.status == :archived, do: " readonly", else: ""}>
         <div class="accordion-header" id={"heading_#{@post.id}"}>
-          <div class="border-post-forum border-success p-2 my-4">
+          <div class="border-post p-2 my-4">
             {#if @post.status == :submitted}
               <span class={"badge" <> if @post.status == :submitted, do: " badge-success"}>{@post.status}</span>
             {/if}
@@ -43,7 +43,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
             <div class="accordion-body">
 
               {#for {reply, reply_index} <- @post.replies}
-                <div class={"border-post-forum border-danger mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
+                <div class={"border-reply mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
 
                   {#if reply.status == :submitted}
                   <span class={"badge" <> if reply.status == :submitted, do: " badge-success"}>{reply.status}</span>
