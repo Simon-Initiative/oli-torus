@@ -1,7 +1,4 @@
-import {
-  setRestartLesson,
-  setScreenIdleTimeOutTriggered,
-} from 'apps/delivery/store/features/adaptivity/slice';
+import { setRestartLesson } from 'apps/delivery/store/features/adaptivity/slice';
 import {
   selectEnableHistory,
   selectPreviewMode,
@@ -26,7 +23,7 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
   };
 
   const handleRestartLesson = () => {
-    dispatch(setRestartLesson({ screenIdleTimeOut: true }));
+    dispatch(setRestartLesson({ restartLesson: true }));
   };
 
   return (
