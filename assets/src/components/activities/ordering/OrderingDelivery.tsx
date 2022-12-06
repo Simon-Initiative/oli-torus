@@ -126,7 +126,10 @@ export const OrderingComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
+        <HintsDeliveryConnected
+          partId={castPartId(activityState.parts[0].partId)}
+          resetPartInputs={defaultPartInputs}
+        />
         <EvaluationConnected />
       </div>
     </div>

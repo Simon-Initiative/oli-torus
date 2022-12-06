@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { assertNever, valueOr } from 'utils/common';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
@@ -104,6 +104,11 @@ export const ShortAnswerComponent: React.FC = () => {
     );
   }, []);
 
+  const resetParts = useMemo(
+    () => ({ [castPartId(activityState.parts[0].partId)]: [''] }),
+    [activityState.parts],
+  );
+
   // First render initializes state
   if (!uiState.partState) {
     return null;
@@ -145,15 +150,12 @@ export const ShortAnswerComponent: React.FC = () => {
           onBlur={() => deferredSave.current.flushPendingChanges(false)}
         />
 
-        <ResetButtonConnected
-          onReset={() =>
-            dispatch(
-              resetAction(onResetActivity, { [castPartId(activityState.parts[0].partId)]: [''] }),
-            )
-          }
-        />
+        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
+        <HintsDeliveryConnected
+          partId={castPartId(activityState.parts[0].partId)}
+          resetPartInputs={resetParts}
+        />
         <EvaluationConnected />
       </div>
     </div>

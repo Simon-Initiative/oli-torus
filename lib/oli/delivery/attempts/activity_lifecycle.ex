@@ -201,7 +201,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       lifecycle_state: :active,
       date_evaluated: nil,
       date_submitted: nil,
-      hints: [],
+      hints: previous_part_attempt.hints,
       grading_approach: previous_part_attempt.grading_approach
     }
   end
@@ -289,7 +289,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                grading_approach: part_attempt.grading_approach,
                response: nil,
                activity_attempt_id: activity_attempt.id,
-               datashop_session_id: datashop_session_id
+               datashop_session_id: datashop_session_id,
+               hints: part_attempt.hints
              }) do
           {:ok, part_attempt} ->
             PartState.from_attempt(part_attempt, part, explanation_provider_fn)
