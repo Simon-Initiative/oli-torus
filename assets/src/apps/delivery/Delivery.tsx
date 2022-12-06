@@ -78,26 +78,17 @@ const Delivery: React.FC<DeliveryProps> = ({
 
   const screenIdleWarningTime = screenIdleTime - 2;
   const idleTime = screenIdleWarningTime * 60 * 1000;
-  const setTimeoutTimer = () =>
-    setTimeout(
-      () => dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true })),
-      idleTime,
-    );
-  const clearTimeoutFunc = () => {
-    clearTimeout(setTimeoutTimer());
-  };
-  const resetTimeout = () => {
-    clearTimeoutFunc();
-    setTimeoutTimer();
-  };
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode) {
       return;
     }
-    resetTimeout();
-    setTimeoutTimer();
+    const timer = setTimeout(() => {
+      dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true }));
+    }, idleTime);
+    return () => clearTimeout(timer);
   }, [screenIdleExpirationTime]);
+
   useEffect(() => {
     setInitialPageState();
   }, []);

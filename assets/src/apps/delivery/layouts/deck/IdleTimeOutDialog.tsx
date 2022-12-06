@@ -3,22 +3,20 @@ import {
   selectOverviewURL,
   setScreenIdleExpirationTime,
 } from 'apps/delivery/store/features/page/slice';
-import TimeRemaining from 'components/common/TimeRemaining';
-import React, { useState } from 'react';
+import { readGlobal } from 'data/persistence/extrinsic';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setScreenIdleTimeOutTriggered } from '../../store/features/adaptivity/slice';
 
-interface ScreenIdleTimeOutDialogProps {
-  remainingTime: number;
-}
-const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remainingTime }) => {
+const ScreenIdleTimeOutDialog: React.FC<any> = () => {
   const [isOpen, setIsOpen] = useState(true);
   const overviewURL = useSelector(selectOverviewURL);
 
-  const handleCloseModalClick = () => {
-    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
-    setIsOpen(false);
+  const handleKeepMySessionActiveClick = async () => {
+    //Now lets make a server call to continue the user session
+    await readGlobal([]);
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: false }));
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
   };
   const dispatch = useDispatch();
   const handleSessionExpire = () => {
@@ -27,6 +25,12 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
     (window as Window).location = overviewURL;
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: false }));
   };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleSessionExpire();
+    }, 60000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
@@ -42,16 +46,6 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
         style={{ display: isOpen ? 'block' : 'none', top: '20%', left: '50%' }}
       >
         <div className="modal-header">
-          <button
-            type="button"
-            className="close"
-            title="Close IdleTimeOutDialog Lesson window"
-            aria-label="Close IdleTimeOutDialog Lesson window"
-            data-dismiss="modal"
-            onClick={handleCloseModalClick}
-          >
-            ×
-          </button>
           <h3>Are you still working?</h3>
         </div>
 
@@ -60,17 +54,7 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
             <div className="type"></div>
             <div className="message">
               <p>
-                Your session will timeout in{' '}
-                <b>
-                  {isOpen && (
-                    <TimeRemaining
-                      onTimerEnd={handleSessionExpire}
-                      liveUpdate={true}
-                      remainingTimeInMinutes={remainingTime}
-                    ></TimeRemaining>
-                  )}
-                </b>
-                . You want to continue?
+                Your session will timeout in <b>1 minutes</b>. You want to continue?
               </p>
             </div>
           </div>
@@ -79,7 +63,7 @@ const ScreenIdleTimeOutDialog: React.FC<ScreenIdleTimeOutDialogProps> = ({ remai
           <button
             className="btn btn-primary"
             name="Keep My Session Active"
-            onClick={handleCloseModalClick}
+            onClick={handleKeepMySessionActiveClick}
           >
             Keep My Session Active
           </button>
