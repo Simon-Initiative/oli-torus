@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id)
 
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
-        submit_active_part_attempts(activity_attempt)
+        submit_active_part_attempts(part_attempts)
 
         custom = Map.get(delivery, "custom", %{})
 
@@ -85,19 +85,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  defp submit_active_part_attempts(activity_attempt) do
-    part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+  defp submit_active_part_attempts(part_attempts) do
+    right_now = DateTime.utc_now()
 
-    Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
-    |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
-      case update_part_attempt(pa, %{
-             lifecycle_state: :submitted,
-             date_submitted: DateTime.utc_now()
-           }) do
-        {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
-        e -> {:halt, e}
-      end
+    update_attrs = Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
+    |> Enum.map(fn pa ->
+      %{
+        lifecycle_state: :submitted,
+        date_submitted: right_now,
+        updated_at: right_now
+      }
     end)
+
+    Oli.Repo.update_all()
   end
 
   def evaluate_from_rules(
