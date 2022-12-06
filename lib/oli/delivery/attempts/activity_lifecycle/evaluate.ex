@@ -86,18 +86,25 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp submit_active_part_attempts(part_attempts) do
-    right_now = DateTime.utc_now()
+    update_values =
+      Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
+      |> Enum.map(fn pa -> "('#{pa.attempt_guid}')" end)
+      |> Enum.join(",")
 
-    update_attrs = Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
-    |> Enum.map(fn pa ->
-      %{
-        lifecycle_state: :submitted,
-        date_submitted: right_now,
-        updated_at: right_now
-      }
-    end)
+    sql = """
+      UPDATE part_attempts
+      SET
+        lifecycle_state = 'submitted',
+        date_submitted = NOW(),
+        updated_at = NOW()
+      FROM (
+          VALUES
+          #{update_values}
+      ) AS batch_values (attempt_guid)
+      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
+    """
 
-    Oli.Repo.update_all()
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
   end
 
   def evaluate_from_rules(
@@ -532,7 +539,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          part_inputs,
          client_evaluations,
          roll_up_fn,
-         replace,
+         _,
          datashop_session_id
        ) do
     case client_evaluations
@@ -554,7 +561,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             }}
          end)
          |> (fn evaluations -> {:ok, evaluations} end).()
-         |> persist_evaluations(part_inputs, roll_up_fn, replace, datashop_session_id) do
+         |> persist_evaluations(part_inputs, roll_up_fn, datashop_session_id) do
       {:ok, results} ->
         results
 
