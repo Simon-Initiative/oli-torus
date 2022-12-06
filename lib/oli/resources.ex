@@ -9,6 +9,7 @@ defmodule Oli.Resources do
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
+  alias Oli.Rendering.Content.ResourceSummary
 
   @doc """
   Create a new resource with given attributes of a specific resource tyoe.
@@ -313,7 +314,8 @@ defmodule Oli.Resources do
           parameters: previous_revision.parameters,
           legacy: previous_revision.legacy |> convert_legacy,
           tags: previous_revision.tags,
-          explanation_strategy: previous_revision.explanation_strategy
+          explanation_strategy: previous_revision.explanation_strategy,
+          collab_space_config: previous_revision.collab_space_config
         },
         convert_strings_to_atoms(attrs)
       )
@@ -344,5 +346,38 @@ defmodule Oli.Resources do
         atom -> Map.put(m, atom, Map.get(attrs, atom))
       end
     end)
+  end
+
+  @doc """
+  Returns a resource summary for a given resource_id, project or section slug and resolver.
+  """
+  def resource_summary(resource_id, project_or_section_slug, resolver) do
+    resolver.from_resource_id(project_or_section_slug, resource_id)
+    |> then(fn %Revision{title: title, slug: slug} ->
+      %ResourceSummary{title: title, slug: slug}
+    end)
+  end
+
+  @doc """
+  Returns a list of alternatives groups for a given project or section slug and resolver.
+  """
+  def alternatives_groups(project_or_section_slug, resolver) do
+    case resolver.revisions_of_type(
+           project_or_section_slug,
+           ResourceType.get_id_by_type("alternatives")
+         ) do
+      alternatives when is_list(alternatives) ->
+        {:ok,
+         Enum.map(alternatives, fn a ->
+           %{
+             id: a.resource_id,
+             title: a.title,
+             options: a.content["options"]
+           }
+         end)}
+
+      error ->
+        error
+    end
   end
 end

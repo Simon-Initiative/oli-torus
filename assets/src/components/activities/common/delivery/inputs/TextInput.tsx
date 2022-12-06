@@ -5,8 +5,17 @@ interface Props {
   disabled?: boolean;
   placeholder?: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
+  onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
-export const TextInput: React.FC<Props> = ({ onChange, value, disabled, placeholder }) => {
+export const TextInput: React.FC<Props> = ({
+  onChange,
+  value,
+  disabled,
+  placeholder,
+  onBlur,
+  onKeyUp,
+}) => {
   return (
     <input
       placeholder={placeholder}
@@ -14,6 +23,8 @@ export const TextInput: React.FC<Props> = ({ onChange, value, disabled, placehol
       aria-label="answer submission textbox"
       className="form-control"
       onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
+      onKeyUp={onKeyUp}
       value={value}
       disabled={typeof disabled === 'boolean' ? disabled : false}
     />

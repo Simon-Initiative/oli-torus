@@ -15,7 +15,7 @@
             { live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size }
           </div>
           { live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: @page_size }
-          { live_component Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: @page_size, context: @context }
+          <Table id="table" tree={@tree} publication={@publication} mappings={@mappings} revisions={@revisions} selected={@selected} page_offset={@page_offset} page_size={@page_size} context={@context} />
         </div>
       </div>
     </div>
@@ -55,7 +55,7 @@
             {/for}
           {/if}
 
-          { live_component Details, revision: @selected}
+          <Details revision={@selected} project={@project} />
         </div>
       </div>
     </div>
@@ -84,7 +84,7 @@
             <p>Select a <code>.json</code> file to upload and set as the content of this resource.</p>
 
               <div class="flex my-3" phx-drop-target={@uploads.json.ref}>
-                { live_file_input @uploads.json }
+                <.live_file_input upload={@uploads.json} />
               </div>
 
               {#for entry <- @uploads.json.entries }

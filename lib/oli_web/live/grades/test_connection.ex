@@ -2,7 +2,7 @@ defmodule OliWeb.Grades.TestConnection do
   use OliWeb, :live_component
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">Test LMS Connection</h5>
@@ -72,21 +72,27 @@ defmodule OliWeb.Grades.TestConnection do
   end
 
   def render_line(assigns, {text, :normal}) do
-    ~L"""
-    <samp><%= text %></samp><br/>
+    assigns = assign(assigns, :text, text)
+
+    ~H"""
+    <samp><%= @text %></samp><br/>
     """
   end
 
   def render_line(assigns, {text, :success}) do
-    ~L"""
-    <samp style="color: darkgreen;"><%= text %></samp><br/>
+    assigns = assign(assigns, :text, text)
+
+    ~H"""
+    <samp style="color: darkgreen;"><%= @text %></samp><br/>
 
     """
   end
 
   def render_line(assigns, {text, :failure}) do
-    ~L"""
-    <samp style="color: darkred;"><%= text %></samp><br/>
+    assigns = assign(assigns, :text, text)
+
+    ~H"""
+    <samp style="color: darkred;"><%= @text %></samp><br/>
 
     """
   end

@@ -1,18 +1,18 @@
 import * as React from 'react';
-
-import './LoadingSpinner.scss';
+import { classNames } from 'utils/classNames';
+import styles from './LoadingSpinner.modules.scss';
 
 export enum LoadingSpinnerSize {
   Small,
-  Normal,
+  Medium,
   Large,
 }
 
 export interface LoadingSpinnerProps {
   className?: string;
   failed?: boolean;
-  message?: string;
   size?: LoadingSpinnerSize;
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface LoadingSpinnerState {}
@@ -22,23 +22,30 @@ export class LoadingSpinner extends React.PureComponent<LoadingSpinnerProps, Loa
   }
 
   render() {
-    const { message, failed, children, size } = this.props;
+    const { className, failed, children, size, align } = this.props;
 
     const sizeClass =
       size === LoadingSpinnerSize.Small
-        ? 'ls-small'
+        ? styles.lsSmall
         : size === LoadingSpinnerSize.Large
-        ? 'ls-large'
-        : 'ls-normal';
+        ? styles.lsLarge
+        : styles.lsMedium;
+
+    const alignClass =
+      align === 'left'
+        ? styles.alignLeft
+        : align === 'right'
+        ? styles.alignRight
+        : styles.alignCenter;
 
     return (
-      <div className={'LoadingSpinner ' + sizeClass}>
+      <div className={classNames(styles.loadingSpinner, sizeClass, alignClass, className)}>
         {failed ? (
-          <i className="fa fa-times-circle" />
+          <i className="fa fa-times-circle text-danger" />
         ) : (
           <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" />
         )}
-        &nbsp;{message ? message : children}
+        <span className="ml-1">{children}</span>
       </div>
     );
   }

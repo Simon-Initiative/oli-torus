@@ -11,5 +11,15 @@
   <%= react_component("Components.PageEditor", @raw_context) %>
 </div>
 
+<div class="container mt-5">
+  <%=
+    live_render(@conn, OliWeb.CollaborationLive.CollabSpaceConfigView,
+      session: %{
+        "collab_space_config" => @collab_space_config,
+        "project_slug" => @project_slug,
+        "page_slug" => @revision_slug
+      })
+  %>
+</div>
 
 <%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @raw_context, action: :edit %>

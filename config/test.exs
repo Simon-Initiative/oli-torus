@@ -48,7 +48,17 @@ config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.TestAdapter
 config :bcrypt_elixir, log_rounds: 4
 
 config :lti_1p3,
-  http_client: Oli.Test.MockHTTP
+  http_client: Oli.Test.MockHTTP,
+  provider: Lti_1p3.DataProviders.EctoProvider,
+  ecto_provider: [
+    repo: Oli.Repo,
+    schemas: [
+      user: Oli.Accounts.User,
+      registration: Oli.Lti.Tool.Registration,
+      deployment: Oli.Lti.Tool.Deployment
+    ]
+  ],
+  ags_line_item_prefix: "oli-torus-"
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
@@ -58,6 +68,7 @@ config :oli, OliWeb.Endpoint,
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshSync
+config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenTest
 
 # Print only warnings and errors during test
 config :logger, level: :warn

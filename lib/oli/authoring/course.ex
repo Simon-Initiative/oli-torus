@@ -4,7 +4,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.{Collaborators, ProjectSearch}
-  alias Oli.Authoring.Course.{Project, Family, ProjectResource}
+  alias Oli.Authoring.Course.{Project, Family, ProjectResource, ProjectAttributes}
   alias Oli.Groups.CommunityVisibility
   alias Oli.Inventories
   alias Oli.Publishing
@@ -226,6 +226,18 @@ defmodule Oli.Authoring.Course do
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(nil), do: nil
   def get_project_by_slug(slug) when is_binary(slug), do: Repo.get_by(Project, slug: slug)
+
+  def get_project_attributes(nil), do: %ProjectAttributes{}
+
+  def get_project_attributes(project_slug) when is_binary(project_slug) do
+    project = get_project_by_slug(project_slug)
+
+    case project do
+      nil -> %ProjectAttributes{}
+      %Project{:attributes => nil} -> %ProjectAttributes{}
+      %Project{:attributes => attributes} -> attributes
+    end
+  end
 
   def create_and_attach_resource(project, attrs) do
     with {:ok, %{resource: resource, revision: revision}} <-

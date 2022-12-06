@@ -117,6 +117,33 @@ function determineDateSubmitted(score: number | null, action: PayloadAction<Eval
   return null;
 }
 
+function handleAutomationInResponse(
+  state: WritableDraft<ActivityDeliveryState>,
+  action: PayloadAction<EvaluationResponse>,
+) {
+  const toShow: number[] = action.payload.actions
+    .filter((a: FeedbackAction) => a.show_page !== null)
+    .map((a: FeedbackAction) => a.show_page) as number[];
+
+  if (toShow.length > 0) {
+    const forId = state.attemptState.groupId as string;
+
+    toShow.forEach((index: number) =>
+      Events.dispatch(
+        Events.Registry.ShowContentPage,
+        Events.makeShowContentPage({ forId, index }),
+      ),
+    );
+
+    updatePaginationState(
+      state.activityContext.sectionSlug,
+      state.activityContext.pageAttemptGuid,
+      forId,
+      toShow,
+    );
+  }
+}
+
 export const activityDeliverySlice = createSlice({
   name: 'ActivityDelivery',
   initialState: {} as ActivityDeliveryState,
@@ -125,29 +152,7 @@ export const activityDeliverySlice = createSlice({
       if (action.payload.actions.length > 0) {
         const { score, out_of } = calculateNewScore(action);
 
-        if (action.payload.actions[0].type === 'FeedbackAction') {
-          const toShow: number[] = action.payload.actions
-            .filter((a: FeedbackAction) => a.show_page !== null)
-            .map((a: FeedbackAction) => a.show_page) as number[];
-
-          if (toShow.length > 0) {
-            const forId = state.attemptState.groupId as string;
-
-            toShow.forEach((index: number) =>
-              Events.dispatch(
-                Events.Registry.ShowContentPage,
-                Events.makeShowContentPage({ forId, index }),
-              ),
-            );
-
-            updatePaginationState(
-              state.activityContext.sectionSlug,
-              state.activityContext.pageAttemptGuid,
-              forId,
-              toShow,
-            );
-          }
-        }
+        handleAutomationInResponse(state, action);
 
         state.attemptState = {
           ...state.attemptState,
@@ -162,6 +167,9 @@ export const activityDeliverySlice = createSlice({
     partSubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
       if (action.payload.actions.length > 0) {
         const parts = updatePartsStates(state, action);
+
+        handleAutomationInResponse(state, action);
+
         state.attemptState = {
           ...state.attemptState,
           parts,
@@ -170,13 +178,15 @@ export const activityDeliverySlice = createSlice({
       }
     },
     partResetRecieved(state, action: PayloadAction<PartActivityResponse>) {
-      const parts = state.attemptState.parts.filter(
-        (p) => p.partId === action.payload.attemptState.partId,
-      );
-
+      const parts = state.attemptState.parts.map((p: WritableDraft<PartState>) => {
+        if (action.payload.attemptState.partId === p.partId) {
+          return action.payload.attemptState;
+        }
+        return p;
+      });
       state.attemptState = {
         ...state.attemptState,
-        parts: [...parts, action.payload.attemptState],
+        parts,
       };
     },
     initializePartState(state, action: PayloadAction<ActivityState>) {
@@ -302,6 +312,18 @@ export const isEvaluated = (state: ActivityDeliveryState) =>
 export const isSubmitted = (state: ActivityDeliveryState) =>
   selectAttemptState(state).dateSubmitted !== null;
 
+export const resetAndRequestHintAction =
+  (
+    partId: PartId,
+    onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>,
+    onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+    partInputs?: PartInputs,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    await dispatch(resetAction(onResetActivity, partInputs));
+    await dispatch(requestHint(partId, onRequestHint));
+  };
+
 export const resetAction =
   (
     onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
@@ -310,7 +332,6 @@ export const resetAction =
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
     partInputs && dispatch(slice.actions.setPartInputs(partInputs));
-    dispatch(slice.actions.hideAllHints());
     dispatch(slice.actions.updateModel(response.model));
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>
@@ -365,6 +386,30 @@ export const submitPart =
     dispatch(slice.actions.partSubmissionReceived(response));
   };
 
+export const resetAndSavePart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    partId: string,
+    response: any,
+    onSave: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>,
+    onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
+    dispatch(slice.actions.partResetRecieved(partActivityResponse));
+    const partResponses: PartResponse[] = [
+      { attemptGuid: partActivityResponse.attemptState.attemptGuid, response },
+    ];
+    dispatch(
+      activityDeliverySlice.actions.setStudentInputForPart({
+        partId: partId,
+        studentInput: [response.input],
+      }),
+    );
+    onSave(attemptGuid, partResponses);
+  };
+
 export const resetAndSubmitPart =
   (
     attemptGuid: string,
@@ -386,6 +431,41 @@ export const resetAndSubmitPart =
       studentResponse,
     );
     dispatch(slice.actions.partSubmissionReceived(response));
+  };
+
+export const resetAndSubmitActivity =
+  (
+    attemptGuid: string,
+    responses: StudentResponse[],
+    onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+    onSubmitActivity: (
+      attemptGuid: string,
+      partResponses: PartResponse[],
+    ) => Promise<EvaluationResponse>,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    const response = await onResetActivity(attemptGuid);
+    dispatch(slice.actions.updateModel(response.model));
+    dispatch(slice.actions.setAttemptState(response.attemptState));
+    getState().attemptState.parts.forEach((partState) =>
+      dispatch(
+        slice.actions.setHasMoreHintsForPart({
+          partId: String(partState.partId),
+          hasMoreHints: partState.hasMoreHints,
+        }),
+      ),
+    );
+
+    const partResponses = [];
+    for (let i = 0; i < responses.length; i++) {
+      partResponses.push({
+        attemptGuid: response.attemptState.parts[i].attemptGuid,
+        response: responses[i],
+      } as PartResponse);
+    }
+
+    const submitResponse = await onSubmitActivity(response.attemptState.attemptGuid, partResponses);
+    dispatch(slice.actions.activitySubmissionReceived(submitResponse));
   };
 
 export const submitFiles =

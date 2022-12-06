@@ -36,7 +36,8 @@ import { Explanation } from '../common/explanation/ExplanationAuthoring';
 const store = configureStore();
 
 const ShortAnswer = () => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<ShortAnswerModelSchema>();
+  const { dispatch, model, editMode, projectSlug } =
+    useAuthoringElementContext<ShortAnswerModelSchema>();
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -55,7 +56,10 @@ const ShortAnswer = () => {
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
           <div className="d-flex flex-column mb-2">
-            <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+            <StemDelivery
+              stem={model.stem}
+              context={defaultWriterContext({ projectSlug: projectSlug })}
+            />
             <GradingApproachDropdown
               editMode={editMode}
               selected={
@@ -103,7 +107,7 @@ const ShortAnswer = () => {
                 dispatch(
                   ResponseActions.addResponse(
                     makeResponse(
-                      model.inputType === 'numeric' ? eqRule('1') : containsRule('another answer'),
+                      model.inputType === 'numeric' ? eqRule(1) : containsRule('another answer'),
                       0,
                       '',
                     ),

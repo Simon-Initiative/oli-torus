@@ -15,6 +15,7 @@ const BlockElements: SchemaKey[] = [
   'tc',
   'ol',
   'ul',
+  'dl',
   'math',
   'math_line',
   'code_line',
@@ -126,6 +127,24 @@ export const schema: Schema = {
     isTopLevel: false,
     validChildren: toObj(SemanticChildrenElements),
   },
+  dl: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj([]),
+  },
+  dt: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
+    validChildren: toObj(SemanticChildrenElements),
+  },
+  dd: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
+    validChildren: toObj(SemanticChildrenElements),
+  },
   pronunciation: {
     isVoid: false,
     isBlock: true,
@@ -162,6 +181,14 @@ export const schema: Schema = {
     isTopLevel: true,
     validChildren: toObj(SemanticChildrenElements),
   },
+
+  foreign: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: toObj(['input_ref', 'img']),
+  },
+
   formula: {
     isVoid: true,
     isBlock: true,
@@ -231,6 +258,12 @@ export const schema: Schema = {
     isBlock: true,
     isTopLevel: true,
     validChildren: toObj(['p']),
+  },
+  command_button: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
   },
   a: {
     isVoid: false,

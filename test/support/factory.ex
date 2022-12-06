@@ -14,6 +14,7 @@ defmodule Oli.Factory do
     ResourceAttempt
   }
 
+  alias Oli.Delivery.DeliverySetting
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Lti.LtiParams
@@ -34,6 +35,7 @@ defmodule Oli.Factory do
   alias Oli.Notifications.SystemMessage
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources.{Resource, Revision}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
 
   def author_factory() do
     %Author{
@@ -197,7 +199,8 @@ defmodule Oli.Factory do
       brand: anonymous_build(:brand),
       publisher: anonymous_build(:publisher),
       lti_1p3_deployment: deployment,
-      has_grace_period: false
+      has_grace_period: false,
+      line_items_service_url: "http://default.com"
     }
   end
 
@@ -311,8 +314,32 @@ defmodule Oli.Factory do
   def revision_factory() do
     %Revision{
       title: "Example revision",
-      slug: "example_revision",
+      slug: sequence("example_revision"),
+      resource: anonymous_build(:resource),
+      collab_space_config: build(:collab_space_config)
+    }
+  end
+
+  def collab_space_config_factory() do
+    %CollabSpaceConfig{}
+  end
+
+  def post_factory() do
+    %Post{
+      content: %{message: "Example Post"},
+      status: :approved,
+      user: anonymous_build(:user),
+      section: anonymous_build(:section),
       resource: anonymous_build(:resource)
+    }
+  end
+
+  def delivery_setting_factory() do
+    %DeliverySetting{
+      user: anonymous_build(:user),
+      section: anonymous_build(:section),
+      resource: anonymous_build(:resource),
+      collab_space_config: build(:collab_space_config)
     }
   end
 

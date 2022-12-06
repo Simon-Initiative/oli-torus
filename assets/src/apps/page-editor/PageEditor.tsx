@@ -42,11 +42,16 @@ import { empty, PageUndoable, Undoables, FeatureFlags } from './types';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import '../ResourceEditor.scss';
+import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
+import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
+import Appsignal from '@appsignal/javascript';
+import { initAppSignal } from '../../utils/appsignal';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   activities: ActivityMap;
   featureFlags: FeatureFlags;
+  appsignalKey: string | null;
   onLoadPreferences: () => void;
 }
 
@@ -69,6 +74,7 @@ type PageEditorState = {
   editMode: boolean;
   persistence: 'idle' | 'pending' | 'inflight';
   undoables: Undoables;
+  appsignal: Appsignal | null;
 };
 
 // Creates a function that when invoked submits a save request
@@ -127,6 +133,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       }),
     );
 
+    const appsignal = initAppSignal(props.appsignalKey, 'Core Authoring Editor', {
+      projectSlug: props.projectSlug,
+      resourceSlug: props.resourceSlug,
+      resourceId: String(props.resourceId),
+    });
+
     this.state = {
       activityContexts,
       messages: [],
@@ -139,6 +151,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       allObjectives: arrangeObjectives(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
       undoables: empty(),
+      appsignal,
     };
 
     this.persistence = new DeferredPersistenceStrategy();
@@ -338,9 +351,17 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     if (item !== undefined) {
       if (item.undoable.type === 'PageUndoable') {
-        this.update({
-          content: this.state.content.insertAt(item.undoable.index, item.undoable.item),
-        });
+        if (this.state.content.find(item.contentKey)) {
+          // undoable content item exists, replace it with the undoable state
+          this.update({
+            content: this.state.content.replaceAt(item.undoable.index, item.undoable.item),
+          });
+        } else {
+          // undoable content item does not exist, so insert it
+          this.update({
+            content: this.state.content.insertAt(item.undoable.index, item.undoable.item),
+          });
+        }
       } else {
         const context = this.state.activityContexts.get(item.contentKey);
         if (context !== undefined) {
@@ -523,63 +544,75 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     return (
       <React.StrictMode>
-        <div className="resource-editor row">
-          <div className="col-12">
-            <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+        <AppsignalContext.Provider value={this.state.appsignal}>
+          <ErrorBoundary>
+            <div className="resource-editor row">
+              <div className="col-12">
+                <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
-            <Banner
-              dismissMessage={(msg: any) =>
-                this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
-              }
-              executeAction={(message: any, action: any) => action.execute(message)}
-              messages={this.state.messages}
-            />
-            <TitleBar title={state.title} onTitleEdit={onTitleEdit} editMode={this.state.editMode}>
-              <PersistenceStatus persistence={this.state.persistence} />
+                <Banner
+                  dismissMessage={(msg: any) =>
+                    this.setState({
+                      messages: this.state.messages.filter((m) => msg.guid !== m.guid),
+                    })
+                  }
+                  executeAction={(message: any, action: any) => action.execute(message)}
+                  messages={this.state.messages}
+                />
+                <TitleBar
+                  title={state.title}
+                  onTitleEdit={onTitleEdit}
+                  editMode={this.state.editMode}
+                >
+                  <PersistenceStatus persistence={this.state.persistence} />
 
-              <PreviewButton />
-            </TitleBar>
-            <Objectives>
-              <ObjectivesSelection
-                editMode={this.state.editMode}
-                projectSlug={this.props.projectSlug}
-                objectives={this.state.allObjectives.toArray()}
-                selected={this.state.objectives.toArray()}
-                onEdit={(objectives) => this.update({ objectives: Immutable.List(objectives) })}
-                onRegisterNewObjective={onRegisterNewObjective}
-              />
-            </Objectives>
+                  <PreviewButton />
+                </TitleBar>
+                <Objectives>
+                  <ObjectivesSelection
+                    editMode={this.state.editMode}
+                    projectSlug={this.props.projectSlug}
+                    objectives={this.state.allObjectives.toArray()}
+                    selected={this.state.objectives.toArray()}
+                    onEdit={(objectives) => this.update({ objectives: Immutable.List(objectives) })}
+                    onRegisterNewObjective={onRegisterNewObjective}
+                  />
+                </Objectives>
 
-            <div className="d-flex flex-row">
-              <ContentOutline
-                editMode={this.state.editMode}
-                content={this.state.content}
-                activityContexts={this.state.activityContexts}
-                editorMap={props.editorMap}
-                projectSlug={projectSlug}
-                resourceSlug={resourceSlug}
-                onEditContent={onEdit}
-              />
-              <Editors
-                {...props}
-                editMode={this.state.editMode}
-                objectives={this.state.allObjectives}
-                allTags={this.state.allTags}
-                childrenObjectives={this.state.childrenObjectives}
-                onRegisterNewObjective={onRegisterNewObjective}
-                onRegisterNewTag={onRegisterNewTag}
-                activityContexts={this.state.activityContexts}
-                onRemove={(key: string) => this.onRemove(key)}
-                onEdit={onEdit}
-                onEditActivity={this.onEditActivity}
-                onPostUndoable={this.onPostUndoable}
-                content={this.state.content}
-                onAddItem={onAddItem}
-                resourceContext={props}
-              />
+                <div className="d-flex flex-row">
+                  <AlternativesContextProvider projectSlug={projectSlug}>
+                    <ContentOutline
+                      editMode={this.state.editMode}
+                      content={this.state.content}
+                      activityContexts={this.state.activityContexts}
+                      editorMap={props.editorMap}
+                      projectSlug={projectSlug}
+                      resourceSlug={resourceSlug}
+                      onEditContent={onEdit}
+                    />
+                    <Editors
+                      {...props}
+                      editMode={this.state.editMode}
+                      objectives={this.state.allObjectives}
+                      allTags={this.state.allTags}
+                      childrenObjectives={this.state.childrenObjectives}
+                      onRegisterNewObjective={onRegisterNewObjective}
+                      onRegisterNewTag={onRegisterNewTag}
+                      activityContexts={this.state.activityContexts}
+                      onRemove={(key: string) => this.onRemove(key)}
+                      onEdit={onEdit}
+                      onEditActivity={this.onEditActivity}
+                      onPostUndoable={this.onPostUndoable}
+                      content={this.state.content}
+                      onAddItem={onAddItem}
+                      resourceContext={props}
+                    />
+                  </AlternativesContextProvider>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </ErrorBoundary>
+        </AppsignalContext.Provider>
       </React.StrictMode>
     );
   }

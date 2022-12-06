@@ -17,13 +17,20 @@ defmodule Oli.Delivery.Page.ActivityContext do
   off of the supplied list of activity ids and a map of resource ids to
   resolved revisions.
   """
-  @spec create_context_map(boolean(), %{}) :: %{}
-  def create_context_map(graded, latest_attempts, opts \\ []) do
+  @spec create_context_map(
+          boolean(),
+          %{},
+          Oli.Delivery.Attempts.Core.ResourceAttempt.t(),
+          Oli.Resources.Revision.t()
+        ) :: %{}
+  def create_context_map(graded, latest_attempts, resource_attempt, page_revision, opts \\ []) do
     # get a view of all current registered activity types
     registrations = Activities.list_activity_registrations()
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
-    activity_states = State.from_attempts(latest_attempts)
+    activity_states = State.from_attempts(latest_attempts, resource_attempt, page_revision)
+
+    ordinal_assign_fn = create_ordinal_assignment_fn(graded, opts)
 
     Enum.map(latest_attempts, fn {id,
                                   {%ActivityAttempt{revision: revision} = activity_attempt, _}} ->
@@ -44,10 +51,32 @@ defmodule Oli.Delivery.Page.ActivityContext do
          authoring_element: type.authoring_element,
          script: type.delivery_script,
          graded: graded,
-         bib_refs: Map.get(model, "bibrefs", [])
+         bib_refs: Map.get(model, "bibrefs", []),
+         ordinal: ordinal_assign_fn.(id)
        }}
     end)
     |> Map.new()
+  end
+
+  defp create_ordinal_assignment_fn(false, _), do: fn _ -> nil end
+
+  defp create_ordinal_assignment_fn(true, opts) do
+    case Keyword.has_key?(opts, :assign_ordinals_from) do
+      true ->
+        {map, _} =
+          Keyword.get(opts, :assign_ordinals_from)
+          |> Oli.Resources.PageContent.flat_filter(fn e -> e["type"] == "activity-reference" end)
+          |> Enum.reduce({%{}, 1}, fn e, {m, ordinal} ->
+            {Map.put(m, e["activity_id"], ordinal), ordinal + 1}
+          end)
+
+        fn activity_id ->
+          Map.get(map, activity_id)
+        end
+
+      false ->
+        fn _ -> nil end
+    end
   end
 
   @doc """

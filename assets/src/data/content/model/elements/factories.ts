@@ -36,11 +36,16 @@ import {
   Dialog,
   DialogLine,
   PageLink,
-  DialogSpeaker,
   Conjugation,
   TableHeader,
   TableConjugation,
   TableCell,
+  Foreign,
+  CommandButton,
+  DescriptionListTerm,
+  DescriptionListDefinition,
+  DescriptionList,
+  ModelElement,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -73,6 +78,19 @@ export const Model = {
   ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
 
   ul: () => create<UnorderedList>({ type: 'ul', children: [Model.li()] }),
+
+  dt: () => create<DescriptionListTerm>({ type: 'dt', children: [Model.p([{ text: 'A term' }])] }),
+  dd: () =>
+    create<DescriptionListDefinition>({
+      type: 'dd',
+      children: [Model.p([{ text: 'A definition' }])],
+    }),
+  dl: (children: (DescriptionListDefinition | DescriptionListTerm)[] | null = null) =>
+    create<DescriptionList>({
+      type: 'dl',
+      title: [Model.p([{ text: 'Description Title' }])],
+      items: children || [Model.dt(), Model.dd()],
+    }),
 
   video: () => create<Video>({ type: 'video', src: [] }),
 
@@ -113,6 +131,8 @@ export const Model = {
 
   figure: () => create<Figure>({ type: 'figure', title: [Model.p()], children: [Model.p()] }),
 
+  foreign: () => create<Foreign>({ type: 'foreign', children: [{ text: '' }] }),
+
   formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
     create<FormulaBlock>({ type: 'formula', src, subtype }),
 
@@ -123,8 +143,10 @@ export const Model = {
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-  page_link: (title = '', ref = '', purpose = 'none') =>
-    create<PageLink>({ type: 'page_link', title, ref, purpose }),
+  commandButton: () => create<CommandButton>({ type: 'command_button', style: 'button' }),
+
+  page_link: (idref: number, purpose = 'none') =>
+    create<PageLink>({ type: 'page_link', idref, purpose, children: [{ text: '' }] }),
 
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),

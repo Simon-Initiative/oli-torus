@@ -17,6 +17,7 @@ export interface WriterImpl {
   h6: ElementWriter;
   formula: ElementWriter;
   formulaInline: ElementWriter;
+  foreign: ElementWriter;
   callout: ElementWriter;
   calloutInline: ElementWriter;
   figure: ElementWriter;
@@ -40,12 +41,16 @@ export interface WriterImpl {
   ol: ElementWriter;
   ul: ElementWriter;
   li: ElementWriter;
+  dd: ElementWriter;
+  dl: ElementWriter;
+  dt: ElementWriter;
   math: ElementWriter;
   mathLine: ElementWriter;
   code: ElementWriter;
   codeLine: ElementWriter;
   blockquote: ElementWriter;
   a: ElementWriter;
+  commandButton: ElementWriter;
   cite: ElementWriter;
   inputRef: ElementWriter;
   popup: (
@@ -119,6 +124,8 @@ export class ContentWriter {
         return impl.h5(context, next, content);
       case 'h6':
         return impl.h6(context, next, content);
+      case 'foreign':
+        return impl.foreign(context, next, content);
       case 'formula':
         return impl.formula(context, next, content);
       case 'formula_inline':
@@ -161,6 +168,12 @@ export class ContentWriter {
         return impl.ul(context, next, content);
       case 'li':
         return impl.li(context, next, content);
+      case 'dt':
+        return impl.dt(context, next, content);
+      case 'dd':
+        return impl.dd(context, next, content);
+      case 'dl':
+        return impl.dl(context, next, content);
       case 'math':
         return impl.math(context, next, content);
       case 'math_line':
@@ -173,6 +186,8 @@ export class ContentWriter {
         return impl.blockquote(context, next, content);
       case 'a':
         return impl.a(context, next, content);
+      case 'command_button':
+        return impl.commandButton(context, next, content);
       case 'cite':
         return impl.cite(context, next, content);
       case 'input_ref':

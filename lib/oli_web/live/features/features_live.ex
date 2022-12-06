@@ -35,7 +35,7 @@ defmodule OliWeb.Features.FeaturesLive do
   defp to_state("Disable"), do: :disabled
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <div class="container">
       <div class="row">
         <div class="col-12">
@@ -62,7 +62,7 @@ defmodule OliWeb.Features.FeaturesLive do
                   <td><%= feature.description %></td>
                   <td><%= current(status) %></td>
                   <td>
-                    <button type="button" class="btn btn-outline-danger" phx-click="toggle" phx-value-label="<%= feature.label %>" phx-value-action="<%= action(status) %>">
+                    <button type="button" class="btn btn-outline-danger" phx-click="toggle" phx-value-label={feature.label} phx-value-action={action(status)}>
                       <%= action(status) %>
                     </button>
                   </td>

@@ -16,6 +16,9 @@
         "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-survey.schema.json"
       },
       {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-alternatives.schema.json"
+      },
+      {
         "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-break.schema.json"
       },
       {

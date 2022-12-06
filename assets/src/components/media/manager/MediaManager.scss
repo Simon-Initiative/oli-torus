@@ -125,19 +125,6 @@
       flex-direction: column;
       overflow: hidden;
 
-      .loading {
-        padding: 20px 0;
-        text-align: center;
-        font-size: 0.8em;
-        color: authoring.$gray-500;
-
-        i {
-          margin: 0 5px;
-          animation-duration: 1s;
-          -webkit-animation-duration: 1s;
-        }
-      }
-
       .media-selection-details {
         display: flex;
         flex-direction: column;

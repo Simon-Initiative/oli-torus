@@ -28,6 +28,7 @@ export type EditorProps = {
   toolbarInsertDescs: CommandDescription[];
   // Whether or not editing is allowed
   editMode: boolean;
+  fixedToolbar?: boolean;
   commandContext: CommandContext;
   normalizerContext?: NormalizerContext;
   className?: string;
@@ -109,11 +110,20 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       >
         {props.children}
 
-        <EditorToolbar context={props.commandContext} insertOptions={props.toolbarInsertDescs} />
+        <EditorToolbar
+          context={props.commandContext}
+          insertOptions={props.toolbarInsertDescs}
+          fixedToolbar={props.fixedToolbar}
+        />
 
         <Editable
           style={props.style}
-          className={classNames('slate-editor', props.className, !props.editMode && 'disabled')}
+          className={classNames(
+            'slate-editor',
+            props.fixedToolbar && 'fixed-toolbar',
+            props.className,
+            !props.editMode && 'disabled',
+          )}
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}

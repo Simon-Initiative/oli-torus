@@ -112,6 +112,7 @@ config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
+config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenLibrary
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
@@ -193,6 +194,8 @@ config :mnesia,
   dump_log_write_threshold: 10000
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
+
+config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
 config :surface, :components, [
   {

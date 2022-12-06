@@ -1,0 +1,35 @@
+@import 'common/mixins';
+
+.loadingSpinner {
+  color: var(--authoring-gray-600);
+  @include disable-select;
+
+  & i {
+    margin: '0 5px';
+    animation-duration: 1s;
+  }
+
+  &.lsSmall {
+    font-size: 0.8em;
+  }
+
+  &.lsMedium {
+    font-size: 1em;
+  }
+
+  &.lsLarge {
+    font-size: 1.2em;
+  }
+
+  &.alignLeft {
+    text-align: left;
+  }
+
+  &.alignCenter {
+    text-align: center;
+  }
+
+  &.alignRight {
+    text-align: right;
+  }
+}

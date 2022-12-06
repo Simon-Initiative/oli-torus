@@ -17,7 +17,7 @@ export const Responses = {
     Responses.catchAll(incorrectText),
   ],
   forNumericInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
-    makeResponse(eqRule('1'), 1, correctText),
+    makeResponse(eqRule(1), 1, correctText),
     Responses.catchAll(incorrectText),
   ],
   forMathInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [

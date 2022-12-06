@@ -52,7 +52,7 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.13.2 # Define the elixir version [required]
+          elixir-version: 1.14.0 # Define the elixir version [required]
           otp-version: 24.0 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
@@ -96,7 +96,7 @@ jobs:
     steps:
       - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
         id: check_token
-        run: echo "::set-output name=available::$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)"
+        run: echo "available=$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
 
   auto-format:
     name: Auto format and lint
@@ -120,7 +120,7 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.13.2 # Define the elixir version [required]
+          elixir-version: 1.14.0 # Define the elixir version [required]
           otp-version: 24.0 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
@@ -158,7 +158,7 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.13.2 # Define the elixir version [required]
+          elixir-version: 1.14.0 # Define the elixir version [required]
           otp-version: 24.0 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies

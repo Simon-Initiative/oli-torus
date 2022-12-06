@@ -7,6 +7,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [value_or: 2]
+  import Oli.Authoring.Editing.Utils
+  import OliWeb.Curriculum.Utils
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
@@ -23,7 +25,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing.ChangeTracker
-  alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts
   alias Oli.Repo
@@ -36,6 +37,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.Revision
   alias OliWeb.Common.SessionContext
+  alias Oli.Resources
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -84,7 +86,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            children: children,
            active: :curriculum,
            breadcrumbs:
-             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver),
+             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver, project.customizations),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
@@ -93,9 +95,12 @@ defmodule OliWeb.Curriculum.ContainerLive do
            author: author,
            view: view_pref,
            selected: nil,
-           modal: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
+           numberings: Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            project_slug,
+            project.customizations
+            ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title
          )}
@@ -210,18 +215,67 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project} = socket.assigns
+    revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
 
-    assigns = %{
+    modal_assigns = %{
       id: "options_#{slug}",
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
-      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      revision: revision,
+      changeset: Resources.change_revision(revision),
       project: project
     }
 
+    modal = fn assigns ->
+      ~H"""
+        <OptionsModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: OptionsModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
+  end
+
+  def handle_event("validate-options", %{"revision" => revision_params}, socket) do
+    %{modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+
+    changeset =
+      revision
+      |> Resources.change_revision(revision_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, modal_assigns: %{modal_assigns | changeset: changeset})}
+  end
+
+  def handle_event("save-options", %{"revision" => revision_params}, socket) do
+    %{modal_assigns: %{redirect_url: redirect_url, project: project, revision: revision}} =
+      socket.assigns
+
+    revision_params =
+      case revision_params do
+        %{"explanation_strategy" => %{"type" => "none"}} ->
+          Map.put(revision_params, "explanation_strategy", nil)
+
+        _ ->
+          revision_params
+      end
+
+    case ContainerEditor.edit_page(project, revision.slug, revision_params) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :info,
+           "#{resource_type_label(revision) |> String.capitalize()} options saved"
+         )
+         |> push_redirect(to: redirect_url)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :changeset, changeset)}
+    end
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
@@ -231,7 +285,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     node = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == slug end)
     active = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == container.slug end)
 
-    assigns = %{
+    modal_assigns = %{
       id: "move_#{slug}",
       node: node,
       hierarchy: hierarchy,
@@ -239,10 +293,71 @@ defmodule OliWeb.Curriculum.ContainerLive do
       active: active
     }
 
+    modal = fn assigns ->
+      ~H"""
+        <MoveModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: MoveModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
+  end
+
+  def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
+    %{modal_assigns: %{hierarchy: hierarchy} = modal_assigns} = socket.assigns
+
+    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+
+    modal_assigns = %{
+      modal_assigns
+      | active: active
+    }
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "MoveModal.move_item",
+        %{"uuid" => uuid, "from_uuid" => from_uuid, "to_uuid" => to_uuid},
+        socket
+      ) do
+    %{
+      author: author,
+      project: project,
+      modal_assigns: %{hierarchy: hierarchy}
+    } = socket.assigns
+
+    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
+
+    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  def handle_event("MoveModal.remove", %{"uuid" => uuid, "from_uuid" => from_uuid}, socket) do
+    %{
+      author: author,
+      project: project,
+      modal_assigns: %{hierarchy: hierarchy}
+    } = socket.assigns
+
+    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    to_container = nil
+
+    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  def handle_event("MoveModal.cancel", _, socket) do
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
@@ -254,6 +369,64 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       item ->
         notify_not_empty(socket, container, project, author, item)
+    end
+  end
+
+  def handle_event("DeleteModal.delete", %{"slug" => slug}, socket) do
+    %{
+      modal_assigns: %{
+        container: container,
+        project: project,
+        author: author,
+        revision: revision,
+        redirect_url: redirect_url
+      }
+    } = socket.assigns
+
+    case container do
+      nil ->
+        result =
+          Oli.Repo.transaction(fn ->
+            revision =
+              Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, revision.slug)
+
+            Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
+          end)
+
+        case result do
+          {:ok, _} ->
+            {:noreply,
+             socket
+             |> push_patch(to: redirect_url)
+             |> hide_modal(modal_assigns: nil)}
+
+          _ ->
+            {:noreply,
+             socket
+             |> put_flash(
+               :error,
+               "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
+             )
+             |> hide_modal(modal_assigns: nil)}
+        end
+
+      _ ->
+        case ContainerEditor.remove_child(container, project, author, slug) do
+          {:ok, _} ->
+            {:noreply,
+             socket
+             |> push_patch(to: redirect_url)
+             |> hide_modal(modal_assigns: nil)}
+
+          {:error, _} ->
+            {:noreply,
+             socket
+             |> put_flash(
+               :error,
+               "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
+             )
+             |> hide_modal(modal_assigns: nil)}
+        end
     end
   end
 
@@ -272,53 +445,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       numberings:
-         Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+       numberings: Numbering.number_full_tree(
+        Oli.Publishing.AuthoringResolver,
+        socket.assigns.project.slug,
+        socket.assigns.project.customizations
+        )
      )}
   end
 
-  def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
-    %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
-
-    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
-
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | active: active
-        }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
-  def handle_event(
-        "MoveModal.move_item",
-        %{"uuid" => uuid, "from_uuid" => from_uuid, "to_uuid" => to_uuid},
-        socket
-      ) do
-    %{
-      author: author,
-      project: project,
-      modal: %{assigns: %{hierarchy: hierarchy}}
-    } = socket.assigns
-
-    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
-    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
-    %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
-
-    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
-
-    {:noreply, hide_modal(socket)}
-  end
-
-  def handle_event("MoveModal.cancel", _, socket) do
-    {:noreply, socket}
-  end
-
   def handle_event("dismiss", _, socket) do
-    {:noreply, socket}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   # handle change of selection
@@ -414,90 +550,28 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
   def handle_event("add", %{"type" => type}, socket) do
-    attrs = %{
-      tags: [],
-      objectives: %{"attached" => []},
-      children: [],
-      content:
-        case type do
-          "Adaptive" ->
-            %{
-              "model" => [],
-              "advancedAuthoring" => true,
-              "advancedDelivery" => true,
-              "displayApplicationChrome" => false
-            }
+    case ContainerEditor.add_new(
+           socket.assigns.container,
+           type,
+           socket.assigns.author,
+           socket.assigns.project,
+           socket.assigns.numberings
+         ) do
 
-          _ ->
-            %{
-              "version" => "0.1.0",
-              "model" => []
-            }
-        end,
-      title:
-        case type do
-          "Adaptive" -> "New Adaptive Page"
-          "Scored" -> "New Assessment"
-          "Unscored" -> "New Page"
-          "Container" -> new_container_name(socket.assigns.numberings, socket.assigns.container)
-        end,
-      graded:
-        case type do
-          "Adaptive" -> false
-          "Scored" -> true
-          "Unscored" -> false
-          "Container" -> false
-        end,
-      max_attempts:
-        case type do
-          "Adaptive" -> 0
-          "Scored" -> 5
-          "Unscored" -> 0
-          "Container" -> nil
-        end,
-      recommended_attempts:
-        case type do
-          "Adaptive" -> 0
-          "Scored" -> 5
-          "Unscored" -> 0
-          "Container" -> nil
-        end,
-      scoring_strategy_id:
-        case type do
-          "Adaptive" -> ScoringStrategy.get_id_by_type("best")
-          "Scored" -> ScoringStrategy.get_id_by_type("best")
-          "Unscored" -> ScoringStrategy.get_id_by_type("best")
-          "Container" -> nil
-        end,
-      resource_type_id:
-        case type do
-          "Adaptive" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Scored" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Unscored" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Container" -> Oli.Resources.ResourceType.get_id_by_type("container")
-        end
-    }
+      {:ok, _} ->
 
-    socket =
-      case ContainerEditor.add_new(
-             socket.assigns.container,
-             attrs,
-             socket.assigns.author,
-             socket.assigns.project
-           ) do
-        {:ok, _} ->
-          socket
+        {:noreply,
+         assign(socket,
+           numberings: Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            socket.assigns.project.slug,
+            socket.assigns.project.customizations
+            )
+         )}
 
-        {:error, %Ecto.Changeset{} = _changeset} ->
-          socket
-          |> put_flash(:error, "Could not create new item")
-      end
-
-    {:noreply,
-     assign(socket,
-       numberings:
-         Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-     )}
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not create new item")}
+    end
   end
 
   def handle_event("change-view", %{"view" => view}, socket) do
@@ -515,7 +589,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
-    assigns = %{
+    modal_assigns = %{
       id: "delete_#{item.slug}",
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: item,
@@ -524,14 +598,22 @@ defmodule OliWeb.Curriculum.ContainerLive do
       author: author
     }
 
+    modal = fn assigns ->
+      ~H"""
+        <DeleteModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: DeleteModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
   defp notify_not_empty(socket, container, project, author, item) do
-    assigns = %{
+    modal_assigns = %{
       id: "not_empty_#{item.slug}",
       revision: item,
       container: container,
@@ -539,9 +621,17 @@ defmodule OliWeb.Curriculum.ContainerLive do
       author: author
     }
 
+    modal = fn assigns ->
+      ~H"""
+        <NotEmptyModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: NotEmptyModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -628,9 +718,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-      numberings =
-        Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-
       selected =
         case socket.assigns.selected do
           nil -> nil
@@ -642,7 +729,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
         container: revision,
         children: children,
         rollup: rollup,
-        numberings: numberings
+        numberings: Numbering.number_full_tree(
+          Oli.Publishing.AuthoringResolver,
+          socket.assigns.project.slug,
+          socket.assigns.project.customizations
+          )
       )
     else
       socket
@@ -736,15 +827,5 @@ defmodule OliWeb.Curriculum.ContainerLive do
       {published_resource.resource_id, published_resource.author}
     end)
     |> Enum.into(%{})
-  end
-
-  def new_container_name(numberings, parent_container) do
-    numbering = Map.get(numberings, parent_container.id)
-
-    if numbering do
-      Numbering.container_type(numbering.level + 1)
-    else
-      "Unit"
-    end
   end
 end

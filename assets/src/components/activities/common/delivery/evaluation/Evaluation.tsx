@@ -1,14 +1,7 @@
-import {
-  ActivityState,
-  makeContent,
-  makeFeedback,
-  RichText,
-  PartState,
-} from 'components/activities/types';
+import { ActivityState, makeContent, makeFeedback, PartState } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
-import guid from 'utils/guid';
 
 interface Props {
   shouldShow?: boolean;
@@ -23,23 +16,29 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
   const errorText = makeContent('There was an error processing this response');
   const error = partState.error;
   const feedback = partState.feedback?.content;
+  const resultCl = resultClass(partState.score, partState.outOf, partState.error);
   const explanation = partState.explanation?.content;
 
   return (
     <React.Fragment>
       <Component
         key={`${partState.partId}-feedback`}
-        resultClass={resultClass(partState.score, partState.outOf, partState.error)}
+        resultClass={resultCl}
         score={partState.score}
         outOf={partState.outOf}
+        graded={context.graded}
       >
         <HtmlContentModelRenderer
           content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
           context={context}
         />
       </Component>
-      {explanation && (
-        <Component key={`${partState.partId}-explanation`} resultClass="explanation">
+      {explanation && resultCl !== 'correct' && (
+        <Component
+          key={`${partState.partId}-explanation`}
+          resultClass="explanation"
+          graded={context.graded}
+        >
           <div>
             <div className="mb-1">
               <b>Explanation:</b>
@@ -55,8 +54,8 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
 }
 
 export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, context }) => {
-  const { score, outOf, parts } = attemptState;
-  if (!shouldShow || outOf === null || score === null) {
+  const { parts } = attemptState;
+  if (!shouldShow) {
     return null;
   }
 
@@ -64,33 +63,19 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
     return renderPartFeedback(parts[0], context);
   }
 
-  const totalScoreText: RichText = [
-    {
-      type: 'p',
-      children: [{ text: 'Total Score', strong: true }],
-      id: guid(),
-    },
-  ];
-
-  return (
-    <>
-      <Component resultClass={resultClass(score, outOf, undefined)} score={score} outOf={outOf}>
-        <HtmlContentModelRenderer content={totalScoreText} context={context} />
-      </Component>
-      {parts.map((partState) => renderPartFeedback(partState, context))}
-    </>
-  );
+  return <>{parts.map((partState) => renderPartFeedback(partState, context))}</>;
 };
 
 interface ComponentProps {
   resultClass: string;
   score?: number | null;
   outOf?: number | null;
+  graded?: boolean;
 }
+
 const Component: React.FC<ComponentProps> = (props) => {
-  return (
-    <div aria-label="result" className={`evaluation feedback ${props.resultClass} my-1`}>
-      {(props.score || props.outOf) && (
+  const scoreOrGraphic = props.graded
+    ? (props.score || props.outOf) && (
         <div className="result">
           <span aria-label="score" className="score">
             {props.score}
@@ -100,11 +85,30 @@ const Component: React.FC<ComponentProps> = (props) => {
             {props.outOf}
           </span>
         </div>
-      )}
+      )
+    : graphicForResultClass(props.resultClass);
+
+  return (
+    <div aria-label="result" className={`evaluation feedback ${props.resultClass} my-1`}>
+      {scoreOrGraphic}
       {props.children}
       <div></div>
     </div>
   );
+};
+
+const graphicForResultClass = (resultClass: string) => {
+  if (resultClass === 'correct') {
+    return <span className="icon_30H-hYww material-icons mr-2 graphic">check_circle</span>;
+  }
+  if (resultClass === 'incorrect') {
+    return <span className="icon_30H-hYww material-icons mr-2 graphic">cancel</span>;
+  }
+  if (resultClass === 'partially-correct') {
+    return <span className="icon_30H-hYww material-icons mr-2 graphic">check</span>;
+  }
+
+  return <span className="icon_30H-hYww material-icons mr-2 graphic">error</span>;
 };
 
 const resultClass = (score: number | null, outOf: number | null, error: string | undefined) => {

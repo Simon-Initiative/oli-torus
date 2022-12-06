@@ -126,6 +126,9 @@ export const lessonUiSchema: UiSchema = {
     Appearance: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Lesson Appearance',
+      backgroundImageURL: {
+        'ui:widget': 'TorusImageBrowser',
+      },
     },
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
@@ -213,7 +216,7 @@ export const transformSchemaToModel = (schema: any) => {
     additionalStylesheets,
     title: schema.Properties.title,
     customCss: schema.Properties.customCSS || '',
-    customScript: schema.CustomLogic.customScript,
+    customScript: schema.CustomLogic.customScript || '',
   };
 };
 

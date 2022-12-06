@@ -30,18 +30,26 @@ export const defaultMCModel: () => MCSchema = () => {
         ),
       ],
       targeted: [],
-      transformations: [makeTransformation('choices', Transform.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: '',
     },
   };
 };
 
 export const getCorrectChoice = (model: HasParts, partId: string) => {
-  const responseIdMatch = getCorrectResponse(model, partId).rule.match(/{(.*)}/);
+  const correct = getCorrectResponse(model, partId);
 
-  if (responseIdMatch === null) {
-    return null;
+  if (correct === null) {
+    return Maybe.nothing<Choice>();
   }
 
-  return Choices.getOne(model, responseIdMatch[1]);
+  let value = correct.rule.substring(correct.rule.indexOf('{') + 1);
+  value = value.substring(0, value.indexOf('}'));
+
+  const choice = Choices.getOne(model, value);
+  if (choice === null || choice === undefined) {
+    return Maybe.nothing<Choice>();
+  }
+
+  return Maybe.just(choice);
 };

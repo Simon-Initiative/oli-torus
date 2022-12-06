@@ -74,6 +74,9 @@ export const uiSchema = {
     'ui:title': 'Subtitles',
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
   },
+  src: {
+    'ui:widget': 'TorusVideoBrowser',
+  },
 };
 
 export const adaptivitySchema = {

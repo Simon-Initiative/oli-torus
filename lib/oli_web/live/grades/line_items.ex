@@ -2,14 +2,18 @@ defmodule OliWeb.Grades.LineItems do
   use OliWeb, :live_component
 
   def render(assigns) do
-    disabled =
-      if length(assigns.task_queue) > 0 do
-        "disabled"
-      else
-        ""
-      end
+    assigns =
+      assign(
+        assigns,
+        :disabled,
+        if length(assigns.task_queue) > 0 do
+          [disabled: true]
+        else
+          []
+        end
+      )
 
-    ~L"""
+    ~H"""
 
     <div class="card">
       <div class="card-body">
@@ -24,7 +28,7 @@ defmodule OliWeb.Grades.LineItems do
       </div>
 
       <div class="card-footer">
-        <a class="btn btn-primary" phx-click="send_line_items" <%= disabled %>><%= dgettext("grades", "Update LMS Line Items") %></a>
+        <a class="btn btn-primary" phx-click="send_line_items" {@disabled}><%= dgettext("grades", "Update LMS Line Items") %></a>
       </div>
     </div>
 

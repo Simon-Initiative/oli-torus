@@ -69,15 +69,13 @@ export const Editors = (props: EditorsProps) => {
   const allTags = props.allTags.toArray();
   const canRemove = editMode;
 
+  const contentBreaksExist = content.model.some((v: ResourceContent) => v.type === 'break');
+
   const editors = content.model.map((contentItem, index) => {
     const onEdit = (contentItem: ResourceContent) =>
       props.onEdit(content.updateContentItem(contentItem.id, contentItem));
-    const onRemove = () => props.onRemove(contentItem.id);
 
-    const contentBreaksExist =
-      (contentItem as any).children !== undefined
-        ? (contentItem as any).children.some((v: ResourceContent) => v.type === 'break')
-        : false;
+    const onRemove = props.onRemove;
 
     const editor = createEditor({
       resourceContext: resourceContext,

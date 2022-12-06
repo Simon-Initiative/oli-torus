@@ -6,6 +6,8 @@ interface Props {
   cols?: number;
   disabled?: boolean;
   onChange: (value: string) => void;
+  onBlur?: () => void;
+  onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 export const TextareaInput: React.FC<Props> = (props) => {
   return (
@@ -15,6 +17,8 @@ export const TextareaInput: React.FC<Props> = (props) => {
       cols={typeof props.rows === 'number' ? props.cols : 80}
       className="form-control"
       onChange={(e) => props.onChange(e.target.value)}
+      onBlur={props.onBlur}
+      onKeyUp={props.onKeyUp}
       value={props.value}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
     ></textarea>

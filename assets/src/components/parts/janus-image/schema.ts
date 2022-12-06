@@ -36,7 +36,11 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  src: {
+    'ui:widget': 'TorusImageBrowser',
+  },
+};
 
 export const transformModelToSchema = (model: Partial<ImageModel>) => {
   /* console.log('Image Model -> Schema transformer', model); */

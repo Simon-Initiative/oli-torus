@@ -13,12 +13,20 @@ export type ModelElement = TopLevel | Block | Inline;
 // A list of all our element types, including those that can't be "bare" inside a children array.
 export type AllModelElements = ModelElement | SubElements;
 
-// All allows all SlateElement types. Small disallows full-width items like tables, webpages. Inline is only formatted text and inline elements like links.
-export type ContentModelMode = 'all' | 'small' | 'inline';
+export type AllModelTypes = AllModelElements['type'];
+export type ModelTypes = ModelElement['type'];
+
+// specifies the type of items that can be inserted using the toolbar
+export type ContentModelMode =
+  | 'all' // all SlateElement types
+  | 'extended' // extended block types including full-width items like tables, webpages
+  | 'limited' // limited block, disallows full-width items
+  | 'inline'; // only formatted text and inline elements like links
 
 export type TopLevel =
   | TextBlock
   | List
+  | DescriptionList
   | MediaBlock
   | Table
   | Math
@@ -29,17 +37,27 @@ export type TopLevel =
   | Semantic
   | PageLink;
 
-export type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
+export type Block =
+  | TableRow
+  | TableCell
+  | ListItem
+  | MathLine
+  | CodeLine
+  | FormulaBlock
+  | DescriptionListTerm
+  | DescriptionListDefinition;
 
 export type Semantic = Definition | Callout | Figure | Dialog | Conjugation;
 
 export type Inline =
   | Hyperlink
+  | CommandButton
   | Popup
   | InputRef
   | ImageInline
   | Citation
   | FormulaInline
+  | Foreign
   | CalloutInline;
 
 export type TextBlock = Paragraph | Heading;
@@ -50,7 +68,7 @@ export type Heading =
   | HeadingFour
   | HeadingFive
   | HeadingSix;
-export type List = OrderedList | UnorderedList;
+export type List = OrderedList | UnorderedList | DescriptionList;
 export type MediaBlock = ImageBlock | YouTube | Audio | Webpage | Video;
 export type SemanticChildren = TextBlock | Block;
 // These types are only used inside other structured types and not directly as .children5
@@ -126,6 +144,7 @@ export const UnorderdListStyles = ['none', 'disc', 'circle', 'square'];
 export type UnorderedListStyle = typeof UnorderdListStyles[number];
 
 type ListChildren = (ListItem | OrderedList | UnorderedList | Text)[];
+
 export interface OrderedList extends SlateElement<ListChildren> {
   type: 'ol';
   style?: OrderedListStyle;
@@ -134,6 +153,22 @@ export interface OrderedList extends SlateElement<ListChildren> {
 export interface UnorderedList extends SlateElement<ListChildren> {
   type: 'ul';
   style?: UnorderedListStyle;
+}
+
+export interface DescriptionListTerm extends SlateElement<SemanticChildren[]> {
+  type: 'dt';
+}
+
+export interface DescriptionListDefinition extends SlateElement<SemanticChildren[]> {
+  type: 'dd';
+}
+
+type DescriptionListChildren = (DescriptionListTerm | DescriptionListDefinition)[];
+
+export interface DescriptionList extends SlateElement<VoidChildren> {
+  type: 'dl';
+  title: (Inline | TextBlock)[];
+  items: DescriptionListChildren;
 }
 
 interface BaseImage extends SlateElement<VoidChildren> {
@@ -193,10 +228,16 @@ export interface Dialog extends SlateElement<VoidChildren> {
   lines: DialogLine[];
 }
 
+export interface Foreign extends SlateElement<(Inline | Text)[]> {
+  type: 'foreign';
+  lang?: string;
+}
+
 export type FormulaSubTypes = 'mathml' | 'latex';
 interface Formula<typeIdentifier> extends SlateElement<VoidChildren> {
   type: typeIdentifier;
   subtype: FormulaSubTypes;
+  legacyBlockRendered: boolean;
   src: string;
 }
 
@@ -211,10 +252,17 @@ export interface AudioSource {
   url: string;
   contenttype: string;
 }
+
+export interface VideoCaptionTrack {
+  language_code: string;
+  label: string;
+  src: string;
+}
 export interface Video extends SlateElement<VoidChildren> {
   type: 'video';
   poster?: string;
   src: VideoSource[];
+  captions?: VideoCaptionTrack[];
   height?: number;
   width?: number;
 }
@@ -332,6 +380,13 @@ export interface Hyperlink extends SlateElement<Text[]> {
   target: string;
 }
 
+export interface CommandButton extends SlateElement<Text[]> {
+  type: 'command_button';
+  message: string;
+  target: string;
+  style: 'link' | 'button';
+}
+
 export interface InputRef extends SlateElement<Text[]> {
   type: 'input_ref';
 }
@@ -339,13 +394,14 @@ export interface InputRef extends SlateElement<Text[]> {
 export interface Popup extends SlateElement<Text[]> {
   type: 'popup';
   trigger: any;
+  audioSrc?: string;
+  audioType?: string;
   content: RichText;
 }
 
-export interface PageLink extends SlateElement<Text[]> {
+export interface PageLink extends SlateElement<VoidChildren> {
   type: 'page_link';
-  title: string;
-  ref: string;
+  idref: number;
   purpose: string;
 }
 

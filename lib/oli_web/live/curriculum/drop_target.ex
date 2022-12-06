@@ -6,10 +6,10 @@ defmodule OliWeb.Curriculum.DropTarget do
   use Phoenix.LiveComponent
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <div phx-hook="DropTarget"
-      id="drop-target-<%= assigns.index %>"
-      data-drop-index="<%= assigns.index %>"
+      id={"drop-target-#{assigns.index}"}
+      data-drop-index={assigns.index}
       class="drop-target"
     >
     </div>

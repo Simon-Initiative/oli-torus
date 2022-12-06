@@ -1,5 +1,6 @@
 defmodule Oli.Authoring.Editing.Utils do
   alias Oli.Accounts
+  alias Oli.Resources.Numbering
 
   def authorize_user(author, project) do
     case Accounts.can_access?(author, project) do
@@ -65,4 +66,18 @@ defmodule Oli.Authoring.Editing.Utils do
     end
   end
 
+  def new_container_name(numberings, parent_container) do
+    numbering = Map.get(numberings, parent_container.id)
+
+    if numbering do
+      Numbering.container_type_label(%Numbering{numbering | level: numbering.level + 1})
+    else
+      random_numbering = Map.get(numberings, List.first(Map.keys(numberings)))
+      if random_numbering do
+        Numbering.container_type_label(%Numbering{random_numbering | level: 1})
+      else
+        "Unit"
+      end
+    end
+  end
 end

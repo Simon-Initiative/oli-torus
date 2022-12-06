@@ -25,8 +25,8 @@ export const GradingApproachDropdown = <K extends string>({
   };
 
   return (
-    <div className="mb-4 d-flex">
-      <span>Grading Approach:</span>
+    <div className="mb-4 d-flex align-items-center">
+      <span className="mr-2">Grading Approach</span>
       <select
         style={{ width: 250 }}
         disabled={!editMode}

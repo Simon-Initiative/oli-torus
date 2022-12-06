@@ -198,6 +198,22 @@ defmodule Oli.Delivery.ExtrinsicState do
     end
   end
 
+  defmodule Key do
+    @moduledoc """
+    Defines a key which can be used to set and retrieve extrinsic state
+    """
+
+    # TODO: implement better key management by enforcing the use of a Key struct instead of a string
+    # defstruct key: nil
+
+    # def alternatives_preference(alternatives_id), do: %__MODULE__{key: "alt_pref_#{alternatives_id}"}
+
+    @doc """
+    Returns the key for alternatives preference state
+    """
+    def alternatives_preference(alternatives_id), do: "alt_pref_#{alternatives_id}"
+  end
+
   defp filter_keys(state, nil), do: state
 
   defp filter_keys(state, keys) do

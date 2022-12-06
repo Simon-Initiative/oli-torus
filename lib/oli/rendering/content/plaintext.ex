@@ -55,6 +55,22 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
+  def dl(%Context{}, next, title, %{}) do
+    [
+      title.(),
+      "\n",
+      next.()
+    ]
+  end
+
+  def dt(%Context{}, next, %{}) do
+    [next.(), "\n"]
+  end
+
+  def dd(%Context{}, next, %{}) do
+    [next.(), "\n"]
+  end
+
   def img(%Context{} = _context, _, %{"src" => src}) do
     ["[image with src #{src}] "]
   end
@@ -97,6 +113,10 @@ defmodule Oli.Rendering.Content.Plaintext do
 
   def audio(%Context{} = _context, _, _) do
     ["[audio with missing src] "]
+  end
+
+  def command_button(%Context{} = _context, next, _attrs) do
+    [next.()]
   end
 
   def table(%Context{} = _context, next, _) do
@@ -177,6 +197,12 @@ defmodule Oli.Rendering.Content.Plaintext do
 
   def figure(%Context{} = _context, render_children, render_title, _) do
     [render_title.(), "\n", render_children.(), "\n"]
+  end
+
+  def foreign(_context, next, _attrs) do
+    [
+      next.()
+    ]
   end
 
   def conjugation(%Oli.Rendering.Context{}, render_table, render_pronunciation, attrs) do

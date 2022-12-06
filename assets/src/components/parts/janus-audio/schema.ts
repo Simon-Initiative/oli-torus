@@ -67,7 +67,11 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  src: {
+    'ui:widget': 'TorusAudioBrowser',
+  },
+};
 
 export const adaptivitySchema = {
   exposureInSeconds: CapiVariableTypes.NUMBER,

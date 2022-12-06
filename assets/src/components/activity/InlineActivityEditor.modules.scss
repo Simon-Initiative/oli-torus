@@ -8,6 +8,14 @@
       background: authoring.$card-cap-bg;
     }
 
+    :global .tab-pane .card {
+      margin-bottom: 10px;
+    }
+
+    :global .rich-text-editor {
+      margin-bottom: 10px;
+    }
+
     :global .slate-editor {
       padding: 0.5rem;
       border: 1px solid authoring.$gray-400;

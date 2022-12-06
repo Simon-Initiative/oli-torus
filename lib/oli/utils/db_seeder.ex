@@ -425,6 +425,11 @@ defmodule Oli.Seeder do
         :parent4
       )
 
+      customizations = case map.project.customizations do
+        nil -> nil
+        labels -> Map.from_struct(labels)
+      end
+
     # Create a course section, one for each publication
     {:ok, section_1} =
       Sections.create_section(%{
@@ -432,7 +437,8 @@ defmodule Oli.Seeder do
         registration_open: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
-        base_project_id: map.project.id
+        base_project_id: map.project.id,
+        customizations: customizations
       })
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub1)
@@ -443,7 +449,8 @@ defmodule Oli.Seeder do
         registration_open: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
-        base_project_id: map.project.id
+        base_project_id: map.project.id,
+        customizations: customizations
       })
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub2)
@@ -455,7 +462,8 @@ defmodule Oli.Seeder do
         open_and_free: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
-        base_project_id: map.project.id
+        base_project_id: map.project.id,
+        customizations: customizations
       })
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub2)

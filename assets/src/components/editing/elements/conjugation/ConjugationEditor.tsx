@@ -26,7 +26,9 @@ export const ConjugationEditor: React.FC<Props> = ({
   const togglePreview = useCallback(() => setPreview((preview) => !preview), []);
 
   const writer = new ContentWriter();
-  const temporaryContext: WriterContext = defaultWriterContext();
+  const temporaryContext: WriterContext = defaultWriterContext({
+    projectSlug: commandContext.projectSlug,
+  });
 
   const pronunciation =
     model.pronunciation && writer.render(temporaryContext, model.pronunciation, new HtmlParser());

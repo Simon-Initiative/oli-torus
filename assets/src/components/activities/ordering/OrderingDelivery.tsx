@@ -15,7 +15,6 @@ import {
   listenForParentSurveyReset,
   listenForReviewAttemptChange,
   resetAction,
-  StudentInput,
 } from 'data/activities/DeliveryState';
 import { Choices } from 'data/activities/model/choices';
 import { initialPartInputs, studentInputToString } from 'data/activities/utils';
@@ -23,7 +22,6 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import { Maybe } from 'tsmonad';
 import { castPartId } from '../common/utils';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
@@ -40,6 +38,8 @@ export const OrderingComponent: React.FC = () => {
     onSaveActivity,
   } = useDeliveryElementContext<OrderingSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
+  const { writerContext } = useDeliveryElementContext();
+
   const dispatch = useDispatch();
   const { surveyId } = context;
   const onSelectionChange = (studentInput: ActivityTypes.ChoiceId[]) => {
@@ -93,12 +93,23 @@ export const OrderingComponent: React.FC = () => {
         ]);
       }
     }, 0);
-  }, [uiState.model]);
+  }, []);
 
   // First render initializes state
   if (!uiState.partState) {
     return null;
   }
+
+  const studentInput =
+    uiState.partState[castPartId(uiState.attemptState.parts[0].partId)]?.studentInput;
+
+  // If there is user state, let that drive the order of choices.  If there is no user state,
+  // just use the ordering inherent in the choices from the model.  This allows student and
+  // instructor review use cases to both work.
+  const choices =
+    studentInput === null || studentInput.length === 0
+      ? (uiState.model as ActivityTypes.HasChoices).choices
+      : studentInput.map((id) => Choices.getOne(uiState.model as OrderingSchema, id));
 
   return (
     <div className="activity ordering-activity">
@@ -106,11 +117,8 @@ export const OrderingComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
-          choices={Maybe.maybe(
-            uiState.partState[castPartId(activityState.parts[0].partId)]?.studentInput,
-          )
-            .valueOr<StudentInput>([])
-            .map((id) => Choices.getOne(uiState.model as OrderingSchema, id))}
+          writerContext={writerContext}
+          choices={choices}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
           disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
@@ -118,7 +126,10 @@ export const OrderingComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
+        <HintsDeliveryConnected
+          partId={castPartId(activityState.parts[0].partId)}
+          resetPartInputs={defaultPartInputs}
+        />
         <EvaluationConnected />
       </div>
     </div>

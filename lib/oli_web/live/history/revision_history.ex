@@ -89,7 +89,7 @@ defmodule OliWeb.RevisionHistory do
      |> assign(
        context: context,
        breadcrumbs:
-         Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver) ++
+         Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver, project.customizations) ++
            [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
        page_size: @page_size,
@@ -105,7 +105,6 @@ defmodule OliWeb.RevisionHistory do
        initial_size: length(revisions),
        uploaded_files: [],
        uploaded_content: nil,
-       modal: nil,
        edit_errors: [],
        upload_errors: [],
        edited_json: nil,
@@ -214,14 +213,17 @@ defmodule OliWeb.RevisionHistory do
   end
 
   def handle_event("show_restore_revision_modal", _, socket) do
-    modal = %{
-      component: RestoreRevisionModal,
-      assigns: %{
-        id: "restore_revision"
-      }
+    modal_assigns = %{
+      id: "restore_revision"
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <RestoreRevisionModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   @impl Phoenix.LiveView
@@ -240,8 +242,9 @@ defmodule OliWeb.RevisionHistory do
 
     with uploaded_content <-
            consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
-             File.read!(path)
-             |> Jason.decode!()
+             {:ok,
+              File.read!(path)
+              |> Jason.decode!()}
            end),
          :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
       latest_revision = fetch_revision(hd(socket.assigns.revisions).id)
@@ -263,7 +266,7 @@ defmodule OliWeb.RevisionHistory do
 
     {:noreply,
      socket
-     |> hide_modal()
+     |> hide_modal(modal_assigns: nil)
      |> mimic_edit(selected, selected.content)}
   end
 

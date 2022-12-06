@@ -45,10 +45,11 @@ export const defaultModel = (): MultiInputSchema => {
     stem: multiInputStem(input),
     choices: [],
     inputs: [{ inputType: 'text', id: input.id, partId: '1' }],
+    submitPerPart: false,
     authoring: {
       parts: [makePart(Responses.forTextInput(), [makeHint('')], '1')],
       targeted: [],
-      transformations: [makeTransformation('choices', Transform.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: 'Example question with a fill in the blank',
     },
   };

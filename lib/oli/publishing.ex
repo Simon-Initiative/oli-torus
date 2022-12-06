@@ -1057,6 +1057,56 @@ defmodule Oli.Publishing do
   end
 
   @doc """
+    For a given project's publication id, this function will find all pages and
+    activities that have an objective attached to it.
+
+    The return value is a list of maps of the following format:
+    %{
+      title: the title of the revision,
+      slug: the slug of the revision,
+      resoruce_type_id: the resource type to know if it's a page or activity,
+      attached_objective: resource_id of the attached objective
+    }
+
+    The same revision will appear as many times as attached objectives it has.
+  """
+  def find_attached_objectives(publication_id) do
+    page_id = ResourceType.get_id_by_type("page")
+    activity_id = ResourceType.get_id_by_type("activity")
+
+    sql = """
+      SELECT
+        revision.slug,
+        revision.title,
+        revision.resource_type_id,
+        jsonb_array_elements(revision.objectives->part) as attached_objective
+      FROM
+        revisions as revision,
+        jsonb_object_keys(revision.objectives) p(part)
+      WHERE
+        revision.id IN
+          (SELECT revision_id
+        FROM published_resources
+          WHERE publication_id = $1)
+        AND
+          (revision.resource_type_id = $2 OR revision.resource_type_id = $3)
+        AND jsonb_array_length(revision.objectives->part) > 0;
+    """
+
+    {:ok, %{rows: results}} =
+      Ecto.Adapters.SQL.query(Oli.Repo, sql, [publication_id, page_id, activity_id])
+
+    Enum.map(results, fn [slug, title, resource_type_id, attached_objective] ->
+      %{
+        slug: slug,
+        title: title,
+        resource_type_id: resource_type_id,
+        attached_objective: attached_objective
+      }
+    end)
+  end
+
+  @doc """
   For a given list of resource ids and a given project publication id,
   retrieve the corresponding published resource record, preloading the
   locked_by_id to allow access to the user that might have the resource locked.
@@ -1179,6 +1229,28 @@ defmodule Oli.Publishing do
       and rev.resource_type_id = #{page_id}
       and rev.deleted is false
       and jsonb_path_exists(rev.content, '$.**.conditions.** ? (@.fact == "objectives").value ? (@ == #{objective_id})')
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
+  end
+
+  def find_alternatives_group_references_in_pages(alternatives_resource_id, publication_id) do
+    page_id = ResourceType.get_id_by_type("page")
+
+    sql = """
+    select rev.slug, rev.title
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id = #{publication_id}
+      and rev.resource_type_id = #{page_id}
+      and rev.deleted is false
+      and (
+        jsonb_path_exists(rev.content, '$.model[*] ? (@.type == "alternatives").alternatives_id ? (@ == #{alternatives_resource_id})')
+        or jsonb_path_exists(rev.content, '$.**.children[*] ? (@.type == "alternatives").alternatives_id ? (@ == #{alternatives_resource_id})')
+      )
     """
 
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])

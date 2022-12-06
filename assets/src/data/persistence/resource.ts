@@ -41,7 +41,7 @@ export function edit(
   return makeRequest<Edited>(params);
 }
 
-export type Page = { id: string; title: string };
+export type Page = { id: number; slug: string; title: string };
 export type PagesReceived = { type: 'success'; pages: Page[] };
 
 // Requests all of the page details for a course for the purpose
@@ -55,6 +55,24 @@ export function pages(project: ProjectSlug, current?: string) {
   };
 
   return makeRequest<PagesReceived>(params);
+}
+
+export type AlternativesGroupOption = { id: string; name: string };
+export type AlternativesGroup = {
+  id: number;
+  title: string;
+  options: AlternativesGroupOption[];
+};
+export type AlternativesGroupsReceived = { type: 'success'; alternatives: AlternativesGroup[] };
+
+// Requests all alternative groups for a given project or section
+export function alternatives(projectSlug: ProjectSlug) {
+  const params = {
+    method: 'GET',
+    url: `/project/${projectSlug}/alternatives`,
+  };
+
+  return makeRequest<AlternativesGroupsReceived>(params);
 }
 
 function traverseContent(o: any, func: any) {

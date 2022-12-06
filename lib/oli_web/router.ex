@@ -33,7 +33,7 @@ defmodule OliWeb.Router do
   pipeline :api do
     plug(:accepts, ["json"])
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
@@ -42,21 +42,21 @@ defmodule OliWeb.Router do
   # pipeline for LTI launch endpoints
   pipeline :lti do
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
   end
 
   # pipeline for SSO endpoints
   pipeline :sso do
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(Oli.Plugs.ValidateIdToken)
   end
 
   pipeline :skip_csrf_protection do
     plug(:accepts, ["html"])
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
   end
 
@@ -317,6 +317,12 @@ defmodule OliWeb.Router do
     live("/products/:section_slug/updates", Delivery.ManageUpdates)
     live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
 
+    get(
+      "/products/:product_id/payments/donwload_codes",
+      PaymentController,
+      :download_payment_codes
+    )
+
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
     live("/account", Workspace.AccountDetailsLive)
@@ -364,6 +370,9 @@ defmodule OliWeb.Router do
     put("/:project_id", ProjectController, :update)
     delete("/:project_id", ProjectController, :delete)
 
+    # Alternatives Groups
+    live("/:project_id/alternatives", Resources.AlternativesEditor)
+
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)
 
@@ -371,7 +380,7 @@ defmodule OliWeb.Router do
     get("/:project_id/bibliography", BibliographyController, :index)
 
     # Objectives
-    live("/:project_id/objectives", Objectives.Objectives)
+    live("/:project_id/objectives", ObjectivesLive.Objectives)
 
     # Curriculum
     live(
@@ -427,7 +436,7 @@ defmodule OliWeb.Router do
     # live "/:project_id/insights", Insights
   end
 
-  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+  if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     scope "/api/v1/docs" do
       pipe_through([:browser])
 
@@ -461,6 +470,8 @@ defmodule OliWeb.Router do
 
     post("/:project/lock/:resource", Api.LockController, :acquire)
     delete("/:project/lock/:resource", Api.LockController, :release)
+
+    get("/:project/alternatives", Api.ResourceController, :alternatives)
   end
 
   # Storage Service
@@ -495,6 +506,13 @@ defmodule OliWeb.Router do
     pipe_through([:api, :authoring_protected])
 
     post("/", Api.ActivityBankController, :retrieve)
+  end
+
+  # Blueprint Service
+  scope "/api/v1/blueprint", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    get("/", Api.BlueprintController, :index)
   end
 
   # Objectives Service
@@ -813,6 +831,8 @@ defmodule OliWeb.Router do
       :review_attempt,
       as: :instructor_review
     )
+
+    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor, as: :collab_spaces_index)
   end
 
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
@@ -904,6 +924,7 @@ defmodule OliWeb.Router do
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
+    live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
 
     live(
       "/products/:product_id/discounts/new",
@@ -1087,7 +1108,7 @@ defmodule OliWeb.Router do
   end
 
   # routes only accessible to developers
-  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+  if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
 

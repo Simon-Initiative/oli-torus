@@ -35,7 +35,7 @@ import {
   ModelElement,
   OrderedList,
   Paragraph,
-  Popup,
+  Popup as PopupModel,
   Table,
   TableData,
   TableHeader,
@@ -46,11 +46,14 @@ import {
   YouTube,
   Conjugation as ConjugationModel,
   TableConjugation as TableConjugationModel,
+  Foreign,
+  CommandButton as CommandButtonModel,
+  DescriptionList as DescriptionListModel,
+  DescriptionListDefinition,
+  DescriptionListTerm,
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import React from 'react';
-import { OverlayTrigger, Popover } from 'react-bootstrap';
-import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
 import {
@@ -68,6 +71,9 @@ import { Figure as FigureElement } from '../../../components/common/Figure';
 import { Dialog } from '../../../components/Dialog';
 import { Conjugation } from '../../../components/common/Conjugation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
+import { Popup } from '../../../components/common/Popup';
+import { CommandButton } from '../../../components/common/CommandButton';
+import { DescriptionList } from '../../../components/common/DescriptionList';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -148,6 +154,22 @@ export class HtmlParser implements WriterImpl {
     );
   }
 
+  dl(context: WriterContext, next: Next, element: DescriptionListModel) {
+    return (
+      <DescriptionList context={context} description={element}>
+        {next()}
+      </DescriptionList>
+    );
+  }
+
+  dd(context: WriterContext, next: Next, _element: DescriptionListDefinition) {
+    return <dd>{next()}</dd>;
+  }
+
+  dt(context: WriterContext, next: Next, _element: DescriptionListTerm) {
+    return <dt>{next()}</dt>;
+  }
+
   conjugation(context: WriterContext, next: Next, element: ConjugationModel) {
     const writer = new ContentWriter();
 
@@ -203,10 +225,25 @@ export class HtmlParser implements WriterImpl {
     return <Dialog dialog={dialog} context={context} />;
   }
 
+  foreign(ctx: WriterContext, next: Next, element: Foreign) {
+    return (
+      <span className="foreign" lang={element.lang || ctx.learningLanguage}>
+        {next()}
+      </span>
+    );
+  }
+
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
+    const forceBlockRendering =
+      element.legacyBlockRendered !== undefined && element.legacyBlockRendered;
     switch (element.subtype) {
       case 'latex':
-        return <MathJaxLatexFormula src={element.src} inline={element.type === 'formula_inline'} />;
+        return (
+          <MathJaxLatexFormula
+            src={element.src}
+            inline={element.type === 'formula_inline' && !forceBlockRendering}
+          />
+        );
       case 'mathml':
         return (
           <MathJaxMathMLFormula src={element.src} inline={element.type === 'formula_inline'} />
@@ -388,15 +425,26 @@ export class HtmlParser implements WriterImpl {
       </a>
     );
   }
+
+  commandButton(context: WriterContext, next: Next, attrs: CommandButtonModel) {
+    return <CommandButton commandButton={attrs}>{next()}</CommandButton>;
+  }
+
   inputRef(context: WriterContext, _next: Next, inputRef: InputRef) {
     const { inputRefContext } = context;
     const inputData = inputRefContext?.inputs.get(inputRef.id);
     if (!inputRefContext || !inputData) {
-      return <TextInput onChange={() => {}} value="" disabled />;
+      return <TextInput onKeyUp={() => {}} onChange={() => {}} value="" disabled />;
     }
 
     const shared = {
       onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
+      onBlur: () => inputRefContext.onBlur(inputRef.id),
+      onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        if (e.key === 'Enter') {
+          inputRefContext.onPressEnter(inputRef.id);
+        }
+      },
       value: valueOr(inputData.value, ''),
       disabled: inputRefContext.disabled,
       placeholder: inputData.placeholder || '',
@@ -434,26 +482,11 @@ export class HtmlParser implements WriterImpl {
     }
   }
 
-  popup(context: WriterContext, anchorNext: Next, contentNext: Next, popup: Popup) {
-    const trigger: OverlayTriggerType[] =
-      this.escapeXml(popup.trigger) === 'hover' ? ['hover', 'focus'] : ['focus'];
-
-    const popupContent = (
-      <Popover id={popup.id}>
-        <Popover.Content className="popup__content">{contentNext()}</Popover.Content>
-      </Popover>
-    );
-
+  popup(context: WriterContext, anchorNext: Next, contentNext: Next, popup: PopupModel) {
     return (
-      <OverlayTrigger trigger={trigger} placement="top" overlay={popupContent}>
-        <span
-          tabIndex={0}
-          role="button"
-          className={`popup__anchorText${trigger.includes('hover') ? '' : ' popup__click'}`}
-        >
-          {anchorNext()}
-        </span>
-      </OverlayTrigger>
+      <Popup popup={popup} popupContent={contentNext()}>
+        {anchorNext()}
+      </Popup>
     );
   }
 

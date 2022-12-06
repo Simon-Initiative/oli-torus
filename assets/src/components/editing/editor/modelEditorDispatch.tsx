@@ -28,6 +28,9 @@ import { FigureEditor } from '../elements/figure/FigureEditor';
 import { DialogEditor } from '../elements/dialog/DialogEditor';
 import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
 import { TcEditor } from '../elements/table/TcElement';
+import { ForeignEditor } from '../elements/foreign/ForeignEditor';
+import { CommandButtonEditor } from '../elements/command_button/CommandButtonEditor';
+import { DescriptionListEditor } from '../elements/description/DescriptionListEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -76,6 +79,15 @@ export function editorFor(
       );
     case 'li':
       return <li {...attributes}>{children}</li>;
+
+    case 'dl':
+      return (
+        <DescriptionListEditor {...(editorProps as EditorProps<ContentModel.DescriptionList>)} />
+      );
+    case 'dt':
+      return <dt {...attributes}>{children}</dt>;
+    case 'dd':
+      return <dd {...attributes}>{children}</dd>;
     case 'callout':
       return <CalloutEditor {...(editorProps as EditorProps<ContentModel.Callout>)} />;
     case 'callout_inline':
@@ -88,6 +100,8 @@ export function editorFor(
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
+    case 'command_button':
+      return <CommandButtonEditor {...(editorProps as EditorProps<ContentModel.CommandButton>)} />;
     case 'page_link':
       return <PageLinkEditor {...(editorProps as EditorProps<ContentModel.PageLink>)} />;
     case 'cite':
@@ -123,6 +137,8 @@ export function editorFor(
       return <DefinitionEditor {...(editorProps as EditorProps<ContentModel.Definition>)} />;
     case 'figure':
       return <FigureEditor {...(editorProps as EditorProps<ContentModel.Figure>)} />;
+    case 'foreign':
+      return <ForeignEditor {...(editorProps as EditorProps<ContentModel.Foreign>)} />;
     case 'formula':
     case 'formula_inline':
       return (

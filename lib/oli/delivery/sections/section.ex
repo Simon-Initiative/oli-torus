@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Institutions.Institution
   alias Oli.Branding.Brand
   alias Oli.Delivery.DeliveryPolicy
+  alias Oli.Branding.CustomLabels
 
   alias Oli.Delivery.Sections.{
     SectionsProjectsPublications,
@@ -54,6 +55,8 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_gating_index, :map, default: %{}, null: false)
     field(:previous_next_index, :map, default: nil, null: true)
     field(:display_curriculum_item_numbering, :boolean, default: true)
+
+    embeds_one(:customizations, CustomLabels, on_replace: :delete)
 
     belongs_to(:lti_1p3_deployment, Oli.Lti.Tool.Deployment, foreign_key: :lti_1p3_deployment_id)
 
@@ -142,6 +145,7 @@ defmodule Oli.Delivery.Sections.Section do
       :publisher_id,
       :display_curriculum_item_numbering
     ])
+    |> cast_embed(:customizations, required: false)
     |> validate_required([
       :type,
       :title,

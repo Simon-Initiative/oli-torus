@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { Provider, useDispatch, useSelector, useStore } from 'react-redux';
 import {
   ActivityDeliveryState,
   activityDeliverySlice,
@@ -51,6 +51,7 @@ export const CustomDnDComponent: React.FC = () => {
   const [focusedPart, setFocusedPart] = useState<string | null>(null);
   const [resetListener, setResetListener] = useState<ResetListener | null>(null);
   const dispatch = useDispatch();
+  const { getState } = useStore();
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
@@ -85,27 +86,31 @@ export const CustomDnDComponent: React.FC = () => {
   }
 
   const onSubmit = (partId: string, value: string) => {
-    const partState: PartState = findPart(partId);
+    const state = getState();
+    const part = state.attemptState.parts.find((p: any) => p.partId === partId);
 
-    if (partState.dateEvaluated !== null) {
-      dispatch(
-        resetAndSubmitPart(
-          uiState.attemptState.attemptGuid,
-          findPart(partId).attemptGuid,
-          toStudentResponse(value),
-          onResetPart,
-          onSubmitPart,
-        ),
-      );
-    } else {
-      dispatch(
-        submitPart(
-          uiState.attemptState.attemptGuid,
-          findPart(partId).attemptGuid,
-          toStudentResponse(value),
-          onSubmitPart,
-        ),
-      );
+    const response: string = partId + '_' + value;
+    if (part !== undefined) {
+      if (part.dateEvaluated !== null) {
+        dispatch(
+          resetAndSubmitPart(
+            uiState.attemptState.attemptGuid,
+            findPart(partId).attemptGuid,
+            toStudentResponse(response),
+            onResetPart,
+            onSubmitPart,
+          ),
+        );
+      } else {
+        dispatch(
+          submitPart(
+            uiState.attemptState.attemptGuid,
+            findPart(partId).attemptGuid,
+            toStudentResponse(response),
+            onSubmitPart,
+          ),
+        );
+      }
     }
   };
 

@@ -3,7 +3,6 @@ defmodule OliWeb.Common.FilterBox do
 
   alias Surface.Components.Form.{Field, RadioButton}
 
-
   @doc "The main filter/search"
   slot default, required: true
   @doc "Extra options that can be added next to search and/or sort"
@@ -11,7 +10,10 @@ defmodule OliWeb.Common.FilterBox do
 
   prop table_model, :struct, required: true
   prop card_header_text, :string, default: "Select Curriculum"
-  prop card_body_text, :string, default: "Select a curriculum source to create your course section."
+
+  prop card_body_text, :string,
+    default: "Select a curriculum source to create your course section."
+
   prop show_sort, :boolean, default: true
   prop show_more_opts, :boolean, default: true
 
@@ -50,7 +52,7 @@ defmodule OliWeb.Common.FilterBox do
           {/if}
 
           {#if @show_more_opts}
-            <#slot name="extra_opts"/>
+            <#slot {@extra_opts} />
           {/if}
         </div>
       </div>

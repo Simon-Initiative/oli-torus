@@ -4,6 +4,7 @@ import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from '../../store/features/adaptivity/slice';
 import {
+  selectFinalizeGradedURL,
   selectIsGraded,
   selectOverviewURL,
   selectPageSlug,
@@ -21,8 +22,10 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
   const revisionSlug = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
-  const overviewURL = useSelector(selectOverviewURL);
+
   const graded = useSelector(selectIsGraded);
+  const overviewURL = useSelector(selectOverviewURL);
+  const finalizeGradedURL = useSelector(selectFinalizeGradedURL);
   const handleCloseModalClick = () => {
     setIsOpen(false);
     dispatch(setRestartLesson({ restartLesson: false }));
@@ -90,8 +93,17 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           </div>
         </div>
         <div className="modal-footer">
-          <button className="btn " name="OK" onClick={handleRestart}>
-            OK
+          <button className="btn">
+            <a
+              onClick={handleRestart}
+              href={isPreviewMode ? '#' : graded ? finalizeGradedURL : overviewURL}
+              style={{ color: 'inherit', textDecoration: 'none' }}
+              title="OK, Restart Lesson"
+              aria-label="OK, Restart Lesson"
+              data-dismiss="modal"
+            >
+              OK
+            </a>
           </button>
           <button className="btn " name="CANCEL" onClick={handleCloseModalClick}>
             Cancel

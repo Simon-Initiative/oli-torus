@@ -18,6 +18,24 @@ import { insertFigure } from '../../../elements/figure/figureActions';
 import { insertDialog } from '../../../elements/dialog/dialogActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
+import { insertDescriptionListCommand } from '../../../elements/description/description-list-actions';
+
+export const extendedBlockInsertActions = (onRequestMedia: any) => [
+  insertTable,
+  insertImage(onRequestMedia),
+  insertYoutube,
+  insertCodeblock,
+  insertVideo,
+  insertAudio(onRequestMedia),
+  insertWebpage,
+  insertFormula,
+  insertCallout,
+  insertDefinition,
+  insertFigure,
+  insertDialog,
+  insertConjugation,
+  insertDescriptionListCommand,
+];
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
@@ -34,6 +52,7 @@ export const allBlockInsertActions = (onRequestMedia: any) => [
   insertDialog,
   insertPageLink,
   insertConjugation,
+  insertDescriptionListCommand,
 ];
 
 interface Opts {
@@ -51,7 +70,7 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
   switch (type) {
     case 'inline':
       return [];
-    case 'small':
+    case 'limited':
       return [
         insertImage(onRequestMedia),
         ytCmdDesc,
@@ -60,6 +79,8 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
         insertAudio(onRequestMedia),
         insertFormula,
       ];
+    case 'extended':
+      return extendedBlockInsertActions(onRequestMedia);
     case 'all':
     default:
       return allBlockInsertActions(onRequestMedia);

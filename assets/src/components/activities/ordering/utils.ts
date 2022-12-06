@@ -25,7 +25,9 @@ export const defaultOrderingModel = (): Ordering => {
       ],
       targeted: [],
       correct: [[choice1.id, choice2.id], correctResponse.id],
-      transformations: [{ id: guid(), path: 'choices', operation: Transform.shuffle }],
+      transformations: [
+        { id: guid(), path: 'choices', operation: Transform.shuffle, firstAttemptOnly: true },
+      ],
       previewText: '',
     },
   };

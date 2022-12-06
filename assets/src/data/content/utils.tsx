@@ -73,6 +73,7 @@ export const positionRect = (
   { position, align, childRect, popoverRect, padding }: PopoverState,
   reposition?: boolean,
   parent?: HTMLElement | null,
+  headerOffsest = 0,
 ): DOMRect => {
   const targetMidX = childRect.left + childRect.width / 2;
   const targetMidY = childRect.top + childRect.height / 2;
@@ -110,8 +111,8 @@ export const positionRect = (
 
   // reposition to follow if scrolled off screen
   if (position === 'top' && reposition && parent) {
-    // a constant offset value to account for the header and other items at the top of the scroll view
-    const TOP_SCROLL_OFFSET = 130;
+    // offset value to account for the header and other items at the top of the scroll view
+    const topScrollOffset = headerOffsest + padding;
 
     const parentRect = parent.getBoundingClientRect();
 
@@ -127,9 +128,9 @@ export const positionRect = (
     // here we check to see if the view is scrolled past the top of the editor and if so
     // then we adjust the position the toolbar relative to the top of the window so it is
     // always in view
-    const topAdjustedScrollPos = parentRect.top - TOP_SCROLL_OFFSET;
+    const topAdjustedScrollPos = parentRect.top - topScrollOffset;
     if (topAdjustedScrollPos < 0) {
-      top = top - topAdjustedScrollPos + Math.min(0, parentRect.bottom - TOP_SCROLL_OFFSET);
+      top = top - topAdjustedScrollPos + Math.min(0, parentRect.bottom + padding - topScrollOffset);
     }
   }
 
@@ -166,4 +167,21 @@ export const elementsOfType = (content: ContentTypes, type: string): AllModelEle
     (elem) => Element.isElement(elem) && elem.type === type && elements.push(elem),
   );
   return elements;
+};
+
+/**
+ * isEmptyContent([nodes]) Returns true if the content is "empty" where "empty" is defined as:
+ *   - Does not contain any text node with non-whitespace characters
+ *   - Does not contain any p/header nodes with children that have non-whitespace characters recursively
+ *   - Does not contain any other type of node
+ */
+const blocksToIgnore = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+const shouldIgnore = (type: string) => blocksToIgnore.includes(type);
+export const isEmptyContent = (content: (AllModelElements | Text)[]): boolean => {
+  return !content.find(
+    (c) =>
+      ('text' in c && c.text.trim() !== '') || // Not empty if we have a text node with content in it
+      ('type' in c && shouldIgnore(c.type) && !isEmptyContent(c.children)) || // a paragraph/heading is not empty if its children are not empty
+      ('type' in c && !shouldIgnore(c.type)), // Any other non-paragraph/header element is considered not empty
+  );
 };

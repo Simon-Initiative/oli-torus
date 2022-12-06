@@ -231,7 +231,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (e: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [PC : ${props.id}]`, e); */
+        // console.log(`${notificationType.toString()} notification handled [PC : ${props.id}]`, e);
         const el = ref.current;
         if (el) {
           if (el.notify) {
@@ -259,6 +259,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   useEffect(() => {
     const wcEventHandler = async (e: any) => {
+      if (!e.detail) {
+        return;
+      }
       const { payload, callback } = e.detail;
       if (payload.id !== props.id) {
         // because we need to listen to document we'll get all part component events
@@ -266,11 +269,18 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         return;
       }
       const handler = wcEvents[e.type];
+
       if (handler) {
         // TODO: refactor all handlers to take ID and send it here
         // console.log(`${e.type} event handled [PC : ${props.id}]`, e);
         try {
           const result = await handler(payload);
+
+          if (e.type === 'init' && result.snapshot) {
+            // The init event could end up changing stage.{id}.* properties that handleStylingChanges needs
+            handleStylingChanges(result.snapshot);
+          }
+
           if (e.type === 'resize') {
             handleResize(payload);
           }

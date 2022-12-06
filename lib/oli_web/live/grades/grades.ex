@@ -5,13 +5,13 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.AGS.LineItem
   alias Lti_1p3.Tool.Services.NRPS
-  alias Lti_1p3.Tool.Services.AccessToken
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias Oli.Repo
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias Oli.Lti.AccessTokenLibrary
 
   def mount(
         _params,
@@ -93,20 +93,25 @@ defmodule OliWeb.Grades.GradesLive do
   def render(assigns) do
     has_tasks? = length(assigns.task_queue) > 0
 
-    progress_visible =
-      if has_tasks? do
-        "visible"
-      else
-        "invisible"
-      end
+    assigns =
+      assigns
+      |> assign(
+        :progress_visible,
+        if has_tasks? do
+          "visible"
+        else
+          "invisible"
+        end
+      )
+      |> assign(
+        :percent_progress,
+        case assigns.progress_max do
+          0 -> 0
+          v -> assigns.progress_current / v * 100
+        end
+      )
 
-    percent_progress =
-      case assigns.progress_max do
-        0 -> 0
-        v -> assigns.progress_current / v * 100
-      end
-
-    ~L"""
+    ~H"""
     <div class="mb-2">
       <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section.slug) do %>
         <i class="las la-arrow-left"></i> Back
@@ -129,13 +134,12 @@ defmodule OliWeb.Grades.GradesLive do
       <%= live_component OliWeb.Grades.GradeSync, assigns %>
     </div>
 
-    <div class="mt-4 <%= progress_visible %>">
+    <div class={"mt-4 #{@progress_visible}"}>
       <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
       <div class="progress">
-        <div class="progress-bar" role="progressbar" style="width: <%= percent_progress %>%;" aria-valuenow="<%= percent_progress %>" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar" role="progressbar" style={"width: #{@percent_progress}%;"} aria-valuenow={"#{@percent_progress}"} aria-valuemin="0" aria-valuemax="100"></div>
       </div>
     </div>
-
     """
   end
 
@@ -184,7 +188,12 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   defp access_token_provider(registration) do
-    AccessToken.fetch_access_token(registration, Grading.ags_scopes(), host())
+    provider =
+      :oli
+      |> Application.get_env(:lti_access_token_provider)
+      |> Keyword.get(:provider, AccessTokenLibrary)
+
+    provider.fetch_access_token(registration, Grading.ags_scopes(), host())
   end
 
   defp fetch_students(access_token, section) do

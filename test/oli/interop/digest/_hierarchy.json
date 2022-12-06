@@ -36,6 +36,14 @@
       ],
       "id": "unit-1",
       "title": "Unit 1"
+    },
+    {
+      "type": "labels",
+      "children": [],
+      "sequence": "Sequence",
+      "unit": "Volume",
+      "module": "Module",
+      "section": "Section"
     }
   ],
   "id": "",

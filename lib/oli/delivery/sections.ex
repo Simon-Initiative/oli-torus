@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Delivery.Snapshots.Snapshot
@@ -862,6 +863,14 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  def get_section_resource(section_id, resource_id) do
+    Repo.one(
+      from s in SectionResource,
+        where: s.section_id == ^section_id and s.resource_id == ^resource_id,
+        select: s
+    )
+  end
+
   def rebuild_section_resources(
         section: %Section{id: section_id} = section,
         publication: publication
@@ -1550,6 +1559,21 @@ defmodule Oli.Delivery.Sections do
 
       Map.put(acc, new_slug, published_resource)
     end)
+  end
+
+  @doc """
+  Returns the base_project attributes for the given section
+  """
+  def get_section_attributes(section) do
+    project =
+      Ecto.assoc(section, :base_project)
+      |> Repo.one()
+
+    case project do
+      nil -> %ProjectAttributes{}
+      %Project{:attributes => nil} -> %ProjectAttributes{}
+      %Project{:attributes => attributes} -> attributes
+    end
   end
 
   @doc """

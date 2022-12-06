@@ -1,7 +1,18 @@
 
-<h1 class="title"><%= @title %><%= if @review_mode == true do %>
- (Review)
-<% end %></h1>
+
+<div class="d-flex">
+  <div class="flex-grow-1">
+    <h1 class="title"><%= @title %><%= if @review_mode == true do %>
+    (Review)
+    <% end %></h1>
+  </div>
+  <%= if @page_number != nil do %>
+    <div>
+      <div class="page-numbering"><%= @page_number %></div>
+    </div>
+  <% end %>
+</div>
+
 
 <script>
 window.userToken = "<%= assigns[:user_token] %>";

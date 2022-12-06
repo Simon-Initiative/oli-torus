@@ -5,13 +5,14 @@ defmodule Oli.Rendering.Content.Html do
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
   import Oli.Utils
+  import Oli.Rendering.Utils
 
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
-  import Oli.Rendering.Utils
   alias Oli.Utils.Purposes
+  alias Oli.Rendering.Content.ResourceSummary
 
   @behaviour Oli.Rendering.Content
 
@@ -176,9 +177,9 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def tc(%Context{} = _context, next, attrs) do
-    [click_class, audio_element, play_code] =
+    [click_class, audio_element, play_code, _] =
       case attrs["audioSrc"] do
-        nil -> ["", "", ""]
+        nil -> ["", "", "", ""]
         src -> ["clickable" | audio_player(src)]
       end
 
@@ -203,6 +204,25 @@ defmodule Oli.Rendering.Content.Html do
 
   def ol(%Context{} = _context, next, _) do
     ["<ol>", next.(), "</ol>\n"]
+  end
+
+  def dl(%Context{}, next, title, %{}) do
+    [
+      "<h4 class=\"dl-title\">",
+      title.(),
+      "</h4>\n",
+      "<dl>",
+      next.(),
+      "</dl>\n"
+    ]
+  end
+
+  def dt(%Context{}, next, %{}) do
+    ["<dt>", next.(), "</dt>\n"]
+  end
+
+  def dd(%Context{}, next, %{}) do
+    ["<dd>", next.(), "</dd>\n"]
   end
 
   def ul(%Context{} = _context, next, %{"style" => style}) do
@@ -307,11 +327,13 @@ defmodule Oli.Rendering.Content.Html do
     ["<span class='translation'>", next.(), " </span>\n"]
   end
 
+  defp audio_player(nil), do: ["", "", ""]
+
   defp audio_player(src) do
     audio_id = UUID.uuid4()
     play_code = "document.getElementById(\"#{audio_id}\").play();"
     audio_element = "<audio id='#{audio_id}' src='#{escape_xml!(src)}' preload='auto'></audio>"
-    [audio_element, play_code]
+    [audio_element, play_code, audio_id]
   end
 
   def pronunciation(%Context{} = _context, next, element) do
@@ -320,7 +342,7 @@ defmodule Oli.Rendering.Content.Html do
         ["<span class='pronunciation'>", next.(), "</span>\n"]
 
       src ->
-        [audio_element, play_code] = audio_player(src)
+        [audio_element, play_code, _] = audio_player(src)
 
         [
           "<span class='pronunciation'>",
@@ -334,7 +356,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp maybePronunciationHeader(%{"pronunciation" => pronunciation}) do
-    if pronunciation do
+    if Oli.Activities.ParseUtils.has_content?(pronunciation) do
       "Pronunciation: "
     else
       ""
@@ -372,10 +394,31 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
+  def foreign(
+        %Oli.Rendering.Context{learning_language: learning_language},
+        next,
+        attrs
+      ) do
+    [
+      "<span class='foreign' lang='#{attrs["lang"] || learning_language}'>",
+      next.(),
+      "</span>"
+    ]
+  end
+
   def formula_class(false), do: "formula"
   def formula_class(true), do: "formula-inline"
 
   def formula(context, next, properties, inline \\ false)
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        _next,
+        %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
+        true
+      ) do
+    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  end
 
   def formula(
         %Oli.Rendering.Context{} = _context,
@@ -496,6 +539,39 @@ defmodule Oli.Rendering.Content.Html do
     [next.(), "\n"]
   end
 
+  def command_button(%Context{} = _context, next, %{
+        "style" => style,
+        "target" => target,
+        "message" => message
+      }) do
+    css_class =
+      case style do
+        "link" -> "btn btn-link command-button"
+        _ -> "btn btn-primary command-button"
+      end
+
+    [
+      "<span class=\"#{css_class}\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
+      next.(),
+      "</span>"
+    ]
+  end
+
+  def command_button(%Context{} = _context, next, %{
+        "target" => target,
+        "message" => message
+      }) do
+    [
+      "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
+      next.(),
+      "</span>"
+    ]
+  end
+
+  def command_button(%Context{} = _context, next, _attrs) do
+    [next.()]
+  end
+
   def blockquote(%Context{} = _context, next, _) do
     ["<blockquote>", next.(), "</blockquote>\n"]
   end
@@ -543,24 +619,30 @@ defmodule Oli.Rendering.Content.Html do
           end
       end
 
-    target =
+    target_rel =
       case Keyword.get(opts, :target) do
         nil -> ""
-        target -> ~s| target="#{target}"|
+        target -> ~s| target="#{target}" rel="noreferrer"|
       end
 
-    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target}>|, next.(), "</a>\n"]
+    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target_rel}>|, next.(), "</a>\n"]
   end
 
   defp external_link(%Context{} = _context, next, href) do
-    [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+    [
+      ~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank" rel="noreferrer">|,
+      next.(),
+      "</a>\n"
+    ]
   end
 
-  def page_link(%Context{} = context, _next, %{
-        "title" => title,
-        "ref" => ref,
+  def page_link(%Context{resource_summary_fn: resource_summary_fn} = context, _next, %{
+        "idref" => idref,
         "purpose" => purpose
       }) do
+    %ResourceSummary{title: title, slug: slug} = resource_summary_fn.(idref)
+    href = "/course/link/#{slug}"
+
     [
       ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
       internal_link(
@@ -575,7 +657,7 @@ defmodule Oli.Rendering.Content.Html do
             "</div>\n"
           ]
         end,
-        ref,
+        href,
         target: "_blank"
       ),
       "</div>"
@@ -595,13 +677,21 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do
+  def popup(%Context{}, next, %{"trigger" => trigger, "content" => content} = element) do
     trigger =
       if escape_xml!(trigger) == "hover" do
         "hover focus"
       else
         "manual"
       end
+
+    popup_content =
+      case parse_html_content(content) do
+        "" -> "<i class='material-icons'>volume_up</i>"
+        content -> content
+      end
+
+    [audio_element, _play_code, audio_id] = audio_player(element["audioSrc"])
 
     [
       ~s"""
@@ -617,14 +707,16 @@ defmodule Oli.Rendering.Content.Html do
         data-toggle="popover"
         data-placement="top"
         data-html="true"
+        data-audio="#{audio_id}"
         data-template='
           <div class="popover popup__content" role="tooltip">
             <div class="arrow"></div>
             <h3 class="popover-header"></h3>
             <div class="popover-body"></div>
           </div>'
-        data-content="#{escape_xml!(parse_html_content(content, context))}">
+        data-content="#{escape_xml!(popup_content)}">
         #{next.()}
+        #{audio_element}
       </span>\n
       """
     ]

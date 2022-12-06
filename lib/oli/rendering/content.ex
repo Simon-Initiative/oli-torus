@@ -33,7 +33,11 @@ defmodule Oli.Rendering.Content do
   @callback ol(%Context{}, next, %{}) :: [any()]
   @callback ul(%Context{}, next, %{}) :: [any()]
   @callback li(%Context{}, next, %{}) :: [any()]
+  @callback dl(%Context{}, next, next, %{}) :: [any()]
+  @callback dt(%Context{}, next, %{}) :: [any()]
+  @callback dd(%Context{}, next, %{}) :: [any()]
 
+  @callback command_button(%Context{}, next, %{}) :: [any()]
   @callback conjugation(%Context{}, next, next, %{}) :: [any()]
 
   @callback definition(%Context{}, next, next, next, %{}) ::
@@ -44,6 +48,8 @@ defmodule Oli.Rendering.Content do
 
   @callback dialog(%Context{}, next, %{}) :: [any()]
   @callback dialog_line(%Context{}, next, %{}, %{}) :: [any()]
+
+  @callback foreign(%Context{}, next, %{}) :: [any()]
 
   @callback formula(%Context{}, next, %{}) :: [any()]
   @callback formula_inline(%Context{}, next, %{}) :: [any()]
@@ -218,6 +224,26 @@ defmodule Oli.Rendering.Content do
 
   def render(
         %Context{} = context,
+        %{"type" => "dl", "items" => items, "title" => title} = element,
+        writer
+      ) do
+    render_items = fn -> render(context, items, writer) end
+    render_title = fn -> render(context, title, writer) end
+    writer.dl(context, render_items, render_title, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "dl", "items" => items} = element,
+        writer
+      ) do
+    render_items = fn -> render(context, items, writer) end
+    render_title = fn -> [] end
+    writer.dl(context, render_items, render_title, element)
+  end
+
+  def render(
+        %Context{} = context,
         %{"type" => "dialog"} = element,
         writer
       ) do
@@ -310,6 +336,12 @@ defmodule Oli.Rendering.Content do
       "li" ->
         writer.li(context, next, element)
 
+      "dt" ->
+        writer.dt(context, next, element)
+
+      "dd" ->
+        writer.dd(context, next, element)
+
       "math" ->
         writer.math(context, next, element)
 
@@ -321,6 +353,9 @@ defmodule Oli.Rendering.Content do
 
       "code_line" ->
         writer.code_line(context, next, element)
+
+      "command_button" ->
+        writer.command_button(context, next, element)
 
       "blockquote" ->
         writer.blockquote(context, next, element)
@@ -351,6 +386,9 @@ defmodule Oli.Rendering.Content do
 
       "pronunciation" ->
         writer.pronunciation(context, next, element)
+
+      "foreign" ->
+        writer.foreign(context, next, element)
 
       _ ->
         {error_id, error_msg} = log_error("Content element type is not supported", element)

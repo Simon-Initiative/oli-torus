@@ -53,6 +53,7 @@ defmodule Oli.Resources.Revision do
 
     embeds_one :legacy, Oli.Resources.Legacy, on_replace: :delete
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :delete
 
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
@@ -62,6 +63,7 @@ defmodule Oli.Resources.Revision do
 
     field(:total_count, :integer, virtual: true)
     field(:page_type, :string, virtual: true)
+    field(:parent_slug, :string, virtual: true)
 
     timestamps(type: :utc_datetime)
   end
@@ -94,6 +96,7 @@ defmodule Oli.Resources.Revision do
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)
+    |> cast_embed(:collab_space_config)
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
     |> Slug.update_on_change("revisions")
   end

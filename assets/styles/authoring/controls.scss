@@ -116,7 +116,83 @@
   flex-direction: row;
   gap: 8px;
   align-items: center;
-  button {
+
+  button.tool-button {
     padding: 2px 0px 0px 0px;
   }
+
+  .audio-clip-browser {
+    flex-grow: 1;
+  }
+}
+
+.audio-clip-browser-modal {
+  position: absolute;
+  min-height: 618px;
+  background-color: $body-bg;
+  left: 0px;
+  top: 0px;
+  right: 0px;
+  .audio-clip-footer {
+    display: flex;
+    flex-direction: row;
+    gap: 1em;
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+  }
+}
+
+.picker-panel {
+  padding: 1rem;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background-color: $body-bg;
+  right: 0px;
+  height: 0px;
+  overflow: hidden;
+  transition: height 0.4s ease-out;
+
+  &.open {
+    height: 690px;
+    z-index: 1000;
+  }
+}
+.picker-panel-shade {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  top: 0px;
+  z-index: 900;
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.video-settings {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: inline-block;
+}
+
+.truncate-left {
+  /* Gives us ellipses at the beginning of a string so we can see the end of it.
+     ex: a long string like http://www.google.com/this/is/a/long/string/that/should/be/truncated
+     Will result in something like ".../string/that/should/be/truncated"
+  */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 200px;
+
+  direction: rtl;
+  text-align: left;
+  margin-bottom: 3px;
+}
+
+.image-preview {
+  max-width: 200px;
+  max-height: 200px;
+  overflow: hidden;
 }

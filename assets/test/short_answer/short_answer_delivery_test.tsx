@@ -27,6 +27,7 @@ describe('multiple choice delivery', () => {
         userId: 0,
         pageAttemptGuid: '',
         sectionSlug: '',
+        projectSlug: '',
         bibParams: [],
       },
       preview: false,
@@ -62,8 +63,6 @@ describe('multiple choice delivery', () => {
       });
     });
 
-    expect(onSaveActivity).toHaveBeenCalledTimes(1);
-
     // expect a submit button
     const submitButton = screen.getByLabelText('submit');
     expect(submitButton).toBeTruthy();
@@ -83,7 +82,5 @@ describe('multiple choice delivery', () => {
 
     // expect results to be displayed after submission
     expect(await screen.findAllByLabelText('result')).toHaveLength(1);
-    expect(screen.getByLabelText('score')).toHaveTextContent('1');
-    expect(screen.getByLabelText('out of')).toHaveTextContent('1');
   });
 });

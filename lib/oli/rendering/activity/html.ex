@@ -95,31 +95,40 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp render_historical_attempts(activity_id, historical_attempts, section_slug) do
-    case Map.get(historical_attempts, activity_id) do
+    case historical_attempts do
       nil ->
         []
 
-      [] ->
-        []
+      _ ->
+        case Map.get(historical_attempts, activity_id) do
+          nil ->
+            []
 
-      attempts ->
-        {:safe, attempt_selector} =
-          ReactPhoenix.ClientSide.react_component("Components.AttemptSelector", %{
-            activityId: activity_id,
-            attempts:
-              Enum.map(attempts, fn a ->
-                %{
-                  state: a.lifecycle_state,
-                  attemptNumber: a.attempt_number,
-                  attemptGuid: a.attempt_guid,
-                  date:
-                    Timex.format!(a.updated_at, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}")
-                }
-              end),
-            sectionSlug: section_slug
-          })
+          [] ->
+            []
 
-        [attempt_selector]
+          attempts ->
+            {:safe, attempt_selector} =
+              ReactPhoenix.ClientSide.react_component("Components.AttemptSelector", %{
+                activityId: activity_id,
+                attempts:
+                  Enum.map(attempts, fn a ->
+                    %{
+                      state: a.lifecycle_state,
+                      attemptNumber: a.attempt_number,
+                      attemptGuid: a.attempt_guid,
+                      date:
+                        Timex.format!(
+                          a.updated_at,
+                          "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}"
+                        )
+                    }
+                  end),
+                sectionSlug: section_slug
+              })
+
+            [attempt_selector]
+        end
     end
   end
 
@@ -130,7 +139,8 @@ defmodule Oli.Rendering.Activity.Html do
            user: user,
            resource_attempt: resource_attempt,
            group_id: group_id,
-           survey_id: survey_id
+           survey_id: survey_id,
+           learning_language: learning_language
          } = context,
          %ActivitySummary{
            state: state,
@@ -144,9 +154,11 @@ defmodule Oli.Rendering.Activity.Html do
         graded: graded,
         userId: user.id,
         sectionSlug: context.section_slug,
+        projectSlug: context.project_slug,
         surveyId: survey_id,
         groupId: group_id,
         bibParams: bib_params,
+        learningLanguage: learning_language,
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""
@@ -165,6 +177,18 @@ defmodule Oli.Rendering.Activity.Html do
 
     [
       ~s|<#{tag} phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
+    ]
+  end
+
+  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: nil}),
+    do: activity_html
+
+  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: ordinal}) do
+    [
+      "<div class=\"activity-numbering\">",
+      "Question ##{ordinal}",
+      "</div>",
+      activity_html
     ]
   end
 
@@ -194,6 +218,7 @@ defmodule Oli.Rendering.Activity.Html do
          activity
        ) do
     render_activity_html(context, summary, activity)
+    |> possibly_wrap_with_numbering(summary)
     |> possibly_wrap_in_purpose(activity)
   end
 

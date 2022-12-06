@@ -102,8 +102,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       section: section,
       delivery_breadcrumb: true,
       breadcrumbs: set_breadcrumbs(section, module, title, parent_gate, user_type),
-      gating_condition: gating_condition,
-      modal: nil
+      gating_condition: gating_condition
     )
   end
 
@@ -140,12 +139,17 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       on_cancel: "cancel_select_user"
     }
 
+    modal = fn assigns ->
+      ~F"""
+        <OliWeb.Common.EnrollmentBrowser.SelectUserModal.render {...@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{
-         component: OliWeb.Common.EnrollmentBrowser.SelectUserModal,
-         assigns: modal_assigns
-       }
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -158,7 +162,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
           Map.put(socket.assigns.gating_condition, :user_id, id) |> Map.put(:user, user)
       )
 
-    {:noreply, socket |> hide_modal()}
+    {:noreply, socket |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("show-graded-picker", _, socket) do
@@ -207,7 +211,13 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       on_cancel: "cancel_select_resource"
     }
 
-    {:noreply, assign(socket, modal: %{component: SelectResourceModal, assigns: modal_assigns})}
+    modal = fn assigns ->
+      ~F"""
+        <SelectResourceModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("show-all-picker", _, socket) do
@@ -246,7 +256,13 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       on_cancel: "cancel_select_resource"
     }
 
-    {:noreply, assign(socket, modal: %{component: SelectResourceModal, assigns: modal_assigns})}
+    modal = fn assigns ->
+      ~F"""
+        <SelectResourceModal {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("show-resource-picker", _, socket) do
@@ -266,7 +282,13 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       on_cancel: "cancel_select_resource"
     }
 
-    {:noreply, assign(socket, modal: %{component: SelectResourceModal, assigns: modal_assigns})}
+    modal = fn assigns ->
+      ~F"""
+        <SelectResourceModal {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event(
@@ -274,13 +296,19 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         %{"uuid" => uuid},
         socket
       ) do
-    %{modal: %{assigns: %{hierarchy: hierarchy} = assigns} = modal} = socket.assigns
+    %{modal_assigns: %{hierarchy: hierarchy} = modal_assigns} = socket.assigns
 
     active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
+    modal_assigns = %{
+      modal_assigns
+      | active: active
+    }
+
     {:noreply,
-     assign(socket,
-       modal: %{modal | component: SelectResourceModal, assigns: %{assigns | active: active}}
+     assign(
+       socket,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -289,7 +317,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         %{"uuid" => uuid},
         socket
       ) do
-    %{modal: %{assigns: %{selection: selection} = assigns} = modal} = socket.assigns
+    %{modal_assigns: %{selection: selection} = modal_assigns} = socket.assigns
 
     selection =
       if selection != uuid do
@@ -300,11 +328,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     {:noreply,
      assign(socket,
-       modal: %{
-         modal
-         | component: SelectResourceModal,
-           assigns: %{assigns | selection: selection}
-       }
+       modal_assigns: %{modal_assigns | selection: selection}
      )}
   end
 
@@ -323,7 +347,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     %{
       gating_condition: gating_condition,
-      modal: %{assigns: %{hierarchy: hierarchy}}
+      modal_assigns: %{hierarchy: hierarchy}
     } = socket.assigns
 
     %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title}} =
@@ -357,7 +381,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
          |> Map.put(:resource_id, resource_id)
          |> Map.put(:resource_title, title)
      )
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event(
@@ -367,7 +391,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     %{
       gating_condition: gating_condition,
-      modal: %{assigns: %{hierarchy: hierarchy}}
+      modal_assigns: %{hierarchy: hierarchy}
     } = socket.assigns
 
     %HierarchyNode{
@@ -385,7 +409,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
            :error,
            "Only pages can be selected for this type of gating condition"
          )
-         |> hide_modal()}
+         |> hide_modal(modal_assigns: nil)}
 
       _ ->
         data = Map.put(gating_condition.data, :resource_id, resource_id)
@@ -398,7 +422,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
              |> Map.put(:source_title, title)
          )
          |> put_flash(:error, nil)
-         |> hide_modal()}
+         |> hide_modal(modal_assigns: nil)}
     end
   end
 
@@ -554,20 +578,23 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         _ -> "student exception"
       end
 
-    modal = %{
-      component: DeleteModalNoConfirmation,
-      assigns: %{
-        id: "delete_gating_condition",
-        description: description,
-        entity_type: entity_type,
-        entity_id: id,
-        delete_enabled: true,
-        delete: "delete-gating-condition",
-        modal_action: "Delete"
-      }
+    modal_assigns = %{
+      id: "delete_gating_condition",
+      description: description,
+      entity_type: entity_type,
+      entity_id: id,
+      delete_enabled: true,
+      delete: "delete-gating-condition",
+      modal_action: "Delete"
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <DeleteModalNoConfirmation {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("delete-gating-condition", %{"id" => id}, socket) do
@@ -596,7 +623,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
           )
       end
 
-    {:noreply, socket |> hide_modal()}
+    {:noreply, socket |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("toggle_min_score", _, socket) do

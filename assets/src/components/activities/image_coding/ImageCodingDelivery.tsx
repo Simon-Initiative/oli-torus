@@ -86,6 +86,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const isEvaluated = attemptState.score !== null;
 
   const writerContext = defaultWriterContext({
+    graded: props.context.graded,
     sectionSlug: props.context.sectionSlug,
     bibParams: props.context.bibParams,
   });

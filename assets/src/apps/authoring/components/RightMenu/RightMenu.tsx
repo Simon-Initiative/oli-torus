@@ -2,8 +2,8 @@
 import { UiSchema } from '@rjsf/core';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { JSONSchema7 } from 'json-schema';
-import { debounce, isEqual } from 'lodash';
-import React, { useCallback, useEffect, useState } from 'react';
+import { isEqual } from 'lodash';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, ButtonGroup, ButtonToolbar, Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
@@ -26,7 +26,7 @@ import { selectCurrentGroup } from '../../../delivery/store/features/groups/slic
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { updateSequenceItem } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
-import { selectState as selectPageState, updatePage } from '../../store/page/slice';
+import { selectState as selectPageState } from '../../store/page/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
@@ -88,6 +88,12 @@ const RightMenu: React.FC<any> = () => {
   const [questionBankData, setBankData] = useState<any>();
   const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+
+  const selectedPartDef = useMemo(
+    () => findPartByIdInActivity(currentActivity, currentPartSelection),
+    [currentActivity, currentPartSelection],
+  );
+
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -119,16 +125,15 @@ const RightMenu: React.FC<any> = () => {
   };
   const handleCopyComponent = useCallback(() => {
     if (currentActivity && currentPartSelection) {
-      const partDef = currentActivity.content?.partsLayout.find(
-        (part: any) => part.id === currentPartSelection,
-      );
+      const partDef = findPartByIdInActivity(currentActivity, currentPartSelection);
+
       if (!partDef) {
         console.warn(`Part with id ${currentPartSelection} not found on this screen`);
         return;
       }
       dispatch(setCopiedPart({ copiedPart: partDef }));
     }
-  }, [currentActivity, currentPartSelection]);
+  }, [currentActivity, currentPartSelection, dispatch]);
   const bankPropertyChangeHandler = useCallback(
     (properties: object) => {
       if (currentSequence) {
@@ -142,27 +147,9 @@ const RightMenu: React.FC<any> = () => {
           dispatch(updateSequenceItem({ sequence: cloneSequence, group: currentGroup }));
           dispatch(savePage({ undoable: true }));
         }
-        //debounceSaveBankSettings(currentGroup, currentSequence, bankShowCount, bankEndTarget);
       }
     },
-    [currentSequence],
-  );
-
-  const debounceSaveBankSettings = useCallback(
-    debounce(
-      (group, currentSequence, bankShowCount, bankEndTarget) => {
-        if (currentSequence) {
-          const cloneSequence = clone(currentSequence);
-          cloneSequence.custom.bankShowCount = bankShowCount;
-          cloneSequence.custom.bankEndTarget = bankEndTarget;
-          dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
-          dispatch(savePage({ undoable: true }));
-        }
-      },
-      0,
-      { maxWait: 10000, leading: false },
-    ),
-    [],
+    [currentGroup, currentSequence, dispatch],
   );
 
   const screenPropertyChangeHandler = useCallback(
@@ -201,39 +188,11 @@ const RightMenu: React.FC<any> = () => {
           cloneActivity.title = title;
         }
         if (JSON.stringify(cloneActivity) !== JSON.stringify(currentActivity)) {
-          debounceSaveScreenSettings(cloneActivity);
+          dispatch(saveActivity({ activity: cloneActivity, undoable: true }));
         }
       }
     },
     [currentActivity],
-  );
-
-  const debounceSaveScreenSettings = useCallback(
-    debounce(
-      (activity) => {
-        /* console.log('SAVING ACTIVITY:', { activity }); */
-        dispatch(saveActivity({ activity, undoable: true }));
-      },
-      500,
-      { maxWait: 10000, leading: false },
-    ),
-    [],
-  );
-
-  const debounceSavePage = useCallback(
-    debounce(
-      (changes) => {
-        /* console.log('SAVING PAGE', { changes }); */
-        // update server
-        dispatch(savePage({ ...changes, undoable: true }));
-        // update redux
-        // TODO: check if revision slug changes?
-        dispatch(updatePage(changes));
-      },
-      500,
-      { maxWait: 10000, leading: false },
-    ),
-    [],
   );
 
   const lessonPropertyChangeHandler = useCallback(
@@ -250,6 +209,7 @@ const RightMenu: React.FC<any> = () => {
         ...modelChanges,
         custom: { ...currentLesson.custom, ...modelChanges.custom },
       };
+
       //need to remove the allowNavigation property
       //making sure the enableHistory is present before removing that.
       if (
@@ -258,51 +218,24 @@ const RightMenu: React.FC<any> = () => {
       ) {
         delete lessonChanges.custom.allowNavigation;
       }
-      /* console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties }); */
+      // console.log('LESSON PROP CHANGED', {
+      //   modelChanges,
+      //   lessonChanges,
+      //   properties,
+      //   currentLesson,
+      // });
 
       // need to put a healthy debounce in here, this fires every keystroke
       // save the page
       if (JSON.stringify(lessonChanges) !== JSON.stringify(currentLesson)) {
-        debounceSavePage(lessonChanges);
+        dispatch(savePage({ ...lessonChanges, undoable: true }));
       }
     },
-    [currentLesson],
-  );
-
-  const debouncePartPropertyChanges = useCallback(
-    debounce(
-      (properties, partInstance, origActivity, origId) => {
-        let modelChanges = properties;
-
-        // do not allow saving of bad ID
-        if (!modelChanges.id || !modelChanges.id.trim()) {
-          modelChanges.id = origId;
-        }
-
-        modelChanges = transformPartSchemaToModel(modelChanges);
-        if (partInstance && partInstance.transformSchemaToModel) {
-          modelChanges.custom = {
-            ...modelChanges.custom,
-            ...partInstance.transformSchemaToModel(modelChanges.custom),
-          };
-        }
-
-        /* console.log('COMPONENT PROP CHANGED', { properties, modelChanges }); */
-        dispatch(
-          updatePart({ activityId: origActivity.id, partId: origId, changes: modelChanges }),
-        );
-
-        // in case the id changes, update the selection
-        dispatch(setCurrentSelection({ selection: modelChanges.id }));
-      },
-      500,
-      { maxWait: 10000, leading: false },
-    ),
-    [],
+    [currentLesson, dispatch],
   );
 
   const [currentComponentData, setCurrentComponentData] = useState<any>();
-  const [currentPartInstance, setCurrentPartInstance] = useState(null);
+  const [currentPartInstance, setCurrentPartInstance] = useState<any>(null);
   const [existingIds, setExistingIds] = useState<string[]>([]);
   useEffect(() => {
     if (!currentPartSelection || !currentActivityTree) {
@@ -376,15 +309,35 @@ const RightMenu: React.FC<any> = () => {
   }, [currentPartSelection, currentActivityTree]);
 
   const componentPropertyChangeHandler = useCallback(
-    (properties: object) => {
-      debouncePartPropertyChanges(
-        properties,
-        currentPartInstance,
-        currentActivity,
-        currentPartSelection,
+    (properties: any) => {
+      let modelChanges = properties;
+
+      // do not allow saving of bad ID
+      if (!modelChanges.id || !modelChanges.id.trim()) {
+        modelChanges.id = currentPartSelection;
+      }
+
+      modelChanges = transformPartSchemaToModel(modelChanges);
+      if (currentPartInstance && currentPartInstance.transformSchemaToModel) {
+        modelChanges.custom = {
+          ...modelChanges.custom,
+          ...currentPartInstance.transformSchemaToModel(modelChanges.custom),
+        };
+      }
+
+      /* console.log('COMPONENT PROP CHANGED', { properties, modelChanges }); */
+      dispatch(
+        updatePart({
+          activityId: currentActivity.id,
+          partId: currentPartSelection,
+          changes: modelChanges,
+        }),
       );
+
+      // in case the id changes, update the selection
+      dispatch(setCurrentSelection({ selection: modelChanges.id }));
     },
-    [currentActivity, currentPartInstance, currentPartSelection],
+    [currentActivity, currentPartInstance, currentPartSelection, dispatch],
   );
 
   const handleEditComponentJson = (newJson: any) => {
@@ -492,11 +445,13 @@ const RightMenu: React.FC<any> = () => {
                 <Button>
                   <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
                 </Button>
-                <CompJsonEditor
-                  onChange={handleEditComponentJson}
-                  jsonValue={currentComponentData}
-                  existingPartIds={existingIds}
-                />
+                {selectedPartDef && (
+                  <CompJsonEditor
+                    onChange={handleEditComponentJson}
+                    jsonValue={selectedPartDef}
+                    existingPartIds={existingIds}
+                  />
+                )}
                 <Button variant="danger" onClick={() => setShowConfirmDelete(true)}>
                   <i className="fas fa-trash mr-2" />
                 </Button>
@@ -524,4 +479,10 @@ const RightMenu: React.FC<any> = () => {
     </Tabs>
   );
 };
+
+const findPartByIdInActivity = (currentActivity: any, targetPartId: string) => {
+  if (!currentActivity || !targetPartId) return null;
+  return currentActivity.content?.partsLayout.find((part: any) => part.id === targetPartId);
+};
+
 export default RightMenu;

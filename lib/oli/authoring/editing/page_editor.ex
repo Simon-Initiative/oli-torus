@@ -9,7 +9,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   require Logger
 
   alias Oli.Authoring.{Locks, Course}
-  alias Oli.Resources.Revision
+  alias Oli.Resources.{Collaboration, Revision}
   alias Oli.Resources
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
@@ -25,7 +25,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
-  alias Oli.Utils.SchemaResolver
   alias Oli.Features
 
   @doc """
@@ -63,8 +62,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-           {:ok, converted_update} <- convert_to_activity_ids(update),
-           :ok <- validate_page_content_json(converted_update) do
+           {:ok, converted_update} <- convert_to_activity_ids(update) do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired or updated the lock, we can proceed
@@ -111,35 +109,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     previous
   end
-
-  defp validate_page_content_json(page) do
-    case page_content(page) do
-      nil ->
-        :ok
-
-      json ->
-        schema = SchemaResolver.resolve("page-content.schema.json")
-
-        case ExJsonSchema.Validator.validate(schema, json) do
-          :ok ->
-            :ok
-
-          {:error, errors} ->
-            error_details = [
-              schema: "page-content.schema.json",
-              page: page,
-              errors: errors
-            ]
-
-            Logger.error("Page content JSON invalid #{Kernel.inspect(error_details)}")
-            {:error, errors}
-        end
-    end
-  end
-
-  defp page_content(%{"content" => content}), do: content
-  defp page_content(%{content: content}), do: content
-  defp page_content(_), do: nil
 
   @doc """
   Attempts to lock a resource for editing.
@@ -234,7 +203,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
            construct_parent_references(objectives) |> trap_nil(),
-         {:ok, tags} <- Oli.Authoring.Editing.TagEditor.list(project_slug, author),
+         {:ok, tags} <-
+           Oli.Authoring.Editing.ResourceEditor.list(
+             project_slug,
+             author,
+             Oli.Resources.ResourceType.get_id_by_type("tag")
+           ),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
@@ -244,6 +218,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
         |> Oli.Delivery.PreviousNextIndex.retrieve(revision.resource_id)
 
       activity_ids = activities_from_content(revision.content)
+
+      {:ok, collab_space_config} =
+        Collaboration.get_collab_space_config_for_page_in_project(revision_slug, project_slug)
 
       {:ok,
        %Oli.Authoring.Editing.ResourceContext{
@@ -267,7 +244,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
            end),
          project: publication.project,
          previous_page: previous,
-         next_page: next
+         next_page: next,
+         collab_space_config: collab_space_config,
+         appsignalKey: Application.get_env(:appsignal, :client_key)
        }}
     else
       _ -> {:error, :not_found}
@@ -286,15 +265,23 @@ defmodule Oli.Authoring.Editing.PageEditor do
         :delivery
       end
 
+    graded = Keyword.get(options, :graded, false)
+
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
-         {:ok, activities} <- create_activity_summary_map(publication.id, content),
+         {:ok, attributes} <- Course.get_project_attributes(project_slug) |> trap_nil(),
+         {:ok, activities} <- create_activity_summary_map(publication.id, content, graded),
          render_context <- %Rendering.Context{
            user: author,
            mode: mode,
            activity_map: activities,
+           resource_summary_fn: &Resources.resource_summary(&1, project_slug, AuthoringResolver),
+           alternatives_groups_fn: &Resources.alternatives_groups(&1, AuthoringResolver),
+           alternatives_selector_fn: &Resources.Alternatives.select/2,
+           extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
            project_slug: project_slug,
-           bib_app_params: Keyword.get(options, :bib_app_params, [])
+           bib_app_params: Keyword.get(options, :bib_app_params, []),
+           learning_language: attributes.learning_language
          } do
       Rendering.Page.render(render_context, content, Rendering.Page.Html)
     else
@@ -302,13 +289,24 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  defp create_activity_summary_map(publication_id, content) do
+  defp create_activity_summary_map(publication_id, content, graded) do
     # Now see if we even have any activities that need to be mapped
     found_activities =
       Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
         type == "activity-reference"
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
+
+    # Assign ordinals into a map, keyed on resource (activity) id
+    ordinal_map =
+      Enum.with_index(found_activities, 1)
+      |> Enum.reduce(%{}, fn {id, ordinal}, map ->
+        if graded do
+          Map.put(map, id, ordinal)
+        else
+          Map.put(map, id, nil)
+        end
+      end)
 
     # Get a mapping of the activities to their parent groups. We need to set this
     # correctly so that client-side pagination automation works
@@ -326,8 +324,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
        |> Enum.map(fn %Revision{
                         resource_id: resource_id,
                         activity_type_id: activity_type_id,
-                        content: content,
-                        graded: graded
+                        content: content
                       } = revision ->
          # To support 'test mode' in the editor, we give the editor an initial transformed
          # version of the model that it can immediately use for display purposes. If it fails
@@ -365,7 +362,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            authoring_element: type.authoring_element,
            script: type.delivery_script,
            graded: graded,
-           bib_refs: Map.get(content, "bibrefs", [])
+           bib_refs: Map.get(content, "bibrefs", []),
+           ordinal: Map.get(ordinal_map, resource_id)
          }
        end)
        |> Enum.reduce(%{}, fn summary, acc -> Map.put(acc, summary.id, summary) end)}
@@ -557,24 +555,45 @@ defmodule Oli.Authoring.Editing.PageEditor do
   #   parentId: the id of the parent objective, nil if no parent objective
   # }
   #
+  # Take into account that more than one entry with the same id could be present, as the sub
+  # objectives can have more than one parent.
+  #
   def construct_parent_references(revisions) do
     # create a map of ids to their parent ids
     parents =
       Enum.reduce(revisions, %{}, fn r, m ->
         Enum.reduce(r.children, m, fn c, n ->
-          Map.put(n, c, r.resource_id)
+          case Map.get(n, c) do
+            nil -> Map.put(n, c, [r.resource_id])
+            value -> Map.put(n, c, [r.resource_id | value])
+          end
         end)
       end)
 
     # now just transform the revision list to pair it down to including
     # id, title, and the new parent_id
-    Enum.map(revisions, fn r ->
-      %{
-        id: r.resource_id,
-        title: r.title,
-        parentId: Map.get(parents, r.resource_id)
-      }
+    Enum.reduce(revisions, [], fn revision, result ->
+      case Map.get(parents, revision.resource_id) do
+        nil ->
+          concatenate_to_revision_parent_result(revision, nil, result)
+
+        parents ->
+          Enum.reduce(parents, result, fn parent_id, result ->
+            concatenate_to_revision_parent_result(revision, parent_id, result)
+          end)
+      end
     end)
+  end
+
+  defp concatenate_to_revision_parent_result(revision, parent_id, result) do
+    [
+      %{
+        id: revision.resource_id,
+        title: revision.title,
+        parentId: parent_id
+      }
+      | result
+    ]
   end
 
   # Retrieve the latest (current) revision for a resource given the

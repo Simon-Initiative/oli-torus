@@ -3,7 +3,6 @@ import {
   additionalFormattingOptions,
   boldDesc,
   italicDesc,
-  underLineDesc,
   inlineCodeDesc,
 } from 'components/editing/elements/marks/toggleMarkActions';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
@@ -16,6 +15,8 @@ import { popupCmdDesc as insertPopup } from 'components/editing/elements/popup/P
 import { insertImageInline } from 'components/editing/elements/image/imageActions';
 import { insertInlineFormula } from '../../elements/formula/formulaActions';
 import { insertInlineCallout } from '../../elements/callout/calloutActions';
+import { insertForeign } from '../../elements/foreign/foreignActions';
+import { insertCommandButton } from '../../elements/command_button/commandButtonActions';
 
 interface Props {}
 export const Inlines = (_props: Props) => {
@@ -24,10 +25,12 @@ export const Inlines = (_props: Props) => {
   ));
 
   const inlineInsertions = [
+    insertForeign,
     insertPopup,
     insertImageInline,
     insertInlineFormula,
     insertInlineCallout,
+    insertCommandButton,
   ];
   const moreInlineOptions = additionalFormattingOptions.concat(inlineInsertions);
 

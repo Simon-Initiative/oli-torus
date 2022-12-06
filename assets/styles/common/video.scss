@@ -4,6 +4,22 @@ $video-controls-bg: $workspace-sidebar-bg;
 $video-controls-color: $workspace-sidebar-link-color;
 
 .video-player {
+  div.video-react-menu,
+  ul.video-react-menu-content {
+    min-width: 5em;
+    bottom: 6px !important;
+    background-color: $video-controls-bg;
+    color: $video-controls-color;
+    li {
+      font-family: $font-family-sans-serif;
+      text-align: right;
+      margin-bottom: 0px;
+      padding-right: 1em;
+      line-height: 1em;
+      background-color: $video-controls-bg;
+      color: $video-controls-color;
+    }
+  }
   .control-bar {
     font-family: $font-family-sans-serif;
     background-color: $video-controls-bg;
@@ -21,6 +37,32 @@ $video-controls-color: $workspace-sidebar-link-color;
     .play-icon {
       font-size: 128px;
       color: #fff;
+    }
+  }
+
+  .video-captions-button {
+    position: 'relative';
+    text-shadow: none !important;
+  }
+
+  .captions-menu {
+    position: absolute;
+
+    right: 0px;
+    padding: 0.25em;
+    margin: 0;
+    min-width: 10em;
+    background-color: $video-controls-bg;
+    color: $video-controls-color;
+    list-style: none;
+    bottom: 30px;
+    text-shadow: none !important;
+    li.captions-menu-item {
+      margin: 0;
+      padding: 0.5em;
+    }
+    li:hover {
+      background-color: darken($video-controls-bg, 10%);
     }
   }
 }

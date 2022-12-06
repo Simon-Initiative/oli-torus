@@ -61,7 +61,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     const fileList: File[] = [];
     for (let i = 0; i < files.length; i = i + 1) {
       const file = files[i];
-      fileList.push(renameFile(file, 'webcontent/' + model.resourceBase + '/' + file.name));
+      fileList.push(file);
     }
 
     uploadFiles(projectSlug, fileList)
@@ -74,13 +74,6 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         const id = 'upload_error';
         display(errorModal(reason.message, id), id);
       });
-  };
-
-  const renameFile = (originalFile: any, newName: string) => {
-    return new File([originalFile], newName, {
-      type: originalFile.type,
-      lastModified: originalFile.lastModified,
-    });
   };
 
   const onUploadClick = (id: string) => {

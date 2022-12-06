@@ -5,6 +5,7 @@ defmodule OliWeb.Api.ResourceController do
   alias Oli.Authoring.Course
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Resources
 
   def index(conn, %{"project" => project_slug}) do
     case Course.get_project_by_slug(project_slug) do
@@ -12,24 +13,12 @@ defmodule OliWeb.Api.ResourceController do
         error(conn, 404, "not found")
 
       project ->
-        # we allow a client to supply a current link slug that we will attempt to
-        # match up to the project's current list of page slugs.
-        {linked_resource_id, slug} =
-          case Map.get(conn.query_params, "current", nil) do
-            nil -> {nil, nil}
-            slug -> {AuthoringResolver.from_revision_slug(project_slug, slug), slug}
-          end
-
         pages =
           AuthoringResolver.all_pages(project.slug)
           |> Enum.map(fn r ->
             %{
-              id:
-                if r.resource_id == linked_resource_id do
-                  slug
-                else
-                  r.slug
-                end,
+              id: r.resource_id,
+              slug: r.slug,
               title: r.title
             }
           end)
@@ -74,6 +63,19 @@ defmodule OliWeb.Api.ResourceController do
 
         conn
         |> send_resp(500, msg)
+    end
+  end
+
+  def alternatives(conn, %{"project" => project_slug}) do
+    case Resources.alternatives_groups(
+           project_slug,
+           Oli.Publishing.AuthoringResolver
+         ) do
+      {:ok, alternatives} ->
+        json(conn, %{"type" => "success", "alternatives" => alternatives})
+
+      _ ->
+        error(conn, 404, "failed to resolve alternatives groups")
     end
   end
 

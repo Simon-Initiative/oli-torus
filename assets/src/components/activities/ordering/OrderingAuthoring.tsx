@@ -29,7 +29,8 @@ import { Explanation } from '../common/explanation/ExplanationAuthoring';
 const store = configureStore();
 
 export const Ordering: React.FC = () => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<OrderingSchema>();
+  const { dispatch, model, editMode, projectSlug } = useAuthoringElementContext<OrderingSchema>();
+  const writerContext = defaultWriterContext({ projectSlug: projectSlug });
 
   const choices = model.choices.reduce((m: any, c) => {
     m[c.id] = c;
@@ -51,9 +52,10 @@ export const Ordering: React.FC = () => {
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Answer Key">
-        <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+        <StemDelivery stem={model.stem} context={writerContext} />
 
         <ResponseChoices
+          writerContext={writerContext}
           choices={getCorrectChoiceIds(model).map((id) => choices[id])}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
         />

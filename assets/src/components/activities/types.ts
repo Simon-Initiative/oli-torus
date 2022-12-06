@@ -200,6 +200,7 @@ export type Manifest = {
 export interface ActivityModelSchema {
   resourceId?: number;
   authoring?: any;
+  learningLanguage?: string;
   content?: any;
   activityType?: any;
   id?: string; // maybe slug
@@ -397,6 +398,7 @@ export const makeFeedback: (text: string) => Feedback = makeContent;
 export interface Transformation extends Identifiable {
   path: string;
   operation: Transform;
+  firstAttemptOnly: boolean;
 }
 /**
  * Marker interface for an entity that has transformations.
@@ -406,16 +408,26 @@ export interface HasTransformations {
     transformations: Transformation[];
   };
 }
+
+export interface HasPerPartSubmissionOption {
+  submitPerPart: boolean;
+}
+
 /**
  * Helper function to create a transformation.
  * @param path  JSON path of the node within the model to transform
  * @param operation The transformation operation
  * @returns
  */
-export const makeTransformation = (path: string, operation: Transform): Transformation => ({
+export const makeTransformation = (
+  path: string,
+  operation: Transform,
+  firstAttemptOnly: boolean,
+): Transformation => ({
   id: guid(),
   path,
   operation,
+  firstAttemptOnly,
 });
 
 /**

@@ -49,7 +49,10 @@ defmodule OliWeb.Common.Breadcrumb do
   end
 
   @doc """
-  Makes a breadcrumb trail (`%Breadcrumb{}[]`) from the curriculum through all the containers leading to the revision passed as an argument. A Breadcrumb is also created for the `revision_slug` at the end of the list.
+  Makes a breadcrumb trail (`%Breadcrumb{}[]`) from the curriculum through all the containers leading to the revision passed as an argument.
+  A Breadcrumb is also created for the `revision_slug` at the end of the list.
+
+  If a page does not exist in the hierarchy then the "All Pages" link is rendered as the root instead of the "Curriculum"
 
   ## Parameters
 
@@ -62,34 +65,36 @@ defmodule OliWeb.Common.Breadcrumb do
      [%Breadcrumb{ curriculum }, %Breadcrumb{ container_1 }, ..., %Breadcrumb{ revision_slug }]
 
   """
-  def trail_to(project_or_section_slug, revision_slug, resolver) do
-    [
-      curriculum(project_or_section_slug)
-      | trail_to_helper(project_or_section_slug, revision_slug, resolver)
-    ]
-  end
-
-  defp trail_to_helper(project_or_section_slug, revision_slug, resolver) do
-    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug) do
-      case Numbering.path_from_root_to(
+  def trail_to(project_or_section_slug, revision_slug, resolver, custom_labels) do
+    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug, custom_labels),
+         numbering <-
+           Numbering.path_from_root_to(
              resolver,
              project_or_section_slug,
              revision_slug
            ) do
+      case numbering do
         {:ok, [_root | path]} ->
-          Enum.map(path, fn revision ->
-            make_breadcrumb(project_or_section_slug, revision, numberings)
-          end)
+          trail =
+            Enum.map(path, fn revision ->
+              make_breadcrumb(project_or_section_slug, revision, numberings)
+            end)
+
+          [
+            curriculum(project_or_section_slug)
+            | trail
+          ]
 
         {:error, :target_resource_not_found} ->
           revision = resolver.from_revision_slug(project_or_section_slug, revision_slug)
 
-          [
-            new(%{
-              full_title: revision.title,
-              link: nil
-            })
-          ]
+          all_pages(project_or_section_slug) ++
+            [
+              new(%{
+                full_title: revision.title,
+                link: nil
+              })
+            ]
       end
     end
   end
@@ -145,6 +150,27 @@ defmodule OliWeb.Common.Breadcrumb do
   end
 
   @doc """
+  Makes a %Breadcrumb{} to the all pages route.
+  """
+  def all_pages(project_slug) do
+    [
+      new(%{
+        full_title: "Project Overview",
+        link: Routes.project_path(OliWeb.Endpoint, :overview, project_slug)
+      }),
+      new(%{
+        full_title: "All Pages",
+        link:
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Resources.PagesView,
+            project_slug
+          )
+      })
+    ]
+  end
+
+  @doc """
   Generates a breadcrumb trail to the given node using a hierarchy
   """
   def breadcrumb_trail_to(%HierarchyNode{uuid: uuid} = hierarchy, active) do
@@ -174,9 +200,9 @@ defmodule OliWeb.Common.Breadcrumb do
       "container" ->
         Breadcrumb.new(%{
           full_title:
-            Numbering.prefix(%{level: numbering.level, index: numbering.index}) <>
+            Numbering.prefix(numbering) <>
               ": " <> rev.title,
-          short_title: Numbering.prefix(%{level: numbering.level, index: numbering.index}),
+          short_title: Numbering.prefix(numbering),
           slug: uuid
         })
 

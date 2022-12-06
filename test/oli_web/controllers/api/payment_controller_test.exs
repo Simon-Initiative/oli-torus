@@ -5,6 +5,14 @@ defmodule OliWeb.PaymentControllerTest do
 
   alias Oli.Seeder
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Delivery.Paywall.Payment
+
+  defp generate_payment_code(product, code) do
+    :payment
+    |> insert(section: product, code: code)
+    |> Map.get(:code)
+    |> Payment.to_human_readable()
+  end
 
   describe "payment controller tests" do
     setup [:setup_session]
@@ -147,6 +155,65 @@ defmodule OliWeb.PaymentControllerTest do
       assert html_response(conn, 200) =~ "<input type=\"text\" disabled value=\"$100.00\"/>"
 
       reset_test_payment_config()
+    end
+
+    test "download .txt file with the last payment codes created", %{conn: conn} do
+      product =
+        insert(:section, %{
+          type: :blueprint
+        })
+
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      code1 = generate_payment_code(product, 123_456_789)
+
+      code2 = generate_payment_code(product, 987_654_321)
+
+      code3 = generate_payment_code(product, 111_111_111)
+
+      # Simulate response with 2 payment codes
+      conn_with_codes =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
+        )
+
+      assert response(conn_with_codes, 200) =~ "#{code3}\n#{code2}"
+
+      # Simulate response with 0 payment codes
+      conn_without_codes =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 0)
+        )
+
+      assert response(conn_without_codes, 200) =~ ""
+
+      # Simulate response without sending the amount of payment codes
+      conn_without_count =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug)
+        )
+
+      assert response(conn_without_count, 200) =~ "#{code3}\n#{code2}\n#{code1}"
+    end
+
+    test "download .txt file of a product that has no payment codes generated", %{conn: conn} do
+      product =
+        insert(:section, %{
+          type: :blueprint
+        })
+
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
+        )
+
+      assert response(conn, 200) =~ ""
     end
   end
 

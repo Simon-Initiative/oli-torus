@@ -18,7 +18,7 @@ export const defaultCATAModel = (): CATA => {
   const correctResponse = makeResponse(
     matchListRule([correctChoice.id, incorrectChoice.id], [correctChoice.id]),
     1,
-    '',
+    'Correct',
   );
 
   return {
@@ -35,7 +35,7 @@ export const defaultCATAModel = (): CATA => {
       ],
       correct: [[correctChoice.id], correctResponse.id],
       targeted: [],
-      transformations: [makeTransformation('choices', Transform.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: '',
     },
   };

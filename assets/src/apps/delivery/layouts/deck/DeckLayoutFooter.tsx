@@ -181,6 +181,21 @@ const NextButton: React.FC<NextButton> = ({
   );
 };
 
+export const processResults = (events: any) => {
+  const actionsByType: any = {
+    feedback: [],
+    mutateState: [],
+    navigation: [],
+  };
+  events.forEach((evt: any) => {
+    const { actions } = evt.params;
+    actions.forEach((action: any) => {
+      actionsByType[action.type].push(action);
+    });
+  });
+  return actionsByType;
+};
+
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
 
@@ -214,21 +229,6 @@ const DeckLayoutFooter: React.FC = () => {
     }
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
-
-  const processResults = (events: any) => {
-    const actionsByType: any = {
-      feedback: [],
-      mutateState: [],
-      navigation: [],
-    };
-    events.forEach((evt: any) => {
-      const { actions } = evt.params;
-      actions.forEach((action: any) => {
-        actionsByType[action.type].push(action);
-      });
-    });
-    return actionsByType;
-  };
 
   const checkIfFirstEventHasNavigation = (event: any) => {
     let isDifferentNavigationExist = false;

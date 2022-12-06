@@ -1,7 +1,7 @@
 @import 'delivery/variables';
 
 h1.title {
-  font-weight: 300;
+  font-weight: 600;
   color: $title-color;
   padding-bottom: 0.5em;
   border-bottom: 1px solid $gray-400;
@@ -43,6 +43,21 @@ h1.title {
   width: 100%;
   flex: 1;
   margin-top: 20px;
+}
+
+.activity-numbering {
+  float: right;
+  font-weight: 500;
+}
+
+.page-numbering {
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  font-size: 28px;
+  text-align: center;
+  padding: 5px 0px;
+  width: 65px;
+  color: #2c2627;
 }
 
 .content {

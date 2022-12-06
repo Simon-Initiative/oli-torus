@@ -15,14 +15,17 @@ import { useCallback, useRef } from 'react';
 export const useAudio = (src?: string) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const playAudio = useCallback(() => {
+
+  const playAudio = useCallback((event?: any) => {
+    event?.preventDefault && event?.preventDefault(); // Fixes https://eliterate.atlassian.net/browse/MER-1503
+
     const audio = audioRef.current;
     if (audio) {
       if (audio.paused) {
         audio.currentTime = 0;
-        setIsPlaying(true);
-        audio.currentTime = 0;
-        audio.play();
+        audio.play().then(() => setIsPlaying(true));
+        audio.onabort = () => setIsPlaying(false);
+        audio.onerror = () => setIsPlaying(false);
         audio.onended = () => setIsPlaying(false);
       } else {
         setIsPlaying(false);

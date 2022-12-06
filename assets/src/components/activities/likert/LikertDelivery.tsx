@@ -85,7 +85,10 @@ const LikertComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
+        <HintsDeliveryConnected
+          partId={castPartId(activityState.parts[0].partId)}
+          resetPartInputs={emptySelectionMap}
+        />
         <EvaluationConnected />
       </div>
     </div>

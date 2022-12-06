@@ -14,6 +14,8 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
+  alias Oli.Branding.CustomLabels
+  alias Oli.Repo
 
   @doc """
   This method should be called after any hierarchy-changing operation
@@ -104,11 +106,17 @@ defmodule Oli.Delivery.Hierarchy do
     %PublishedResource{publication: pub} =
       published_resources_by_resource_id[revision.resource_id]
 
+    pub = Repo.preload(pub, :project)
+    labels = case pub.project.customizations do
+      nil -> Map.from_struct(CustomLabels.default())
+      l -> Map.from_struct(l)
+    end
     %HierarchyNode{
       uuid: uuid(),
       numbering: %Numbering{
         index: index,
-        level: level
+        level: level,
+        labels: labels
       },
       revision: revision,
       resource_id: revision.resource_id,
@@ -177,6 +185,48 @@ defmodule Oli.Delivery.Hierarchy do
     else
       Enum.reduce(children, nil, fn child, acc ->
         if acc == nil, do: find_in_hierarchy(child, find_by), else: acc
+      end)
+    end
+  end
+
+  @doc """
+  Finds the parent node of the matching node in the hierarchy with the given uuid
+  or function `fn node -> true`.
+
+  Returns the first parent that contains the matching node.
+  """
+  def find_parent_in_hierarchy(
+        node,
+        uuid_or_find_by_fn,
+        parent \\ nil
+      )
+
+  def find_parent_in_hierarchy(
+        %HierarchyNode{uuid: uuid, children: children} = node,
+        uuid_to_find,
+        parent
+      )
+      when is_binary(uuid_to_find) do
+    if uuid == uuid_to_find do
+      parent
+    else
+      Enum.reduce(children, nil, fn child, acc ->
+        if acc == nil, do: find_parent_in_hierarchy(child, uuid_to_find, node), else: acc
+      end)
+    end
+  end
+
+  def find_parent_in_hierarchy(
+        %HierarchyNode{children: children} = node,
+        find_by,
+        parent
+      )
+      when is_function(find_by) do
+    if find_by.(node) do
+      parent
+    else
+      Enum.reduce(children, nil, fn child, acc ->
+        if acc == nil, do: find_parent_in_hierarchy(child, find_by, node), else: acc
       end)
     end
   end

@@ -2,14 +2,18 @@ defmodule OliWeb.Grades.GradeSync do
   use OliWeb, :live_component
 
   def render(assigns) do
-    disabled =
-      if length(assigns.task_queue) > 0 or assigns.selected_page == nil do
-        "disabled"
-      else
-        ""
-      end
+    assigns =
+      assign(
+        assigns,
+        :disabled,
+        if length(assigns.task_queue) > 0 or assigns.selected_page == nil do
+          [disabled: true]
+        else
+          []
+        end
+      )
 
-    ~L"""
+    ~H"""
 
     <div class="card">
       <div class="card-body">
@@ -29,7 +33,7 @@ defmodule OliWeb.Grades.GradeSync do
 
         <select class="custom-select custom-select-lg mb-3">
           <%= for page <- @graded_pages do %>
-            <option value="<%= page.resource_id %>" phx-click="select_page" phx-value-page="<%= page.resource_id %>"><%= page.title %></option>
+            <option value={page.resource_id} phx-click="select_page" phx-value-page={page.resource_id}><%= page.title %></option>
           <% end %>
         </select>
 
@@ -45,7 +49,7 @@ defmodule OliWeb.Grades.GradeSync do
 
       <div class="card-footer">
 
-        <a class="btn btn-primary" phx-click="send_grades" <%= disabled %>><%= dgettext("grades", "Synchronize Grades") %></a>
+        <a class="btn btn-primary" phx-click="send_grades" {@disabled} ><%= dgettext("grades", "Synchronize Grades") %></a>
 
       </div>
     </div>

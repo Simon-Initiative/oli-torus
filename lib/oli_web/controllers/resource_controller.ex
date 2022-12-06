@@ -50,12 +50,18 @@ defmodule OliWeb.ResourceController do
           images: Routes.static_path(conn, "/images")
         },
         activityTypes: activity_types,
-        partComponentTypes: PartComponents.part_components_for_project(project)
+        partComponentTypes: PartComponents.part_components_for_project(project),
+        appsignalKey: Application.get_env(:appsignal, :client_key)
       },
       active: :curriculum,
       activity_types: activity_types,
       breadcrumbs:
-        Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
+        Breadcrumb.trail_to(
+          project_slug,
+          revision_slug,
+          Oli.Publishing.AuthoringResolver,
+          project.customizations
+        ),
       graded: context.graded,
       part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
       raw_context: context,
@@ -69,7 +75,12 @@ defmodule OliWeb.ResourceController do
     render(conn, "edit.html",
       active: :curriculum,
       breadcrumbs:
-        Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
+        Breadcrumb.trail_to(
+          project_slug,
+          revision_slug,
+          Oli.Publishing.AuthoringResolver,
+          project.customizations
+        ),
       is_admin?: is_admin?,
       raw_context: context,
       scripts: Activities.get_activity_scripts(:authoring_script),
@@ -79,7 +90,8 @@ defmodule OliWeb.ResourceController do
       activity_types: Activities.activities_for_project(project),
       part_component_types: PartComponents.part_components_for_project(project),
       graded: context.graded,
-      title: "Edit | " <> context.title
+      title: "Edit | " <> context.title,
+      collab_space_config: context.collab_space_config
     )
   end
 
@@ -144,7 +156,12 @@ defmodule OliWeb.ResourceController do
           {:ok, context} ->
             render(conn, "page_preview.html",
               breadcrumbs:
-                Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
+                Breadcrumb.trail_to(
+                  project_slug,
+                  revision_slug,
+                  Oli.Publishing.AuthoringResolver,
+                  project.customizations
+                ),
               objectives:
                 Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
                   revision,
@@ -155,6 +172,7 @@ defmodule OliWeb.ResourceController do
               content_html:
                 PageEditor.render_page_html(project_slug, transformed_content, author,
                   preview: true,
+                  graded: revision.graded,
                   bib_app_params: bib_references
                 ),
               context: context,

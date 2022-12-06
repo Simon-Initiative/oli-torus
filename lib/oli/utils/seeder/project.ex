@@ -107,7 +107,6 @@ defmodule Oli.Utils.Seeder.Project do
       |> Seeder.Project.create_page(
         author,
         ref(project_tag),
-        ref(publication_tag),
         ref(unit1_tag),
         %{
           title: "Unscored page one",
@@ -126,7 +125,6 @@ defmodule Oli.Utils.Seeder.Project do
       |> Seeder.Project.create_page(
         author,
         ref(project_tag),
-        ref(publication_tag),
         ref(unit1_tag),
         %{
           title: "Scored page two",
@@ -160,11 +158,14 @@ defmodule Oli.Utils.Seeder.Project do
 
     publication =
       case publication do
-        %Publication{published: nil} = p ->
-          Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
+        %Publication{published: nil} ->
+          project = Oli.Authoring.Course.get_project!(publication.project_id)
+          {:ok, published} = Oli.Publishing.publish_project(project, "ensure published")
 
-        p ->
-          p
+          published
+
+        already_published ->
+          already_published
       end
 
     seeds
@@ -261,14 +262,14 @@ defmodule Oli.Utils.Seeder.Project do
         seeds,
         author,
         project,
-        publication,
         attach_to_container_revision,
         attrs \\ %{},
         tags \\ []
       ) do
-    [author, project, publication, attach_to_container_revision] =
-      unpack(seeds, [author, project, publication, attach_to_container_revision])
+    [author, project, attach_to_container_revision] =
+      unpack(seeds, [author, project, attach_to_container_revision])
 
+    publication = Publishing.project_working_publication(project.slug)
     published_resource_tag = tags[:published_resource_tag] || random_tag()
 
     resource_tag = tags[:resource_tag]

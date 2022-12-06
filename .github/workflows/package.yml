@@ -23,10 +23,10 @@ jobs:
       - name: 🧾 Build info
         id: info
         run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::$(echo tokamak.oli.cmu.edu)"
-          echo "::set-output name=workspace::$GITHUB_WORKSPACE"
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+          echo "deploy_host=$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
+          echo "workspace=$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
 
       - name: 📦 Package
         uses: ./.github/actions/torus-builder
@@ -72,7 +72,7 @@ jobs:
       - name: 🧪 Setup Elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.13.2 # Define the elixir version [required]
+          elixir-version: 1.14.0 # Define the elixir version [required]
           otp-version: 24.0 # Define the OTP version [required]
 
       - name: ⬇️ Install Elixir Dependencies
@@ -97,14 +97,22 @@ jobs:
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: doc # The folder the action should deploy.
 
+  check-auto-deploy:
+    name: Check AUTO_DEPLOY_ENABLED config
+    runs-on: ubuntu-latest
+    environment: tokamak.oli.cmu.edu
+    outputs:
+      enabled: ${{ steps.check_auto_deploy_enabled.outputs.enabled }}
+    steps:
+      - name: Check whether AUTO_DEPLOY_ENABLED is set to TRUE
+        id: check_auto_deploy_enabled
+        run: echo "enabled=$(if [ "${{ secrets.AUTO_DEPLOY_ENABLED }}" == "TRUE" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
+
   deployment:
     runs-on: ubuntu-latest
-    needs: package
-    if: github.ref == 'refs/heads/master'
-
-    environment:
-      name: ${{ needs.package.outputs.deploy_host }}
-      url: ${{ needs.package.outputs.deploy_host }}
+    environment: tokamak.oli.cmu.edu
+    needs: [package, check-auto-deploy]
+    if: github.ref == 'refs/heads/master' && needs.check-auto-deploy.outputs.enabled == 'true'
 
     steps:
       - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.package.outputs.deploy_host }}"
