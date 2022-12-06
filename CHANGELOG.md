@@ -35,6 +35,7 @@
 - Upgrade to Phoenix LiveView 0.18
 - Optimize webpack to improve development compile times
 - Add client side reporting to appsignal for core and adaptive authoring.
+- Updated hint logic to be consistent across core-lesson question types and allow requesting hints for auto-submit questions.
 
 ## 0.21.5 (2022-09-01)
 

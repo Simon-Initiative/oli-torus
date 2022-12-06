@@ -74,6 +74,10 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("attemptNumber = {1} && input = {[3,4]}", "4.0") == true
     assert eval("attemptNumber = {1} && input = {[3.0,4.0]}", "4") == true
 
+    assert eval("attemptNumber = {1} && input = {(-4.66e-19,-4.5e-19)}", "-4.6e-19") == true
+
+
+
     # gracefully handles space in between range
     assert eval("attemptNumber = {1} && input = {[3, 5]}", "4") == true
 
