@@ -153,7 +153,17 @@ defmodule OliWeb.ProjectController do
     with {:ok, description} <- params["description"] |> trap_nil(),
          {active_publication_id, ""} <- params["active_publication_id"] |> Integer.parse(),
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
-         {:ok, _pub} <- Publishing.publish_project(project, description) do
+         previous_publication <-
+           Publishing.get_latest_published_publication_by_slug(project.slug),
+         {:ok, new_publication} <- Publishing.publish_project(project, description) do
+      if params["auto_push_update"] == "true" do
+        Publishing.push_publication_update_to_sections(
+          project,
+          previous_publication,
+          new_publication
+        )
+      end
+
       conn
       |> put_flash(:info, "Publish Successful!")
       |> redirect(to: Routes.project_path(conn, :publish, project))

@@ -92,6 +92,11 @@
             disabled: !@has_changes,
             phx_disable_with: "Publishing..." %>
 
+          <div class="my-3">
+            <%= checkbox f, :auto_push_update, disabled: !@has_changes %>
+            <%= label f, :auto_push_update, "Automatically push this publication update to all products and sections" %>
+          </div>
+
           <%= case @version_change do %>
             <% {:no_changes, _} -> %>
 
