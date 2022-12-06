@@ -87,7 +87,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {#if show_collab_space?(@collab_space_config)}
         {render_modal(assigns)}
 
-        <div class="card">
+        <div class={"card" <> if @collab_space_config.status == :archived, do: " readonly", else: ""}>
           <div class="card-body">
             <div class="card-title h5">Collaborative Space</div>
           </div>

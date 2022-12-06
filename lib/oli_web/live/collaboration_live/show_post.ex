@@ -9,11 +9,11 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
   def render(assigns) do
     ~F"""
-      <div class="accordion-item">
+      <div class={"accordion-item" <> if @post.status == :archived, do: " readonly", else: ""}>
         <div class="accordion-header" id={"heading_#{@post.id}"}>
           <div class="border-post-forum border-success p-2 my-4">
-            {#if Enum.member?([:submitted, :archived], @post.status)}
-              <span class={"badge" <> if @post.status == :submitted, do: " badge-success", else: " badge-danger"}>{@post.status}</span>
+            {#if @post.status == :submitted}
+              <span class={"badge" <> if @post.status == :submitted, do: " badge-success"}>{@post.status}</span>
             {/if}
 
             <div class="my-2">{@post.content.message}</div>
@@ -27,13 +27,13 @@ defmodule OliWeb.CollaborationLive.ShowPost do
             {/if}
 
             {#if @post.user_id == @user.id}
-              <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={@post.id} disabled={make_disabled?(@post.status)}><i class="fas fa-edit"></i></button>
+              <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={@post.id}><i class="fas fa-edit"></i></button>
             {/if}
 
             {#if @is_threaded}
-              <button class="btn btn-link" type="button" :on-click="display_reply_to_post_modal" phx-value-parent_id={@post.id} disabled={make_disabled?(@post.status)}><i class="fas fa-reply"></i></button>
+              <button class="btn btn-link" type="button" :on-click="display_reply_to_post_modal" phx-value-parent_id={@post.id}><i class="fas fa-reply"></i></button>
               {#if @post.replies_count > 0}
-                <button class="btn btn-link" :on-click="set_selected" phx-value-id={@post.id} data-toggle="collapse" data-target={"#collapse_#{@post.id}"} aria-expanded="true" aria-controls={"collapse_#{@post.id}"} disabled={make_disabled?(@post.status)}><i class="fa fa-angle-down mr-1"></i></button>
+                <button class="btn btn-link not-readonly" :on-click="set_selected" phx-value-id={@post.id} data-toggle="collapse" data-target={"#collapse_#{@post.id}"} aria-expanded="true" aria-controls={"collapse_#{@post.id}"}><i class="fa fa-angle-down mr-1"></i></button>
               {/if}
             {/if}
           </div>
@@ -43,10 +43,10 @@ defmodule OliWeb.CollaborationLive.ShowPost do
             <div class="accordion-body">
 
               {#for {reply, reply_index} <- @post.replies}
-                <div class="border-post-forum border-danger mb-3 p-2">
+                <div class={"border-post-forum border-danger mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
 
-                  {#if Enum.member?([:submitted, :archived], reply.status)}
-                    <span class={"badge" <> if reply.status == :submitted, do: " badge-success", else: " badge-danger"}>{reply.status}</span>
+                  {#if reply.status == :submitted}
+                  <span class={"badge" <> if reply.status == :submitted, do: " badge-success"}>{reply.status}</span>
                   {/if}
 
                   {#if reply.parent_post_id != @post.id}
@@ -63,9 +63,9 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                   {/if}
 
                   {#if reply.user_id == @user.id}
-                    <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={reply.id} disabled={make_disabled?(reply.status)}><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={reply.id}><i class="fas fa-edit"></i></button>
                   {/if}
-                  <button class="btn btn-link" type="button" :on-click="display_reply_to_reply_modal" phx-value-parent_id={reply.id} phx-value-root_id={@post.id} disabled={make_disabled?(reply.status)}><i class="fas fa-reply"></i></button>
+                  <button class="btn btn-link" type="button" :on-click="display_reply_to_reply_modal" phx-value-parent_id={reply.id} phx-value-root_id={@post.id}><i class="fas fa-reply"></i></button>
                 </div>
               {/for}
             </div>
@@ -82,7 +82,4 @@ defmodule OliWeb.CollaborationLive.ShowPost do
       Replied to {parent_post.user.name} in #{thread_index}.{index}
     """
   end
-
-  defp make_disabled?(:archived), do: true
-  defp make_disabled?(_), do: false
 end

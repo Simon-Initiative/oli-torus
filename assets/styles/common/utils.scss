@@ -30,3 +30,12 @@
 .w-85 {
   width: 85%;
 }
+
+.readonly {
+  pointer-events: none;
+  background: #80808029 !important;
+}
+
+.not-readonly {
+  pointer-events: all;
+}
