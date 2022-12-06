@@ -2,6 +2,7 @@ defmodule Oli.Plugs.AuthorizeSectionPreview do
   import Plug.Conn
   import Phoenix.Controller
 
+  alias Oli.Accounts
   alias Oli.Delivery.Sections
 
   # We only allow access to preview mode if the user is logged in as an instructor
@@ -12,10 +13,11 @@ defmodule Oli.Plugs.AuthorizeSectionPreview do
 
   def call(conn, _opts) do
     user = conn.assigns[:current_user]
+    author = conn.assigns[:current_author]
     section_slug = conn.path_params["section_slug"]
 
     cond do
-      Sections.is_instructor?(user, section_slug) ->
+      Sections.is_instructor?(user, section_slug) or Accounts.is_admin?(author) ->
         conn
 
       not is_nil(user) and Sections.is_enrolled?(user.id, section_slug) ->

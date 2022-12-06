@@ -22,7 +22,11 @@ defmodule OliWeb.ManualGrading.Rendering do
       page_id: attempt.page_id,
       mode: :review,
       activity_map:
-        Oli.Delivery.Page.ActivityContext.create_context_map(attempt.graded, attempt_parts,
+        Oli.Delivery.Page.ActivityContext.create_context_map(
+          attempt.graded,
+          attempt_parts,
+          nil,
+          nil,
           prune: false
         ),
       activity_types_map: activity_types_map,

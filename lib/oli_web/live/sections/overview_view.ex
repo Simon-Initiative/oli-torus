@@ -106,10 +106,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group label="Curriculum" description="Manage the content delivered to students">
         <ul class="link-list">
         <li>
-          <a target="_blank" href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)} class={"btn btn-link p-0 #{if @is_system_admin, do: " disabled mr-2"}"}>Preview Course Content</a>
-          {#if @is_system_admin}
-            <span class="badge badge-info">Coming Soon</span>
-          {/if}
+          <a target="_blank" href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)} class={"btn btn-link p-0"}><span>Preview Course as Instructor</span> <i class="las la-external-link-alt align-self-center ml-1"></i></a>
         </li>
         <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)} target="_blank"><span>Enter Course as a Student</span> <i class="las la-external-link-alt align-self-center ml-1"></i></a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>

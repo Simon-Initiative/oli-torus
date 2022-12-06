@@ -175,7 +175,9 @@ defmodule OliWeb.PageDeliveryView do
       Oli.Activities.State.ActivityState.from_attempt(
         activity_attempt,
         Map.values(part_attempts_map),
-        model
+        model,
+        nil,
+        nil
       )
 
     activity_type_slug =

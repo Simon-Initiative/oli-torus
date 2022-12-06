@@ -865,6 +865,14 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  def get_section_resource(section_id, resource_id) do
+    Repo.one(
+      from s in SectionResource,
+        where: s.section_id == ^section_id and s.resource_id == ^resource_id,
+        select: s
+    )
+  end
+
   def rebuild_section_resources(
         section: %Section{id: section_id} = section,
         publication: publication
