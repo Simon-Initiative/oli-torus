@@ -578,6 +578,11 @@ defmodule OliWeb.Router do
     post("/automation_teardown", Api.AutomationSetupController, :teardown)
   end
 
+  scope "/api/v1/page_lifecycle", OliWeb do
+    pipe_through([:api, :delivery_protected])
+    post("/", Api.PageLifecycleController, :transition)
+  end
+
   scope "/api/v1/payments", OliWeb do
     pipe_through([:api, :delivery_protected])
 
@@ -753,12 +758,6 @@ defmodule OliWeb.Router do
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/page/:page", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
-
-    get(
-      "/:section_slug/page/:revision_slug/attempt/:attempt_guid",
-      PageDeliveryController,
-      :finalize_attempt
-    )
 
     get(
       "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review",

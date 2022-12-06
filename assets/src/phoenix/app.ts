@@ -14,6 +14,7 @@ import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
 import 'react-phoenix';
+import { finalize } from './finalize';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 
 const csrfToken = (document as any)
@@ -52,6 +53,7 @@ window.OLI = {
   selectCookiePreferences,
   retrieveCookies,
   onReady,
+  finalize,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
@@ -131,6 +133,7 @@ declare global {
       selectCookiePreferences: typeof selectCookiePreferences;
       retrieveCookies: typeof retrieveCookies;
       onReady: typeof onReady;
+      finalize: typeof finalize;
       CreateAccountPopup: (node: any, props: any) => void;
     };
     keepAlive: () => void;
