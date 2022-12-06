@@ -258,6 +258,40 @@ defmodule Oli.Resources.Collaboration do
   # Posts
 
   @doc """
+  Returns the list of posts that a user can see.
+
+  ## Examples
+
+      iex> list_posts_for_user_in_page_section(1, 1, 1))
+      [%Post{status: :archived}, ...]
+
+      iex> list_posts_for_user_in_page_section(2, 2, 2)
+      []
+  """
+  def list_posts_for_user_in_page_section(section_id, resource_id, user_id, enter_time \\ nil) do
+    filter_by_enter_time =
+      if is_nil(enter_time) do
+        true
+      else
+        dynamic([p], p.inserted_at >= ^enter_time or p.updated_at >= ^enter_time)
+      end
+
+    Repo.all(
+      from(
+        post in Post,
+        where: post.section_id == ^section_id and post.resource_id == ^resource_id
+          and (post.status in [:approved, :archived] or (post.status == :submitted and post.user_id == ^user_id)),
+        where: ^filter_by_enter_time,
+        select_merge: %{
+          replies_count: fragment("select count(*) from posts where thread_root_id = ?", post.id)
+        },
+        order_by: [asc: :inserted_at],
+        preload: [:user]
+      )
+    )
+  end
+
+  @doc """
   Returns the list of posts that meets the criteria passed in the filter.
 
   ## Examples
@@ -275,9 +309,7 @@ defmodule Oli.Resources.Collaboration do
         where: ^filter_conditions(filter),
         select_merge: %{
           replies_count: fragment("select count(*) from posts where thread_root_id = ?", post.id)
-        },
-        order_by: [asc: :inserted_at],
-        preload: [:user]
+        }
       )
     )
   end

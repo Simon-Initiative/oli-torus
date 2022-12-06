@@ -24,7 +24,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   data topic, :string
   data active_users, :list
   data posts, :list
-  data post_changeset, :changeset
+  data new_post_changeset, :changeset
   data collab_space_config, :any
   data user, :any
   data section, :any
@@ -41,6 +41,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         } = _session,
         socket
       ) do
+    {:ok, enter_time} = DateTime.now("Etc/UTC")
     topic = "cs_#{section_slug}_#{page_slug}"
 
     user = Accounts.get_user_by(%{id: current_user_id})
@@ -55,16 +56,18 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       default_user_presence_payload(user)
     )
 
-    post_changeset = Collaboration.change_post(%PostSchema{
+    new_post_changeset = Collaboration.change_post(%PostSchema{
       user_id: user.id,
       section_id: section.id,
       resource_id: page_resource.id
     })
 
-    # refactor to retrieve correct status
-    search_params = {
-      %{section_id: section.id, resource_id: page_resource.id},
-      collab_space_config
+    search_params = %{
+      section_id: section.id,
+      resource_id: page_resource.id,
+      user_id: user.id,
+      collab_space_config: collab_space_config,
+      enter_time: enter_time
     }
     posts = get_posts(search_params)
 
@@ -78,7 +81,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         active_users: Presence.list_presences(topic),
         posts: posts,
         collab_space_config: collab_space_config,
-        post_changeset: post_changeset
+        new_post_changeset: new_post_changeset
       )}
   end
 
@@ -94,7 +97,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
           <div class="card-footer bg-transparent d-flex justify-content-between">
             <div>
               <div class="accordion" id="post-accordion">
-                <button type="button" :on-click="display_create_modal" class="btn btn-primary">+ Create</button>
+                <button type="button" :on-click="display_create_modal" class="btn btn-primary">+ New</button>
 
                 {#for {post, index} <- @posts}
                   <ShowPost
@@ -120,8 +123,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       on_submit: "create_post",
       on_change: "typing",
       on_blur: "stop_typing",
-      changeset: socket.assigns.post_changeset,
-      title: "Create post"
+      changeset: socket.assigns.new_post_changeset,
+      title: "New post"
     }
 
     modal = fn assigns ->
@@ -141,9 +144,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   def handle_event("create_post", %{"post" => attrs} = _params, socket) do
     socket = clear_flash(socket)
 
-    case Collaboration.create_post(
-           get_attrs_to_create_post(attrs, socket.assigns.collab_space_config.auto_accept)
-         ) do
+    attrs =
+      if not socket.assigns.collab_space_config.auto_accept,
+        do: Map.put(attrs, "status", :submitted),
+        else: attrs
+
+    case Collaboration.create_post(attrs) do
       {:ok, _post} ->
         socket = put_flash(socket, :info, "Post successfully created")
 
@@ -160,9 +166,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     end
   end
 
-  def handle_event("display_reply_to_post_modal", %{"parent_id" => parent_id}, socket) do
-    changeset_post_reply =
-      Ecto.Changeset.put_change(socket.assigns.post_changeset, :parent_post_id, parent_id)
+  def handle_event("display_reply_to_post_modal", %{"parent_id" => parent_id, "index" => index}, socket) do
+    post_reply_changeset =
+      socket.assigns.new_post_changeset
+      |> Ecto.Changeset.put_change(:parent_post_id, parent_id)
       |> Ecto.Changeset.put_change(:thread_root_id, parent_id)
 
     modal_assigns = %{
@@ -170,8 +177,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       on_submit: "create_post",
       on_change: "typing",
       on_blur: "stop_typing",
-      changeset: changeset_post_reply,
-      title: "Create reply"
+      changeset: post_reply_changeset,
+      title: "New reply to #{index}"
     }
 
     modal = fn assigns ->
@@ -181,20 +188,21 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     end
 
     {:noreply,
-     socket
-     |> show_modal(
-       modal,
-       modal_assigns: modal_assigns
-     )}
+      socket
+      |> show_modal(
+        modal,
+        modal_assigns: modal_assigns
+      )}
   end
 
   def handle_event(
         "display_reply_to_reply_modal",
-        %{"parent_id" => parent_id, "root_id" => root_id},
+        %{"parent_id" => parent_id, "root_id" => root_id, "index" => index},
         socket
       ) do
-    changeset_post_reply =
-      Ecto.Changeset.put_change(socket.assigns.post_changeset, :parent_post_id, parent_id)
+    reply_reply_changeset =
+      socket.assigns.new_post_changeset
+      |> Ecto.Changeset.put_change(:parent_post_id, parent_id)
       |> Ecto.Changeset.put_change(:thread_root_id, root_id)
 
     modal_assigns = %{
@@ -202,8 +210,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       on_submit: "create_post",
       on_change: "typing",
       on_blur: "stop_typing",
-      changeset: changeset_post_reply,
-      title: "Create reply"
+      changeset: reply_reply_changeset,
+      title: "New reply to #{index}"
     }
 
     modal = fn assigns ->
@@ -213,11 +221,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     end
 
     {:noreply,
-     socket
-     |> show_modal(
-       modal,
-       modal_assigns: modal_assigns
-     )}
+      socket
+      |> show_modal(
+        modal,
+        modal_assigns: modal_assigns
+      )}
   end
 
   def handle_event("display_edit_modal", %{"id" => id}, socket) do
@@ -312,32 +320,47 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     }
   end
 
-  defp get_posts({_filter, %CollabSpaceConfig{show_full_history: false}}), do: []
+  defp get_posts(%{
+    section_id: section_id,
+    resource_id: page_resource_id,
+    user_id: user_id,
+    collab_space_config: %CollabSpaceConfig{show_full_history: false} = collab_space_config,
+    enter_time: enter_time
+  }) do
+    Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id, enter_time)
+    |> maybe_threading(collab_space_config)
+    |> Enum.with_index(1)
+  end
 
-  defp get_posts({filter, %CollabSpaceConfig{threaded: true}}) do
-    all_posts = Collaboration.search_posts(filter)
+  defp get_posts(%{
+    section_id: section_id,
+    resource_id: page_resource_id,
+    user_id: user_id,
+    collab_space_config: collab_space_config,
+  }) do
+    Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id)
+    |> maybe_threading(collab_space_config)
+    |> Enum.with_index(1)
+  end
 
-    all_posts
-    |> Enum.reduce([], fn post, acc ->
+  defp maybe_threading(all_posts, %CollabSpaceConfig{threaded: true}) do
+    Enum.reduce(all_posts, [], fn post, acc ->
       if is_nil(post.thread_root_id) do
         replies =
           all_posts
           |> Enum.filter(fn child -> child.thread_root_id == post.id end)
           |> Enum.with_index(1)
-        [Map.put(post, :replies, replies)] ++ acc
+
+        acc ++ [Map.put(post, :replies, replies)]
       else
         acc
       end
     end)
-    |> Enum.with_index(1)
   end
 
-  defp get_posts({filter, _}), do: Collaboration.search_posts(filter) |> Enum.with_index(1)
+  defp maybe_threading(all_posts, _), do: all_posts
 
   defp show_collab_space?(nil), do: false
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
-
-  defp get_attrs_to_create_post(attrs, true), do: attrs
-  defp get_attrs_to_create_post(attrs, false), do: Map.put(attrs, "status", :submitted)
 end

@@ -13,7 +13,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
         <div class="accordion-header" id={"heading_#{@post.id}"}>
           <div class="border-post p-2 my-4">
             {#if @post.status == :submitted}
-              <span class={"badge" <> if @post.status == :submitted, do: " badge-success"}>{@post.status}</span>
+              <span class="badge badge-success">{@post.status}</span>
             {/if}
 
             <div class="my-2">{@post.content.message}</div>
@@ -22,7 +22,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
             <div class="badge badge-light mr-1">#{@index}</div>
 
-            {#if @post.replies_count > 0}
+            {#if @is_threaded and @post.replies_count > 0}
               <div class="font-weight-light small ml-1"><i class="fa fa-reply-all mr-1"></i>{@post.replies_count}</div>
             {/if}
 
@@ -31,7 +31,8 @@ defmodule OliWeb.CollaborationLive.ShowPost do
             {/if}
 
             {#if @is_threaded}
-              <button class="btn btn-link" type="button" :on-click="display_reply_to_post_modal" phx-value-parent_id={@post.id}><i class="fas fa-reply"></i></button>
+              <button class="btn btn-link" type="button" :on-click="display_reply_to_post_modal" phx-value-parent_id={@post.id} phx-value-index={"##{@index}"}><i class="fas fa-reply"></i></button>
+
               {#if @post.replies_count > 0}
                 <button class="btn btn-link not-readonly" :on-click="set_selected" phx-value-id={@post.id} data-toggle="collapse" data-target={"#collapse_#{@post.id}"} aria-expanded="true" aria-controls={"collapse_#{@post.id}"}><i class="fa fa-angle-down mr-1"></i></button>
               {/if}
@@ -41,12 +42,11 @@ defmodule OliWeb.CollaborationLive.ShowPost do
         {#if @is_threaded}
           <div id={"collapse_#{@post.id}"} class={"collapse w-85 ml-auto" <> if Integer.to_string(@post.id) == @selected, do: " show", else: ""} aria-labelledby={"heading_#{@post.id}"} data-parent="#post-accordion">
             <div class="accordion-body">
-
               {#for {reply, reply_index} <- @post.replies}
                 <div class={"border-reply mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
 
                   {#if reply.status == :submitted}
-                  <span class={"badge" <> if reply.status == :submitted, do: " badge-success"}>{reply.status}</span>
+                    <span class="badge badge-success">{reply.status}</span>
                   {/if}
 
                   {#if reply.parent_post_id != @post.id}
@@ -54,6 +54,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                   {/if}
 
                   <div class="my-2">{reply.content.message}</div>
+
                   <div class="text-muted small mb-2">{reply.user.name} - {reply.inserted_at}</div>
 
                   <div class="badge badge-light mr-1">#{@index}.{reply_index}</div>
@@ -65,7 +66,8 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                   {#if reply.user_id == @user.id}
                     <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={reply.id}><i class="fas fa-edit"></i></button>
                   {/if}
-                  <button class="btn btn-link" type="button" :on-click="display_reply_to_reply_modal" phx-value-parent_id={reply.id} phx-value-root_id={@post.id}><i class="fas fa-reply"></i></button>
+
+                  <button class="btn btn-link" type="button" :on-click="display_reply_to_reply_modal" phx-value-parent_id={reply.id} phx-value-root_id={@post.id} phx-value-index={"##{@index}.#{reply_index}"}><i class="fas fa-reply"></i></button>
                 </div>
               {/for}
             </div>
