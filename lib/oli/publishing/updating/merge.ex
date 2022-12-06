@@ -21,7 +21,7 @@ defmodule Oli.Publishing.Updating.Merge do
   In the above example, we see an original (base) list of [1, 2, 3]. An append
   took place to generate (src) list.  Separately, removals were performed from
   (base) to generate (target).  This three way merge will reapply the removals
-  that generated (target) to (src) to yield (final) of [1, 4].any()
+  that generated (target) to (src) to yield (final) of [1, 4].
 
   This algorithm is case based, and relies heavily on the AIRRO (Append, Insert,
   Removal, Reorder, Other) classification of the type of change between two lists.

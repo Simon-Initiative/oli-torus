@@ -112,7 +112,7 @@ defmodule OliWeb.ProjectController do
 
     has_changes =
       case version_change do
-        {:no_changes, _} -> false
+        :no_changes -> false
         _ -> true
       end
 
