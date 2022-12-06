@@ -29,7 +29,7 @@ export const drawHotspotShape = (
   ctx: CanvasRenderingContext2D,
   hs: Hotspot,
   color: string,
-  border: boolean = true,
+  border = true,
 ) => {
   ctx.lineWidth = 2;
   ctx.strokeStyle = '#000000';
@@ -49,7 +49,7 @@ export const drawHotspotShape = (
   } else if (getShape(hs) === 'poly') {
     ctx.beginPath();
     ctx.moveTo(hs.coords[0], hs.coords[1]);
-    for (var i = 2; i < hs.coords.length; i += 2) {
+    for (let i = 2; i < hs.coords.length; i += 2) {
       ctx.lineTo(hs.coords[i], hs.coords[i + 1]);
     }
     ctx.closePath();

@@ -15,7 +15,7 @@ export const ImageHotspotActions = {
     return (model: any, _post: PostUndoable) => {
       // sync coords w/content text as comma-separated list. Result filtered to all numbers,
       // but may still have bad size for an area definition.
-      const coords: Number[] = toSimpleText(content)
+      const coords: number[] = toSimpleText(content)
         .split(',')
         .map(Number)
         .filter((x) => !isNaN(x));
