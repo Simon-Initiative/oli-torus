@@ -214,7 +214,11 @@ defmodule Oli.Delivery.Page.PageContext do
       end
 
     {state, [resource_attempt], latest_attempts,
-     ActivityContext.create_context_map(page_revision.graded, latest_attempts,
+     ActivityContext.create_context_map(
+       page_revision.graded,
+       latest_attempts,
+       resource_attempt,
+       page_revision,
        assign_ordinals_from: content_for_ordinal_assignment
      )}
   end

@@ -1,10 +1,11 @@
 defmodule Oli.Utils.Seeder.Project do
   import Oli.Utils.Seeder.Utils
 
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Repo
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Inventories
   alias Oli.Publishing
   alias Oli.Activities
@@ -15,7 +16,7 @@ defmodule Oli.Utils.Seeder.Project do
   alias Oli.Activities
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Inventories
   alias Oli.Activities
   alias Oli.Resources
@@ -23,6 +24,7 @@ defmodule Oli.Utils.Seeder.Project do
   alias Oli.Utils.Slug
   alias Oli.Activities.Model.Feedback
   alias Oli.Resources.ExplanationStrategy
+  alias Oli.Delivery.Sections.Blueprint
 
   @doc """
   Creates an author
@@ -77,7 +79,6 @@ defmodule Oli.Utils.Seeder.Project do
       |> Seeder.Project.create_container(
         author,
         ref(project_tag),
-        ref(publication_tag),
         ref(curriculum_revision_tag),
         %{
           title: "Unit 1"
@@ -147,6 +148,19 @@ defmodule Oli.Utils.Seeder.Project do
     |> tag(:unit1_tag, unit1_tag)
     |> tag(:unscored_page1_tag, unscored_page1_tag)
     |> tag(:scored_page2_tag, scored_page2_tag)
+  end
+
+  @doc """
+  Creates a sample project
+  """
+  def create_product(seeds, title, project, tags \\ []) do
+    [project] = unpack(seeds, [project])
+    product_tag = tags[:product_tag]
+
+    {:ok, product} = Blueprint.create_blueprint(project.slug, title, nil)
+
+    seeds
+    |> tag(product_tag, product)
   end
 
   @doc """
@@ -319,14 +333,14 @@ defmodule Oli.Utils.Seeder.Project do
         seeds,
         author,
         project,
-        publication,
         attach_to_container_revision,
         attrs \\ %{},
         tags \\ []
       ) do
-    [author, project, publication, attach_to_container_revision] =
-      unpack(seeds, [author, project, publication, attach_to_container_revision])
+    [author, project, attach_to_container_revision] =
+      unpack(seeds, [author, project, attach_to_container_revision])
 
+    publication = Publishing.project_working_publication(project.slug)
     published_resource_tag = tags[:published_resource_tag] || random_tag()
 
     resource_tag = tags[:resource_tag]
@@ -603,5 +617,14 @@ defmodule Oli.Utils.Seeder.Project do
     |> Publishing.update_published_resource(%{revision_id: updated.id})
 
     seeds
+  end
+
+  def resolve(seeds, project, revision, tags) do
+    [project, revision] = unpack(seeds, [project, revision])
+
+    revision = AuthoringResolver.from_resource_id(project.slug, revision.resource_id)
+
+    seeds
+    |> tag(tags[:revision_tag], revision)
   end
 end

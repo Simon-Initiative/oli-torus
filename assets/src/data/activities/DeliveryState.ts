@@ -312,6 +312,18 @@ export const isEvaluated = (state: ActivityDeliveryState) =>
 export const isSubmitted = (state: ActivityDeliveryState) =>
   selectAttemptState(state).dateSubmitted !== null;
 
+export const resetAndRequestHintAction =
+  (
+    partId: PartId,
+    onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>,
+    onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+    partInputs?: PartInputs,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    await dispatch(resetAction(onResetActivity, partInputs));
+    await dispatch(requestHint(partId, onRequestHint));
+  };
+
 export const resetAction =
   (
     onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
@@ -320,7 +332,6 @@ export const resetAction =
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
     partInputs && dispatch(slice.actions.setPartInputs(partInputs));
-    dispatch(slice.actions.hideAllHints());
     dispatch(slice.actions.updateModel(response.model));
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>
@@ -434,7 +445,6 @@ export const resetAndSubmitActivity =
   ): AppThunk =>
   async (dispatch, getState) => {
     const response = await onResetActivity(attemptGuid);
-    dispatch(slice.actions.hideAllHints());
     dispatch(slice.actions.updateModel(response.model));
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>

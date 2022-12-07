@@ -1,5 +1,6 @@
 defmodule Oli.Publishing do
   import Ecto.Query, warn: false
+  alias Oli.Publishing.Publications.DiffAgent
   alias Oli.Repo
 
   alias Oli.Authoring.Course.Project
@@ -11,7 +12,6 @@ defmodule Oli.Publishing do
   alias Oli.Resources.{Revision, ResourceType}
 
   alias Oli.Publishing.{
-    Publication,
     PublishedResource,
     PartMappingRefreshAdapter,
     PartMappingRefreshAsync
@@ -24,6 +24,8 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Groups
+  alias Oli.Publishing.Publications.{Publication, PublicationDiff, PublicationDiffKey}
+  alias Oli.Delivery.Updates
 
   @doc """
   Bulk creates a number of resource, revision, project_resource and published_resource
@@ -129,7 +131,7 @@ defmodule Oli.Publishing do
         from m in Oli.Publishing.PublishedResource,
           join: rev in Revision,
           on: rev.id == m.revision_id,
-          join: p in Oli.Publishing.Publication,
+          join: p in Oli.Publishing.Publications.Publication,
           on: p.id == m.publication_id,
           where:
             is_nil(p.published) and m.resource_id in ^resource_ids and
@@ -823,7 +825,7 @@ defmodule Oli.Publishing do
            now <- DateTime.utc_now(),
 
            # diff publications to determine the new version number
-           {{_, {edition, major, minor}}, _changes} <-
+           %PublicationDiff{edition: edition, major: major, minor: minor} <-
              diff_publications(latest_published_publication, active_publication),
 
            # create a new publication to capture all further edits
@@ -864,6 +866,45 @@ defmodule Oli.Publishing do
     end)
   end
 
+  def push_publication_update_to_sections(project, previous_publication, new_publication) do
+    with products_and_sections <-
+           fetch_products_and_sections_eligible_for_update(project.id, previous_publication.id) do
+      # Diff publications up front as an optimization.
+      # This will be used later by each update job to determine which update strategy to use
+      DiffAgent.put(
+        PublicationDiffKey.key(previous_publication.id, new_publication.id),
+        diff_publications(previous_publication, new_publication)
+      )
+
+      # spawn oban jobs for every section (and product) to execute a course update
+      Enum.each(products_and_sections, fn %{section: section} ->
+        %{
+          "section_slug" => section.slug,
+          "publication_id" => new_publication.id
+        }
+        |> Updates.Worker.new()
+        |> Oban.insert!()
+      end)
+    end
+  end
+
+  def fetch_products_and_sections_eligible_for_update(project_id, previous_publication_id) do
+    today = DateTime.utc_now()
+
+    from(
+      s in Section,
+      join: spp in SectionsProjectsPublications,
+      on: s.id == spp.section_id,
+      where:
+        s.status == :active and spp.project_id == ^project_id and
+          spp.publication_id == ^previous_publication_id and
+          (is_nil(s.end_date) or s.end_date >= ^today),
+      order_by: s.id,
+      select: %{section: s, current_publication_id: spp.publication_id}
+    )
+    |> Repo.all()
+  end
+
   def get_all_mappings_for_resource(resource_id, project_slug) do
     Repo.all(
       from mapping in PublishedResource,
@@ -878,29 +919,54 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
-  with a version number and a map that contains any changes where the key is the resource id which points to
-  a tuple with the first element being the change status (:changed|:added|:deleted) and the second is a
-  map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}
+  Diff two publications of the same project and returns a `%PublicationDiff{}` which includes the change
+  classification (:major|:minor|:no_changes), an updated version number and a `changes` map that contains
+  any changes where the key is the resource id which points to a tuple with the first element being the
+  change status (:changed|:added|:deleted) and the second is a map containing the resource and revision.
+  e.g. %{ 23 => {:changed, %{resource: res_p2, revision: rev_p2}} }
 
   ## Examples
 
       iex> diff_publications(publication1, publication2)
-      {{:major, {0, 1, 0}}, %{
-        23 => {:changed, %{resource: res1, revision: rev1}}
-        24 => {:added, %{resource: res2, revision: rev2}}
-        24 => {:added, %{resource: res3, revision: rev3}}
-        24 => {:deleted, %{resource: res4, revision: rev4}}
-      }}
+      %PublicationDiff{
+        classification: :major,
+        edition: 0,
+        major: 1,
+        minor: 0,
+        changes: %{
+          23 => {:changed, %{resource: res1, revision: rev1}}
+          24 => {:added, %{resource: res2, revision: rev2}}
+          24 => {:added, %{resource: res3, revision: rev3}}
+          24 => {:deleted, %{resource: res4, revision: rev4}}
+        },
+        from_pub: %Publication{},
+        to_pub: %Publication{},
+      }
 
       iex> diff_publications(publication2, publication3)
-      {{:minor, {0, 0, 1}}, %{
-        23 => {:changed, %{resource: res1, revision: rev1}}
-        24 => {:changed, %{resource: res2, revision: rev2}}
-      }}
+      %PublicationDiff{
+        classification: :minor,
+        edition: 0,
+        major: 0,
+        minor: 1,
+        changes: %{
+          23 => {:changed, %{resource: res1, revision: rev1}}
+          24 => {:changed, %{resource: res2, revision: rev2}}
+        },
+        from_pub: %Publication{},
+        to_pub: %Publication{},
+      }
 
       iex> diff_publications(publication1, publication1)
-      {:no_changes, %{}}
+      %PublicationDiff{
+        classification: :no_changes,
+        edition: 0,
+        major: 2,
+        minor: 0,
+        changes: %{},
+        from_pub: %Publication{},
+        to_pub: %Publication{},
+      }
   """
   def diff_publications(p1, p2) do
     all_resource_revisions_p1 = get_resource_revisions_for_publication(p1)
@@ -945,12 +1011,23 @@ defmodule Oli.Publishing do
           {p1.edition, p1.major, p1.minor}
       end
 
-    {version_change(changes, {edition, major, minor}), changes}
+    {classification, {edition, major, minor}} =
+      classify_version_change(changes, {edition, major, minor})
+
+    %PublicationDiff{
+      classification: classification,
+      edition: edition,
+      major: major,
+      minor: minor,
+      changes: changes,
+      from_pub: p1,
+      to_pub: p2
+    }
   end
 
   # classify the changes as either :major, :minor, or :no_changes and return the new version number
   # result e.g. {:major, {1, 0}}
-  defp version_change(changes, {edition, major, minor} = _current_version) do
+  defp classify_version_change(changes, {edition, major, minor} = _current_version) do
     changes
     |> Enum.reduce({:no_changes, {edition, major, minor}}, fn {_id,
                                                                {_type,

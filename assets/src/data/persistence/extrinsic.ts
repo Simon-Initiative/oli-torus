@@ -131,10 +131,12 @@ export const updateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
+  /*console.log('updateGlobalUserState called', { updates, useLocalStorage });*/
+
   //Lets update the cache with latest changes.
   userStateCache.timestamp = Date.now();
   formatUserState(updates, userStateCache);
-  /*console.log('updateGlobalUserState called', { updates, useLocalStorage });*/
+
   const result = await batchedUpdate(updates, useLocalStorage);
   /* console.log('updateGlobalUserState result', { result, updates }); */
   return result;

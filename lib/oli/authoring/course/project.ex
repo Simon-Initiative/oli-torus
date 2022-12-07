@@ -35,7 +35,7 @@ defmodule Oli.Authoring.Course.Project do
 
     many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility
 
-    has_many :publications, Oli.Publishing.Publication
+    has_many :publications, Oli.Publishing.Publications.Publication
 
     belongs_to :publisher, Oli.Inventories.Publisher
 

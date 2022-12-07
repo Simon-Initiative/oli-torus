@@ -16,7 +16,5 @@ defmodule Oli.Delivery.Updates.Worker do
       section,
       publication_id
     )
-
-    Oli.Delivery.PreviousNextIndex.rebuild(section)
   end
 end

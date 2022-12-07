@@ -7,7 +7,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   alias Oli.Publishing.Resolver
   alias Oli.Resources.Resource
   alias Oli.Resources.Revision
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Hierarchy.HierarchyNode
@@ -262,10 +262,11 @@ defmodule Oli.Publishing.AuthoringResolver do
         {Enum.reverse(children), numbering_tracker}
       end)
 
-    labels = case project.customizations do
-      nil -> Map.from_struct(CustomLabels.default())
-      l -> Map.from_struct(l)
-    end
+    labels =
+      case project.customizations do
+        nil -> Map.from_struct(CustomLabels.default())
+        l -> Map.from_struct(l)
+      end
 
     {
       %HierarchyNode{

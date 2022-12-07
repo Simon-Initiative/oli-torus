@@ -3,6 +3,7 @@ defmodule OliWeb.PageDeliveryController do
   require Logger
 
   import OliWeb.Common.FormatDateTime
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -11,7 +12,6 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
@@ -95,7 +95,6 @@ defmodule OliWeb.PageDeliveryController do
         %Revision{resource_type_id: ^page_type_id} ->
           conn
           |> redirect(to: Routes.delivery_path(conn, :page, section_slug, revision_slug))
-
 
         # Render a container in the most efficient manner: A single resolver call for child
         # revisions based on retrieval of child data from the PreviousNextIndex cache
@@ -211,12 +210,12 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, {previous, next, current}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
 
-    {:ok, summary} = Oli.Delivery.Student.Summary.get_summary(section_slug, user)
+    resource_access = Core.get_resource_access(page.resource_id, section.slug, user.id)
 
     section_resource = Sections.get_section_resource(section.id, page.resource_id)
 
     render(conn, "prologue.html", %{
-      summary: summary,
+      resource_access: resource_access,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
       preview_mode: preview_mode,
@@ -292,12 +291,9 @@ defmodule OliWeb.PageDeliveryController do
         reviewMode: context.review_mode,
         overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
         finalizeGradedURL:
-          Routes.page_delivery_path(
+          Routes.page_lifecycle_path(
             conn,
-            :finalize_attempt,
-            section.slug,
-            context.page.slug,
-            resource_attempt.attempt_guid
+            :transition
           )
       },
       bib_app_params: %{
@@ -340,9 +336,9 @@ defmodule OliWeb.PageDeliveryController do
   defp render_page(%PageContext{user: user} = context, conn, section_slug, _) do
     section = conn.assigns.section
 
-    #get_section_resource
+    # get_section_resource
     section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
-    
+
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
     base_project_attributes = Sections.get_section_attributes(section)
@@ -736,96 +732,6 @@ defmodule OliWeb.PageDeliveryController do
     else
       render(conn, "not_authorized.html")
     end
-  end
-
-  def finalize_attempt(conn, %{
-        "section_slug" => section_slug,
-        "revision_slug" => revision_slug,
-        "attempt_guid" => attempt_guid
-      }) do
-    user = conn.assigns.current_user
-    section = conn.assigns.section
-    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-
-    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
-      {:ok, %ResourceAccess{id: id}} ->
-        Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-
-        after_finalized(conn, section_slug, revision_slug, attempt_guid, user)
-
-      {:error, {:already_submitted}} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-
-      {:error, {:active_attempt_present}} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-
-      {:error, {:no_more_attempts}} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-
-      {:error, e} ->
-        Logger.error("Page finalization error encountered: #{e}")
-        Oli.Utils.Appsignal.capture_error(e)
-        render(conn, "error.html")
-
-      e ->
-        Logger.error("Page finalization error encountered: #{e}")
-        Oli.Utils.Appsignal.capture_error(e)
-        render(conn, "error.html")
-    end
-  end
-
-  def after_finalized(conn, section_slug, revision_slug, attempt_guid, user) do
-    section = conn.assigns.section
-    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-    context = PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
-
-    preview_mode = Map.get(conn.assigns, :preview_mode, false)
-
-    message =
-      if context.page.max_attempts == 0 do
-        "You have an unlimited number of attempts remaining"
-      else
-        taken = length(context.resource_attempts)
-        remaining = max(context.page.max_attempts - taken, 0)
-
-        "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{plural(remaining)} remaining"
-      end
-
-    grade_message =
-      case section.grade_passback_enabled do
-        true -> "Your grade will be updated in your LMS shortly"
-        _ -> ""
-      end
-
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
-
-    {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
-
-    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
-
-    render(conn, "after_finalized.html",
-      grade_message: grade_message,
-      section_slug: section_slug,
-      attempt_guid: attempt_guid,
-      scripts: Activities.get_activity_scripts(),
-      preview_mode: preview_mode,
-      previous_page: previous,
-      next_page: next,
-      current_page: current,
-      page_number: section_resource.numbering_level,
-      title: context.page.title,
-      message: message,
-      slug: context.page.slug,
-      section: section,
-      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
-      revision: context.page,
-      resource_slug: context.page.slug,
-      bib_app_params: %{
-        bibReferences: context.bib_revisions
-      }
-    )
   end
 
   defp plural(num) do

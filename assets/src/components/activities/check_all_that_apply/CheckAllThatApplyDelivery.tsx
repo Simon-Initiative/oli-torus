@@ -12,7 +12,7 @@ import {
   listenForParentSurveyReset,
   listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
@@ -52,6 +52,11 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     );
   }, []);
 
+  const resetInputs = useMemo(
+    () => ({ [castPartId(activityState.parts[0].partId)]: [] }),
+    [activityState.parts],
+  );
+
   // First render initializes state
   if (!uiState.partState) {
     return null;
@@ -85,15 +90,12 @@ export const CheckAllThatApplyComponent: React.FC = () => {
             )
           }
         />
-        <ResetButtonConnected
-          onReset={() =>
-            dispatch(
-              resetAction(onResetActivity, { [castPartId(activityState.parts[0].partId)]: [] }),
-            )
-          }
-        />
+        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
+        <HintsDeliveryConnected
+          partId={castPartId(activityState.parts[0].partId)}
+          resetPartInputs={resetInputs}
+        />
         <EvaluationConnected />
       </div>
     </div>

@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.Updates.Utils do
 
   import OliWeb.Common.FormatDateTime
 
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
 
   def render(assigns) do
     ~H"""

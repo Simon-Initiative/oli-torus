@@ -7,6 +7,7 @@ defmodule Oli.Utils.Seeder.Section do
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Utils.DataGenerators.NameGenerator
   alias Oli.Utils.Slug
+  alias Oli.Publishing.DeliveryResolver
 
   @doc """
   Creates a section
@@ -14,10 +15,11 @@ defmodule Oli.Utils.Seeder.Section do
   def create_section(seeds, project, publication, institution, attrs \\ %{}, tags \\ []) do
     [project, publication, institution] = unpack(seeds, [project, publication, institution])
 
-    customizations = case project.customizations do
-      nil -> nil
-      labels -> Map.from_struct(labels)
-    end
+    customizations =
+      case project.customizations do
+        nil -> nil
+        labels -> Map.from_struct(labels)
+      end
 
     attrs =
       %{title: "Example Section", registration_open: true, context_id: UUID.uuid4()}
@@ -85,5 +87,14 @@ defmodule Oli.Utils.Seeder.Section do
       ])
 
     seeds
+  end
+
+  def resolve(seeds, section, resource_id, tags) do
+    [section] = unpack(seeds, [section])
+
+    revision = DeliveryResolver.from_resource_id(section.slug, resource_id)
+
+    seeds
+    |> tag(tags[:revision_tag], revision)
   end
 end
