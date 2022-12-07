@@ -6,7 +6,7 @@ defmodule Oli.Delivery.PreviousNextIndex do
   alias Oli.Repo
 
   @doc """
-  For a given section slug and a resource id of a page or container within the section hiearchy, returns the
+  For a given section slug and a resource id of a page or container within the section hierarchy, returns the
   link descriptors for the previous, next and current resources.  This function will rebuild the previous_next_index
   if it is nil.  This allows a just-in-time update for actions that invalidate this structure.
 

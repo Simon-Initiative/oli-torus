@@ -41,7 +41,10 @@ defmodule Oli.Application do
           start:
             {SchedEx, :run_every,
              [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
-        }
+        },
+
+        # Starts the publication diff agent store
+        Oli.Publishing.Publications.DiffAgent
       ] ++ maybe_node_js_config()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -66,12 +69,14 @@ defmodule Oli.Application do
     nodes_config = :erpc.multicall(Node.list(), Oli.Application, :current_oban_config, [])
 
     # Check if a node already has the part_mapping_refresh queue configured
-    pm_refresh_already_setup? = Enum.any?(nodes_config, fn
-      {:ok, config} ->
-        config[:queues][:part_mapping_refresh]
+    pm_refresh_already_setup? =
+      Enum.any?(nodes_config, fn
+        {:ok, config} ->
+          config[:queues][:part_mapping_refresh]
 
-      _ -> false
-    end)
+        _ ->
+          false
+      end)
 
     if pm_refresh_already_setup? do
       # If the part_mapping_refresh queue is already setup somewhere else, we don't want to setup it in this node.
