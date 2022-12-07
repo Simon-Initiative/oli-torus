@@ -26,24 +26,34 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   def persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn, datashop_session_id) do
     evaluated_inputs = Enum.zip(part_inputs, evaluations)
 
-    update_values = Enum.map(evaluated_inputs, fn pair -> attrs_for(pair, datashop_session_id) end)
-    |> Enum.filter(fn attrs -> !is_nil(attrs) end)
-    |> Enum.map(fn pa ->
-      """
-      (
-        '#{pa.attempt_guid}',
-        #{handle_json(pa.response)},
-        '#{Atom.to_string(pa.lifecycle_state)}',
-        #{null_or_now(pa.date_evaluated)},
-        #{null_or_now(pa.date_submitted)},
-        #{handle_num(pa.score)},
-        #{handle_num(pa.out_of)},
-        #{handle_json(pa.feedback)},
-        '#{pa.datashop_session_id}'
-      )
-      """
-    end)
-    |> Enum.join(",")
+    right_now = DateTime.utc_now()
+
+    {values, params, _} =
+      Enum.map(evaluated_inputs, fn pair -> attrs_for(pair, datashop_session_id, right_now) end)
+      |> Enum.filter(fn attrs -> !is_nil(attrs) end)
+      |> Enum.reduce({[], [], 0}, fn pa, {values, params, i} ->
+        {
+          values ++
+            [
+              "($#{i + 1}, $#{i + 2}::JSONB, $#{i + 3}, $#{i + 4}::timestamp, $#{i + 5}::timestamp, $#{i + 6}::double precision, $#{i + 7}::double precision, $#{i + 8}::JSONB, $#{i + 9})"
+            ],
+          params ++
+            [
+              pa.attempt_guid,
+              pa.response,
+              Atom.to_string(pa.lifecycle_state),
+              pa.date_evaluated,
+              pa.date_submitted,
+              pa.score,
+              pa.out_of,
+              pa.feedback,
+              pa.datashop_session_id
+            ],
+          i + 9
+        }
+      end)
+
+    values = Enum.join(values, ",")
 
     sql = """
       UPDATE part_attempts
@@ -59,27 +69,34 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
         updated_at = NOW()
       FROM (
           VALUES
-          #{update_values}
+          #{values}
       ) AS batch_values (attempt_guid, response, lifecycle_state, date_evaluated, date_submitted, score, out_of, feedback, datashop_session_id)
       WHERE part_attempts.attempt_guid = batch_values.attempt_guid
     """
 
-    case Ecto.Adapters.SQL.query(Repo, sql, []) do
+    case Ecto.Adapters.SQL.query(Repo, sql, params) do
       {:ok, _} -> roll_up_fn.({:ok, Enum.map(evaluations, fn {:ok, action} -> action end)})
       e -> e
     end
   end
 
-  defp attrs_for({%{attempt_guid: attempt_guid, input: input}, {:ok, %FeedbackAction{
-    feedback: feedback,
-    score: score,
-    out_of: out_of}}}, datashop_session_id) do
+  defp attrs_for(
+         {%{attempt_guid: attempt_guid, input: input},
+          {:ok,
+           %FeedbackAction{
+             feedback: feedback,
+             score: score,
+             out_of: out_of
+           }}},
+         datashop_session_id,
+         now
+       ) do
     %{
       attempt_guid: attempt_guid,
       response: input,
       lifecycle_state: :evaluated,
-      date_evaluated: true,
-      date_submitted: true,
+      date_evaluated: now,
+      date_submitted: now,
       score: score,
       out_of: out_of,
       feedback: feedback,
@@ -87,13 +104,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
     }
   end
 
-  defp attrs_for({%{attempt_guid: attempt_guid, input: input}, {:ok, %SubmissionAction{}}}, datashop_session_id) do
+  defp attrs_for(
+         {%{attempt_guid: attempt_guid, input: input}, {:ok, %SubmissionAction{}}},
+         datashop_session_id,
+         now
+       ) do
     %{
       attempt_guid: attempt_guid,
       response: input,
       lifecycle_state: :submitted,
       date_evaluated: nil,
-      date_submitted: true,
+      date_submitted: now,
       score: nil,
       out_of: nil,
       feedback: nil,
@@ -101,15 +122,5 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
     }
   end
 
-  defp attrs_for(_, _), do: nil
-
-  defp handle_num(nil), do: "NULL::double precision"
-  defp handle_num(v), do: "#{v}"
-
-  defp handle_json(nil), do: "NULL::JSONB"
-  defp handle_json(map), do: "'#{Jason.encode!(map)}'::JSONB"
-
-  defp null_or_now(nil), do: "NULL::timestamp"
-  defp null_or_now(_), do: "NOW()"
-
+  defp attrs_for(_, _, _), do: nil
 end
