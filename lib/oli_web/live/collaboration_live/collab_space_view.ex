@@ -10,7 +10,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias OliWeb.CollaborationLive.{
     ActiveUsers,
     PostModal,
-    ShowPost
+    ShowPost,
+    SortPosts
   }
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
@@ -79,7 +80,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         active_users: Presence.list_presences(topic),
         posts: get_posts(search_params),
         collab_space_config: collab_space_config,
-        new_post_changeset: new_post_changeset
+        new_post_changeset: new_post_changeset,
+        sort: %{by: :inserted_at, order: :asc}
       )}
   end
 
@@ -89,26 +91,25 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         {render_modal(assigns)}
 
         <div class={"card" <> if @collab_space_config.status == :archived, do: " readonly", else: ""}>
-          <div class="card-body">
-            <div class="card-title h5">Collaborative Space</div>
-          </div>
-          <div class="card-footer bg-transparent d-flex justify-content-between">
-            <div>
-              <div class="accordion" id="post-accordion">
-                <button type="button" :on-click="display_create_modal" class="btn btn-primary">+ New</button>
+          <div class="card-body"><div class="card-title h5">Collaborative Space</div></div>
 
-                {#for {post, index} <- @posts}
-                  <ShowPost
-                    post={post}
-                    index={index}
-                    selected={@selected}
-                    user={@user}
-                    is_threaded={@collab_space_config.threaded}/>
-                {/for}
-              </div>
+          <div class="card-footer bg-transparent">
+            <div class="d-flex justify-content-between">
+              <SortPosts sort={@sort} />
+              <button type="button" :on-click="display_create_modal" class="btn btn-primary h-25">+ New</button>
+              <ActiveUsers users={@active_users} />
             </div>
 
-            <ActiveUsers users={@active_users} />
+            <div class="accordion mt-2" id="post-accordion">
+              {#for {post, index} <- @posts}
+                <ShowPost
+                  post={post}
+                  index={index}
+                  selected={@selected}
+                  user={@user}
+                  is_threaded={@collab_space_config.threaded}/>
+              {/for}
+            </div>
           </div>
         </div>
       {/if}
@@ -255,6 +256,25 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   def handle_event("set_selected", %{"id" => value}, socket) do
     {:noreply, assign(socket, selected: value)}
+  end
+
+  def handle_event("sort", %{"sort" => %{"sort_by" => sort_by, "sort_order" => sort_order}} = _params, socket) do
+    sort_by = String.to_atom(sort_by)
+    sort_order = String.to_atom(sort_order)
+
+    sorted_posts =
+      socket.assigns.posts
+      |> Enum.unzip()
+      |> elem(0)
+      |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+      |> Enum.with_index(1)
+
+    {:noreply,
+      assign(
+        socket,
+        posts: sorted_posts,
+        sort: %{by: sort_by, order: sort_order}
+      )}
   end
 
   def handle_info({:updated_post, updated_posts}, socket) do

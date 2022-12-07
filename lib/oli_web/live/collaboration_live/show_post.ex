@@ -28,8 +28,9 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
             {#if @post.user_id == @user.id}
               <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={@post.id}><i class="fas fa-edit"></i></button>
+
               <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title={if @post.replies_count > 0, do: "Post cannot be deleted because it has replies"}>
-                <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={@post.id} phx-value-index={@index} disabled={if @post.replies_count > 0, do: true}><i class="fas fa-trash"></i></button>
+                <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={@post.id} phx-value-index={@index} disabled={@post.replies_count > 0}><i class="fas fa-trash"></i></button>
               </span>
             {/if}
 
@@ -68,6 +69,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
                   {#if reply.user_id == @user.id}
                     <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={reply.id}><i class="fas fa-edit"></i></button>
+
                     <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} ><i class="fas fa-trash"></i></button>
                   {/if}
 
