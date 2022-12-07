@@ -1,6 +1,5 @@
 defmodule OliWeb.CollaborationLive.CollabSpaceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  use OliWeb.Common.Modal
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
@@ -118,28 +117,24 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     """
   end
 
+  # ----------------
+  # so we can set "typing" to false
+  def handle_event("_bsmodal.unmount", _, socket = %{assigns: %{topic: topic, user: %{id: user_id}}}) do
+    Presence.update_presence(self(), topic, user_id, %{typing: false})
+    {:noreply, assign(socket, __modal__: nil)}
+  end
+  use OliWeb.Common.Modal
+  # ----------------
+
   def handle_event("display_create_modal", _params, socket) do
     modal_assigns = %{
       id: "create_post_modal",
       on_submit: "create_post",
-      on_change: "typing",
-      on_blur: "stop_typing",
       changeset: socket.assigns.new_post_changeset,
       title: "New post"
     }
 
-    modal = fn assigns ->
-      ~F"""
-        <PostModal {...@modal_assigns} />
-      """
-    end
-
-    {:noreply,
-      socket
-      |> show_modal(
-        modal,
-        modal_assigns: modal_assigns
-      )}
+    display_post_modal(modal_assigns, socket)
   end
 
   def handle_event("create_post", %{"post" => attrs} = _params, socket) do
@@ -176,24 +171,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     modal_assigns = %{
       id: "create_reply_modal",
       on_submit: "create_post",
-      on_change: "typing",
-      on_blur: "stop_typing",
       changeset: post_reply_changeset,
       title: "New reply to #{index}"
     }
 
-    modal = fn assigns ->
-      ~F"""
-        <PostModal {...@modal_assigns} />
-      """
-    end
-
-    {:noreply,
-      socket
-      |> show_modal(
-        modal,
-        modal_assigns: modal_assigns
-      )}
+    display_post_modal(modal_assigns, socket)
   end
 
   def handle_event(
@@ -209,24 +191,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     modal_assigns = %{
       id: "create_reply_modal",
       on_submit: "create_post",
-      on_change: "typing",
-      on_blur: "stop_typing",
       changeset: reply_reply_changeset,
       title: "New reply to #{index}"
     }
 
-    modal = fn assigns ->
-      ~F"""
-        <PostModal {...@modal_assigns} />
-      """
-    end
-
-    {:noreply,
-      socket
-      |> show_modal(
-        modal,
-        modal_assigns: modal_assigns
-      )}
+    display_post_modal(modal_assigns, socket)
   end
 
   def handle_event("display_edit_modal", %{"id" => id}, socket) do
@@ -236,24 +205,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     modal_assigns = %{
       id: "edit_post_modal",
       on_submit: "edit_post",
-      on_change: "typing",
-      on_blur: "stop_typing",
       changeset: changeset
     }
 
-    modal = fn assigns ->
-      ~F"""
-        <PostModal {...@modal_assigns} />
-      """
-    end
-
-    {:noreply,
-      socket
-      |> assign(editing_post: post)
-      |> show_modal(
-        modal,
-        modal_assigns: modal_assigns
-      )}
+    display_post_modal(modal_assigns, socket)
   end
 
   def handle_event(
@@ -337,20 +292,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       |> hide_modal(modal_assigns: nil)}
   end
 
-  def handle_event("typing", _value, socket = %{assigns: %{user: _user}}) do
-    # Presence.update_presence(self(), topic, user.id, %{typing: true})
-    {:noreply, socket}
-  end
-
-  def handle_event(
-        "stop_typing",
-        %{"value" => _value},
-        socket = %{assigns: %{user: _user}}
-      ) do
-    # Presence.update_presence(self(), topic, user.id, %{typing: false})
-    {:noreply, socket}
-  end
-
   def handle_event("set_selected", %{"id" => value}, socket) do
     {:noreply, assign(socket, selected: value)}
   end
@@ -362,7 +303,24 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   def handle_info(%{event: "presence_diff"}, socket) do
     {:noreply,
       assign(socket,
-        users: Presence.list_presences(socket.assigns.topic)
+        active_users: Presence.list_presences(socket.assigns.topic)
+      )}
+  end
+
+  defp display_post_modal(modal_assigns, socket = %{assigns: %{topic: topic, user: %{id: user_id}}}) do
+    Presence.update_presence(self(), topic, user_id, %{typing: true})
+
+    modal = fn assigns ->
+      ~F"""
+        <PostModal {...@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+      show_modal(
+        socket,
+        modal,
+        modal_assigns: modal_assigns
       )}
   end
 
@@ -412,7 +370,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       end
     end)
   end
-
   defp maybe_threading(all_posts, _), do: all_posts
 
   defp show_collab_space?(nil), do: false

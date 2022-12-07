@@ -11,10 +11,7 @@ defmodule OliWeb.CollaborationLive.PostModal do
 
   prop id, :string, required: true
   prop title, :string, default: "Edit post"
-  prop button_text, :string, default: "Save"
   prop changeset, :struct, required: true
-  prop on_change, :event, required: true
-  prop on_blur, :event, required: true
   prop on_submit, :event, required: true
 
   def render(assigns) do
@@ -28,7 +25,7 @@ defmodule OliWeb.CollaborationLive.PostModal do
             </div>
             <div class="modal-body">
               <div class="col-12 mt-2">
-                <Form for={@changeset} submit={@on_submit} change={@on_change} opts={autocomplete: "off"}>
+                <Form for={@changeset} submit={@on_submit} opts={autocomplete: "off"}>
                   <HiddenInput field={:user_id} />
                   <HiddenInput field={:section_id} />
                   <HiddenInput field={:resource_id} />
@@ -38,11 +35,11 @@ defmodule OliWeb.CollaborationLive.PostModal do
 
                   <Inputs for={:content}>
                     <Field name={:message} class="form-group">
-                      <TextArea class="form-control" blur={@on_blur} opts={placeholder: "Write message..."}/>
+                      <TextArea class="form-control" opts={placeholder: "Write message..."}/>
                     </Field>
                   </Inputs>
 
-                  <div class="text-right"><button type="submit" class="btn btn-sm btn-primary">{@button_text}</button></div>
+                  <div class="text-right"><button type="submit" class="btn btn-sm btn-primary">Save</button></div>
                 </Form>
               </div>
             </div>
