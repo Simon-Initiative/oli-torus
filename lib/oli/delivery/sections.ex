@@ -1408,32 +1408,6 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  # finds the node in the hierarchy with the given resource id
-  defp hierarchy_node(hierarchy, resource_id) do
-    Hierarchy.find_in_hierarchy(
-      hierarchy,
-      fn %HierarchyNode{
-           resource_id: node_resource_id
-         } ->
-        node_resource_id == resource_id
-      end
-    )
-  end
-
-  # finds the parent node of a resource id by looking up the parent resource in the
-  # new hierarchy, then using that parent resource_id to get the node from the current hierarchy
-  defp hierarchy_parent_node(current_hierarchy, new_hierarchy, resource_id) do
-    new_hierarchy_parent = parent_node(new_hierarchy, resource_id)
-
-    case new_hierarchy_parent do
-      nil ->
-        nil
-
-      %{resource_id: new_hierarchy_parent_resource_id} ->
-        hierarchy_node(current_hierarchy, new_hierarchy_parent_resource_id)
-    end
-  end
-
   @doc """
   For a given section and resource, determine which project this
   resource originally belongs to.
@@ -1446,20 +1420,6 @@ defmodule Oli.Delivery.Sections do
         select: sr.project_id
       )
     )
-  end
-
-  # finds the parent node of the given resource id
-  defp parent_node(hierarchy, resource_id) do
-    container = ResourceType.get_id_by_type("container")
-
-    Hierarchy.find_in_hierarchy(hierarchy, fn %HierarchyNode{revision: revision} ->
-      # only search containers, skip pages and other resource types
-      if revision.resource_type_id == container do
-        resource_id in Enum.map(revision.children, & &1)
-      else
-        false
-      end
-    end)
   end
 
   # Takes a hierarchy node and a accumulator list of section resources and returns the
