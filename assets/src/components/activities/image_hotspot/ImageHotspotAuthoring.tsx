@@ -1,7 +1,4 @@
-import {
-  Hints as HintsAuthoring,
-  Hints,
-} from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Choices } from 'data/activities/model/choices';
@@ -12,7 +9,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import { ImageHotspotActions } from './actions';
-import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot } from './schema';
+import { Hotspot, ImageHotspotModelSchema, makeHotspot } from './schema';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';

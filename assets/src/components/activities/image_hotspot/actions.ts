@@ -1,13 +1,10 @@
-import { ImageHotspotModelSchema } from './schema';
-import { HasParts, Part } from '../types';
+import { HasParts } from '../types';
 import * as ActivityTypes from '../types';
-import { PostUndoable, makeUndoable } from 'components/activities/types';
+import { PostUndoable } from 'components/activities/types';
 import { Operations } from 'utils/pathOperations';
-
 import { toSimpleText } from 'components/editing/slateUtils';
 import { Descendant } from 'slate';
 import { matchListRule } from 'data/activities/model/rules';
-import PartsLayoutRenderer from '../adaptive/components/delivery/PartsLayoutRenderer';
 import { Responses } from 'data/activities/model/responses';
 
 export const ImageHotspotActions = {
@@ -33,7 +30,6 @@ export const ImageHotspotActions = {
   },
 
   setSize(height: number, width: number) {
-    console.log('setSize ' + height + ', ' + width);
     return (model: any & HasParts, post: PostUndoable) => {
       model.height = height;
       model.width = width;

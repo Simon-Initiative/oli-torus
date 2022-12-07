@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { getShape, Hotspot, ImageHotspotModelSchema } from './schema';
@@ -11,7 +11,6 @@ import {
   initializeState,
   setSelection,
   resetAction,
-  PartInputs,
   isEvaluated,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
@@ -26,10 +25,6 @@ import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPo
 import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
 import { useDeliveryElementContext, DeliveryElementProvider } from '../DeliveryElementProvider';
 import { castPartId } from '../common/utils';
-import { toSimpleText } from 'components/editing/slateUtils';
-import guid from 'utils/guid';
-import { Choices } from '../common/choices/authoring/ChoicesAuthoring';
-import { ConsoleLogger } from 'typedoc/dist/lib/utils';
 import { drawHotspotShape, HS_COLOR } from './utils';
 
 const ImageHotspotComponent: React.FC = () => {
@@ -110,7 +105,6 @@ const ImageHotspotComponent: React.FC = () => {
   };
 
   const onClickHotspot = (hs: Hotspot) => {
-    console.log('Clicked hotspot ' + hs.id);
     if (!isEvaluated(uiState)) {
       onSelect(partId, hs.id);
     }

@@ -7,7 +7,6 @@ import {
   Choice,
   RichText,
   makeChoice,
-  PostUndoable,
 } from '../types';
 import { ID } from 'data/content/model/other';
 import { CATACompatible } from '../check_all_that_apply/actions';
