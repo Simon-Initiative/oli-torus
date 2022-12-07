@@ -309,25 +309,30 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   On success returns a tuple of the form `{:ok, %Postgrex.Result{}}`
   """
   def save_student_input(part_inputs) do
-    Repo.transaction(fn ->
-      count = length(part_inputs)
+    {part_input_values, params, _} =
+      Enum.reduce(part_inputs, {[], [], 0}, fn part_input, {values, params, i} ->
+        {
+          values ++ ["($#{i + 1}, $#{i + 2}::JSONB)"],
+          params ++ [part_input.attempt_guid, part_input.response],
+          i + 2
+        }
+      end)
 
-      case Enum.reduce_while(part_inputs, :ok, fn %{
-                                                    attempt_guid: attempt_guid,
-                                                    response: response
-                                                  },
-                                                  _ ->
-             case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid),
-                    set: [response: response]
-                  ) do
-               nil -> {:halt, :error}
-               _ -> {:cont, :ok}
-             end
-           end) do
-        :error -> Repo.rollback(:error)
-        :ok -> {:ok, count}
-      end
-    end)
+    part_input_values =  Enum.join(part_input_values, ",")
+
+    sql = """
+      UPDATE part_attempts
+      SET
+        response = batch_values.response,
+        updated_at = NOW()
+      FROM (
+          VALUES
+          #{part_input_values}
+      ) AS batch_values (attempt_guid, response)
+      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
+    """
+
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   @doc """
