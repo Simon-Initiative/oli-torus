@@ -60,7 +60,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   graded = false,
   overviewURL = '',
   finalizeGradedURL = '',
-  screenIdleTimeOutInSeconds = 1800000,
+  screenIdleTimeOutInSeconds = 1800,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -71,7 +71,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
-  const screenIdleWarningTime = screenIdleTimeOutInSeconds - 60000;
+  const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 60000;
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode) {

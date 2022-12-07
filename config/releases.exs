@@ -91,7 +91,7 @@ config :oli,
   ],
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   screen_idle_timeout_in_seconds:
-    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1,800,000"))
+    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
