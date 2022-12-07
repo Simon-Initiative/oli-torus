@@ -49,7 +49,7 @@ const initialState: PageState = {
   activeEverapp: '',
   overviewURL: '',
   finalizeGradedURL: '',
-  screenIdleTimeOutInSeconds: 30,
+  screenIdleTimeOutInSeconds: 1800,
 };
 
 const pageSlice = createSlice({
@@ -77,14 +77,12 @@ const pageSlice = createSlice({
       state.graded = !!action.payload.graded;
       state.overviewURL = action.payload.overviewURL;
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
-      state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds
-        ? action.payload.screenIdleTimeOutInSeconds
-        : 30;
+      state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
       if (action.payload.screenIdleTimeOutInSeconds) {
-        state.screenIdleExpireTime = Date.now() + action.payload.screenIdleTimeOutInSeconds;
+        state.screenIdleExpireTime = Date.now() + action.payload.screenIdleTimeOutInSeconds * 1000;
       }
     },
     setScore(state, action: PayloadAction<{ score: number }>) {
@@ -93,7 +91,7 @@ const pageSlice = createSlice({
     setScreenIdleExpirationTime(state, action: PayloadAction<{ screenIdleExpireTime: number }>) {
       if (state.screenIdleTimeOutInSeconds) {
         state.screenIdleExpireTime =
-          action.payload.screenIdleExpireTime + state.screenIdleTimeOutInSeconds;
+          action.payload.screenIdleExpireTime + state.screenIdleTimeOutInSeconds * 1000;
       }
     },
     setActiveEverapp(state, action: PayloadAction<{ id: string }>) {
