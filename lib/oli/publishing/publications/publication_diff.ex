@@ -8,7 +8,8 @@ defmodule Oli.Publishing.Publications.PublicationDiff do
     :minor,
     :changes,
     :from_pub,
-    :to_pub
+    :to_pub,
+    :created_at
   ]
 
   defstruct [
@@ -18,7 +19,8 @@ defmodule Oli.Publishing.Publications.PublicationDiff do
     :minor,
     :changes,
     :from_pub,
-    :to_pub
+    :to_pub,
+    :created_at
   ]
 
   @type t() :: %__MODULE__{
@@ -28,6 +30,7 @@ defmodule Oli.Publishing.Publications.PublicationDiff do
           minor: Integer.t(),
           changes: Map.t(),
           from_pub: Publication.t(),
-          to_pub: Publication.t()
+          to_pub: Publication.t(),
+          created_at: DateTime.t()
         }
 end

@@ -36,11 +36,19 @@ defmodule Oli.Application do
           id: "cleanup_nonce_store_daily",
           start: {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
         },
+        # Starts the login hint cleanup task
         %{
           id: "cleanup_login_hint_store_daily",
           start:
             {SchedEx, :run_every,
              [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
+        },
+        # Starts the publication diff cleanup task
+        %{
+          id: "cleanup_publication_diffs_daily",
+          start:
+            {SchedEx, :run_every,
+             [Oli.Publishing.Publications.DiffAgent, :cleanup_diff_store, [], "1 1 * * *"]}
         },
 
         # Starts the publication diff agent store
@@ -67,6 +75,8 @@ defmodule Oli.Application do
 
     # Get the current oban config in all other nodes in the cluster
     nodes_config = :erpc.multicall(Node.list(), Oli.Application, :current_oban_config, [])
+
+    Oban.Telemetry.attach_default_logger()
 
     # Check if a node already has the part_mapping_refresh queue configured
     pm_refresh_already_setup? =

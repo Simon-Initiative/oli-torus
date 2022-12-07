@@ -1,6 +1,8 @@
 defmodule Oli.Publishing.Publications.DiffAgent do
   use Agent
 
+  require Logger
+
   alias Oli.Publishing.Publications.{PublicationDiff, PublicationDiffKey}
 
   @doc """
@@ -31,5 +33,22 @@ defmodule Oli.Publishing.Publications.DiffAgent do
   """
   def delete(%PublicationDiffKey{key: key}) do
     Agent.get_and_update(__MODULE__, &Map.pop(&1, key))
+  end
+
+  @doc """
+  Removes all publication diffs older than 10 days
+  """
+  def cleanup_diff_store() do
+    Logger.info("Cleaning up publication diffs older than 10 days...")
+
+    ten_days_ago = Timex.now() |> Timex.subtract(Timex.Duration.from_days(10))
+
+    Agent.update(__MODULE__, fn cache ->
+      Enum.filter(cache, fn %PublicationDiff{created_at: created_at} ->
+        Timex.compare(created_at, ten_days_ago) > 0
+      end)
+    end)
+
+    Logger.info("Publication diff cleanup complete.")
   end
 end
