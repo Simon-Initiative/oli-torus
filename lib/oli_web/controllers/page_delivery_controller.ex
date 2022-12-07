@@ -288,7 +288,7 @@ defmodule OliWeb.PageDeliveryController do
             context.page.slug,
             resource_attempt.attempt_guid
           ),
-        screenIdleTimeOut: Application.fetch_env!(:oli, :screen_idle_timeout)
+        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions

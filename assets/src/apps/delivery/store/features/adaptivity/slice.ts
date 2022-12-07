@@ -23,7 +23,7 @@ export interface AdaptivityState {
   lastMutateChanges: any;
   initPhaseComplete: any; // timestamp
   historyModeNavigation: boolean;
-  screenIdleTimeOut: boolean;
+  screenIdleTimeOutTriggered: boolean;
 }
 
 const initialState: AdaptivityState = {
@@ -46,7 +46,7 @@ const initialState: AdaptivityState = {
   lastMutateChanges: null,
   initPhaseComplete: null,
   historyModeNavigation: false,
-  screenIdleTimeOut: false,
+  screenIdleTimeOutTriggered: false,
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -72,8 +72,11 @@ const slice: Slice<AdaptivityState> = createSlice({
     setRestartLesson(state, action: PayloadAction<{ restartLesson: boolean }>) {
       state.restartLesson = action.payload.restartLesson;
     },
-    setScreenIdleTimeOutTriggered(state, action: PayloadAction<{ screenIdleTimeOut: boolean }>) {
-      state.screenIdleTimeOut = action.payload.screenIdleTimeOut;
+    setScreenIdleTimeOutTriggered(
+      state,
+      action: PayloadAction<{ screenIdleTimeOutTriggered: boolean }>,
+    ) {
+      state.screenIdleTimeOutTriggered = action.payload.screenIdleTimeOutTriggered;
     },
     setLessonEnd(state, action: PayloadAction<{ lessonEnded: boolean }>) {
       state.lessonEnded = action.payload.lessonEnded;
@@ -134,7 +137,7 @@ export const selectRestartLesson = createSelector(
 );
 export const selectScreenIdleTimeOutTriggered = createSelector(
   selectState,
-  (state: AdaptivityState) => state.screenIdleTimeOut,
+  (state: AdaptivityState) => state.screenIdleTimeOutTriggered,
 );
 export const selectLessonEnd = createSelector(
   selectState,

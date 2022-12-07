@@ -24,7 +24,7 @@ export interface PageState {
   activeEverapp: string;
   overviewURL: string;
   finalizeGradedURL: string;
-  screenIdleTimeOut: number;
+  screenIdleTimeOutInSeconds: number;
   screenIdleExpireTime?: number;
 }
 
@@ -49,7 +49,7 @@ const initialState: PageState = {
   activeEverapp: '',
   overviewURL: '',
   finalizeGradedURL: '',
-  screenIdleTimeOut: 30,
+  screenIdleTimeOutInSeconds: 30,
 };
 
 const pageSlice = createSlice({
@@ -77,26 +77,23 @@ const pageSlice = createSlice({
       state.graded = !!action.payload.graded;
       state.overviewURL = action.payload.overviewURL;
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
-      state.screenIdleTimeOut = action.payload.screenIdleTimeOut
-        ? action.payload.screenIdleTimeOut
+      state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds
+        ? action.payload.screenIdleTimeOutInSeconds
         : 30;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
-      if (action.payload.screenIdleTimeOut) {
-        const screenIdleTimeOut = action.payload.screenIdleTimeOut * 60 * 1000;
-        const expireTime = Date.now() + screenIdleTimeOut;
-        state.screenIdleExpireTime = expireTime;
+      if (action.payload.screenIdleTimeOutInSeconds) {
+        state.screenIdleExpireTime = Date.now() + action.payload.screenIdleTimeOutInSeconds;
       }
     },
     setScore(state, action: PayloadAction<{ score: number }>) {
       state.score = action.payload.score;
     },
     setScreenIdleExpirationTime(state, action: PayloadAction<{ screenIdleExpireTime: number }>) {
-      if (state.screenIdleExpireTime) {
-        const screenIdleTimeOut = state.screenIdleExpireTime * 60 * 1000;
-        const expireTime = action.payload.screenIdleExpireTime + screenIdleTimeOut;
-        state.screenIdleExpireTime = expireTime;
+      if (state.screenIdleTimeOutInSeconds) {
+        state.screenIdleExpireTime =
+          action.payload.screenIdleExpireTime + state.screenIdleTimeOutInSeconds;
       }
     },
     setActiveEverapp(state, action: PayloadAction<{ id: string }>) {
@@ -124,9 +121,9 @@ export const selectPageContent = createSelector(selectState, (state) => state.co
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
-export const selectScreenIdleTimeOut = createSelector(
+export const selectScreenIdleTimeOutInSeconds = createSelector(
   selectState,
-  (state) => state.screenIdleTimeOut,
+  (state) => state.screenIdleTimeOutInSeconds,
 );
 export const selectScreenIdleExpirationTime = createSelector(
   selectState,

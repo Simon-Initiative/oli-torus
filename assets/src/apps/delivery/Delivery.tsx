@@ -18,10 +18,7 @@ import {
 } from './store/features/adaptivity/slice';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
-import {
-  selectScreenIdleExpirationTime,
-  selectScreenIdleTimeOut,
-} from './store/features/page/slice';
+import { selectScreenIdleExpirationTime } from './store/features/page/slice';
 
 export interface DeliveryProps {
   resourceId: number;
@@ -42,7 +39,7 @@ export interface DeliveryProps {
   graded: boolean;
   overviewURL: string;
   finalizeGradedURL: string;
-  screenIdleTimeOut?: number;
+  screenIdleTimeOutInSeconds?: number;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -63,29 +60,28 @@ const Delivery: React.FC<DeliveryProps> = ({
   graded = false,
   overviewURL = '',
   finalizeGradedURL = '',
-  screenIdleTimeOut = 30,
+  screenIdleTimeOutInSeconds = 1800000,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
   const restartLesson = useSelector(selectRestartLesson);
   const screenIdleExpirationTime = useSelector(selectScreenIdleExpirationTime);
-  const screenIdleTime = useSelector(selectScreenIdleTimeOut);
   const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
   let LayoutView: React.FC<LayoutProps> = () => <div>Unknown Layout</div>;
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
+  const screenIdleWarningTime = screenIdleTimeOutInSeconds - 60000;
+  console.log({ screenIdleWarningTime, screenIdleTimeOutInSeconds });
 
-  const screenIdleWarningTime = screenIdleTime - 2;
-  const idleTime = screenIdleWarningTime * 60 * 1000;
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode) {
       return;
     }
     const timer = setTimeout(() => {
-      dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOut: true }));
-    }, idleTime);
+      dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOutTriggered: true }));
+    }, screenIdleWarningTime);
     return () => clearTimeout(timer);
   }, [screenIdleExpirationTime]);
 
@@ -123,7 +119,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         activeEverapp: 'none',
         overviewURL,
         finalizeGradedURL,
-        screenIdleTimeOut,
+        screenIdleTimeOutInSeconds,
       }),
     );
   };
