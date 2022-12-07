@@ -283,7 +283,7 @@ defmodule Oli.Resources.Collaboration do
           and (post.status in [:approved, :archived] or (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_enter_time,
         select_merge: %{
-          replies_count: fragment("select count(*) from posts where thread_root_id = ?", post.id)
+          replies_count: fragment("select count(*) from posts where thread_root_id = ? and status != 'deleted'", post.id)
         },
         order_by: [asc: :inserted_at],
         preload: [:user]

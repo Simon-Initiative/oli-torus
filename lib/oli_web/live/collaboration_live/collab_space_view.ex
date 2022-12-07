@@ -10,11 +10,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias Oli.Resources.Collaboration.Post, as: PostSchema
 
   alias OliWeb.CollaborationLive.{
-    ShowPost,
+    ActiveUsers,
     PostModal,
-    ActiveUsers
+    ShowPost
   }
 
+  alias OliWeb.Common.Confirm
   alias OliWeb.Presence
   alias Phoenix.PubSub
 
@@ -280,6 +281,60 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply, put_flash(socket, :error, "Couldn't edit post")}
     end
+  end
+
+  def handle_event("display_delete_modal", %{"id" => id, "index" => index}, socket) do
+    modal_assigns = %{
+      title: "Delete Post",
+      id: "delete_post_modal",
+      ok: "delete_post",
+      cancel: "cancel_delete_post"
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <Confirm {...@modal_assigns}>Are you sure to delete post #{index}?</Confirm>
+      """
+    end
+
+    {:noreply,
+     socket
+     |> assign(deleting_post: id)
+     |> show_modal(
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event("delete_post", _, socket) do
+    socket = clear_flash(socket)
+    post = Collaboration.get_post_by(%{id: socket.assigns.deleting_post})
+
+    case Collaboration.update_post(post, %{status: :deleted}) do
+      {:ok, _} ->
+        socket = put_flash(socket, :info, "Post successfully deleted")
+
+        PubSub.broadcast(
+          Oli.PubSub,
+          socket.assigns.topic,
+          {:updated_post, get_posts(socket.assigns.search_params)}
+        )
+
+        {:noreply,
+          socket
+          |> assign(editing_post: nil)
+          |> hide_modal(modal_assigns: nil)}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, put_flash(socket, :error, "Couldn't delete post")}
+    end
+  end
+
+  def handle_event("cancel_delete_post", _, socket) do
+    {:noreply,
+      socket
+      |> assign(editing_post: nil)
+      |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("typing", _value, socket = %{assigns: %{user: _user}}) do
