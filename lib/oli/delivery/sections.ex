@@ -27,8 +27,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
-  alias Oli.Publishing.Publications.DiffAgent
-  alias Oli.Publishing.Publications.{PublicationDiff, PublicationDiffKey}
+  alias Oli.Publishing.Publications.{PublicationDiff}
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
@@ -1157,19 +1156,7 @@ defmodule Oli.Delivery.Sections do
     current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
     # fetch diff from cache if one is available. If not, compute one on the fly
-    diff =
-      case DiffAgent.get(PublicationDiffKey.key(current_publication.id, new_publication.id)) do
-        nil ->
-          Logger.warn(
-            "No precomputed publication diff found for delta #{current_publication.id} -> #{new_publication.id}. Generating one now."
-          )
-
-          # generate a diff between the old and new publication
-          Publishing.diff_publications(current_publication, new_publication)
-
-        diff ->
-          diff
-      end
+    diff = Publishing.get_publication_diff(current_publication, new_publication)
 
     result =
       case diff do

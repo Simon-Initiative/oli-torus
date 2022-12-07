@@ -1,5 +1,8 @@
 defmodule Oli.Publishing do
   import Ecto.Query, warn: false
+
+  require Logger
+
   alias Oli.Publishing.Publications.DiffAgent
   alias Oli.Repo
 
@@ -919,6 +922,33 @@ defmodule Oli.Publishing do
   end
 
   @doc """
+  Returns a publication diff between two publications.
+
+  This function first tries to load the diff from the DiffAgent cache if one exists.
+  If not, the it will compute one just in time and add it to the cache.
+  """
+  def get_publication_diff(p1, p2) do
+    case DiffAgent.get(PublicationDiffKey.key(p1.id, p2.id)) do
+      nil ->
+        Logger.warn(
+          "No precomputed publication diff found for delta #{p1.id} -> #{p2.id}. Generating one now."
+        )
+
+        # generate a diff between the old and new publication
+        key = PublicationDiffKey.key(p1.id, p2.id)
+        diff = Publishing.diff_publications(p1, p2)
+
+        # cache the generated diff
+        DiffAgent.put(key, diff)
+
+        diff
+
+      diff ->
+        diff
+    end
+  end
+
+  @doc """
   Diff two publications of the same project and returns a `%PublicationDiff{}` which includes the change
   classification (:major|:minor|:no_changes), an updated version number and a `changes` map that contains
   any changes where the key is the resource id which points to a tuple with the first element being the
@@ -941,6 +971,7 @@ defmodule Oli.Publishing do
         },
         from_pub: %Publication{},
         to_pub: %Publication{},
+        created_at: %DateTime{}
       }
 
       iex> diff_publications(publication2, publication3)
@@ -955,6 +986,7 @@ defmodule Oli.Publishing do
         },
         from_pub: %Publication{},
         to_pub: %Publication{},
+        created_at: %DateTime{}
       }
 
       iex> diff_publications(publication1, publication1)
@@ -966,6 +998,7 @@ defmodule Oli.Publishing do
         changes: %{},
         from_pub: %Publication{},
         to_pub: %Publication{},
+        created_at: %DateTime{}
       }
   """
   def diff_publications(p1, p2) do
@@ -1021,7 +1054,8 @@ defmodule Oli.Publishing do
       minor: minor,
       changes: changes,
       from_pub: p1,
-      to_pub: p2
+      to_pub: p2,
+      created_at: DateTime.utc_now()
     }
   end
 
