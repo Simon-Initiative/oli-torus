@@ -293,20 +293,23 @@ defmodule Oli.Analytics.DatashopTest do
 
       assert xml
              |> xpath(~x"//context_message/meta[user_id/text() = '#{user1.email}']/time/text()")
-             |> to_string() == date_accessed
+             |> to_string()
+             |> String.starts_with?(date_accessed)
 
       assert xml
              |> xpath(~x"//tool_message/meta[user_id/text() = '#{user1.email}']/time/text()")
-             |> to_string() == date_submitted
+             |> to_string()
+             |> String.starts_with?(date_submitted)
 
       assert xml
              |> xpath(~x"//tutor_message/meta[user_id/text() = '#{user1.email}']/time/text()")
-             |> to_string() == date_submitted
+             |> to_string()
+             |> String.starts_with?(date_submitted)
     end
   end
 
   defp format_date(date) do
-    {:ok, time} = Timex.format(date, "{YYYY}-{0M}-{0D} {0h24}:{0m}:{0s}")
+    {:ok, time} = Timex.format(date, "{YYYY}-{0M}-{0D} {0h24}:{0m}:")
     time
   end
 

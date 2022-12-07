@@ -282,7 +282,7 @@ export const savePart =
     )?.attemptGuid;
     if (!attemptGuid) return;
 
-    const r = await onSave(getState().attemptState.attemptGuid, attemptGuid, response);
+    await onSave(getState().attemptState.attemptGuid, attemptGuid, response);
     const files = (response as any).files;
     dispatch(slice.actions.updatePartState({ partId, response: files }));
   };

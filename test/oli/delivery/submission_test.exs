@@ -117,7 +117,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         )
 
       # Save an activity part on the page but do not submit it
-      {:ok, {:ok, 1}} =
+      {:ok, %{num_rows: 1}} =
         ActivityLifecycle.save_student_input([
           %{
             # attempt_guid: user1_part_attempt.attempt_guid,
@@ -591,9 +591,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ]
 
       # The part can be saved once
-      assert {:ok, {:ok, 1}} = ActivityLifecycle.save_student_input(part_inputs)
+      assert {:ok, %{num_rows: 1}} = ActivityLifecycle.save_student_input(part_inputs)
       # The part can be saved again
-      assert {:ok, {:ok, 1}} = ActivityLifecycle.save_student_input(part_inputs)
+      assert {:ok, %{num_rows: 1}} = ActivityLifecycle.save_student_input(part_inputs)
     end
 
     test "processing a submission", %{
