@@ -72,8 +72,6 @@ const Delivery: React.FC<DeliveryProps> = ({
     LayoutView = DeckLayoutView;
   }
   const screenIdleWarningTime = screenIdleTimeOutInSeconds - 60000;
-  console.log({ screenIdleWarningTime, screenIdleTimeOutInSeconds });
-
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode) {
