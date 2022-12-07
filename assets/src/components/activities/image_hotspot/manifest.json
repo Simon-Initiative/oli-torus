@@ -1,0 +1,20 @@
+{
+  "id": "oli_image_hotspot",
+  "friendlyName": "Image Hotspot",
+  "petiteLabel": "Hotspot",
+  "description": "A multiple choice question answered by selecting from a set of designated hotspots in an image",
+  "icon": "image",
+  "allowClientEvaluation": false,
+  "delivery": {
+    "element": "oli-image-hotspot-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-image-hotspot-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}
