@@ -272,7 +272,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       );
 
       if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
-        /* console.log('EVENT FOR ME', { e, activity, attempt, currentAttempt }); */
+        // console.log('EVENT FOR ME', { e, activity, attempt, currentAttempt });
         isForMe = true;
       }
       const handler = bridgeEvents[e.type];
