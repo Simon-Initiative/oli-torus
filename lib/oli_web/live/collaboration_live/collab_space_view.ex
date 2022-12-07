@@ -7,13 +7,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration.Post, as: PostSchema
-
   alias OliWeb.CollaborationLive.{
     ActiveUsers,
     PostModal,
     ShowPost
   }
-
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
   alias Phoenix.PubSub
@@ -42,6 +40,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         socket
       ) do
     {:ok, enter_time} = DateTime.now("Etc/UTC")
+
     topic = "cs_#{section_slug}_#{page_slug}"
 
     user = Accounts.get_user_by(%{id: current_user_id})
@@ -69,7 +68,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       collab_space_config: collab_space_config,
       enter_time: enter_time
     }
-    posts = get_posts(search_params)
 
     {:ok,
       assign(socket,
@@ -79,7 +77,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         section: section,
         user: user,
         active_users: Presence.list_presences(topic),
-        posts: posts,
+        posts: get_posts(search_params),
         collab_space_config: collab_space_config,
         new_post_changeset: new_post_changeset
       )}
@@ -208,37 +206,18 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       changeset: changeset
     }
 
-    display_post_modal(modal_assigns, socket)
+    display_post_modal(modal_assigns, assign(socket, editing_post: post))
   end
 
-  def handle_event(
-        "edit_post",
-        %{"post" => attrs},
-        socket
-      ) do
+  def handle_event("edit_post", %{"post" => attrs}, socket) do
     socket = clear_flash(socket)
 
-    case Collaboration.update_post(socket.assigns.editing_post, attrs) do
-      {:ok, _} ->
-        socket = put_flash(socket, :info, "Post successfully edited")
-
-        PubSub.broadcast(
-          Oli.PubSub,
-          socket.assigns.topic,
-          {:updated_post, get_posts(socket.assigns.search_params)}
-        )
-
-        {:noreply,
-          socket
-          |> assign(editing_post: nil)
-          |> hide_modal(modal_assigns: nil)}
-
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Couldn't edit post")}
-    end
+    do_edit_post(socket.assigns.editing_post, attrs, socket)
   end
 
   def handle_event("display_delete_modal", %{"id" => id, "index" => index}, socket) do
+    post = Collaboration.get_post_by(%{id: id})
+
     modal_assigns = %{
       title: "Delete Post",
       id: "delete_post_modal",
@@ -248,41 +227,23 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     modal = fn assigns ->
       ~F"""
-        <Confirm {...@modal_assigns}>Are you sure to delete post #{index}?</Confirm>
+        <Confirm {...@modal_assigns}>Are you sure you want to delete the post #{index}?</Confirm>
       """
     end
 
     {:noreply,
-     socket
-     |> assign(deleting_post: id)
-     |> show_modal(
-       modal,
-       modal_assigns: modal_assigns
-     )}
+      socket
+      |> assign(editing_post: post)
+      |> show_modal(
+        modal,
+        modal_assigns: modal_assigns
+      )}
   end
 
   def handle_event("delete_post", _, socket) do
     socket = clear_flash(socket)
-    post = Collaboration.get_post_by(%{id: socket.assigns.deleting_post})
 
-    case Collaboration.update_post(post, %{status: :deleted}) do
-      {:ok, _} ->
-        socket = put_flash(socket, :info, "Post successfully deleted")
-
-        PubSub.broadcast(
-          Oli.PubSub,
-          socket.assigns.topic,
-          {:updated_post, get_posts(socket.assigns.search_params)}
-        )
-
-        {:noreply,
-          socket
-          |> assign(editing_post: nil)
-          |> hide_modal(modal_assigns: nil)}
-
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Couldn't delete post")}
-    end
+    do_edit_post(socket.assigns.editing_post, %{status: :deleted}, socket)
   end
 
   def handle_event("cancel_delete_post", _, socket) do
@@ -322,6 +283,27 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         modal,
         modal_assigns: modal_assigns
       )}
+  end
+
+  defp do_edit_post(post, attrs, socket) do
+    case Collaboration.update_post(post, attrs) do
+      {:ok, _} ->
+        socket = put_flash(socket, :info, "Post successfully edited")
+
+        PubSub.broadcast(
+          Oli.PubSub,
+          socket.assigns.topic,
+          {:updated_post, get_posts(socket.assigns.search_params)}
+        )
+
+        {:noreply,
+          socket
+          |> assign(editing_post: nil)
+          |> hide_modal(modal_assigns: nil)}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, put_flash(socket, :error, "Couldn't edit post")}
+    end
   end
 
   defp default_user_presence_payload(user) do

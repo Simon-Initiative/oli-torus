@@ -1,0 +1,20 @@
+.border-post {
+  border-left: 2.5px solid #63a372 !important;
+}
+
+.border-reply {
+  border-left: 2.5px solid #dc3545 !important;
+}
+
+.w-85 {
+  width: 85%;
+}
+
+.readonly {
+  pointer-events: none;
+  background: #80808029 !important;
+}
+
+.not-readonly {
+  pointer-events: all;
+}
