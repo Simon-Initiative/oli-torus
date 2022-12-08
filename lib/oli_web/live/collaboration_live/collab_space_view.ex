@@ -70,6 +70,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       enter_time: enter_time
     }
 
+    sort = %{by: :inserted_at, order: :asc}
+
     {:ok,
       assign(socket,
         topic: topic,
@@ -78,10 +80,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         section: section,
         user: user,
         active_users: Presence.list_presences(topic),
-        posts: get_posts(search_params),
+        posts: get_posts(search_params, sort),
         collab_space_config: collab_space_config,
         new_post_changeset: new_post_changeset,
-        sort: %{by: :inserted_at, order: :asc}
+        sort: sort
       )}
   end
 
@@ -151,7 +153,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
-          {:updated_post, get_posts(socket.assigns.search_params)}
+          {:updated_post, get_posts(socket.assigns.search_params, socket.assigns.sort)}
         )
 
         {:noreply, hide_modal(socket, modal_assigns: nil)}
@@ -313,7 +315,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
-          {:updated_post, get_posts(socket.assigns.search_params)}
+          {:updated_post, get_posts(socket.assigns.search_params, socket.assigns.sort)}
         )
 
         {:noreply,
@@ -341,9 +343,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     user_id: user_id,
     collab_space_config: %CollabSpaceConfig{show_full_history: false} = collab_space_config,
     enter_time: enter_time
-  }) do
+  }, %{by: sort_by, order: sort_order}) do
     Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id, enter_time)
     |> maybe_threading(collab_space_config)
+    |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
     |> Enum.with_index(1)
   end
 
@@ -352,9 +355,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     resource_id: page_resource_id,
     user_id: user_id,
     collab_space_config: collab_space_config,
-  }) do
+  }, %{by: sort_by, order: sort_order}) do
     Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id)
     |> maybe_threading(collab_space_config)
+    |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
     |> Enum.with_index(1)
   end
 

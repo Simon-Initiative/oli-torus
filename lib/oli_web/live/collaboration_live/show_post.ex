@@ -43,6 +43,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
             {/if}
           </div>
         </div>
+
         {#if @is_threaded}
           <div id={"collapse_#{@post.id}"} class={"collapse w-85 ml-auto" <> if Integer.to_string(@post.id) == @selected, do: " show", else: ""} aria-labelledby={"heading_#{@post.id}"} data-parent="#post-accordion">
             <div class="accordion-body">
@@ -70,7 +71,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                   {#if reply.user_id == @user.id}
                     <button class="btn btn-link" type="button" :on-click="display_edit_modal" phx-value-id={reply.id}><i class="fas fa-edit"></i></button>
 
-                    <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} ><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} disabled={has_replies?(@post.replies, reply.id)}><i class="fas fa-trash"></i></button>
                   {/if}
 
                   <button class="btn btn-link" type="button" :on-click="display_reply_to_reply_modal" phx-value-parent_id={reply.id} phx-value-root_id={@post.id} phx-value-index={"##{@index}.#{reply_index}"}><i class="fas fa-reply"></i></button>
@@ -89,5 +90,15 @@ defmodule OliWeb.CollaborationLive.ShowPost do
     ~F"""
       Replied to {parent_post.user.name} in #{thread_index}.{index}
     """
+  end
+
+  defp has_replies?(replies, reply_id) do
+    some_child =
+      replies
+      |> Enum.unzip()
+      |> elem(0)
+      |> Enum.find(& &1.parent_post_id == reply_id)
+
+    not is_nil(some_child)
   end
 end
