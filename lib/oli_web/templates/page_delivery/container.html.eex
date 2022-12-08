@@ -9,7 +9,7 @@
   </span>
 <% else %>
 
-  <ol class="course-outline well" style="list-style: none;">
+  <ol class="course-outline well" style="list-style: none; padding-left: 24px;">
 
   <%= for child <- @children do %>
     <% props = Map.merge(assigns, %{

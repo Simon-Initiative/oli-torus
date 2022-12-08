@@ -117,6 +117,33 @@ function determineDateSubmitted(score: number | null, action: PayloadAction<Eval
   return null;
 }
 
+function handleAutomationInResponse(
+  state: WritableDraft<ActivityDeliveryState>,
+  action: PayloadAction<EvaluationResponse>,
+) {
+  const toShow: number[] = action.payload.actions
+    .filter((a: FeedbackAction) => a.show_page !== null)
+    .map((a: FeedbackAction) => a.show_page) as number[];
+
+  if (toShow.length > 0) {
+    const forId = state.attemptState.groupId as string;
+
+    toShow.forEach((index: number) =>
+      Events.dispatch(
+        Events.Registry.ShowContentPage,
+        Events.makeShowContentPage({ forId, index }),
+      ),
+    );
+
+    updatePaginationState(
+      state.activityContext.sectionSlug,
+      state.activityContext.pageAttemptGuid,
+      forId,
+      toShow,
+    );
+  }
+}
+
 export const activityDeliverySlice = createSlice({
   name: 'ActivityDelivery',
   initialState: {} as ActivityDeliveryState,
@@ -125,29 +152,7 @@ export const activityDeliverySlice = createSlice({
       if (action.payload.actions.length > 0) {
         const { score, out_of } = calculateNewScore(action);
 
-        if (action.payload.actions[0].type === 'FeedbackAction') {
-          const toShow: number[] = action.payload.actions
-            .filter((a: FeedbackAction) => a.show_page !== null)
-            .map((a: FeedbackAction) => a.show_page) as number[];
-
-          if (toShow.length > 0) {
-            const forId = state.attemptState.groupId as string;
-
-            toShow.forEach((index: number) =>
-              Events.dispatch(
-                Events.Registry.ShowContentPage,
-                Events.makeShowContentPage({ forId, index }),
-              ),
-            );
-
-            updatePaginationState(
-              state.activityContext.sectionSlug,
-              state.activityContext.pageAttemptGuid,
-              forId,
-              toShow,
-            );
-          }
-        }
+        handleAutomationInResponse(state, action);
 
         state.attemptState = {
           ...state.attemptState,
@@ -162,6 +167,9 @@ export const activityDeliverySlice = createSlice({
     partSubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
       if (action.payload.actions.length > 0) {
         const parts = updatePartsStates(state, action);
+
+        handleAutomationInResponse(state, action);
+
         state.attemptState = {
           ...state.attemptState,
           parts,
@@ -274,7 +282,7 @@ export const savePart =
     )?.attemptGuid;
     if (!attemptGuid) return;
 
-    const r = await onSave(getState().attemptState.attemptGuid, attemptGuid, response);
+    await onSave(getState().attemptState.attemptGuid, attemptGuid, response);
     const files = (response as any).files;
     dispatch(slice.actions.updatePartState({ partId, response: files }));
   };
@@ -304,6 +312,18 @@ export const isEvaluated = (state: ActivityDeliveryState) =>
 export const isSubmitted = (state: ActivityDeliveryState) =>
   selectAttemptState(state).dateSubmitted !== null;
 
+export const resetAndRequestHintAction =
+  (
+    partId: PartId,
+    onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>,
+    onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+    partInputs?: PartInputs,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    await dispatch(resetAction(onResetActivity, partInputs));
+    await dispatch(requestHint(partId, onRequestHint));
+  };
+
 export const resetAction =
   (
     onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
@@ -312,7 +332,6 @@ export const resetAction =
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
     partInputs && dispatch(slice.actions.setPartInputs(partInputs));
-    dispatch(slice.actions.hideAllHints());
     dispatch(slice.actions.updateModel(response.model));
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>
@@ -426,7 +445,6 @@ export const resetAndSubmitActivity =
   ): AppThunk =>
   async (dispatch, getState) => {
     const response = await onResetActivity(attemptGuid);
-    dispatch(slice.actions.hideAllHints());
     dispatch(slice.actions.updateModel(response.model));
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>

@@ -107,10 +107,13 @@ defmodule Oli.Delivery.Hierarchy do
       published_resources_by_resource_id[revision.resource_id]
 
     pub = Repo.preload(pub, :project)
-    labels = case pub.project.customizations do
-      nil -> Map.from_struct(CustomLabels.default())
-      l -> Map.from_struct(l)
-    end
+
+    labels =
+      case pub.project.customizations do
+        nil -> Map.from_struct(CustomLabels.default())
+        l -> Map.from_struct(l)
+      end
+
     %HierarchyNode{
       uuid: uuid(),
       numbering: %Numbering{

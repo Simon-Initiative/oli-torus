@@ -5,7 +5,7 @@ defmodule Oli.Publishing.PublishedResource do
   schema "published_resources" do
     field :lock_updated_at, :naive_datetime
 
-    belongs_to :publication, Oli.Publishing.Publication
+    belongs_to :publication, Oli.Publishing.Publications.Publication
     belongs_to :resource, Oli.Resources.Resource
     belongs_to :revision, Oli.Resources.Revision
     belongs_to :author, Oli.Accounts.Author, foreign_key: :locked_by_id

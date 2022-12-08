@@ -17,6 +17,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Evaluation.{Explanation, ExplanationContext}
+
   import Oli.Delivery.Attempts.Core
 
   @doc """
@@ -95,8 +97,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       ) do
     Repo.transaction(fn ->
       activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+      resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
 
-      if activity_attempt == nil do
+      if is_nil(activity_attempt) do
         Repo.rollback({:not_found})
       else
         # We cannot rely on the attempt number from the supplied activity attempt
@@ -139,40 +142,68 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             # simulate preloading of the revision
             new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
 
-            new_part_attempts =
-              case Enum.reduce_while(part_attempts, {:ok, []}, fn p, {:ok, acc} ->
-                     response =
-                       if seed_state_from_previous do
-                         p.response
-                       else
-                         nil
-                       end
+            raw_part_attempts =
+              Enum.map(part_attempts, fn p ->
+                create_raw_part_attempt(
+                  new_activity_attempt.id,
+                  p,
+                  seed_state_from_previous,
+                  datashop_session_id
+                )
+              end)
 
-                     case create_part_attempt(%{
-                            attempt_guid: UUID.uuid4(),
-                            attempt_number: 1,
-                            part_id: p.part_id,
-                            grading_approach: p.grading_approach,
-                            response: response,
-                            activity_attempt_id: new_activity_attempt.id,
-                            datashop_session_id: datashop_session_id
-                          }) do
-                       {:ok, part_attempt} -> {:cont, {:ok, acc ++ [part_attempt]}}
-                       {:error, changeset} -> {:halt, {:error, changeset}}
-                     end
-                   end) do
-                {:ok, new_part_attempts} -> new_part_attempts
-                {:error, error} -> Repo.rollback(error)
-              end
+            Repo.insert_all(PartAttempt, raw_part_attempts)
 
-            {ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
-             ModelPruner.prune(working_model)}
+            new_part_attempts = get_latest_part_attempts(new_activity_attempt.attempt_guid)
+
+            {ActivityState.from_attempt(
+               new_activity_attempt,
+               new_part_attempts,
+               model,
+               resource_attempt,
+               resource_attempt.revision
+             ), ModelPruner.prune(working_model)}
           else
             {:error, error} -> Repo.rollback(error)
           end
         end
       end
     end)
+  end
+
+  defp create_raw_part_attempt(
+         activity_attempt_id,
+         previous_part_attempt,
+         seed_state_from_previous,
+         datashop_session_id
+       ) do
+    response =
+      if seed_state_from_previous do
+        previous_part_attempt.response
+      else
+        nil
+      end
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    %{
+      part_id: previous_part_attempt.part_id,
+      response: response,
+      activity_attempt_id: activity_attempt_id,
+      attempt_guid: UUID.uuid4(),
+      datashop_session_id: datashop_session_id,
+      attempt_number: 1,
+      inserted_at: now,
+      updated_at: now,
+      score: nil,
+      out_of: nil,
+      feedback: nil,
+      lifecycle_state: :active,
+      date_evaluated: nil,
+      date_submitted: nil,
+      hints: previous_part_attempt.hints,
+      grading_approach: previous_part_attempt.grading_approach
+    }
   end
 
   defp maybe_transform_model(
@@ -239,6 +270,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           end
 
         part = Enum.find(parsed_model.parts, fn p -> p.id == part_attempt.part_id end)
+        resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
+
+        explanation_provider_fn = fn part, part_attempt ->
+          Explanation.get_explanation(%ExplanationContext{
+            part: part,
+            part_attempt: part_attempt,
+            activity_attempt: activity_attempt,
+            resource_attempt: resource_attempt,
+            resource_revision: resource_attempt.revision
+          })
+        end
 
         case create_part_attempt(%{
                attempt_guid: UUID.uuid4(),
@@ -247,10 +289,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                grading_approach: part_attempt.grading_approach,
                response: nil,
                activity_attempt_id: activity_attempt.id,
-               datashop_session_id: datashop_session_id
+               datashop_session_id: datashop_session_id,
+               hints: part_attempt.hints
              }) do
-          {:ok, part_attempt} -> PartState.from_attempt(part_attempt, part)
-          {:error, changeset} -> Repo.rollback(changeset)
+          {:ok, part_attempt} ->
+            PartState.from_attempt(part_attempt, part, explanation_provider_fn)
+
+          {:error, changeset} ->
+            Repo.rollback(changeset)
         end
       end
     end)
@@ -260,28 +306,33 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   Processes a list of part inputs and saves the response to the corresponding
   part attempt record.
 
-  On success returns a tuple of the form `{:ok, count}`
+  On success returns a tuple of the form `{:ok, %Postgrex.Result{}}`
   """
   def save_student_input(part_inputs) do
-    Repo.transaction(fn ->
-      count = length(part_inputs)
+    {part_input_values, params, _} =
+      Enum.reduce(part_inputs, {[], [], 0}, fn part_input, {values, params, i} ->
+        {
+          values ++ ["($#{i + 1}, $#{i + 2}::JSONB)"],
+          params ++ [part_input.attempt_guid, part_input.response],
+          i + 2
+        }
+      end)
 
-      case Enum.reduce_while(part_inputs, :ok, fn %{
-                                                    attempt_guid: attempt_guid,
-                                                    response: response
-                                                  },
-                                                  _ ->
-             case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid),
-                    set: [response: response]
-                  ) do
-               nil -> {:halt, :error}
-               _ -> {:cont, :ok}
-             end
-           end) do
-        :error -> Repo.rollback(:error)
-        :ok -> {:ok, count}
-      end
-    end)
+    part_input_values =  Enum.join(part_input_values, ",")
+
+    sql = """
+      UPDATE part_attempts
+      SET
+        response = batch_values.response,
+        updated_at = NOW()
+      FROM (
+          VALUES
+          #{part_input_values}
+      ) AS batch_values (attempt_guid, response)
+      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
+    """
+
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   @doc """

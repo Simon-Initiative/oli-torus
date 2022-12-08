@@ -5,6 +5,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Sections
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating
   alias Oli.Delivery.Attempts.Core
@@ -66,6 +67,8 @@ defmodule Oli.Plugs.MaybeGatedResource do
 
     details = Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
 
+    section_resource = Sections.get_section_resource(section.id, revision.resource_id)
+
     conn
     |> put_view(OliWeb.DeliveryView)
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
@@ -76,6 +79,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
       previous_page: previous,
       next_page: next,
       current_page: current,
+      page_number: section_resource.numbering_level,
       preview_mode: false,
       revision: revision,
       title: revision.title,

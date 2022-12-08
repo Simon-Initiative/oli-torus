@@ -1,5 +1,5 @@
 defmodule Oli.Publishing.PartMappingRefreshAdapter do
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
 
   @moduledoc """
     Behaviour for spawning a function that freshes the part_mapping materialized view:

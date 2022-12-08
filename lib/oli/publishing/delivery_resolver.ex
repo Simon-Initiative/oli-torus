@@ -215,10 +215,11 @@ defmodule Oli.Publishing.DeliveryResolver do
       )
       |> Repo.all()
       |> Enum.reduce({%{}, nil}, fn {s, sr, rev, is_root?}, {nodes, root} ->
-        labels = case s.customizations do
-          nil -> Map.from_struct(CustomLabels.default())
-          l -> Map.from_struct(l)
-        end
+        labels =
+          case s.customizations do
+            nil -> Map.from_struct(CustomLabels.default())
+            l -> Map.from_struct(l)
+          end
 
         node = %HierarchyNode{
           uuid: uuid(),

@@ -4,9 +4,38 @@
 
 ### Bug Fixes
 
+- Fix an issue with duplicate part ids on ingest
+- Fix some performance issues related to published resources trigger
+- Allow admin users to review adaptive page attempts
+- Fix an issue with table layouts
+- Fix an issue where ordering choices were not ordered correctly in review
+- Fix an issue with popup audio element
+- Fix an issue where command button submitted multiple choice
+- Fix an issue where legacy block LaTeX were not rendered correctly
+- Fix an issue where mixed-case collaborator emails would fail
+- Fix an issue where multiple active publications can occur
+
 ### Enhancements
 
 - Add tab for authoring 'explanation' feedback to all activities
+- Add support for definition element
+- Add support for dialog element
+- Add support for vlab activity type
+- Add support for explanation feedback (legacy multiple feedbacks)
+- Add all activities view
+- Add support for conjugation element
+- Add support for activity page links
+- Remove submit button and automatically submit multiple choice questions in formative
+- Add playback speed control to video elements
+- Add support for alternatives/alternative
+- Add activity/question numbering in graded pages
+- Upload media as content-addressable in S3 storage
+- Allow components in adaptive editor to be resized
+- Add support for collaboration spaces
+- Upgrade to Phoenix LiveView 0.18
+- Optimize webpack to improve development compile times
+- Add client side reporting to appsignal for core and adaptive authoring.
+- Updated hint logic to be consistent across core-lesson question types and allow requesting hints for auto-submit questions.
 
 ## 0.21.5 (2022-09-01)
 

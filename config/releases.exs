@@ -256,6 +256,8 @@ config :libcluster,
       end
   ]
 
+config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

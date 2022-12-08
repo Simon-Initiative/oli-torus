@@ -11,7 +11,13 @@
   <% end %>
 
 
-  <div class="flex-grow-1"></div>
+  <div class="flex-grow-1">
+    <%= if @page_number != nil and !container?(@revision) do %>
+      <div>
+        <div class="page-numbering" style="margin: 20px auto;"><%= @page_number %></div>
+      </div>
+    <% end %>
+  </div>
 
   <%= cond do %>
     <% @next_page != nil -> %>

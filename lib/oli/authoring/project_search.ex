@@ -2,7 +2,7 @@ defmodule Oli.Authoring.ProjectSearch do
   import Ecto.Query
 
   alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
 
   @doc """

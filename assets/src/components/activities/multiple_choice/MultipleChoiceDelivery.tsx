@@ -117,7 +117,10 @@ export const MultipleChoiceComponent: React.FC = () => {
           isEvaluated={isEvaluated(uiState) && context.graded}
           context={writerContext}
         />
-        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
+        <HintsDeliveryConnected
+          partId={castPartId(activityState.parts[0].partId)}
+          resetPartInputs={{ [activityState.parts[0].partId]: [] }}
+        />
         <EvaluationConnected />
       </div>
     </div>
