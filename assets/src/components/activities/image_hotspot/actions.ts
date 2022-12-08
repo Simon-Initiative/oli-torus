@@ -1,4 +1,4 @@
-import { HasParts } from '../types';
+import { HasParts, makeContent } from '../types';
 import * as ActivityTypes from '../types';
 import { PostUndoable } from 'components/activities/types';
 import { Operations } from 'utils/pathOperations';
@@ -16,6 +16,16 @@ export const ImageHotspotActions = {
         .split(',')
         .map(Number)
         .filter((x) => !isNaN(x));
+      Operations.applyAll(model, [
+        Operations.replace(`$..choices[?(@.id=='${id}')].content`, content),
+        Operations.replace(`$..choices[?(@.id=='${id}')].coords`, coords),
+      ]);
+    };
+  },
+
+  setCoords(id: string, coords: number[]) {
+    return (model: any, _post: PostUndoable) => {
+      const content = makeContent(coords.join(',')).content;
       Operations.applyAll(model, [
         Operations.replace(`$..choices[?(@.id=='${id}')].content`, content),
         Operations.replace(`$..choices[?(@.id=='${id}')].coords`, coords),
