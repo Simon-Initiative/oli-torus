@@ -9,10 +9,17 @@
       </div>
     </div>
   <% end %>
-  <h5 class="text-secondary border-bottom border-secondary mb-2">
-    Course Overview
-  </h5>
-  <ol id="index-container" class="course-outline well" style="list-style: none;">
+  <div class="d-flex text-secondary border-bottom border-secondary mb-2">
+    <div class="flex-grow-1">
+      <h5>
+        Course Overview
+      </h5>
+    </div>
+    <div class="mr-2">
+      Pages
+    </div>
+  </div>
+  <ol id="index-container" class="course-outline well" style="list-style: none; padding-left: 0px;">
     <%= render "_outline.html", Map.merge(assigns, %{
       nodes: @hierarchy.children,
       active_page: nil,

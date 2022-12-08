@@ -1,5 +1,4 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { writePartAttemptState } from 'data/persistence/state/intrinsic';
 import {
   defaultGlobalEnv,
   evalScript,
@@ -10,10 +9,17 @@ import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { selectActivityAttemptState, selectById, upsertActivityAttemptState } from '../slice';
 import AttemptSlice from '../name';
+import { deferredSavePart } from '../../../../../../data/persistence/deferredSavePart';
+
+interface SavePartPayload {
+  attemptGuid: string;
+  partAttemptGuid: string;
+  response: any;
+}
 
 export const savePartState = createAsyncThunk(
   `${AttemptSlice}/savePartState`,
-  async (payload: any, { dispatch, getState }) => {
+  async (payload: SavePartPayload, { dispatch, getState }) => {
     const { attemptGuid, partAttemptGuid, response } = payload;
     const rootState = getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
@@ -66,13 +72,15 @@ export const savePartState = createAsyncThunk(
 
     const finalize = false;
 
-    return writePartAttemptState(
-      sectionSlug,
-      attemptGuid,
-      partAttemptGuid,
-      updatedPartResponses,
-      finalize,
-    );
+    deferredSavePart(sectionSlug, attemptGuid, partAttemptGuid, updatedPartResponses, finalize);
+
+    // writePartAttemptState(
+    //   sectionSlug,
+    //   attemptGuid,
+    //   partAttemptGuid,
+    //   updatedPartResponses,
+    //   finalize,
+    // );
   },
 );
 

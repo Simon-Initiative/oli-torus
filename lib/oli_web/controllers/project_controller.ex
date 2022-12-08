@@ -3,6 +3,7 @@ defmodule OliWeb.ProjectController do
 
   import Oli.Utils, only: [trap_nil: 1, log_error: 2]
 
+  alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Accounts
   alias Oli.Utils
   alias Oli.Authoring.Course
@@ -75,11 +76,11 @@ defmodule OliWeb.ProjectController do
           {true, nil, %{}}
 
         _ ->
-          {version_change, changes} =
+          %PublicationDiff{classification: classification, changes: changes} =
             Publishing.diff_publications(latest_published_publication, active_publication)
 
           parent_pages =
-            case version_change do
+            case classification do
               {:no_changes, _} ->
                 %{}
 
@@ -95,7 +96,7 @@ defmodule OliWeb.ProjectController do
                 )
             end
 
-          {version_change, changes, parent_pages}
+          {classification, changes, parent_pages}
       end
 
     base_url = Oli.Utils.get_base_url()
@@ -111,7 +112,7 @@ defmodule OliWeb.ProjectController do
 
     has_changes =
       case version_change do
-        {:no_changes, _} -> false
+        :no_changes -> false
         _ -> true
       end
 
@@ -152,7 +153,17 @@ defmodule OliWeb.ProjectController do
     with {:ok, description} <- params["description"] |> trap_nil(),
          {active_publication_id, ""} <- params["active_publication_id"] |> Integer.parse(),
          {:ok} <- check_active_publication_id(project.slug, active_publication_id),
-         {:ok, _pub} <- Publishing.publish_project(project, description) do
+         previous_publication <-
+           Publishing.get_latest_published_publication_by_slug(project.slug),
+         {:ok, new_publication} <- Publishing.publish_project(project, description) do
+      if params["auto_push_update"] == "true" do
+        Publishing.push_publication_update_to_sections(
+          project,
+          previous_publication,
+          new_publication
+        )
+      end
+
       conn
       |> put_flash(:info, "Publish Successful!")
       |> redirect(to: Routes.project_path(conn, :publish, project))

@@ -33,7 +33,8 @@ defmodule Oli.Factory do
   alias Oli.Inventories.Publisher
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Notifications.SystemMessage
-  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Publishing.{PublishedResource}
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
 
@@ -314,7 +315,7 @@ defmodule Oli.Factory do
   def revision_factory() do
     %Revision{
       title: "Example revision",
-      slug: "example_revision",
+      slug: sequence("example_revision"),
       resource: anonymous_build(:resource),
       collab_space_config: build(:collab_space_config)
     }

@@ -578,6 +578,11 @@ defmodule OliWeb.Router do
     post("/automation_teardown", Api.AutomationSetupController, :teardown)
   end
 
+  scope "/api/v1/page_lifecycle", OliWeb do
+    pipe_through([:api, :delivery_protected])
+    post("/", Api.PageLifecycleController, :transition)
+  end
+
   scope "/api/v1/payments", OliWeb do
     pipe_through([:api, :delivery_protected])
 
@@ -755,12 +760,6 @@ defmodule OliWeb.Router do
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
     get(
-      "/:section_slug/page/:revision_slug/attempt/:attempt_guid",
-      PageDeliveryController,
-      :finalize_attempt
-    )
-
-    get(
       "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review",
       PageDeliveryController,
       :review_attempt
@@ -832,6 +831,8 @@ defmodule OliWeb.Router do
       :review_attempt,
       as: :instructor_review
     )
+
+    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor, as: :collab_spaces_index)
   end
 
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
@@ -923,6 +924,7 @@ defmodule OliWeb.Router do
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
+    live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
 
     live(
       "/products/:product_id/discounts/new",

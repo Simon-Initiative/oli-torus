@@ -41,6 +41,8 @@ export const GroupEditor = ({
     onEdit(updatedContent as ResourceContent);
   };
 
+  const contentBreaksExist = contentItem.children.some((v: ResourceContent) => v.type === 'break');
+
   return (
     <>
       {contentItem.children.map((c, childIndex) => {
@@ -72,6 +74,7 @@ export const GroupEditor = ({
               editorMap,
               canRemove,
               featureFlags,
+              contentBreaksExist,
               onEdit: onEditChild,
               onEditActivity,
               onRemove: onRemove,

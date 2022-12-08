@@ -45,20 +45,26 @@ export const writePageAttemptState = async (
   return { result };
 };
 
+export interface PartResponse {
+  attemptGuid: string;
+  response: any;
+}
+
 export const writeActivityAttemptState = async (
   sectionSlug: string,
   attemptGuid: string,
-  partResponses: any,
+  partResponses: PartResponse[],
   finalize = false,
 ) => {
   const method = finalize ? 'PUT' : 'PATCH';
   const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
-  const result = await makeRequest({
+  const result = await makeRequest<{ type: 'success' }>({
     url,
     method,
     body: JSON.stringify({ partInputs: partResponses }),
   });
-  return { result };
+
+  return { result: result.type };
 };
 
 export const writePartAttemptState = async (
@@ -68,6 +74,7 @@ export const writePartAttemptState = async (
   input: any,
   finalize = false,
 ) => {
+  console.info('writePartAttemptState');
   const method = finalize ? 'PUT' : 'PATCH';
   const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`;
   const result = await makeRequest({

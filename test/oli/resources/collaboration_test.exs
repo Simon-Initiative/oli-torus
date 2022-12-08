@@ -112,6 +112,7 @@ defmodule Oli.Resources.CollaborationTest do
         publication: publication,
         page_revision: page_revision,
         page_revision_cs: page_revision_cs,
+        page_resource_cs: page_resource_cs,
         collab_space_config: collab_space_config,
         author: author,
         section: section,
@@ -221,13 +222,13 @@ defmodule Oli.Resources.CollaborationTest do
       refute Resources.get_resource_from_slug(slug)
     end
 
-    test "search_collaborative_spaces/1 returns correctly when no collab spaces present" do
+    test "list_collaborative_spaces_in_section/1 returns correctly when no collab spaces present" do
       section = insert(:section)
 
-      assert [] == Collaboration.search_collaborative_spaces(section.slug)
+      assert [] == Collaboration.list_collaborative_spaces_in_section(section.slug)
     end
 
-    test "search_collaborative_spaces/1 returns collab spaces correctly with posts" do
+    test "list_collaborative_spaces_in_section/1 returns collab spaces correctly with posts configured in pages" do
       {:ok,
         %{
           page_revision_cs: page_revision_cs,
@@ -240,11 +241,70 @@ defmodule Oli.Resources.CollaborationTest do
         page: page,
         number_of_posts: 2,
         number_of_posts_pending_approval: 1,
-        most_recent_post: _most_recent_post
-      }] = Collaboration.search_collaborative_spaces(section.slug)
+        most_recent_post: _most_recent_post,
+        section: returned_section
+      }] = Collaboration.list_collaborative_spaces_in_section(section.slug)
+
+      assert returned_collab_space_config["status"] |> String.to_atom() == collab_space_config.status
+      assert returned_collab_space_config["threaded"] == collab_space_config.threaded
+      assert page.resource_id == page_revision_cs.resource_id
+      assert returned_section.id == section.id
+    end
+
+    test "list_collaborative_spaces_in_section/1 returns collab spaces correctly with posts configured in the delivery setting" do
+      {:ok,
+        %{
+          page_revision_cs: page_revision_cs,
+          page_resource_cs: page_resource_cs,
+          section: section
+        }} = create_project_with_collab_space_and_posts()
+
+      collab_space_config = build(:collab_space_config, status: :archived)
+      insert(:delivery_setting,
+        section: section,
+        resource: page_resource_cs,
+        collab_space_config: collab_space_config
+      )
+
+      assert [%{
+        collab_space_config: returned_collab_space_config,
+        page: page,
+        number_of_posts: 2,
+        number_of_posts_pending_approval: 1,
+        most_recent_post: _most_recent_post,
+        section: returned_section
+      }] = Collaboration.list_collaborative_spaces_in_section(section.slug)
+
+      assert returned_collab_space_config["status"] |> String.to_atom() == :archived
+      assert returned_collab_space_config["threaded"] == collab_space_config.threaded
+      assert page.resource_id == page_revision_cs.resource_id
+      assert returned_section.id == section.id
+    end
+
+    test "list_collaborative_spaces/0 returns correctly when no collab spaces present" do
+      assert [] == Collaboration.list_collaborative_spaces()
+    end
+
+    test "list_collaborative_spaces/0 returns collab spaces correctly with posts configured in pages" do
+      {:ok,
+        %{
+          page_revision_cs: page_revision_cs,
+          collab_space_config: collab_space_config,
+          project: project
+        }} = create_project_with_collab_space_and_posts()
+
+      assert [%{
+        collab_space_config: returned_collab_space_config,
+        page: page,
+        number_of_posts: 2,
+        number_of_posts_pending_approval: 1,
+        most_recent_post: _most_recent_post,
+        project: returned_project
+      }] = Collaboration.list_collaborative_spaces()
 
       assert returned_collab_space_config == collab_space_config
       assert page.resource_id == page_revision_cs.resource_id
+      assert returned_project.id == project.id
     end
 
     test "get_collab_space_config_for_page_in_section/2 returns nil when no collab space is present" do

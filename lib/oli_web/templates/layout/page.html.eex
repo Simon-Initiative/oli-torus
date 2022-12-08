@@ -35,6 +35,7 @@
         previous_page: @previous_page,
         next_page: @next_page,
         current_page: @current_page,
+        page_number: @page_number,
         section: @section,
         preview_mode: @preview_mode,
         revision: @revision,
