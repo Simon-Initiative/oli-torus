@@ -13,7 +13,7 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
   const overviewURL = useSelector(selectOverviewURL);
 
   const handleKeepMySessionActiveClick = async () => {
-    //Now lets make a server call to continue the user session
+    //lets make a server call to continue the user session
     await readGlobal([]);
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOutTriggered: false }));
     dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
