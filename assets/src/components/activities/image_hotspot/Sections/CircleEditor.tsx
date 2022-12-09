@@ -2,7 +2,7 @@ import * as React from 'react';
 import './ShapeEditor.scss';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
-import { BoundingClientRect, Point } from './common';
+import { Point } from './common';
 import { throttle } from './timing';
 
 const mapCoordsToCircleProps = (coords: Immutable.List<number>) => {
@@ -18,7 +18,7 @@ export interface CircleEditorProps {
   label: string;
   coords: Immutable.List<number>;
   selected: boolean;
-  boundingClientRect: Maybe<BoundingClientRect>;
+  boundingClientRect: Maybe<DOMRect>;
   onSelect: (id: string) => void;
   onEdit: (coords: Immutable.List<number>) => void;
 }
@@ -68,7 +68,7 @@ export class CircleEditor extends React.PureComponent<CircleEditorProps, CircleE
     e.stopPropagation();
   }
 
-  endResize(e: any) {
+  endResize(_e: any) {
     const { onEdit } = this.props;
     const { newCoords } = this.state;
 
@@ -139,7 +139,7 @@ export class CircleEditor extends React.PureComponent<CircleEditorProps, CircleE
     window.addEventListener('mouseup', this.endMove);
   }
 
-  endMove(e: any) {
+  endMove(_e: any) {
     const { onEdit } = this.props;
     const { newCoords } = this.state;
 
@@ -196,7 +196,7 @@ export class CircleEditor extends React.PureComponent<CircleEditorProps, CircleE
     });
   }
 
-  onSelect(id: string, e: any) {
+  onSelect(id: string, e: React.MouseEvent) {
     this.props.onSelect(id);
     e.stopPropagation();
   }

@@ -3,7 +3,7 @@ import './ShapeEditor.scss';
 import * as Immutable from 'immutable';
 import { throttle } from './timing';
 import { Maybe } from 'tsmonad';
-import { BoundingClientRect, Point } from './common';
+import { Point } from './common';
 
 const mapCoordsToRectProps = (coords: Immutable.List<number>) => {
   return {
@@ -19,7 +19,7 @@ export interface RectangleEditorProps {
   label: string;
   coords: Immutable.List<number>;
   selected: boolean;
-  boundingClientRect: Maybe<BoundingClientRect>;
+  boundingClientRect: Maybe<DOMRect>;
   onSelect: (id: string) => void;
   onEdit: (coords: Immutable.List<number>) => void;
 }
@@ -78,7 +78,7 @@ export class RectangleEditor extends React.PureComponent<
     e.stopPropagation();
   }
 
-  endResize(e: any) {
+  endResize(_e: any) {
     const { onEdit } = this.props;
     const { newCoords } = this.state;
 
@@ -177,7 +177,7 @@ export class RectangleEditor extends React.PureComponent<
     window.addEventListener('mouseup', this.endMove);
   }
 
-  endMove(e: any) {
+  endMove(_e: any) {
     const { onEdit } = this.props;
     const { newCoords } = this.state;
 
@@ -255,7 +255,7 @@ export class RectangleEditor extends React.PureComponent<
     });
   }
 
-  onSelect(id: string, e: any) {
+  onSelect(id: string, e: React.MouseEvent) {
     this.props.onSelect(id);
     e.stopPropagation();
   }
