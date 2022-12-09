@@ -1,3 +1,5 @@
+import { ModelTypes, schema } from '../data/content/model/schema';
+
 /**
  * Returns the given value if it is not null or undefined. Otherwise, it returns
  * the default value. The return value will always be a defined value of the type given
@@ -31,6 +33,14 @@ function hasContent(item: any): boolean {
     if (!item) return false;
     if (typeof item?.type === 'string' && item.type !== 'p') return true;
     if (Array.isArray(item)) return item.some(hasContent);
+
+    if (item?.type) {
+      const s = schema[item.type as ModelTypes];
+      const sc = schema;
+      // We'll assume void elements are content.
+      if (s?.isVoid) return true;
+    }
+
     if (item.text) return item.text?.trim();
 
     return ([item?.children, item?.content, item?.content?.model] as any)
