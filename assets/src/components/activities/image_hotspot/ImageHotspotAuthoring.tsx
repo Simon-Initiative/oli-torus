@@ -108,6 +108,12 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     dispatch(ImageHotspotActions.setCoords(id, coords.toArray()));
   };
 
+  const removeHotspot = (id: string) => {
+    model.multiple
+      ? dispatch(CATAActions.removeChoiceAndUpdateRules(id))
+      : dispatch(MCActions.removeChoice(id, model.authoring.parts[0].id));
+  };
+
   const hotspotLabel = (model: ImageHotspotModelSchema, id: string) => {
     const index = model.choices.findIndex((h) => h.id === id);
     return index !== undefined ? (index + 1).toString() : '?';
@@ -208,6 +214,14 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             <button className="btn btn-primary mt-2" disabled={!model.imageURL} onClick={addRect}>
               Add Rectangle
             </button>
+            &nbsp;&nbsp;
+            <button
+              className="btn btn-primary mt-2"
+              onClick={(_e) => removeHotspot(selectedHotspot!)}
+              disabled={!selectedHotspot || model.choices.length <= 1}
+            >
+              Remove
+            </button>
           </div>
 
           <div className="form-check mb-2">
@@ -233,11 +247,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             setAll={(choices: Hotspot[]) => dispatch(Choices.setAll(choices))}
             onEdit={(id, content) => dispatch(ImageHotspotActions.setContent(id, content))}
             addOne={() => addHotspot(makeHotspot())}
-            onRemove={(id) =>
-              model.multiple
-                ? dispatch(CATAActions.removeChoiceAndUpdateRules(id))
-                : dispatch(MCActions.removeChoice(id, model.authoring.parts[0].id))
-            }
+            onRemove={(id) => removeHotspot(id)}
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
