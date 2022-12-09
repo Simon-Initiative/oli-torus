@@ -460,5 +460,62 @@ defmodule Oli.Resources.CollaborationTest do
 
       assert [] == Collaboration.search_posts(%{status: :deleted})
     end
+
+    test "list_posts_for_user_in_page_section/3 returns posts meeting the criteria" do
+      user = insert(:user)
+      section = insert(:section)
+      resource = insert(:resource)
+
+      parent_post = insert(:post, user: user, section: section, resource: resource)
+      insert(:post, thread_root: parent_post, user: user, section: section, resource: resource)
+      insert(:post, thread_root: parent_post, user: user, section: section, resource: resource, status: :deleted)
+      insert(:post, thread_root: parent_post, user: user, section: section, resource: resource, status: :submitted)
+      insert(:post, thread_root: parent_post, section: section, resource: resource, status: :submitted)
+
+      insert(:post, user: user, section: section, resource: resource, status: :archived)
+      insert(:post, user: user, section: section, resource: resource, status: :submitted)
+
+      insert(:post, section: section, resource: resource, status: :submitted)
+      insert(:post, user: user, section: section, resource: resource, status: :deleted)
+
+      posts = Collaboration.list_posts_for_user_in_page_section(section.id, resource.id, user.id)
+
+      assert 5 == length(posts)
+      assert 2 == posts |> Enum.find(& &1.id == parent_post.id) |> Map.get(:replies_count)
+    end
+
+    test "list_posts_for_user_in_page_section/3 returns empty when no posts meets the criteria" do
+      user = insert(:user)
+      section = insert(:section)
+      resource = insert(:resource)
+
+      insert_pair(:post)
+
+      assert [] == Collaboration.list_posts_for_user_in_page_section(section.id, resource.id, user.id)
+    end
+
+    test "list_posts_for_user_in_page_section/4 returns posts after the enter time" do
+      enter_time = yesterday()
+
+      user = insert(:user)
+      section = insert(:section)
+      resource = insert(:resource)
+
+      insert(:post, user: user, section: section, resource: resource)
+
+      assert 1 == length(Collaboration.list_posts_for_user_in_page_section(section.id, resource.id, user.id, enter_time))
+    end
+
+    test "list_posts_for_user_in_page_section/4 do not return posts before the enter time" do
+      enter_time = tomorrow()
+
+      user = insert(:user)
+      section = insert(:section)
+      resource = insert(:resource)
+
+      insert(:post, user: user, section: section, resource: resource)
+
+      assert 0 == length(Collaboration.list_posts_for_user_in_page_section(section.id, resource.id, user.id, enter_time))
+    end
   end
 end

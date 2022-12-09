@@ -21,5 +21,6 @@ defmodule Oli.Resources.Collaboration.PostContent do
     |> cast(attrs, [
       :message
     ])
+    |> validate_required([:message])
   end
 end

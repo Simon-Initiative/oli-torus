@@ -36,7 +36,7 @@ defmodule Oli.Factory do
   alias Oli.Publishing.{PublishedResource}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent}
 
   def author_factory() do
     %Author{
@@ -323,6 +323,10 @@ defmodule Oli.Factory do
 
   def collab_space_config_factory() do
     %CollabSpaceConfig{}
+  end
+
+  def post_content_factory() do
+    %PostContent{}
   end
 
   def post_factory() do

@@ -279,11 +279,18 @@ defmodule Oli.Resources.Collaboration do
     Repo.all(
       from(
         post in Post,
-        where: post.section_id == ^section_id and post.resource_id == ^resource_id
-          and (post.status in [:approved, :archived] or (post.status == :submitted and post.user_id == ^user_id)),
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_enter_time,
         select_merge: %{
-          replies_count: fragment("select count(*) from posts where thread_root_id = ? and status != 'deleted'", post.id)
+          replies_count:
+            fragment(
+              "select count(*) from posts where thread_root_id = ? and (status = ANY('{approved, archived}') or (status = 'submitted' and user_id = ?))",
+              post.id,
+              ^user_id
+            )
         },
         order_by: [asc: :inserted_at],
         preload: [:user]

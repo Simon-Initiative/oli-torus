@@ -35,9 +35,10 @@
     display: inline-block;
     padding-left: 2em;
   }
+
   li:before {
     content: "\2022";
-    color: green;
+    color: $green;
     position: absolute;
     top: -15px;
     left: 0;

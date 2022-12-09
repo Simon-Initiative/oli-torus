@@ -30,6 +30,21 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   data page_resource, :any
   data search_params, :any
 
+  # ----------------
+  # Presence
+  def presence_topic(section_slug, page_slug),
+    do: "collab_space_#{section_slug}_#{page_slug}"
+
+  def presence_default_user_payload(user) do
+    %{
+      typing: false,
+      first_name: user.name,
+      email: user.email,
+      user_id: user.id
+    }
+  end
+  # ----------------
+
   def mount(
         _,
         %{
@@ -42,7 +57,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       ) do
     {:ok, enter_time} = DateTime.now("Etc/UTC")
 
-    topic = "cs_#{section_slug}_#{page_slug}"
+    topic = presence_topic(section_slug, page_slug)
 
     user = Accounts.get_user_by(%{id: current_user_id})
     section = Sections.get_section_by_slug(section_slug)
@@ -53,7 +68,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       self(),
       topic,
       current_user_id,
-      default_user_presence_payload(user)
+      presence_default_user_payload(user)
     )
 
     new_post_changeset = Collaboration.change_post(%PostSchema{
@@ -92,29 +107,27 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {#if show_collab_space?(@collab_space_config)}
         {render_modal(assigns)}
 
-        <div class="card" >
+        <div class="card">
           <div class="card-body d-flex align-items-center">
             <h3 class="card-title mb-0">Collaborative Space</h3>
-            {#if is_archived(@collab_space_config.status)}
+            {#if is_archived?(@collab_space_config.status)}
               <span class="badge badge-info ml-2">Archived</span>
             {/if}
           </div>
 
           <div class="card-footer bg-transparent">
             <div class="row">
-
               <div class="col-xs-12 col-lg-9 order-lg-first">
-
                 <div class="d-flex justify-content-between align-items-center">
                   <div class="d-flex align-items-center border border-light p-3 rounded">
                     <div class="mr-2"><strong>Sort by</strong></div>
                     <SortPosts sort={@sort} />
                   </div>
-                  <button type="button" :on-click="display_create_modal" class="btn btn-primary h-25" disabled={is_archived(@collab_space_config.status)}>+ New</button>
+                  <button type="button" :on-click="display_create_modal" class="btn btn-primary h-25" disabled={is_archived?(@collab_space_config.status)}>+ New</button>
                 </div>
 
                 <div class="accordion mt-5 vh-100 overflow-auto" id="post-accordion">
-                  <div class={if is_archived(@collab_space_config.status), do: "readonly", else: ""}>
+                  <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
                     {#for {post, index} <- @posts}
                       <ShowPost
                         post={post}
@@ -130,7 +143,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
               <div class="col-xs-12 col-lg-3 order-first mb-5">
                 <ActiveUsers users={@active_users} />
               </div>
-
             </div>
           </div>
         </div>
@@ -173,7 +185,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
-          {:updated_post, get_posts(socket.assigns.search_params, socket.assigns.sort)}
+          {:updated_posts, get_posts(socket.assigns.search_params, socket.assigns.sort)}
         )
 
         {:noreply, hide_modal(socket, modal_assigns: nil)}
@@ -299,7 +311,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       )}
   end
 
-  def handle_info({:updated_post, updated_posts}, socket) do
+  def handle_info({:updated_posts, updated_posts}, socket) do
     {:noreply, assign(socket, posts: updated_posts)}
   end
 
@@ -335,7 +347,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         PubSub.broadcast(
           Oli.PubSub,
           socket.assigns.topic,
-          {:updated_post, get_posts(socket.assigns.search_params, socket.assigns.sort)}
+          {:updated_posts, get_posts(socket.assigns.search_params, socket.assigns.sort)}
         )
 
         {:noreply,
@@ -346,15 +358,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply, put_flash(socket, :error, "Couldn't edit post")}
     end
-  end
-
-  defp default_user_presence_payload(user) do
-    %{
-      typing: false,
-      first_name: user.name,
-      email: user.email,
-      user_id: user.id
-    }
   end
 
   defp get_posts(%{
@@ -402,7 +405,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
 
-  defp is_archived(:archived), do: true
-  defp is_archived(_), do: false
-
+  defp is_archived?(:archived), do: true
+  defp is_archived?(_), do: false
 end
