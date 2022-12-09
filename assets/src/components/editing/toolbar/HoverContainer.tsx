@@ -1,12 +1,4 @@
-import React, {
-  PropsWithChildren,
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-  ReactNode,
-  ReactChild,
-} from 'react';
+import React, { PropsWithChildren, ReactNode, useCallback, useEffect, useState } from 'react';
 import { useMousedown } from 'components/misc/resizable/useMousedown';
 import { positionRect } from 'data/content/utils';
 import { Popover, PopoverAlign, PopoverPosition } from 'react-tiny-popover';
@@ -40,13 +32,14 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
     [],
   );
 
-  const children =
+  const children = (
     !props.children || props.style ? (
       // Add a wrapping span if there are no children (so that <Popover> works) or if we have to add a style.
       <span style={{ ...props.style }}>{props.children}</span>
     ) : (
       props.children
-    );
+    )
+  ) as ReactNode & JSX.Element;
 
   return (
     <Popover
