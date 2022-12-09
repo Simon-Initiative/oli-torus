@@ -27,6 +27,7 @@ import { CATAActions } from '../check_all_that_apply/actions';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
 import { CircleEditor } from './Sections/CircleEditor';
 import { RectangleEditor } from './Sections/RectangleEditor';
+import { PolygonEditor } from './Sections/PolygonEditor';
 import { Maybe } from 'tsmonad';
 import * as Immutable from 'immutable';
 
@@ -107,6 +108,16 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     dispatch(ImageHotspotActions.setCoords(id, coords.toArray()));
   };
 
+  const hotspotLabel = (model: ImageHotspotModelSchema, id: string) => {
+    const index = model.choices.findIndex((h) => h.id === id);
+    return index !== undefined ? (index + 1).toString() : '?';
+  };
+
+  // list w/selected hotspot sorted to end so it renders at top of z-order
+  const zorderedHotspots = [...model.choices].sort((h1, h2) =>
+    h1.id === selectedHotspot ? 1 : h2.id === selectedHotspot ? -1 : 0,
+  );
+
   return (
     <React.Fragment>
       <TabbedNavigation.Tabs>
@@ -126,48 +137,63 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                   style={{ position: 'absolute' }}
                 />
                 <svg width={model.width} height={model.height} style={{ position: 'relative' }}>
-                  {model.choices
-                    .sort((h1, h2) => (h1.id === selectedHotspot ? 1 : 0))
-                    .map((hotspot, index) => {
-                      switch (getShape(hotspot)) {
-                        case 'circle':
-                          return (
-                            <CircleEditor
-                              key={hotspot.id}
-                              id={hotspot.id}
-                              label={(index + 1).toString()}
-                              selected={hotspot.id === selectedHotspot}
-                              boundingClientRect={
-                                imgRef.current
-                                  ? Maybe.just(imgRef.current.getBoundingClientRect())
-                                  : Maybe.nothing()
-                              }
-                              coords={Immutable.List(hotspot.coords)}
-                              onSelect={setSelectedHotspot}
-                              onEdit={(coords) => onEditCoords(hotspot.id, coords)}
-                            />
-                          );
-                        case 'rect':
-                          return (
-                            <RectangleEditor
-                              key={hotspot.id}
-                              id={hotspot.id}
-                              label={(index + 1).toString()}
-                              selected={hotspot.id === selectedHotspot}
-                              boundingClientRect={
-                                imgRef.current
-                                  ? Maybe.just(imgRef.current.getBoundingClientRect())
-                                  : Maybe.nothing()
-                              }
-                              coords={Immutable.List(hotspot.coords)}
-                              onSelect={setSelectedHotspot}
-                              onEdit={(coords) => onEditCoords(hotspot.id, coords)}
-                            />
-                          );
-                        default:
-                          return null;
-                      }
-                    })}
+                  {zorderedHotspots.map((hotspot) => {
+                    switch (getShape(hotspot)) {
+                      case 'circle':
+                        return (
+                          <CircleEditor
+                            key={hotspot.id}
+                            id={hotspot.id}
+                            label={hotspotLabel(model, hotspot.id)}
+                            selected={hotspot.id === selectedHotspot}
+                            boundingClientRect={
+                              imgRef.current
+                                ? Maybe.just(imgRef.current.getBoundingClientRect())
+                                : Maybe.nothing()
+                            }
+                            coords={Immutable.List(hotspot.coords)}
+                            onSelect={setSelectedHotspot}
+                            onEdit={(coords) => onEditCoords(hotspot.id, coords)}
+                          />
+                        );
+                      case 'rect':
+                        return (
+                          <RectangleEditor
+                            key={hotspot.id}
+                            id={hotspot.id}
+                            label={hotspotLabel(model, hotspot.id)}
+                            selected={hotspot.id === selectedHotspot}
+                            boundingClientRect={
+                              imgRef.current
+                                ? Maybe.just(imgRef.current.getBoundingClientRect())
+                                : Maybe.nothing()
+                            }
+                            coords={Immutable.List(hotspot.coords)}
+                            onSelect={setSelectedHotspot}
+                            onEdit={(coords) => onEditCoords(hotspot.id, coords)}
+                          />
+                        );
+                      case 'poly':
+                        return (
+                          <PolygonEditor
+                            key={hotspot.id}
+                            id={hotspot.id}
+                            label={hotspotLabel(model, hotspot.id)}
+                            selected={hotspot.id === selectedHotspot}
+                            boundingClientRect={
+                              imgRef.current
+                                ? Maybe.just(imgRef.current.getBoundingClientRect())
+                                : Maybe.nothing()
+                            }
+                            coords={Immutable.List(hotspot.coords)}
+                            onSelect={setSelectedHotspot}
+                            onEdit={(coords) => onEditCoords(hotspot.id, coords)}
+                          />
+                        );
+                      default:
+                        return null;
+                    }
+                  })}
                 </svg>
               </div>
             )}
