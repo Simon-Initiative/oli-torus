@@ -1,9 +1,19 @@
 .border-post {
-  border-left: 2.5px solid #63a372 !important;
+  border-left: 0.2rem solid #007bff !important;
 }
 
 .border-reply {
-  border-left: 2.5px solid #dc3545 !important;
+  border-left: 0.2rem solid #17a2b8 !important;
+}
+
+.border-index {
+  border-right: 1px solid #73757e !important;
+  padding: 0.7rem;
+}
+
+.text-username {
+  font-size: .95rem;
+  font-weight: 400 !important;
 }
 
 .w-85 {
@@ -13,8 +23,25 @@
 .readonly {
   pointer-events: none;
   background: #80808029 !important;
+  opacity: 0.6;
 }
 
 .not-readonly {
   pointer-events: all;
+}
+
+.members {
+  li {
+    display: inline-block;
+    padding-left: 2em;
+  }
+  li:before {
+    content: "\2022";
+    color: green;
+    position: absolute;
+    top: -15px;
+    left: 0;
+    padding-left: 0.1em;
+    font-size: 3em;
+  }
 }

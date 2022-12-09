@@ -8,7 +8,7 @@ defmodule OliWeb.CollaborationLive.SortPosts do
 
   def render(assigns) do
     ~F"""
-      <Form for={:sort} change="sort" class="d-flex h-25">
+      <Form for={:sort} change="sort" class="d-flex">
         <Select field="sort_by" options={"Date": "inserted_at", "# of Replies": "replies_count"} class="custom-select custom-select mr-2" selected={@sort.by}/>
 
         <Field name="sort_order" class="control w-100 d-flex align-items-center">

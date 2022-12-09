@@ -92,25 +92,45 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {#if show_collab_space?(@collab_space_config)}
         {render_modal(assigns)}
 
-        <div class={"card" <> if @collab_space_config.status == :archived, do: " readonly", else: ""}>
-          <div class="card-body"><div class="card-title h5">Collaborative Space</div></div>
+        <div class="card" >
+          <div class="card-body d-flex align-items-center">
+            <h3 class="card-title mb-0">Collaborative Space</h3>
+            {#if is_archived(@collab_space_config.status)}
+              <span class="badge badge-info ml-2">Archived</span>
+            {/if}
+          </div>
 
           <div class="card-footer bg-transparent">
-            <div class="d-flex justify-content-between">
-              <SortPosts sort={@sort} />
-              <button type="button" :on-click="display_create_modal" class="btn btn-primary h-25">+ New</button>
-              <ActiveUsers users={@active_users} />
-            </div>
+            <div class="row">
 
-            <div class="accordion mt-2" id="post-accordion">
-              {#for {post, index} <- @posts}
-                <ShowPost
-                  post={post}
-                  index={index}
-                  selected={@selected}
-                  user={@user}
-                  is_threaded={@collab_space_config.threaded}/>
-              {/for}
+              <div class="col-xs-12 col-lg-9 order-lg-first">
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center border border-light p-3 rounded">
+                    <div class="mr-2"><strong>Sort by</strong></div>
+                    <SortPosts sort={@sort} />
+                  </div>
+                  <button type="button" :on-click="display_create_modal" class="btn btn-primary h-25" disabled={is_archived(@collab_space_config.status)}>+ New</button>
+                </div>
+
+                <div class="accordion mt-5 vh-100 overflow-auto" id="post-accordion">
+                  <div class={if is_archived(@collab_space_config.status), do: "readonly", else: ""}>
+                    {#for {post, index} <- @posts}
+                      <ShowPost
+                        post={post}
+                        index={index}
+                        selected={@selected}
+                        user={@user}
+                        is_threaded={@collab_space_config.threaded}/>
+                    {/for}
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-xs-12 col-lg-3 order-first mb-5">
+                <ActiveUsers users={@active_users} />
+              </div>
+
             </div>
           </div>
         </div>
@@ -381,4 +401,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp show_collab_space?(nil), do: false
   defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   defp show_collab_space?(_), do: true
+
+  defp is_archived(:archived), do: true
+  defp is_archived(_), do: false
+
 end

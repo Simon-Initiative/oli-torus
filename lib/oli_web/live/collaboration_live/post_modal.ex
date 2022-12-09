@@ -19,8 +19,8 @@ defmodule OliWeb.CollaborationLive.PostModal do
       <div class="modal fade show d-block" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
         <div class="modal-dialog modal-lg" role="document">
           <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">{@title}</h5>
+            <div class="modal-header pb-0">
+              <h4 class="modal-title">{@title}</h4>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">

@@ -7,13 +7,15 @@ defmodule OliWeb.CollaborationLive.ActiveUsers do
     ~F"""
       <div class="members list-group">
         <div class="list-group-item active">
-          <h4>Active users <strong>({length(@users)})</strong></h4>
+          <h5 class="mb-0"><strong>Active users ({length(@users)})</strong></h5>
         </div>
-        <div class="list-group-item">
+        <ul class="list-group pb-0 list-group-flush border border-top-0 border-light">
           {#for user <- @users}
-            <p>{user.first_name}<strong>{if user.typing do " is typing..." end}</strong></p>
+            <li class="list-group-item">
+              {user.first_name}<strong>{if user.typing do " is typing..." end}</strong>
+            </li>
           {/for}
-        </div>
+        </ul>
       </div>
     """
   end
