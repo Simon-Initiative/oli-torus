@@ -53,30 +53,36 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
         }
       end)
 
-    values = Enum.join(values, ",")
+    case values do
+      [] ->
+        roll_up_fn.({:ok, Enum.map(evaluations, fn {:ok, action} -> action end)})
 
-    sql = """
-      UPDATE part_attempts
-      SET
-        response = batch_values.response,
-        lifecycle_state = batch_values.lifecycle_state,
-        date_evaluated = batch_values.date_evaluated,
-        date_submitted = batch_values.date_submitted,
-        score = batch_values.score,
-        out_of = batch_values.out_of,
-        feedback = batch_values.feedback,
-        datashop_session_id = batch_values.datashop_session_id,
-        updated_at = NOW()
-      FROM (
-          VALUES
-          #{values}
-      ) AS batch_values (attempt_guid, response, lifecycle_state, date_evaluated, date_submitted, score, out_of, feedback, datashop_session_id)
-      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
-    """
+      _ ->
+        values = Enum.join(values, ",")
 
-    case Ecto.Adapters.SQL.query(Repo, sql, params) do
-      {:ok, _} -> roll_up_fn.({:ok, Enum.map(evaluations, fn {:ok, action} -> action end)})
-      e -> e
+        sql = """
+          UPDATE part_attempts
+          SET
+            response = batch_values.response,
+            lifecycle_state = batch_values.lifecycle_state,
+            date_evaluated = batch_values.date_evaluated,
+            date_submitted = batch_values.date_submitted,
+            score = batch_values.score,
+            out_of = batch_values.out_of,
+            feedback = batch_values.feedback,
+            datashop_session_id = batch_values.datashop_session_id,
+            updated_at = NOW()
+          FROM (
+              VALUES
+              #{values}
+          ) AS batch_values (attempt_guid, response, lifecycle_state, date_evaluated, date_submitted, score, out_of, feedback, datashop_session_id)
+          WHERE part_attempts.attempt_guid = batch_values.attempt_guid
+        """
+
+        case Ecto.Adapters.SQL.query(Repo, sql, params) do
+          {:ok, _} -> roll_up_fn.({:ok, Enum.map(evaluations, fn {:ok, action} -> action end)})
+          e -> e
+        end
     end
   end
 
