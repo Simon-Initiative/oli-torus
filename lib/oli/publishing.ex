@@ -841,7 +841,7 @@ defmodule Oli.Publishing do
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
-           {:ok, _} <- upsert_revision_part_records(active_publication.id),
+           {:ok, _} <- insert_revision_part_records(active_publication.id),
 
            # set the active publication to published
            {:ok, publication} <-
@@ -875,7 +875,7 @@ defmodule Oli.Publishing do
   # that is far more efficient since it operates against a single publication,
   # where the part_mapping refresh operated over the entire published_resources table.
   #
-  def upsert_revision_part_records(publication_id) do
+  def insert_revision_part_records(publication_id) do
     query = """
       INSERT INTO revision_parts(part_id, grading_approach, revision_id)
       SELECT DISTINCT t.parts->>'id' as part_id, t.parts->>'gradingApproach' as grading_approach, t.revision_id as revision_id FROM (
