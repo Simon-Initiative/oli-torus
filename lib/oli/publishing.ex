@@ -841,7 +841,7 @@ defmodule Oli.Publishing do
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
-           _ <- upsert_revision_part_records(active_publication.id),
+           {:ok, _} <- upsert_revision_part_records(active_publication.id),
 
            # set the active publication to published
            {:ok, publication} <-
@@ -888,7 +888,16 @@ defmodule Oli.Publishing do
         ON CONFLICT (revision_id, part_id, grading_approach) DO NOTHING;
     """
 
-    Repo.query!(query, [publication_id])
+    # Execute the query, wrapping the successful Result struct in an {:ok, result} tuple
+    # or a failure in a {:error, failure} tuple
+    case Repo.query!(query, [publication_id]) do
+      %Postgrex.Result{num_rows: num_rows} = result ->
+        Logger.info("Publication resulted in #{num_rows} new revision_parts records")
+        {:ok, result}
+
+      e ->
+        {:error, e}
+    end
   end
 
   def push_publication_update_to_sections(project, previous_publication, new_publication) do
