@@ -836,7 +836,10 @@ defmodule Oli.Seeder do
         true
 
       %Publication{published: nil} = p ->
-        Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
+        {:ok, pub} = Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
+        Oli.Publishing.upsert_revision_part_records(pub.id)
+
+        {:ok, pub}
     end
   end
 

@@ -15,9 +15,7 @@ defmodule Oli.Publishing do
   alias Oli.Resources.{Revision, ResourceType}
 
   alias Oli.Publishing.{
-    PublishedResource,
-    PartMappingRefreshAdapter,
-    PartMappingRefreshAsync
+    PublishedResource
   }
 
   alias Oli.Institutions.Institution
@@ -554,13 +552,11 @@ defmodule Oli.Publishing do
 
   def update_publication(
         %Publication{} = publication,
-        attrs,
-        adapter \\ refresh_adapter()
+        attrs
       ) do
     publication
     |> Publication.changeset(attrs)
     |> Repo.update()
-    |> adapter.maybe_refresh_part_mapping()
   end
 
   @doc """
@@ -574,7 +570,6 @@ defmodule Oli.Publishing do
   def delete_publication(%Publication{} = publication) do
     publication
     |> Repo.delete()
-    |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   def get_published_objective_details(publication_id) do
@@ -818,9 +813,9 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}, String.t(), PartMappingRefreshAdapter | nil) ::
+  @spec publish_project(%Project{}, String.t()) ::
           {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project, description, refresh_adapter \\ refresh_adapter()) do
+  def publish_project(project, description) do
     Repo.transaction(fn ->
       with active_publication <- project_working_publication(project.slug),
            latest_published_publication <-
@@ -846,6 +841,7 @@ defmodule Oli.Publishing do
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+           _ <- upsert_revision_part_records(active_publication.id),
 
            # set the active publication to published
            {:ok, publication} <-
@@ -857,8 +853,7 @@ defmodule Oli.Publishing do
                  edition: edition,
                  major: major,
                  minor: minor
-               },
-               refresh_adapter
+               }
              ) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
@@ -867,6 +862,33 @@ defmodule Oli.Publishing do
         error -> Repo.rollback(error)
       end
     end)
+  end
+
+  # For a given publication, gather all of the part ids and their grading approach
+  # from within the revisions of activities.  Inserts the three element tuple
+  # of {part_id, grading_approach, revision_id} into the `revision_parts` table.
+  #
+  # There will be conflicts, of course, as later publications will have the same
+  # three element tuples.  The ON CONFLICT ... DO NOTHING handles this.
+  #
+  # This replaces the materialized view approach of the "part_mapping", but in a way
+  # that is far more efficient since it operates against a single publication,
+  # where the part_mapping refresh operated over the entire published_resources table.
+  #
+  def upsert_revision_part_records(publication_id) do
+    query = """
+      INSERT INTO revision_parts(part_id, grading_approach, revision_id)
+      SELECT DISTINCT t.parts->>'id' as part_id, t.parts->>'gradingApproach' as grading_approach, t.revision_id as revision_id FROM (
+        SELECT jsonb_path_query(r.content, '$."authoring"."parts"[*]') as parts,
+          r.id as revision_id
+        FROM published_resources pr
+          LEFT JOIN publications p ON p.id = pr.publication_id
+          LEFT JOIN revisions r ON r.id = pr.revision_id
+        WHERE pr.publication_id = $1 AND r.resource_type_id = 3) t
+        ON CONFLICT (revision_id, part_id, grading_approach) DO NOTHING;
+    """
+
+    Repo.query!(query, [publication_id])
   end
 
   def push_publication_update_to_sections(project, previous_publication, new_publication) do
@@ -1367,12 +1389,5 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
-  end
-
-  @spec refresh_adapter() :: PartMappingRefreshAdapter
-  defp refresh_adapter() do
-    :oli
-    |> Application.get_env(Oli.Publishing)
-    |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
   end
 end

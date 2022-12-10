@@ -232,7 +232,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
        pm.grading_approach
        END)
       FROM activity_attempts as a
-      LEFT JOIN part_mapping as pm on a.revision_id = pm.revision_id
+      LEFT JOIN revision_parts as pm on a.revision_id = pm.revision_id
       WHERE a.resource_attempt_id = $1 #{exclude_clause};
     """
 
