@@ -30,6 +30,7 @@ import { RectangleEditor } from './Sections/RectangleEditor';
 import { PolygonEditor } from './Sections/PolygonEditor';
 import { Maybe } from 'tsmonad';
 import * as Immutable from 'immutable';
+import { defaultCoords } from './utils';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
   const { dispatch, model, editMode, projectSlug, onRequestMedia } =
@@ -79,10 +80,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
   const addCircle = (_e: any) => {
     if (model.width && model.height) {
-      var hs = makeHotspot();
-      hs.coords = [Math.floor(model.width / 2), Math.floor(model.height / 2), 50];
-      // sync coord list to text content for manual editing
-      hs.content = makeContent(hs.coords.join(',')).content;
+      var hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
       addHotspot(hs);
       setSelectedHotspot(hs.id);
     }
@@ -90,15 +88,12 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
   const addRect = (_e: any) => {
     if (model.width && model.height) {
-      var hs = makeHotspot();
-      hs.coords = [
+      var hs = makeHotspot([
         Math.floor(model.width / 2) - 50,
         Math.floor(model.height / 2) - 50,
         Math.floor(model.width / 2) + 50,
         Math.floor(model.height / 2) + 50,
-      ];
-      // sync coord list to text content for manual editing
-      hs.content = makeContent(hs.coords.join(',')).content;
+      ]);
       addHotspot(hs);
       setSelectedHotspot(hs.id);
     }
@@ -246,7 +241,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             simpleText={true}
             setAll={(choices: Hotspot[]) => dispatch(Choices.setAll(choices))}
             onEdit={(id, content) => dispatch(ImageHotspotActions.setContent(id, content))}
-            addOne={() => addHotspot(makeHotspot())}
+            addOne={() => addHotspot(makeHotspot(defaultCoords))}
             onRemove={(id) => removeHotspot(id)}
           />
         </TabbedNavigation.Tab>

@@ -7,6 +7,7 @@ import {
   Choice,
   RichText,
   makeChoice,
+  makeContent,
 } from '../types';
 import { ID } from 'data/content/model/other';
 import { CATACompatible } from '../check_all_that_apply/actions';
@@ -26,12 +27,14 @@ export function getShape(hotspot: Hotspot): string | undefined {
   return undefined;
 }
 
-export function makeHotspot(): Hotspot {
+export function makeHotspot(coords: number[] = []): Hotspot {
   const hotspot = new Hotspot();
   const choice = makeChoice('');
   hotspot.id = choice.id;
   hotspot.content = choice.content;
-  hotspot.coords = [];
+  hotspot.coords = coords;
+  // sync coords to text content as comma-separated list
+  hotspot.content = makeContent(coords.join(',')).content;
   return hotspot;
 }
 
