@@ -9,7 +9,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import { ImageHotspotActions } from './actions';
-import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot } from './schema';
+import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot, shapeName } from './schema';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -114,6 +114,12 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     return index !== undefined ? (index + 1).toString() : '?';
   };
 
+  const shapeEditors = {
+    rect: RectangleEditor,
+    circle: CircleEditor,
+    poly: PolygonEditor,
+  };
+
   // list w/selected hotspot sorted to end so it renders at top of z-order
   const zorderedHotspots = [...model.choices].sort((h1, h2) =>
     h1.id === selectedHotspot ? 1 : h2.id === selectedHotspot ? -1 : 0,
@@ -139,60 +145,25 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                 />
                 <svg width={model.width} height={model.height} style={{ position: 'relative' }}>
                   {zorderedHotspots.map((hotspot) => {
-                    switch (getShape(hotspot)) {
-                      case 'circle':
-                        return (
-                          <CircleEditor
-                            key={hotspot.id}
-                            id={hotspot.id}
-                            label={hotspotLabel(model, hotspot.id)}
-                            selected={hotspot.id === selectedHotspot}
-                            boundingClientRect={
-                              imgRef.current
-                                ? Maybe.just(imgRef.current.getBoundingClientRect())
-                                : Maybe.nothing()
-                            }
-                            coords={Immutable.List(hotspot.coords)}
-                            onSelect={setSelectedHotspot}
-                            onEdit={(coords) => onEditCoords(hotspot.id, coords)}
-                          />
-                        );
-                      case 'rect':
-                        return (
-                          <RectangleEditor
-                            key={hotspot.id}
-                            id={hotspot.id}
-                            label={hotspotLabel(model, hotspot.id)}
-                            selected={hotspot.id === selectedHotspot}
-                            boundingClientRect={
-                              imgRef.current
-                                ? Maybe.just(imgRef.current.getBoundingClientRect())
-                                : Maybe.nothing()
-                            }
-                            coords={Immutable.List(hotspot.coords)}
-                            onSelect={setSelectedHotspot}
-                            onEdit={(coords) => onEditCoords(hotspot.id, coords)}
-                          />
-                        );
-                      case 'poly':
-                        return (
-                          <PolygonEditor
-                            key={hotspot.id}
-                            id={hotspot.id}
-                            label={hotspotLabel(model, hotspot.id)}
-                            selected={hotspot.id === selectedHotspot}
-                            boundingClientRect={
-                              imgRef.current
-                                ? Maybe.just(imgRef.current.getBoundingClientRect())
-                                : Maybe.nothing()
-                            }
-                            coords={Immutable.List(hotspot.coords)}
-                            onSelect={setSelectedHotspot}
-                            onEdit={(coords) => onEditCoords(hotspot.id, coords)}
-                          />
-                        );
-                      default:
-                        return null;
+                    const shape: shapeName | undefined = getShape(hotspot);
+                    if (shape) {
+                      const ShapeEditor = shapeEditors[shape];
+                      return (
+                        <ShapeEditor
+                          key={hotspot.id}
+                          id={hotspot.id}
+                          label={hotspotLabel(model, hotspot.id)}
+                          selected={hotspot.id === selectedHotspot}
+                          boundingClientRect={
+                            imgRef.current
+                              ? Maybe.just(imgRef.current.getBoundingClientRect())
+                              : Maybe.nothing()
+                          }
+                          coords={Immutable.List(hotspot.coords)}
+                          onSelect={setSelectedHotspot}
+                          onEdit={(coords) => onEditCoords(hotspot.id, coords)}
+                        />
+                      );
                     }
                   })}
                 </svg>

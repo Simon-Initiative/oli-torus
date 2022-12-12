@@ -19,7 +19,9 @@ export class Hotspot implements Choice {
   title?: string;
 }
 
-export function getShape(hotspot: Hotspot): string | undefined {
+export type shapeName = 'circle' | 'rect' | 'poly';
+
+export function getShape(hotspot: Hotspot): shapeName | undefined {
   const n = hotspot.coords.length;
   if (n === 3) return 'circle';
   if (n === 4) return 'rect';
