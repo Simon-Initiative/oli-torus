@@ -16,7 +16,7 @@ export const insertFormula = createButtonCommandDesc({
 
 export const insertInlineFormula = createButtonCommandDesc({
   icon: 'functions',
-  description: 'Formula',
+  description: 'Formula (Inline)',
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;
