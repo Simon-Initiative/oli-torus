@@ -9,7 +9,7 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import { ImageHotspotActions } from './actions';
-import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot, shapeName } from './schema';
+import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot, shapeType } from './schema';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -145,7 +145,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                 />
                 <svg width={model.width} height={model.height} style={{ position: 'relative' }}>
                   {zorderedHotspots.map((hotspot) => {
-                    const shape: shapeName | undefined = getShape(hotspot);
+                    const shape: shapeType | undefined = getShape(hotspot);
                     if (shape) {
                       const ShapeEditor = shapeEditors[shape];
                       return (
