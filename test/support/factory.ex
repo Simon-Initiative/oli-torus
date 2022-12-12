@@ -335,7 +335,9 @@ defmodule Oli.Factory do
       status: :approved,
       user: anonymous_build(:user),
       section: anonymous_build(:section),
-      resource: anonymous_build(:resource)
+      resource: anonymous_build(:resource),
+      updated_at: DateTime.utc_now(),
+      inserted_at: DateTime.utc_now()
     }
   end
 

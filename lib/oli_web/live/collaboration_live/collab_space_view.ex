@@ -191,7 +191,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         {:noreply, hide_modal(socket, modal_assigns: nil)}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Couldn't insert post")}
+        {:noreply,
+          socket
+          |> put_flash(:error, "Couldn't create post")
+          |> hide_modal(modal_assigns: nil)}
     end
   end
 
@@ -356,7 +359,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
           |> hide_modal(modal_assigns: nil)}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Couldn't edit post")}
+        {:noreply,
+          socket
+          |> put_flash(:error, "Couldn't edit post")
+          |> hide_modal(modal_assigns: nil)}
     end
   end
 

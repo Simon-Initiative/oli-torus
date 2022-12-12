@@ -11,7 +11,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
   def render(assigns) do
     ~F"""
-      <div class={"accordion-item" <> if @post.status == :archived, do: " readonly", else: ""}>
+      <div id={"accordion_post_#{@post.id}"} class={"accordion-item" <> if @post.status == :archived, do: " readonly", else: ""}>
         <div class="accordion-header" id={"heading_#{@post.id}"}>
           <div class="card border-post my-3">
             <div class="card-header d-flex justify-content-between align-items-center p-0">
@@ -31,7 +31,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
               <div><p class="my-1">{@post.content.message}</p></div>
               <hr class="bg-light"/>
 
-              <div id="post_actions" class="d-flex justify-content-between align-items-center" phx-update="ignore">
+              <div class="d-flex justify-content-between align-items-center">
                 <div>
                   {#if @post.user_id == @user.id}
                     <button class="btn btn-link" type="button" data-toggle="tooltip" title="Edit" :on-click="display_edit_modal" phx-value-id={@post.id}><i class="fas fa-edit"></i></button>
@@ -68,7 +68,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
           <div id={"collapse_#{@post.id}"} class={"collapse w-85 ml-auto" <> if Integer.to_string(@post.id) == @selected, do: " show", else: ""} aria-labelledby={"heading_#{@post.id}"} data-parent="#post-accordion">
             <div class="accordion-body">
               {#for {reply, reply_index} <- @post.replies}
-                <div class={"card border-reply mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
+                <div id={"accordion_reply_#{reply.id}"} class={"card border-reply mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
                   <div class="card-header d-flex justify-content-between align-items-center p-0">
                     <div class="d-flex align-items-center">
                       <div class="h4 mb-0 border-index">#{@index}.{reply_index}</div>
@@ -86,7 +86,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                     <div><p class="my-1">{reply.content.message}</p></div>
                     <hr class="bg-light"/>
 
-                    <div id="reply_actions" class="d-flex justify-content-between align-items-center" phx-update="ignore">
+                    <div class="d-flex justify-content-between align-items-center">
                       <div>
                         {#if reply.user_id == @user.id}
                           <button class="btn btn-link" type="button" data-toggle="tooltip" title="Edit" :on-click="display_edit_modal" phx-value-id={reply.id}><i class="fas fa-edit"></i></button>
@@ -113,7 +113,6 @@ defmodule OliWeb.CollaborationLive.ShowPost do
         {/if}
       </div>
     """
-
   end
 
   defp reply_parent_post_text(assigns, replies, thread_index, parent_post_id) do
@@ -129,7 +128,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
       replies
       |> Enum.unzip()
       |> elem(0)
-      |> Enum.find(& &1.parent_post_id == reply_id)
+      |> Enum.find(&(&1.parent_post_id == reply_id))
 
     not is_nil(some_child)
   end

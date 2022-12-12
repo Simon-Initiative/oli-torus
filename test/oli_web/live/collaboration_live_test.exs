@@ -1089,8 +1089,10 @@ defmodule OliWeb.CollaborationLiveTest do
         assert has_element?(view, ".accordion-item:nth-child(2)", "#{first_post.content.message}")
     end
 
-    test "creates a new post",
+    test "creating a post",
         %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs} do
+      message = "Testing post"
+
       {:ok, view, _html} =
         live_isolated(
           conn,
@@ -1109,22 +1111,21 @@ defmodule OliWeb.CollaborationLiveTest do
 
       view
       |> element("form[phx-submit=\"create_post\"")
-      |> render_submit(%{"post" => %{content: %{message: "Testing post"}}})
+      |> render_submit(%{"post" => %{content: %{message: message}}})
 
       assert view
         |> element("div.alert.alert-info")
         |> render() =~
           "Post successfully created"
 
-      refute has_element?(view, ".modal-title", "Create post")
+      assert_receive {:updated_posts, posts}
 
-      assert_receive {:updated_posts, [{post, index} | _]}
-
-      assert has_element?(view, ".h3", "##{index}")
-      assert has_element?(view, ".card-body", "#{post.content.message}")
+      assert length(posts) == 2
+      assert has_element?(view, ".h3", "#2")
+      assert has_element?(view, ".card-body", "#{message}")
     end
 
-    test "creates new post displays error message",
+    test "create post displays error message",
         %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs} do
       {:ok, view, _html} =
         live_isolated(
@@ -1149,9 +1150,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert view
         |> element("div.alert.alert-danger")
         |> render() =~
-          "Couldn&#39;t insert post"
-
-      refute has_element?(view, ".modal-title", "Create post")
+          "Couldn&#39;t create post"
 
       refute_receive {:updated_posts, _posts}
     end
@@ -1199,21 +1198,384 @@ defmodule OliWeb.CollaborationLiveTest do
       refute has_element?(view, ".card-body", "#{new_post_1.content.message}")
     end
 
-    # Test cases
+    test "deleting a post",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post} do
+      content = build(:post_content, message: "Testing")
+      post = insert(:post, user: user, section: section, resource: page_resource_cs, content: content)
 
-    # delete post (disabled)
-      # new reply
-      # edit reply
-      # delete reply
-      # new reply reply
+      parent_post = insert(:post, user: user, section: section, resource: page_resource_cs)
+      insert(:post, user: user, section: section, resource: page_resource_cs, parent_post: parent_post, thread_root: parent_post)
 
-      # post archived
-      # reply archived
-      # post submitted (auto accept true)
-      # reply submitted (auto accept true)
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
 
-      # collab space archived
-      # collab space no threaded
-      # collab space not show full history
+      refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{first_post.id}\"]")
+      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]:disabled")
+
+      assert has_element?(view, ".card-body", "#{post.content.message}")
+
+      view
+      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{post.id}\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"delete_post\"")
+      |> render_click()
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully edited"
+
+      assert_receive {:updated_posts, posts}
+      assert length(posts) == 2 # reply is nested
+
+      refute has_element?(view, ".card-body", "#{post.content.message}")
+    end
+
+    test "creating a reply",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, first_post: first_post} do
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      view
+      |> element("button[phx-click=\"display_reply_to_post_modal\"][phx-value-parent_id=\"#{first_post.id}\"]")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"create_post\"")
+      |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully created"
+
+      assert_receive {:updated_posts, [{%{id: parent_id, replies: [{reply, reply_index} | _]}, index} | _]}
+
+      assert has_element?(view, ".h4", "##{index}.#{reply_index}")
+      assert has_element?(view, ".accordion-body", "#{reply.content.message}")
+      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{parent_id}\"]", "1")
+    end
+
+    test "editing a reply",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post} do
+      content = build(:post_content, message: "Other test")
+      reply = insert(:post, user: user, section: section, resource: page_resource_cs, content: content, parent_post: first_post, thread_root: first_post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      view
+      |> element("button[phx-click=\"display_edit_modal\"][phx-value-id=\"#{reply.id}\"]")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"edit_post\"")
+      |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully edited"
+
+      assert_receive {:updated_posts, [{%{id: parent_id, replies: [{updated_reply, reply_index} | _]}, index} | _]}
+
+      assert has_element?(view, ".h4", "##{index}.#{reply_index}")
+      refute has_element?(view, ".accordion-body", "#{reply.content.message}")
+      assert has_element?(view, ".accordion-body", "#{updated_reply.content.message}")
+      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{parent_id}\"]", "1")
+    end
+
+    test "deleting a reply",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs} do
+      content = build(:post_content, message: "Testing")
+      parent_post = insert(:post, user: user, section: section, resource: page_resource_cs)
+      reply = insert(:post, user: user, section: section, resource: page_resource_cs, content: content, parent_post: parent_post, thread_root: parent_post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]:disabled")
+      assert has_element?(view, ".accordion-body", "#{reply.content.message}")
+
+      view
+      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply.id}\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"delete_post\"")
+      |> render_click()
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully edited"
+
+      assert_receive {:updated_posts, posts}
+      assert length(posts) == 2
+
+      refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]:disabled")
+      refute has_element?(view, ".accordion-body", "#{reply.content.message}")
+    end
+
+    test "creating a reply of a reply",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post} do
+      reply = insert(:post, user: user, section: section, resource: page_resource_cs, parent_post: first_post, thread_root: first_post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      view
+      |> element("button[phx-click=\"display_reply_to_reply_modal\"][phx-value-root_id=\"#{first_post.id}\"][phx-value-parent_id=\"#{reply.id}\"]")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"create_post\"")
+      |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully created"
+
+      assert_receive {:updated_posts, [{%{id: root_id, replies: replies}, index}]}
+
+      {_reply, reply_index} = Enum.find(replies, fn {reply_res, _index} -> reply_res.id == reply.id end)
+      [{reply_reply, reply_reply_index} | _] = Enum.filter(replies, fn {reply_reply, _index} -> reply_reply.id != reply.id end)
+
+      assert has_element?(view, ".h4", "##{index}.#{reply_reply_index}")
+      assert has_element?(view, ".accordion-body", "#{reply_reply.content.message}")
+      assert has_element?(view, ".accordion-body", "Replied ##{index}.#{reply_index}")
+      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{root_id}\"]", "2")
+    end
+
+    test "collab space is archived",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs} do
+      collab_space_config = build(:collab_space_config, status: :archived)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      assert has_element?(view, "h3", "Collaborative Space")
+      assert has_element?(view, "span", "Archived")
+      assert has_element?(view, "button[phx-click=\"display_create_modal\"]:disabled")
+      assert has_element?(view, ".readonly")
+    end
+
+    test "post is archived",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs} do
+      post = insert(:post, user: user, section: section, resource: page_resource_cs, status: :archived)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      assert has_element?(view, "#accordion_post_#{post.id}.readonly")
+    end
+
+    test "reply is archived",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post} do
+      reply = insert(:post, user: user, section: section, resource: page_resource_cs, thread_root: first_post, parent_post: first_post, status: :archived)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+        assert has_element?(view, "#accordion_reply_#{reply.id}.readonly")
+    end
+
+    test "collab space has auto accept false",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs} do
+      collab_space_config = build(:collab_space_config, status: :enabled, auto_accept: false)
+      message = "Testing Post"
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      view
+      |> element("button[phx-click=\"display_create_modal\"")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"create_post\"")
+      |> render_submit(%{"post" => %{content: %{message: message}}})
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully created"
+
+      assert_receive {:updated_posts, posts}
+
+      {created_post, index} = Enum.find(posts, fn {post, _index} -> post.content.message == message end)
+
+      assert has_element?(view, ".h3", "##{index}")
+      assert has_element?(view, "#accordion_post_#{created_post.id} .badge-info", "Pending approval")
+
+      view
+      |> element("button[phx-click=\"display_reply_to_post_modal\"][phx-value-parent_id=\"#{created_post.id}\"]")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"create_post\"")
+      |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully created"
+
+      assert_receive {:updated_posts, posts}
+
+      {%{replies: [{reply, reply_index} | _]}, index} = Enum.find(posts, fn {post, _index} -> post.id == created_post.id end)
+
+      assert has_element?(view, ".h4", "##{index}.#{reply_index}")
+      assert has_element?(view, "#accordion_reply_#{reply.id} .badge-info", "Pending approval")
+    end
+
+    test "collab space is no threaded",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post} do
+      collab_space_config = build(:collab_space_config, status: :enabled, threaded: false)
+      reply = insert(:post, user: user, section: section, resource: page_resource_cs, thread_root: first_post, parent_post: first_post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      assert has_element?(view, "h3", "Collaborative Space")
+      assert has_element?(view, ".h3", "#2")
+      assert has_element?(view, ".card-body", "#{first_post.content.message}")
+      assert has_element?(view, ".card-body", "#{reply.content.message}")
+      refute has_element?(view, "button[phx-click=\"display_reply_to_post_modal\"][phx-value-parent_id=\"#{first_post.id}\"]")
+      refute has_element?(view, "#accordion_reply#{reply.id}")
+    end
+
+    test "collab space does not show full history",
+        %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs} do
+      collab_space_config = build(:collab_space_config, status: :enabled, show_full_history: false)
+      content = build(:post_content, message: "New post")
+      post = insert(:post, user: user, section: section, resource: page_resource_cs, inserted_at: yesterday(), updated_at: yesterday(), content: content)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug
+          }
+        )
+
+      assert has_element?(view, "h3", "Collaborative Space")
+      refute has_element?(view, ".card-body", "#{post.content.message}")
+
+      view
+      |> element("button[phx-click=\"display_create_modal\"")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"create_post\"")
+      |> render_submit(%{"post" => %{content: %{message: "Testing post"}}})
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully created"
+
+      assert_receive {:updated_posts, [{created_post, index} | _]}
+
+      assert has_element?(view, ".h3", "##{index}")
+      assert has_element?(view, ".card-body", "#{created_post.content.message}")
+    end
   end
 end
