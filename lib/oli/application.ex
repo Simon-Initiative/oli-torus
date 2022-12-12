@@ -71,32 +71,9 @@ defmodule Oli.Application do
   # Returns the Oban configuration for the application.
   # It makes sure that only one node in the cluster has the part_mapping_refresh queue configured.
   defp oban_config do
-    env_oban_config = Application.fetch_env!(:oli, Oban)
-
-    # Get the current oban config in all other nodes in the cluster
-    nodes_config = :erpc.multicall(Node.list(), Oli.Application, :current_oban_config, [])
-
     Oban.Telemetry.attach_default_logger()
 
-    # Check if a node already has the part_mapping_refresh queue configured
-    pm_refresh_already_setup? =
-      Enum.any?(nodes_config, fn
-        {:ok, config} ->
-          config[:queues][:part_mapping_refresh]
-
-        _ ->
-          false
-      end)
-
-    if pm_refresh_already_setup? do
-      # If the part_mapping_refresh queue is already setup somewhere else, we don't want to setup it in this node.
-      queues_without_pm = Keyword.delete(env_oban_config[:queues], :part_mapping_refresh)
-      Keyword.put(env_oban_config, :queues, queues_without_pm)
-    else
-      # If the part_mapping_refresh queue is not already setup, we need to setup it.
-      # We'll use the default queue configuration, but with the part_mapping_refresh queue configured.
-      env_oban_config
-    end
+    Application.fetch_env!(:oli, Oban)
   end
 
   def current_oban_config do
