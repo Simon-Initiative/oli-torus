@@ -130,8 +130,7 @@ config :oli, Oban,
     snapshots: 20,
     selections: 2,
     updates: 10,
-    grades: 30,
-    part_mapping_refresh: 1
+    grades: 30
   ]
 
 config :ex_money,

@@ -96,7 +96,6 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           <button className="btn">
             <a
               onClick={handleRestart}
-              href={isPreviewMode ? '#' : graded ? finalizeGradedURL : overviewURL}
               style={{ color: 'inherit', textDecoration: 'none' }}
               title="OK, Restart Lesson"
               aria-label="OK, Restart Lesson"

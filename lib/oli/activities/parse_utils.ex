@@ -43,6 +43,23 @@ defmodule Oli.Activities.ParseUtils do
       xs when is_list(xs) ->
         Enum.any?(for x <- xs, do: has_content?(x))
 
+      # These elements ARE content, even if they don't have children or text in them.
+      %{"type" => t}
+      when t in [
+             "img",
+             "img_inline",
+             "conjugation",
+             "dialog",
+             "definition",
+             "formula",
+             "formula_inline",
+             "youtube",
+             "audio",
+             "iframe",
+             "video"
+           ] ->
+        true
+
       %{content: content} ->
         case content do
           # :model -> former impl when selection was persisted

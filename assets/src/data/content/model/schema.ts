@@ -82,7 +82,8 @@ export interface SchemaConfig {
   isSimpleText?: boolean;
 }
 
-interface Schema extends Record<AllModelElements['type'], SchemaConfig> {}
+export type ModelTypes = AllModelElements['type'];
+interface Schema extends Record<ModelTypes, SchemaConfig> {}
 export const schema: Schema = {
   p: {
     isVoid: false,

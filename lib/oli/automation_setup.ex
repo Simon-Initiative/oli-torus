@@ -165,8 +165,7 @@ defmodule Oli.AutomationSetup do
   defp publish_project(project) do
     Oli.Publishing.publish_project(
       project,
-      "Automated test setup",
-      Oli.Publishing.PartMappingRefreshSync
+      "Automated test setup"
     )
   end
 
@@ -189,11 +188,12 @@ defmodule Oli.AutomationSetup do
   end
 
   defp create_section(true, publication, project, educator) do
-    customizations = case project.customizations do
-      nil -> nil
-      labels -> Map.from_struct(labels)
-    end
-    
+    customizations =
+      case project.customizations do
+        nil -> nil
+        labels -> Map.from_struct(labels)
+      end
+
     {:ok, section} =
       Oli.Delivery.Sections.create_section(%{
         title: "Automation test section",
