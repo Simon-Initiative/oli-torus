@@ -8,7 +8,7 @@ defmodule Oli.Publishing.Publications.DiffAgent do
   @doc """
   Starts the Agent.
   """
-  def start_link(_opts) do
+  def start_link(_opts \\ []) do
     Agent.start_link(fn -> %{} end, name: __MODULE__)
   end
 
@@ -44,8 +44,13 @@ defmodule Oli.Publishing.Publications.DiffAgent do
     ten_days_ago = Timex.now() |> Timex.subtract(Timex.Duration.from_days(10))
 
     Agent.update(__MODULE__, fn cache ->
-      Enum.filter(cache, fn %PublicationDiff{created_at: created_at} ->
-        Timex.compare(created_at, ten_days_ago) > 0
+      Enum.reduce(cache, %{}, fn {k, %PublicationDiff{created_at: created_at} = v}, acc ->
+        if Timex.compare(created_at, ten_days_ago) > 0 do
+          # diff has not expired, keep in the cache
+          Map.put(acc, k, v)
+        else
+          acc
+        end
       end)
     end)
 
