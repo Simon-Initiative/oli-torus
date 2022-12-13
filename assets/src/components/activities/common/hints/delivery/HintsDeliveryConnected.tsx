@@ -27,6 +27,7 @@ const shouldShow = (
   correct: boolean,
   shouldShow?: boolean,
 ) => {
+  if (graded) return false;
   if (surveyId !== null) return false;
   if (!correct) return true;
 

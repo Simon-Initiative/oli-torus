@@ -686,13 +686,13 @@ defmodule Oli.PublishingTest do
       assert published_revision.content == revision_with_activity.content
     end
 
-    test "publish_project/1 refreshes part_mapping materialized view with published information" do
+    test "publish_project/1 updates revision_part with published information" do
       %{activity: %{revision: revision}, project: project} = project_with_activity()
 
       Publishing.publish_project(project, "Some description")
 
       assert Repo.all(
-               from pm in "part_mapping",
+               from pm in "revision_parts",
                  where: pm.revision_id == ^revision.id,
                  select: pm.grading_approach
              ) == ["manual"]
