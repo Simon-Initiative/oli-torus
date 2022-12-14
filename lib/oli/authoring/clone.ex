@@ -21,13 +21,16 @@ defmodule Oli.Authoring.Clone do
                title: base_project.family.title <> " Copy",
                description: base_project.family.description
              }),
+           {:ok, customizations, attributes} <- copy_attributes(base_project),
            {:ok, cloned_project} <-
              Course.create_project(%{
                title: base_project.title <> new_project_title_suffix,
                version: "1.0.0",
                family_id: cloned_family.id,
                project_id: base_project.id,
-               publisher_id: base_project.publisher_id
+               publisher_id: base_project.publisher_id,
+               customizations: customizations,
+               attributes: attributes
              }),
            {:ok, _} <- Collaborators.add_collaborator(author, cloned_project),
            base_root_container <- AuthoringResolver.root_container(base_project.slug),
@@ -40,7 +43,8 @@ defmodule Oli.Authoring.Clone do
            _ <- Locks.release_all(base_publication.id),
            _ <- clone_all_published_resources(base_publication.id, cloned_publication.id),
            _ <- clone_all_project_resources(base_project.id, cloned_project.id),
-           _ <- clone_all_media_items(base_project.id, cloned_project.id) do
+           _ <- clone_all_media_items(base_project.id, cloned_project.id),
+           _ <- clone_all_project_activity_registrations(base_project.id, cloned_project.id) do
         cloned_project
       else
         {:error, error} -> Repo.rollback(error)
@@ -81,6 +85,17 @@ defmodule Oli.Authoring.Clone do
     Repo.query!(query, [cloned_project_id, base_project_id])
   end
 
+  def clone_all_project_activity_registrations(base_project_id, cloned_project_id) do
+    query = """
+      INSERT INTO activity_registration_projects(activity_registration_id, project_id, inserted_at, updated_at)
+      SELECT activity_registration_id, $1, now(), now()
+      FROM activity_registration_projects as p
+      WHERE p.project_id = $2;
+    """
+
+    Repo.query!(query, [cloned_project_id, base_project_id])
+  end
+
   @doc """
   Returns the existing clones from a parent project that an author might have.
   """
@@ -107,5 +122,21 @@ defmodule Oli.Authoring.Clone do
     project_slug
     |> existing_clones(author)
     |> Enum.count() > 0
+  end
+
+  defp copy_attributes(base_project) do
+    customizations =
+      case base_project.customizations do
+        nil -> nil
+        labels -> Map.from_struct(labels)
+      end
+
+    attributes =
+      case base_project.attributes do
+        nil -> nil
+        base_attributes -> Map.from_struct(base_attributes)
+      end
+
+    {:ok, customizations, attributes}
   end
 end
