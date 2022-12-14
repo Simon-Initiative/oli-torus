@@ -150,7 +150,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   def revisions_of_type(section_slug, resource_type_id) do
     fn ->
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
-        where: rev.resource_type_id == ^resource_type_id,
+        where: rev.resource_type_id == ^resource_type_id and rev.deleted == false,
         select: rev
       )
       |> Repo.all()
