@@ -43,6 +43,44 @@ defmodule Oli.Utils.Seeder.Section do
     |> tag(tags[:section_tag], section)
   end
 
+  def create_section_from_product(
+        seeds,
+        product,
+        instructor,
+        institution,
+        attrs \\ %{},
+        tags \\ []
+      ) do
+    [product, instructor, institution] = unpack(seeds, [product, instructor, institution])
+
+    attrs =
+      %{
+        type: :enrollable,
+        title: "Example Section from Product",
+        context_id: UUID.uuid4()
+      }
+      |> Map.merge(attrs)
+      |> Map.merge(%{
+        institution_id:
+          case institution do
+            nil -> nil
+            i -> i.id
+          end,
+        base_project_id: product.base_project_id
+      })
+
+    {:ok, section} = Oli.Delivery.Sections.Blueprint.duplicate(product, attrs)
+
+    seeds =
+      case instructor do
+        nil -> seeds
+        instructor -> enroll_as_instructor(seeds, instructor, section)
+      end
+
+    seeds
+    |> tag(tags[:section_tag], section)
+  end
+
   def create_and_enroll_learner(seeds, section, user_attrs, tags \\ []) do
     user_tag = tags[:user_tag] || random_tag()
 
@@ -84,6 +122,17 @@ defmodule Oli.Utils.Seeder.Section do
     {:ok, %Enrollment{}} =
       Sections.enroll(user.id, section.id, [
         Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      ])
+
+    seeds
+  end
+
+  defp enroll_as_instructor(seeds, section, user) do
+    [section, user] = unpack(seeds, [section, user])
+
+    {:ok, %Enrollment{}} =
+      Sections.enroll(user.id, section.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
       ])
 
     seeds
