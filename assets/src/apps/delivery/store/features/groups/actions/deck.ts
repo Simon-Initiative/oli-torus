@@ -43,6 +43,7 @@ import {
   selectResourceAttemptGuid,
   selectSectionSlug,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../page/slice';
 import { GroupsSlice } from '../name';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
@@ -424,6 +425,8 @@ interface ActivityAttemptMapping {
 export const loadActivities = createAsyncThunk(
   `${GroupsSlice}/deck/loadActivities`,
   async (activityAttemptMapping: ActivityAttemptMapping[], thunkApi) => {
+    //reset the screen Idle Time
+    thunkApi.dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     const rootState = thunkApi.getState() as RootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
