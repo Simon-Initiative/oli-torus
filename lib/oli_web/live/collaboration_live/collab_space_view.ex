@@ -32,8 +32,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   # ----------------
   # Presence
-  def presence_topic(section_slug, page_slug),
-    do: "collab_space_#{section_slug}_#{page_slug}"
+  def presence_topic(section_slug, resource_id),
+    do: "collab_space_#{section_slug}_#{resource_id}"
 
   def presence_default_user_payload(user) do
     %{
@@ -57,11 +57,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       ) do
     {:ok, enter_time} = DateTime.now("Etc/UTC")
 
-    topic = presence_topic(section_slug, page_slug)
-
     user = Accounts.get_user_by(%{id: current_user_id})
     section = Sections.get_section_by_slug(section_slug)
     page_resource = Resources.get_resource_from_slug(page_slug)
+
+    topic = presence_topic(section_slug, page_resource.id)
 
     PubSub.subscribe(Oli.PubSub, topic)
     Presence.track_presence(
@@ -179,14 +179,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         else: attrs
 
     case Collaboration.create_post(attrs) do
-      {:ok, _post} ->
+      {:ok, %PostSchema{status: status}} ->
         socket = put_flash(socket, :info, "Post successfully created")
 
-        PubSub.broadcast(
-          Oli.PubSub,
-          socket.assigns.topic,
-          {:updated_posts, get_posts(socket.assigns.search_params, socket.assigns.sort)}
-        )
+        send_updated_posts(status, socket.assigns.topic)
 
         {:noreply, hide_modal(socket, modal_assigns: nil)}
 
@@ -314,8 +310,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       )}
   end
 
-  def handle_info({:updated_posts, updated_posts}, socket) do
-    {:noreply, assign(socket, posts: updated_posts)}
+  def handle_info(:updated_posts, socket) do
+    {:noreply, assign(socket, posts: get_posts(socket.assigns.search_params, socket.assigns.sort))}
   end
 
   def handle_info(%{event: "presence_diff"}, socket) do
@@ -344,14 +340,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   defp do_edit_post(post, attrs, socket) do
     case Collaboration.update_post(post, attrs) do
-      {:ok, _} ->
+      {:ok, %PostSchema{status: status}} ->
         socket = put_flash(socket, :info, "Post successfully edited")
 
-        PubSub.broadcast(
-          Oli.PubSub,
-          socket.assigns.topic,
-          {:updated_posts, get_posts(socket.assigns.search_params, socket.assigns.sort)}
-        )
+        send_updated_posts(status, socket.assigns.topic)
 
         {:noreply,
           socket
@@ -413,4 +405,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   defp is_archived?(:archived), do: true
   defp is_archived?(_), do: false
+
+  defp send_updated_posts(:submitted, _), do: send(self(), :updated_posts)
+  defp send_updated_posts(_, topic), do: PubSub.broadcast(Oli.PubSub, topic, :updated_posts)
 end

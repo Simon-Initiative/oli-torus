@@ -7,7 +7,7 @@ defmodule OliWeb.CollaborationLiveTest do
 
   alias Oli.Delivery
   alias Oli.Delivery.{DeliverySetting, Sections}
-  alias Oli.Resources.ResourceType
+  alias Oli.Resources.{Collaboration, ResourceType}
   alias OliWeb.CollaborationLive.{CollabSpaceView, CollabSpaceConfigView}
   alias OliWeb.Presence
 
@@ -1029,7 +1029,7 @@ defmodule OliWeb.CollaborationLiveTest do
       test_user = insert(:user, name: "Test User")
       Presence.track_presence(
         self(),
-        CollabSpaceView.presence_topic(section.slug, page_revision_cs.slug),
+        CollabSpaceView.presence_topic(section.slug, page_revision_cs.resource_id),
         test_user.id,
         CollabSpaceView.presence_default_user_payload(test_user)
       )
@@ -1049,7 +1049,7 @@ defmodule OliWeb.CollaborationLiveTest do
       other_test_user = insert(:user, name: "Other Test User")
       Presence.track_presence(
         self(),
-        CollabSpaceView.presence_topic(section.slug, page_revision_cs.slug),
+        CollabSpaceView.presence_topic(section.slug, page_revision_cs.resource_id),
         other_test_user.id,
         CollabSpaceView.presence_default_user_payload(other_test_user)
       )
@@ -1118,9 +1118,11 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive {:updated_posts, posts}
+      assert_receive :updated_posts
 
+      posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       assert length(posts) == 2
+
       assert has_element?(view, ".h3", "#2")
       assert has_element?(view, ".card-body", "#{message}")
     end
@@ -1152,7 +1154,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Couldn&#39;t create post"
 
-      refute_receive {:updated_posts, _posts}
+      refute_receive :updated_posts
     end
 
     test "editing a post",
@@ -1189,11 +1191,12 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully edited"
 
-      assert_receive {:updated_posts, posts}
+      assert_receive :updated_posts
 
-      {updated_post, index} = Enum.find(posts, fn {post, _index} -> post.id == new_post_1.id end)
+      updated_post =
+        Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+        |> Enum.find(& &1.id == new_post_1.id)
 
-      assert has_element?(view, ".h3", "##{index}")
       assert has_element?(view, ".card-body", "#{updated_post.content.message}")
       refute has_element?(view, ".card-body", "#{new_post_1.content.message}")
     end
@@ -1236,8 +1239,10 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully edited"
 
-      assert_receive {:updated_posts, posts}
-      assert length(posts) == 2 # reply is nested
+      assert_receive :updated_posts
+
+      posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+      assert length(posts) == 3
 
       refute has_element?(view, ".card-body", "#{post.content.message}")
     end
@@ -1269,11 +1274,14 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive {:updated_posts, [{%{id: parent_id, replies: [{reply, reply_index} | _]}, index} | _]}
+      assert_receive :updated_posts
 
-      assert has_element?(view, ".h4", "##{index}.#{reply_index}")
+      posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+      reply = Enum.find(posts, & &1.thread_root_id == first_post.id)
+      assert length(posts) == 2
+
       assert has_element?(view, ".accordion-body", "#{reply.content.message}")
-      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{parent_id}\"]", "1")
+      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{first_post.id}\"]", "1")
     end
 
     test "editing a reply",
@@ -1306,12 +1314,15 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully edited"
 
-      assert_receive {:updated_posts, [{%{id: parent_id, replies: [{updated_reply, reply_index} | _]}, index} | _]}
+      assert_receive :updated_posts
 
-      assert has_element?(view, ".h4", "##{index}.#{reply_index}")
+      updated_reply =
+        Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+        |> Enum.find(& &1.id == reply.id)
+
       refute has_element?(view, ".accordion-body", "#{reply.content.message}")
       assert has_element?(view, ".accordion-body", "#{updated_reply.content.message}")
-      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{parent_id}\"]", "1")
+      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{first_post.id}\"]", "1")
     end
 
     test "deleting a reply",
@@ -1348,7 +1359,9 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully edited"
 
-      assert_receive {:updated_posts, posts}
+      assert_receive :updated_posts
+
+      posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       assert length(posts) == 2
 
       refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]:disabled")
@@ -1384,15 +1397,15 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive {:updated_posts, [{%{id: root_id, replies: replies}, index}]}
+      assert_receive :updated_posts
 
-      {_reply, reply_index} = Enum.find(replies, fn {reply_res, _index} -> reply_res.id == reply.id end)
-      [{reply_reply, reply_reply_index} | _] = Enum.filter(replies, fn {reply_reply, _index} -> reply_reply.id != reply.id end)
+      posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+      reply_reply = Enum.find(posts, & &1.parent_post_id == reply.id)
+      assert length(posts) == 3
 
-      assert has_element?(view, ".h4", "##{index}.#{reply_reply_index}")
       assert has_element?(view, ".accordion-body", "#{reply_reply.content.message}")
-      assert has_element?(view, ".accordion-body", "Replied ##{index}.#{reply_index}")
-      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{root_id}\"]", "2")
+      assert has_element?(view, ".accordion-body", "Replied #1.1")
+      assert has_element?(view, "button[phx-click=\"set_selected\"][phx-value-id=\"#{first_post.id}\"]", "2")
     end
 
     test "collab space is archived",
@@ -1485,11 +1498,13 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive {:updated_posts, posts}
+      # just the live view creating the post receive the updated_posts
+      refute_receive :updated_posts
 
-      {created_post, index} = Enum.find(posts, fn {post, _index} -> post.content.message == message end)
+      created_post =
+        Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+        |> Enum.find(& &1.content.message == message)
 
-      assert has_element?(view, ".h3", "##{index}")
       assert has_element?(view, "#accordion_post_#{created_post.id} .badge-info", "Pending approval")
 
       view
@@ -1505,11 +1520,13 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive {:updated_posts, posts}
+      # just the live view creating the post receive the updated_posts
+      refute_receive :updated_posts
 
-      {%{replies: [{reply, reply_index} | _]}, index} = Enum.find(posts, fn {post, _index} -> post.id == created_post.id end)
+      reply =
+        Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+        |> Enum.find(& &1.parent_post_id == created_post.id)
 
-      assert has_element?(view, ".h4", "##{index}.#{reply_index}")
       assert has_element?(view, "#accordion_reply_#{reply.id} .badge-info", "Pending approval")
     end
 
@@ -1540,6 +1557,7 @@ defmodule OliWeb.CollaborationLiveTest do
 
     test "collab space does not show full history",
         %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs} do
+      message = "Testing post"
       collab_space_config = build(:collab_space_config, status: :enabled, show_full_history: false)
       content = build(:post_content, message: "New post")
       post = insert(:post, user: user, section: section, resource: page_resource_cs, inserted_at: yesterday(), updated_at: yesterday(), content: content)
@@ -1565,16 +1583,19 @@ defmodule OliWeb.CollaborationLiveTest do
 
       view
       |> element("form[phx-submit=\"create_post\"")
-      |> render_submit(%{"post" => %{content: %{message: "Testing post"}}})
+      |> render_submit(%{"post" => %{content: %{message: message}}})
 
       assert view
         |> element("div.alert.alert-info")
         |> render() =~
           "Post successfully created"
 
-      assert_receive {:updated_posts, [{created_post, index} | _]}
+      assert_receive :updated_posts
 
-      assert has_element?(view, ".h3", "##{index}")
+      created_post =
+        Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
+        |> Enum.find(& &1.content.message == message)
+
       assert has_element?(view, ".card-body", "#{created_post.content.message}")
     end
   end
