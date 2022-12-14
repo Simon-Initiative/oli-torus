@@ -1,9 +1,10 @@
 @use 'authoring/theme' as authoring;
 
 .popup__anchorText {
-  color: authoring.$orange;
+  color: authoring.$green;
   font-style: italic;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .slate-editor .popup__anchorText {
