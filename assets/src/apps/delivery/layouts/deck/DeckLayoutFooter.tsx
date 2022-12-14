@@ -444,27 +444,19 @@ const DeckLayoutFooter: React.FC = () => {
     }
   }, [lastCheckResults, isPreviewMode]);
 
-  const isActivityHistoryTimeStampIsZero = () => {
-    const trackingStampKey = `session.visitTimestamps.${currentActivity?.id}`;
-    const globalSnapshot = getEnvState(defaultGlobalEnv);
-    return globalSnapshot[trackingStampKey];
-  };
-
-  const updateActivityHistoryTimeStamp = (activityHistoryTimeStamp: number) => {
+  const updateActivityHistoryTimeStamp = () => {
     //If we get correct Feedback on current screen, on 'Next' button click, we would navigated to next screen
     // however, instead if we navigate back using the 'History' button and then come back to current screen (i.e. where we got the good feedback earlier).
     //At this point, session.visitTimestamps.${currentActivity?.id} get set to 0 because we are revisting the screen.
     //We update the timestamp on Trigger Check however Since clicking the 'Next' button takes user to next screen, the timestamp of current screen
     //never gets  updated and is always set to 0 hence it's always visible on top of the history list.
     // Here we are checking, when we user leaves the screen, if the visit timestamp is zero then lets update the timestamp
-    if (!activityHistoryTimeStamp) {
-      const targetVisitTimeStampOp: ApplyStateOperation = {
-        target: `session.visitTimestamps.${currentActivityId}`,
-        operator: '=',
-        value: Date.now(),
-      };
-      applyState(targetVisitTimeStampOp, defaultGlobalEnv);
-    }
+    const targetVisitTimeStampOp: ApplyStateOperation = {
+      target: `session.visitTimestamps.${currentActivityId}`,
+      operator: '=',
+      value: Date.now(),
+    };
+    applyState(targetVisitTimeStampOp, defaultGlobalEnv);
   };
 
   const checkHandler = () => {
@@ -477,12 +469,19 @@ const DeckLayoutFooter: React.FC = () => {
       currentActivity,
       displayFeedbackIcon,
     }); */
-    const activityHistoryTimeStamp = isActivityHistoryTimeStampIsZero();
+    const activityHistoryTimeStamp = getValue(
+      `session.visitTimestamps.${currentActivityId}`,
+      defaultGlobalEnv,
+    );
+    console.log({ activityHistoryTimeStamp });
+
     if (displayFeedback) setDisplayFeedback(false);
 
     // if (isGoodFeedback && canProceed) {
     if (isGoodFeedback) {
-      updateActivityHistoryTimeStamp(activityHistoryTimeStamp);
+      if (activityHistoryTimeStamp === 0) {
+        updateActivityHistoryTimeStamp();
+      }
       if (nextActivityId && nextActivityId.trim()) {
         dispatch(
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
@@ -505,7 +504,9 @@ const DeckLayoutFooter: React.FC = () => {
         nextActivityId?.trim().length &&
         nextActivityId !== currentActivityId
       ) {
-        updateActivityHistoryTimeStamp(activityHistoryTimeStamp);
+        if (activityHistoryTimeStamp === 0) {
+          updateActivityHistoryTimeStamp();
+        }
         //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
         //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
         dispatch(
@@ -526,7 +527,9 @@ const DeckLayoutFooter: React.FC = () => {
       nextActivityId?.trim().length &&
       nextActivityId !== currentActivityId
     ) {
-      updateActivityHistoryTimeStamp(activityHistoryTimeStamp);
+      if (activityHistoryTimeStamp === 0) {
+        updateActivityHistoryTimeStamp();
+      }
       //** DT - there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
       //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
       dispatch(
