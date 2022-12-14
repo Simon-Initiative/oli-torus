@@ -28,6 +28,43 @@ defmodule Oli.Publishing do
   alias Oli.Publishing.Publications.{Publication, PublicationDiff, PublicationDiffKey}
   alias Oli.Delivery.Updates
 
+  def find_linked_pages(page_resource_ids, publication_ids) do
+
+    joined_resource_ids = Enum.join(page_resource_ids, ",")
+    joined_publication_ids = Enum.join(publication_ids, ",")
+
+    item_types =
+      ["page_link", "a"]
+      |> Enum.map(&~s|@.type == "#{&1}"|)
+      |> Enum.join(" || ")
+
+    sql = """
+    select
+      rev.resource_id,
+      jsonb_path_query(content, '$.** ? (#{item_types})')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id IN (#{joined_publication_ids})
+      and mapping.resource_id IN (#{joined_resource_ids})
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.map(results, fn [_, content] ->
+      case content["type"] do
+        "a" -> case content["href"] do
+          "/course/link/" <> slug -> %{slug: slug}
+          _ -> nil
+        end
+        "page_link" -> %{resource_id: content["idref"]}
+      end
+    end)
+    |> Enum.filter(fn item -> !is_nil(item) end)
+    |> MapSet.new()
+
+  end
+
   @doc """
   Bulk creates a number of resource, revision, project_resource and published_resource
   records.  Useful for optimal execution of project ingest and project duplication.

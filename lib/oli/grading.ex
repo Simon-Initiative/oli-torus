@@ -328,4 +328,76 @@ defmodule Oli.Grading do
       )
     )
   end
+
+  def fetch_reachable_graded_pages(section_slug) do
+
+    all_graded = fetch_graded_pages(section_slug)
+    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+
+    pages_in_hierarchy = Map.values(section.previous_next_index)
+    |> Enum.filter(fn item ->
+      item["type"] == "page"
+    end)
+
+    graded_pages_in_hierarchy = Enum.filter(pages_in_hierarchy, fn item -> item["graded"] == "true" end)
+
+    # We can short circuit here if all of the graded pages are in the hierarchy
+    if Enum.count(all_graded) == Enum.count(graded_pages_in_hierarchy) do
+      all_graded
+    else
+
+      # Find the set of resource ids of graded pages that are referenced from a page that is in the hierarchy
+
+      practice_pages_in_hierarchy = Enum.filter(pages_in_hierarchy, fn item -> item["graded"] == "false" end)
+      |> Enum.map(fn item ->
+        {resource_id, _} = Integer.parse(item["id"])
+        resource_id
+      end)
+
+      in_hierarchy = Enum.map(graded_pages_in_hierarchy, fn item ->
+        {resource_id, _} = Integer.parse(item["id"])
+        resource_id
+      end) |> MapSet.new()
+
+      not_in_hierarchy =
+        Enum.filter(all_graded, fn r -> !MapSet.member?(in_hierarchy, r.resource_id) end)
+        |> Enum.map(fn r -> r.resource_id end)
+        |> MapSet.new()
+
+      publication_ids = Repo.all(
+        from(s in Section,
+          join: spp in SectionsProjectsPublications,
+          on: s.id == spp.section_id,
+          select: spp))
+          |> Enum.map(fn spp -> spp.publication_id end)
+
+      linked_pages = Oli.Publishing.find_linked_pages(practice_pages_in_hierarchy, publication_ids)
+
+      via_slug = Enum.filter(linked_pages, fn kind -> Map.has_key?(kind, :slug) end)
+      via_resource_id = Enum.filter(linked_pages, fn kind -> Map.has_key?(kind, :resource_id) end)
+
+      all_linked_resource_ids = case via_slug do
+        [] -> []
+        slugs ->
+          Enum.map(slugs, fn %{slug: slug} ->
+            case Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, slug) do
+              nil -> nil
+              r -> r.resource_id
+            end
+          end)
+          |> Enum.filter(fn item -> !is_nil(item) end)
+
+      end ++ via_resource_id
+      |> MapSet.new()
+      |> MapSet.to_list()
+
+      # combine the ones outside of the hierarchy with those that are in the hierarchy, and dedupe (a page can be in both categories)
+      all_graded_resource_ids = Enum.filter(all_linked_resource_ids, fn id -> MapSet.member?(not_in_hierarchy, id) end) ++ MapSet.to_list(in_hierarchy)
+      set_of = MapSet.new(all_graded_resource_ids)
+
+      # Now filter all graded pages down to this set
+      Enum.filter(all_graded, fn rev -> MapSet.member?(set_of, rev.resource_id) end)
+
+    end
+  end
 end
