@@ -870,10 +870,9 @@ defmodule Oli.SectionsTest do
       page1: page1,
       revision1: revision1,
       page2: page2,
-      revision2: revision2,
-      institution: institution
+      revision2: revision2
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+      {:ok, _initial_pub} = Publishing.publish_project(project, "some changes")
 
       %{product: product, section: section} =
         %{}
