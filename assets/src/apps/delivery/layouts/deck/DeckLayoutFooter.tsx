@@ -196,6 +196,17 @@ export const processResults = (events: any) => {
   return actionsByType;
 };
 
+export const checkIfFirstEventHasNavigation = (event: any) => {
+  let isDifferentNavigationExist = false;
+  const { actions } = event.params;
+  actions.forEach((action: any) => {
+    if (action.type === 'navigation') {
+      isDifferentNavigationExist = true;
+    }
+  });
+  return isDifferentNavigationExist;
+};
+
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
 
@@ -229,17 +240,6 @@ const DeckLayoutFooter: React.FC = () => {
     }
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
-
-  const checkIfFirstEventHasNavigation = (event: any) => {
-    let isDifferentNavigationExist = false;
-    const { actions } = event.params;
-    actions.forEach((action: any) => {
-      if (action.type === 'navigation') {
-        isDifferentNavigationExist = true;
-      }
-    });
-    return isDifferentNavigationExist;
-  };
 
   const checkIfAllEventsHaveSameNavigation = (results: any) => {
     const navigationTargets: string[] = [];
