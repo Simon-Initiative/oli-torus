@@ -52,7 +52,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
           "section_slug" => section_slug,
           "page_slug" => page_slug,
           "current_user_id" => current_user_id
-        } = _session,
+        } = session,
         socket
       ) do
     {:ok, enter_time} = DateTime.now("Etc/UTC")
@@ -60,6 +60,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     user = Accounts.get_user_by(%{id: current_user_id})
     section = Sections.get_section_by_slug(section_slug)
     page_resource = Resources.get_resource_from_slug(page_slug)
+    is_instructor = Map.get(session, "is_instructor")
 
     topic = presence_topic(section_slug, page_resource.id)
 
@@ -98,7 +99,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         posts: get_posts(search_params, sort),
         collab_space_config: collab_space_config,
         new_post_changeset: new_post_changeset,
-        sort: sort
+        sort: sort,
+        is_instructor: is_instructor
       )}
   end
 
@@ -134,7 +136,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                         index={index}
                         selected={@selected}
                         user={@user}
-                        is_threaded={@collab_space_config.threaded}/>
+                        is_threaded={@collab_space_config.threaded}
+                        is_instructor={@is_instructor}/>
                     {/for}
                   </div>
                 </div>
@@ -284,6 +287,45 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     {:noreply,
       socket
       |> assign(editing_post: nil)
+      |> hide_modal(modal_assigns: nil)}
+  end
+
+  def handle_event("display_archive_modal", %{"id" => id, "index" => index, "status" => status}, socket) do
+    post = Collaboration.get_post_by(%{id: id})
+    status = String.to_atom(status)
+
+    modal_assigns = %{
+      title: is_archived?(status) && "Unarchive Post" || "Archive Post",
+      id: "archive_post_modal",
+      ok: "archive_post",
+      cancel: "cancel_archive_post"
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <Confirm {...@modal_assigns}>Are you sure you want to {is_archived?(status) && "unarchive" || "archive"} the post #{index}?</Confirm>
+      """
+    end
+
+    {:noreply,
+      socket
+      |> assign(archived_post: post, post_status: is_archived?(status) && :approved || :archived)
+      |> show_modal(
+        modal,
+        modal_assigns: modal_assigns
+      )}
+  end
+
+  def handle_event("archive_post", _, socket) do
+    socket = clear_flash(socket)
+
+    do_edit_post(socket.assigns.archived_post, %{status: socket.assigns.post_status}, socket)
+  end
+
+  def handle_event("cancel_archive_post", _, socket) do
+    {:noreply,
+      socket
+      |> assign(archived_post: nil)
       |> hide_modal(modal_assigns: nil)}
   end
 

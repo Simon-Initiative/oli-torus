@@ -8,10 +8,11 @@ defmodule OliWeb.CollaborationLive.ShowPost do
   prop user, :struct
   prop selected, :string, default: ""
   prop is_threaded, :boolean, required: true
+  prop is_instructor, :boolean, required: true
 
   def render(assigns) do
     ~F"""
-      <div id={"accordion_post_#{@post.id}"} class={"accordion-item" <> if @post.status == :archived, do: " readonly", else: ""}>
+      <div id={"accordion_post_#{@post.id}"} class={"accordion-item" <> if @post.status == :archived and not @is_instructor, do: " readonly", else: ""}>
         <div class="accordion-header" id={"heading_#{@post.id}"}>
           <div class="card border-post my-3">
             <div class="card-header d-flex justify-content-between align-items-center p-0">
@@ -39,6 +40,9 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                     <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title={if @post.replies_count > 0, do: "Cannot be deleted because it has replies", else: "Delete"}>
                       <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={@post.id} phx-value-index={@index} disabled={if @post.replies_count > 0, do: true}><i class="fas fa-trash"></i></button>
                     </span>
+                  {/if}
+                  {#if @is_instructor}
+                    <button class="btn btn-link" type="button" data-toggle="tooltip" title={if is_archived?(@post.status), do: "Archive", else: "Unarchive"} :on-click="display_archive_modal" phx-value-id={@post.id} phx-value-index={@index} phx-value-status={@post.status}><i class={"fa fa-" <> if is_archived?(@post.status), do: "lock", else: "unlock"}></i></button>
                   {/if}
                 </div>
 
@@ -68,7 +72,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
           <div id={"collapse_#{@post.id}"} class={"collapse w-85 ml-auto" <> if Integer.to_string(@post.id) == @selected, do: " show", else: ""} aria-labelledby={"heading_#{@post.id}"} data-parent="#post-accordion">
             <div class="accordion-body">
               {#for {reply, reply_index} <- @post.replies}
-                <div id={"accordion_reply_#{reply.id}"} class={"card border-reply mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
+                <div id={"accordion_reply_#{reply.id}"} class={"card border-reply mb-3 p-2" <> if reply.status == :archived and not @is_instructor, do: " readonly", else: ""}>
                   <div class="card-header d-flex justify-content-between align-items-center p-0">
                     <div class="d-flex align-items-center">
                       <div class="h4 mb-0 border-index">#{@index}.{reply_index}</div>
@@ -94,6 +98,9 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                           <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title={if has_replies?(@post.replies, reply.id), do: "Cannot be deleted because it has replies", else: "Delete"}>
                             <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} disabled={has_replies?(@post.replies, reply.id)}><i class="fas fa-trash"></i></button>
                           </span>
+                        {/if}
+                        {#if @is_instructor}
+                            <button class="btn btn-link" type="button" data-toggle="tooltip" title={if is_archived?(reply.status), do: "Archive", else: "Unarchived"} :on-click="display_archive_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} phx-value-status={reply.status}><i class={"fa fa-" <> if is_archived?(reply.status), do: "lock", else: "unlock"}></i></button>
                         {/if}
                       </div>
 
@@ -132,4 +139,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
     not is_nil(some_child)
   end
+
+  defp is_archived?(:archived), do: true
+  defp is_archived?(_), do: false
 end
