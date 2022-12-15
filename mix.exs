@@ -189,6 +189,7 @@ defmodule Oli.MixProject do
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
       {:sweet_xml, "~> 0.7.1"},
+      {:tailwind, "~> 0.1.9", only: :dev},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
@@ -213,7 +214,10 @@ defmodule Oli.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
 
       # resets the database in the :test env
-      "test.ecto.reset": ["ecto.reset"]
+      "test.ecto.reset": ["ecto.reset"],
+
+      # deploy tailwind assets
+      "assets.deploy": ["tailwind default --minify", "phx.digest"]
     ]
   end
 end
