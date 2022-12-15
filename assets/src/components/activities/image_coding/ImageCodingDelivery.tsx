@@ -160,7 +160,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           const action: ActivityTypes.FeedbackAction = response
             .actions[0] as ActivityTypes.FeedbackAction;
           const { error } = action;
-          const parts = [Object.assign({}, partState, { feedback, error })];
+          const parts = [Object.assign({}, partState, { feedback, error, score, outOf })];
           const updated = Object.assign({}, attemptState, { score, outOf, parts });
           setAttemptState(updated);
         }
@@ -268,7 +268,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
   ) : null;
 
-  const reset = isEvaluated && !props.context.graded && props.context.surveyId === undefined && (
+  const reset = isEvaluated && !props.context.graded && props.context.surveyId === null && (
     <div className="d-flex">
       <div className="flex-fill"></div>
       <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
@@ -328,7 +328,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton = !model.isExample && props.context.surveyId === undefined && (
+  const maybeSubmitButton = !model.isExample && props.context.surveyId === null && (
     <button
       className="btn btn-primary mt-2 float-right"
       disabled={isEvaluated || !ranCode}
@@ -367,7 +367,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0" />
         </div>
 
-        {!model.isExample && props.context.surveyId === undefined && ungradedDetails}
+        {!model.isExample && props.context.surveyId === null && ungradedDetails}
       </div>
       {reset}
     </div>
