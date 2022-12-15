@@ -1,24 +1,24 @@
-import { modalActions } from 'actions/modal';
+import React from 'react';
+
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { EditorProps } from 'components/editing/elements/interfaces';
-import { PopupContentModal } from 'components/editing/elements/popup/PopupContentModal';
+import { PopupContentEditor } from 'components/editing/elements/popup/PopupContentEditor';
 import { InlineChromiumBugfix, updateModel } from 'components/editing/elements/utils';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+
 import { useCollapsedSelection } from 'data/content/utils';
 import { useSlate } from 'slate-react';
-
-const dismiss = () => window.oliDispatch(modalActions.dismiss());
-const display = (c: any) => window.oliDispatch(modalActions.display(c));
+import { useToggle } from '../../../hooks/useToggle';
 
 import './PopupElement.scss';
 
 interface Props extends EditorProps<ContentModel.Popup> {}
 export const PopupEditor = (props: Props) => {
   const editor = useSlate();
+  const [popupEditorOpen, , openEditor, closeEditor] = useToggle(false);
 
   const collapsedSelection = useCollapsedSelection();
   const isOpen = React.useCallback(() => collapsedSelection, [collapsedSelection]);
@@ -30,28 +30,10 @@ export const PopupEditor = (props: Props) => {
 
   const onDone = React.useCallback(
     (changes: Partial<ContentModel.Popup>) => {
-      dismiss();
+      closeEditor();
       onEdit(changes);
     },
-    [onEdit],
-  );
-
-  const onCancel = React.useCallback(() => {
-    dismiss();
-  }, []);
-
-  const execute = React.useCallback(
-    (_context, _editor, _params) => {
-      display(
-        <PopupContentModal
-          commandContext={props.commandContext}
-          model={props.model}
-          onDone={onDone}
-          onCancel={onCancel}
-        />,
-      );
-    },
-    [props.commandContext, props.model, onDone, onCancel],
+    [closeEditor, onEdit],
   );
 
   return (
@@ -65,18 +47,27 @@ export const PopupEditor = (props: Props) => {
             <CommandButton
               description={createButtonCommandDesc({
                 icon: 'edit',
-                description: 'Edit content',
-                execute,
+                description: 'Edit Popup Content',
+                execute: openEditor,
               })}
             />
           </Toolbar.Group>
         </Toolbar>
       }
     >
-      <span {...props.attributes} className="popup__anchorText">
-        <InlineChromiumBugfix />
-        {props.children}
-        <InlineChromiumBugfix />
+      <span>
+        <span {...props.attributes} className="popup__anchorText">
+          <InlineChromiumBugfix />
+          {props.children}
+          <InlineChromiumBugfix />
+        </span>
+        {popupEditorOpen && (
+          <PopupContentEditor
+            commandContext={props.commandContext}
+            model={props.model}
+            onDone={onDone}
+          />
+        )}
       </span>
     </HoverContainer>
   );

@@ -2,6 +2,8 @@ defmodule Oli.Publishing.AuthoringResolverTest do
   use Oli.DataCase
 
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Resources.ResourceType
 
   describe "authoring resolution" do
     setup do
@@ -170,6 +172,55 @@ defmodule Oli.Publishing.AuthoringResolverTest do
              |> Enum.at(0)
              |> Map.get(:numbering)
              |> Map.get(:level) == 2
+    end
+
+    test "revisions_of_type/2 returns all non-deleted revisions of a specified type", %{
+      author: author,
+      project: project
+    } do
+      {:ok, _alt_group1} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          ResourceType.get_id_by_type("alternatives"),
+          %{title: "Alt 1", content: %{"options" => []}}
+        )
+
+      {:ok, alt_group2} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          ResourceType.get_id_by_type("alternatives"),
+          %{title: "Alt 2", content: %{"options" => []}}
+        )
+
+      {:ok, _alt_group3} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          ResourceType.get_id_by_type("alternatives"),
+          %{title: "Alt 3", content: %{"options" => []}}
+        )
+
+      revisions =
+        AuthoringResolver.revisions_of_type(
+          project.slug,
+          ResourceType.get_id_by_type("alternatives")
+        )
+
+      assert Enum.count(revisions) == 3
+      assert revisions |> Enum.map(& &1.title) |> Enum.sort() == ["Alt 1", "Alt 2", "Alt 3"]
+
+      {:ok, _deleted} = ResourceEditor.delete(project.slug, alt_group2.resource_id, author)
+
+      revisions =
+        AuthoringResolver.revisions_of_type(
+          project.slug,
+          ResourceType.get_id_by_type("alternatives")
+        )
+
+      assert Enum.count(revisions) == 2
+      assert revisions |> Enum.map(& &1.title) |> Enum.sort() == ["Alt 1", "Alt 3"]
     end
   end
 end
