@@ -1,30 +1,25 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
-  require Logger
 
   import OliWeb.Common.FormatDateTime
-  alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Page.PageContext
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Paywall
-  alias Oli.Delivery.Paywall.Discount
-  alias Oli.Rendering.Context
-  alias Oli.Rendering.Page
+
+  require Logger
+
+  alias Oli.Accounts
   alias Oli.Activities
-  alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Utils.Slug
-  alias Oli.Utils.Time
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.{Core, PageLifecycle}
+  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Paywall.Discount
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Grading
   alias Oli.PartComponents
+  alias Oli.Rendering.{Context, Page}
   alias Oli.Rendering.Activity.ActivitySummary
-  alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
-  alias Oli.Resources.Revision
-  alias Oli.Utils.BibUtils
-  alias Oli.Resources.{Collaboration, PageContent}
-  alias Oli.Accounts
+  alias Oli.Resources.{Collaboration, PageContent, Revision}
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -39,13 +34,11 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          hierarchy = Resolver.full_hierarchy(section.slug)
-
           render(conn, "index.html",
             title: section.title,
             description: section.description,
             section_slug: section_slug,
-            hierarchy: hierarchy,
+            hierarchy: build_hierarchy(section),
             display_curriculum_item_numbering: section.display_curriculum_item_numbering,
             preview_mode: false,
             page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
@@ -100,7 +93,7 @@ defmodule OliWeb.PageDeliveryController do
         # revisions based on retrieval of child data from the PreviousNextIndex cache
         %Revision{resource_type_id: ^container_type_id, title: title} = revision ->
           {:ok, {previous, next, current}, previous_next_index} =
-            Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+            PreviousNextIndex.retrieve(section, revision.resource_id)
 
           section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
@@ -208,7 +201,7 @@ defmodule OliWeb.PageDeliveryController do
       end)
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
+      PreviousNextIndex.retrieve(section, page.resource_id)
 
     resource_access = Core.get_resource_access(page.resource_id, section.slug, user.id)
 
@@ -261,7 +254,7 @@ defmodule OliWeb.PageDeliveryController do
     resource_attempt = Enum.at(context.resource_attempts, 0)
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
+      PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     previous_url = url_from_desc(conn, section_slug, previous)
     next_url = url_from_desc(conn, section_slug, next)
@@ -390,7 +383,7 @@ defmodule OliWeb.PageDeliveryController do
     all_activities = Activities.list_activity_registrations()
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
+      PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     render(
       conn,
@@ -435,13 +428,15 @@ defmodule OliWeb.PageDeliveryController do
   # PREVIEW
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
-    section = conn.assigns.section
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
 
     render(conn, "index.html",
       title: section.title,
       description: section.description,
       section_slug: section_slug,
-      hierarchy: Resolver.full_hierarchy(section.slug),
+      hierarchy: build_hierarchy(section),
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       preview_mode: true,
       page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
@@ -470,7 +465,7 @@ defmodule OliWeb.PageDeliveryController do
             section = conn.assigns.section
 
             {:ok, {previous, next, current}, _} =
-              Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+              PreviousNextIndex.retrieve(section, revision.resource_id)
 
             html =
               ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
@@ -555,7 +550,7 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+      PreviousNextIndex.retrieve(section, revision.resource_id)
 
     type_by_id =
       Activities.list_activity_registrations()
@@ -865,7 +860,7 @@ defmodule OliWeb.PageDeliveryController do
   defp simulate_children_nodes(current, previous_next_index) do
     Enum.map(current["children"], fn s ->
       {:ok, {_, _, child}, _} =
-        Oli.Delivery.PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
+        PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
 
       child
     end)
@@ -885,4 +880,31 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+
+  defp update_children(value, parent),
+    do: Map.put(value, "children", Enum.map(value["children"], fn id -> Map.get(parent, id) end))
+
+  defp build_hierarchy(section) do
+    {:ok, {_previous, _next, _current}, previous_next_index} =
+      PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
+
+    previous_next_index_with_children =
+      previous_next_index
+      |> Enum.map(fn {key, value} -> {key, update_children(value, previous_next_index)} end)
+      |> Enum.into(%{})
+
+    hierarchy =
+      previous_next_index
+      |> Enum.reduce(%{}, fn {key, value}, acc ->
+        if value["level"] == "1",
+          do: Map.put(acc, key, update_children(value, previous_next_index_with_children)),
+          else: acc
+      end)
+      |> Enum.map(fn {_key, value} -> value end)
+
+    %{
+      id: "hierarchy_built_with_previous_next_index",
+      children: hierarchy
+    }
+  end
 end
