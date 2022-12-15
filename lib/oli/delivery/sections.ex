@@ -1165,8 +1165,9 @@ defmodule Oli.Delivery.Sections do
 
         %PublicationDiff{classification: :major} ->
           cond do
-            # Case 1: The course section is based on this project, but not seeded from a product
-            section.base_project_id == project_id and is_nil(section.blueprint_id) ->
+            # Case 1: The course section is based on this project, but is not a product and is not seeded from a product
+            section.base_project_id == project_id and section.type == :enrollable and
+                is_nil(section.blueprint_id) ->
               perform_update(
                 :major,
                 section,
@@ -1179,7 +1180,11 @@ defmodule Oli.Delivery.Sections do
             section.base_project_id == project_id and !is_nil(section.blueprint_id) ->
               perform_update(:minor, section, project_id, new_publication, current_hierarchy)
 
-            # Case 3: The course section is not based on this project (but it remixes some materials from project)
+            # Case 3: The course section is a product based on this project
+            section.base_project_id == project_id and section.type == :blueprint ->
+              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
+
+            # Case 4: The course section is not based on this project (but it remixes some materials from project)
             true ->
               perform_update(:minor, section, project_id, new_publication, current_hierarchy)
           end
