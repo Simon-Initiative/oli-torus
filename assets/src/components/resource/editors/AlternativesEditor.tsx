@@ -127,7 +127,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
         alternativeOptionsTitles={alternativeOptionsTitles}
         parents={parents}
         canRemove={canRemove}
-        onRemove={onRemove}
+        onRemove={() => onRemove(contentItem.id)}
         onCreateAlternative={showCreateAlternativeModal}
         onEditAlternative={onEditAlternative}
         onDeleteAlternative={onDeleteAlternative}

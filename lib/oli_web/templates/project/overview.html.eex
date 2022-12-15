@@ -38,6 +38,8 @@
         <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}), class: "form-control", required: true %>
       </div>
 
+      <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
+
     </div>
   </div>
 
@@ -57,17 +59,15 @@
           <%= label fp, :learning_language, "Learning Language (optional)", class: "control-label" %>
           <%= select fp, :learning_language, @language_codes, class: "form-control", required: false,  prompt: "What language is being taught in this project?" %>
 
-
         </div>
       <% end %>
-
-      <div class="d-flex flex-row">
-        <div class="flex-grow-1"></div>
-        <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
-      </div>
     </div>
 
-    <div class="mt-4">
+    <div>
+      <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
+    </div>
+
+    <div>
       <div><a type="button" class="btn btn-link pl-0" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesEditor, @project.slug) %>">Manage Alternatives</a></div>
       <small>Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.</small>
     </div>
@@ -75,6 +75,16 @@
 </div>
 
 <% end %>
+
+<div class="row py-5 border-bottom">
+  <div class="col-md-4">
+    <h4>Project Labels</h4>
+    <div class="text-muted">Project wide customization of labels.</div>
+  </div>
+  <div class="col-md-8">
+    <%= live_render @conn, OliWeb.Projects.CustomizationLive, session: %{ "project_slug" => @project.slug } %>
+  </div>
+</div>
 
 <div class="row py-5 border-bottom">
   <div class="col-md-4">

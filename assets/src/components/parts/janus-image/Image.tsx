@@ -115,6 +115,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
 
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
+
   return ready ? (
     <img data-janus-type={tagName} draggable="false" alt={alt} src={src} style={imageStyles} />
   ) : null;

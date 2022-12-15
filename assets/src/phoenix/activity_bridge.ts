@@ -39,6 +39,7 @@ export const initActivityBridge = (elementId: string) => {
     (e: any) => {
       e.preventDefault();
       e.stopPropagation();
+      console.info('SAVE ACTIVITY');
       makeRequest(
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`,
         'PATCH',
@@ -83,6 +84,7 @@ export const initActivityBridge = (elementId: string) => {
   div.addEventListener(
     'savePart',
     (e: any) => {
+      console.info('SAVEPART');
       e.preventDefault();
       e.stopPropagation();
       makeRequest(

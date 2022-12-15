@@ -89,7 +89,7 @@ defmodule OliWeb.RevisionHistory do
      |> assign(
        context: context,
        breadcrumbs:
-         Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver) ++
+         Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver, project.customizations) ++
            [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
        page_size: @page_size,

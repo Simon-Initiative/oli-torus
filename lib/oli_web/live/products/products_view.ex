@@ -146,7 +146,11 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def handle_event("create", _, socket) do
-    case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title) do
+    customizations = case socket.assigns.project.customizations do
+      nil -> nil
+      labels -> Map.from_struct(labels)
+    end
+    case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title, customizations) do
       {:ok, blueprint} ->
         {:noreply,
          socket

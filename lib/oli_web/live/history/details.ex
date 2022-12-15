@@ -27,8 +27,8 @@ defmodule OliWeb.RevisionHistory.Details do
         }}
         set_options="monaco_editor_set_options"
         set_value="monaco_editor_set_value"
-        get_value="monaco_editor_get_value" />
-
+        get_value="monaco_editor_get_value"
+        use_code_lenses={[%{name: "activity-links", context: %{ "projectSlug" => assigns.project.slug }}]} />
       <div>
         <table
         style="table-layout: fixed;"

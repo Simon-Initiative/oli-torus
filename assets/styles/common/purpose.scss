@@ -187,6 +187,24 @@
     }
   }
 
+  &.myresponse {
+    border: 1px solid $content-purpose-myresponse-color;
+
+    & > .content-purpose-label {
+      background-color: $content-purpose-myresponse-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f681';
+      }
+    }
+  }
+
   &.simulation {
     border: 1px solid $content-purpose-simulation-color;
 
@@ -295,6 +313,10 @@
 
   &.quiz {
     @include page_link_style($content-purpose-quiz-color);
+  }
+
+  &.myresponse {
+    @include page_link_style($content-purpose-myresponse-color);
   }
 
   &.simulation {

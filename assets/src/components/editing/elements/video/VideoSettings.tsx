@@ -8,6 +8,7 @@ import { Toolbar } from 'components/editing/toolbar/Toolbar';
 
 import * as ContentModel from 'data/content/model/elements/types';
 import { VideoModal } from './VideoModal';
+import { useDispatch } from 'react-redux';
 
 interface SettingsProps {
   commandContext: CommandContext;
@@ -36,25 +37,28 @@ interface SettingsButtonProps {
   onEdit: (attrs: Partial<ContentModel.Video>) => void;
 }
 
-const SettingsButton = (props: SettingsButtonProps) => (
-  <DescriptiveButton
-    description={createButtonCommandDesc({
-      icon: 'play_circle_filled',
-      description: 'Settings',
-      execute: (_context, _editor, _params) =>
-        window.oliDispatch(
-          modalActions.display(
-            <VideoModal
-              projectSlug={props.projectSlug}
-              model={props.model}
-              onDone={(video: Partial<ContentModel.Video>) => {
-                window.oliDispatch(modalActions.dismiss());
-                props.onEdit(video);
-              }}
-              onCancel={() => window.oliDispatch(modalActions.dismiss())}
-            />,
+const SettingsButton = (props: SettingsButtonProps) => {
+  const dispatch = useDispatch();
+  return (
+    <DescriptiveButton
+      description={createButtonCommandDesc({
+        icon: 'play_circle_filled',
+        description: 'Settings',
+        execute: (_context, _editor, _params) =>
+          dispatch(
+            modalActions.display(
+              <VideoModal
+                projectSlug={props.projectSlug}
+                model={props.model}
+                onDone={(video: Partial<ContentModel.Video>) => {
+                  dispatch(modalActions.dismiss());
+                  props.onEdit(video);
+                }}
+                onCancel={() => window.oliDispatch(modalActions.dismiss())}
+              />,
+            ),
           ),
-        ),
-    })}
-  />
-);
+      })}
+    />
+  );
+};

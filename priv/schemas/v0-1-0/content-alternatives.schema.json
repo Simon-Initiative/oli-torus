@@ -32,6 +32,7 @@
   },
   "required": [
     "type",
+    "id",
     "strategy",
     "children"
   ],
@@ -59,6 +60,7 @@
       },
       "required": [
         "type",
+        "id",
         "value",
         "children"
       ]

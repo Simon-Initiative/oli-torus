@@ -13,7 +13,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :objectives,
     :latest_attempts,
     :bib_revisions,
-    :historical_attempts
+    :historical_attempts,
+    :collab_space_config
   ]
   defstruct [
     :user,
@@ -25,7 +26,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :objectives,
     :latest_attempts,
     :bib_revisions,
-    :historical_attempts
+    :historical_attempts,
+    :collab_space_config
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -36,6 +38,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
   alias Oli.Delivery.Sections.Section
+  alias Oli.Resources.Collaboration
   alias Oli.Utils.BibUtils
 
   @doc """
@@ -82,6 +85,9 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
+
     %PageContext{
       user: Attempts.get_user_from_attempt(resource_attempt),
       review_mode: true,
@@ -93,7 +99,8 @@ defmodule Oli.Delivery.Page.PageContext do
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
       bib_revisions: bib_revisions,
-      historical_attempts: retrieve_historical_attempts(hd(resource_attempts))
+      historical_attempts: retrieve_historical_attempts(hd(resource_attempts)),
+      collab_space_config: collab_space_config
     }
   end
 
@@ -174,6 +181,9 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
+
     %PageContext{
       user: user,
       review_mode: false,
@@ -185,7 +195,8 @@ defmodule Oli.Delivery.Page.PageContext do
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
       bib_revisions: bib_revisions,
-      historical_attempts: nil
+      historical_attempts: nil,
+      collab_space_config: collab_space_config
     }
   end
 
@@ -196,8 +207,20 @@ defmodule Oli.Delivery.Page.PageContext do
   end
 
   defp assemble_final_context(state, resource_attempt, latest_attempts, page_revision) do
+    content_for_ordinal_assignment =
+      case resource_attempt.content do
+        nil -> page_revision.content
+        t -> t
+      end
+
     {state, [resource_attempt], latest_attempts,
-     ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+     ActivityContext.create_context_map(
+       page_revision.graded,
+       latest_attempts,
+       resource_attempt,
+       page_revision,
+       assign_ordinals_from: content_for_ordinal_assignment
+     )}
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)

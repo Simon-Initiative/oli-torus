@@ -140,10 +140,15 @@ defmodule Oli.Delivery.Evaluation.Rule do
   end
 
   defp is_range?(str), do: String.starts_with?(str, ["[", "("])
-  defp is_float?(str), do: String.contains?(str, ".")
+
+  defp is_float?(str),
+    do: String.contains?(str, ".") or (String.contains?(str, "e") and String.contains?(str, "."))
 
   defp parse_range(range_str) do
-    case Regex.run(~r/([[(])\s*(-?[.\d]+)\s*,\s*(-?[.\d]+)\s*[\])]#?(\d+)?/, range_str) do
+    case Regex.run(
+           ~r/([[(])\s*(-?[-01234567890e.]+)\s*,\s*(-?[-01234567890e.]+)\s*[\])]#?(\d+)?/,
+           range_str
+         ) do
       [_, "[", lower, upper | maybe_precision] ->
         {:inclusive, parse_number(lower), parse_number(upper), parse_precision(maybe_precision)}
 

@@ -1,5 +1,9 @@
 defmodule Oli.Publishing do
   import Ecto.Query, warn: false
+
+  require Logger
+
+  alias Oli.Publishing.Publications.DiffAgent
   alias Oli.Repo
 
   alias Oli.Authoring.Course.Project
@@ -11,10 +15,7 @@ defmodule Oli.Publishing do
   alias Oli.Resources.{Revision, ResourceType}
 
   alias Oli.Publishing.{
-    Publication,
-    PublishedResource,
-    PartMappingRefreshAdapter,
-    PartMappingRefreshAsync
+    PublishedResource
   }
 
   alias Oli.Institutions.Institution
@@ -24,6 +25,8 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Groups
+  alias Oli.Publishing.Publications.{Publication, PublicationDiff, PublicationDiffKey}
+  alias Oli.Delivery.Updates
 
   @doc """
   Bulk creates a number of resource, revision, project_resource and published_resource
@@ -129,7 +132,7 @@ defmodule Oli.Publishing do
         from m in Oli.Publishing.PublishedResource,
           join: rev in Revision,
           on: rev.id == m.revision_id,
-          join: p in Oli.Publishing.Publication,
+          join: p in Oli.Publishing.Publications.Publication,
           on: p.id == m.publication_id,
           where:
             is_nil(p.published) and m.resource_id in ^resource_ids and
@@ -549,13 +552,11 @@ defmodule Oli.Publishing do
 
   def update_publication(
         %Publication{} = publication,
-        attrs,
-        adapter \\ refresh_adapter()
+        attrs
       ) do
     publication
     |> Publication.changeset(attrs)
     |> Repo.update()
-    |> adapter.maybe_refresh_part_mapping()
   end
 
   @doc """
@@ -569,7 +570,6 @@ defmodule Oli.Publishing do
   def delete_publication(%Publication{} = publication) do
     publication
     |> Repo.delete()
-    |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   def get_published_objective_details(publication_id) do
@@ -813,9 +813,9 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}, String.t(), PartMappingRefreshAdapter | nil) ::
+  @spec publish_project(%Project{}, String.t()) ::
           {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project, description, refresh_adapter \\ refresh_adapter()) do
+  def publish_project(project, description) do
     Repo.transaction(fn ->
       with active_publication <- project_working_publication(project.slug),
            latest_published_publication <-
@@ -823,7 +823,7 @@ defmodule Oli.Publishing do
            now <- DateTime.utc_now(),
 
            # diff publications to determine the new version number
-           {{_, {edition, major, minor}}, _changes} <-
+           %PublicationDiff{edition: edition, major: major, minor: minor} <-
              diff_publications(latest_published_publication, active_publication),
 
            # create a new publication to capture all further edits
@@ -841,6 +841,7 @@ defmodule Oli.Publishing do
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+           {:ok, _} <- insert_revision_part_records(active_publication.id),
 
            # set the active publication to published
            {:ok, publication} <-
@@ -852,8 +853,7 @@ defmodule Oli.Publishing do
                  edition: edition,
                  major: major,
                  minor: minor
-               },
-               refresh_adapter
+               }
              ) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
@@ -862,6 +862,81 @@ defmodule Oli.Publishing do
         error -> Repo.rollback(error)
       end
     end)
+  end
+
+  # For a given publication, gather all of the part ids and their grading approach
+  # from within the revisions of activities.  Inserts the three element tuple
+  # of {part_id, grading_approach, revision_id} into the `revision_parts` table.
+  #
+  # There will be conflicts, of course, as later publications will have the same
+  # three element tuples.  The ON CONFLICT ... DO NOTHING handles this.
+  #
+  # This replaces the materialized view approach of the "part_mapping", but in a way
+  # that is far more efficient since it operates against a single publication,
+  # where the part_mapping refresh operated over the entire published_resources table.
+  #
+  def insert_revision_part_records(publication_id) do
+    query = """
+      INSERT INTO revision_parts(part_id, grading_approach, revision_id)
+      SELECT DISTINCT t.parts->>'id' as part_id, t.parts->>'gradingApproach' as grading_approach, t.revision_id as revision_id FROM (
+        SELECT jsonb_path_query(r.content, '$."authoring"."parts"[*]') as parts,
+          r.id as revision_id
+        FROM published_resources pr
+          LEFT JOIN publications p ON p.id = pr.publication_id
+          LEFT JOIN revisions r ON r.id = pr.revision_id
+        WHERE pr.publication_id = $1 AND r.resource_type_id = 3) t
+        ON CONFLICT (revision_id, part_id, grading_approach) DO NOTHING;
+    """
+
+    # Execute the query, wrapping the successful Result struct in an {:ok, result} tuple
+    # or a failure in a {:error, failure} tuple
+    case Repo.query!(query, [publication_id]) do
+      %Postgrex.Result{num_rows: num_rows} = result ->
+        Logger.info("Publication resulted in #{num_rows} new revision_parts records")
+        {:ok, result}
+
+      e ->
+        {:error, e}
+    end
+  end
+
+  def push_publication_update_to_sections(project, previous_publication, new_publication) do
+    with products_and_sections <-
+           fetch_products_and_sections_eligible_for_update(project.id, previous_publication.id) do
+      # Diff publications up front as an optimization.
+      # This will be used later by each update job to determine which update strategy to use
+      DiffAgent.put(
+        PublicationDiffKey.key(previous_publication.id, new_publication.id),
+        diff_publications(previous_publication, new_publication)
+      )
+
+      # spawn oban jobs for every section (and product) to execute a course update
+      Enum.each(products_and_sections, fn %{section: section} ->
+        %{
+          "section_slug" => section.slug,
+          "publication_id" => new_publication.id
+        }
+        |> Updates.Worker.new()
+        |> Oban.insert!()
+      end)
+    end
+  end
+
+  def fetch_products_and_sections_eligible_for_update(project_id, previous_publication_id) do
+    today = DateTime.utc_now()
+
+    from(
+      s in Section,
+      join: spp in SectionsProjectsPublications,
+      on: s.id == spp.section_id,
+      where:
+        s.status == :active and spp.project_id == ^project_id and
+          spp.publication_id == ^previous_publication_id and
+          (is_nil(s.end_date) or s.end_date >= ^today),
+      order_by: s.id,
+      select: %{section: s, current_publication_id: spp.publication_id}
+    )
+    |> Repo.all()
   end
 
   def get_all_mappings_for_resource(resource_id, project_slug) do
@@ -878,29 +953,84 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
-  with a version number and a map that contains any changes where the key is the resource id which points to
-  a tuple with the first element being the change status (:changed|:added|:deleted) and the second is a
-  map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}
+  Returns a publication diff between two publications.
+
+  This function first tries to load the diff from the DiffAgent cache if one exists.
+  If not, the it will compute one just in time and add it to the cache.
+  """
+  def get_publication_diff(p1, p2) do
+    case DiffAgent.get(PublicationDiffKey.key(p1.id, p2.id)) do
+      nil ->
+        Logger.warn(
+          "No precomputed publication diff found for delta #{p1.id} -> #{p2.id}. Generating one now."
+        )
+
+        # generate a diff between the old and new publication
+        key = PublicationDiffKey.key(p1.id, p2.id)
+        diff = Publishing.diff_publications(p1, p2)
+
+        # cache the generated diff
+        DiffAgent.put(key, diff)
+
+        diff
+
+      diff ->
+        diff
+    end
+  end
+
+  @doc """
+  Diff two publications of the same project and returns a `%PublicationDiff{}` which includes the change
+  classification (:major|:minor|:no_changes), an updated version number and a `changes` map that contains
+  any changes where the key is the resource id which points to a tuple with the first element being the
+  change status (:changed|:added|:deleted) and the second is a map containing the resource and revision.
+  e.g. %{ 23 => {:changed, %{resource: res_p2, revision: rev_p2}} }
 
   ## Examples
 
       iex> diff_publications(publication1, publication2)
-      {{:major, {0, 1, 0}}, %{
-        23 => {:changed, %{resource: res1, revision: rev1}}
-        24 => {:added, %{resource: res2, revision: rev2}}
-        24 => {:added, %{resource: res3, revision: rev3}}
-        24 => {:deleted, %{resource: res4, revision: rev4}}
-      }}
+      %PublicationDiff{
+        classification: :major,
+        edition: 0,
+        major: 1,
+        minor: 0,
+        changes: %{
+          23 => {:changed, %{resource: res1, revision: rev1}}
+          24 => {:added, %{resource: res2, revision: rev2}}
+          24 => {:added, %{resource: res3, revision: rev3}}
+          24 => {:deleted, %{resource: res4, revision: rev4}}
+        },
+        from_pub: %Publication{},
+        to_pub: %Publication{},
+        created_at: %DateTime{}
+      }
 
       iex> diff_publications(publication2, publication3)
-      {{:minor, {0, 0, 1}}, %{
-        23 => {:changed, %{resource: res1, revision: rev1}}
-        24 => {:changed, %{resource: res2, revision: rev2}}
-      }}
+      %PublicationDiff{
+        classification: :minor,
+        edition: 0,
+        major: 0,
+        minor: 1,
+        changes: %{
+          23 => {:changed, %{resource: res1, revision: rev1}}
+          24 => {:changed, %{resource: res2, revision: rev2}}
+        },
+        from_pub: %Publication{},
+        to_pub: %Publication{},
+        created_at: %DateTime{}
+      }
 
       iex> diff_publications(publication1, publication1)
-      {:no_changes, %{}}
+      %PublicationDiff{
+        classification: :no_changes,
+        edition: 0,
+        major: 2,
+        minor: 0,
+        changes: %{},
+        from_pub: %Publication{},
+        to_pub: %Publication{},
+        created_at: %DateTime{}
+      }
   """
   def diff_publications(p1, p2) do
     all_resource_revisions_p1 = get_resource_revisions_for_publication(p1)
@@ -945,12 +1075,24 @@ defmodule Oli.Publishing do
           {p1.edition, p1.major, p1.minor}
       end
 
-    {version_change(changes, {edition, major, minor}), changes}
+    {classification, {edition, major, minor}} =
+      classify_version_change(changes, {edition, major, minor})
+
+    %PublicationDiff{
+      classification: classification,
+      edition: edition,
+      major: major,
+      minor: minor,
+      changes: changes,
+      from_pub: p1,
+      to_pub: p2,
+      created_at: DateTime.utc_now()
+    }
   end
 
   # classify the changes as either :major, :minor, or :no_changes and return the new version number
   # result e.g. {:major, {1, 0}}
-  defp version_change(changes, {edition, major, minor} = _current_version) do
+  defp classify_version_change(changes, {edition, major, minor} = _current_version) do
     changes
     |> Enum.reduce({:no_changes, {edition, major, minor}}, fn {_id,
                                                                {_type,
@@ -1256,12 +1398,5 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
-  end
-
-  @spec refresh_adapter() :: PartMappingRefreshAdapter
-  defp refresh_adapter() do
-    :oli
-    |> Application.get_env(Oli.Publishing)
-    |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
   end
 end

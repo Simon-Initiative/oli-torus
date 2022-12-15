@@ -15,9 +15,11 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :activityContexts,
     :resourceId,
     :featureFlags,
+    :appsignalKey,
     # these fields are not JSON encoded
     :project,
     :previous_page,
-    :next_page
+    :next_page,
+    :collab_space_config
   ]
 end

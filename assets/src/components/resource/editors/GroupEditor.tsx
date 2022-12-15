@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { AddResource } from './AddResource';
 import { EditorProps, createEditor } from './createEditor';
 import { ResourceContent, ResourceGroup } from 'data/content/resource';
-import { GroupBlock } from './GroupBlock';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import styles from './ContentBlock.modules.scss';
 
 interface GroupEditorProps extends EditorProps {
   contentItem: ResourceGroup;
@@ -40,15 +41,10 @@ export const GroupEditor = ({
     onEdit(updatedContent as ResourceContent);
   };
 
+  const contentBreaksExist = contentItem.children.some((v: ResourceContent) => v.type === 'break');
+
   return (
-    <GroupBlock
-      editMode={editMode}
-      contentItem={contentItem}
-      parents={parents}
-      canRemove={canRemove}
-      onRemove={() => onRemove(contentItem.id)}
-      onEdit={onEdit}
-    >
+    <>
       {contentItem.children.map((c, childIndex) => {
         return (
           <div key={c.id}>
@@ -78,6 +74,7 @@ export const GroupEditor = ({
               editorMap,
               canRemove,
               featureFlags,
+              contentBreaksExist,
               onEdit: onEditChild,
               onEditActivity,
               onRemove: onRemove,
@@ -99,6 +96,28 @@ export const GroupEditor = ({
         onAddItem={onAddItem}
         onRegisterNewObjective={onRegisterNewObjective}
       />
-    </GroupBlock>
+    </>
+  );
+};
+
+interface GroupBlockProps {
+  editMode: boolean;
+  contentItem: ResourceGroup;
+  parents: ResourceContent[];
+  canRemove: boolean;
+  onEdit: (contentItem: ResourceGroup) => void;
+  onRemove: () => void;
+}
+export const GroupBlock = (props: PropsWithChildren<GroupBlockProps>) => {
+  const { editMode, contentItem, canRemove, children, onRemove } = props;
+
+  return (
+    <div id={`resource-editor-${contentItem.id}`} className={styles.groupBlock}>
+      <div className={styles.groupBlockHeader}>
+        <div className="flex-grow-1"></div>
+        <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
+      </div>
+      {children}
+    </div>
   );
 };

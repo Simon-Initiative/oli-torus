@@ -3,6 +3,7 @@ defmodule Oli.Authoring.Course.Project do
   import Ecto.Changeset
 
   alias Oli.Authoring.Course.ProjectAttributes
+  alias Oli.Branding.CustomLabels
   alias Oli.Utils.Slug
 
   @derive {Phoenix.Param, key: :slug}
@@ -16,6 +17,7 @@ defmodule Oli.Authoring.Course.Project do
     field :allow_duplication, :boolean, default: false
     field :legacy_svn_root, :string
 
+    embeds_one :customizations, CustomLabels, on_replace: :delete
     embeds_one :attributes, ProjectAttributes, on_replace: :delete
 
     belongs_to :parent_project, Oli.Authoring.Course.Project, foreign_key: :project_id
@@ -33,7 +35,7 @@ defmodule Oli.Authoring.Course.Project do
 
     many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility
 
-    has_many :publications, Oli.Publishing.Publication
+    has_many :publications, Oli.Publishing.Publications.Publication
 
     belongs_to :publisher, Oli.Inventories.Publisher
 
@@ -60,6 +62,7 @@ defmodule Oli.Authoring.Course.Project do
       :publisher_id
     ])
     |> cast_embed(:attributes, required: false)
+    |> cast_embed(:customizations, required: false)
     |> validate_required([:title, :version, :family_id, :publisher_id])
     |> foreign_key_constraint(:publisher_id)
     |> Slug.update_never("projects")

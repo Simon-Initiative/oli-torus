@@ -198,6 +198,17 @@ describe('rules', () => {
     );
   });
 
+  it('properly parses range with negative exponent from rule', () => {
+    expect(parseInputFromRule('input like {(-4.66e-19,-4.5e-19)}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Range,
+        lowerBound: -4.66e-19,
+        upperBound: -4.5e-19,
+        inclusive: false,
+      }),
+    );
+  });
+
   it('properly parses range input from rule with precision', () => {
     expect(parseInputFromRule('input like {[-151.0,151.3]#3}').valueOrThrow()).toEqual(
       expect.objectContaining({

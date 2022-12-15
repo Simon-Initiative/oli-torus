@@ -1,9 +1,10 @@
 @use 'authoring/theme' as authoring;
 
 .popup__anchorText {
-  color: authoring.$orange;
+  color: authoring.$green;
   font-style: italic;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .slate-editor .popup__anchorText {
@@ -27,5 +28,16 @@
 .popup__modalContent {
   text-align: initial;
   min-width: 600px;
-  min-height: 485px;
+}
+
+.popup__content_editor {
+  color: authoring.$body-color;
+
+  margin-left: 30px;
+  border: 1px dashed;
+  padding: 10px;
+
+  h2 {
+    font-size: 1.2rem;
+  }
 }

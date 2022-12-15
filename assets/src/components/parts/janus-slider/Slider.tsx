@@ -240,7 +240,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
       const options = [];
       const numberOfTicks = (maximum - minimum) / snapInterval;
       for (let i = 0; i <= numberOfTicks; i++) {
-        options.push(<option value={i * snapInterval}></option>);
+        options.push(<option key={i} value={i * snapInterval}></option>);
       }
       return options;
     }

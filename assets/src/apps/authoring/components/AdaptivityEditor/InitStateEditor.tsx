@@ -215,7 +215,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
     const activityClone = clone(currentActivity);
     const initStateClone = clone(initState);
     activityClone.content.custom.facts = initStateClone;
-    dispatch(saveActivity({ activity: activityClone, undoable: true }));
+    dispatch(saveActivity({ activity: activityClone, undoable: true, immediate: true }));
     setIsDirty(false);
   }, [isDirty]);
 

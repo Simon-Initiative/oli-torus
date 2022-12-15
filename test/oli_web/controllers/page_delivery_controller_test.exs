@@ -187,15 +187,18 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn =
-        get(
+        post(
           conn,
-          Routes.page_delivery_path(
+          Routes.page_lifecycle_path(
             conn,
-            :finalize_attempt,
-            section.slug,
-            page_revision.slug,
-            attempt.attempt_guid
-          )
+            :transition
+          ),
+          %{
+            "action" => "finalize",
+            "section_slug" => section.slug,
+            "revision_slug" => page_revision.slug,
+            "attempt_guid" => attempt.attempt_guid
+          }
         )
 
       # fetch the resource id record and verify the grade rolled up
@@ -329,15 +332,18 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn =
-        get(
+        post(
           conn,
-          Routes.page_delivery_path(
+          Routes.page_lifecycle_path(
             conn,
-            :finalize_attempt,
-            section.slug,
-            page_revision.slug,
-            attempt.attempt_guid
-          )
+            :transition
+          ),
+          %{
+            "action" => "finalize",
+            "section_slug" => section.slug,
+            "revision_slug" => page_revision.slug,
+            "attempt_guid" => attempt.attempt_guid
+          }
         )
 
       # now visit the page again, verifying that we see the page as an ungraded page

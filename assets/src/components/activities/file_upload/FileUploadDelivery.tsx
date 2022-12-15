@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { maybe } from 'tsmonad';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
@@ -275,6 +275,8 @@ export const FileUploadComponent: React.FC = () => {
     );
   }, []);
 
+  const resetParts = useMemo(() => ({ [castPartId(state.parts[0].partId)]: [] }), [state.parts]);
+
   // First render initializes state
   if (!uiState.partState) {
     return null;
@@ -295,17 +297,18 @@ export const FileUploadComponent: React.FC = () => {
           }
         />
 
-        <ResetButtonConnected
-          onReset={() =>
-            dispatch(resetAction(onResetActivity, { [castPartId(state.parts[0].partId)]: [] }))
-          }
-        />
+        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
         <SubmitButton
-          shouldShow={!isSubmitted(uiState) && !graded && surveyId === undefined}
+          shouldShow={
+            !isSubmitted(uiState) && !graded && (surveyId === undefined || surveyId === null)
+          }
           disabled={getFilesFromState(uiState).length === 0}
           onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
         />
-        <HintsDeliveryConnected partId={castPartId(state.parts[0].partId)} />
+        <HintsDeliveryConnected
+          partId={castPartId(state.parts[0].partId)}
+          resetPartInputs={resetParts}
+        />
         <EvaluationConnected />
       </div>
     </div>

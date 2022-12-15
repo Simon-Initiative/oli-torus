@@ -4,13 +4,19 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import { AnyPartComponent, defaultCapabilities } from 'components/parts/types/parts';
+import {
+  AnyPartComponent,
+  AnyPartModel,
+  defaultCapabilities,
+  PartCapabilities,
+} from 'components/parts/types/parts';
 import EventEmitter from 'events';
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import Draggable from 'react-draggable';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
 import PartComponent from '../common/PartComponent';
+import { ResizeContainer } from './ResizeContainer';
 
 interface LayoutEditorProps {
   id: string;
@@ -37,84 +43,67 @@ const defaultHandler = async () => {
 
 const toolBarTopOffset = -38;
 
+const getPartAndCapabilities = (
+  selectedPartId: string,
+  parts: AnyPartComponent[],
+): (AnyPartComponent & { capabilities: PartCapabilities }) | null => {
+  const part = parts.find((p) => p.id === selectedPartId);
+  if (part) {
+    let capabilities = { ...defaultCapabilities };
+    // attempt to get an instance of the part class
+    const PartClass = customElements.get(part.type);
+    if (PartClass) {
+      // TODO: cache the instance data somewhere so we don't do this every time
+      const instance = new PartClass() as any; // TODO: extend HTMLElement?
+      if (instance.getCapabilities) {
+        capabilities = { ...capabilities, ...instance.getCapabilities() };
+      }
+      const partWithCapabilities = { ...part, capabilities };
+      return partWithCapabilities;
+    }
+  }
+  return null;
+};
+
 const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
-  const [pusher, setPusher] = useState(pusherContext || new EventEmitter().setMaxListeners(50));
 
-  useEffect(() => {
-    if (pusherContext) {
-      setPusher(pusherContext);
-    }
-  }, [pusherContext]);
+  const pusher = useMemo(
+    () => pusherContext || new EventEmitter().setMaxListeners(50),
+    [pusherContext],
+  );
+
+  // The size of the current component *while* it's being resized before new size is, ignored if not actively resizing
+  const [dragSize, setDragSize] = useState({ width: 0, height: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   const [parts, setParts] = useState(props.parts);
-  const [selectedPartId, setSelectedPartId] = useState(props.selected || '');
+
   const [configurePartId, setConfigurePartId] = useState('');
-  const [selectedPart, setSelectedPart] = useState<any>(null);
-  const [isDragging, setIsDragging] = useState(false);
+
+  const selectedPartId = props.selected || '';
+  const selectedPartAndCapabilities = useMemo(
+    () => getPartAndCapabilities(selectedPartId, parts),
+    [selectedPartId, parts],
+  );
+
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
-  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
 
   const fallbackPortalId = `part-portal-${props.id}`;
-  const [portalId, setPortalId] = useState(props.configurePortalId || fallbackPortalId);
-
-  useEffect(() => {
-    setPortalId(props.configurePortalId || fallbackPortalId);
-  }, [props.configurePortalId]);
+  const portalId = props.configurePortalId || fallbackPortalId;
 
   // this effect keeps the local parts state in sync with the props
   useEffect(() => {
     setParts(props.parts);
   }, [props.parts]);
 
-  // this effect keeps the local selected id in sync with the props
-  useEffect(() => {
-    if (props.selected !== selectedPartId) {
-      setSelectedPartId(props.selected || '');
-    }
-  }, [props.selected]);
-
-  // this effect keeps the toolbar positioned next to the selected part
-  useEffect(() => {
-    const x = selectedPart?.custom.x || 0;
-    const y = (selectedPart?.custom.y || 0) + toolBarTopOffset;
-    if (toolbarPosition.x !== x && toolbarPosition.y !== y) {
-      setToolbarPosition({ x, y });
-    }
-  }, [selectedPart]);
-
-  // this keeps a reference to the actual part data of the selected part id in local state
-  useEffect(() => {
-    if (selectedPartId) {
-      const part = parts.find((p) => p.id === selectedPartId);
-      if (part) {
-        let capabilities = { ...defaultCapabilities };
-        // attempt to get an instance of the part class
-        const PartClass = customElements.get(part.type);
-        if (PartClass) {
-          // TODO: cache the instance data somewhere so we don't do this every time
-          const instance = new PartClass() as any; // TODO: extend HTMLElement?
-          if (instance.getCapabilities) {
-            capabilities = { ...capabilities, ...instance.getCapabilities() };
-          }
-          const partWithCapabilities = { ...part, capabilities };
-          setSelectedPart(partWithCapabilities);
-          /* console.log('PART SELECTION CHANGED', {
-            selectedPartId,
-            selectedPart: partWithCapabilities,
-          }); */
-        }
-      }
-    } else {
-      setSelectedPart(null);
-      /* console.log('PART SELECTION CHANGED', {
-        selectedPartId,
-        selectedPart: null,
-      }); */
-    }
-    // any time selection changes we need to stop editing
-    setConfigurePartId('');
-  }, [selectedPartId, parts]);
+  const toolbarPosition = { x: 0, y: 0 };
+  if (selectedPartAndCapabilities) {
+    const x = selectedPartAndCapabilities?.custom.x || 0;
+    const y = (selectedPartAndCapabilities?.custom.y || 0) + toolBarTopOffset;
+    toolbarPosition.x = x;
+    toolbarPosition.y = y;
+  }
 
   // this effect is to cover the case when the user is clicking "off" of a part to deselect it
   useEffect(() => {
@@ -122,12 +111,18 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       const path = e.path || (e.composedPath && e.composedPath());
       const pathIds =
         path?.map((node: HTMLElement) => node.getAttribute && node.getAttribute('id')) || [];
+      const classes = path?.map((node: HTMLElement) => node.className) || [];
+      const isDraggable = classes.find((c: string) => c?.includes('draggable'));
       // console.log('HOST CLICK', { pathIds, path, e });
       const isToolbarClick = pathIds.includes(`active-selection-toolbar-${props.id}`);
       const isInConfigMode = configurePartId !== '';
       // TODO: ability to click things underneath other things using path and selection
-      if (!isInConfigMode && !isToolbarClick && !parts.find((p) => pathIds.includes(p.id))) {
-        setSelectedPartId('');
+      if (
+        !isDraggable &&
+        !isInConfigMode &&
+        !isToolbarClick &&
+        !parts.find((p) => pathIds.includes(p.id))
+      ) {
         props.onSelect('');
       }
     };
@@ -139,7 +134,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         props.hostRef.removeEventListener('click', handleHostClick);
       }
     };
-  }, [props, parts, configurePartId]);
+  }, [props.id, props.hostRef, parts, configurePartId]);
 
   const handlePartClick = useCallback(
     async (e: any, payload: any) => {
@@ -148,39 +143,75 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       if (selectedPartId === payload.id) {
         return;
       }
-      setSelectedPartId(payload.id);
       props.onSelect(payload.id);
     },
-    [selectedPartId],
+    [props.onSelect, selectedPartId],
+  );
+
+  /**
+   * Given a part ID, this will clone and modify values on part.custom and post the changes up the chain.
+   *
+   * Example:
+   *   modifyPartCustomProp("part-123", { x: 100, y: 200 });
+   */
+  const modifyPartCustomProp = useCallback(
+    (partId: string, modifications: Record<string, any>) => {
+      const originalPart = parts.find((p: any) => p.id === partId);
+      if (!originalPart) {
+        console.error("Tried to modify part that doesn't exist", { partId, modifications });
+        return;
+      }
+
+      if (!originalPart.custom) {
+        console.error('Tried to modify part with no custom attribute', { part: originalPart });
+        return;
+      }
+
+      const changes = Object.keys(modifications).filter(
+        (key) => modifications[key] !== originalPart.custom[key],
+      );
+
+      if (changes.length === 0) {
+        // console.log('No changes to make', { partId, modifications });
+        return;
+      }
+
+      console.info('Modifying part ', partId, modifications);
+      const newPart = clone(originalPart);
+      newPart.custom = { ...originalPart.custom, ...modifications };
+      const newParts = parts.map((p: any) => (p.id === partId ? newPart : p));
+
+      // optimistically update parts
+      setParts(newParts);
+
+      // update parent with changes
+      props.onChange(newParts);
+    },
+    [parts, props],
+  );
+
+  const handlePartResize = useCallback(
+    ({
+      partId,
+      resizeData,
+    }: {
+      partId: string;
+      resizeData: { x: number; y: number; width: number; height: number };
+    }) => {
+      const { width, height, x, y } = resizeData;
+      modifyPartCustomProp(partId, { width, height, x, y });
+      setIsDragging(false);
+    },
+    [modifyPartCustomProp],
   );
 
   const handlePartDrag = useCallback(
-    async (payload: any) => {
-      // console.log('AUTHOR PART DRAG', payload);
-      if (payload.dragData.deltaX === 0 && payload.dragData.deltaY === 0) {
-        return;
-      }
-      let transformStyle = ''; // 'transform: translate(0px, 0px);';
-      const newPosition = { x: payload.dragData.x, y: payload.dragData.y };
-      const partsClone = clone(parts);
-      const part = partsClone.find((p: any) => p.id === payload.partId);
-      if (part) {
-        part.custom.x = newPosition.x;
-        part.custom.y = newPosition.y;
-        transformStyle = `transform: translate(${newPosition.x}px, ${newPosition.y}px);`;
-        setToolbarPosition({ x: newPosition.x, y: newPosition.y + toolBarTopOffset });
-      }
-
-      // optimistically update parts
-      setParts(partsClone);
-
-      // update parent with changes
-      props.onChange(partsClone);
-
-      // need to reset the styling applied by react-draggable
-      payload.dragData.node.setAttribute('style', transformStyle);
+    ({ partId, dragData }: { partId: string; dragData: { x: number; y: number } }) => {
+      const { x, y } = dragData;
+      modifyPartCustomProp(partId, { x, y });
+      setIsDragging(false);
     },
-    [parts],
+    [modifyPartCustomProp],
   );
 
   const handlePartConfigure = useCallback(
@@ -220,14 +251,14 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const handlePartDelete = useCallback(async () => {
     // console.log('AUTHOR PART DELETE', { selectedPart }, selectedPartId);
-    const filteredParts = parts.filter((part) => part.id !== selectedPart.id);
+    if (!selectedPartAndCapabilities) return;
+    const filteredParts = parts.filter((part) => part.id !== selectedPartAndCapabilities.id);
     props.onChange(filteredParts);
     // optimistically update local state
     setParts(filteredParts);
     // just setting the part ID should trigger the selectedPart also to get reset
-    setSelectedPartId('');
     props.onSelect('');
-  }, [selectedPart, parts]);
+  }, [selectedPartAndCapabilities, parts]);
 
   const DeleteComponentHandler = useCallback(() => {
     handlePartDelete();
@@ -237,30 +268,26 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const handleCopyComponent = useCallback(async () => {
     /* console.log('AUTHOR PART COPY', { selectedPart }); */
     if (props.onCopyPart) {
-      props.onCopyPart(selectedPart);
+      props.onCopyPart(selectedPartAndCapabilities);
     }
     //dispatch(setCopiedPart({ copiedPart: selectedPart }));
-  }, [selectedPart, parts]);
+  }, [selectedPartAndCapabilities, parts]);
 
   const handlePartMoveForward = useCallback(async () => {
-    /* console.log('AUTHOR PART MOVE FWD', { selectedPart }); */
-    const partsClone = clone(parts);
-    const part = partsClone.find((p: any) => p.id === selectedPart.id);
-    part.custom.z = part.custom.z + 1;
-    props.onChange(partsClone);
-    // optimistically update local state
-    setParts(partsClone);
-  }, [selectedPart, parts]);
+    if (!selectedPartAndCapabilities) return;
+    const part = parts.find((p: any) => p.id === selectedPartAndCapabilities.id);
+    part?.custom &&
+      modifyPartCustomProp(selectedPartAndCapabilities.id, { z: (part?.custom?.z || 0) + 1 });
+  }, [selectedPartAndCapabilities, parts]);
 
   const handlePartMoveBack = useCallback(async () => {
-    /* console.log('AUTHOR PART MOVE BACK', { selectedPart }); */
-    const partsClone = clone(parts);
-    const part = partsClone.find((p: any) => p.id === selectedPart.id);
-    part.custom.z = part.custom.z - 1;
-    props.onChange(partsClone);
-    // optimistically update local state
-    setParts(partsClone);
-  }, [selectedPart, parts]);
+    if (!selectedPartAndCapabilities) return;
+    const part = parts.find((p: any) => p.id === selectedPartAndCapabilities.id);
+    part?.custom &&
+      modifyPartCustomProp(selectedPartAndCapabilities.id, {
+        z: Math.max(0, (part?.custom?.z || 0) - 1),
+      });
+  }, [selectedPartAndCapabilities, parts]);
 
   const handlePartCancelConfigure = useCallback(
     async ({ id }: { id: string }) => {
@@ -302,34 +329,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     }
   };
 
-  const [partStyles, setPartStyles] = useState<string[]>([]);
-
-  useEffect(() => {
-    const styles = parts.map((part) => {
-      const partId = part.id ? part.id.replace(/:/g, '\\:') : 'ERROR_PART_ID';
-      return `#${partId} {
-        display: block;
-        position: absolute;
-        width: ${part.custom.width}px;
-        top: 0px;
-        left: 0px;
-        transform: translate(${part.custom.x || 0}px, ${part.custom.y || 0}px);
-        z-index: ${part.custom.z};
-      }`;
-    });
-    setPartStyles(styles);
-    parts.forEach((part) => {
-      const partId = part.id ? part.id.replace(/:/g, '\\:') : 'ERROR_PART_ID';
-      const partElement = document.getElementById(partId);
-      if (partElement) {
-        partElement.setAttribute(
-          'style',
-          `transform: translate(${part.custom.x || 0}px, ${part.custom.y || 0}px);`,
-        );
-      }
-    });
-  }, [parts]);
-
   useEffect(() => {
     if (!pusher) {
       return;
@@ -365,7 +364,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         unsub();
       });
     };
-  }, [pusher]);
+  }, [configurePartId, handlePartCancelConfigure, pusher]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -379,6 +378,21 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       },
     };
   };
+
+  // Given a part ID and a model for that part, will return the model with the width & height
+  // filled in if it's being actively dragged. This is so we can display the part-component properly
+  // sized during the drag before the new width/height is committed.
+  const decorateModelWithDragWidthHeight = useCallback(
+    (partId: string, model: AnyPartModel) => {
+      if (!isDragging) return model;
+      if (partId !== selectedPartId) return model;
+      return {
+        ...model,
+        ...dragSize,
+      };
+    },
+    [dragSize, isDragging, selectedPartId],
+  );
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
@@ -439,7 +453,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             left: 25%;
             background-color: #fff;
           }
-          ${partStyles.join('\n')}
         `}
         </style>
         <div
@@ -453,17 +466,20 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           id={`active-selection-toolbar-${props.id}`}
           className="active-selection-toolbar"
           style={{
-            display: selectedPart && !isDragging ? 'block' : 'none',
+            display: selectedPartAndCapabilities && !isDragging ? 'block' : 'none',
             top: toolbarPosition.y,
             left: toolbarPosition.x,
           }}
         >
-          {selectedPart && selectedPart.capabilities.configure && (
-            <button title="Edit" onClick={() => handleToolbarPartConfigure(selectedPart.id, true)}>
+          {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.configure && (
+            <button
+              title="Edit"
+              onClick={() => handleToolbarPartConfigure(selectedPartAndCapabilities.id, true)}
+            >
               <i className="las la-edit"></i>
             </button>
           )}
-          {selectedPart && selectedPart.capabilities.copy && (
+          {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.copy && (
             <button title="Copy" onClick={handleCopyComponent}>
               <i className="las la-copy"></i>
             </button>
@@ -471,17 +487,17 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {/* <button title="Configure" onClick={handlePartConfigure}>
             <i className="las la-cog"></i>
           </button> */}
-          {selectedPart && selectedPart.capabilities.move && (
+          {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
             <button title="Move Forward" onClick={handlePartMoveForward}>
               <i className="las la-plus"></i>
             </button>
           )}
-          {selectedPart && selectedPart.capabilities.move && (
+          {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
             <button title="Move Back" onClick={handlePartMoveBack}>
               <i className="las la-minus"></i>
             </button>
           )}
-          {selectedPart && selectedPart.capabilities.delete && (
+          {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.delete && (
             <button title="Delete" onClick={() => setShowConfirmDelete(true)}>
               <i className="las la-trash"></i>
             </button>
@@ -489,7 +505,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           <ConfirmDelete
             show={showConfirmDelete}
             elementType="Component"
-            elementName={selectedPart?.id}
+            elementName={selectedPartAndCapabilities?.id}
             deleteHandler={DeleteComponentHandler}
             cancelHandler={() => {
               setShowConfirmDelete(false);
@@ -500,7 +516,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           const partProps = {
             id: part.id,
             type: part.type,
-            model: part.custom,
+            model: decorateModelWithDragWidthHeight(part.id, part.custom),
             state: {},
             configureMode: part.id === configurePartId,
             editMode: true,
@@ -511,22 +527,52 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             onSubmit: defaultHandler,
             onResize: defaultHandler,
           };
+
           const disableDrag =
-            selectedPartId !== part.id ||
-            part.id === configurePartId ||
-            (selectedPart && !selectedPart.capabilities.move);
+            selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
+
           return (
-            <Draggable
+            <ResizeContainer
               key={part.id}
-              grid={[5, 5]}
-              defaultPosition={{ x: part.custom.x || 0, y: part.custom.y || 0 }}
-              disabled={disableDrag}
-              onStart={() => {
+              dragGrid={[5, 5]}
+              resizeGrid={[1, 1]}
+              selected={part.id === selectedPartId}
+              size={{ width: part.custom.width || 100, height: part.custom.height || 100 }}
+              position={{
+                x: part.custom.x || 0,
+                y: part.custom.y || 0,
+              }}
+              disabled={!!disableDrag}
+              style={{ zIndex: part?.custom?.z || 0 }}
+              onResizeStart={() => {
+                props.onSelect(part.id);
+                setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
                 setIsDragging(true);
               }}
-              onStop={(_, dragData) => {
-                setIsDragging(false);
-                handlePartDrag({ partId: part.id, dragData });
+              onDragStart={() => {
+                props.onSelect(part.id);
+                setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
+                setIsDragging(true);
+              }}
+              onDragStop={(e, d) => {
+                handlePartDrag({ partId: part.id, dragData: d });
+              }}
+              onResize={(e, direction, ref) => {
+                setDragSize({
+                  width: parseInt(ref.style.width, 10),
+                  height: parseInt(ref.style.height, 10),
+                });
+              }}
+              onResizeStop={(e, direction, ref, delta, position) => {
+                handlePartResize({
+                  partId: part.id,
+                  resizeData: {
+                    width: parseInt(ref.style.width, 10),
+                    height: parseInt(ref.style.height, 10),
+                    x: Math.round(position.x),
+                    y: Math.round(position.y),
+                  },
+                });
               }}
             >
               <PartComponent
@@ -539,7 +585,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 onSaveConfigure={handlePartSaveConfigure}
                 onCancelConfigure={handlePartCancelConfigure}
               />
-            </Draggable>
+            </ResizeContainer>
           );
         })}
       </div>

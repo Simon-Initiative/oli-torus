@@ -4,7 +4,7 @@ defmodule OliWeb.SelectSourceTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
 
   import Phoenix.LiveViewTest
   import Oli.Factory

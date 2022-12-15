@@ -11,7 +11,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt, PartAttempt, StudentInput}
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
-  alias Oli.Delivery.Student.Summary
 
   describe "concurrent activity accesses with two students" do
     setup do
@@ -94,9 +93,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
-      # View index
-      {:ok, _summary} = Summary.get_summary(section.slug, user1)
-
       # Open the graded page as user 1 to get the prologue
       user1_page_context =
         PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
@@ -121,7 +117,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         )
 
       # Save an activity part on the page but do not submit it
-      {:ok, {:ok, 1}} =
+      {:ok, %{num_rows: 1}} =
         ActivityLifecycle.save_student_input([
           %{
             # attempt_guid: user1_part_attempt.attempt_guid,
@@ -156,8 +152,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # so the resource is partially completed.
 
       # User 2
-
-      {:ok, _summary2} = Summary.get_summary(section.slug, user2)
 
       # Access the graded page with user2
       assert is_nil(Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id))
@@ -597,9 +591,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ]
 
       # The part can be saved once
-      assert {:ok, {:ok, 1}} = ActivityLifecycle.save_student_input(part_inputs)
+      assert {:ok, %{num_rows: 1}} = ActivityLifecycle.save_student_input(part_inputs)
       # The part can be saved again
-      assert {:ok, {:ok, 1}} = ActivityLifecycle.save_student_input(part_inputs)
+      assert {:ok, %{num_rows: 1}} = ActivityLifecycle.save_student_input(part_inputs)
     end
 
     test "processing a submission", %{

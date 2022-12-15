@@ -118,7 +118,12 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
 
         <Editable
           style={props.style}
-          className={classNames('slate-editor', props.className, !props.editMode && 'disabled')}
+          className={classNames(
+            'slate-editor',
+            props.fixedToolbar && 'fixed-toolbar',
+            props.className,
+            !props.editMode && 'disabled',
+          )}
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}

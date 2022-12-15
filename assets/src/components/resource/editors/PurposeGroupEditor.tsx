@@ -42,6 +42,7 @@ export const PurposeGroupEditor = ({
   objectivesMap,
   graded,
   featureFlags,
+  contentBreaksExist,
   onEdit,
   onEditActivity,
   onAddItem,
@@ -56,7 +57,7 @@ export const PurposeGroupEditor = ({
       contentItem={contentItem}
       parents={parents}
       canRemove={canRemove}
-      onRemove={onRemove}
+      onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
     >
       <GroupEditor
@@ -72,6 +73,7 @@ export const PurposeGroupEditor = ({
         allTags={allTags}
         canRemove={canRemove}
         editorMap={editorMap}
+        contentBreaksExist={contentBreaksExist}
         objectivesMap={objectivesMap}
         graded={graded}
         featureFlags={featureFlags}

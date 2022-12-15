@@ -1,5 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { processResults } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
+import {
+  checkIfFirstEventHasNavigation,
+  processResults,
+} from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
@@ -383,10 +386,11 @@ export const triggerCheck = createAsyncThunk(
       const hasFeedback = actionsByType.feedback.length > 0;
       const hasNavigation = actionsByType.navigation.length > 0;
       let expectedResumeActivityId = currentActivity.id;
+      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(checkResult[0]);
       if (hasFeedback && hasNavigation) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
-        if (navTarget !== expectedResumeActivityId) {
+        if (navTarget !== expectedResumeActivityId && doesFirstEventHasNavigation) {
           switch (navTarget) {
             case 'next':
               const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));

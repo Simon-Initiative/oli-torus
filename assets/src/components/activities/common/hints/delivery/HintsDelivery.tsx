@@ -5,8 +5,7 @@ import { Card } from 'components/misc/Card';
 import { Hint } from 'components/activities/types';
 
 interface Props {
-  isEvaluated: boolean;
-  isSubmitted: boolean;
+  requestHintDisabled: boolean;
   hints: Hint[];
   hasMoreHints: boolean;
   context: WriterContext;
@@ -15,8 +14,7 @@ interface Props {
 }
 
 export const HintsDelivery: React.FC<Props> = ({
-  isEvaluated,
-  isSubmitted,
+  requestHintDisabled,
   hints,
   hasMoreHints,
   context,
@@ -43,14 +41,18 @@ export const HintsDelivery: React.FC<Props> = ({
             className="d-flex align-items-center mb-2"
           >
             <span className="mr-2">{index + 1}.</span>
-            <HtmlContentModelRenderer content={hint.content} context={context} />
+            <HtmlContentModelRenderer
+              content={hint.content}
+              context={context}
+              style={{ width: '100%' }}
+            />
           </div>
         ))}
         {hasMoreHints && (
           <button
             aria-label="request hint"
             onClick={onClick}
-            disabled={isEvaluated || isSubmitted || !hasMoreHints}
+            disabled={requestHintDisabled}
             className="btn btn-sm btn-link"
             style={{ padding: 0 }}
           >

@@ -82,7 +82,9 @@ defmodule Oli.Resources.PageBrowse do
     query =
       Revision
       |> join(:left, [rev], pr in Oli.Publishing.PublishedResource, on: pr.revision_id == rev.id)
-      |> join(:left, [_, pr], pub in Oli.Publishing.Publication, on: pr.publication_id == pub.id)
+      |> join(:left, [_, pr], pub in Oli.Publishing.Publications.Publication,
+        on: pr.publication_id == pub.id
+      )
       |> join(:left, [_, _, pub], proj in Oli.Authoring.Course.Project,
         on: pub.project_id == proj.id
       )
@@ -132,7 +134,9 @@ defmodule Oli.Resources.PageBrowse do
     query =
       Revision
       |> join(:left, [rev], pr in Oli.Publishing.PublishedResource, on: pr.revision_id == rev.id)
-      |> join(:left, [_, pr], pub in Oli.Publishing.Publication, on: pr.publication_id == pub.id)
+      |> join(:left, [_, pr], pub in Oli.Publishing.Publications.Publication,
+        on: pr.publication_id == pub.id
+      )
       |> join(:left, [_, _, pub], proj in Oli.Authoring.Course.Project,
         on: pub.project_id == proj.id
       )

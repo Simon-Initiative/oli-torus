@@ -78,7 +78,8 @@ const AdaptiveRulesList: React.FC = () => {
   const debounceSaveChanges = useCallback(
     debounce(
       (activity) => {
-        dispatch(saveActivity({ activity, undoable: true }));
+        // TODO - we could probably refactor this component to debounce inside saveActivity instead of here.
+        dispatch(saveActivity({ activity, undoable: true, immediate: true }));
       },
       500,
       { maxWait: 10000, leading: false },
