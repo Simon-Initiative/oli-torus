@@ -312,7 +312,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
         |> get(live_view_author_edit(project.slug, page_revision.slug))
 
-      assert html_response(conn, 200) =~ "<div class=\"card-title h5\">Collaborative Space</div>"
+      assert html_response(conn, 200) =~ "<h3 class=\"card-title\">Collaborative Space Config</h3>"
     end
   end
 
@@ -334,7 +334,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, ".h5", "Collaborative Space")
+      assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Disabled")
       assert has_element?(view, "button[phx-click=\"enable\"", "Enable")
       refute has_element?(view, "button[phx-click=\"archive\"", "Archived")
@@ -369,7 +369,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, ".h5", "Collaborative Space")
+      assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Enabled")
       assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
       assert has_element?(view, "button[phx-click=\"archive\"", "Archive")
@@ -444,7 +444,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, ".h5", "Collaborative Space")
+      assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Enabled")
 
       assert view
@@ -577,7 +577,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, ".h5", "Collaborative Space")
+      assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Disabled")
       assert has_element?(view, "button[phx-click=\"enable\"", "Enable")
       refute has_element?(view, "button[phx-click=\"archive\"", "Archived")
@@ -606,7 +606,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, ".h5", "Collaborative Space")
+      assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Enabled")
       assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
       assert has_element?(view, "button[phx-click=\"archive\"", "Archive")
@@ -646,7 +646,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, ".h5", "Collaborative Space")
+      assert has_element?(view, "h3", "Collaborative Space Config")
       assert has_element?(view, "span", "Enabled")
 
       assert view |> element("#revision_collab_space_config_threaded") |> render() =~ "checked"

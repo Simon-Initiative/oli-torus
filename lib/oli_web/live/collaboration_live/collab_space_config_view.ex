@@ -80,14 +80,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     ~F"""
       <div class="card">
         <div class="card-body d-flex justify-content-between">
-          <div class="d-flex">
-            <div class="card-title h5">Collaborative Space</div>
-            <span class="badge badge-info ml-2" style="height: fit-content">{humanize(@collab_space_status)}</span>
+          <div class="d-flex flex-column">
+            <h3 class="card-title">Collaborative Space Config</h3>
+            <h6 class="d-flex align-items-center">Current status <span class="badge badge-info ml-2" style="height: fit-content">{humanize(@collab_space_status)}</span></h6>
           </div>
 
           {#case @collab_space_status}
             {#match :disabled}
-              <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
+              <div><button class="btn btn-outline-primary" :on-click="enable">Enable</button></div>
             {#match :enabled}
               <div>
                 <button class="btn btn-outline-primary" :on-click="archive">Archive</button>
