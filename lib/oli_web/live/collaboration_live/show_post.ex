@@ -9,10 +9,11 @@ defmodule OliWeb.CollaborationLive.ShowPost do
   prop selected, :string, default: ""
   prop is_threaded, :boolean, required: true
   prop is_instructor, :boolean, required: true
+  prop collab_space_status, :atom, required: true
 
   def render(assigns) do
     ~F"""
-      <div id={"accordion_post_#{@post.id}"} class={"accordion-item" <> if @post.status == :archived and not @is_instructor, do: " readonly", else: ""}>
+      <div id={"accordion_post_#{@post.id}"} class={"accordion-item" <> if @post.status == :archived or @collab_space_status == :archived, do: " readonly", else: ""}>
         <div class="accordion-header" id={"heading_#{@post.id}"}>
           <div class="card border-post my-3">
             <div class="card-header d-flex justify-content-between align-items-center p-0">
@@ -20,13 +21,18 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                 <div class="h3 mb-0 border-index">#{@index}</div>
                 <div class="p-2 text-username">{@post.user.name}</div>
               </div>
-
               <div class="small text-light font-italic mr-3">{FormatDateTime.format_datetime(@post.inserted_at, precision: :relative)}</div>
             </div>
 
             <div class="card-body pb-2">
               {#if @post.status == :submitted}
-                <div class="d-flex justify-content-end"><div class="badge badge-info mb-2">Pending approval</div></div>
+                <div class="d-flex justify-content-end align-items-center">
+                  <div class="badge badge-info mr-2">Pending approval</div>
+                  {#if @is_instructor}
+                    <button class="btn btn-sm btn-success rounded-button mr-1" data-toggle="tooltip" title="Accept" :on-click="display_accept_modal" phx-value-id={@post.id} phx-value-index={@index}><i class="fa fa-check"></i></button>
+                    <button class="btn btn-sm btn-danger rounded-button ml-1" data-toggle="tooltip" title="Reject" :on-click="display_reject_modal" phx-value-id={@post.id} phx-value-index={@index}><i class="fa fa-times"></i></button>
+                  {/if}
+                </div>
               {/if}
 
               <div><p class="my-1">{@post.content.message}</p></div>
@@ -34,16 +40,21 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
               <div class="d-flex justify-content-between align-items-center">
                 <div>
+
                   {#if @post.user_id == @user.id}
                     <button class="btn btn-link" type="button" data-toggle="tooltip" title="Edit" :on-click="display_edit_modal" phx-value-id={@post.id}><i class="fas fa-edit"></i></button>
+                    {#if not @is_instructor}
+                      <span class="d-inline-block" data-toggle="tooltip" title={if @post.replies_count > 0, do: "Cannot be deleted because it has replies", else: "Delete"}>
+                        <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={@post.id} phx-value-index={@index} disabled={if @post.replies_count > 0, do: true}><i class="fas fa-trash"></i></button>
+                      </span>
+                    {/if}
+                  {/if}
 
-                    <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title={if @post.replies_count > 0, do: "Cannot be deleted because it has replies", else: "Delete"}>
-                      <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={@post.id} phx-value-index={@index} disabled={if @post.replies_count > 0, do: true}><i class="fas fa-trash"></i></button>
-                    </span>
-                  {/if}
                   {#if @is_instructor}
-                    <button class="btn btn-link" type="button" data-toggle="tooltip" title={if is_archived?(@post.status), do: "Archive", else: "Unarchive"} :on-click="display_archive_modal" phx-value-id={@post.id} phx-value-index={@index} phx-value-status={@post.status}><i class={"fa fa-" <> if is_archived?(@post.status), do: "lock", else: "unlock"}></i></button>
+                    <button class={"btn btn-link" <> if not is_archived?(@collab_space_status), do: " not-readonly", else: ""} type="button" data-toggle="tooltip" title={if is_archived?(@post.status), do: "Unarchive", else: "Archive"} :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"} phx-value-id={@post.id} phx-value-index={@index}><i class={"fa fa-" <> if is_archived?(@post.status), do: "lock", else: "unlock"}></i></button>
+                    <button class="btn btn-link" type="button" data-toggle="tooltip" title="Delete" :on-click="display_delete_multiple_modal" phx-value-id={@post.id} phx-value-index={@index}><i class="fas fa-trash"></i></button>
                   {/if}
+
                 </div>
 
                 <div>
@@ -61,9 +72,11 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                         </div>
                       </button>
                     {/if}
+
                   {/if}
                 </div>
               </div>
+
             </div>
           </div>
         </div>
@@ -72,19 +85,24 @@ defmodule OliWeb.CollaborationLive.ShowPost do
           <div id={"collapse_#{@post.id}"} class={"collapse w-85 ml-auto" <> if Integer.to_string(@post.id) == @selected, do: " show", else: ""} aria-labelledby={"heading_#{@post.id}"} data-parent="#post-accordion">
             <div class="accordion-body">
               {#for {reply, reply_index} <- @post.replies}
-                <div id={"accordion_reply_#{reply.id}"} class={"card border-reply mb-3 p-2" <> if reply.status == :archived and not @is_instructor, do: " readonly", else: ""}>
+                <div id={"accordion_reply_#{reply.id}"} class={"card border-reply mb-3 p-2" <> if reply.status == :archived, do: " readonly", else: ""}>
                   <div class="card-header d-flex justify-content-between align-items-center p-0">
                     <div class="d-flex align-items-center">
                       <div class="h4 mb-0 border-index">#{@index}.{reply_index}</div>
                       <div class="p-2 text-username">{reply.user.name}</div>
                     </div>
-
                     <div class="small text-light font-italic mr-3">{FormatDateTime.format_datetime(reply.inserted_at, precision: :relative)}</div>
                   </div>
 
                   <div class="card-body pb-2">
                     {#if reply.status == :submitted}
-                      <div class="d-flex justify-content-end"><div class="badge badge-info mb-2">Pending approval</div></div>
+                      <div class="d-flex justify-content-end align-items-center">
+                        <div class="badge badge-info mr-2">Pending approval</div>
+                        {#if @is_instructor}
+                          <button class="btn btn-sm btn-success rounded-button mr-1" data-toggle="tooltip" title="Accept" :on-click="display_accept_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"}><i class="fa fa-check"></i></button>
+                          <button class="btn btn-sm btn-danger rounded-button ml-1" data-toggle="tooltip" title="Reject" :on-click="display_reject_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"}><i class="fa fa-times"></i></button>
+                        {/if}
+                      </div>
                     {/if}
 
                     <div><p class="my-1">{reply.content.message}</p></div>
@@ -94,13 +112,17 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                       <div>
                         {#if reply.user_id == @user.id}
                           <button class="btn btn-link" type="button" data-toggle="tooltip" title="Edit" :on-click="display_edit_modal" phx-value-id={reply.id}><i class="fas fa-edit"></i></button>
-
-                          <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title={if has_replies?(@post.replies, reply.id), do: "Cannot be deleted because it has replies", else: "Delete"}>
-                            <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} disabled={has_replies?(@post.replies, reply.id)}><i class="fas fa-trash"></i></button>
-                          </span>
+                          {#if not @is_instructor}
+                            <span class="d-inline-block" data-toggle="tooltip" title={if has_replies?(@post.replies, reply.id), do: "Cannot be deleted because it has replies", else: "Delete"}>
+                              <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} disabled={has_replies?(@post.replies, reply.id)}><i class="fas fa-trash"></i></button>
+                            </span>
+                          {/if}
                         {/if}
                         {#if @is_instructor}
-                            <button class="btn btn-link" type="button" data-toggle="tooltip" title={if is_archived?(reply.status), do: "Archive", else: "Unarchived"} :on-click="display_archive_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} phx-value-status={reply.status}><i class={"fa fa-" <> if is_archived?(reply.status), do: "lock", else: "unlock"}></i></button>
+                          <button class={"btn btn-link" <> if not is_archived?(@post.status) and not is_archived?(@collab_space_status), do: " not-readonly", else: ""} type="button" data-toggle="tooltip" title={if is_archived?(reply.status), do: "Unarchive", else: "Archive"} :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"} phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} disabled={if @collab_space_status == :disabled, do: true, else: false}><i class={"fa fa-" <> if is_archived?(reply.status), do: "lock", else: "unlock"}></i></button>
+                          <span class="d-inline-block" data-toggle="tooltip" title="Delete">
+                            <button class="btn btn-link" type="button" :on-click="display_delete_multiple_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"}><i class="fas fa-trash"></i></button>
+                          </span>
                         {/if}
                       </div>
 

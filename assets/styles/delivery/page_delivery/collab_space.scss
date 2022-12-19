@@ -46,3 +46,12 @@
     font-size: 3em;
   }
 }
+
+.rounded-button {
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
