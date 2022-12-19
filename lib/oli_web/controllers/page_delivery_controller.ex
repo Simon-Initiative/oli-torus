@@ -893,14 +893,22 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.map(fn {key, value} -> {key, update_children(value, previous_next_index)} end)
       |> Enum.into(%{})
 
-    hierarchy =
+    hierarchy_map =
       previous_next_index
       |> Enum.reduce(%{}, fn {key, value}, acc ->
         if value["level"] == "1",
           do: Map.put(acc, key, update_children(value, previous_next_index_with_children)),
           else: acc
       end)
-      |> Enum.map(fn {_key, value} -> value end)
+
+    # sort the top level of the hierarchy according to the order of the SectionResource ids that
+    # appear in the section.root_section_resource children attribute.  These ids, unfortunately, are
+    # ids of SR records, and are not resource_ids.  So we have to run a simply query to map those
+    # to resource_ids
+    hierarchy = Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(section.root_section_resource)
+    |> Enum.map(fn resource_id ->
+      Map.get(hierarchy_map, Integer.to_string(resource_id))
+    end)
 
     %{
       id: "hierarchy_built_with_previous_next_index",
