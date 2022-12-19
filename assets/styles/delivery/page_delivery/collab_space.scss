@@ -1,11 +1,3 @@
-.border-post {
-  border-left: 0.2rem solid #007bff !important;
-}
-
-.border-reply {
-  border-left: 0.2rem solid #17a2b8 !important;
-}
-
 .border-index {
   border-right: 1px solid #73757e !important;
   padding: 0.7rem;
@@ -54,4 +46,24 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.post {
+  .border-index {
+    font-size: $h3-font-size;
+  }
+
+  .border-post {
+    border-left: 0.2rem solid #007bff !important;
+  }
+}
+
+.reply {
+  .border-index {
+    font-size: $h4-font-size;
+  }
+
+  .border-post {
+    border-left: 0.2rem solid #17a2b8 !important;
+  }
 }

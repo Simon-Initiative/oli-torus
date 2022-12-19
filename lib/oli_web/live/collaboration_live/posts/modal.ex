@@ -1,4 +1,4 @@
-defmodule OliWeb.CollaborationLive.PostModal do
+defmodule OliWeb.CollaborationLive.Posts.Modal do
   use Surface.Component
 
   alias Surface.Components.Form

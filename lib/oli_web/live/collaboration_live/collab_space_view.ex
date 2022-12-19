@@ -7,11 +7,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration.Post, as: PostSchema
-  alias OliWeb.CollaborationLive.{
-    ActiveUsers,
-    PostModal,
-    ShowPost,
-    SortPosts
+  alias OliWeb.CollaborationLive.ActiveUsers
+  alias OliWeb.CollaborationLive.Posts.{
+    Modal,
+    List,
+    Sort
   }
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
@@ -125,23 +125,19 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                 <div class="d-flex justify-content-between align-items-center">
                   <div class="d-flex align-items-center border border-light p-3 rounded">
                     <div class="mr-2"><strong>Sort by</strong></div>
-                    <SortPosts sort={@sort} />
+                    <Sort sort={@sort} />
                   </div>
                   <button type="button" :on-click="display_create_modal" class="btn btn-primary h-25" disabled={is_archived?(@collab_space_config.status)}>+ New</button>
                 </div>
 
                 <div class="accordion mt-5 vh-100 overflow-auto" id="post-accordion">
                   <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
-                    {#for {post, index} <- @posts}
-                      <ShowPost
-                        post={post}
-                        index={index}
-                        selected={@selected}
-                        user={@user}
-                        is_threaded={@collab_space_config.threaded}
-                        is_instructor={@is_instructor}
-                        collab_space_status={@collab_space_config.status}/>
-                    {/for}
+                    <List
+                      posts={@posts}
+                      collab_space_config={@collab_space_config}
+                      selected={@selected}
+                      user_id={@user.id}
+                      is_instructor={@is_instructor} />
                   </div>
                 </div>
               </div>
@@ -406,7 +402,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     modal = fn assigns ->
       ~F"""
-        <PostModal {...@modal_assigns} />
+        <Modal {...@modal_assigns} />
       """
     end
 

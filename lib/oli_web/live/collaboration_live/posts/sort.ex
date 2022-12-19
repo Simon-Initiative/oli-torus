@@ -1,4 +1,4 @@
-defmodule OliWeb.CollaborationLive.SortPosts do
+defmodule OliWeb.CollaborationLive.Posts.Sort do
   use Surface.Component
 
   alias Surface.Components.Form
