@@ -268,7 +268,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
   ) : null;
 
-  const reset = isEvaluated && !props.context.graded && props.context.surveyId === null && (
+  const reset = isEvaluated && !props.context.graded && !props.context.surveyId && (
     <div className="d-flex">
       <div className="flex-fill"></div>
       <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
@@ -328,15 +328,17 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton = !model.isExample && props.context.surveyId === null && (
-    <button
-      className="btn btn-primary mt-2 float-right"
-      disabled={isEvaluated || !ranCode}
-      onClick={onSubmit}
-    >
-      Submit
-    </button>
-  );
+  const maybeSubmitButton = !model.isExample &&
+    !props.context.surveyId &&
+    !props.context.graded && (
+      <button
+        className="btn btn-primary mt-2 float-right"
+        disabled={isEvaluated || !ranCode}
+        onClick={onSubmit}
+      >
+        Submit
+      </button>
+    );
 
   const runButton = (
     <button className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>
@@ -367,7 +369,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0" />
         </div>
 
-        {!model.isExample && props.context.surveyId === null && ungradedDetails}
+        {!model.isExample && !props.context.surveyId && ungradedDetails}
       </div>
       {reset}
     </div>
