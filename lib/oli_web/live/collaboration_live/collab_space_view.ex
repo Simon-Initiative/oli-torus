@@ -19,20 +19,21 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   data selected, :string, default: ""
   data modal, :any, default: nil
-  data editing_post, :any, default: nil
+  data editing_post, :struct, default: nil
   data topic, :string
   data active_users, :list
   data posts, :list
   data new_post_changeset, :changeset
-  data collab_space_config, :any
-  data user, :any
-  data section, :any
-  data page_resource, :any
-  data search_params, :any
+  data collab_space_config, :struct
+  data user, :struct
+  data section, :struct
+  data page_resource, :struct
+  data search_params, :struct
+  data sort, :struct
+  data is_instructor, :boolean
 
   # ----------------
-  # Presence
-  def presence_topic(section_slug, resource_id),
+  def channels_topic(section_slug, resource_id),
     do: "collab_space_#{section_slug}_#{resource_id}"
 
   def presence_default_user_payload(user) do
@@ -60,9 +61,9 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     user = Accounts.get_user_by(%{id: current_user_id})
     section = Sections.get_section_by_slug(section_slug)
     page_resource = Resources.get_resource_from_slug(page_slug)
-    is_instructor = Map.get(session, "is_instructor")
+    is_instructor = Map.get(session, "is_instructor", false)
 
-    topic = presence_topic(section_slug, page_resource.id)
+    topic = channels_topic(section_slug, page_resource.id)
 
     PubSub.subscribe(Oli.PubSub, topic)
     Presence.track_presence(
@@ -164,6 +165,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   use OliWeb.Common.Modal
   # ----------------
 
+  #-----------Create Post-----------#
+
   def handle_event("display_create_modal", _params, socket) do
     modal_assigns = %{
       id: "create_post_modal",
@@ -173,30 +176,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     }
 
     display_post_modal(modal_assigns, socket)
-  end
-
-  def handle_event("create_post", %{"post" => attrs} = _params, socket) do
-    socket = clear_flash(socket)
-
-    attrs =
-      if not socket.assigns.collab_space_config.auto_accept,
-        do: Map.put(attrs, "status", :submitted),
-        else: attrs
-
-    case Collaboration.create_post(attrs) do
-      {:ok, %PostSchema{status: status}} ->
-        socket = put_flash(socket, :info, "Post successfully created")
-
-        send_updated_posts(status, socket.assigns.topic)
-
-        {:noreply, hide_modal(socket, modal_assigns: nil)}
-
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply,
-          socket
-          |> put_flash(:error, "Couldn't create post")
-          |> hide_modal(modal_assigns: nil)}
-    end
   end
 
   def handle_event("display_reply_to_post_modal", %{"parent_id" => parent_id, "index" => index}, socket) do
@@ -235,6 +214,30 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     display_post_modal(modal_assigns, socket)
   end
 
+  def handle_event("create_post", %{"post" => attrs} = _params, socket) do
+    socket = clear_flash(socket)
+
+    attrs =
+      if not socket.assigns.collab_space_config.auto_accept,
+        do: Map.put(attrs, "status", :submitted),
+        else: attrs
+
+    case Collaboration.create_post(attrs) do
+      {:ok, %PostSchema{status: status}} ->
+        socket = put_flash(socket, :info, "Post successfully created")
+
+        send_updated_posts(status, socket.assigns.topic)
+
+        {:noreply, hide_modal(socket, modal_assigns: nil)}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply,
+          socket
+          |> put_flash(:error, "Couldn't create post")
+          |> hide_modal(modal_assigns: nil)}
+    end
+  end
+
   #-----------Edit Post-----------#
 
   def handle_event("display_edit_modal", %{"id" => id}, socket) do
@@ -250,11 +253,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     display_post_modal(modal_assigns, assign(socket, editing_post: post))
   end
 
-  def handle_event("edit_post", %{"post" => attrs}, socket) do
-    socket = clear_flash(socket)
-
-    do_edit_post(socket.assigns.editing_post, attrs, socket)
-  end
+  def handle_event("edit_post", %{"post" => attrs}, socket),
+    do: do_edit_post(socket.assigns.editing_post, attrs, socket)
 
   #-----------Delete Post-----------#
 
@@ -264,18 +264,23 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     modal_assigns = %{
       title: "Delete Post",
       id: "delete_post_modal",
-      ok: "delete_post",
+      ok: "delete_posts",
       cancel: "cancel_confirm_modal"
     }
 
-    display_confirm_modal(modal_assigns, "delete", index, assign(socket, editing_post: post))
+    opt_text = if socket.assigns.is_instructor, do: "This will also delete the replies if there is any.", else: ""
+
+    display_confirm_modal(
+      modal_assigns,
+      "delete",
+      index,
+      assign(socket, editing_post: post),
+      opt_text
+    )
   end
 
-  def handle_event("delete_post", _, socket) do
-    socket = clear_flash(socket)
-
-    do_edit_post(socket.assigns.editing_post, %{status: :deleted}, socket)
-  end
+  def handle_event("delete_posts", _, socket),
+    do: do_delete_post(socket.assigns.editing_post, socket)
 
   #-----------Archive Post-----------#
 
@@ -292,11 +297,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     display_confirm_modal(modal_assigns, "archive", index, assign(socket, editing_post: post))
   end
 
-  def handle_event("archive_post", _, socket) do
-    socket = clear_flash(socket)
-
-    do_edit_post(socket.assigns.editing_post, %{status: :archived}, socket)
-  end
+  def handle_event("archive_post", _, socket),
+    do: do_edit_post(socket.assigns.editing_post, %{status: :archived}, socket)
 
   #-----------Unarchive Post-----------#
 
@@ -313,11 +315,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     display_confirm_modal(modal_assigns, "unarchive", index, assign(socket, editing_post: post))
   end
 
-  def handle_event("unarchive_post", _, socket) do
-    socket = clear_flash(socket)
-
-    do_edit_post(socket.assigns.editing_post, %{status: :approved}, socket)
-  end
+  def handle_event("unarchive_post", _, socket),
+    do: do_edit_post(socket.assigns.editing_post, %{status: :approved}, socket)
 
   #-----------Accept Post-----------#
 
@@ -334,11 +333,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     display_confirm_modal(modal_assigns, "accept", index, assign(socket, editing_post: post))
   end
 
-  def handle_event("accept_post", _, socket) do
-    socket = clear_flash(socket)
-
-    do_edit_post(socket.assigns.editing_post, %{status: :approved}, socket)
-  end
+  def handle_event("accept_post", _, socket),
+    do: do_edit_post(socket.assigns.editing_post, %{status: :approved}, socket)
 
   #-----------Reject Post-----------#
 
@@ -352,35 +348,17 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       cancel: "cancel_confirm_modal"
     }
 
-    display_confirm_modal(modal_assigns, "reject", index, assign(socket, editing_post: post))
+    display_confirm_modal(
+      modal_assigns,
+      "reject",
+      index,
+      assign(socket, editing_post: post),
+      "This will also reject the replies if there is any."
+    )
   end
 
-  def handle_event("reject_post", _, socket) do
-    socket = clear_flash(socket)
-
-    do_delete_post(socket.assigns.editing_post, socket)
-  end
-
-  #-----------Delete multiple Post-----------#
-
-  def handle_event("display_delete_multiple_modal", %{"id" => id, "index" => index}, socket) do
-    post = Collaboration.get_post_by(%{id: id})
-
-    modal_assigns = %{
-      title: "Delete Post",
-      id: "delete_multiple_post_modal",
-      ok: "delete_multiple_post",
-      cancel: "cancel_confirm_modal"
-    }
-
-    display_confirm_modal(modal_assigns, "delete", index, assign(socket, editing_post: post))
-  end
-
-  def handle_event("delete_multiple_post", _, socket) do
-    socket = clear_flash(socket)
-
-    do_delete_post(socket.assigns.editing_post, socket)
-  end
+  def handle_event("reject_post", _, socket),
+    do: do_delete_post(socket.assigns.editing_post, socket)
 
   def handle_event("cancel_confirm_modal", _, socket) do
     {:noreply,
@@ -389,9 +367,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       |> hide_modal(modal_assigns: nil)}
   end
 
-  def handle_event("set_selected", %{"id" => value}, socket) do
-    {:noreply, assign(socket, selected: value)}
-  end
+  # ----------------
+
+  def handle_event("set_selected", %{"id" => value}, socket),
+    do: {:noreply, assign(socket, selected: value)}
 
   def handle_event("sort", %{"sort" => %{"sort_by" => sort_by, "sort_order" => sort_order}} = _params, socket) do
     sort_by = String.to_atom(sort_by)
@@ -412,9 +391,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       )}
   end
 
-  def handle_info(:updated_posts, socket) do
-    {:noreply, assign(socket, posts: get_posts(socket.assigns.search_params, socket.assigns.sort))}
-  end
+  def handle_info(:updated_posts, socket),
+    do: {:noreply, assign(socket, posts: get_posts(socket.assigns.search_params, socket.assigns.sort))}
 
   def handle_info(%{event: "presence_diff"}, socket) do
     {:noreply,
@@ -440,11 +418,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       )}
   end
 
-  defp display_confirm_modal(modal_assigns, action, index, socket) do
-
+  defp display_confirm_modal(modal_assigns, action, index, socket, opt_text \\ "") do
     modal = fn assigns ->
       ~F"""
-        <Confirm {...@modal_assigns}> Are you sure you want to {action} post #{index}? </Confirm>
+        <Confirm {...@modal_assigns}> Are you sure you want to {action} post #{index}? {opt_text}</Confirm>
       """
     end
 
@@ -457,6 +434,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   end
 
   defp do_edit_post(post, attrs, socket) do
+    socket = clear_flash(socket)
+
     case Collaboration.update_post(post, attrs) do
       {:ok, %PostSchema{status: status}} ->
         socket = put_flash(socket, :info, "Post successfully edited")
@@ -479,17 +458,17 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp do_delete_post(post, socket) do
     socket = clear_flash(socket)
 
-    with {number, nil} when number > 0 <- Collaboration.delete_posts(post) do
-      socket = put_flash(socket, :info, "Post/s successfully deleted")
+    case Collaboration.delete_posts(post) do
+      {number, nil} when number > 0 ->
+        socket = put_flash(socket, :info, "Post/s successfully deleted")
 
-      send_updated_posts(nil, socket.assigns.topic)
+        send_updated_posts(:deleted, socket.assigns.topic)
 
-      {:noreply,
-        socket
-        |> assign(editing_post: nil)
-        |> hide_modal(modal_assigns: nil)}
+        {:noreply,
+          socket
+          |> assign(editing_post: nil)
+          |> hide_modal(modal_assigns: nil)}
 
-    else
       _ ->
         {:noreply,
           socket

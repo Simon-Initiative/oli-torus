@@ -1029,7 +1029,7 @@ defmodule OliWeb.CollaborationLiveTest do
       test_user = insert(:user, name: "Test User")
       Presence.track_presence(
         self(),
-        CollabSpaceView.presence_topic(section.slug, page_revision_cs.resource_id),
+        CollabSpaceView.channels_topic(section.slug, page_revision_cs.resource_id),
         test_user.id,
         CollabSpaceView.presence_default_user_payload(test_user)
       )
@@ -1049,7 +1049,7 @@ defmodule OliWeb.CollaborationLiveTest do
       other_test_user = insert(:user, name: "Other Test User")
       Presence.track_presence(
         self(),
-        CollabSpaceView.presence_topic(section.slug, page_revision_cs.resource_id),
+        CollabSpaceView.channels_topic(section.slug, page_revision_cs.resource_id),
         other_test_user.id,
         CollabSpaceView.presence_default_user_payload(other_test_user)
       )
@@ -1231,13 +1231,13 @@ defmodule OliWeb.CollaborationLiveTest do
       |> render_click()
 
       view
-      |> element("button[phx-click=\"delete_post\"")
+      |> element("button[phx-click=\"delete_posts\"")
       |> render_click()
 
       assert view
         |> element("div.alert.alert-info")
         |> render() =~
-          "Post successfully edited"
+          "Post/s successfully deleted"
 
       assert_receive :updated_posts
 
@@ -1351,13 +1351,13 @@ defmodule OliWeb.CollaborationLiveTest do
       |> render_click()
 
       view
-      |> element("button[phx-click=\"delete_post\"")
+      |> element("button[phx-click=\"delete_posts\"")
       |> render_click()
 
       assert view
         |> element("div.alert.alert-info")
         |> render() =~
-          "Post successfully edited"
+          "Post/s successfully deleted"
 
       assert_receive :updated_posts
 

@@ -52,7 +52,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
 
                   {#if @is_instructor}
                     <button class={"btn btn-link" <> if not is_archived?(@collab_space_status), do: " not-readonly", else: ""} type="button" data-toggle="tooltip" title={if is_archived?(@post.status), do: "Unarchive", else: "Archive"} :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"} phx-value-id={@post.id} phx-value-index={@index}><i class={"fa fa-" <> if is_archived?(@post.status), do: "lock", else: "unlock"}></i></button>
-                    <button class="btn btn-link" type="button" data-toggle="tooltip" title="Delete" :on-click="display_delete_multiple_modal" phx-value-id={@post.id} phx-value-index={@index}><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-link" type="button" data-toggle="tooltip" title="Delete" :on-click="display_delete_modal" phx-value-id={@post.id} phx-value-index={@index}><i class="fas fa-trash"></i></button>
                   {/if}
 
                 </div>
@@ -121,7 +121,7 @@ defmodule OliWeb.CollaborationLive.ShowPost do
                         {#if @is_instructor}
                           <button class={"btn btn-link" <> if not is_archived?(@post.status) and not is_archived?(@collab_space_status), do: " not-readonly", else: ""} type="button" data-toggle="tooltip" title={if is_archived?(reply.status), do: "Unarchive", else: "Archive"} :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"} phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"} disabled={if @collab_space_status == :disabled, do: true, else: false}><i class={"fa fa-" <> if is_archived?(reply.status), do: "lock", else: "unlock"}></i></button>
                           <span class="d-inline-block" data-toggle="tooltip" title="Delete">
-                            <button class="btn btn-link" type="button" :on-click="display_delete_multiple_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"}><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-link" type="button" :on-click="display_delete_modal" phx-value-id={reply.id} phx-value-index={"#{@index}.#{reply_index}"}><i class="fas fa-trash"></i></button>
                           </span>
                         {/if}
                       </div>

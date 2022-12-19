@@ -399,7 +399,7 @@ defmodule Oli.Resources.Collaboration do
     |> Repo.update()
   end
 
-   @doc """
+  @doc """
   Delete a post or a set of posts.
 
   ## Examples
