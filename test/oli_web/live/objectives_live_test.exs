@@ -234,7 +234,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
-    @tag :skip
     test "show objective", %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
       {:ok, sub_obj_2} = create_objective(project, publication, "sub_obj_2", "Sub Objective 2")
@@ -256,6 +255,8 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
+      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
+
       assert has_element?(view, "##{obj.slug}")
       assert has_element?(view, "##{obj.slug}", "Sub-Objectives 2")
       assert has_element?(view, "##{obj.slug}", "Pages 2")
@@ -275,8 +276,6 @@ defmodule OliWeb.ObjectivesLiveTest do
                ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_2.slug)}\"]",
                "#{page_2.title}"
              )
-
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
@@ -354,6 +353,8 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
+      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
+
       view
       |> element("button[phx-click=\"set_selected\"][phx-value-slug=#{obj_a.slug}]")
       |> render_click(%{"slug" => obj_a.slug})
@@ -420,7 +421,6 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       refute has_element?(view, ".collapse", "#{removal_title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
