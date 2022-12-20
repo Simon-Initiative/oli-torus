@@ -423,6 +423,7 @@ defmodule Oli.SectionsTest do
     end
   end
 
+  @moduletag :capture_log
   describe "section updates" do
     setup do
       Seeder.base_project_with_resource2()
