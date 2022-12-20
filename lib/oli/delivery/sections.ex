@@ -561,6 +561,26 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+
+  @doc """
+  For a section resource record, map its children SR records to resource ids,
+  of course preserving the order of the children list.
+
+  ## Examples
+      iex> map_section_resource_children_to_resource_ids(root_resource)
+      [1, 2, 3, 4]
+  """
+  def map_section_resource_children_to_resource_ids(root_section_resource) do
+
+    srs = from(s in SectionResource,
+      where: s.id in ^root_section_resource.children
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
+
+    Enum.map(root_section_resource.children, fn sr_id -> Map.get(srs, sr_id) end)
+  end
+
   @doc """
   Creates a section resource.
   ## Examples
