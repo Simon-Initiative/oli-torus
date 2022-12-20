@@ -5,16 +5,9 @@ import { useToggle } from '../../../../../components/hooks/useToggle';
 import { MIMETYPE_FILTERS } from '../../../../../components/media/manager/MediaManager';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
+import { MediaBrowserComponent, TorusMediaBrowserWrapper } from './TorusMediaBrowserWrapper';
 
-interface Props {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (url: string) => void;
-  onBlur: (id: string, url: string) => void;
-}
-
-export const TorusVideoBrowser: React.FC<Props> = ({ id, label, value, onChange, onBlur }) => {
+const _TorusVideoBrowser: MediaBrowserComponent = ({ id, label, value, onChange, onBlur }) => {
   const [pickerOpen, , openPicker, closePicker] = useToggle();
   const projectSlug: string = useSelector(selectProjectSlug);
 
@@ -56,3 +49,5 @@ export const TorusVideoBrowser: React.FC<Props> = ({ id, label, value, onChange,
     </span>
   );
 };
+
+export const TorusVideoBrowser = TorusMediaBrowserWrapper(_TorusVideoBrowser);
