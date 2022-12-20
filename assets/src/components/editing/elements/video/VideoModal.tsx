@@ -188,8 +188,8 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
               <table className="table table-striped">
                 <thead>
                   <tr>
-                    <th>Content Type</th>
                     <th>URL</th>
+                    <th>Content Type</th>
                     <th>Remove</th>
                   </tr>
                 </thead>
