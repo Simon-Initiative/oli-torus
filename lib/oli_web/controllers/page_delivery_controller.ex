@@ -883,38 +883,31 @@ defmodule OliWeb.PageDeliveryController do
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
 
-  defp update_children(value, parent),
-    do: Map.put(value, "children", Enum.map(value["children"], fn id -> Map.get(parent, id) end))
+  defp build_helper(id, previous_next_index) do
+
+    node = Map.get(previous_next_index, id)
+
+    Map.put(node, "children", Enum.map(node["children"], fn id ->
+      build_helper(id, previous_next_index)
+    end))
+  end
+
+  def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
+    Enum.map(resource_ids, fn resource_id -> build_helper(resource_id, previous_next_index) end)
+  end
 
   defp build_hierarchy(section) do
-    {:ok, {_previous, _next, _current}, previous_next_index} =
+    {:ok, _, previous_next_index} =
       PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
 
-    previous_next_index_with_children =
-      previous_next_index
-      |> Enum.map(fn {key, value} -> {key, update_children(value, previous_next_index)} end)
-      |> Enum.into(%{})
-
-    hierarchy_map =
-      previous_next_index
-      |> Enum.reduce(%{}, fn {key, value}, acc ->
-        if value["level"] == "1",
-          do: Map.put(acc, key, update_children(value, previous_next_index_with_children)),
-          else: acc
-      end)
-
-    # sort the top level of the hierarchy according to the order of the SectionResource ids that
-    # appear in the section.root_section_resource children attribute.  These ids, unfortunately, are
-    # ids of SR records, and are not resource_ids.  So we have to run a simply query to map those
-    # to resource_ids
-    hierarchy = Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(section.root_section_resource)
-    |> Enum.map(fn resource_id ->
-      Map.get(hierarchy_map, Integer.to_string(resource_id))
-    end)
+    # Retrieve the top level resource ids, and convert them to strings
+    resource_ids = Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(section.root_section_resource)
+    |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
 
     %{
       id: "hierarchy_built_with_previous_next_index",
-      children: hierarchy
+      # Recursively build the map based hierarchy from the structure defined by previous_next_index
+      children: build_hierarchy_from_top_level(resource_ids, previous_next_index)
     }
   end
 end

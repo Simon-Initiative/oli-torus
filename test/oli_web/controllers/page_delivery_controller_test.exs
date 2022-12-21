@@ -11,6 +11,158 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
 
+
+  describe "page_delivery_controller build_hierarchy" do
+    setup [:setup_lti_session]
+
+    test "properly converts a deeply nested  student access by an enrolled student", %{} do
+
+      # Defines a hierachry of:
+
+      # Page one
+      # Page two
+      # New page
+      # Unit ONE
+      # Unit TWO
+      # -- Module
+      # ---- Section
+      # ------ Nested Section
+      # --------- Deep Page
+      #
+
+      previous_next_index = %{
+        "10429" => %{
+          "children" => [],
+          "graded" => "false",
+          "id" => "10429",
+          "index" => "1",
+          "level" => "1",
+          "next" => "10430",
+          "prev" => "5",
+          "slug" => "unit_one",
+          "title" => "Unit ONE",
+          "type" => "container"
+        },
+        "10430" => %{
+          "children" => ["14112"],
+          "graded" => "false",
+          "id" => "10430",
+          "index" => "2",
+          "level" => "1",
+          "next" => "14112",
+          "prev" => "10429",
+          "slug" => "unit_two",
+          "title" => "Unit TWO",
+          "type" => "container"
+        },
+        "14112" => %{
+          "children" => ["14113"],
+          "graded" => "false",
+          "id" => "14112",
+          "index" => "1",
+          "level" => "2",
+          "next" => "14113",
+          "prev" => "10430",
+          "slug" => "module",
+          "title" => "Module",
+          "type" => "container"
+        },
+        "14113" => %{
+          "children" => ["14114"],
+          "graded" => "false",
+          "id" => "14113",
+          "index" => "1",
+          "level" => "3",
+          "next" => "14114",
+          "prev" => "14112",
+          "slug" => "section",
+          "title" => "Section",
+          "type" => "container"
+        },
+        "14114" => %{
+          "children" => ["14115"],
+          "graded" => "false",
+          "id" => "14114",
+          "index" => "1",
+          "level" => "4",
+          "next" => "14115",
+          "prev" => "14113",
+          "slug" => "section_40s9w",
+          "title" => "Nested Section",
+          "type" => "container"
+        },
+        "14115" => %{
+          "children" => [],
+          "graded" => "false",
+          "id" => "14115",
+          "index" => "4",
+          "level" => "5",
+          "next" => nil,
+          "prev" => "14114",
+          "slug" => "new_page_3fi3r",
+          "title" => "Deep Page",
+          "type" => "page"
+        },
+        "2" => %{
+          "children" => [],
+          "graded" => "true",
+          "id" => "2",
+          "index" => "1",
+          "level" => "1",
+          "next" => "3",
+          "prev" => nil,
+          "slug" => "page_one",
+          "title" => "Page one",
+          "type" => "page"
+        },
+        "3" => %{
+          "children" => [],
+          "graded" => "false",
+          "id" => "3",
+          "index" => "2",
+          "level" => "1",
+          "next" => "5",
+          "prev" => "2",
+          "slug" => "page_two",
+          "title" => "Page two",
+          "type" => "page"
+        },
+        "5" => %{
+          "children" => [],
+          "graded" => "false",
+          "id" => "5",
+          "index" => "3",
+          "level" => "1",
+          "next" => "10429",
+          "prev" => "3",
+          "slug" => "new_page",
+          "title" => "New Page",
+          "type" => "page"
+        }
+      }
+
+      # Build the hierarchy and check the correctness of the deeply nested containers
+      hierarchy = OliWeb.PageDeliveryController.build_hierarchy_from_top_level(["2", "3", "5", "10429", "10430"], previous_next_index)
+      assert Enum.count(hierarchy) == 5
+
+      unit_two = Enum.at(hierarchy, 4)
+      assert unit_two["title"] == "Unit TWO"
+
+      module = unit_two["children"] |> Enum.at(0)
+      assert module["title"] == "Module"
+
+      section = module["children"] |> Enum.at(0)
+      assert section["title"] == "Section"
+
+      nested_section = section["children"] |> Enum.at(0)
+      assert nested_section["title"] == "Nested Section"
+
+      deep_page = nested_section["children"] |> Enum.at(0)
+      assert deep_page["title"] == "Deep Page"
+
+    end
+  end
+
   describe "page_delivery_controller index" do
     setup [:setup_lti_session]
 
