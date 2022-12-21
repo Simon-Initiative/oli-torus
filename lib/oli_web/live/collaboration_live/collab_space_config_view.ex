@@ -8,6 +8,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.CollaborationLive.CollabSpaceView
+  alias Phoenix.PubSub
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Field, HiddenInput, Inputs, Label, NumberInput}
 
@@ -28,10 +30,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     is_delivery = Map.get(session, "is_delivery")
     page_resource = Resources.get_resource_from_slug(page_slug)
 
-    {page_revision, changeset, parent_entity} =
+    {page_revision, changeset, parent_entity, topic} =
       if is_delivery do
         section_slug = Map.get(session, "section_slug")
         section = Sections.get_section_by_slug(section_slug)
+
+        topic = CollabSpaceView.channels_topic(section_slug, page_resource.id)
+        PubSub.subscribe(Oli.PubSub, topic)
 
         delivery_setting =
           case Delivery.get_delivery_setting_by(%{
@@ -47,7 +52,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           Delivery.change_delivery_setting(delivery_setting, %{
             collab_space_config: from_struct(collab_space_config)
           }),
-          section
+          section,
+          topic
         }
       else
         project_slug = Map.get(session, "project_slug")
@@ -58,7 +64,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           Resources.change_revision(page_revision, %{
             collab_space_config: from_struct(collab_space_config)
           }),
-          Course.get_project_by_slug(project_slug)
+          Course.get_project_by_slug(project_slug),
+          ""
         }
       end
 
@@ -72,7 +79,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         changeset: changeset,
         page_revision: page_revision,
         page_resource: page_resource,
-        parent_entity: parent_entity
+        parent_entity: parent_entity,
+        topic: topic
       )}
   end
 
@@ -196,6 +204,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       {:ok, delivery_setting} ->
         socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
         collab_space_config = delivery_setting.collab_space_config
+
+        PubSub.broadcast(
+          Oli.PubSub,
+          socket.assigns.topic,
+          {:updated_collab_space_config, collab_space_config}
+        )
 
         {:noreply,
           assign(socket,

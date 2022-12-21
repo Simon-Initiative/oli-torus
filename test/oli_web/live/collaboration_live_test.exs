@@ -8,6 +8,7 @@ defmodule OliWeb.CollaborationLiveTest do
   alias Oli.Delivery
   alias Oli.Delivery.{DeliverySetting, Sections}
   alias Oli.Resources.{Collaboration, ResourceType}
+  alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.CollaborationLive.{CollabSpaceView, CollabSpaceConfigView}
   alias OliWeb.Presence
 
@@ -347,6 +348,8 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "span", "Enabled")
       assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
       assert has_element?(view, "button[phx-click=\"archive\"", "Archive")
+
+      assert_receive {:updated_collab_space_config, %CollabSpaceConfig{status: :enabled}}
     end
 
     test "returns the collab space config as enabled when there is config in the page and change status correctly",
@@ -382,6 +385,8 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "button[phx-click=\"enable\"", "Enable")
       assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
 
+      assert_receive {:updated_collab_space_config, %CollabSpaceConfig{status: :archived}}
+
       view
       |> element("button[phx-click=\"disable\"")
       |> render_click()
@@ -389,6 +394,8 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "span", "Disabled")
       assert has_element?(view, "button[phx-click=\"enable\"", "Enable")
       refute has_element?(view, "button[phx-click=\"archive\"", "Archived")
+
+      assert_receive {:updated_collab_space_config, %CollabSpaceConfig{status: :disabled}}
     end
 
     test "returns the collab space config as archived when there is a delivery setting config", %{
@@ -523,6 +530,14 @@ defmodule OliWeb.CollaborationLiveTest do
                 section_id: section.id,
                 resource_id: page_resource_cs.id
               })
+
+      assert_receive {
+        :updated_collab_space_config,
+        %CollabSpaceConfig{
+          threaded: false,
+          auto_accept: false,
+          participation_min_replies: 2
+        }}
     end
 
     test "handles error when changes to the collab space config attrs are wrong", %{
@@ -557,6 +572,8 @@ defmodule OliWeb.CollaborationLiveTest do
       assert view
             |> element("#delivery_setting_collab_space_config_participation_min_replies")
             |> render() =~ "0"
+
+      refute_receive {:updated_collab_space_config, _}
     end
   end
 
@@ -590,6 +607,8 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "span", "Enabled")
       assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
       assert has_element?(view, "button[phx-click=\"archive\"", "Archive")
+
+      refute_receive {:updated_collab_space_config, _}
     end
 
     test "returns the collab space config as enabled when there is config and change status correctly",

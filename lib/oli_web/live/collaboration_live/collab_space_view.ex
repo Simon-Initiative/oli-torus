@@ -390,6 +390,24 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   def handle_info(:updated_posts, socket),
     do: {:noreply, assign(socket, posts: get_posts(socket.assigns.search_params, socket.assigns.sort))}
 
+  def handle_info(
+    {:updated_collab_space_config, %CollabSpaceConfig{show_full_history: show_full_history} = collab_space_config},
+    socket
+  ) do
+    search_params = Map.put(socket.assigns.search_params, :collab_space_config, collab_space_config)
+
+    socket =
+      if show_full_history != socket.assigns.collab_space_config.show_full_history,
+        do: assign(socket, posts: get_posts(search_params, socket.assigns.sort)),
+        else: socket
+
+    {:noreply,
+      assign(socket,
+        collab_space_config: collab_space_config,
+        search_params: search_params
+      )}
+  end
+
   def handle_info(%{event: "presence_diff"}, socket) do
     {:noreply,
       assign(socket,
