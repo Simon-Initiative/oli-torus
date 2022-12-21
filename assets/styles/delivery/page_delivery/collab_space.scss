@@ -1,11 +1,6 @@
-.border-index {
+.post-index {
   border-right: 1px solid #73757e !important;
   padding: 0.7rem;
-}
-
-.text-username {
-  font-size: .95rem;
-  font-weight: 400 !important;
 }
 
 .w-85 {
@@ -49,21 +44,21 @@
 }
 
 .post {
-  .border-index {
+  .post-index {
     font-size: $h3-font-size;
   }
 
-  .border-post {
+  .post-border {
     border-left: 0.2rem solid #007bff !important;
   }
 }
 
 .reply {
-  .border-index {
+  .post-index {
     font-size: $h4-font-size;
   }
 
-  .border-post {
+  .post-border {
     border-left: 0.2rem solid #17a2b8 !important;
   }
 }

@@ -17,6 +17,7 @@ defmodule OliWeb.CollaborationLive.Posts.Sort do
               <RadioButton value="desc" checked={@sort.order == :desc} opts={hidden: true}/>
               <i class='fa fa-sort-amount-down'></i>
             </label>
+
             <label class={"btn btn-outline-secondary" <> if @sort.order == :asc, do: " active", else: ""}>
               <RadioButton value="asc" checked={@sort.order == :asc} opts={hidden: true}/>
               <i class='fa fa-sort-amount-up'></i>

@@ -6,9 +6,8 @@ defmodule OliWeb.CollaborationLive.ActiveUsers do
   def render(assigns) do
     ~F"""
       <div class="members list-group">
-        <div class="list-group-item active">
-          <h5 class="mb-0"><strong>Active users ({length(@users)})</strong></h5>
-        </div>
+        <h5 class="list-group-item active mb-0"><strong>Active users ({length(@users)})</strong></h5>
+
         <ul class="list-group pb-0 list-group-flush border border-top-0 border-light">
           {#for user <- @users}
             <li class="list-group-item">

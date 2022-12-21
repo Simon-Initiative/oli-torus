@@ -12,8 +12,8 @@ defmodule OliWeb.CollaborationLive.Posts.List do
   def render(assigns) do
     ~F"""
       {#for {post, index} <- @posts}
-        <div id={"accordion_post_#{post.id}"} class={"accordion-item" <> if post.status == :archived or @collab_space_config.status == :archived, do: " readonly", else: ""}>
-          <div class="accordion-header post" id={"heading_#{post.id}"}>
+        <div id={"accordion_post_#{post.id}"} class={"accordion-item post" <> if post.status == :archived or @collab_space_config.status == :archived, do: " readonly", else: ""}>
+          <div class="accordion-header" id={"heading_#{post.id}"}>
             <Show
               post={post}
               index={index}

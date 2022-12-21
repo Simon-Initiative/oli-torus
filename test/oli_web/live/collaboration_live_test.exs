@@ -1039,7 +1039,7 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert has_element?(view, "h3", "Collaborative Space")
       assert has_element?(view, "h5", "Active users (1)")
-      assert has_element?(view, ".border-index", "#1")
+      assert has_element?(view, ".post-index", "#1")
       assert has_element?(view, ".card-body", "#{first_post.content.message}")
     end
 
@@ -1142,7 +1142,7 @@ defmodule OliWeb.CollaborationLiveTest do
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       assert length(posts) == 2
 
-      assert has_element?(view, ".border-index", "#2")
+      assert has_element?(view, ".post-index", "#2")
       assert has_element?(view, ".card-body", "#{message}")
     end
 
@@ -1444,7 +1444,7 @@ defmodule OliWeb.CollaborationLiveTest do
         )
 
       assert has_element?(view, "h3", "Collaborative Space")
-      assert has_element?(view, "span", "Archived")
+      assert has_element?(view, "h6", "Archived")
       assert has_element?(view, "button[phx-click=\"display_create_modal\"]:disabled")
       assert has_element?(view, ".readonly")
     end
@@ -1565,7 +1565,7 @@ defmodule OliWeb.CollaborationLiveTest do
         )
 
       assert has_element?(view, "h3", "Collaborative Space")
-      assert has_element?(view, ".border-index", "#2")
+      assert has_element?(view, ".post-index", "#2")
       assert has_element?(view, ".card-body", "#{first_post.content.message}")
       assert has_element?(view, ".card-body", "#{reply.content.message}")
       refute has_element?(view, "button[phx-click=\"display_reply_to_post_modal\"][phx-value-parent_id=\"#{first_post.id}\"]")
@@ -1655,7 +1655,7 @@ defmodule OliWeb.CollaborationLiveTest do
       posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, page_revision_cs.resource_id)
       assert length(posts) == 3
 
-      assert has_element?(view, ".border-index", "#3")
+      assert has_element?(view, ".post-index", "#3")
       assert has_element?(view, ".card-body", "#{message}")
     end
 
