@@ -1599,4 +1599,283 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, ".card-body", "#{created_post.content.message}")
     end
   end
+
+  describe "instructor - collab space view" do
+    setup [:lms_instructor_conn, :create_project_and_section]
+
+    test "creating a post",
+        %{conn: conn, instructor: instructor, section: section, page_revision_cs: page_revision_cs} do
+      message = "Testing post"
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_instructor" => true
+          }
+        )
+
+      view
+      |> element("button[phx-click=\"display_create_modal\"")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"create_post\"")
+      |> render_submit(%{"post" => %{content: %{message: message}}})
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post successfully created"
+
+      assert_receive :updated_posts
+
+      posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, page_revision_cs.resource_id)
+      assert length(posts) == 3
+
+      assert has_element?(view, ".border-index", "#3")
+      assert has_element?(view, ".card-body", "#{message}")
+    end
+
+    test "deleting a post",
+        %{conn: conn,
+          instructor: instructor,
+          section: section,
+          page_revision_cs: page_revision_cs,
+          page_resource_cs: page_resource_cs,
+          first_post: first_post} do
+      parent_post = insert(:post, user: instructor, section: section, resource: page_resource_cs)
+      reply = insert(:post, user: instructor, section: section, resource: page_resource_cs, parent_post: parent_post, thread_root: parent_post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_instructor" => true
+          }
+        )
+
+      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]")
+      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply.id}\"]")
+      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{first_post.id}\"]")
+
+      view
+      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"delete_posts\"")
+      |> render_click()
+
+      assert view
+        |> element("div.alert.alert-info")
+        |> render() =~
+          "Post/s successfully deleted"
+
+      assert_receive :updated_posts
+
+      posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, page_revision_cs.resource_id)
+      assert length(posts) == 2
+
+      refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]")
+      refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply.id}\"]")
+      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{first_post.id}\"]")
+    end
+
+    test "accept submitted post",
+      %{conn: conn,
+        instructor: instructor,
+        section: section,
+        page_revision_cs: page_revision_cs,
+        second_post: second_post} do
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_instructor" => true
+          }
+        )
+
+        assert has_element?(view, "#accordion_post_#{second_post.id} .badge-info", "Pending approval")
+
+        view
+        |> element("button[phx-click=\"display_accept_modal\"][phx-value-id=\"#{second_post.id}\"]")
+        |> render_click()
+
+        view
+        |> element("button[phx-click=\"accept_post\"")
+        |> render_click()
+
+        assert view
+          |> element("div.alert.alert-info")
+          |> render() =~
+            "Post successfully edited"
+
+        assert has_element?(view, "#accordion_post_#{second_post.id}")
+        refute has_element?(view, "#accordion_post_#{second_post.id} .badge-info", "Pending approval")
+    end
+
+    test "reject submitted post",
+        %{conn: conn, instructor: instructor, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post, second_post: second_post} do
+      post = insert(:post, user: instructor, section: section, resource: page_resource_cs, parent_post: second_post, thread_root: second_post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_instructor" => true
+          }
+        )
+
+        assert has_element?(view, "#accordion_post_#{second_post.id} .badge-info", "Pending approval")
+        assert has_element?(view, "#accordion_reply_#{post.id}")
+        assert has_element?(view, "#accordion_post_#{first_post.id}")
+
+        view
+        |> element("button[phx-click=\"display_reject_modal\"][phx-value-id=\"#{second_post.id}\"]")
+        |> render_click()
+
+        view
+        |> element("button[phx-click=\"reject_post\"")
+        |> render_click()
+
+        assert view
+          |> element("div.alert.alert-info")
+          |> render() =~
+            "Post/s successfully deleted"
+
+        posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, page_revision_cs.resource_id)
+        assert length(posts) == 1
+
+        refute has_element?(view, "#accordion_post_#{second_post.id}")
+        refute has_element?(view, "#accordion_reply_#{post.id}")
+        assert has_element?(view, "#accordion_post_#{first_post.id}")
+    end
+
+    test "archive post",
+        %{conn: conn, instructor: instructor, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post} do
+      reply = insert(:post, user: instructor, section: section, resource: page_resource_cs, parent_post: first_post, thread_root: first_post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_instructor" => true
+          }
+        )
+
+        refute has_element?(view, "#accordion_post_#{first_post.id}.accordion-item.readonly")
+        refute has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+
+        view
+        |> element("button[phx-click=\"display_archive_modal\"][phx-value-id=\"#{reply.id}\"]")
+        |> render_click()
+
+        view
+        |> element("button[phx-click=\"archive_post\"")
+        |> render_click()
+
+        assert view
+          |> element("div.alert.alert-info")
+          |> render() =~
+            "Post successfully edited"
+
+        refute has_element?(view, "#accordion_post_#{first_post.id}.accordion-item.readonly")
+        assert has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+
+        view
+        |> element("button[phx-click=\"display_archive_modal\"][phx-value-id=\"#{first_post.id}\"]")
+        |> render_click()
+
+        view
+        |> element("button[phx-click=\"archive_post\"")
+        |> render_click()
+
+        assert view
+          |> element("div.alert.alert-info")
+          |> render() =~
+            "Post successfully edited"
+
+        assert has_element?(view, "#accordion_post_#{first_post.id}.accordion-item.readonly")
+    end
+
+    test "unarchive post",
+        %{conn: conn, instructor: instructor, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs} do
+      post = insert(:post, status: :archived, user: instructor, section: section, resource: page_resource_cs)
+      reply = insert(:post, status: :archived, user: instructor, section: section, resource: page_resource_cs, parent_post: post, thread_root: post)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => instructor.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_instructor" => true
+          }
+        )
+
+        assert has_element?(view, "#accordion_post_#{post.id}.accordion-item.readonly")
+        assert has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+
+        view
+        |> element("button[phx-click=\"display_unarchive_modal\"][phx-value-id=\"#{reply.id}\"]")
+        |> render_click()
+
+        view
+        |> element("button[phx-click=\"unarchive_post\"")
+        |> render_click()
+
+        assert view
+          |> element("div.alert.alert-info")
+          |> render() =~
+            "Post successfully edited"
+
+        assert has_element?(view, "#accordion_post_#{post.id}.accordion-item.readonly")
+        refute has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+
+        view
+        |> element("button[phx-click=\"display_unarchive_modal\"][phx-value-id=\"#{post.id}\"]")
+        |> render_click()
+
+        view
+        |> element("button[phx-click=\"unarchive_post\"")
+        |> render_click()
+
+        assert view
+          |> element("div.alert.alert-info")
+          |> render() =~
+            "Post successfully edited"
+
+        refute has_element?(view, "#accordion_post_#{post.id}.accordion-item.readonly")
+    end
+  end
 end
