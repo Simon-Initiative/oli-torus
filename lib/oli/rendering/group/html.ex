@@ -21,9 +21,10 @@ defmodule Oli.Rendering.Group.Html do
   def group(%Context{} = context, next, params) do
 
     id = Map.get(params, "id", UUID.uuid4())
+    purpose = Map.get(params, "purpose", "none")
 
     params = Map.put(params, "id", id)
-    |> Map.put("purpose", "none")
+    |> Map.put("purpose", purpose)
 
     group(context, next, params)
   end
