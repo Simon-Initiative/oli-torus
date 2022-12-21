@@ -80,7 +80,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
   const addCircle = (_e: any) => {
     if (model.width && model.height) {
-      var hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
+      const hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
       addHotspot(hs);
       setSelectedHotspot(hs.id);
     }
@@ -88,7 +88,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
   const addRect = (_e: any) => {
     if (model.width && model.height) {
-      var hs = makeHotspot([
+      const hs = makeHotspot([
         Math.floor(model.width / 2) - 50,
         Math.floor(model.height / 2) - 50,
         Math.floor(model.width / 2) + 50,
