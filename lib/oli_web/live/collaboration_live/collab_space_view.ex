@@ -219,10 +219,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         else: attrs
 
     case Collaboration.create_post(attrs) do
-      {:ok, %PostSchema{status: status}} ->
+      {:ok, %PostSchema{}} ->
         socket = put_flash(socket, :info, "Post successfully created")
 
-        send_updated_posts(status, socket.assigns.topic)
+        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, :updated_posts)
 
         {:noreply, hide_modal(socket, modal_assigns: nil)}
 
@@ -433,10 +433,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     socket = clear_flash(socket)
 
     case Collaboration.update_post(post, attrs) do
-      {:ok, %PostSchema{status: status}} ->
+      {:ok, %PostSchema{}} ->
         socket = put_flash(socket, :info, "Post successfully edited")
 
-        send_updated_posts(status, socket.assigns.topic)
+        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, :updated_posts)
 
         {:noreply,
           socket
@@ -458,7 +458,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {number, nil} when number > 0 ->
         socket = put_flash(socket, :info, "Post/s successfully deleted")
 
-        send_updated_posts(:deleted, socket.assigns.topic)
+        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, :updated_posts)
 
         {:noreply,
           socket
@@ -532,7 +532,4 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   defp is_archived?(:archived), do: true
   defp is_archived?(_), do: false
-
-  defp send_updated_posts(:submitted, _), do: send(self(), :updated_posts)
-  defp send_updated_posts(_, topic), do: PubSub.broadcast(Oli.PubSub, topic, :updated_posts)
 end

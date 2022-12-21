@@ -1498,8 +1498,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      # just the live view creating the post receive the updated_posts
-      refute_receive :updated_posts
+      assert_receive :updated_posts
 
       created_post =
         Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
@@ -1520,8 +1519,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      # just the live view creating the post receive the updated_posts
-      refute_receive :updated_posts
+      assert_receive :updated_posts
 
       reply =
         Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
