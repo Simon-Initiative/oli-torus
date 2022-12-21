@@ -10,7 +10,6 @@ interface ModalProps {
 export const YouTubeModal = ({ onDone, onCancel, model }: ModalProps) => {
   const [src, setSrc] = useState(model.src);
   const [alt, setAlt] = useState(model.alt);
-  const [width, _setWidth] = useState(model.width);
 
   return (
     <Modal
@@ -19,7 +18,7 @@ export const YouTubeModal = ({ onDone, onCancel, model }: ModalProps) => {
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={() => onCancel()}
-      onOk={() => onDone({ alt, width, src })}
+      onOk={() => onDone({ alt, width: model.width, src })}
     >
       <div>
         <h4 className="mb-2">Change Video</h4>

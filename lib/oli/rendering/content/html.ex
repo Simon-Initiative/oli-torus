@@ -331,7 +331,8 @@ defmodule Oli.Rendering.Content.Html do
 
   defp audio_player(src) do
     audio_id = UUID.uuid4()
-    play_code = "document.getElementById(\"#{audio_id}\").play();"
+    # See app.ts for toggleAudio()
+    play_code = "window.toggleAudio(document.getElementById(\"#{audio_id}\"));"
     audio_element = "<audio id='#{audio_id}' src='#{escape_xml!(src)}' preload='auto'></audio>"
     [audio_element, play_code, audio_id]
   end

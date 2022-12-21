@@ -129,31 +129,57 @@ export const orderedListStyleCommands = OrderedListStyles.filter(notLatinOption)
     }),
 );
 
+// When checking if a list is active, we only want to consider the most top-level list in the hierarchy.
+export const listTypeActive = (editor: Editor, targetListType: string) => {
+  const [match] = Editor.nodes(editor, {
+    mode: 'lowest',
+    match: (n) => Element.isElement(n) && ['ul', 'ol'].indexOf(n.type as string) > -1,
+  });
+
+  const [node] = match || [];
+
+  return node && 'type' in node && node.type === targetListType;
+};
+
 export const listSettingButtonGroups = [
   [
     createButtonCommandDesc({
       icon: 'format_list_bulleted',
       description: 'Unordered List',
-      active: (editor) => isActive(editor, ['ul']),
+      active: (editor) => listTypeActive(editor, 'ul'),
       execute: (_ctx, editor) => {
-        const [, at] = [...Editor.nodes(editor)][1];
+        if (listTypeActive(editor, 'ul')) {
+          return;
+        }
+        const target = [...Editor.nodes(editor)].pop();
+        if (!target) {
+          return;
+        }
+        const [, at] = target;
         Transforms.setNodes(
           editor,
           { type: 'ul', style: undefined },
-          { at, match: (e) => Element.isElement(e) && e.type === 'ol', mode: 'all' },
+          { at, match: (e) => Element.isElement(e) && e.type === 'ol', mode: 'lowest' },
         );
       },
     }),
     createButtonCommandDesc({
       icon: 'format_list_numbered',
       description: 'Ordered List',
-      active: (editor) => isActive(editor, ['ol']),
+      active: (editor) => listTypeActive(editor, 'ol'),
       execute: (_ctx, editor) => {
-        const [, at] = [...Editor.nodes(editor)][1];
+        if (listTypeActive(editor, 'ol')) {
+          return;
+        }
+        const target = [...Editor.nodes(editor)].pop();
+        if (!target) {
+          return;
+        }
+        const [, at] = target;
         Transforms.setNodes(
           editor,
           { type: 'ol', style: undefined },
-          { at, match: (e) => Element.isElement(e) && e.type === 'ul', mode: 'all' },
+          { at, match: (e) => Element.isElement(e) && e.type === 'ul', mode: 'lowest' },
         );
       },
     }),

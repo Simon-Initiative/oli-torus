@@ -1,11 +1,16 @@
 import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot } from './schema';
-import { makeStem, makeHint, makePart } from '../types';
+import { makeStem, makeHint, makePart, makeContent } from '../types';
 
 import { Responses } from 'data/activities/model/responses';
 
+// Default hotspot coords for use before image size is known define a
+// small circle near upper left to fit within any reasonably sized image.
+export const defaultCoords = [50, 50, 40];
+
 export const defaultImageHotspotModel: () => ImageHotspotModelSchema = () => {
-  const hotspot1: Hotspot = makeHotspot();
-  // initialize for default single selection. Will need different CATA-style
+  // As with MCQ, should always have at least one hotspot to serve as correct answer choice.
+  const hotspot1: Hotspot = makeHotspot(defaultCoords);
+  // initialize respnses for default single selection. Will need different CATA-style
   // response structure if dynamically changed to multiple selection
   const responses = Responses.forMultipleChoice(hotspot1.id);
   return {

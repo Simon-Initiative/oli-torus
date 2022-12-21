@@ -161,7 +161,7 @@ const ImageHotspotComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, { [partId]: [] }))}
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={partId} />
+        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
       </div>
     </div>
