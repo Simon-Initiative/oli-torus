@@ -221,9 +221,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   };
 
   const onReady = async (attemptGuid: string, partAttemptGuid: string, response: any) => {
-    const snapshot = getEnvState(defaultGlobalEnv);
-    const isResumeMode = snapshot['session.isResumeMode'] || false;
-
+    const isResumeMode = getValue('session.isResumeMode', defaultGlobalEnv) || false;
     if (Array.isArray(response) && !isResumeMode) {
       await Promise.all(
         await response.map(async (partResponse) => {
