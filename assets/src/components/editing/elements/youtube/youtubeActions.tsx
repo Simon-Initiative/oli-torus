@@ -7,6 +7,27 @@ import { modalActions } from 'actions/modal';
 import { Modal } from 'components/modal/Modal';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 
+export const youtubeUrlToId = (src?: string | null) => {
+  if (!src) return null;
+
+  // https://www.youtube.com/embed/W98qXD35kXY
+  const embedRegex = /embed\/([a-zA-Z0-9_-]+)/;
+  const match = embedRegex.exec(src);
+  if (match) {
+    return match[1];
+  }
+
+  const hasParams = src.includes('?');
+  if (hasParams) {
+    const queryString = src.substr(src.indexOf('?') + 1);
+    src = getQueryVariableFromString('v', queryString);
+  } else if (src.indexOf('/youtu.be/') !== -1) {
+    src = src.substr(src.lastIndexOf('/') + 1);
+  }
+
+  return src;
+};
+
 export const insertYoutube = createButtonCommandDesc({
   icon: 'smart_display',
   description: 'YouTube',
@@ -14,22 +35,11 @@ export const insertYoutube = createButtonCommandDesc({
     const at = editor.selection;
     if (!at) return;
 
-    selectYoutube().then((selectedSrc) => {
-      if (selectedSrc !== null) {
-        let src = selectedSrc;
-
-        const hasParams = src.includes('?');
-
-        if (hasParams) {
-          const queryString = src.substr(src.indexOf('?') + 1);
-          src = getQueryVariableFromString('v', queryString);
-        } else if (src.indexOf('/youtu.be/') !== -1) {
-          src = src.substr(src.lastIndexOf('/') + 1);
-        }
-
-        Transforms.insertNodes(editor, Model.youtube(src), { at });
-      }
-    });
+    selectYoutube()
+      .then(youtubeUrlToId)
+      .then((src) => {
+        src && Transforms.insertNodes(editor, Model.youtube(src), { at });
+      });
   },
 });
 

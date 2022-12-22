@@ -43,6 +43,7 @@ import {
   selectPageContent,
   selectPreviewMode,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
@@ -221,7 +222,6 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
-
   const isPreviewMode = useSelector(selectPreviewMode);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -460,6 +460,7 @@ const DeckLayoutFooter: React.FC = () => {
   };
 
   const checkHandler = () => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsLoading(true);
     /* console.log('CHECK BUTTON CLICKED', {
       isGoodFeedback,
