@@ -190,6 +190,7 @@ defmodule Oli.MixProject do
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},
       {:surface, "~> 0.9.1"},
+      {:surface_formatter, "~> 0.7.5"},
       {:premailex, "~> 0.3.0"},
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
