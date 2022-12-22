@@ -473,7 +473,12 @@ const DeckLayoutFooter: React.FC = () => {
       `session.visitTimestamps.${currentActivityId}`,
       defaultGlobalEnv,
     );
-    console.log({ activityHistoryTimeStamp });
+    const targetIsResumeModeOp: ApplyStateOperation = {
+      target: 'session.isResumeMode',
+      operator: '=',
+      value: false,
+    };
+    applyState(targetIsResumeModeOp, defaultGlobalEnv);
 
     if (displayFeedback) setDisplayFeedback(false);
 

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
+import { applyState, defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import {
   selectHistoryNavigationActivity,
@@ -93,6 +93,12 @@ const HistoryNavigation: React.FC = () => {
   }); */
 
   const nextHandler = () => {
+    const targetIsResumeModeOp = {
+      target: 'session.isResumeMode',
+      operator: '=',
+      value: false,
+    };
+    applyState(targetIsResumeModeOp, defaultGlobalEnv);
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
 
@@ -107,6 +113,12 @@ const HistoryNavigation: React.FC = () => {
   };
 
   const prevHandler = () => {
+    const targetIsResumeModeOp = {
+      target: 'session.isResumeMode',
+      operator: '=',
+      value: false,
+    };
+    applyState(targetIsResumeModeOp, defaultGlobalEnv);
     const prevActivity = historyItems[currentHistoryActivityIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
     dispatch(

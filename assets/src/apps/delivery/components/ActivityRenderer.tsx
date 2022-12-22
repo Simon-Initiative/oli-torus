@@ -1,5 +1,5 @@
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
+import { defaultGlobalEnv, getEnvState, getValue, templatizeText } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -220,7 +220,18 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     return result;
   };
 
-  const onReady = async (attemptGuid: string) => {
+  const onReady = async (attemptGuid: string, partAttemptGuid: string, response: any) => {
+    const snapshot = getEnvState(defaultGlobalEnv);
+    const isResumeMode = snapshot['session.isResumeMode'] || false;
+
+    if (Array.isArray(response) && !isResumeMode) {
+      await Promise.all(
+        await response.map(async (partResponse) => {
+          await onActivitySavePart(activity.id, attemptGuid, partResponse[0], partResponse[1]);
+        }),
+      );
+    }
+
     const results = await onActivityReady(activity.id, attemptGuid);
     const result: Success = {
       type: 'success',
