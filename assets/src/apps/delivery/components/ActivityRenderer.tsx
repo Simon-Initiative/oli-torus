@@ -227,7 +227,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (Array.isArray(response) && !isResumeMode) {
       await Promise.all(
         await response.map(async (partResponse) => {
-          await onActivitySavePart(activity.id, attemptGuid, partResponse[0], partResponse[1]);
+          const partAttemptGuid = partResponse[0];
+          const partAttemptResponses = partResponse[1];
+          await onActivitySavePart(activity.id, attemptGuid, partAttemptGuid, partAttemptResponses);
         }),
       );
     }
