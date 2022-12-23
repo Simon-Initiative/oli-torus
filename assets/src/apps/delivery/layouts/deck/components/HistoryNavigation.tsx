@@ -93,12 +93,6 @@ const HistoryNavigation: React.FC = () => {
   }); */
 
   const nextHandler = () => {
-    const targetIsResumeModeOp = {
-      target: 'session.isResumeMode',
-      operator: '=',
-      value: false,
-    };
-    applyState(targetIsResumeModeOp, defaultGlobalEnv);
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
 
@@ -113,12 +107,6 @@ const HistoryNavigation: React.FC = () => {
   };
 
   const prevHandler = () => {
-    const targetIsResumeModeOp = {
-      target: 'session.isResumeMode',
-      operator: '=',
-      value: false,
-    };
-    applyState(targetIsResumeModeOp, defaultGlobalEnv);
     const prevActivity = historyItems[currentHistoryActivityIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
     dispatch(
