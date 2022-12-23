@@ -1,5 +1,5 @@
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { defaultGlobalEnv, getEnvState, getValue, templatizeText } from 'adaptivity/scripting';
+import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
