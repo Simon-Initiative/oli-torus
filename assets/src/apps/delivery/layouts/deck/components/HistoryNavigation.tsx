@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { applyState, defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
+import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import {
   selectHistoryNavigationActivity,
