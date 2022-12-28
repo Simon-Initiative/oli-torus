@@ -884,13 +884,16 @@ defmodule Oli.Publishing do
         FROM published_resources pr
           LEFT JOIN publications p ON p.id = pr.publication_id
           LEFT JOIN revisions r ON r.id = pr.revision_id
-        WHERE pr.publication_id = $1 AND r.resource_type_id = 3) t
+        WHERE pr.publication_id = $1 AND r.resource_type_id = $2) t
         ON CONFLICT (revision_id, part_id, grading_approach) DO NOTHING;
     """
 
     # Execute the query, wrapping the successful Result struct in an {:ok, result} tuple
     # or a failure in a {:error, failure} tuple
-    case Repo.query!(query, [publication_id]) do
+    case Repo.query!(query, [
+           publication_id,
+           Oli.Resources.ResourceType.get_id_by_type("activity")
+         ]) do
       %Postgrex.Result{num_rows: num_rows} = result ->
         Logger.info("Publication resulted in #{num_rows} new revision_parts records")
         {:ok, result}
