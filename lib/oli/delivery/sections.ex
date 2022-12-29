@@ -900,6 +900,39 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  @doc """
+  Returns information about the projects that have been remixed in a section.
+
+  ## Examples
+
+      iex> get_projects_remixed(1, 1)
+      [%{id: 2, description: "description of project 2", title: "Project 2", ...}]
+
+      iex> get_projects_remixed(1, 2)
+      []
+  """
+
+  def get_projects_remixed(section_id, current_project_id) do
+    Repo.all(
+      from(
+        project in Project,
+        join: spp in SectionsProjectsPublications,
+        on: spp.project_id == project.id,
+        join: pub in Publication,
+        on: pub.id == spp.publication_id,
+        where:
+          spp.section_id == ^section_id and
+          spp.project_id != ^current_project_id,
+        select: %{
+          id: project.id,
+          title: project.title,
+          description: project.description,
+          publication: pub
+        }
+      )
+    )
+  end
+
   def rebuild_section_resources(
         section: %Section{id: section_id} = section,
         publication: publication
