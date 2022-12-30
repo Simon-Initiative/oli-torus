@@ -5,6 +5,8 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Oli.Delivery.Attempts.Core
+
   defp live_view_student_resource_view_route(section_slug, user_id, resource_id) do
     Routes.live_path(
       OliWeb.Endpoint,
@@ -15,7 +17,7 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
     )
   end
 
-  defp setup_section_resource_access(instructor) do
+  defp setup_section_resource_access(%{:instructor => instructor}) do
     {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
       section_with_assessment(%{})
 
@@ -37,15 +39,14 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
   end
 
   describe "student resource view" do
-    setup [:instructor_conn]
+    setup [:instructor_conn, :setup_section_resource_access]
 
     test "score must be less or equal to out_of value", %{
       conn: conn,
-      instructor: instructor
+      section_slug: section_slug,
+      student_id: student_id,
+      resource_id: resource_id
     } do
-      [section_slug: section_slug, student_id: student_id, resource_id: resource_id] =
-        setup_section_resource_access(instructor)
-
       {:ok, view, _html} =
         live(
           conn,
@@ -69,15 +70,20 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
              |> element("span[phx-feedback-for='resource_access[out_of]']")
              |> render() =~
                "must be greater than score"
+
+      %{out_of: out_of, score: score} =
+        Core.get_resource_access(resource_id, section_slug, student_id)
+
+      refute score == 3
+      refute out_of == 1
     end
 
     test "score is saved if score and out_of values are correct", %{
       conn: conn,
-      instructor: instructor
+      section_slug: section_slug,
+      student_id: student_id,
+      resource_id: resource_id
     } do
-      [section_slug: section_slug, student_id: student_id, resource_id: resource_id] =
-        setup_section_resource_access(instructor)
-
       {:ok, view, _html} =
         live(
           conn,
@@ -103,6 +109,12 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
       assert view
              |> element("button[phx-click='enable_score_edit']")
              |> render() =~ "Change Score"
+
+      %{out_of: out_of, score: score} =
+        Core.get_resource_access(resource_id, section_slug, student_id)
+
+      assert score == 2.5
+      assert out_of == 2.5
     end
   end
 end
