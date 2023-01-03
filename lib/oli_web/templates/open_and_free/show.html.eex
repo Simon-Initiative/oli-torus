@@ -61,7 +61,7 @@
   </p>
   <p>
     <h5>Updates</h5>
-    <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
+    <%= live_render(@conn, OliWeb.Delivery.ManageSourceMaterials, session: %{
       "section" => @section,
       "current_author" => @current_author
       }) %>

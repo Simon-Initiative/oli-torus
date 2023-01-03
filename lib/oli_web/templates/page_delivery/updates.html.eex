@@ -1,7 +1,7 @@
 
 <h2><%= dgettext("available_updates", "Available Updates") %></h2>
 
-<%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
+<%= live_render(@conn, OliWeb.Delivery.ManageSourceMaterials, session: %{
   "section" => @section,
   "current_user" => @current_user
   }) %>
