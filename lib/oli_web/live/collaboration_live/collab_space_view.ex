@@ -51,14 +51,20 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         %{
           "collab_space_config" => collab_space_config,
           "section_slug" => section_slug,
-          "page_slug" => page_slug,
-          "current_user_id" => current_user_id
+          "page_slug" => page_slug
         } = session,
         socket
       ) do
     {:ok, enter_time} = DateTime.now("Etc/UTC")
 
-    user = Accounts.get_user_by(%{id: current_user_id})
+    {user, user_id} = case Map.get(session, "current_user_id") do
+      nil ->
+        id = Map.get(session, "current_author_id")
+        {Accounts.get_author(id), id}
+      id ->
+        {Accounts.get_user_by(%{id: id}), id}
+    end
+
     section = Sections.get_section_by_slug(section_slug)
     page_resource = Resources.get_resource_from_slug(page_slug)
     is_instructor = Map.get(session, "is_instructor", false)
@@ -69,7 +75,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     Presence.track_presence(
       self(),
       topic,
-      current_user_id,
+      user_id,
       presence_default_user_payload(user)
     )
 

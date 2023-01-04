@@ -317,6 +317,24 @@ defmodule OliWeb.CollaborationLiveTest do
     end
   end
 
+  describe "user can access when is logged in as a system admin" do
+    setup [:admin_conn, :create_project_and_section]
+
+    test "returns the collab space view when accessing the instructor preview page view", %{
+      conn: conn,
+      admin: admin,
+      section: section,
+      page_revision_cs: page_revision_cs
+    } do
+      conn =
+        conn
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get(live_view_instructor_preview(section.slug, page_revision_cs.slug))
+
+      assert html_response(conn, 200) =~ "<h3 class=\"card-title\">Collaborative Space</h3>"
+    end
+  end
+
   describe "instructor - collab space config view" do
     setup [:lms_instructor_conn, :create_project_and_section]
 
