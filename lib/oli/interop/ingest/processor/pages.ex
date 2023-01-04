@@ -22,6 +22,21 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     %Oli.Resources.ExplanationStrategy{type: :after_set_num_attempts, set_num_attempts: 2}
   end
 
+  defp read_collab_space(%{"collabSpace" => config}) do
+
+  end
+
+  defp read_collab_space(_) do
+    %{
+      status: :disabled,
+      threaded: true,
+      auto_accept: true,
+      show_full_history: true,
+      participation_min_replies: 0,
+      participation_min_posts: 0
+    }
+  end
+
   defp mapper(state, resource_id, resource) do
     legacy_id = Map.get(resource, "legacyId", nil)
     legacy_path = Map.get(resource, "legacyPath", nil)
@@ -66,6 +81,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
       explanation_strategy: get_explanation_strategy(graded),
+      collab_space_config: read_collab_space(resource),
       graded: graded,
       max_attempts:
         if graded do
