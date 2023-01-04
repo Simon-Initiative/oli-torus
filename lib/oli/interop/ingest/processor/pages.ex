@@ -23,19 +23,17 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
   end
 
   defp read_collab_space(%{"collabSpace" => config}) do
-
-  end
-
-  defp read_collab_space(_) do
     %{
-      status: :disabled,
-      threaded: true,
-      auto_accept: true,
-      show_full_history: true,
-      participation_min_replies: 0,
-      participation_min_posts: 0
+      status: Map.get(config, "status", "disabled") |> String.to_existing_atom(),
+      threaded:  Map.get(config, "threaded", true),
+      auto_accept: Map.get(config, "auto_accept", true),
+      show_full_history: Map.get(config, "show_full_history", true),
+      participation_min_replies: Map.get(config, "participation_min_replies", 0),
+      participation_min_posts: Map.get(config, "participation_min_posts", 0),
     }
   end
+
+  defp read_collab_space(json), do: read_collab_space(%{"collabSpace" => %{}})
 
   defp mapper(state, resource_id, resource) do
     legacy_id = Map.get(resource, "legacyId", nil)
