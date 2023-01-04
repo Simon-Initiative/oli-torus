@@ -107,9 +107,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def audio(%Context{} = context, _, %{"src" => src} = attrs) do
-    captioned_content(context, attrs, [~s|<audio controls src="#{escape_xml!(src)}">
+    captioned_content(context, attrs, [
+      ~s|<audio aria-label="#{attrs["alt"]}" controls src="#{escape_xml!(src)}">
       Your browser does not support the <code>audio</code> element.
-    </audio>\n|])
+    </audio>\n|
+    ])
   end
 
   def audio(%Context{} = context, _, e) do
