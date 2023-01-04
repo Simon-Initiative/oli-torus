@@ -1,17 +1,7 @@
-defmodule Oli.Activities.TransformersTest do
+defmodule Oli.Activities.Transformers.VariableSubstitutionTest do
   use ExUnit.Case, async: true
 
-  alias Oli.Activities.Transformers
-
   alias Oli.Activities.Transformers.VariableSubstitution
-
-  defp as_revision(id, model) do
-    %Oli.Resources.Revision{
-      id: id,
-      resource_id: id,
-      content: model
-    }
-  end
 
   test "correctly escapes and replaces variables that possibly contain JSON special chars" do
     model = %{
