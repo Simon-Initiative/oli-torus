@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.1 (2022-1-5)
+
+### Bug Fixes
+
+- Fix an issue with dynamic questions and variables that contain " or \
+- Removes global state caching to fix problems with a class of adaptive pages
+
 ## 0.22.0 (2022-12-20)
 
 ### Bug Fixes
