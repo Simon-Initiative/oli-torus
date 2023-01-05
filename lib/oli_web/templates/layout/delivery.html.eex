@@ -13,7 +13,6 @@
 
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
     <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
-    <link id="vendor-css" rel="stylesheet" href="/css/vendor.css" />
 
     <%= if dev_mode?() do %>
       <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
