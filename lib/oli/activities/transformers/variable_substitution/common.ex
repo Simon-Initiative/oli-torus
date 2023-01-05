@@ -13,8 +13,28 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.Common do
           number -> Kernel.to_string(number)
         end
 
-      String.replace(s, "@@#{v}@@", r)
+      String.replace(s, "@@#{v}@@", json_escape(r))
     end)
     |> Jason.decode()
+  end
+
+  # according to RFC 4627, escape special chars in JSON
+  # https://www.ietf.org/rfc/rfc4627.txt
+  defp json_escape(str) do
+    str
+    |> String.split("")
+    |> Enum.map(fn c ->
+      case c do
+        "\\" -> "\\\\"
+        "\"" -> "\\\""
+        "\b" -> "\\b"
+        "\f" -> "\\f"
+        "\n" -> "\\n"
+        "\r" -> "\\r"
+        "\t" -> "\\t"
+        _ -> c
+      end
+    end)
+    |> Enum.join()
   end
 end
