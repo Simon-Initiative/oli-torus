@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.Publications.PublicationDiff
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Delivery.Updates.{ApplyUpdateModal, ProjectInfo}
+  alias OliWeb.Delivery.ManageSourceMaterials.{ApplyUpdateModal, ProjectInfo, ProjectCard}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
@@ -81,49 +81,39 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       {render_modal(assigns)}
       <div class="pb-5">
 
-        <div class="card my-2">
-          <div class="card-header d-flex align-items-center" id={"project_info_#{@base_project_details.id}"} phx-update="ignore">
-            <h6 class="mb-0 mr-2">Base Project Info</h6>
-            <i class="fa fa-info-circle" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Base project information"></i>
-          </div>
-          <ul class="list-group">
-            <li class="list-group-item">
-              <ProjectInfo
-                project={@base_project_details}
-                current_publication={@current_publication}
-                newest_publication={newest_publication(@base_project_details.id, @updates)}
-                updates={@updates}
-                updates_in_progress={@updates_in_progress}
-              />
-            </li>
-          </ul>
-        </div>
+        <ProjectCard
+          id={"product_info_#{@base_project_details.id}"}
+          title="Base Project Info"
+          tooltip="Information about the base project curriculum"
+        >
+          <ProjectInfo
+            project={@base_project_details}
+            current_publication={@current_publication}
+            newest_publication={newest_publication(@base_project_details.id, @updates)}
+            updates={@updates}
+            updates_in_progress={@updates_in_progress}
+          />
+        </ProjectCard>
 
         {#if not is_nil(@section.blueprint_id)}
-          <div class="card my-2">
-            <div class="card-header d-flex align-items-center" id={"product_info_#{@section.blueprint_id}"} phx-update="ignore">
-              <h6 class="mb-0 mr-2">Product Info</h6>
-              <i class="fa fa-info-circle" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Product information on which it is based"></i>
+          <ProjectCard
+            id={"product_info_#{@section.blueprint_id}"}
+            title="Product Info"
+            tooltip="Information about the product on which this section is based"
+          >
+            <div class="card-title">
+              <h5>{@section.blueprint.title}</h5>
             </div>
-            <ul class="list-group">
-              <li class="list-group-item">
-                <div class="card-body">
-                  <div class="card-title">
-                    <h5>{@section.blueprint.title}</h5>
-                  </div>
-                  <p class="card-text">{@section.blueprint.description}</p>
-                </div>
-              </li>
-            </ul>
-          </div>
+            <p class="card-text">{@section.blueprint.description}</p>
+          </ProjectCard>
         {/if}
 
         {#if Enum.count(@projects_remixed) > 0}
-          <div class="card my-2">
-            <div class="card-header d-flex align-items-center" id={"projects_remixed_1"} phx-update="ignore">
-              <h6 class="mb-0 mr-2">Projects Remixed</h6>
-              <i class="fa fa-info-circle" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Information about the projects that are remixed in this section"></i>
-            </div>
+          <ProjectCard
+            id="projects_remixed_1"
+            title="Remixed Projects Info"
+            tooltip="Information about the projects that have been remixed into this section"
+          >
             <ul class="list-group">
               {#for project <- @projects_remixed}
                 <li class="list-group-item">
@@ -137,12 +127,15 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
                 </li>
               {/for}
             </ul>
-          </div>
+          </ProjectCard>
         {/if}
 
       </div>
     """
   end
+
+  def version_number(%Publication{edition: edition, major: major, minor: minor}),
+    do: "v#{edition}.#{major}.#{minor}"
 
   defp newest_publication(project_id, updates) do
     case Enum.find(updates, fn {id, _} -> id == project_id end) do
@@ -156,7 +149,9 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
         %{"project-id" => project_id, "publication-id" => publication_id},
         socket
       ) do
-    %{updates: updates, current_publication: current_publication} = socket.assigns
+    %{updates: updates, section: section} = socket.assigns
+
+    current_publication = Sections.get_current_publication(section.id, project_id)
 
     newest_publication = newest_publication(String.to_integer(project_id), updates)
 
