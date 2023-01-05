@@ -7,12 +7,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration.Post, as: PostSchema
+  alias Oli.Repo
   alias OliWeb.CollaborationLive.ActiveUsers
-  alias OliWeb.CollaborationLive.Posts.{
-    Modal,
-    List,
-    Sort
-  }
+  alias OliWeb.CollaborationLive.Posts.{Modal, Sort}
+  alias OliWeb.CollaborationLive.Posts.List, as: PostList
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
   alias Phoenix.PubSub
@@ -145,7 +143,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
               <div class="accordion mt-5 vh-100 overflow-auto" id="post-accordion">
                 <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
-                  <List
+                  <PostList
                     posts={@posts}
                     collab_space_config={@collab_space_config}
                     selected={@selected}
@@ -231,10 +229,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         else: attrs
 
     case Collaboration.create_post(attrs) do
-      {:ok, %PostSchema{}} ->
+      {:ok, %PostSchema{} = post} ->
         socket = put_flash(socket, :info, "Post successfully created")
 
-        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, :updated_posts)
+        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, {:post_created, Repo.preload(post, :user)})
 
         {:noreply, hide_modal(socket, modal_assigns: nil)}
 
@@ -399,8 +397,54 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       )}
   end
 
-  def handle_info(:updated_posts, socket),
-    do: {:noreply, assign(socket, posts: get_posts(socket.assigns.search_params, socket.assigns.sort))}
+  def handle_info({:post_created, %PostSchema{} = post}, socket) do
+    all_posts = get_all_posts(socket.assigns.posts)
+    posts =
+      if post.status == :submitted do
+        if socket.assigns.is_instructor or post.user.id == socket.assigns.user.id,
+          do: all_posts ++ [post],
+          else: all_posts
+      else
+        all_posts ++ [post]
+      end
+
+    {:noreply,
+      assign(socket,
+        posts: get_posts(socket.assigns.search_params, socket.assigns.sort, posts)
+      )}
+  end
+
+  def handle_info({:post_deleted, post_id}, socket) do
+    posts =
+      socket.assigns.posts
+      |> get_all_posts()
+      |> Enum.filter(fn post -> post.id != post_id and post.thread_root_id != post_id and post.parent_post_id != post_id end)
+
+    {:noreply,
+      assign(socket,
+        posts: get_posts(socket.assigns.search_params, socket.assigns.sort, posts)
+      )}
+  end
+
+  def handle_info({:post_edited, %PostSchema{} = post_edited}, socket) do
+    all_posts = get_all_posts(socket.assigns.posts)
+    posts =
+      if post_edited.status == :submitted do
+        if socket.assigns.is_instructor or post_edited.user.id == socket.assigns.user.id,
+          do: update_in_all_posts(all_posts, post_edited),
+          else: all_posts
+      else
+        case Enum.find(all_posts, & &1.id == post_edited.id) do
+          nil -> all_posts ++ [post_edited]
+          _ -> update_in_all_posts(all_posts, post_edited)
+        end
+      end
+
+    {:noreply,
+      assign(socket,
+        posts: get_posts(socket.assigns.search_params, socket.assigns.sort, posts)
+      )}
+  end
 
   def handle_info(
     {:updated_collab_space_config, %CollabSpaceConfig{show_full_history: show_full_history} = collab_space_config},
@@ -463,10 +507,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     socket = clear_flash(socket)
 
     case Collaboration.update_post(post, attrs) do
-      {:ok, %PostSchema{}} ->
+      {:ok, %PostSchema{} = post} ->
         socket = put_flash(socket, :info, "Post successfully edited")
 
-        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, :updated_posts)
+        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, {:post_edited, Repo.preload(post, :user)})
 
         {:noreply,
           socket
@@ -488,7 +532,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       {number, nil} when number > 0 ->
         socket = put_flash(socket, :info, "Post/s successfully deleted")
 
-        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, :updated_posts)
+        PubSub.broadcast(Oli.PubSub, socket.assigns.topic, {:post_deleted, post.id})
 
         {:noreply,
           socket
@@ -540,6 +584,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     |> Enum.with_index(1)
   end
 
+  defp get_posts(%{collab_space_config: collab_space_config}, %{by: sort_by, order: sort_order}, posts) do
+    posts
+    |> maybe_threading(collab_space_config)
+    |> sort(sort_by, sort_order)
+    |> Enum.with_index(1)
+  end
+
   defp maybe_threading(all_posts, %CollabSpaceConfig{threaded: true}) do
     Enum.reduce(all_posts, [], fn post, acc ->
       if is_nil(post.thread_root_id) do
@@ -548,7 +599,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
           |> Enum.filter(fn child -> child.thread_root_id == post.id end)
           |> Enum.with_index(1)
 
-        acc ++ [Map.put(post, :replies, replies)]
+        post =
+          post
+          |> Map.put(:replies, replies)
+          |> Map.put(:replies_count, length(replies))
+
+        acc ++ [post]
       else
         acc
       end
@@ -569,5 +625,27 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   defp sort(posts, sort_by, sort_order) do
     Enum.sort_by(posts, & Map.get(&1, sort_by), sort_order)
+  end
+
+  defp update_in_all_posts(posts, %PostSchema{id: post_edited_id} = post_edited) do
+    Enum.map(posts, fn
+      %PostSchema{id: ^post_edited_id} -> post_edited
+      post -> post
+    end)
+  end
+
+  defp get_all_posts(posts) do
+    posts
+    |> Enum.unzip()
+    |> elem(0)
+    |> Enum.reduce([], fn post, acc ->
+      replies =
+        post
+        |> Map.get(:replies, [])
+        |> Enum.unzip()
+        |> elem(0)
+
+      acc ++ [post] ++ replies
+    end)
   end
 end

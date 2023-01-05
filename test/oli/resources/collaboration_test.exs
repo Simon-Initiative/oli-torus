@@ -481,7 +481,7 @@ defmodule Oli.Resources.CollaborationTest do
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, resource.id, user.id)
 
       assert 5 == length(posts)
-      assert 2 == posts |> Enum.find(& &1.id == parent_post.id) |> Map.get(:replies_count)
+      assert 2 == posts |> Enum.filter(& &1.thread_root_id == parent_post.id) |> length()
     end
 
     test "list_posts_for_user_in_page_section/3 returns empty when no posts meets the criteria" do
@@ -538,7 +538,7 @@ defmodule Oli.Resources.CollaborationTest do
       posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, resource.id)
 
       assert 6 == length(posts)
-      assert 3 == posts |> Enum.find(& &1.id == parent_post.id) |> Map.get(:replies_count)
+      assert 3 == posts |> Enum.filter(& &1.thread_root_id == parent_post.id) |> length()
     end
 
     test "list_posts_for_instructor_in_page_section/2 returns empty when no posts meets the criteria" do

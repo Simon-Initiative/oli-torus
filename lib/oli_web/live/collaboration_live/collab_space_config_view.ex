@@ -267,4 +267,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     |> Atom.to_string()
     |> String.capitalize()
   end
+
+  def handle_info(_, socket), do: {:noreply, socket}
 end
