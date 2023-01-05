@@ -20,24 +20,23 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
           <div class="modal-content">
 
             <div class="modal-header">
-              <h5 class="modal-title">Apply Update</h5>
+              <h5 class="modal-title">Apply Update - {@newest_publication.project.title}</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body pb-0">
 
               <h6 class="mb-3">Do you want to apply this update from
                 <strong>v{version_number(@current_publication)}</strong> to <strong>v{version_number(@newest_publication)}</strong>?
               </h6>
 
-              <div class="list-group-item flex-column align-items-start my-2">
+              <div class="alert alert-secondary" role="alert">
                 <div class="d-flex justify-content-between align-items-center">
-                  <h5>{@newest_publication.project.title}</h5>
+                  <p class="mb-auto">{@newest_publication.description}</p>
                   <small>Published {date(@newest_publication.published, precision: :relative)}</small>
                 </div>
-                <p class="mb-1">{@newest_publication.description}</p>
               </div>
 
               <hr class="bg-light">
@@ -52,9 +51,7 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
                 {/for}
               </ul>
 
-              <!-- <div class="alert alert-warning my-2" role="alert">
-                <b>This action cannot be undone.</b>
-              </div> -->
+              <hr class="bg-light">
             </div>
 
             <div class="modal-footer">
@@ -68,7 +65,7 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
     """
   end
 
-  def version_number(%Publication{edition: edition, major: major, minor: minor}) do
+  defp version_number(%Publication{edition: edition, major: major, minor: minor}) do
     "#{edition}.#{major}.#{minor}"
   end
 end
