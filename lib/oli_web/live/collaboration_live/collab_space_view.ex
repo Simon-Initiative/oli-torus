@@ -388,7 +388,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       socket.assigns.posts
       |> Enum.unzip()
       |> elem(0)
-      |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+      |> sort(sort_by, sort_order)
       |> Enum.with_index(1)
 
     {:noreply,
@@ -511,7 +511,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   }, %{by: sort_by, order: sort_order}) do
     Collaboration.list_posts_for_instructor_in_page_section(section_id, page_resource_id)
     |> maybe_threading(collab_space_config)
-    |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+    |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
   end
 
@@ -524,7 +524,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   }, %{by: sort_by, order: sort_order}) do
     Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id, enter_time)
     |> maybe_threading(collab_space_config)
-    |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+    |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
   end
 
@@ -536,7 +536,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   }, %{by: sort_by, order: sort_order}) do
     Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id)
     |> maybe_threading(collab_space_config)
-    |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+    |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
   end
 
@@ -562,4 +562,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   defp is_archived?(:archived), do: true
   defp is_archived?(_), do: false
+
+  defp sort(posts, :inserted_at = sort_by, sort_order) do
+    Enum.sort_by(posts, & Map.get(&1, sort_by) |> DateTime.to_unix(), sort_order)
+  end
+
+  defp sort(posts, sort_by, sort_order) do
+    Enum.sort_by(posts, & Map.get(&1, sort_by), sort_order)
+  end
 end
