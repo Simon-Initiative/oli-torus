@@ -1,9 +1,9 @@
-defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
+defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
   use Surface.Component
 
   import OliWeb.Common.FormatDateTime
 
-  alias Oli.Publishing.Publications.Publication
+  alias OliWeb.Delivery.ManageSourceMaterials
 
   prop changes, :map, required: true
   prop current_publication, :struct, required: true
@@ -13,7 +13,6 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
   prop updates, :map, required: true
 
   def render(assigns) do
-
     ~F"""
       <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
         <div class="modal-dialog modal-lg" role="document">
@@ -29,8 +28,10 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
             <div class="modal-body pb-0">
 
               <h6 class="mb-3">Do you want to apply this update from
-                <strong>v{version_number(@current_publication)}</strong> to <strong>v{version_number(@newest_publication)}</strong>?
+                <strong>{ManageSourceMaterials.version_number(@current_publication)}</strong> to <strong>{ManageSourceMaterials.version_number(@newest_publication)}</strong>?
               </h6>
+
+              <small>Latest publication description</small>
 
               <div class="alert alert-secondary" role="alert">
                 <div class="d-flex justify-content-between align-items-center">
@@ -63,9 +64,5 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
         </div>
       </div>
     """
-  end
-
-  defp version_number(%Publication{edition: edition, major: major, minor: minor}) do
-    "#{edition}.#{major}.#{minor}"
   end
 end
