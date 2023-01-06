@@ -3,7 +3,7 @@ nav .nav-item a.user {
   display: flex;
 
   .role {
-    color: $gray-600;
+    color: var(--color-gray-600);
     font-size: 0.8em;
     font-weight: 600;
     text-transform: uppercase;
@@ -35,7 +35,7 @@ nav .nav-item a.user::after {
 }
 
 body.app nav.navbar {
-  border-bottom: 2px solid $gray-500;
+  border-bottom: 2px solid var(--color-gray-500);
 }
 
 nav.navbar .navbar-brand {

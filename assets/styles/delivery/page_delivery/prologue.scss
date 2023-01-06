@@ -1,8 +1,6 @@
-@import 'delivery/variables';
-
 .prologue {
   &.jumbotron {
-    background: $gray-200;
+    background: var(--color-gray-200);
     margin-top: 50px;
   }
 

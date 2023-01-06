@@ -46,7 +46,7 @@ a.card-link {
     height: 40px;
     font-size: 1.1em;
     font-weight: bold;
-    color: $body-color;
+    color: var(--body-color);
     width: 100%;
     overflow: hidden;
     margin: 0;
@@ -55,7 +55,7 @@ a.card-link {
   p {
     font-size: 11px;
     font-weight: normal;
-    color: $secondary;
+    color: var(--secondary);
     width: 100%;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -64,11 +64,11 @@ a.card-link {
 
   &:hover {
     h1 {
-      color: $link-color;
+      color: var(--link-color);
     }
 
     p {
-      color: $link-color;
+      color: var(--link-color);
     }
   }
 

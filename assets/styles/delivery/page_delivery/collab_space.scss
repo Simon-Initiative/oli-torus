@@ -12,7 +12,7 @@
 }
 
 .text-username {
-  font-size: .95rem;
+  font-size: 0.95rem;
   font-weight: 400 !important;
 }
 
@@ -37,8 +37,8 @@
   }
 
   li:before {
-    content: "\2022";
-    color: $green;
+    content: '\2022';
+    color: var(--color-green-400);
     position: absolute;
     top: -15px;
     left: 0;

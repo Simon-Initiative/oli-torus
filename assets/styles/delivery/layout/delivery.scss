@@ -22,7 +22,7 @@ body {
     overflow: auto;
     max-height: 10vh;
     text-overflow: ellipsis;
-    color: $body-color;
+    color: var(--body-color);
     .card-text {
       overflow: auto;
     }

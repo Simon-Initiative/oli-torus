@@ -1,7 +1,7 @@
 $nav-height: 65px;
 $panel-side-width: 270px;
 $panel-bg-color-light: #f5f6f7;
-$panel-bg-color-dark: $gray-700;
+$panel-bg-color-dark: #7b8a8b;
 $panel-font-color-light: #333;
 $panel-font-color-dark: $panel-font-color-light;
 $torus-panel-side-width: 200px;
@@ -9,6 +9,8 @@ $rounded: 4px;
 $ui-border-color: #ccc;
 $panel-section-title-bar-height: 39px;
 $panel-section-title-bar-color: #e8ebed;
+$workspace-bg: var(--body-bg);
+$font-family-sans-serif: var(--font-sans);
 
 #aa-loading {
   transition-timing-function: ease-in-out;
@@ -305,12 +307,13 @@ $panel-section-title-bar-color: #e8ebed;
     bottom: 0;
     overflow: scroll;
     background: white;
-    
+
     .aa-stage-pan {
       width: 100%;
       height: 100%;
       backface-visibility: 'visible';
-      background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC) repeat;
+      background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
+        repeat;
       border: 1px solid #999;
     }
   }

@@ -1,20 +1,18 @@
-@use 'authoring/theme' as authoring;
-
 :global(html.authoring) {
   .toolbar {
     display: flex;
     flex-direction: row;
-    background: var(--authoring-toolbar-bg);
-    border: 2px solid var(--authoring-toolbar-border-color);
+    background: var(--toolbar-bg);
+    border: 2px solid var(--toolbar-border-color);
     border-radius: 8px;
 
-    z-index: authoring.$z-content-3;
+    z-index: var(--z-content-3);
     box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.45);
     -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.45);
 
     &.fixedToolbar {
       border: none;
-      border-bottom: 2px solid var(--authoring-toolbar-border-color);
+      border-bottom: 2px solid var(--toolbar-border-color);
       border-radius: 0px;
       margin-bottom: 0;
       box-shadow: none;
@@ -44,7 +42,7 @@
     display: flex;
     flex-direction: row;
     margin: 6px 0;
-    border-left: 2px solid var(--authoring-toolbar-group-separator-color);
+    border-left: 2px solid var(--toolbar-group-separator-color);
 
     &:first-of-type {
       border-left: none;
@@ -55,7 +53,7 @@
     display: flex;
     flex-direction: row;
     font-weight: 400;
-    color: var(--authoring-toolbar-color);
+    color: var(--toolbar-color);
     text-align: center;
     vertical-align: middle;
     align-items: center;
@@ -84,12 +82,12 @@
     }
 
     &:hover {
-      background-color: var(--authoring-toolbar-group-separator-color);
+      background-color: var(--toolbar-group-separator-color);
     }
 
     &.active {
-      background: var(--authoring-toolbar-active-bg);
-      color: var(--authoring-toolbar-active-color);
+      background: var(--toolbar-active-bg);
+      color: var(--toolbar-active-color);
     }
   }
 
@@ -123,8 +121,8 @@
     flex-direction: column;
     padding: 8px;
     overflow-y: auto;
-    background: var(--authoring-toolbar-bg);
-    border: 2px solid var(--authoring-toolbar-border-color);
+    background: var(--toolbar-bg);
+    border: 2px solid var(--toolbar-border-color);
 
     .toolbarButton {
       display: inline-flex;

@@ -55,34 +55,7 @@ const populateEntries = () => {
     };
   });
 
-  const themePaths = [
-    ...glob
-      .sync('./styles/themes/authoring/*.scss')
-      .map((p) => ({ prefix: 'authoring_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/authoring/custom/*.scss')
-      .map((p) => ({ prefix: 'authoring_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/delivery/*.scss')
-      .map((p) => ({ prefix: 'delivery_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/delivery/custom/*.scss')
-      .map((p) => ({ prefix: 'delivery_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/delivery/adaptive_themes/*/light.scss')
-      .map((p) => ({ prefix: 'delivery_adaptive_themes_default_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/preview/*.scss')
-      .map((p) => ({ prefix: 'preview_', themePath: p })),
-  ];
-
-  const foundThemes = themePaths.map(({ prefix, themePath }) => {
-    const theme = path.basename(themePath, '.scss');
-
-    return {
-      [prefix + theme]: themePath,
-    };
-  });
+  const foundThemes = [{ bs_default: './styles/index.scss' }];
 
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.

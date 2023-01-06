@@ -1,29 +1,26 @@
 @import '~video-react/styles/scss/video-react';
 
-$video-controls-bg: $workspace-sidebar-bg;
-$video-controls-color: $workspace-sidebar-link-color;
-
 .video-player {
   div.video-react-menu,
   ul.video-react-menu-content {
     min-width: 5em;
     bottom: 6px !important;
-    background-color: $video-controls-bg;
-    color: $video-controls-color;
+    background-color: var(--workspace-sidebar-bg);
+    color: var(--workspace-sidebar-link-color);
     li {
-      font-family: $font-family-sans-serif;
+      font-family: var(--font-sans);
       text-align: right;
       margin-bottom: 0px;
       padding-right: 1em;
       line-height: 1em;
-      background-color: $video-controls-bg;
-      color: $video-controls-color;
+      background-color: var(--workspace-sidebar-bg);
+      color: var(--workspace-sidebar-link-color);
     }
   }
   .control-bar {
-    font-family: $font-family-sans-serif;
-    background-color: $video-controls-bg;
-    color: $video-controls-color;
+    font-family: var(--font-sans);
+    background-color: var(--workspace-sidebar-bg);
+    color: var(--workspace-sidebar-link-color);
   }
   .big-play-button {
     position: absolute;
@@ -52,8 +49,8 @@ $video-controls-color: $workspace-sidebar-link-color;
     padding: 0.25em;
     margin: 0;
     min-width: 10em;
-    background-color: $video-controls-bg;
-    color: $video-controls-color;
+    background-color: var(--workspace-sidebar-bg);
+    color: var(--workspace-sidebar-link-color);
     list-style: none;
     bottom: 30px;
     text-shadow: none !important;
@@ -62,7 +59,7 @@ $video-controls-color: $workspace-sidebar-link-color;
       padding: 0.5em;
     }
     li:hover {
-      background-color: darken($video-controls-bg, 10%);
+      background-color: var(--workspace-sidebar-bg);
     }
   }
 }

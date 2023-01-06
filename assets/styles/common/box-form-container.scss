@@ -23,7 +23,7 @@
     width: fit-content;
     margin: 0.5em auto;
     padding: 0;
-    border: 0.05rem solid $secondary;
+    border: 0.05rem solid var(--secondary);
     border-radius: 0.25rem;
   }
 
@@ -127,13 +127,13 @@
 
 .provider-google {
   font-family: 'Roboto', sans-serif !important;
-  color: $google-button-font-color !important;
-  background-color: $google-button-background-color !important;
+  color: var(--google-button-font-color) !important;
+  background-color: var(--google-button-background-color) !important;
   padding: 0 !important;
 
   &.btn {
     &:hover {
-      background-color: darken($google-button-background-color, 3%) !important;
+      background-color: var(--google-button-background-color) !important;
     }
   }
 
@@ -159,12 +159,12 @@
 }
 
 .provider-github {
-  color: $github-button-font-color !important;
-  background-color: $github-button-background-color !important;
+  color: var(--github-button-font-color) !important;
+  background-color: var(--github-button-background-color) !important;
 
   &.btn {
     &:hover {
-      background-color: darken($github-button-background-color, 3%) !important;
+      background-color: var(--github-button-background-color) !important;
     }
   }
 

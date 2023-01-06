@@ -1,7 +1,5 @@
-@use 'authoring/theme' as authoring;
-
 .popup__anchorText {
-  color: authoring.$green;
+  color: var(--color-green-400);
   font-style: italic;
   cursor: pointer;
   font-weight: bold;
@@ -31,7 +29,7 @@
 }
 
 .popup__content_editor {
-  color: authoring.$body-color;
+  color: var(--body-color);
 
   margin-left: 30px;
   border: 1px dashed;

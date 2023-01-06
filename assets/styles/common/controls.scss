@@ -30,21 +30,21 @@
 }
 
 .list-group .list-group-item:last-child {
-  border-bottom: $list-group-border-width solid $list-group-border-color;
+  border-bottom: var(--list-group-border-width) solid var(--list-group-border-color);
 }
 
 a.form-control {
-  color: $blue;
+  color: var(--color-blue-400);
 }
 
 button.icon-button {
   &:hover {
-    color: var(--authoring-primary);
+    color: var(--primary);
   }
 }
 
 button.danger-icon-button {
   &:hover {
-    color: var(--authoring-danger);
+    color: var(--danger);
   }
 }

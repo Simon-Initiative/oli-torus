@@ -1,26 +1,38 @@
-/** Authoring Styles **/
-@import 'authoring/variables';
-
-/* fixes an issue with contenteditable (slate) not being selectable in safari */
-[contenteditable] {
-  -webkit-user-select: text;
-  user-select: text;
-}
-
-&,
 body {
   margin: 0;
   padding: 0;
   min-height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-body {
   flex: 1;
   position: relative;
-  font-family: $font-family-sans-serif;
-  font-size: $font-size-base;
+  font-family: var(--font-sans);
+  font-size: 1em;
+
+  h1,
+  .h1 {
+    font-size: 2em;
+  }
+  h2,
+  .h2 {
+    font-size: 1.75em;
+  }
+  h3,
+  .h3 {
+    font-size: 1.5em;
+  }
+  h4,
+  .h4 {
+    font-size: 1.25em;
+  }
+  h5,
+  .h5 {
+    font-size: 1.125em;
+  }
+  h6,
+  .h6 {
+    font-size: 1em;
+  }
 }
 
 body.modal-open {
@@ -47,7 +59,7 @@ body.modal-open {
 
   &:focus {
     background-color: #0d6efd !important;
-    color: $white;
+    color: var(--color-white);
     display: inline-block;
     height: auto;
     width: auto;
@@ -65,7 +77,7 @@ p:last-of-type {
 
 form .form-label-group .help-block,
 form .form-group .help-block {
-  color: $danger;
+  color: var(--danger);
 }
 
 i.unicode-icon {
@@ -74,20 +86,34 @@ i.unicode-icon {
   font-weight: 700;
 }
 
-.ellipsize-overflow {
+.ellipsis-overflow {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex-flow: row nowrap;
 }
 
-/* fix dropdown menu */
-a:not([href]) {
-  cursor: pointer;
+.torus-logo {
+  font-family: 'Open Sans', sans-serif;
+}
 
-  &:hover {
-    color: $white;
+.breadcrumb-bar {
+  height: 2em;
+  background: var(--workspace-breadcrumb-bg);
+  box-shadow: inset 0 1px 2px 0 rgba(var(--black, 0.17));
+
+  .breadcrumb {
+    font-size: 1rem;
+    margin-bottom: 0;
   }
+}
+
+form .form-label-group .help-block {
+  color: #dc3545;
+}
+
+.custom-select {
+  -webkit-appearance: none;
 }
 
 .system-banner {
@@ -96,4 +122,19 @@ a:not([href]) {
   span {
     color: black;
   }
+}
+
+/* fix dropdown menu */
+a:not([href]) {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-white);
+  }
+}
+
+/* fix an issue with contenteditable (slate) not being selectable in safari */
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
 }

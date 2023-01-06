@@ -1,12 +1,10 @@
-@use 'authoring/theme' as authoring;
-@import 'bootstrap';
 @import 'common/mixins.scss';
 
 html.authoring {
   .editors {
     flex: 1;
     min-width: 0;
-    border: 2px solid authoring.$gray-200;
+    border: 2px solid var(--color-gray-200);
     margin-top: 20px;
     padding: 20px 0px;
 
@@ -42,7 +40,7 @@ html.authoring {
       .resource-block-editor {
         .btn-purpose {
           min-width: 150px;
-          border: 1px solid authoring.$gray-200;
+          border: 1px solid var(--color-gray-200);
 
           text-align: left;
           &.dropdown-toggle::after {
@@ -51,16 +49,16 @@ html.authoring {
           }
 
           &:hover {
-            border-color: rgba(authoring.$body-color, 0.6);
-            background: rgba(authoring.$body-color, 0.05);
+            border-color: rgba(var(--body-color, 0.6));
+            background: rgba(var(--body-color, 0.05));
           }
 
           &:disabled {
-            background-color: authoring.$card-cap-bg;
+            background-color: var(--card-cap-bg);
 
             &:hover {
-              border-color: rgba(authoring.$body-color, 0.1);
-              background: authoring.$card-cap-bg;
+              border-color: rgba(var(--body-color, 0.1));
+              background: var(--card-cap-bg);
             }
           }
         }
@@ -82,6 +80,6 @@ html.authoring {
 
 html.dark {
   .editors {
-    border-color: authoring.$gray-800;
+    border-color: var(--color-gray-800);
   }
 }

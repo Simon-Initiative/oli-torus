@@ -13,8 +13,8 @@ span.term {
   blockquote {
     margin-top: 12px;
     font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
-    color: $body-color;
-    border-left: 3px solid $gray-400;
+    color: var(--body-color);
+    border-left: 3px solid var(--color-gray-400);
     padding-left: 20px;
     padding-bottom: 2px;
     word-break: break-word;
@@ -26,8 +26,8 @@ span.term {
 
   pre {
     text-align: left;
-    color: $body-color;
-    background: darken($body-bg, 5%);
+    color: var(--body-color);
+    background: var(--body-bg);
     font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
     letter-spacing: -0.003em;
     border-radius: 6px;
@@ -44,7 +44,7 @@ span.term {
   }
 
   .dl-title {
-    color: $green;
+    color: var(--color-green-400);
     font-size: 1.3em;
     font-weight: bold;
   }
@@ -80,7 +80,7 @@ span.term {
     overflow: hidden;
 
     th {
-      background-color: rgba($blue, 15%);
+      background-color: rgba(var(--color-blue-400), 15%);
     }
 
     th,
@@ -172,7 +172,7 @@ span.term {
 
   .definition {
     .term {
-      color: $green;
+      color: var(--color-green-400);
       font-size: 1.3em;
       font-weight: bold;
     }
@@ -236,7 +236,7 @@ span.term {
 
   .pronunciation-player {
     text-decoration: underline;
-    color: $link-color;
+    color: var(--link-color);
     cursor: pointer;
   }
 
@@ -254,7 +254,7 @@ span.term {
 
   .callout-inline,
   .callout {
-    background-color: darken($body-bg, 5%);
+    background-color: var(--body-bg);
   }
 
   .callout-block,
@@ -281,25 +281,25 @@ span.term {
     border-radius: 2px;
     .dialog-line {
       &.speaker-1 {
-        background-color: $speaker1;
+        background-color: var(--speaker1);
       }
       &.speaker-2 {
-        background-color: $speaker2;
+        background-color: var(--speaker2);
       }
       &.speaker-3 {
-        background-color: $speaker3;
+        background-color: var(--speaker3);
       }
       &.speaker-4 {
-        background-color: $speaker4;
+        background-color: var(--speaker4);
       }
       &.speaker-5 {
-        background-color: $speaker5;
+        background-color: var(--speaker5);
       }
       display: flex;
       flex-direction: row;
       margin-bottom: 0.5rem;
       align-items: center;
-      background-color: darken($body-bg, 5%);
+      background-color: var(--body-bg);
       .dialog-content {
         flex-grow: 1;
       }
@@ -325,7 +325,7 @@ span.term {
     justify-content: center;
     figure {
       figcaption {
-        color: $primary;
+        color: var(--primary);
       }
       @extend .img-fluid;
       @extend .img-thumbnail;
@@ -339,7 +339,7 @@ span.term {
 
     figure {
       display: inline-block;
-      background-color: $gray-100;
+      background-color: var(--color-gray-100);
       @extend .img-fluid;
       @extend .img-thumbnail;
 
@@ -365,7 +365,7 @@ span.term {
 
 .conjugation {
   .title {
-    color: $green;
+    color: var(--color-green-400);
     font-size: 2em;
     line-height: 2.1em;
     font-weight: bold;
@@ -383,7 +383,7 @@ span.term {
   table {
     margin-top: 1rem;
     .clickable {
-      color: $primary;
+      color: var(--primary);
       cursor: pointer;
     }
     .clickable:hover {
