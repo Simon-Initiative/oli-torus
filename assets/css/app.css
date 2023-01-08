@@ -14,12 +14,15 @@
     @apply px-6 py-2 rounded;
   }
   .btn-xs {
-    @apply px-1 py-1 text-xl;
+    @apply px-1 py-1 text-xs;
   }
   .btn-sm {
-    @apply px-2 py-2 text-xl;
+    @apply px-2 py-2 text-sm;
   }
   .btn-lg {
+    @apply px-4 py-4 text-lg;
+  }
+  .btn-xl {
     @apply px-4 py-4 text-xl;
   }
   .btn-block {
@@ -87,8 +90,33 @@
     @apply grow;
   }
 
-  .dropdown-divider {
-    @aaply h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25;
+  .dropdown hr.dropdown-divider {
+    @apply h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25;
+  }
+
+  h6.dropdown-item {
+    @apply text-gray-500
+              font-semibold
+              text-sm
+              py-2
+              px-4
+              block
+              w-full
+              whitespace-nowrap
+              bg-transparent;
+  }
+
+  .dropdown-item {
+    @apply text-sm
+            py-2
+            px-4
+            font-normal
+            block
+            w-full
+            whitespace-nowrap
+            bg-transparent
+            text-gray-700
+            hover:bg-gray-100;
   }
 
   .form-group input,

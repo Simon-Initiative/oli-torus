@@ -6,7 +6,7 @@
       px-6
       py-2.5
       font-medium
-      text-xs
+      text-sm
       leading-tight
       transition
       duration-150
@@ -58,7 +58,8 @@
           bg-white
           text-base
           z-50
-          float-left
+          float-right
+          right-0
           py-2
           list-none
           text-left
@@ -71,80 +72,64 @@
         "
         aria-labelledby="dropdownMenuButton1d"
       >
+    <%= if user_is_guest?(@conn) do %>
       <li>
-        <%= link "Sign in / Create account", to: Routes.delivery_path(@conn, :signin, section: maybe_section_slug(@conn)), class: "
-            dropdown-item
-            btn
-            text-sm
-            py-2
-            px-4
-            font-normal
-            block
-            w-full
-            whitespace-nowrap
-            bg-transparent
-            text-gray-700
-            hover:bg-gray-100
-          " %>
+        <%= link "Sign in / Create account", to: Routes.delivery_path(@conn, :signin, section: maybe_section_slug(@conn)), class: "dropdown-item btn" %>
       </li>
-      <li>
-        <a
-          class="
-            dropdown-item
-            btn
-            text-sm
-            py-2
-            px-4
-            font-normal
-            block
-            w-full
-            whitespace-nowrap
-            bg-transparent
-            text-gray-700
-            hover:bg-gray-100
-          "
-          href="#"
-          >Another action</a>
-      </li>
-      <li>
-        <a
-          class="
-            dropdown-item
-            btn
-            text-sm
-            py-2
-            px-4
-            font-normal
-            block
-            w-full
-            whitespace-nowrap
-            bg-transparent
-            text-gray-700
-            hover:bg-gray-100
-          "
-          href="#"
-          >Something else here</a>
-      </li>
-      <hr class="h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25" />
-      <li>
-        <a
-          class="
-            dropdown-item
-            btn
-            text-sm
-            py-2
-            px-4
-            font-normal
-            block
-            w-full
-            whitespace-nowrap
-            bg-transparent
-            text-gray-700
-            hover:bg-gray-100
-          "
-          href="#"
-          >Separated link</a>
-      </li>
-    </ul>
 
+      <div id="create-account-popup"></div>
+      <script>
+        OLI.CreateAccountPopup(document.querySelector('#create-account-popup'), {sectionSlug: '<%= maybe_section_slug(@conn) %>'})
+      </script>
+    <% end %>
+      <%= if (not user_role_is_student(@conn, @current_user)) or Sections.is_independent_instructor?(@current_user) do %>
+        <li>
+          <%= if account_linked?(@current_user) do %>
+            <h6 class="dropdown-item">Linked: <%= @current_user.author.email %></h6>
+            <a class="dropdown-item" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)} target="_blank">Go to Course Author <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i></a>
+            <a class="dropdown-item" href={Routes.delivery_path(@conn, :link_account)} target="_blank">Link a different account</a>
+          <% else %>
+            <a class="dropdown-item" href={Routes.delivery_path(@conn, :link_account)} target="_blank">Link Existing Account</a>
+          <% end %>
+        </li>
+      <% end %>
+
+      <%= if user_is_independent_learner?(@current_user) do %>
+        <li>
+          <%= link "Edit Account", to: Routes.pow_registration_path(@conn, :edit), class: "dropdown-item btn" %>
+          <div class="dropdown-item no-hover">
+            Dark Mode
+            <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
+          </div>
+        </li>
+      <% end %>
+
+      <li>
+        <div class="dropdown-item no-hover">
+          Timezone
+          <br>
+          <OliWeb.Common.SelectTimezone.render conn={@conn}/>
+        </div>
+      </li>
+      <hr class="dropdown-divider" />
+
+      <%= if user_is_independent_learner?(@current_user) or Sections.is_independent_instructor?(@current_user) do %>
+        <li>
+          <%= link "My Courses", to: Routes.delivery_path(@conn, :open_and_free_index), class: "dropdown-item btn" %>
+        </li>
+      <% end %>
+
+      <hr class="dropdown-divider" />
+
+      <%= if user_is_guest?(@conn) do %>
+      <li>
+        <%= link "Sign out", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
+      </li>
+      <% else %>
+
+      <li>
+        <%= link "Leave course", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
+      </li>
+      <% end  %>
+    </ul>
 </div>

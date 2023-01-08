@@ -193,7 +193,7 @@ defmodule OliWeb.DeliveryView do
       _picture ->
         ~H"""
         <div class="user-icon">
-          <img src={@current_user.picture} class="rounded-circle" />
+          <img src={@current_user.picture} referrerpolicy="no-referrer" class="rounded-full" />
         </div>
         """
     end
@@ -202,7 +202,7 @@ defmodule OliWeb.DeliveryView do
   def user_icon(assigns) do
     ~H"""
     <div class="user-icon">
-      <div class="user-img rounded-circle">
+      <div class="user-img rounded-full">
         <span class="material-icons text-secondary">account_circle</span>
       </div>
     </div>
