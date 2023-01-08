@@ -102,17 +102,6 @@ h1.title {
   }
 }
 
-/** override styles for devices medium-sized and smaller */
-@include media-breakpoint-down(md) {
-  #sidebar {
-    display: none;
-  }
-
-  #page-content {
-    margin-left: 0px;
-  }
-}
-
 .rolled-up-objectives {
   margin: 20px 10px;
   padding: 16px;

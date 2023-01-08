@@ -224,14 +224,11 @@ $objectives-text: $black;
 $objectives-background: lighten($cyan, 35%);
 $objectives-border-color: lighten($cyan, 30%);
 
-$list-group-border-radius: 4px;
-
 ////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: DO NOT MODIFY IMPORT
 // This import is required and must always be after the last variable
 // declaration and before any custom styles in this style sheet
 ////////////////////////////////////////////////////////////////////////////////////
-@import 'bootstrap';
 
 @import 'common/index.scss';
 @import 'authoring/index.scss';
@@ -247,9 +244,6 @@ $list-group-border-radius: 4px;
   }
 }
 
-.d-light-none {
-  display: none !important;
-}
 // }
 
 :root {
@@ -275,8 +269,6 @@ $list-group-border-radius: 4px;
 
   --google-button-font-color: #{$google-button-font-color};
   --google-button-background-color: #{$google-button-background-color};
-
-  --card-cap-bg: #{$card-cap-bg};
 
   --z-content-1: #{$z-content-1};
   --z-content-2: #{$z-content-2};
@@ -349,9 +341,9 @@ $list-group-border-radius: 4px;
 
   --workspace-breadcrumb-bg: #{$workspace-breadcrumb-bg};
 
-  --list-group-border-radius: #{$list-group-border-radius};
-  --list-group-border-width: #{$list-group-border-width};
-  --list-group-border-color: #{$list-group-border-color};
+  --list-group-border-radius: 4px;
+  --list-group-border-width: 1px;
+  --list-group-border-color: #{$gray-100};
 }
 
 /**
@@ -596,7 +588,6 @@ html.dark {
   // This import is required and must always be after the last variable
   // declaration and before any custom styles in this style sheet
   ////////////////////////////////////////////////////////////////////////////////////
-  @import 'bootstrap';
 
   @import 'common/index.scss';
   @import 'authoring/index.scss';
@@ -831,10 +822,6 @@ html.dark {
         rgba($primary, 0.1) 100%
       );
     }
-  }
-
-  .d-dark-none {
-    display: none !important;
   }
 
   img:not([src*='.svg']) {

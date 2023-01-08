@@ -1,3 +1,102 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+@layer base {
+  a:not(.btn) {
+    @apply underline text-blue-500 hover:text-blue-600;
+  }
+}
+
+@layer components {
+  /** Bootstrap Shims **/
+  .btn {
+    @apply px-6 py-2 rounded;
+  }
+  .btn-xs {
+    @apply px-1 py-1 text-xl;
+  }
+  .btn-sm {
+    @apply px-2 py-2 text-xl;
+  }
+  .btn-lg {
+    @apply px-4 py-4 text-xl;
+  }
+  .btn-block {
+    @apply w-full inline-block text-center;
+  }
+
+  .btn-primary {
+    @apply text-white rounded-md bg-blue-500 hover:bg-blue-600;
+  }
+  .btn-secondary {
+    @apply text-white rounded-md bg-gray-500 hover:bg-gray-600;
+  }
+  .btn-success {
+    @apply text-white rounded-md bg-green-500 hover:bg-green-600;
+  }
+  .btn-danger {
+    @apply text-white rounded-md bg-red-500 hover:bg-red-600;
+  }
+  .btn-warning {
+    @apply text-white rounded-md bg-yellow-500 hover:bg-yellow-600;
+  }
+  .btn-info {
+    @apply text-white rounded-md bg-blue-400 hover:bg-blue-500;
+  }
+  .btn-light {
+    @apply text-gray-800 rounded-md bg-gray-50 hover:bg-gray-100;
+  }
+  .btn-dark {
+    @apply text-white rounded-md bg-gray-700 hover:bg-gray-900;
+  }
+  .btn-outline-primary {
+    @apply text-blue-600 rounded-md border border-solid border-blue-600 hover:bg-blue-500 hover:text-white;
+  }
+  .btn-outline-secondary {
+    @apply text-gray-600 rounded-md border border-solid border-gray-600 hover:bg-gray-500 hover:text-white;
+  }
+  .btn-outline-success {
+    @apply text-green-600  rounded-md border border-solid border-green-600 hover:bg-green-500 hover:text-white;
+  }
+  .btn-outline-danger {
+    @apply text-red-600 rounded-md border border-solid border-red-600 hover:bg-red-500 hover:text-white;
+  }
+  .btn-outline-warning {
+    @apply text-yellow-600 rounded-md border border-solid border-yellow-600 hover:bg-yellow-500 hover:text-white;
+  }
+  .btn-outline-info {
+    @apply text-blue-400 rounded-md border border-solid border-blue-400 hover:bg-blue-400 hover:text-white;
+  }
+  .btn-outline-light {
+    @apply text-gray-500 rounded-md border border-solid border-gray-600 hover:bg-gray-100 hover:text-gray-500;
+  }
+  .btn-outline-dark {
+    @apply text-gray-800 py-2 px-6 rounded-md border border-solid border-gray-800 hover:bg-gray-800 hover:text-white;
+  }
+
+  .btn-link {
+    @apply text-blue-500 rounded-md  hover:text-blue-600;
+  }
+
+  .d-flex {
+    @apply flex;
+  }
+
+  .flex-grow-1 {
+    @apply grow;
+  }
+
+  .dropdown-divider {
+    @aaply h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25;
+  }
+
+  .form-group input,
+  .form-label-group input {
+    @apply border-gray-300 rounded-sm;
+  }
+
+  .custom-control input[type='checkbox'] {
+    @apply border-gray-400 rounded-sm;
+  }
+}

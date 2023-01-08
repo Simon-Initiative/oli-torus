@@ -1,7 +1,4 @@
-@import 'bootstrap';
-
 .draggableColumnContainer {
-  @extend .mt-3;
 }
 
 .draggableColumnIndicator {
@@ -15,9 +12,6 @@
 }
 
 .draggableColumnCard {
-  @extend .d-flex;
-  @extend .mb-2;
-  @extend .align-items-center;
   cursor: default !important;
   border-radius: 4px;
   background: var(--body-bg);

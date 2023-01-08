@@ -1,18 +1,24 @@
+
 <script src="https://www.google.com/recaptcha/api.js"></script>
-<div class="modal fade help-modal" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
+
+<!-- Modal -->
+<div class="modal help-modal fade fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto"
+  id="help-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog relative w-auto pointer-events-none">
+    <div
+      class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current">
       <%= f = form_for :help, "#", [id: "form-request-help"] %>
-        <div class="modal-header">
-          <h5 class="modal-title">
+        <div
+          class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
+          <h5 class="modal-title text-xl font-medium leading-normal text-gray-800 inline-flex">
             <img src="<%= Routes.static_path(@conn, "/images/icons/life-ring-regular.svg") %>" class="help-icon"></img>
             <span>Help</span>
           </h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <button type="button"
+            class="btn-close box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline"
+            data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body relative p-4">
           <div class="container form-container">
             <div class="row">
               <div class="col-lg-8 mx-auto">
@@ -64,17 +70,20 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-            <%= submit "Send Request",
-                id: "button-create-author",
-                class: "btn btn-primary",
-                phx_disable_with: "Requesting help..." %>
+        <div
+          class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
+          <%= submit "Send Request",
+            id: "button-create-author",
+            class: "btn btn-primary",
+            phx_disable_with: "Requesting help..." %>
+        </div>
         </div>
       </form>
     </div>
   </div>
 </div>
-</div>
+
+
 <script>
   let helpRecapture = null;
 

@@ -54,11 +54,11 @@ html.authoring {
           }
 
           &:disabled {
-            background-color: var(--card-cap-bg);
+            background-color: var(--color-slate-100);
 
             &:hover {
               border-color: rgba(var(--body-color, 0.1));
-              background: var(--card-cap-bg);
+              background: var(--color-slate-100);
             }
           }
         }

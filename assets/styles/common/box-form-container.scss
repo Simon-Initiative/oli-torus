@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap');
 
 .box-form-container {
+  margin: 40px auto;
+
   --input-padding-x: 1.5rem;
   --input-padding-y: 0.75rem;
 
@@ -18,13 +20,13 @@
     width: 100%;
   }
 
-  .social-signin.btn {
+  .social-signin {
     transition: all 0.2s;
-    width: fit-content;
     margin: 0.5em auto;
     padding: 0;
-    border: 0.05rem solid var(--secondary);
+    border: 0.05rem solid var(--color-gray-300);
     border-radius: 0.25rem;
+    border-radius: 6px;
   }
 
   .form-label-group {
@@ -33,6 +35,7 @@
   }
 
   .form-label-group input {
+    width: 100%;
     height: auto;
   }
 

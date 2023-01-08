@@ -11,11 +11,13 @@
     <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png") %>">
     <link rel="manifest" href="/site.webmanifest">
 
+    <!-- CSS -->
+    <link id="styles" rel="stylesheet" href="/css/styles.css" />
 
-    <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-    <link id="bs-default" rel="stylesheet" href="/css/bs_default.css" />
-
+    <!-- Tailwind CSS -->
     <link id="app" rel="stylesheet" href="/css/app.css" />
+
+    <!-- Vendor CSS -->
     <link id="vendor-css" rel="stylesheet" href="/css/vendor.css" />
 
     <%= if dev_mode?() do %>
@@ -69,7 +71,7 @@
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
   </head>
-  <body>
+  <body class="dark:bg-gray-900 dark:text-white">
     <input type="hidden" id="layout-id" data-layout-id="authoring">
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
@@ -79,12 +81,6 @@
     <script>
       // initialize jquery window object
       window.$ = $;
-
-      // initialize all rendered dropdown toggles
-      $('.dropdown-toggle').dropdown();
-      $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
-      });
 
       // handle direct tab routing via url hash
       $(document).ready(function() {
@@ -102,6 +98,6 @@
     </script>
 
     <script>hljs.highlightAll();</script>
-
+    <script src="https://cdn.jsdelivr.net/npm/tw-elements/dist/js/index.min.js"></script>
   </body>
 </html>

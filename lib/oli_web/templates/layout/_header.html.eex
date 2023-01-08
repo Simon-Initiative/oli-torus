@@ -1,9 +1,8 @@
 
-<nav class="navbar navbar-expand">
-
-    <div class="container">
+<nav class="navbar py-1">
+    <div class="container mx-auto flex flex-row">
         <a class="navbar-brand torus-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
-            <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+            <%= brand_logo(Map.merge(assigns, %{class: "inline-block align-top mr-2"})) %>
         </a>
 
         <div class="nav-item my-2 my-lg-0 mr-2">
@@ -13,9 +12,9 @@
         <%= if user_signed_in?(@conn) do %>
             <%= render "_user_account_dropdown.html", assigns %>
         <% else %>
-        <%= if @conn.request_path == "/" do %>
-            <%= link "Learner/Educator Sign In", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
-      <% end %>
-    <% end %>
+            <%= if @conn.request_path == "/" do %>
+                <%= link "Learner/Educator Sign In", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
+        <% end %>
+        <% end %>
     </div>
 </nav>
