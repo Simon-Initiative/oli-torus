@@ -1,12 +1,5 @@
-// /** @type {import('tailwindcss').Config} */
-
 // See the Tailwind configuration guide for advanced usage
 // https://tailwindcss.com/docs/configuration
-
-// import plugin from 'tailwindcss/plugin';
-// import tailwindFormsPlugin from '@tailwindcss/forms';
-// import tailwindCSSVariablesPlugin from 'tailwind-css-variables';
-// import theme from './tailwind.theme.js';
 
 const plugin = require('tailwindcss/plugin');
 const tailwindFormsPlugin = require('@tailwindcss/forms');
