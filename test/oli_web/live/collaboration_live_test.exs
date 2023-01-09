@@ -9,6 +9,7 @@ defmodule OliWeb.CollaborationLiveTest do
   alias Oli.Delivery.{DeliverySetting, Sections}
   alias Oli.Resources.{Collaboration, ResourceType}
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias Oli.Resources.Collaboration.Post, as: PostSchema
   alias OliWeb.CollaborationLive.{CollabSpaceView, CollabSpaceConfigView}
   alias OliWeb.Presence
 
@@ -1155,7 +1156,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive :updated_posts
+      assert_receive {:post_created, %PostSchema{}}
 
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       assert length(posts) == 2
@@ -1191,7 +1192,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Couldn&#39;t create post"
 
-      refute_receive :updated_posts
+      refute_receive {:post_created, %PostSchema{}}
     end
 
     test "editing a post",
@@ -1228,7 +1229,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully edited"
 
-      assert_receive :updated_posts
+      assert_receive {:post_edited, %PostSchema{}}
 
       updated_post =
         Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
@@ -1241,7 +1242,8 @@ defmodule OliWeb.CollaborationLiveTest do
     test "deleting a post",
         %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs, first_post: first_post} do
       content = build(:post_content, message: "Testing")
-      post = insert(:post, user: user, section: section, resource: page_resource_cs, content: content)
+      %PostSchema{id: post_id} = post = insert(:post, user: user, section: section, resource: page_resource_cs, content: content)
+
 
       parent_post = insert(:post, user: user, section: section, resource: page_resource_cs)
       insert(:post, user: user, section: section, resource: page_resource_cs, parent_post: parent_post, thread_root: parent_post)
@@ -1264,7 +1266,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, ".card-body", "#{post.content.message}")
 
       view
-      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{post.id}\"]")
+      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{post_id}\"]")
       |> render_click()
 
       view
@@ -1276,7 +1278,8 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post/s successfully deleted"
 
-      assert_receive :updated_posts
+
+      assert_receive {:post_deleted, ^post_id}
 
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       assert length(posts) == 3
@@ -1311,7 +1314,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive :updated_posts
+      assert_receive {:post_created, %PostSchema{}}
 
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       reply = Enum.find(posts, & &1.thread_root_id == first_post.id)
@@ -1351,7 +1354,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully edited"
 
-      assert_receive :updated_posts
+      assert_receive {:post_edited, %PostSchema{}}
 
       updated_reply =
         Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
@@ -1366,7 +1369,7 @@ defmodule OliWeb.CollaborationLiveTest do
         %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs, page_resource_cs: page_resource_cs} do
       content = build(:post_content, message: "Testing")
       parent_post = insert(:post, user: user, section: section, resource: page_resource_cs)
-      reply = insert(:post, user: user, section: section, resource: page_resource_cs, content: content, parent_post: parent_post, thread_root: parent_post)
+      %PostSchema{id: reply_id} = reply = insert(:post, user: user, section: section, resource: page_resource_cs, content: content, parent_post: parent_post, thread_root: parent_post)
 
       {:ok, view, _html} =
         live_isolated(
@@ -1384,7 +1387,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, ".accordion-body", "#{reply.content.message}")
 
       view
-      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply.id}\"]")
+      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply_id}\"]")
       |> render_click()
 
       view
@@ -1396,7 +1399,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post/s successfully deleted"
 
-      assert_receive :updated_posts
+      assert_receive {:post_deleted, ^reply_id}
 
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       assert length(posts) == 2
@@ -1434,7 +1437,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive :updated_posts
+      assert_receive {:post_created, %PostSchema{}}
 
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
       reply_reply = Enum.find(posts, & &1.parent_post_id == reply.id)
@@ -1535,7 +1538,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive :updated_posts
+      assert_receive {:post_created, %PostSchema{}}
 
       created_post =
         Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
@@ -1556,7 +1559,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive :updated_posts
+      assert_receive {:post_created, %PostSchema{}}
 
       reply =
         Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
@@ -1625,7 +1628,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive :updated_posts
+      assert_receive {:post_created, %PostSchema{}}
 
       created_post =
         Collaboration.list_posts_for_user_in_page_section(section.id, page_revision_cs.resource_id, user.id)
@@ -1668,7 +1671,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post successfully created"
 
-      assert_receive :updated_posts
+      assert_receive {:post_created, %PostSchema{}}
 
       posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, page_revision_cs.resource_id)
       assert length(posts) == 3
@@ -1684,7 +1687,7 @@ defmodule OliWeb.CollaborationLiveTest do
           page_revision_cs: page_revision_cs,
           page_resource_cs: page_resource_cs,
           first_post: first_post} do
-      parent_post = insert(:post, user: instructor, section: section, resource: page_resource_cs)
+      %PostSchema{id: parent_post_id} = parent_post = insert(:post, user: instructor, section: section, resource: page_resource_cs)
       reply = insert(:post, user: instructor, section: section, resource: page_resource_cs, parent_post: parent_post, thread_root: parent_post)
 
       {:ok, view, _html} =
@@ -1700,12 +1703,12 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]")
+      assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post_id}\"]")
       assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply.id}\"]")
       assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{first_post.id}\"]")
 
       view
-      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]")
+      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post_id}\"]")
       |> render_click()
 
       view
@@ -1717,12 +1720,12 @@ defmodule OliWeb.CollaborationLiveTest do
         |> render() =~
           "Post/s successfully deleted"
 
-      assert_receive :updated_posts
+      assert_receive {:post_deleted, ^parent_post_id}
 
       posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, page_revision_cs.resource_id)
       assert length(posts) == 2
 
-      refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]")
+      refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post_id}\"]")
       refute has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply.id}\"]")
       assert has_element?(view, "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{first_post.id}\"]")
     end
