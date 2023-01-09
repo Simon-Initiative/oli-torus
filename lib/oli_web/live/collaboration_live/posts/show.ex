@@ -185,7 +185,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
     """
   end
 
-  defp has_replies?(%Post{replies_count: replies_count}, _, _) when replies_count > 0,
+  defp has_replies?(%Post{replies_count: replies_count}, _, _) when is_number(replies_count) and replies_count > 0,
     do: true
 
   defp has_replies?(%Post{replies_count: 0}, [], _), do: false
