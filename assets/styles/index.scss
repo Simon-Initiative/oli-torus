@@ -120,7 +120,6 @@ $active: darken($primary, 15%);
 $workspace-header-bg: #f5f8fb;
 $workspace-sidebar-bg: #e3e7ec;
 $workspace-sidebar-link-color: $gray-800;
-$workspace-bg: $white;
 $workspace-logo-bg: #f5f8fb;
 $workspace-breadcrumb-bg: $workspace-logo-bg;
 
@@ -339,11 +338,16 @@ $objectives-border-color: lighten($cyan, 30%);
   --footer-color: #{$footer-color};
   --footer-height: #{$footer-height};
 
-  --workspace-breadcrumb-bg: #{$workspace-breadcrumb-bg};
-
   --list-group-border-radius: 4px;
   --list-group-border-width: 1px;
   --list-group-border-color: #{$gray-100};
+
+  --workspace-header-bg: #{$workspace-header-bg};
+  --workspace-sidebar-bg: #{$workspace-sidebar-bg};
+  --workspace-sidebar-link-color: #{$workspace-sidebar-link-color};
+  --workspace-logo-bg: #{$workspace-logo-bg};
+  --workspace-breadcrumb-bg: #{$workspace-breadcrumb-bg};
+  --workspace-header-shadow: #{rgba($black, 0.17)};
 }
 
 /**

@@ -10,7 +10,6 @@ $workspace-sidebar-width: 65px;
 .workspace {
   flex: 1;
   display: flex;
-  background-color: var(--workspace-bg);
   flex-direction: column;
   position: relative;
 
@@ -20,7 +19,7 @@ $workspace-sidebar-width: 65px;
     top: 0;
     z-index: var(--z-content-5);
     background-color: var(--workspace-header-bg);
-    box-shadow: 0 2px 4px 0 var(--color-black);
+    box-shadow: 0 2px 4px 0 var(--workspace-header-shadow);
 
     .header-bar {
       height: 2.5em;
@@ -36,6 +35,11 @@ $workspace-sidebar-width: 65px;
         var(--workspace-header-bg) 0%,
         var(--workspace-logo-bg) 100%
       );
+
+      img {
+        height: 50px;
+        margin-top: 5px;
+      }
 
       // bottom triangle
       &:after {
@@ -62,7 +66,7 @@ $workspace-sidebar-width: 65px;
     .breadcrumb-bar {
       height: 27px;
       background: var(--workspace-breadcrumb-bg);
-      box-shadow: inset 0 1px 2px 0 var(--color-black);
+      box-shadow: inset 0 1px 2px 0 var(--workspace-header-shadow);
 
       .phx-connected {
         width: 100%;
@@ -101,9 +105,9 @@ $workspace-sidebar-width: 65px;
 
   .workspace-header {
     width: 100%;
-    padding: 16px 32px;
     position: relative;
     background-color: var(--workspace-header-bg);
+    align-items: center;
 
     h2 {
       margin-bottom: 4px;
@@ -201,15 +205,23 @@ $workspace-sidebar-width: 65px;
     }
 
     .sidebar-item {
+      display: block;
       width: $workspace-sidebar-width;
       background-color: transparent;
       border-color: transparent;
-      padding: 0px;
-      padding-top: 8px;
+      padding: 8px;
+
+      img {
+        margin: auto;
+      }
+      .label {
+        text-align: center;
+      }
     }
 
     .sidebar-item:hover {
       background-color: var(--color-gray-500);
+      color: var(--color-white);
     }
 
     .sidebar-item:focus {

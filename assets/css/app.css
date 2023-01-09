@@ -48,7 +48,7 @@
     @apply text-white rounded-md bg-blue-400 hover:bg-blue-500;
   }
   .btn-light {
-    @apply text-gray-800 rounded-md bg-gray-50 hover:bg-gray-100;
+    @apply text-gray-800 rounded-md bg-gray-100 hover:bg-gray-200;
   }
   .btn-dark {
     @apply text-white rounded-md bg-gray-700 hover:bg-gray-900;
@@ -90,6 +90,10 @@
     @apply grow;
   }
 
+  .flex-column {
+    @apply flex-col;
+  }
+
   .dropdown hr.dropdown-divider {
     @apply h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25;
   }
@@ -124,7 +128,18 @@
     @apply border-gray-300 rounded-sm;
   }
 
-  .custom-control input[type='checkbox'] {
+  .custom-control input[type='checkbox'],
+  .form-check input[type='checkbox'] {
     @apply border-gray-400 rounded-sm;
   }
+
+  .input-group input {
+    @apply border-gray-300 rounded-sm min-w-full;
+  }
+
+  .text-danger {
+    @apply text-red-500 hover:text-red-600;
+  }
+
+  /* .table table-striped table-bordered */
 }

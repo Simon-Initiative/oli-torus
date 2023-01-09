@@ -30,7 +30,7 @@ defmodule OliWeb.AuthoringView do
 
         ~H"""
         <div class="user-icon">
-          <img src={@picture} class="rounded-circle" />
+          <img src={@picture} referrerpolicy="no-referrer" class="rounded-full" />
         </div>
         """
     end
@@ -39,7 +39,7 @@ defmodule OliWeb.AuthoringView do
   def author_icon(assigns) do
     ~H"""
     <div class="user-icon">
-      <div class="user-img rounded-circle">
+      <div class="user-img rounded-full">
         <span class="material-icons text-secondary">account_circle</span>
       </div>
     </div>

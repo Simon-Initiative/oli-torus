@@ -38,7 +38,7 @@ defmodule OliWeb.Common.SortableTable.Table do
       end
 
     ~F"""
-    <th style="cursor: pointer;" :on-click={@sort} phx-value-sort_by={column_spec.name}>
+    <th class="border-b border-r p-2 bg-gray-100" style="cursor: pointer;" :on-click={@sort} phx-value-sort_by={column_spec.name}>
       {column_spec.label}
       {#if @model.sort_by_spec == column_spec}
         <i class={"fas fa-sort-" <> sort_direction_cls}></i>
@@ -50,19 +50,19 @@ defmodule OliWeb.Common.SortableTable.Table do
   defp render_row(assigns, row) do
     row_class =
       if id_field(row, assigns.model) == assigns.model.selected do
-        "table-active"
+        "border-b table-active"
       else
         if assigns.select != nil do
-          "selectable"
+          "border-b selectable"
         else
-          ""
+          "border-b"
         end
       end
 
     ~F"""
     <tr id={id_field(row, @model)} class={row_class} :on-click={@select} phx-value-id={id_field(row, @model)}>
     {#for column_spec <- @model.column_specs}
-      <td>
+      <td class="border-r p-2">
         <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
           {#if is_nil(column_spec.render_fn)}
             {ColumnSpec.default_render_fn(column_spec, row)}
@@ -78,7 +78,7 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   def render(assigns) do
     ~F"""
-    <table class={"table table-striped table-bordered " <> @additional_table_class}>
+    <table class={"min-w-full border " <> @additional_table_class}>
       <thead>
         <tr>
         {#for column_spec <- @model.column_specs}
