@@ -183,4 +183,40 @@
   .page-item.active .page-link {
     @apply bg-blue-500 text-white;
   }
+
+  .alert {
+    @apply rounded-lg py-5 px-6 mb-4 text-base;
+  }
+
+  .alert-primary {
+    @apply bg-blue-100 text-blue-700;
+  }
+
+  .alert-secondary {
+    @apply bg-purple-100 text-purple-700;
+  }
+
+  .alert-success {
+    @apply bg-green-100 text-green-700;
+  }
+
+  .alert-danger {
+    @apply bg-red-100 text-red-700;
+  }
+
+  .alert-warning {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+
+  .alert-info {
+    @apply bg-indigo-100 text-indigo-700;
+  }
+
+  .alert-light {
+    @apply bg-gray-50 text-gray-500;
+  }
+
+  .alert-dark {
+    @apply bg-gray-300 text-gray-800;
+  }
 }
