@@ -16,7 +16,7 @@
           <label
             phx-click="change-view"
             phx-value-view="Basic"
-            class="btn btn-xs btn-light p-2 <%= if @view == "Basic" do "active" else "" end %> %>">
+            class="btn btn-xs <%= if @view == "Basic" do "active" else "" end %> %>">
             <input type="radio" name="options" id="view-1"
               <%= if @view == "Basic" do "checked" else "" end %>
             > <span>Basic</span>
@@ -24,7 +24,7 @@
 
           <label
             phx-click="change-view"
-            phx-value-view="Detailed" class="btn btn-xs btn-light p-2 <%= if @view == "Detailed" do "active" else "" end %>">
+            phx-value-view="Detailed" class="btn btn-xs <%= if @view == "Detailed" do "active" else "" end %>">
             <input type="radio" name="options" id="view-2"
               <%= if @view == "Detailed" do "checked" else "" end %>
             > <span>Detailed</span>
@@ -32,7 +32,7 @@
 
           <label
             phx-click="change-view"
-            phx-value-view="Learning Summary" class="btn btn-xs btn-light p-2 <%= if @view == "Learning Summary" do "active" else "" end %>">
+            phx-value-view="Learning Summary" class="btn btn-xs <%= if @view == "Learning Summary" do "active" else "" end %>">
             <input type="radio" name="options" id="view-3"
               <%= if @view == "Learning Summary" do "checked" else "" end %>
             > <span>Learning</span>
@@ -71,19 +71,19 @@
         <%= live_component DropTarget, id: "last", index: length(@children) %>
       </div>
       <div class="mt-5">
-        <span class="text-secondary mr-2">Create</span>
-        <button phx-click="add" phx-value-type="Unscored" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+        <span class="text-secondary mr-2">Create:</span>
+        <button phx-click="add" phx-value-type="Unscored" class="btn btn-xs btn-outline-primary mr-0.5" type="button">
           Practice Page
         </button>
-        <button phx-click="add" phx-value-type="Scored" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+        <button phx-click="add" phx-value-type="Scored" class="btn btn-xs btn-outline-primary mr-0.5" type="button">
           Graded Assessment
         </button>
         <%= if @adaptivity_flag do %>
-          <button phx-click="add" phx-value-type="Adaptive" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+          <button phx-click="add" phx-value-type="Adaptive" class="btn btn-xs btn-outline-primary mr-0.5" type="button">
             Adaptive Page
           </button>
         <% end %>
-        <button phx-click="add" phx-value-type="Container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+        <button phx-click="add" phx-value-type="Container" class="btn btn-xs btn-outline-primary mr-0.5" type="button">
           <%= new_container_name(@numberings, @container) %>
         </button>
       </div>

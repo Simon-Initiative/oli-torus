@@ -14,7 +14,7 @@
     @apply px-3 py-1 rounded-md;
   }
   .btn-xs {
-    @apply px-1 py-1 text-xs;
+    @apply px-1.5 py-1.5 text-xs;
   }
   .btn-sm {
     @apply px-2 py-1 text-sm;
@@ -82,7 +82,7 @@
   }
 
   .btn-link {
-    @apply text-blue-500  hover:text-blue-600;
+    @apply text-blue-500  hover:text-blue-600 hover:underline;
   }
 
   .d-flex {
