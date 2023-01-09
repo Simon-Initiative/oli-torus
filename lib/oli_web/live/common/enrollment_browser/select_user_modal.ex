@@ -20,7 +20,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.SelectUserModal do
         <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Select Student</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
@@ -31,7 +31,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.SelectUserModal do
                 context: assigns.context}
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" :on-click={@on_cancel}>Cancel</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" :on-click={@on_cancel}>Cancel</button>
             </div>
         </div>
       </div>

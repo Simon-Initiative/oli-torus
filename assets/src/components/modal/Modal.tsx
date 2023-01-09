@@ -103,7 +103,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
                     type="button"
                     className="btn btn-link"
                     onClick={onCancel}
-                    data-dismiss="modal"
+                    data-bs-dismiss="modal"
                   >
                     {cancelLabel}
                   </button>

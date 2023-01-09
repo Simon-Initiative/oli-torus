@@ -50,7 +50,7 @@
   border-style: solid;
   border-color: var(--color-gray-300);
   border-radius: 4px;
-  padding: 0.2em 0.4em;
+  padding: 0.5em 0.8em;
 }
 
 .rbt-input-multi.focus {
@@ -76,15 +76,16 @@
 }
 
 .rbt-input-multi input::-moz-placeholder {
+  color: var(--color-gray-500);
   opacity: 1;
 }
 
 .rbt-input-multi input:-ms-input-placeholder {
-  color: var(--color-gray-900);
+  color: var(--color-gray-500);
 }
 
 .rbt-input-multi input::-webkit-input-placeholder {
-  color: var(--color-gray-900);
+  color: var(--color-gray-500);
 }
 
 .rbt-input-multi .rbt-input-wrapper {

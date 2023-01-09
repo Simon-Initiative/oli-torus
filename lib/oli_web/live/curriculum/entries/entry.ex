@@ -25,7 +25,7 @@ defmodule OliWeb.Curriculum.EntryLive do
       data-drag-index={assigns.index}
       data-drag-slug={@child.slug}
       phx-hook="DragSource"
-      class={"p-2 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}>
+      class={"p-3 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}>
 
       <div class="flex-grow-1 d-flex flex-column align-self-center">
         <div class="flex-1">
@@ -36,7 +36,7 @@ defmodule OliWeb.Curriculum.EntryLive do
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
 
             <%= link(
-                class: "entry-title ml-3",
+                class: "entry-title ml-2",
                 to: Routes.resource_path(
                   OliWeb.Endpoint,
                   :edit,

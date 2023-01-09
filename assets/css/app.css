@@ -11,10 +11,11 @@
 @layer components {
   /** Bootstrap Shims **/
   .btn {
-    @apply px-3 py-1 rounded-md;
+    @apply px-3 py-1 rounded-md cursor-pointer;
   }
+
   .btn-xs {
-    @apply px-1.5 py-1.5 text-xs;
+    @apply px-1.5 py-1 text-xs;
   }
   .btn-sm {
     @apply px-2 py-1 text-sm;
@@ -85,6 +86,21 @@
     @apply text-blue-500  hover:text-blue-600 hover:underline;
   }
 
+  .btn[disabled] {
+    @apply text-gray-400 hover:no-underline cursor-default;
+  }
+
+  .btn-primary[disabled],
+  .btn-secondary[disabled],
+  .btn-success[disabled],
+  .btn-danger[disabled],
+  .btn-warning[disabled],
+  .btn-info[disabled],
+  .btn-light[disabled],
+  .btn-dark[disabled] {
+    @apply text-gray-400 bg-gray-200 hover:bg-gray-200 cursor-default;
+  }
+
   .d-flex {
     @apply flex;
   }
@@ -99,6 +115,10 @@
 
   .dropdown hr.dropdown-divider {
     @apply h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25;
+  }
+
+  .dropdown-toggle {
+    @apply flex items-center whitespace-nowrap;
   }
 
   .dropdown-menu {
@@ -145,19 +165,74 @@
             hover:bg-gray-100;
   }
 
-  .form-group input,
-  .form-label-group input {
-    @apply border-gray-300;
+  a.dropdown-item,
+  .dropdown-item a {
+    @apply no-underline text-gray-700;
+  }
+
+  .nav nav-tabs {
+    @apply flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4;
+  }
+
+  .nav-item {
+    @apply inline-block;
+  }
+
+  .nav-link {
+    @apply block
+      font-medium
+      text-sm
+      leading-tight
+      uppercase
+      border-x-0 border-t-0 border-b-2 border-transparent
+      px-6
+      py-3
+      my-2
+      hover:border-transparent hover:bg-gray-100
+      focus:border-transparent;
+  }
+
+  /* remove underline from links in dropdown menus and tabs */
+  a.nav-link {
+    @apply no-underline;
+  }
+
+  .form-group .form-control,
+  .form-label-group .form-control {
+    @apply border-gray-300 rounded-md min-w-full;
   }
 
   .custom-control input[type='checkbox'],
   .form-check input[type='checkbox'] {
-    @apply border-gray-400;
+    @apply border-gray-400 rounded-sm;
   }
 
-  .input-group input,
-  .input-group select {
-    @apply border-gray-300 min-w-full;
+  .form-group input[type='text'],
+  .input-group input[type='text'],
+  input.form-control[type='text'],
+  .input-group select,
+  select.custom-select {
+    @apply border-gray-300 rounded-md min-w-full;
+  }
+
+  .form-group input[type='file'] {
+    @apply border border-gray-300 p-1 rounded-md min-w-full;
+  }
+
+  .input-group {
+    @apply flex flex-row items-stretch;
+  }
+
+  .input-group .form-control {
+    @apply block;
+  }
+
+  .input-group-append {
+    @apply flex items-stretch rounded-tr-none rounded-br-none rounded text-gray-600  border-0;
+  }
+
+  .input-group-append button {
+    @apply rounded-none border-r-0 border-gray-300 last:border last:rounded-tr-md last:rounded-br-md whitespace-nowrap;
   }
 
   .text-danger {
@@ -186,6 +261,10 @@
 
   .page-item.active .page-link {
     @apply bg-blue-500 text-white;
+  }
+
+  .page-item.disabled .page-link {
+    @apply bg-transparent text-gray-400 hover:text-gray-400;
   }
 
   .alert {
@@ -271,10 +350,77 @@
   }
 
   .card {
-    @apply block p-6 rounded-lg shadow-lg bg-white max-w-sm;
+    @apply block p-6 rounded-lg shadow-lg bg-white;
   }
 
   .card-body {
     @apply text-gray-700 text-base;
+  }
+
+  .modal {
+    @apply fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto;
+  }
+
+  .modal-dialog {
+    @apply relative w-auto pointer-events-none;
+  }
+
+  .modal-content {
+    @apply border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current;
+  }
+
+  .modal-header {
+    @apply flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md;
+  }
+
+  .modal-body {
+    @apply relative p-4;
+  }
+
+  .modal-footer {
+    @apply flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md;
+  }
+
+  .justify-content-start {
+    @apply justify-start;
+  }
+  .justify-content-end {
+    @apply justify-end;
+  }
+  .justify-content-center {
+    @apply justify-center;
+  }
+  .justify-content-between {
+    @apply justify-between;
+  }
+  .justify-content-around {
+    @apply justify-around;
+  }
+  .justify-content-evenly {
+    @apply justify-evenly;
+  }
+
+  .align-items-start {
+    @apply items-start;
+  }
+  .align-items-end {
+    @apply items-end;
+  }
+  .align-items-center {
+    @apply items-center;
+  }
+  .align-items-baseline {
+    @apply items-baseline;
+  }
+  .align-items-stretch {
+    @apply items-stretch;
+  }
+
+  .row {
+    @apply grid grid-cols-12;
+  }
+
+  .col-1 {
+    @apply col-span-1;
   }
 }

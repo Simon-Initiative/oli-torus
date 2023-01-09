@@ -68,14 +68,14 @@
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
   </head>
-  <body>
+  <body class="dark:bg-slate-800 dark:text-white">
     <input type="hidden" id="layout-id" data-layout-id="delivery">
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
     <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
     <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
-    <main role="main" class="container">
+    <main role="main" class="container mx-auto">
 
       <%= Map.get(assigns, :inner_layout) || @inner_content %>
 

@@ -28,12 +28,12 @@ defmodule OliWeb.Projects.VisibilityLive do
 
   def render(assigns) do
     ~H"""
-    <div class="row py-5 border-bottom">
-      <div class="col-md-4">
+    <div class="grid grid-cols-12 py-5 border-bottom">
+      <div class="md:col-span-4">
         <h4>Allow Duplication</h4>
         <div class="text-muted">Control whether other users can create duplicates of your projects for their own development.</div>
       </div>
-      <div class="col-md-8">
+      <div class="md:col-span-8">
         <form phx-change="duplication" id="duplication_option">
           <div class="form-check">
             <%= label class: "form-check-label" do %>
@@ -48,11 +48,11 @@ defmodule OliWeb.Projects.VisibilityLive do
       </div>
     </div>
     <div class="row py-5 border-bottom">
-      <div class="col-md-4">
+      <div class="md:col-span-4">
         <h4>Publishing Visibility</h4>
         <div class="text-muted">Control who can create course sections for this project once it is published.</div>
       </div>
-      <div class="col-md-8">
+      <div class="md:col-span-8">
         <form phx-change="option" id="visibility_option">
           <div class="form-check form-switch">
             <div class="form-group">
@@ -83,7 +83,7 @@ defmodule OliWeb.Projects.VisibilityLive do
         </form>
         <%= if @project.visibility == :selected do %>
           <div class="row">
-            <div class="col-sm-12">
+            <div class="sm:col-span-12">
               <ul class="nav nav-tabs">
                 <li class="nav-item">
                   <a phx-click="users_tab" class={"nav-link #{if  @tab == :users, do: "active"}"}

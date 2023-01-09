@@ -1,6 +1,7 @@
 :global(html.authoring) {
   .inlineActivityEditor {
     margin: 0px auto;
+    flex: 1;
 
     :global .tab-pane .card {
       margin-bottom: 10px;

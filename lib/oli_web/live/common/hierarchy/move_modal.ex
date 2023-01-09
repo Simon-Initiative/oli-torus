@@ -13,7 +13,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
         <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Move <%= resource_type_label(@node.revision) |> String.capitalize() %></h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>

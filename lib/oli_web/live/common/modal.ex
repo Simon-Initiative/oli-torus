@@ -43,7 +43,7 @@ defmodule OliWeb.Common.Modal do
   end
   ```
 
-  4. Dismiss modal using bootstrap javascript (data-dismiss="modal", escape key, etc...)
+  4. Dismiss modal using bootstrap javascript (data-bs-dismiss="modal", escape key, etc...)
   or using the `hide_modal(socket, assigns)` function. Hide modal can optionally take any
   cleanup assigns to be set after the modal has disappeared and is no longer being rendered.
   ```

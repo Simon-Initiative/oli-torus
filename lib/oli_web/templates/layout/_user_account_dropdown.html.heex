@@ -49,28 +49,28 @@
   </button>
 
   <ul
-        class="
-          dropdown-menu
-          min-w-max
-          absolute
-          hidden
-          bg-white
-          text-base
-          z-50
-          float-right
-          right-0
-          py-2
-          list-none
-          text-left
-          rounded-lg
-          shadow-lg
-          mt-1
-          m-0
-          bg-clip-padding
-          border-none
-        "
-        aria-labelledby="accountDropdownMenu"
-      >
+    class="
+      dropdown-menu
+      min-w-max
+      absolute
+      hidden
+      bg-white
+      text-base
+      z-50
+      float-right
+      right-0
+      p-2
+      list-none
+      text-left
+      rounded-lg
+      shadow-lg
+      mt-1
+      m-0
+      bg-clip-padding
+      border-none
+    "
+    aria-labelledby="accountDropdownMenu"
+  >
     <%= if user_is_guest?(@conn) do %>
       <li>
         <%= link "Sign in / Create account", to: Routes.delivery_path(@conn, :signin, section: maybe_section_slug(@conn)), class: "dropdown-item btn" %>

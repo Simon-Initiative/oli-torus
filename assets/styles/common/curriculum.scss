@@ -24,9 +24,9 @@
   }
 
   .curriculum-entry {
-    border: 1px solid var(--color-gray-400);
+    border: 1px solid var(--color-gray-300);
     border-radius: 4px;
-    box-shadow: 1px 1px 8px 1px rgba($color: var(--color-gray-400), $alpha: 0.33);
+    box-shadow: 1px 1px 8px 1px var(--color-gray-200);
     cursor: grab;
     background-color: var(--body-bg);
     color: var(--body-color);
@@ -38,11 +38,6 @@
 
     &.active {
       border-color: var(--primary);
-    }
-
-    .entry-title {
-      font-size: 14px;
-      font-weight: 600;
     }
 
     .badge {

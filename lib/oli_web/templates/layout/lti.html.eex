@@ -42,7 +42,7 @@
   </head>
   <body>
 
-    <main role="main" class="container">
+    <main role="main" class="container mx-auto">
 
       <%= Map.get(assigns, :inner_layout) || @inner_content %>
 

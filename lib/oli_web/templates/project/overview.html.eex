@@ -1,16 +1,11 @@
-<style>
-  .action-button {
-    width: 100px;
-  }
-</style>
-<div class="overview container">
+<div class="overview container mx-auto">
 <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
-  <div class="row py-5 ">
-    <div class="col-md-4">
+  <div class="grid grid-cols-12 py-5 ">
+    <div class="col-span-4">
       <h4>Details</h4>
       <div class="text-muted">Your project title and description will be shown to students when you publish this project.</div>
     </div>
-    <div class="col-md-8">
+    <div class="col-span-8">
 
       <div class="form-label-group mb-3">
         <%= label f, :title, "Project ID", class: "control-label" %>
@@ -43,15 +38,15 @@
     </div>
   </div>
 
-  <div class="row py-5 border-bottom">
-  <div class="col-md-4">
+  <div class="grid grid-cols-12 py-5 border-bottom">
+  <div class="col-span-4">
     <h4>Project Attributes</h4>
     <div class="text-muted">
       Project wide configuration, not all options may be relevant for all
       subject areas.
     </div>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
 
     <div class="d-block">
       <%= inputs_for f, :attributes, fn fp -> %>
@@ -76,22 +71,22 @@
 
 <% end %>
 
-<div class="row py-5 border-bottom">
-  <div class="col-md-4">
+<div class="grid grid-cols-12 py-5 border-bottom">
+  <div class="col-span-4">
     <h4>Project Labels</h4>
     <div class="text-muted">Project wide customization of labels.</div>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
     <%= live_render @conn, OliWeb.Projects.CustomizationLive, session: %{ "project_slug" => @project.slug } %>
   </div>
 </div>
 
-<div class="row py-5 border-bottom">
-  <div class="col-md-4">
+<div class="grid grid-cols-12 py-5 border-bottom">
+  <div class="col-span-4">
     <h4>Collaborators</h4>
     <div class="text-muted">Invite other authors by email to contribute to your project. Specify multiple separated by a comma.</div>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
     <script src="https://www.google.com/recaptcha/api.js"></script>
     <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
     <div class="form-group">
@@ -123,12 +118,12 @@
 </div>
 </div>
 
-<div class="row py-5 border-bottom">
-  <div class="col-md-4">
+<div class="grid grid-cols-12 py-5 border-bottom">
+  <div class="col-span-4">
     <h4>Advanced Activities</h4>
     <div class="text-muted">Enable advanced activity types for your project to include in your curriculum.</div>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
     <table class="table table-sm">
       <tbody>
         <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
@@ -140,11 +135,12 @@
 
 
 <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
-<div class="row py-5">
-  <div class="col-md-4">
+
+<div class="grid grid-cols-12 py-5">
+  <div class="col-span-4">
     <h4>Actions</h4>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
     <div class="d-flex align-items-center">
       <p>
         <%= button("Duplicate",
