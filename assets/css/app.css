@@ -98,6 +98,25 @@
     @apply h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25;
   }
 
+  .dropdown-menu {
+    @apply min-w-max
+            absolute
+            hidden
+            bg-white
+            text-base
+            z-50
+            float-left
+            py-2
+            list-none
+            text-left
+            rounded-lg
+            shadow-lg
+            mt-1
+            m-0
+            bg-clip-padding
+            border-none;
+  }
+
   h6.dropdown-item {
     @apply text-gray-500
               font-semibold
@@ -164,6 +183,4 @@
   .page-item.active .page-link {
     @apply bg-blue-500 text-white;
   }
-
-  /* .table table-striped table-bordered */
 }

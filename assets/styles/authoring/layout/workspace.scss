@@ -181,18 +181,8 @@ $workspace-sidebar-width: 65px;
       z-index: var(--z-content-2);
 
       a {
-        // display: flex;
-        // flex-direction: columns;
-        // margin: 10px 0;
         color: var(--workspace-sidebar-link-color);
       }
-    }
-
-    .dropdown-item {
-      padding-top: 1px;
-      padding-bottom: 1px;
-      margin-top: 5px;
-      margin-bottom: 5px;
     }
 
     .dropdown-menu > a:hover {
