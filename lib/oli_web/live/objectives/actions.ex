@@ -5,7 +5,7 @@ defmodule OliWeb.ObjectivesLive.Actions do
 
   def render(assigns) do
     ~F"""
-      <div class="float-right p-2">
+      <div class="flex flex-row-reverse p-2">
         <button
           phx-click="display_new_sub_modal"
           phx-value-slug={@slug}

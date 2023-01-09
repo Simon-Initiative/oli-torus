@@ -11,75 +11,78 @@
 @layer components {
   /** Bootstrap Shims **/
   .btn {
-    @apply px-6 py-2 rounded;
+    @apply px-3 py-1 rounded-md;
   }
   .btn-xs {
     @apply px-1 py-1 text-xs;
   }
   .btn-sm {
-    @apply px-2 py-2 text-sm;
+    @apply px-2 py-1 text-sm;
+  }
+  .btn-md {
+    @apply px-3 py-1;
   }
   .btn-lg {
-    @apply px-4 py-4 text-lg;
+    @apply px-4 py-2 text-lg;
   }
   .btn-xl {
-    @apply px-4 py-4 text-xl;
+    @apply px-6 py-2 text-xl;
   }
   .btn-block {
     @apply w-full inline-block text-center;
   }
 
   .btn-primary {
-    @apply text-white rounded-md bg-blue-500 hover:bg-blue-600;
+    @apply text-white bg-blue-500 hover:bg-blue-600;
   }
   .btn-secondary {
-    @apply text-white rounded-md bg-gray-500 hover:bg-gray-600;
+    @apply text-white bg-gray-500 hover:bg-gray-600;
   }
   .btn-success {
-    @apply text-white rounded-md bg-green-500 hover:bg-green-600;
+    @apply text-white bg-green-500 hover:bg-green-600;
   }
   .btn-danger {
-    @apply text-white rounded-md bg-red-500 hover:bg-red-600;
+    @apply text-white bg-red-500 hover:bg-red-600;
   }
   .btn-warning {
-    @apply text-white rounded-md bg-yellow-500 hover:bg-yellow-600;
+    @apply text-white bg-yellow-500 hover:bg-yellow-600;
   }
   .btn-info {
-    @apply text-white rounded-md bg-blue-400 hover:bg-blue-500;
+    @apply text-white bg-blue-400 hover:bg-blue-500;
   }
   .btn-light {
-    @apply text-gray-800 rounded-md bg-gray-100 hover:bg-gray-200;
+    @apply text-gray-800 bg-gray-100 hover:bg-gray-200;
   }
   .btn-dark {
-    @apply text-white rounded-md bg-gray-700 hover:bg-gray-900;
+    @apply text-white bg-gray-700 hover:bg-gray-900;
   }
   .btn-outline-primary {
-    @apply text-blue-600 rounded-md border border-solid border-blue-600 hover:bg-blue-500 hover:text-white;
+    @apply text-blue-600 border border-solid border-blue-600 hover:bg-blue-500 hover:text-white;
   }
   .btn-outline-secondary {
-    @apply text-gray-600 rounded-md border border-solid border-gray-600 hover:bg-gray-500 hover:text-white;
+    @apply text-gray-600 border border-solid border-gray-600 hover:bg-gray-500 hover:text-white;
   }
   .btn-outline-success {
-    @apply text-green-600  rounded-md border border-solid border-green-600 hover:bg-green-500 hover:text-white;
+    @apply text-green-600  border border-solid border-green-600 hover:bg-green-500 hover:text-white;
   }
   .btn-outline-danger {
-    @apply text-red-600 rounded-md border border-solid border-red-600 hover:bg-red-500 hover:text-white;
+    @apply text-red-600 border border-solid border-red-600 hover:bg-red-500 hover:text-white;
   }
   .btn-outline-warning {
-    @apply text-yellow-600 rounded-md border border-solid border-yellow-600 hover:bg-yellow-500 hover:text-white;
+    @apply text-yellow-600 border border-solid border-yellow-600 hover:bg-yellow-500 hover:text-white;
   }
   .btn-outline-info {
-    @apply text-blue-400 rounded-md border border-solid border-blue-400 hover:bg-blue-400 hover:text-white;
+    @apply text-blue-400 border border-solid border-blue-400 hover:bg-blue-400 hover:text-white;
   }
   .btn-outline-light {
-    @apply text-gray-500 rounded-md border border-solid border-gray-600 hover:bg-gray-100 hover:text-gray-500;
+    @apply text-gray-500 border border-solid border-gray-600 hover:bg-gray-100 hover:text-gray-500;
   }
   .btn-outline-dark {
-    @apply text-gray-800 py-2 px-6 rounded-md border border-solid border-gray-800 hover:bg-gray-800 hover:text-white;
+    @apply text-gray-800 py-2 px-6 border border-solid border-gray-800 hover:bg-gray-800 hover:text-white;
   }
 
   .btn-link {
-    @apply text-blue-500 rounded-md  hover:text-blue-600;
+    @apply text-blue-500  hover:text-blue-600;
   }
 
   .d-flex {
@@ -144,16 +147,17 @@
 
   .form-group input,
   .form-label-group input {
-    @apply border-gray-300 rounded-sm;
+    @apply border-gray-300;
   }
 
   .custom-control input[type='checkbox'],
   .form-check input[type='checkbox'] {
-    @apply border-gray-400 rounded-sm;
+    @apply border-gray-400;
   }
 
-  .input-group input {
-    @apply border-gray-300 rounded-sm min-w-full;
+  .input-group input,
+  .input-group select {
+    @apply border-gray-300 min-w-full;
   }
 
   .text-danger {
@@ -218,5 +222,59 @@
 
   .alert-dark {
     @apply bg-gray-300 text-gray-800;
+  }
+
+  .badge {
+    @apply inline-block py-1.5 px-2.5 leading-none text-center text-sm whitespace-nowrap align-baseline font-bold bg-gray-600 text-white rounded;
+  }
+
+  .badge-xs {
+    @apply text-xs;
+  }
+  .badge-sm {
+    @apply text-sm;
+  }
+  .badge-lg {
+    @apply text-lg;
+  }
+  .badge-xl {
+    @apply text-xl;
+  }
+
+  .badge-primary {
+    @apply bg-blue-600 text-white;
+  }
+  .badge-secondary {
+    @apply bg-purple-600 text-white;
+  }
+  .badge-success {
+    @apply bg-green-500 text-white;
+  }
+  .badge-danger {
+    @apply bg-red-600 text-white;
+  }
+  .badge-warning {
+    @apply bg-yellow-500 text-white;
+  }
+  .badge-info {
+    @apply bg-blue-400 text-white;
+  }
+  .badge-light {
+    @apply bg-gray-200 text-white;
+  }
+  .badge-dark {
+    @apply bg-gray-800 text-white;
+  }
+
+  .align-items-baseline {
+    @apply items-baseline;
+  }
+
+  .card {
+    @apply block p-6 rounded-lg shadow-lg bg-white max-w-sm;
+  }
+
+  .card-body {
+    @apply text-gray-700 text-base;
   }
 }

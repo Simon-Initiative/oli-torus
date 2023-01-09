@@ -21,10 +21,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   data page_resource, :any
   data parent_entity, :any
 
-  def mount(_params, %{
-    "collab_space_config" => collab_space_config,
-    "page_slug" => page_slug
-  } = session, socket) do
+  def mount(
+        _params,
+        %{
+          "collab_space_config" => collab_space_config,
+          "page_slug" => page_slug
+        } = session,
+        socket
+      ) do
     is_delivery = Map.get(session, "is_delivery")
     page_resource = Resources.get_resource_from_slug(page_slug)
 
@@ -35,9 +39,9 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
         delivery_setting =
           case Delivery.get_delivery_setting_by(%{
-            section_id: section.id,
-            resource_id: page_resource.id
-          }) do
+                 section_id: section.id,
+                 resource_id: page_resource.id
+               }) do
             nil -> %DeliverySetting{}
             ds -> ds
           end
@@ -63,24 +67,24 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       end
 
     {:ok,
-      assign(socket,
-        is_delivery: is_delivery,
-        author_id: Map.get(session, "current_author_id"),
-        user_id: Map.get(session, "current_user_id"),
-        collab_space_config: collab_space_config,
-        collab_space_status: get_status(collab_space_config),
-        changeset: changeset,
-        page_revision: page_revision,
-        page_resource: page_resource,
-        parent_entity: parent_entity
-      )}
+     assign(socket,
+       is_delivery: is_delivery,
+       author_id: Map.get(session, "current_author_id"),
+       user_id: Map.get(session, "current_user_id"),
+       collab_space_config: collab_space_config,
+       collab_space_status: get_status(collab_space_config),
+       changeset: changeset,
+       page_revision: page_revision,
+       page_resource: page_resource,
+       parent_entity: parent_entity
+     )}
   end
 
   def render(assigns) do
     ~F"""
-      <div class="card">
-        <div class="card-body d-flex justify-content-between">
-          <div class="d-flex">
+      <div class="card max-w-full">
+        <div class="card-body flex-1 d-flex justify-content-between">
+          <div class="d-flex flex-1">
             <div class="card-title h5">Collaborative Space</div>
             <span class="badge badge-info ml-2" style="height: fit-content">{humanize(@collab_space_status)}</span>
           </div>
@@ -179,7 +183,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     )
   end
 
-
   # first argument is a flag that specifies whether it is delivery or not, to accordingly
   # update the revision or the delivery_setting configuration
   defp upsert_collab_space(true, action, attrs, socket) do
@@ -198,11 +201,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         collab_space_config = delivery_setting.collab_space_config
 
         {:noreply,
-          assign(socket,
-            changeset: Delivery.change_delivery_setting(delivery_setting),
-            collab_space_status: get_status(collab_space_config),
-            collab_space_config: collab_space_config
-          )}
+         assign(socket,
+           changeset: Delivery.change_delivery_setting(delivery_setting),
+           collab_space_status: get_status(collab_space_config),
+           collab_space_config: collab_space_config
+         )}
 
       {:error, _} ->
         socket = put_flash(socket, :error, "Collaborative space couldn't be #{action}.")
@@ -214,29 +217,28 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     socket = clear_flash(socket)
 
     case Collaboration.upsert_collaborative_space(
-      attrs,
-      socket.assigns.parent_entity,
-      socket.assigns.page_revision.slug,
-      socket.assigns.author_id
-    ) do
+           attrs,
+           socket.assigns.parent_entity,
+           socket.assigns.page_revision.slug,
+           socket.assigns.author_id
+         ) do
       {:ok,
-        %{
-          project: _project,
-          publication: _publication,
-          page_resource: _page_resource,
-          next_page_revision: next_page_revision
-        }
-      } ->
+       %{
+         project: _project,
+         publication: _publication,
+         page_resource: _page_resource,
+         next_page_revision: next_page_revision
+       }} ->
         socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
         collab_space_config = next_page_revision.collab_space_config
 
         {:noreply,
-          assign(socket,
-            page_revision: next_page_revision,
-            changeset: Resources.change_revision(next_page_revision),
-            collab_space_status: get_status(collab_space_config),
-            collab_space_config: collab_space_config
-          )}
+         assign(socket,
+           page_revision: next_page_revision,
+           changeset: Resources.change_revision(next_page_revision),
+           collab_space_status: get_status(collab_space_config),
+           collab_space_config: collab_space_config
+         )}
 
       {:error, _} ->
         socket = put_flash(socket, :error, "Collaborative space couldn't be #{action}.")

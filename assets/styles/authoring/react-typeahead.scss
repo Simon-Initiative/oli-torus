@@ -25,6 +25,7 @@
 
 .rbt-menu > .dropdown-item:hover {
   color: var(--color-white);
+  background-color: var(--primary);
 }
 
 .rbt-menu > .dropdown-item:focus {
@@ -43,6 +44,13 @@
   overflow: hidden;
   position: relative;
   height: auto;
+  color: var(--color-gray-900);
+  background-color: var(--color-white);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--color-gray-300);
+  border-radius: 4px;
+  padding: 0.2em 0.4em;
 }
 
 .rbt-input-multi.focus {
@@ -68,7 +76,6 @@
 }
 
 .rbt-input-multi input::-moz-placeholder {
-  color: var(--color-gray-900);
   opacity: 1;
 }
 

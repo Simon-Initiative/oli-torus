@@ -19,7 +19,7 @@ defmodule OliWeb.Common.FilterBox do
 
   def render(assigns) do
     ~F"""
-    <div class="card mb-3">
+    <div class="card max-w-full mb-3">
       <h3 class="card-header">{@card_header_text}</h3>
       <div class="card-body">
         <p class="mt-1 mb-4">{@card_body_text}</p>
@@ -28,7 +28,7 @@ defmodule OliWeb.Common.FilterBox do
 
           {#if @show_sort}
             <form :on-change="sort" class="d-flex">
-              <select name="sort_by" id="select_sort" class="custom-select custom-select mr-2">
+              <select name="sort_by" id="select_sort" class="custom-select mr-2">
                 <option value="" disabled selected>Sort by</option>
                 {#for column_spec <- @table_model.column_specs}
                   {#if column_spec.name != :action}

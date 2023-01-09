@@ -246,6 +246,9 @@ $objectives-border-color: lighten($cyan, 30%);
 // }
 
 :root {
+  --primary: #{$primary};
+  --secondary: #{$secondary};
+
   --gray-100: #{$gray-100};
   --gray-200: #{$gray-200};
   --gray-300: #{$gray-300};
