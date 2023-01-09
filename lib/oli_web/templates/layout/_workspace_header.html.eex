@@ -11,12 +11,19 @@
     </div>
   </div>
 
-  <%= if Map.has_key?(@conn.assigns, :breadcrumbs) and Map.has_key?(@conn.assigns, :project) and length(@breadcrumbs) > 0 do %>
-    <nav class="breadcrumb-bar flex flex-row align-items-center px-3">
-      <%= live_render(@conn, BreadcrumbTrailLive, session: %{
-      "container_slug" => container_slug(@conn.assigns),
-      "project_slug" => @project.slug,
-      "breadcrumbs" => @breadcrumbs }) %>
-    </nav>
+  <%= case assigns do %>
+    <% %{breadcrumbs: breadcrumbs, project: project}  when not is_nil(project) -> %>
+      <%= if length(breadcrumbs) > 0 do %>
+        <nav class="breadcrumb-bar flex flex-row align-items-center px-3">
+          <%= live_render(@conn, BreadcrumbTrailLive, session: %{
+          "container_slug" => container_slug(@conn.assigns),
+          "project_slug" => project.slug,
+          "breadcrumbs" => breadcrumbs }) %>
+        </nav>
+      <% end %>
+
+    <% _ -> %>
+
   <% end %>
+
 </div>

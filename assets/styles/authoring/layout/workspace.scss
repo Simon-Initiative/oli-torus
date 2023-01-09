@@ -141,7 +141,7 @@ $workspace-sidebar-width: 65px;
   .custom-breadcrumb {
     background-color: transparent;
     box-shadow: none;
-    padding: 0px;
+    padding: 4px;
     margin-bottom: 8px;
     white-space: nowrap;
     flex-wrap: nowrap;
@@ -154,6 +154,8 @@ $workspace-sidebar-width: 65px;
     }
 
     .breadcrumb-item {
+      display: inline-block;
+
       & + .breadcrumb-item {
         padding-left: 0.35rem;
 
