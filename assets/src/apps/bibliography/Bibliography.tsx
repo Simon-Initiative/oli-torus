@@ -327,7 +327,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
 
   return (
     <div className="resource-editor row">
-      <div className="col-12">
+      <div className="col-span-12">
         <Banner
           dismissMessage={(msg) => setMessages(messages.filter((m) => msg.guid !== m.guid))}
           executeAction={(message, action) => action.execute(message)}

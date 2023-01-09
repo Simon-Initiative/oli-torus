@@ -101,6 +101,10 @@
     @apply text-gray-400 bg-gray-200 hover:bg-gray-200 cursor-default;
   }
 
+  .container {
+    @apply mx-auto;
+  }
+
   .d-flex {
     @apply flex;
   }
@@ -198,25 +202,24 @@
   }
 
   .form-group .form-control,
-  .form-label-group .form-control {
-    @apply border-gray-300 rounded-md min-w-full;
+  .form-label-group .form-control,
+  input.form-control {
+    @apply border-gray-300 rounded-md min-w-full disabled:bg-gray-100 disabled:text-gray-600;
   }
 
   .custom-control input[type='checkbox'],
-  .form-check input[type='checkbox'] {
-    @apply border-gray-400 rounded-sm;
+  .form-check input[type='checkbox'],
+  .form-group input[type='checkbox'],
+  .form-control input[type='checkbox'] {
+    @apply border-gray-400 rounded-sm disabled:bg-gray-300 hover:border-gray-400;
   }
-
-  .form-group input[type='text'],
-  .input-group input[type='text'],
-  input.form-control[type='text'],
-  .input-group select,
-  select.custom-select {
-    @apply border-gray-300 rounded-md min-w-full;
-  }
-
   .form-group input[type='file'] {
     @apply border border-gray-300 p-1 rounded-md min-w-full;
+  }
+
+  .input-group select,
+  select.custom-select {
+    @apply border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-600;
   }
 
   .input-group {
@@ -414,13 +417,5 @@
   }
   .align-items-stretch {
     @apply items-stretch;
-  }
-
-  .row {
-    @apply grid grid-cols-12;
-  }
-
-  .col-1 {
-    @apply col-span-1;
   }
 }

@@ -74,10 +74,10 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
             <label className="control-label" htmlFor={k}>
               {renderLabel(k)}
             </label>
-            <div className="col-sm-12">
+            <div className="sm:col-span-12">
               {k === 'date-parts' ? (
                 <div className="d-flex">
-                  <div className="col-sm-4">
+                  <div className="sm:col-span-4">
                     <TextInput
                       editMode={true}
                       width="100%"
@@ -89,7 +89,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
                       }}
                     />
                   </div>
-                  <div className="col-sm-4">
+                  <div className="sm:col-span-4">
                     <TextInput
                       editMode={true}
                       width="100%"
@@ -101,7 +101,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
                       }}
                     />
                   </div>
-                  <div className="col-sm-4">
+                  <div className="sm:col-span-4">
                     <TextInput
                       editMode={true}
                       width="100%"
@@ -137,7 +137,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
     return (
       <div className="d-flex">
         {Object.entries(value).map(([k, val]) => (
-          <div key={k} className="col-sm-6">
+          <div key={k} className="sm:col-span-6">
             <TextInput
               editMode={true}
               width="100%"
@@ -232,7 +232,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
         >
           <i className="las la-trash-alt"></i>
         </button>
-        <div className="col-sm-12">{renderAttributeEditor(key1, value1)}</div>
+        <div className="sm:col-span-12">{renderAttributeEditor(key1, value1)}</div>
       </div>
     );
   };

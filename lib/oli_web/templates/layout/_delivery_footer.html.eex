@@ -6,7 +6,7 @@
 
 <footer class="footer">
   <div class="container">
-    <div class="row">
+    <div class="grid grid-cols-12">
       <div class="col-sm-auto text-left">
         <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
       </div>

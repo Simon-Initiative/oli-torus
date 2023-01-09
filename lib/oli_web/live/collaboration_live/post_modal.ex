@@ -25,7 +25,7 @@ defmodule OliWeb.CollaborationLive.PostModal do
               <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
-              <div class="col-12 mt-2">
+              <div class="col-span-12 mt-2">
                 <Form for={@changeset} submit={@on_submit} opts={autocomplete: "off"}>
                   <HiddenInput field={:user_id} />
                   <HiddenInput field={:section_id} />

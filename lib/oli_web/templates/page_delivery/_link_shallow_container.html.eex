@@ -1,4 +1,4 @@
-<div class="border-bottom mb-2" style="border-color: #dee2e6;">
+<div class="border-b mb-2" style="border-color: #dee2e6;">
   <%= link to: @container_link_url.(@node.revision.slug),
     class: resource_link_class(@active_page == @node.revision.slug) do %>
     <span class="container-title my-2">

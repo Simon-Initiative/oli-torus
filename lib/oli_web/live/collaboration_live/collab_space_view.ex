@@ -7,12 +7,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration.Post, as: PostSchema
+
   alias OliWeb.CollaborationLive.{
     ActiveUsers,
     PostModal,
     ShowPost,
     SortPosts
   }
+
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
   alias Phoenix.PubSub
@@ -43,6 +45,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       user_id: user.id
     }
   end
+
   # ----------------
 
   def mount(
@@ -64,6 +67,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     topic = presence_topic(section_slug, page_resource.id)
 
     PubSub.subscribe(Oli.PubSub, topic)
+
     Presence.track_presence(
       self(),
       topic,
@@ -71,11 +75,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       presence_default_user_payload(user)
     )
 
-    new_post_changeset = Collaboration.change_post(%PostSchema{
-      user_id: user.id,
-      section_id: section.id,
-      resource_id: page_resource.id
-    })
+    new_post_changeset =
+      Collaboration.change_post(%PostSchema{
+        user_id: user.id,
+        section_id: section.id,
+        resource_id: page_resource.id
+      })
 
     search_params = %{
       section_id: section.id,
@@ -88,18 +93,18 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     sort = %{by: :inserted_at, order: :asc}
 
     {:ok,
-      assign(socket,
-        topic: topic,
-        search_params: search_params,
-        page_resource: page_resource,
-        section: section,
-        user: user,
-        active_users: Presence.list_presences(topic),
-        posts: get_posts(search_params, sort),
-        collab_space_config: collab_space_config,
-        new_post_changeset: new_post_changeset,
-        sort: sort
-      )}
+     assign(socket,
+       topic: topic,
+       search_params: search_params,
+       page_resource: page_resource,
+       section: section,
+       user: user,
+       active_users: Presence.list_presences(topic),
+       posts: get_posts(search_params, sort),
+       collab_space_config: collab_space_config,
+       new_post_changeset: new_post_changeset,
+       sort: sort
+     )}
   end
 
   def render(assigns) do
@@ -116,8 +121,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
           </div>
 
           <div class="card-footer bg-transparent">
-            <div class="row">
-              <div class="col-xs-12 col-lg-9 order-lg-first">
+            <div class="grid grid-cols-12">
+              <div class="xs:col-span-12 lg:col-span-9 order-lg-first">
                 <div class="d-flex justify-content-between align-items-center">
                   <div class="d-flex align-items-center border border-light p-3 rounded">
                     <div class="mr-2"><strong>Sort by</strong></div>
@@ -140,7 +145,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                 </div>
               </div>
 
-              <div class="col-xs-12 col-lg-3 order-first mb-5">
+              <div class="xs:col-span-12 lg:col-span-3 order-first mb-5">
                 <ActiveUsers users={@active_users} />
               </div>
             </div>
@@ -152,10 +157,15 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   # ----------------
   # so we can set "typing" to false
-  def handle_event("_bsmodal.unmount", _, socket = %{assigns: %{topic: topic, user: %{id: user_id}}}) do
+  def handle_event(
+        "_bsmodal.unmount",
+        _,
+        socket = %{assigns: %{topic: topic, user: %{id: user_id}}}
+      ) do
     Presence.update_presence(self(), topic, user_id, %{typing: false})
     {:noreply, assign(socket, __modal__: nil)}
   end
+
   use OliWeb.Common.Modal
   # ----------------
 
@@ -188,13 +198,17 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
-          socket
-          |> put_flash(:error, "Couldn't create post")
-          |> hide_modal(modal_assigns: nil)}
+         socket
+         |> put_flash(:error, "Couldn't create post")
+         |> hide_modal(modal_assigns: nil)}
     end
   end
 
-  def handle_event("display_reply_to_post_modal", %{"parent_id" => parent_id, "index" => index}, socket) do
+  def handle_event(
+        "display_reply_to_post_modal",
+        %{"parent_id" => parent_id, "index" => index},
+        socket
+      ) do
     post_reply_changeset =
       socket.assigns.new_post_changeset
       |> Ecto.Changeset.put_change(:parent_post_id, parent_id)
@@ -266,12 +280,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     end
 
     {:noreply,
-      socket
-      |> assign(editing_post: post)
-      |> show_modal(
-        modal,
-        modal_assigns: modal_assigns
-      )}
+     socket
+     |> assign(editing_post: post)
+     |> show_modal(
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   def handle_event("delete_post", _, socket) do
@@ -282,16 +296,20 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   def handle_event("cancel_delete_post", _, socket) do
     {:noreply,
-      socket
-      |> assign(editing_post: nil)
-      |> hide_modal(modal_assigns: nil)}
+     socket
+     |> assign(editing_post: nil)
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("set_selected", %{"id" => value}, socket) do
     {:noreply, assign(socket, selected: value)}
   end
 
-  def handle_event("sort", %{"sort" => %{"sort_by" => sort_by, "sort_order" => sort_order}} = _params, socket) do
+  def handle_event(
+        "sort",
+        %{"sort" => %{"sort_by" => sort_by, "sort_order" => sort_order}} = _params,
+        socket
+      ) do
     sort_by = String.to_atom(sort_by)
     sort_order = String.to_atom(sort_order)
 
@@ -299,29 +317,33 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       socket.assigns.posts
       |> Enum.unzip()
       |> elem(0)
-      |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+      |> Enum.sort_by(&Map.get(&1, sort_by), sort_order)
       |> Enum.with_index(1)
 
     {:noreply,
-      assign(
-        socket,
-        posts: sorted_posts,
-        sort: %{by: sort_by, order: sort_order}
-      )}
+     assign(
+       socket,
+       posts: sorted_posts,
+       sort: %{by: sort_by, order: sort_order}
+     )}
   end
 
   def handle_info(:updated_posts, socket) do
-    {:noreply, assign(socket, posts: get_posts(socket.assigns.search_params, socket.assigns.sort))}
+    {:noreply,
+     assign(socket, posts: get_posts(socket.assigns.search_params, socket.assigns.sort))}
   end
 
   def handle_info(%{event: "presence_diff"}, socket) do
     {:noreply,
-      assign(socket,
-        active_users: Presence.list_presences(socket.assigns.topic)
-      )}
+     assign(socket,
+       active_users: Presence.list_presences(socket.assigns.topic)
+     )}
   end
 
-  defp display_post_modal(modal_assigns, socket = %{assigns: %{topic: topic, user: %{id: user_id}}}) do
+  defp display_post_modal(
+         modal_assigns,
+         socket = %{assigns: %{topic: topic, user: %{id: user_id}}}
+       ) do
     Presence.update_presence(self(), topic, user_id, %{typing: true})
 
     modal = fn assigns ->
@@ -331,11 +353,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     end
 
     {:noreply,
-      show_modal(
-        socket,
-        modal,
-        modal_assigns: modal_assigns
-      )}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   defp do_edit_post(post, attrs, socket) do
@@ -346,40 +368,52 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         send_updated_posts(status, socket.assigns.topic)
 
         {:noreply,
-          socket
-          |> assign(editing_post: nil)
-          |> hide_modal(modal_assigns: nil)}
+         socket
+         |> assign(editing_post: nil)
+         |> hide_modal(modal_assigns: nil)}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply,
-          socket
-          |> put_flash(:error, "Couldn't edit post")
-          |> hide_modal(modal_assigns: nil)}
+         socket
+         |> put_flash(:error, "Couldn't edit post")
+         |> hide_modal(modal_assigns: nil)}
     end
   end
 
-  defp get_posts(%{
-    section_id: section_id,
-    resource_id: page_resource_id,
-    user_id: user_id,
-    collab_space_config: %CollabSpaceConfig{show_full_history: false} = collab_space_config,
-    enter_time: enter_time
-  }, %{by: sort_by, order: sort_order}) do
-    Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id, enter_time)
+  defp get_posts(
+         %{
+           section_id: section_id,
+           resource_id: page_resource_id,
+           user_id: user_id,
+           collab_space_config:
+             %CollabSpaceConfig{show_full_history: false} = collab_space_config,
+           enter_time: enter_time
+         },
+         %{by: sort_by, order: sort_order}
+       ) do
+    Collaboration.list_posts_for_user_in_page_section(
+      section_id,
+      page_resource_id,
+      user_id,
+      enter_time
+    )
     |> maybe_threading(collab_space_config)
-    |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+    |> Enum.sort_by(&Map.get(&1, sort_by), sort_order)
     |> Enum.with_index(1)
   end
 
-  defp get_posts(%{
-    section_id: section_id,
-    resource_id: page_resource_id,
-    user_id: user_id,
-    collab_space_config: collab_space_config,
-  }, %{by: sort_by, order: sort_order}) do
+  defp get_posts(
+         %{
+           section_id: section_id,
+           resource_id: page_resource_id,
+           user_id: user_id,
+           collab_space_config: collab_space_config
+         },
+         %{by: sort_by, order: sort_order}
+       ) do
     Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id)
     |> maybe_threading(collab_space_config)
-    |> Enum.sort_by(& Map.get(&1, sort_by), sort_order)
+    |> Enum.sort_by(&Map.get(&1, sort_by), sort_order)
     |> Enum.with_index(1)
   end
 
@@ -397,6 +431,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       end
     end)
   end
+
   defp maybe_threading(all_posts, _), do: all_posts
 
   defp show_collab_space?(nil), do: false

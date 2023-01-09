@@ -10,8 +10,8 @@
       Your institution's registration is pending approval. You will receive an email once your request has been approved.
     </p>
 
-    <div class="row justify-content-md-center my-3">
-      <div class="col col-8">
+    <div class="grid grid-cols-12 justify-content-md-center my-3">
+      <div class="col col-span-8">
         <table class="table table-sm text-center border">
             <tr>
                 <td>

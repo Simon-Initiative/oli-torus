@@ -20,8 +20,8 @@
         </div>
         <div class="modal-body relative p-4">
           <div class="container form-container">
-            <div class="row">
-              <div class="col-lg-8 mx-auto">
+            <div class="grid grid-cols-12">
+              <div class="lg:col-span-8 mx-auto">
                 <h5 id="help-success-message" class="d-none text-success">Your help request submitted</h5>
                 <%= hidden_input f, :location, id: "location"%>
                 <%= hidden_input f, :cookies_enabled, id: "cookies_enabled"%>

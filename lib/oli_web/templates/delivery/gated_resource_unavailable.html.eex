@@ -1,6 +1,6 @@
 <div class="container">
-  <div class="row">
-    <div class="col-12 text-center pt-4">
+  <div class="grid grid-cols-12">
+    <div class="col-span-12 text-center pt-4">
       <p><i class="lar la-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
       <h2 class="mt-4 mb-4">This Resource is Gated</h2>
       <p>

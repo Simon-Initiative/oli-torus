@@ -25,7 +25,7 @@
   </div>
 
   <div class="form-row" phx-update="ignore">
-    <div class="form-group col-md-6">
+    <div class="form-group md:col-span-6">
       <div class="text-secondary my-1">Start Date</div>
       <div class="input-group date">
         <%= datetime_local_input f, :start_date, class: "form-control " <> error_class(f, :start_date, "is-invalid"),
@@ -38,7 +38,7 @@
       </div>
       <%= error_tag f, :start_date %>
     </div>
-    <div class="form-group col-md-6">
+    <div class="form-group md:col-span-6">
       <div class="text-secondary my-1">End Date</div>
       <div class="input-group date">
         <%= datetime_local_input f, :end_date, class: "form-control " <> error_class(f, :end_date, "is-invalid"),

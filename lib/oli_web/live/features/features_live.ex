@@ -37,15 +37,15 @@ defmodule OliWeb.Features.FeaturesLive do
   def render(assigns) do
     ~H"""
     <div class="container">
-      <div class="row">
-        <div class="col-12">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12">
           <p class="mb-3">
             Change the status of system-wide feature flags
           </p>
         </div>
       </div>
-      <div class="row">
-        <div class="col-12">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12">
           <table class="table table-striped table-bordered">
             <thead>
               <tr>

@@ -64,7 +64,7 @@ export const PopupContentEditor = (props: Props) => {
   return (
     <div className="row popup__content_editor" contentEditable={false}>
       <h2>Popup Content</h2>
-      <div className="col-12">
+      <div className="col-span-12">
         <span className="mb-4">Shown to students when triggered</span>
         <div className="popup__modalContent">
           {triggerSettings}

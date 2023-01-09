@@ -28,7 +28,7 @@ defmodule OliWeb.Projects.VisibilityLive do
 
   def render(assigns) do
     ~H"""
-    <div class="grid grid-cols-12 py-5 border-bottom">
+    <div class="grid grid-cols-12 py-5 border-b">
       <div class="md:col-span-4">
         <h4>Allow Duplication</h4>
         <div class="text-muted">Control whether other users can create duplicates of your projects for their own development.</div>
@@ -47,7 +47,7 @@ defmodule OliWeb.Projects.VisibilityLive do
         </div>
       </div>
     </div>
-    <div class="row py-5 border-bottom">
+    <div class="grid grid-cols-12 py-5 border-b">
       <div class="md:col-span-4">
         <h4>Publishing Visibility</h4>
         <div class="text-muted">Control who can create course sections for this project once it is published.</div>
@@ -82,7 +82,7 @@ defmodule OliWeb.Projects.VisibilityLive do
           </div>
         </form>
         <%= if @project.visibility == :selected do %>
-          <div class="row">
+          <div class="grid grid-cols-12">
             <div class="sm:col-span-12">
               <ul class="nav nav-tabs">
                 <li class="nav-item">
@@ -105,7 +105,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                       <%= hidden_input :search_field, :entity, value: "instructors" %>
                     </form>
                   </div>
-                  <div class="row justify-content-center">
+                  <div class="grid grid-cols-12 justify-content-center">
                     <%= if !Enum.empty?(@user_emails) do %>
                       <div class="flex-fill">
                         <p>Select from the list below and submit</p>
@@ -149,7 +149,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                         <%= hidden_input :search_field, :entity, value: "institution" %>
                       </form>
                     </div>
-                    <div class="row justify-content-center">
+                    <div class="grid grid-cols-12 justify-content-center">
                       <%= if !Enum.empty?(@institution_names) do %>
                         <div class="flex-fill">
                           <p>Select from the list below and submit</p>

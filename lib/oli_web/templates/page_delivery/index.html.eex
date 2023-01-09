@@ -9,7 +9,7 @@
       </div>
     </div>
   <% end %>
-  <div class="d-flex text-secondary border-bottom border-secondary mb-2">
+  <div class="d-flex text-secondary border-b border-secondary mb-2">
     <div class="flex-grow-1">
       <h5>
         Course Overview

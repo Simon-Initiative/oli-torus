@@ -2,15 +2,15 @@
 <%= render_modal(assigns) %>
 
 <div id="curriculum-container" class="container mx-auto curriculum-editor">
-  <div class="row">
-    <div class="col-12">
+  <div class="grid grid-cols-12">
+    <div class="col-span-12">
       <p class="mb-3">
         Create and arrange your learning materials below.
       </p>
     </div>
   </div>
-  <div class="row">
-    <div class="col-12">
+  <div class="grid grid-cols-12">
+    <div class="col-span-12">
       <div class="change-view-buttons">
         <div class="btn-group btn-group-toggle" data-toggle="buttons">
           <label
@@ -41,8 +41,8 @@
       </div>
     </div>
   </div>
-  <div class="row" phx-window-keydown="keydown">
-    <div class="col-12">
+  <div class="grid grid-cols-12" phx-window-keydown="keydown">
+    <div class="col-span-12">
       <div class="curriculum-entries">
         <%= if Enum.count(@children) == 0 do %>
           <div style="margin-top: 15px">

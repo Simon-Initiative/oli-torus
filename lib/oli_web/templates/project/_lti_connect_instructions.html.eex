@@ -36,8 +36,8 @@ $(function() {
 })
 </script>
 
-<div class="row justify-content-md-center mt-5">
-  <div class="col-8">
+<div class="grid grid-cols-12 justify-content-md-center mt-5">
+  <div class="col-span-8">
     <div class="card">
       <div class="card-body text-center">
         <h5 class="card-title">Deliver this course through your institution's LMS</h5>

@@ -20,7 +20,7 @@ defmodule OliWeb.ObjectivesLive.FormModal do
             </div>
             <div class="modal-body">
               <p>At the end of the course, students should be able to...</p>
-              <div class="col-12 mt-4">
+              <div class="col-span-12 mt-4">
                 <Form for={@changeset} submit={@on_click}>
                   <HiddenInput field={:slug}/>
                   <HiddenInput field={:parent_slug}/>

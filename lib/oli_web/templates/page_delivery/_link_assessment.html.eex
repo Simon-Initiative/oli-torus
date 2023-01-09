@@ -1,4 +1,4 @@
-<div class="d-flex border-bottom mb-2" style="border-color: #dee2e6;">
+<div class="d-flex border-b mb-2" style="border-color: #dee2e6;">
   <div class="flex-grow-1">
     <%= link to: @page_link_url.(@node.revision.slug),
       class: resource_link_class(@active_page == @node.revision.slug) do %>

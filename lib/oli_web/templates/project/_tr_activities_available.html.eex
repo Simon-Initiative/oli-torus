@@ -1,6 +1,6 @@
-<tr>
-  <td><%= "#{@activity_enabled.title}"%></td>
-  <td class="user-actions text-center">
+<div class="flex flex-row">
+  <div class="flex-1"><%= "#{@activity_enabled.title}"%></div>
+  <div class="user-actions">
     <%= if @activity_enabled.global do %>
       <%= "---"%>
     <% else %>
@@ -10,5 +10,5 @@
         <%= link "Add", to: Routes.project_activity_path(@conn, :enable_activity, @project, @activity_enabled.slug), method: :put, class: "btn btn-link" %>
       <% end %>
     <% end %>
-  </td>
-</tr>
+  </div>
+</div>

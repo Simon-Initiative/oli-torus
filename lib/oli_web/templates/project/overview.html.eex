@@ -38,7 +38,7 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-12 py-5 border-bottom">
+  <div class="grid grid-cols-12 py-5 border-b">
   <div class="col-span-4">
     <h4>Project Attributes</h4>
     <div class="text-muted">
@@ -62,7 +62,7 @@
       <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
     </div>
 
-    <div>
+    <div class="mt-5">
       <div><a type="button" class="btn btn-link pl-0" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesEditor, @project.slug) %>">Manage Alternatives</a></div>
       <small>Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.</small>
     </div>
@@ -71,7 +71,7 @@
 
 <% end %>
 
-<div class="grid grid-cols-12 py-5 border-bottom">
+<div class="grid grid-cols-12 py-5 border-b">
   <div class="col-span-4">
     <h4>Project Labels</h4>
     <div class="text-muted">Project wide customization of labels.</div>
@@ -81,7 +81,7 @@
   </div>
 </div>
 
-<div class="grid grid-cols-12 py-5 border-bottom">
+<div class="grid grid-cols-12 py-5 border-b">
   <div class="col-span-4">
     <h4>Collaborators</h4>
     <div class="text-muted">Invite other authors by email to contribute to your project. Specify multiple separated by a comma.</div>
@@ -118,17 +118,13 @@
 </div>
 </div>
 
-<div class="grid grid-cols-12 py-5 border-bottom">
+<div class="grid grid-cols-12 py-5 border-b">
   <div class="col-span-4">
     <h4>Advanced Activities</h4>
     <div class="text-muted">Enable advanced activity types for your project to include in your curriculum.</div>
   </div>
   <div class="col-span-8">
-    <table class="table table-sm">
-      <tbody>
-        <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
-      </tbody>
-    </table>
+    <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
   </div>
 </div>
 

@@ -1,6 +1,6 @@
 <div class="container">
-  <div class="row">
-    <div class="col-12 text-center pt-4">
+  <div class="grid grid-cols-12">
+    <div class="col-span-12 text-center pt-4">
       <%= case @reason do %>
         <% :before_start_date -> %>
           <p><i class="la la-calendar-times-o" aria-hidden="true" style="font-size: 64px"></i></p>
