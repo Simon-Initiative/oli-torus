@@ -59,7 +59,13 @@ defmodule OliWeb.Common.PagedTable do
     patch_fn.(socket, %{offset: offset})
   end
 
-  def delegate_handle_event("paged_table_selection_change", %{"id" => selected}, socket, patch_fn, _) do
+  def delegate_handle_event(
+        "paged_table_selection_change",
+        %{"id" => selected},
+        socket,
+        patch_fn,
+        _
+      ) do
     patch_fn.(socket, %{selected: selected})
   end
 

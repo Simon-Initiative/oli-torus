@@ -11,8 +11,9 @@ defmodule OliWeb.Common.Paging do
     params = PagingParams.calculate(assigns.total_count, assigns.offset, assigns.limit, 5)
 
     ~F"""
-    <div id={@id} class="d-flex justify-content-between">
+    <div id={@id} class="d-flex justify-content-between items-center">
       <div>{params.label}</div>
+      <div class="flex-1"></div>
       <nav aria-label="Paging">
         <ul class="pagination">
           <li class={"page-item", disabled: (params.current_page_index == 0)}>
