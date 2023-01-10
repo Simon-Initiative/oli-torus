@@ -109,6 +109,10 @@ $workspace-sidebar-width: 65px;
     background-color: var(--workspace-header-bg);
     align-items: center;
 
+    &.with-breadcrumbs {
+      height: 38px;
+    }
+
     h2 {
       margin-bottom: 4px;
     }

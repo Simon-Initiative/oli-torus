@@ -1,6 +1,6 @@
 
 <div class="workspace-header-container flex-1 flex flex-column">
-  <div class="workspace-header flex-grow-1 flex flex-row flex-nowrap px-6">
+  <div class="workspace-header flex-grow-1 flex flex-row flex-nowrap px-6 <%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: "with-breadcrumbs", else: "" %>">
     <h3><%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: hd(Enum.reverse(@breadcrumbs)).short_title, else: @title %></h3>
     <div class="flex-1"></div>
     <div>
