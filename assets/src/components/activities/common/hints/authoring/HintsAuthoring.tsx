@@ -1,5 +1,5 @@
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { HintCard } from 'components/activities/common/hints/authoring/HintCard';
 import { Hint, RichText } from 'components/activities/types';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';

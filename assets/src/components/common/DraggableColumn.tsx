@@ -8,7 +8,7 @@ import {
   DropResult,
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
-import { classNames } from 'utils/classNames';
+import { ClassName, classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 
 import styles from './DraggableColumn.modules.scss';
@@ -31,6 +31,7 @@ const DragIndicator: React.FC<DragIndicatorProps> = ({ isDragDisabled }) => {
   );
 };
 interface ItemProps {
+  className?: ClassName;
   id: string;
   itemAriaLabel?: string;
   item: any;
@@ -44,6 +45,7 @@ interface ItemProps {
 }
 const Item: React.FC<ItemProps> = ({
   id,
+  className,
   index = 0,
   itemAriaLabel,
   item,
@@ -61,6 +63,7 @@ const Item: React.FC<ItemProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={classNames(
+            className,
             styles.draggableColumnCard,
             displayOutline ? styles.draggableColumnOutlined : null,
           )}

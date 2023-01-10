@@ -1,7 +1,7 @@
 import React from 'react';
 import { CustomDnDSchema } from './schema';
 import { TextInput } from 'components/common/TextInput';
-import { RemoveButton } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { RemoveButton } from 'components/activities/common/authoring/RemoveButton';
 
 export type PartManagerProps = {
   model: CustomDnDSchema;

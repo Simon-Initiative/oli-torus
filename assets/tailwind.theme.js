@@ -1,5 +1,8 @@
 module.exports = {
   extend: {
+    colors: {
+      'body-color': '#212529',
+    },
     forms: {
       borderRadius: 6,
     },

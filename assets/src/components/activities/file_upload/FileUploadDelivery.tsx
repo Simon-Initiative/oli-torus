@@ -37,7 +37,7 @@ import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryE
 import { Manifest } from 'components/activities/types';
 import { FileSpec, FileUploadSchema } from 'components/activities/file_upload/schema';
 import { getReadableFileSizeString, fileName } from './utils';
-import { RemoveButton } from '../common/authoring/removeButton/RemoveButton';
+import { RemoveButton } from '../common/authoring/RemoveButton';
 import { uploadActivityFile } from 'data/persistence/state/intrinsic';
 import { defaultMaxFileSize } from './utils';
 import { Dispatch } from '@reduxjs/toolkit';

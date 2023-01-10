@@ -7,11 +7,7 @@
       margin-bottom: 10px;
     }
 
-    :global .rich-text-editor {
-      margin-bottom: 10px;
-    }
-
-    :global .slate-editor {
+    :global(.rich-text-editor > .slate-editor) {
       padding: 0.5rem;
       border: 1px solid var(--color-gray-400);
       border-radius: 0.25em;

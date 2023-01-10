@@ -92,7 +92,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
               aria-label="Close"
             ></button>
           </div>
-          <div className="modal-body relative p-4">{children}</div>
+          <div className="modal-body relative p-4 pt-0">{children}</div>
           <div className="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
             {props.footer ? (
               props.footer
@@ -101,7 +101,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
                 {props.hideCancelButton === true ? null : (
                   <button
                     type="button"
-                    className="btn btn-link"
+                    className="btn btn-link ml-2"
                     onClick={onCancel}
                     data-bs-dismiss="modal"
                   >
@@ -113,7 +113,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
                     disabled={props.disableOk}
                     type="button"
                     onClick={onOk}
-                    className={`btn btn-${okClassName}`}
+                    className={`btn btn-${okClassName} ml-2`}
                   >
                     {okLabel}
                   </button>

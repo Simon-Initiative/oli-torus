@@ -191,7 +191,6 @@
       border-x-0 border-t-0 border-b-2 border-transparent
       px-6
       py-3
-      my-2
       hover:border-transparent hover:bg-gray-100
       focus:border-transparent;
   }
@@ -203,8 +202,22 @@
 
   .form-group .form-control,
   .form-label-group .form-control,
-  input.form-control {
-    @apply border-gray-300 rounded-md min-w-full disabled:bg-gray-100 disabled:text-gray-600;
+  input.form-control,
+  .input-group input.form-control,
+  .input-group select,
+  select.custom-select {
+    @apply border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600;
+  }
+
+  .btn-group button.btn {
+    @apply border-0;
+  }
+
+  .form-check-input {
+    @apply appearance-none rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer;
+  }
+  .form-check-label {
+    @apply inline-block text-gray-800;
   }
 
   .custom-control input[type='checkbox'],
@@ -214,12 +227,7 @@
     @apply border-gray-400 rounded-sm disabled:bg-gray-300 hover:border-gray-400;
   }
   .form-group input[type='file'] {
-    @apply border border-gray-300 p-1 rounded-md min-w-full;
-  }
-
-  .input-group select,
-  select.custom-select {
-    @apply border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-600;
+    @apply border border-gray-300 p-1 rounded-md;
   }
 
   .input-group {

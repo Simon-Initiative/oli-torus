@@ -2,7 +2,7 @@
 }
 
 .draggableColumnIndicator {
-  color: rgba($color: var(--body-color), $alpha: 0.6);
+  color: rgba($color: var(--color-gray-300), $alpha: 0.6);
   cursor: grab !important;
   width: 24px;
   margin-right: 0.5rem;
@@ -15,6 +15,9 @@
   cursor: default !important;
   border-radius: 4px;
   background: var(--body-bg);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 .draggableColumnOutlined {

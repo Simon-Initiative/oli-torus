@@ -37,7 +37,7 @@ defmodule OliWeb.Projects.VisibilityLive do
         <form phx-change="duplication" id="duplication_option">
           <div class="form-check">
             <%= label class: "form-check-label" do %>
-              <%= checkbox :duplication, :allow_duplication, id: "dupe_check", class: "form-check-input", checked: @project.allow_duplication %>
+              <%= checkbox :duplication, :allow_duplication, id: "dupe_check", checked: @project.allow_duplication %>
               Allow duplication by non-collaborators
             <% end %>
           </div>
@@ -54,29 +54,35 @@ defmodule OliWeb.Projects.VisibilityLive do
       </div>
       <div class="md:col-span-8">
         <form phx-change="option" id="visibility_option">
-          <div class="form-check form-switch">
-            <div class="form-group">
-              <%= label class: "form-check-label" do %>
+          <div class="form-check">
+            <div class="form-group mb-2">
+              <%= label class: "form-check-label flex flex-row" do %>
                 <%= radio_button :visibility, :option, "authors", class: "form-check-input", checked: @project.visibility == :authors or is_nil(@project.visibility) %>
-                <div class="d-flex align-items-center">
-                  <p>Project authors</p>
-                  <span class="ml-2 badge badge-pill badge-light">default</span>
+                <div class="block ml-2">
+                  <div class="d-flex align-items-center">
+                    <p>Project authors</p>
+                    <span class="ml-2 badge badge-xs badge-pill badge-primary">default</span>
+                  </div>
+                  <small>Only instructors with linked authoring accounts that are project collaborators</small>
                 </div>
-                <small>Only instructors with linked authoring accounts that are project collaborators</small>
               <% end %>
             </div>
-            <div class="form-group">
-              <%= label class: "form-check-label" do %>
+            <div class="form-group mb-2">
+              <%= label class: "form-check-label flex flex-row" do %>
                 <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: @project.visibility == :global %>
-                <p>Open</p>
-                <small>Any instructor</small>
+                <div class="block ml-2">
+                  <p>Open</p>
+                  <small>Any instructor</small>
+                </div>
               <% end %>
             </div>
-            <div class="form-group">
-              <%= label class: "form-check-label" do %>
-                <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked:  @project.visibility == :selected %>
-                <p>Restricted</p>
-                <small>Only instructors with these linked authoring accounts or from these institutions...</small>
+            <div class="form-group mb-2">
+              <%= label class: "form-check-label flex flex-row" do %>
+                <%= radio_button :visibility, :option, "selected", checked:  @project.visibility == :selected %>
+                <div class="block ml-2">
+                  <p>Restricted</p>
+                  <small>Only instructors with these linked authoring accounts or from these institutions...</small>
+                </div>
               <% end %>
             </div>
           </div>

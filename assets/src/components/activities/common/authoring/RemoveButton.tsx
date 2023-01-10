@@ -2,8 +2,6 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { AuthoringButton } from 'components/activities/common/authoring/AuthoringButton';
 import React from 'react';
 
-import './RemoveButton.scss';
-
 type Props = {
   onClick: () => void;
   className?: string;
@@ -16,9 +14,9 @@ export const RemoveButton: React.FC<Props> = (props) => (
     ariaLabel="Remove"
     editMode={props.editMode}
     action={props.onClick}
-    className="removeButton__button"
+    className="text-body-color hover:text-red-500"
   >
-    <i style={props.style} className="removeButton__icon material-icons-outlined">
+    <i style={props.style} className="material-icons-outlined align-middle">
       close
     </i>
   </AuthoringButton>
