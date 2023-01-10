@@ -114,7 +114,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       }) do
     # Collect all of the part attempt guids for all of the activities that get finalized
     with {:ok, part_attempt_guids} <-
-           finalize_activity_and_part_attempts(resource_attempt.id, datashop_session_id),
+           finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
          {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt) do
       case resource_attempt do
         %ResourceAttempt{lifecycle_state: :evaluated} ->
@@ -148,10 +148,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   def finalize(_), do: {:error, {:already_submitted}}
 
-  defp finalize_activity_and_part_attempts(resource_attempt_id, datashop_session_id) do
+  defp finalize_activity_and_part_attempts(resource_attempt, datashop_session_id) do
     with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
            Evaluate.update_part_attempts_and_get_activity_attempts(
-             resource_attempt_id,
+             resource_attempt,
              datashop_session_id
            ),
          {:ok, _} <-

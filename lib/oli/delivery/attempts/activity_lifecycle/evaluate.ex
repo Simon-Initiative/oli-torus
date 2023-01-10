@@ -377,8 +377,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, evaluations}
   end
 
-  def update_part_attempts_and_get_activity_attempts(resource_attempt_id, datashop_session_id) do
-    resource_attempt_id
+  def update_part_attempts_and_get_activity_attempts(resource_attempt, datashop_session_id) do
+    resource_attempt.id
     |> get_latest_activity_attempts()
     |> Enum.reduce_while(
       {0, [], [], []},
@@ -390,30 +390,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
            part_attempt_guids
          } = acc ->
         if activity_attempt.lifecycle_state != :evaluated and activity_attempt.scoreable do
-          # --- part attempts
-          activity_attempt = activity_attempt |> Repo.preload([:revision, :resource_attempt])
-          part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+          activity_attempt = Map.put(activity_attempt, :resource_attempt, resource_attempt)
 
-          part_inputs =
-            part_attempts
-            |> Enum.map(fn pa ->
-              {input, files} =
-                if pa.response,
-                  do: {Map.get(pa.response, "input"), Map.get(pa.response, "files", [])},
-                  else: {nil, nil}
-
-              %{
-                attempt_guid: pa.attempt_guid,
-                input: %StudentInput{input: input, files: files}
-              }
-            end)
-            |> filter_already_evaluated(part_attempts)
-
-          case activity_attempt
-               |> do_evaluate_submissions(part_inputs, part_attempts)
-               |> persist_evaluations(part_inputs, fn result -> result end, datashop_session_id) do
-            {:ok, _} ->
-              # --- activity attempt
+          case update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
+            {:ok, part_inputs} ->
               part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
 
               %{
@@ -424,7 +404,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 date_submitted: date_submitted
               } = determine_activity_rollup_attrs(part_inputs, part_attempts, activity_attempt)
 
-              # ---
               {:cont,
                {
                  i + 6,
@@ -445,13 +424,40 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                    Enum.map(part_attempts, fn part_attempt -> part_attempt.attempt_guid end)
                }}
 
-            error -> {:halt, error}
+            error ->
+              {:halt, error}
           end
         else
           {:cont, acc}
         end
       end
     )
+  end
+
+  defp update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
+    part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+
+    part_inputs =
+      part_attempts
+      |> Enum.map(fn pa ->
+        {input, files} =
+          if pa.response,
+            do: {Map.get(pa.response, "input"), Map.get(pa.response, "files", [])},
+            else: {nil, nil}
+
+        %{
+          attempt_guid: pa.attempt_guid,
+          input: %StudentInput{input: input, files: files}
+        }
+      end)
+      |> filter_already_evaluated(part_attempts)
+
+    case activity_attempt
+         |> do_evaluate_submissions(part_inputs, part_attempts)
+         |> persist_evaluations(part_inputs, fn result -> result end, datashop_session_id) do
+      {:ok, _} -> {:ok, part_inputs}
+      e -> e
+    end
   end
 
   @doc """
@@ -658,10 +664,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     do_evaluate_submissions(activity_attempt, part_inputs, part_attempts)
   end
 
-  defp do_evaluate_submissions(%ActivityAttempt{
-    resource_attempt: resource_attempt,
-    attempt_number: attempt_number
-  } = activity_attempt, part_inputs, part_attempts) do
+  defp do_evaluate_submissions(
+         %ActivityAttempt{
+           resource_attempt: resource_attempt,
+           attempt_number: attempt_number
+         } = activity_attempt,
+         part_inputs,
+         part_attempts
+       ) do
     activity_model = select_model(activity_attempt)
 
     {:ok, %Model{parts: parts}} = Model.parse(activity_model)
