@@ -481,7 +481,7 @@ defmodule Oli.Resources.CollaborationTest do
       posts = Collaboration.list_posts_for_user_in_page_section(section.id, resource.id, user.id)
 
       assert 5 == length(posts)
-      assert 2 == posts |> Enum.find(& &1.id == parent_post.id) |> Map.get(:replies_count)
+      assert 2 == posts |> Enum.filter(& &1.thread_root_id == parent_post.id) |> length()
     end
 
     test "list_posts_for_user_in_page_section/3 returns empty when no posts meets the criteria" do
@@ -516,6 +516,55 @@ defmodule Oli.Resources.CollaborationTest do
       insert(:post, user: user, section: section, resource: resource)
 
       assert 0 == length(Collaboration.list_posts_for_user_in_page_section(section.id, resource.id, user.id, enter_time))
+    end
+
+    test "list_posts_for_instructor_in_page_section/2 returns posts meeting the criteria" do
+      section = insert(:section)
+      resource = insert(:resource)
+
+      parent_post = insert(:post, section: section, resource: resource)
+      insert(:post, thread_root: parent_post, section: section, resource: resource)
+      insert(:post, thread_root: parent_post, section: section, resource: resource, status: :deleted)
+      insert(:post, thread_root: parent_post, section: section, resource: resource, status: :submitted)
+      insert(:post, thread_root: parent_post, section: section, resource: resource, status: :archived)
+
+      insert(:post, section: section, resource: resource, status: :archived)
+      insert(:post, section: section, resource: resource, status: :submitted)
+      insert(:post, section: section, resource: resource, status: :deleted)
+
+      insert(:post, section: section)
+      insert(:post, resource: resource)
+
+      posts = Collaboration.list_posts_for_instructor_in_page_section(section.id, resource.id)
+
+      assert 6 == length(posts)
+      assert 3 == posts |> Enum.filter(& &1.thread_root_id == parent_post.id) |> length()
+    end
+
+    test "list_posts_for_instructor_in_page_section/2 returns empty when no posts meets the criteria" do
+      section = insert(:section)
+      resource = insert(:resource)
+
+      insert_pair(:post)
+
+      assert [] == Collaboration.list_posts_for_instructor_in_page_section(section.id, resource.id)
+    end
+
+    test "delete_posts/1 delete the posts successfully" do
+      section = insert(:section)
+      resource = insert(:resource)
+
+      parent_post = insert(:post, section: section, resource: resource)
+      reply = insert(:post, section: section, resource: resource, thread_root: parent_post)
+      post = insert(:post, section: section, resource: resource)
+
+      {number, nil} = Collaboration.delete_posts(parent_post)
+
+      assert 2 == number
+
+      assert %Post{status: :deleted} = Collaboration.get_post_by(%{id: parent_post.id})
+      assert %Post{status: :deleted} = Collaboration.get_post_by(%{id: reply.id})
+      assert %Post{status: :approved} = Collaboration.get_post_by(%{id: post.id})
     end
   end
 end

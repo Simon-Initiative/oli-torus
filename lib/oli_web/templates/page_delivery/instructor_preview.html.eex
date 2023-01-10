@@ -26,4 +26,16 @@
         })
     %>
   </div>
+
+  <div class="container mt-5">
+    <%=
+      live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
+        session: %{
+          "collab_space_config" => @collab_space_config,
+          "section_slug" => @section_slug,
+          "page_slug" => @revision.slug,
+          "is_instructor" => true
+        })
+    %>
+  </div>
 <% end %>
