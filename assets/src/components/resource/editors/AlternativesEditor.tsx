@@ -197,7 +197,7 @@ export const ManageAlternativesLink = ({ projectSlug }: ManageAlternativesLinkPr
       target="_blank"
       rel="noreferrer"
     >
-      Manage Alternatives <i className="las la-external-link-alt"></i>
+      Manage Alternatives <i className="fas fa-external-link-alt"></i>
     </a>
   </>
 );
@@ -314,7 +314,7 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
             className={classNames('btn btn-sm', styles.option, styles.add)}
             onClick={onCreateAlternative}
           >
-            <i className="las la-plus"></i>
+            <i className="fas fa-plus"></i>
           </button>
         </div>
         <div className="flex-grow-1"></div>
@@ -346,13 +346,13 @@ const OptionPill = ({
 
   const titleOrWarning = title ?? (
     <Tooltip title="This alternative value no longer exists and should be changed or removed">
-      <i className="las la-exclamation-circle text-danger"></i>
+      <i className="fas fa-exclamation-circle text-danger"></i>
     </Tooltip>
   );
 
   const maybeDuplicateWarning = isDuplicate && (
     <Tooltip title="This alternative has the same value as another. One or the other should be changed or removed">
-      <i className="las la-exclamation-triangle text-warning mx-1"></i>
+      <i className="fas fa-exclamation-triangle text-warning mx-1"></i>
     </Tooltip>
   );
 
@@ -366,7 +366,7 @@ const OptionPill = ({
             className={classNames('btn btn-sm', styles.edit)}
             onClick={onEditAlternativeClick}
           >
-            <i className="las la-ellipsis-h"></i>
+            <i className="fas fa-ellipsis-h"></i>
           </button>
         </>
       </div>

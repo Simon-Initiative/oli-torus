@@ -29,13 +29,13 @@ defmodule OliWeb.Curriculum.Actions do
           </svg>
         </button>
         <div class="dropdown-menu dropdown-menu-right" id={"dropdownMenu_#{@child.slug}"} aria-labelledby={"dropdownMenuButton_#{@child.slug}"}>
-          <button type="button" class="dropdown-item" phx-click="show_options_modal" phx-value-slug={@child.slug}><i class="las la-sliders-h mr-1 flex-1"></i> Options</button>
-          <button type="button" class="dropdown-item" phx-click="show_move_modal" phx-value-slug={@child.slug}><i class="las la-arrow-circle-right mr-1"></i> Move to...</button>
+          <button type="button" class="dropdown-item" phx-click="show_options_modal" phx-value-slug={@child.slug}><i class="fas fa-sliders-h mr-1 flex-1"></i> Options</button>
+          <button type="button" class="dropdown-item" phx-click="show_move_modal" phx-value-slug={@child.slug}><i class="fas fa-arrow-circle-right mr-1"></i> Move to...</button>
           <%= if ResourceType.is_non_adaptive_page(@child) do %>
-            <button type="button" class="dropdown-item" phx-click="duplicate_page" phx-value-id={@child.id}><i class="las la-copy mr-1"></i> Duplicate</button>
+            <button type="button" class="dropdown-item" phx-click="duplicate_page" phx-value-id={@child.id}><i class="fas fa-copy mr-1"></i> Duplicate</button>
           <% end %>
           <div class="dropdown-divider"></div>
-          <button type="button" class="dropdown-item text-danger" phx-click="show_delete_modal" phx-value-slug={@child.slug}><i class="lar la-trash-alt mr-1"></i> Delete</button>
+          <button type="button" class="dropdown-item text-danger" phx-click="show_delete_modal" phx-value-slug={@child.slug}><i class="far fa-trash-alt mr-1"></i> Delete</button>
         </div>
       </div>
     </div>

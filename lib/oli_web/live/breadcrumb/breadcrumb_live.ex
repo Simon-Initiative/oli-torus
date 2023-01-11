@@ -20,7 +20,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
     ~H"""
     <li class="breadcrumb-item">
       <%= get_title(@breadcrumb, @show_short) %>
-      <span><i class="las la-angle-right"></i></span>
+      <span><i class="fas fa-angle-right"></i></span>
     </li>
     """
   end
@@ -30,7 +30,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
     <li class="breadcrumb-item">
       <%= link get_title(@breadcrumb, @show_short),
           to: @breadcrumb.link %>
-      <span><i class="las la-angle-right"></i></span>
+      <span><i class="fas fa-angle-right"></i></span>
     </li>
     """
   end

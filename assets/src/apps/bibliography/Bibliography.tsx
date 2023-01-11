@@ -256,10 +256,10 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
         <div key={key} className="d-flex justify-content-start mb-4">
           <div className="mr-2">
             <div className="mb-1">
-              <EditBibEntry icon="las la-edit" onEdit={onEdit} />
+              <EditBibEntry icon="fas fa-edit" onEdit={onEdit} />
             </div>
             <div className="mb-1">
-              <EditBibEntry icon="las la-user-edit" onEdit={onManualEdit} />
+              <EditBibEntry icon="fas fa-user-edit" onEdit={onManualEdit} />
             </div>
             {/* <div>
               <DeleteBibEntry onDelete={onDeleted} />
@@ -335,7 +335,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
         />
         <div className="d-flex justify-content-start">
           <button type="button" className="btn btn-link" onClick={() => onPlainCreateOrEdit()}>
-            <i className="las la-solid la-plus"></i> Add Entry
+            <i className="fas fa-solid la-plus"></i> Add Entry
           </button>
           {createEntryDropdown}
         </div>

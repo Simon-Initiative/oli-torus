@@ -47,16 +47,16 @@ defmodule OliWeb.Delivery.Remix.Entry do
   def icon(%{node: %HierarchyNode{revision: revision}} = assigns) do
     if is_container?(revision) do
       ~H"""
-      <i class="las la-archive font-bold fa-lg mx-2"></i>
+      <i class="fas fa-archive font-bold fa-lg mx-2"></i>
       """
     else
       if revision.graded do
         ~H"""
-        <i class="lar la-list-alt fa-lg mx-2"></i>
+        <i class="far fa-list-alt fa-lg mx-2"></i>
         """
       else
         ~H"""
-        <i class="lar la-file-alt fa-lg mx-2"></i>
+        <i class="far fa-file-alt fa-lg mx-2"></i>
         """
       end
     end

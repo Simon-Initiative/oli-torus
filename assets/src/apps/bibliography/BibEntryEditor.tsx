@@ -167,7 +167,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
             setModel({ ...model, [key]: [...values, { given: '', family: '' }] });
           }}
         >
-          <i className="las la-solid la-plus"></i> {'Add ' + toFriendlyLabel(key)}
+          <i className="fas fa-solid la-plus"></i> {'Add ' + toFriendlyLabel(key)}
         </button>
       </div>
     );
@@ -230,7 +230,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
           title="Delete this field"
           aria-pressed="false"
         >
-          <i className="las la-trash-alt"></i>
+          <i className="fas fa-trash-alt"></i>
         </button>
         <div className="sm:col-span-12">{renderAttributeEditor(key1, value1)}</div>
       </div>

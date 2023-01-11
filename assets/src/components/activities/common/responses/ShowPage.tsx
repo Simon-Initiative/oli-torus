@@ -10,7 +10,7 @@ export const ShowPage: React.FC<{
     return (
       <div className="float-right">
         <button className="btn btn-sm btn-link" onClick={(_e) => onChange(0)}>
-          Automate the reveal of a content page <i className={`tiny-icon las la-code-branch`}></i>
+          Automate the reveal of a content page <i className={`tiny-icon fas fa-code-branch`}></i>
         </button>
       </div>
     );
@@ -35,7 +35,7 @@ export const ShowPage: React.FC<{
 
         <div className="sm:col-span-1">
           <button className="float-right btn btn-sm btn-info" onClick={() => onChange(undefined)}>
-            <i className={`tiny-icon las la-trash`}></i>
+            <i className={`tiny-icon fas fa-trash`}></i>
           </button>
         </div>
       </div>

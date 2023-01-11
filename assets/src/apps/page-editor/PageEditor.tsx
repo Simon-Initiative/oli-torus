@@ -538,7 +538,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           )
         }
       >
-        Preview <i className="las la-external-link-alt ml-1"></i>
+        Preview <i className="fas fa-external-link-alt ml-1"></i>
       </a>
     );
 

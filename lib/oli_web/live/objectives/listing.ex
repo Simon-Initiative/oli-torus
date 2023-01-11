@@ -44,7 +44,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
                             phx-click="display_edit_modal"
                             phx-value-slug={sub_objective.slug}
                             class="ml-1 btn btn-sm btn-light">
-                            <i class="las la-i-cursor"></i>
+                            <i class="fas fa-i-cursor"></i>
                           </button>
                           <button
                             phx-click="delete"

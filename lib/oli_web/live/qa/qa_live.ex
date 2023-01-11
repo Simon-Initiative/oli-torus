@@ -150,7 +150,7 @@ defmodule OliWeb.Qa.QaLive do
             phx-disable-with="Reviewing...">Run Review</button>
 
           <%= link to: Routes.resource_path(OliWeb.Endpoint, :preview, @project.slug), class: "btn btn-outline-primary mt-3 ml-2", target: "preview-#{@project.slug}" do %>
-            Preview Course <i class="las la-external-link-alt ml-1"></i>
+            Preview Course <i class="fas fa-external-link-alt ml-1"></i>
           <% end %>
         </div>
       </div>

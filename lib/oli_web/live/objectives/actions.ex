@@ -24,7 +24,7 @@ defmodule OliWeb.ObjectivesLive.Actions do
           phx-click="display_edit_modal"
           phx-value-slug={@slug}
           class="ml-1 btn btn-sm btn-light">
-          <i class="las la-i-cursor"></i> Reword
+          <i class="fas fa-i-cursor"></i> Reword
         </button>
 
         <button

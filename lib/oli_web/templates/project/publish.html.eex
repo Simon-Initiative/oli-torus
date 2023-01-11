@@ -48,7 +48,7 @@
                       <p>Major
                         <%= case {@version_change, @latest_published_publication} do %>
                           <% {{:major, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
-                            <small class="ml-1"><%= "v#{current_edition}.#{current_major}.#{current_minor}" %><i class="las la-arrow-right mx-2"></i><%= "v#{edition}.#{major}.#{minor}" %></small>
+                            <small class="ml-1"><%= "v#{current_edition}.#{current_major}.#{current_minor}" %><i class="fas fa-arrow-right mx-2"></i><%= "v#{edition}.#{major}.#{minor}" %></small>
 
                           <% _ -> %>
                         <% end %>
@@ -62,7 +62,7 @@
                       <p>Minor
                         <%= case {@version_change, @latest_published_publication} do %>
                           <% {{:minor, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
-                            <small class="ml-1"><%= "v#{current_edition}.#{current_major}.#{current_minor}" %><i class="las la-arrow-right mx-1"></i><%= "v#{edition}.#{major}.#{minor}" %></small>
+                            <small class="ml-1"><%= "v#{current_edition}.#{current_major}.#{current_minor}" %><i class="fas fa-arrow-right mx-1"></i><%= "v#{edition}.#{major}.#{minor}" %></small>
 
                           <% _ -> %>
                         <% end %>

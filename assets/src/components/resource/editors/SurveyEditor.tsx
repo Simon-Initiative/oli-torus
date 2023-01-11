@@ -120,7 +120,7 @@ export const SurveyOutlineItem = (props: SurveyOutlineItemProps) => {
 
   return (
     <OutlineGroup {...props}>
-      <Icon iconName="las la-poll" />
+      <Icon iconName="fas fa-poll" />
       <Description title={resourceGroupTitle(contentItem)}>
         {contentItem.children.size} items
       </Description>

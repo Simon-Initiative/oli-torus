@@ -43,7 +43,7 @@ defmodule OliWeb.Curriculum.EntryLive do
                   @project.slug,
                   @child.slug
                 )) do %>
-                <i class="las la-edit"></i> Edit
+                <i class="fas fa-edit"></i> Edit
             <% end %>
           <% end %>
           <%= if @editor do %>
@@ -76,16 +76,16 @@ defmodule OliWeb.Curriculum.EntryLive do
   def icon(%{child: child} = assigns) do
     if is_container?(child) do
       ~H"""
-      <i class="las la-archive font-bold fa-lg mx-2"></i>
+      <i class="fas fa-archive font-bold fa-lg mx-2"></i>
       """
     else
       if child.graded do
         ~H"""
-        <i class="lar la-list-alt fa-lg mx-2"></i>
+        <i class="far fa-list-alt fa-lg mx-2"></i>
         """
       else
         ~H"""
-        <i class="lar la-file-alt fa-lg mx-2"></i>
+        <i class="far fa-file-alt fa-lg mx-2"></i>
         """
       end
     end

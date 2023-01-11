@@ -28,7 +28,7 @@
           <div style="float: right;">
             {#if @edited_json}
               <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="save_edits">
-                <i class="las la-save"></i> Save as New Revision
+                <i class="fas fa-save"></i> Save as New Revision
               </button>
               <button type="button" class="btn btn-outline-primary btn-sm" phx-click="cancel_edits">
                 Cancel
@@ -50,7 +50,7 @@
             {#for error <- @edit_errors}
               <div class="alert alert-warning d-flex" role="alert">
                 <div class="flex-grow-1">{error}</div>
-                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="las la-external-link-alt"></i></a></div>
+                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="fas fa-external-link-alt"></i></a></div>
               </div>
             {/for}
           {/if}

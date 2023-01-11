@@ -96,7 +96,7 @@ defmodule OliWeb.Products.Payments.TableModel do
     case {payment.type, payment.provider_type} do
       {:direct, :stripe} ->
         ~F"""
-        <a href={"https://dashboard.stripe.com/test/payments/#{payment.provider_payload["id"]}"}>View <i class="las la-external-link-alt ml-1"></i></a>
+        <a href={"https://dashboard.stripe.com/test/payments/#{payment.provider_payload["id"]}"}>View <i class="fas fa-external-link-alt ml-1"></i></a>
         """
 
       _ ->

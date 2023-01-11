@@ -8,7 +8,7 @@
         method: :delete,
         class: "btn btn-sm btn-outline-danger ml-2",
         data: [confirm: "Are you sure you want to permanently delete this registration? \"#{@registration.issuer} - #{@registration.client_id}\""] do %>
-        <i class="lar la-trash-alt"></i> Delete
+        <i class="far fa-trash-alt"></i> Delete
     <% end %>
   </div>
 
@@ -58,14 +58,14 @@
                 <%= deployment.deployment_id %>
                 <%= link to: Routes.registration_deployment_path(@conn, :edit, @registration.id, deployment.id),
                     class: "btn btn-xs btn-primary ml-2 float-right" do %>
-                    <i class="lar la-trash-alt"></i> Edit
+                    <i class="far fa-trash-alt"></i> Edit
                 <% end %>
 
                 <%= link to: Routes.registration_deployment_path(@conn, :delete, @registration.id, deployment.id),
                     method: :delete,
                     class: "btn btn-xs btn-danger ml-2 float-right",
                     data: [confirm: "Are you sure you want to delete this deployment? \"#{deployment.deployment_id}\""] do %>
-                    <i class="lar la-trash-alt"></i> Delete
+                    <i class="far fa-trash-alt"></i> Delete
                 <% end %>
                 </li>
             </ul>

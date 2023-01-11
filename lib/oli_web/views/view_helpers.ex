@@ -32,7 +32,7 @@ defmodule OliWeb.ViewHelpers do
   """
   def external_link(text, opts \\ []) do
     link Keyword.merge([target: "_blank"], opts) do
-      [text, content_tag("i", "", class: "las la-external-link-alt ml-1")]
+      [text, content_tag("i", "", class: "fas fa-external-link-alt ml-1")]
     end
   end
 

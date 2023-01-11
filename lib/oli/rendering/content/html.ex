@@ -653,7 +653,7 @@ defmodule Oli.Rendering.Content.Html do
             ~s|<div class="title flex-grow-1">|,
             escape_xml!(title),
             "</div>",
-            ~s|<i class="las la-external-link-square-alt la-2x"></i>|,
+            ~s|<i class="fas fa-external-link-square-alt la-2x"></i>|,
             "</div>\n"
           ]
         end,
