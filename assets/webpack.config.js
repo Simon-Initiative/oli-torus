@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { ESBuildMinifyPlugin } = require('esbuild-loader');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const LicensePlugin = require('webpack-license-plugin');
 
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
@@ -294,5 +295,17 @@ module.exports = (env, options) => ({
       ],
     }),
     new MonacoWebpackPlugin(),
+    new LicensePlugin({
+      outputFilename: '../licenses.json',
+      licenseOverrides: {
+        'janus-script@1.9.2': 'MIT',
+        'phoenix_html@3.2.0': 'MIT',
+        'typed-function@2.0.0': 'MIT',
+      },
+      unacceptableLicenseTest: (licenseIdentifier) => {
+        // unacceptable licenses
+        return ['GPL', 'AGPL', 'LGPL', 'NGPL'].includes(licenseIdentifier);
+      },
+    }),
   ].filter((plugin) => plugin !== undefined),
 });
