@@ -9,9 +9,7 @@ defmodule OliWeb.Accounts.Modals.GrantAdminModal do
         <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Grant Admin</h5>
-              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <p class="mb-4">Are you sure you want to grant administrator privileges to <b><%= @user.email %></b>?</p>

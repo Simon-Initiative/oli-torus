@@ -208,7 +208,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                     data-dismiss="alert"
                     aria-label="Close"
                   >
-                    <span aria-hidden="true">&times;</span>
+                    <i className="fa-solid fa-xmark fa-xl"></i>
                   </button>
                 </div>
               </div>

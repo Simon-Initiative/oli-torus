@@ -72,7 +72,9 @@ defmodule OliWeb.Products.Details.ImageUpload do
                           </div>
                         </div>
                         <div class="col-span-4 align-self-center h-100">
-                          <button class="btn btn-secondary btn-sm" phx-click="cancel_upload" phx-value-ref={entry.ref} aria-label="cancel">&times;</button>
+                          <button class="btn btn-secondary btn-sm" phx-click="cancel_upload" phx-value-ref={entry.ref} aria-label="cancel">
+                            <i class="fa-solid fa-xmark fa-lg"></i>
+                          </button>
                         </div>
                       </div>
                     {/if}

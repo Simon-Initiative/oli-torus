@@ -16,7 +16,7 @@ defmodule OliWeb.ObjectivesLive.FormModal do
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">{title(@action)}</h5>
-              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <p>At the end of the course, students should be able to...</p>

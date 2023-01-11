@@ -22,7 +22,7 @@ defmodule OliWeb.CollaborationLive.PostModal do
           <div class="modal-content">
             <div class="modal-header pb-0">
               <h4 class="modal-title">{@title}</h4>
-              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <div class="col-span-12 mt-2">

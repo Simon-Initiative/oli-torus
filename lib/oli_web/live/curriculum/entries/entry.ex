@@ -36,14 +36,14 @@ defmodule OliWeb.Curriculum.EntryLive do
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
 
             <%= link(
-                class: "entry-title ml-2",
+                class: "entry-title mx-3",
                 to: Routes.resource_path(
                   OliWeb.Endpoint,
                   :edit,
                   @project.slug,
                   @child.slug
                 )) do %>
-                <i class="fas fa-edit"></i> Edit
+                Edit Page
             <% end %>
           <% end %>
           <%= if @editor do %>
@@ -76,16 +76,16 @@ defmodule OliWeb.Curriculum.EntryLive do
   def icon(%{child: child} = assigns) do
     if is_container?(child) do
       ~H"""
-      <i class="fas fa-archive font-bold fa-lg mx-2"></i>
+      <i class="fa fa-archive fa-lg mx-2 text-gray-700"></i>
       """
     else
       if child.graded do
         ~H"""
-        <i class="far fa-list-alt fa-lg mx-2"></i>
+        <i class="fa-solid fa-file-pen fa-lg mx-2 text-gray-700"></i>
         """
       else
         ~H"""
-        <i class="far fa-file-alt fa-lg mx-2"></i>
+        <i class="fa-solid fa-file-lines fa-lg mx-2 text-gray-700"></i>
         """
       end
     end

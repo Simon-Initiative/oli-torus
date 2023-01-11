@@ -11,7 +11,7 @@
 @layer components {
   /** Bootstrap Shims **/
   .btn {
-    @apply px-3 py-1 rounded-md cursor-pointer;
+    @apply px-3 py-2 rounded-sm cursor-pointer;
   }
 
   .btn-xs {
@@ -21,7 +21,7 @@
     @apply px-2 py-1 text-sm;
   }
   .btn-md {
-    @apply px-3 py-1;
+    @apply px-3 py-2;
   }
   .btn-lg {
     @apply px-4 py-2 text-lg;
@@ -58,19 +58,19 @@
     @apply text-white bg-gray-700 hover:bg-gray-900;
   }
   .btn-outline-primary {
-    @apply text-blue-600 border border-solid border-blue-600 hover:bg-blue-500 hover:text-white;
+    @apply text-blue-600 border border-solid border-blue-600 hover:bg-blue-600 hover:text-white;
   }
   .btn-outline-secondary {
-    @apply text-gray-600 border border-solid border-gray-600 hover:bg-gray-500 hover:text-white;
+    @apply text-gray-600 border border-solid border-gray-600 hover:bg-gray-600 hover:text-white;
   }
   .btn-outline-success {
-    @apply text-green-600  border border-solid border-green-600 hover:bg-green-500 hover:text-white;
+    @apply text-green-600  border border-solid border-green-600 hover:bg-green-600 hover:text-white;
   }
   .btn-outline-danger {
-    @apply text-red-600 border border-solid border-red-600 hover:bg-red-500 hover:text-white;
+    @apply text-red-600 border border-solid border-red-600 hover:bg-red-600 hover:text-white;
   }
   .btn-outline-warning {
-    @apply text-yellow-600 border border-solid border-yellow-600 hover:bg-yellow-500 hover:text-white;
+    @apply text-yellow-600 border border-solid border-yellow-600 hover:bg-yellow-600 hover:text-white;
   }
   .btn-outline-info {
     @apply text-blue-400 border border-solid border-blue-400 hover:bg-blue-400 hover:text-white;
@@ -91,7 +91,7 @@
   }
 
   .btn[disabled] {
-    @apply text-gray-400 hover:no-underline cursor-default;
+    @apply text-gray-400 no-underline hover:no-underline cursor-default;
   }
 
   .btn-primary[disabled],
@@ -250,8 +250,14 @@
     @apply rounded-none border-r-0 border-gray-300 last:border last:rounded-tr-md last:rounded-br-md whitespace-nowrap;
   }
 
+  .text-success {
+    @apply text-green-500;
+  }
   .text-danger {
-    @apply text-red-500 hover:text-red-600;
+    @apply text-red-500;
+  }
+  .text-warning {
+    @apply text-yellow-500;
   }
 
   .list-style-none {
@@ -323,10 +329,10 @@
   }
 
   .badge-xs {
-    @apply text-xs;
+    @apply py-0.5 px-1 text-xs;
   }
   .badge-sm {
-    @apply text-sm;
+    @apply py-1 px-2 text-sm;
   }
   .badge-lg {
     @apply text-lg;
@@ -394,6 +400,10 @@
 
   .modal-footer {
     @apply flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md;
+  }
+
+  .modal-dialog .modal-header .btn-close {
+    @apply box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline m-0;
   }
 
   .justify-content-start {
