@@ -9,6 +9,7 @@ defmodule OliWeb.SessionController do
 
   def signout(conn, %{"type" => type}) do
     conn
+    |> delete_cache_entry(type)
     |> delete_pow_user(String.to_atom(type))
     |> delete_session_data(type)
     |> redirect(to: Routes.static_page_path(conn, :index))
@@ -22,4 +23,16 @@ defmodule OliWeb.SessionController do
 
   defp session_data_to_delete(type),
     do: [String.to_atom("current_#{type}_id") | @shared_session_data_to_delete]
+
+  defp delete_cache_entry(conn, type) do
+    id =
+      conn.assigns
+      |> Map.get(String.to_existing_atom("current_#{type}"))
+      |> Map.get(:id)
+
+    Cachex.del(:cache_account, "#{type}_#{id}")
+    Cachex.del(:cache_account, "other")
+
+    conn
+  end
 end
