@@ -1,4 +1,4 @@
-defmodule OliWeb.CollaborationLive.PostModal do
+defmodule OliWeb.CollaborationLive.Posts.Modal do
   use Surface.Component
 
   alias Surface.Components.Form
@@ -23,25 +23,24 @@ defmodule OliWeb.CollaborationLive.PostModal do
               <h4 class="modal-title">{@title}</h4>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
-            <div class="modal-body">
-              <div class="col-12 mt-2">
-                <Form for={@changeset} submit={@on_submit} opts={autocomplete: "off"}>
-                  <HiddenInput field={:user_id} />
-                  <HiddenInput field={:section_id} />
-                  <HiddenInput field={:resource_id} />
 
-                  <HiddenInput field={:parent_post_id} />
-                  <HiddenInput field={:thread_root_id} />
+            <div class="modal-body col-12 mt-2">
+              <Form for={@changeset} submit={@on_submit} opts={autocomplete: "off"}>
+                <HiddenInput field={:user_id} />
+                <HiddenInput field={:section_id} />
+                <HiddenInput field={:resource_id} />
 
-                  <Inputs for={:content}>
-                    <Field name={:message} class="form-group">
-                      <TextArea class="form-control" opts={placeholder: "Write message..."}/>
-                    </Field>
-                  </Inputs>
+                <HiddenInput field={:parent_post_id} />
+                <HiddenInput field={:thread_root_id} />
 
-                  <div class="text-right"><button type="submit" class="btn btn-sm btn-primary">Save</button></div>
-                </Form>
-              </div>
+                <Inputs for={:content}>
+                  <Field name={:message} class="form-group">
+                    <TextArea class="form-control" opts={placeholder: "Write message..."}/>
+                  </Field>
+                </Inputs>
+
+                <button type="submit" class="btn btn-sm btn-primary float-right">Save</button>
+              </Form>
             </div>
           </div>
         </div>

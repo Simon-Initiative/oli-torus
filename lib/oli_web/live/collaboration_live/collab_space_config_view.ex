@@ -8,6 +8,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.CollaborationLive.CollabSpaceView
+  alias Phoenix.PubSub
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Field, HiddenInput, Inputs, Label, NumberInput}
 
@@ -28,10 +30,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     is_delivery = Map.get(session, "is_delivery")
     page_resource = Resources.get_resource_from_slug(page_slug)
 
-    {page_revision, changeset, parent_entity} =
+    {page_revision, changeset, parent_entity, topic} =
       if is_delivery do
         section_slug = Map.get(session, "section_slug")
         section = Sections.get_section_by_slug(section_slug)
+
+        topic = CollabSpaceView.channels_topic(section_slug, page_resource.id)
+        PubSub.subscribe(Oli.PubSub, topic)
 
         delivery_setting =
           case Delivery.get_delivery_setting_by(%{
@@ -47,7 +52,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           Delivery.change_delivery_setting(delivery_setting, %{
             collab_space_config: from_struct(collab_space_config)
           }),
-          section
+          section,
+          topic
         }
       else
         project_slug = Map.get(session, "project_slug")
@@ -58,7 +64,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           Resources.change_revision(page_revision, %{
             collab_space_config: from_struct(collab_space_config)
           }),
-          Course.get_project_by_slug(project_slug)
+          Course.get_project_by_slug(project_slug),
+          ""
         }
       end
 
@@ -72,7 +79,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         changeset: changeset,
         page_revision: page_revision,
         page_resource: page_resource,
-        parent_entity: parent_entity
+        parent_entity: parent_entity,
+        topic: topic
       )}
   end
 
@@ -80,25 +88,23 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     ~F"""
       <div class="card">
         <div class="card-body d-flex justify-content-between">
-          <div class="d-flex">
-            <div class="card-title h5">Collaborative Space</div>
-            <span class="badge badge-info ml-2" style="height: fit-content">{humanize(@collab_space_status)}</span>
+          <div class="d-flex flex-column">
+            <h3 class="card-title">Collaborative Space Config</h3>
+            <h6 class="d-flex align-items-center">Current status <span class="badge badge-info ml-2">{humanize(@collab_space_status)}</span></h6>
           </div>
 
-          {#case @collab_space_status}
-            {#match :disabled}
-              <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
-            {#match :enabled}
-              <div>
+          <div>
+            {#case @collab_space_status}
+              {#match :disabled}
+                <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
+              {#match :enabled}
                 <button class="btn btn-outline-primary" :on-click="archive">Archive</button>
                 <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
-              </div>
-            {#match _}
-              <div>
+              {#match _}
                 <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
                 <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
-              </div>
-          {/case}
+            {/case}
+          </div>
         </div>
         {#if @collab_space_status == :enabled}
           <div class="card-footer bg-transparent d-flex justify-content-center">
@@ -197,6 +203,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
         collab_space_config = delivery_setting.collab_space_config
 
+        PubSub.broadcast(
+          Oli.PubSub,
+          socket.assigns.topic,
+          {:updated_collab_space_config, collab_space_config}
+        )
+
         {:noreply,
           assign(socket,
             changeset: Delivery.change_delivery_setting(delivery_setting),
@@ -255,4 +267,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     |> Atom.to_string()
     |> String.capitalize()
   end
+
+  def handle_info(_, socket), do: {:noreply, socket}
 end
