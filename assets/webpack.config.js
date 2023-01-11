@@ -55,7 +55,7 @@ const populateEntries = () => {
     };
   });
 
-  const foundThemes = [{ styles: './styles/index.scss' }, { adaptive: './styles/adaptive.scss' }];
+  const foundThemes = [{ styles: './styles/index.scss' }];
 
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.

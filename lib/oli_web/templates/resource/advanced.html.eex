@@ -1,8 +1,5 @@
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/authoring.js") %>"></script>
 
-<!-- Bootstrap CSS for Adaptive Authoring -->
-<link id="bs-default" rel="stylesheet" href="/css/adaptive.css" />
-
 <!-- ACTIVITIES -->
 <%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
   <%= if slug == "oli_adaptive" do %>

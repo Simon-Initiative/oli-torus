@@ -83,7 +83,11 @@
   }
 
   .btn-link {
-    @apply text-blue-500  hover:text-blue-600 hover:underline;
+    @apply text-blue-500 underline hover:text-blue-600;
+  }
+
+  .btn-link.text-danger {
+    @apply hover:text-red-600;
   }
 
   .btn[disabled] {
@@ -214,7 +218,7 @@
   }
 
   .form-check-input {
-    @apply appearance-none rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer;
+    @apply appearance-none rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain mr-2 cursor-pointer;
   }
   .form-check-label {
     @apply inline-block text-gray-800;
@@ -425,5 +429,26 @@
   }
   .align-items-stretch {
     @apply items-stretch;
+  }
+
+  .loader.spinner-border.text-primary {
+    @apply animate-spin inline-block w-8 h-8 border-4 rounded-full text-blue-600;
+  }
+
+  .sr-only {
+    @apply visually-hidden;
+  }
+
+  .table {
+    @apply min-w-full border;
+  }
+  .table thead th {
+    @apply border-b border-r p-2 bg-gray-100;
+  }
+  .table tbody tr {
+    @apply border-b;
+  }
+  .table tbody td {
+    @apply border-r p-2;
   }
 }

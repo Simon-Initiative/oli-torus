@@ -147,8 +147,15 @@ $font-family-sans-serif: var(--font-sans);
       }
     }
     .btn-toolbar {
+      display: flex;
+      flex-direction: row;
       flex-wrap: initial;
       transform: scale(0.7);
+
+      .btn-group {
+        display: flex;
+        flex-direction: row;
+      }
     }
   }
   .aa-panel-side-toggle {
