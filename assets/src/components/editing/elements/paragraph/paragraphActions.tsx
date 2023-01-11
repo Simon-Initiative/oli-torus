@@ -1,3 +1,4 @@
+import React from 'react';
 import { toggleCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { toggleBlockquote } from 'components/editing/elements/blockquote/blockquoteActions';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
@@ -7,7 +8,7 @@ import { toggleUnorderedList } from 'components/editing/elements/list/listAction
 import { isActive } from 'components/editing/slateUtils';
 
 export const toggleParagraph = createButtonCommandDesc({
-  icon: 'subject',
+  icon: <i className="fa-solid fa-paragraph"></i>,
   description: 'Paragraph',
   active: (editor) =>
     isActive(editor, 'p') &&

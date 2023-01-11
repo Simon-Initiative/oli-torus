@@ -542,13 +542,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               </a>
             </span>
             {showDetails ? (
-              <span role="button" onClick={detailsOnClick} className="material-icons">
-                keyboard_arrow_down
-              </span>
+              <i className="fa-solid fa-angle-down"></i>
             ) : (
-              <span role="button" onClick={detailsOnClick} className="material-icons">
-                keyboard_arrow_up
-              </span>
+              <i className="fa-solid fa-angle-up"></i>
             )}
           </div>
           {showDetails && (

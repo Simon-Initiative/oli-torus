@@ -2,7 +2,7 @@
 }
 
 .draggableColumnIndicator {
-  color: rgba($color: var(--color-gray-300), $alpha: 0.6);
+  color: var(--color-gray-700);
   cursor: grab !important;
   width: 24px;
   margin-right: 0.5rem;

@@ -18,5 +18,5 @@
 }
 </style>
 <button class="add-button">
-  <i class="material-icons">add</i>
+  <i class="fa-solid fa-plus"></i>
 </button>

@@ -16,9 +16,7 @@ export const RemoveButton: React.FC<Props> = (props) => (
     action={props.onClick}
     className="text-body-color hover:text-red-500"
   >
-    <i style={props.style} className="material-icons-outlined align-middle">
-      close
-    </i>
+    <i className="fa-solid fa-xmark fa-xl"></i>
   </AuthoringButton>
 );
 

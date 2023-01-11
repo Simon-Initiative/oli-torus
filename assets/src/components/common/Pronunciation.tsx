@@ -15,9 +15,11 @@ export const Pronunciation: React.FC<{
 
   return (
     <span className="pronunciation">
-      <span className="material-icons-outlined play-button" onClick={playAudio}>
-        {isPlaying ? 'stop_circle' : 'play_circle'}
-      </span>
+      {isPlaying ? (
+        <i className="fa-solid fa-circle-stop"></i>
+      ) : (
+        <i className="fa-solid fa-circle-play"></i>
+      )}
       <span className="pronunciation-player" onClick={playAudio}>
         {next()} {audioPlayer}
       </span>

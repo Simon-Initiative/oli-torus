@@ -46,7 +46,7 @@ export const PopupEditor = (props: Props) => {
           <Toolbar.Group>
             <CommandButton
               description={createButtonCommandDesc({
-                icon: 'edit',
+                icon: <i className="fa-solid fa-window-restore"></i>,
                 description: 'Edit Popup Content',
                 execute: openEditor,
               })}

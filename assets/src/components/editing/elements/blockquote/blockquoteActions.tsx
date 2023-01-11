@@ -1,10 +1,11 @@
+import React from 'react';
 import { Transforms, Editor, Element } from 'slate';
 import { isTopLevel, isActive } from 'components/editing/slateUtils';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Model } from 'data/content/model/elements/factories';
 
 export const toggleBlockquote = createButtonCommandDesc({
-  icon: 'format_quote',
+  icon: <i className="fa-solid fa-quote-right"></i>,
   description: 'Quote',
   execute: (_context, editor) => {
     Editor.withoutNormalizing(editor, () => {

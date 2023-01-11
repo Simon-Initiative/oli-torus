@@ -19,14 +19,8 @@ interface DragIndicatorProps
   }> {}
 const DragIndicator: React.FC<DragIndicatorProps> = ({ isDragDisabled }) => {
   return (
-    <div
-      className={classNames(
-        styles.draggableColumnIndicator,
-        isDragDisabled && styles.disabled,
-        'material-icons',
-      )}
-    >
-      drag_indicator
+    <div className={classNames(styles.draggableColumnIndicator, isDragDisabled && styles.disabled)}>
+      <i className="fa-solid fa-grip-vertical"></i>
     </div>
   );
 };

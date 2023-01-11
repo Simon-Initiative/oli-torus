@@ -45,12 +45,10 @@ export const NonActivities: React.FC<Props> = ({
 
       <div className="resource-choices non-activities">
         <ResourceChoice
-          icon="edit"
-          label="Mixed"
+          icon="paragraph"
+          label="Rich Text"
           onHoverStart={() =>
-            onSetTip(
-              'Author mixed, HTML-like content such as paragraphs, images, tables, YouTube, etc',
-            )
+            onSetTip('Rich content such as paragraphs, images, tables, YouTube, etc')
           }
           onHoverEnd={() => onResetTip()}
           key={'static_html_content'}
@@ -71,7 +69,7 @@ export const NonActivities: React.FC<Props> = ({
         <ResourceChoice
           icon="random"
           label="Bank"
-          onHoverStart={() => onSetTip('Randomnly select questions from the activity bank')}
+          onHoverStart={() => onSetTip('Randomly select questions from the activity bank')}
           onHoverEnd={() => onResetTip()}
           key={'selection'}
           disabled={false}
@@ -166,7 +164,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         }
         onDone={(alternativesId: string) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(createAlternatives(alternativesId), index);
+          onAddItem(createAlternatives(Number(alternativesId)), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,

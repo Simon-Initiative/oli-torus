@@ -39,7 +39,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: 'menu_book',
+      icon: <i className="fa-solid fa-book-open"></i>,
       description: props.editing ? 'Preview' : 'Edit',
       execute: (_context, _editor, _params) => props.toggleEdit(),
     })}

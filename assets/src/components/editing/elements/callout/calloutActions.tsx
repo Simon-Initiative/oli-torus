@@ -1,10 +1,11 @@
+import React from 'react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { insideSemanticElement } from '../utils';
 
 export const insertCallout = createButtonCommandDesc({
-  icon: 'web_asset',
+  icon: <i className="fa-solid fa-bullhorn"></i>,
   description: 'Callout',
   execute: (_context, editor) => {
     const at = editor.selection;
@@ -16,7 +17,7 @@ export const insertCallout = createButtonCommandDesc({
 });
 
 export const insertInlineCallout = createButtonCommandDesc({
-  icon: 'web_asset',
+  icon: <i className="fa-solid fa-bullhorn"></i>,
   description: 'Callout',
   execute: (_context, editor) => {
     const at = editor.selection;

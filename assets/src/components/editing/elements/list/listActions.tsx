@@ -1,3 +1,4 @@
+import React from 'react';
 import { handleOutdent, handleIndent } from 'components/editing/editor/handlers/lists';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
@@ -56,7 +57,7 @@ const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
 };
 
 export const toggleList = createButtonCommandDesc({
-  icon: 'format_list_bulleted',
+  icon: <i className="fa-solid fa-list-ul"></i>,
   description: 'List',
   active: (editor) => isActive(editor, ['ul', 'ol']),
   execute: (_ctx, editor) => switchType(editor, 'ul'),
@@ -64,7 +65,7 @@ export const toggleList = createButtonCommandDesc({
 
 export const toggleUnorderedList: CommandDescription = {
   type: 'CommandDesc',
-  icon: () => 'format_list_bulleted',
+  icon: () => <i className="fa-solid fa-list-ul"></i>,
   description: () => 'Unordered List',
   command: listCommandMaker('ul'),
   active: (editor) => isActive(editor, ['ul']),
@@ -72,7 +73,7 @@ export const toggleUnorderedList: CommandDescription = {
 
 export const toggleOrderedList: CommandDescription = {
   type: 'CommandDesc',
-  icon: () => 'format_list_numbered',
+  icon: () => <i className="fa-solid fa-list-ol"></i>,
   description: () => 'Ordered List',
   command: listCommandMaker('ol'),
   active: (editor) => isActive(editor, ['ol']),
@@ -95,7 +96,7 @@ const listStyleLabels: Record<OrderedListStyle | UnorderedListStyle, string> = {
 
 export const unorderedListStyleCommands = UnorderdListStyles.map((styleType: string) =>
   createButtonCommandDesc({
-    icon: 'list_alt',
+    icon: <i className="fa-regular fa-rectangle-list"></i>,
     description: listStyleLabels[styleType],
     active: (editor) => isPropActive(editor, 'ul', { style: styleType }),
     execute: (_ctx, editor) => {
@@ -115,7 +116,7 @@ const notLatinOption = (styleType: string) => styleType.indexOf('latin') === -1;
 export const orderedListStyleCommands = OrderedListStyles.filter(notLatinOption).map(
   (styleType: string) =>
     createButtonCommandDesc({
-      icon: 'list_alt',
+      icon: <i className="fa-regular fa-rectangle-list"></i>,
       description: listStyleLabels[styleType],
       active: (editor) => isPropActive(editor, 'ol', { style: styleType }),
       execute: (_ctx, editor) => {
@@ -132,7 +133,7 @@ export const orderedListStyleCommands = OrderedListStyles.filter(notLatinOption)
 export const listSettingButtonGroups = [
   [
     createButtonCommandDesc({
-      icon: 'format_list_bulleted',
+      icon: <i className="fa-solid fa-list-ul"></i>,
       description: 'Unordered List',
       active: (editor) => isActive(editor, ['ul']),
       execute: (_ctx, editor) => {
@@ -145,7 +146,7 @@ export const listSettingButtonGroups = [
       },
     }),
     createButtonCommandDesc({
-      icon: 'format_list_numbered',
+      icon: <i className="fa-solid fa-list-ol"></i>,
       description: 'Ordered List',
       active: (editor) => isActive(editor, ['ol']),
       execute: (_ctx, editor) => {
@@ -160,13 +161,13 @@ export const listSettingButtonGroups = [
   ],
   [
     createButtonCommandDesc({
-      icon: 'format_indent_decrease',
+      icon: <i className="fa-solid fa-outdent"></i>,
       description: 'Outdent',
       active: (_e) => false,
       execute: (_ctx, editor) => handleOutdent(editor),
     }),
     createButtonCommandDesc({
-      icon: 'format_indent_increase',
+      icon: <i className="fa-solid fa-indent"></i>,
       description: 'Indent',
       active: (_e) => false,
       execute: (_ctx, editor) => handleIndent(editor),

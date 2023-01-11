@@ -8,7 +8,7 @@ import { Modal } from 'components/modal/Modal';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 
 export const insertYoutube = createButtonCommandDesc({
-  icon: 'smart_display',
+  icon: <i className="fa-brands fa-youtube"></i>,
   description: 'YouTube',
   execute: (_context, editor, _params) => {
     const at = editor.selection;

@@ -46,7 +46,7 @@ export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange,
         size="sm"
         aria-label="Select Image"
       >
-        <span className="material-icons-outlined">image</span>
+        <i className="fa-solid fa-image"></i>
       </Button>
 
       {pickerOpen && (

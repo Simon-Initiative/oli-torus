@@ -169,7 +169,8 @@
   }
 
   :global(.resource-choice-icon) {
-    font-size: 24px;
+    font-size: 1.3em;
+    color: var(--color-gray-600);
   }
 
   :global(.resource-choices-divider) {

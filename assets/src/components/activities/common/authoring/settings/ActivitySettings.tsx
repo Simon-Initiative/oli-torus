@@ -51,17 +51,17 @@ interface MenuProps {
 }
 const Menu: React.FC<MenuProps> = ({ children }) => {
   return (
-    <li className="inline-block float-right mt-[-5px]">
-      <div className="dropdown relative p-3">
+    <li className="inline-block float-right">
+      <div className="dropdown relative">
         <button
-          className="dropdown-toggle"
+          className="dropdown-toggle p-3 hover:text-blue-500"
           type="button"
           id="dropdownMenuButton1"
           data-bs-toggle="dropdown"
           data-bs-auto-close="outside"
           aria-expanded="false"
         >
-          <i className="material-icons-outlined">more_vert</i>
+          <i className="fa-solid fa-ellipsis-vertical"></i>
         </button>
         <ul
           className="

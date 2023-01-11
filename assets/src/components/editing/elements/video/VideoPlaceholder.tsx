@@ -3,7 +3,6 @@ import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { Placeholder } from 'components/editing/elements/common/Placeholder';
-import { selectImage } from 'components/editing/elements/image/imageActions';
 import { Maybe } from 'tsmonad';
 import { selectVideo } from './videoActions';
 
@@ -22,7 +21,7 @@ export function VideoPlaceholder(props: Props) {
     <Placeholder
       heading={
         <h3 className="d-flex align-items-center">
-          <span className="material-icons mr-2">play_circle_filled</span>Video
+          <i className="fa-solid fa-video mr-2"></i>Video
         </h3>
       }
       attributes={props.attributes}

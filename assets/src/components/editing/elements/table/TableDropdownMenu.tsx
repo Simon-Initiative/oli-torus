@@ -256,13 +256,13 @@ const AlignmentOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
       <h6 className="dropdown-header">Alignment</h6>
       <div className="ml-3 btn-group btn-group-toggle">
         <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('left')}>
-          <i className="material-icons-outlined">format_align_left</i>
+          <i className="fa-solid fa-align-left"></i>
         </button>
         <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('center')}>
-          <i className="material-icons-outlined">format_align_center</i>
+          <i className="fa-solid fa-align-center"></i>
         </button>
         <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('right')}>
-          <i className="material-icons-outlined">format_align_right</i>
+          <i className="fa-solid fa-align-right"></i>
         </button>
       </div>
     </>

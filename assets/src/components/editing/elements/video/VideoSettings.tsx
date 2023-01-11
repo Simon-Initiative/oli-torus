@@ -42,7 +42,7 @@ const SettingsButton = (props: SettingsButtonProps) => {
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
-        icon: 'play_circle_filled',
+        icon: <i className="fa-solid fa-video"></i>,
         description: 'Settings',
         execute: (_context, _editor, _params) =>
           dispatch(

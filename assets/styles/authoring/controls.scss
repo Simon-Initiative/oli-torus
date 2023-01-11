@@ -10,8 +10,8 @@
   height: 100%;
   background-image: -webkit-repeating-radial-gradient(
     center center,
-    rgba(var(--body-color), 0.2),
-    rgba(var(--body-color), 0.3),
+    var(--color-gray-500),
+    var(--color-gray-500),
     transparent 1px,
     transparent 100%
   );

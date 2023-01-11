@@ -99,16 +99,16 @@ const Component: React.FC<ComponentProps> = (props) => {
 
 const graphicForResultClass = (resultClass: string) => {
   if (resultClass === 'correct') {
-    return <span className="icon_30H-hYww material-icons mr-2 graphic">check_circle</span>;
+    return <i className="fa-solid fa-circle-check"></i>;
   }
   if (resultClass === 'incorrect') {
-    return <span className="icon_30H-hYww material-icons mr-2 graphic">cancel</span>;
+    return <i className="fa-solid fa-circle-xmark"></i>;
   }
   if (resultClass === 'partially-correct') {
-    return <span className="icon_30H-hYww material-icons mr-2 graphic">check</span>;
+    return <i className="fa-regular fa-circle-check"></i>;
   }
 
-  return <span className="icon_30H-hYww material-icons mr-2 graphic">error</span>;
+  return <i className="fa-solid fa-circle-exclamation"></i>;
 };
 
 const resultClass = (score: number | null, outOf: number | null, error: string | undefined) => {

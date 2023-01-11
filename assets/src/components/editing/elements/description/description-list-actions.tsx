@@ -1,15 +1,12 @@
+import React from 'react';
 import { Editor, Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
-import {
-  DescriptionListDefinition,
-  DescriptionListTerm,
-} from '../../../../data/content/model/elements/types';
 import { SlateEditor } from '../../../../data/content/model/slate';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const insertDescriptionListCommand = createButtonCommandDesc({
-  icon: 'view_list',
+  icon: <i className="fa-solid fa-list"></i>,
   description: 'Description List',
 
   execute: (context, editor: Editor) => {

@@ -203,7 +203,7 @@ defmodule OliWeb.DeliveryView do
     ~H"""
     <div class="user-icon">
       <div class="user-img rounded-full">
-        <span class="material-icons text-secondary">account_circle</span>
+        <i class="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
       </div>
     </div>
     """

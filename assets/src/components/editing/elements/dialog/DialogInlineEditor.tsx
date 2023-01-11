@@ -149,11 +149,8 @@ export const DialogInlineEditor: React.FC<{
                 <img onClick={onBrowseImage(index)} src={speaker.image} alt={speaker.name} />
               ) : (
                 speaker.image || (
-                  <span
-                    onClick={onBrowseImage(index)}
-                    className="material-icons portrait-placeholder"
-                  >
-                    portrait
+                  <span onClick={onBrowseImage(index)} className="portrait-placeholder">
+                    <i className="fa-solid fa-image-portrait"></i>
                   </span>
                 )
               )}
@@ -165,17 +162,17 @@ export const DialogInlineEditor: React.FC<{
               />
 
               <button className="btn btn-sm browse-btn" onClick={onBrowseImage(index)}>
-                <span className="material-icons">folder</span>
+                <i className="fa-solid fa-folder"></i>
               </button>
 
               <button onClick={onDeleteSpeaker(index)} className="btn btn-sm delete-btn">
-                <span className="material-icons">delete</span>
+                <i className="fa-solid fa-trash"></i>
               </button>
             </div>
           ))}
           <div className="speaker-editor new-speaker">
             <button onClick={onAddSpeaker} className="btn btn-primary">
-              <span className="material-icons">add</span>
+              <i className="fa-solid fa-plus"></i>
             </button>
           </div>
         </div>
@@ -190,7 +187,7 @@ export const DialogInlineEditor: React.FC<{
               speaker={dialog.speakers.find((s) => s.id === line.speaker)}
             />
             <button onClick={onCycleSpeaker(index)} className="btn btn-primary cycle-speaker-btn">
-              <span className="material-icons">cached</span>
+              <i className="fa-solid fa-rotate"></i>
             </button>
             <div className="form-control dialog-input">
               <InlineEditor
@@ -201,11 +198,11 @@ export const DialogInlineEditor: React.FC<{
               />
             </div>
             <button
-              className="btn btn-outline-danger delete-btn"
+              className="btn hover:text-danger mb-3"
               type="button"
               onClick={onDeleteLine(index)}
             >
-              <span className="material-icons">delete</span>
+              <i className="fa-solid fa-xmark fa-lg"></i>
             </button>
           </div>
         ))}

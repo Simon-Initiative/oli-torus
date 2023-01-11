@@ -1,10 +1,11 @@
+import React from 'react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Element, Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { isActive } from '../../slateUtils';
 
 export const insertForeign = createButtonCommandDesc({
-  icon: 'language',
+  icon: <i className="fa-solid fa-language"></i>,
   description: 'Foreign',
   execute: (_context, editor) => {
     const at = editor.selection;

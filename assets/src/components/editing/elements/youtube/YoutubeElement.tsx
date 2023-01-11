@@ -19,7 +19,7 @@ import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton'
 const toLink = (src = '') => 'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
 
 export const ytCmdDesc = createButtonCommandDesc({
-  icon: 'smart_display',
+  icon: <i className="fa-brands fa-youtube"></i>,
   description: 'YouTube',
   execute: (_context, editor, src: string) => {
     const at = editor.selection;
@@ -103,14 +103,14 @@ const Settings = (props: SettingsProps) => {
       <Toolbar.Group>
         <CommandButton
           description={createButtonCommandDesc({
-            icon: 'open_in_new',
+            icon: <i className="fa-solid fa-arrow-up-right-from-square"></i>,
             description: 'Open Video',
             execute: () => window.open(toLink(props.model.src), '_blank'),
           })}
         />
         <CommandButton
           description={createButtonCommandDesc({
-            icon: 'content_copy',
+            icon: <i className="fa-regular fa-copy"></i>,
             description: 'Copy Video Link',
             execute: () => navigator.clipboard.writeText(toLink(props.model.src)),
           })}
@@ -130,7 +130,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: '',
+      icon: <i className="fa-brands fa-youtube"></i>,
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

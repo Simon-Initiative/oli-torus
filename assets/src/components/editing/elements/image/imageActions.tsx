@@ -98,14 +98,14 @@ const execute =
 
 export const insertImage = (onReqMedia: any) =>
   createButtonCommandDesc({
-    icon: 'image',
+    icon: <i className="fa-solid fa-image"></i>,
     description: 'Image',
     execute: execute(onReqMedia),
   });
 
 // Inline images force the media library modal to insert an image
 export const insertImageInline = createButtonCommandDesc({
-  icon: 'burst_mode',
+  icon: <i className="fa-solid fa-images"></i>,
   description: 'Image (Inline)',
   execute: (context, editor) =>
     selectImage(context.projectSlug).then((selection) =>

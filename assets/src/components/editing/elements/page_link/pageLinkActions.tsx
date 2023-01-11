@@ -40,7 +40,7 @@ export function selectPage(commandContext: CommandContext): Promise<{ idref: num
 }
 
 export const insertPageLink = createButtonCommandDesc({
-  icon: 'label',
+  icon: <i className="fa-solid fa-square-up-right"></i>,
   description: 'Page Link',
   execute: (context, editor) =>
     selectPage(context).then(({ idref }) => {

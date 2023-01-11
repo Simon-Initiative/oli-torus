@@ -71,13 +71,11 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
     <Card.Title>{title || '"Cognitive" hints'}</Card.Title>
     <Card.Content>
       {hints.map((hint, index) => (
-        <div key={hint.id} className="d-flex">
-          <div className="mr-3 mt-2" style={{ flexBasis: '18px' }}>
-            {index + 1}.
-          </div>
+        <div key={hint.id} className="d-flex mb-2">
+          <div className="py-2 mr-3 w-[20px]">{index + 1}.</div>
           <RichTextEditorConnected
             placeholder={placeholder || 'Explain how to solve the problem'}
-            className="mb-2 flex-grow-1"
+            className="flex-grow-1"
             value={hint.content}
             onEdit={(content) => updateOne(hint.id, content)}
           />
@@ -89,7 +87,7 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
       <AuthoringButtonConnected
         action={addOne}
         style={{ marginLeft: '22px' }}
-        className="btn btn-sm btn-link"
+        className="btn btn-link"
       >
         Add hint
       </AuthoringButtonConnected>

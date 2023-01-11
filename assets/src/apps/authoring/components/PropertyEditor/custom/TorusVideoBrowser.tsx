@@ -39,7 +39,7 @@ export const TorusVideoBrowser: React.FC<Props> = ({ id, label, value, onChange,
         size="sm"
         aria-label="Select Video File"
       >
-        <span className="material-icons-outlined">video_library</span>
+        <i className="fa-regular fa-file-video"></i>
       </Button>
 
       {pickerOpen && (

@@ -5,7 +5,7 @@ export const InitialPlayButton: React.FC<ControlButtonProps> = ({ actions, playe
   if (player?.hasStarted) return null;
   return (
     <button className="big-play-button" onClick={actions?.play}>
-      <span className="material-icons-outlined play-icon">play_circle_filled</span>
+      <i className="fa-solid fa-circle-play"></i>
     </button>
   );
 };
