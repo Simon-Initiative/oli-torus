@@ -4,7 +4,7 @@
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
   <% end %>
 
-  <div class="message d-flex justify-content-between alert alert-info enter-done">
+  <div class="message d-flex justify-content-between alert alert-info enter-done my-5">
     <div>
       <div>
         <strong>Preview Mode</strong>

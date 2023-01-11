@@ -1,7 +1,7 @@
 <nav class="navbar py-1">
   <div class="container mx-auto flex flex-row">
 
-    <a class="navbar-brand torus-logo mr-auto" href="<%= case assigns[:logo_link] do
+    <a class="navbar-brand torus-logo my-1 mr-auto" href="<%= case assigns[:logo_link] do
       nil ->
         logo_link_path(@conn)
       logo_link ->
@@ -20,16 +20,37 @@
       <% assigns[:hide_user] == true -> %>
 
       <% preview_mode(@conn) -> %>
-        <div class="nav-item dropdown form-inline my-2 my-lg-0">
-          <a class="user block nav-link dropdown-toggle" href="#" aria-haspopup="false" aria-expanded="false">
-            <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline my-1 mr-3">
-              Preview
-            </span>
+        <div class="dropdown relative">
+          <button
+            class="
+              dropdown-toggle
+              px-6
+              py-2.5
+              font-medium
+              text-sm
+              leading-tight
+              transition
+              duration-150
+              ease-in-out
+              flex
+              items-center
+              whitespace-nowrap
+            "
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <div class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4">
+              <div class="username">
+                Preview
+              </div>
+            </div>
             <div class="user-icon">
               <%= user_icon(%{}) %>
             </div>
-          </a>
+          </div>
         </div>
+
 
       <% user_signed_in?(@conn) -> %>
         <%= render "_user_account_dropdown.html", assigns %>
