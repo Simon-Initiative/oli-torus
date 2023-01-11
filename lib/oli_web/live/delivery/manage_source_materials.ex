@@ -4,26 +4,21 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
 
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Updates.Subscriber
-  alias Oli.Delivery.Updates.Worker
+  alias Oli.Delivery.Updates.{Subscriber, Worker}
   alias Oli.Publishing
-  alias Oli.Publishing.Publications.Publication
-  alias Oli.Publishing.Publications.PublicationDiff
+  alias Oli.Publishing.Publications.{Publication, PublicationDiff}
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Delivery.ManageSourceMaterials.{ApplyUpdateModal, ProjectInfo, ProjectCard}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
-  @title "Manage Source Materials"
-
   data base_project_details, :struct
   data current_publication, :map
-  data projects_remixed, :map
+  data remixed_projects, :map
   data section, :struct
   data updates, :map
   data updates_in_progress, :map
 
-  @spec set_breadcrumbs(atom | %{:slug => any, optional(any) => any}, any) :: [...]
   def set_breadcrumbs(section, type) do
     type
     |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
@@ -34,7 +29,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: @title,
+          full_title: "Manage Source Materials",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
@@ -57,13 +52,12 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
         current_publication =
           Sections.get_current_publication(section.id, base_project_details.id)
 
-        projects_remixed = Sections.get_projects_remixed(section.id, base_project_details.id)
+        remixed_projects = Sections.get_remixed_projects(section.id, base_project_details.id)
 
         Subscriber.subscribe_to_update_progress(section.id)
 
         {:ok,
          assign(socket,
-           title: @title,
            section: section,
            updates: updates,
            updates_in_progress: updates_in_progress,
@@ -71,7 +65,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
            breadcrumbs: set_breadcrumbs(section, user_type),
            base_project_details: base_project_details,
            current_publication: current_publication,
-           projects_remixed: projects_remixed
+           remixed_projects: remixed_projects
          )}
     end
   end
@@ -82,7 +76,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       <div class="pb-5">
 
         <ProjectCard
-          id={"product_info_#{@base_project_details.id}"}
+          id={"project_info_#{@base_project_details.id}"}
           title="Base Project Info"
           tooltip="Information about the base project curriculum"
         >
@@ -108,14 +102,14 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
           </ProjectCard>
         {/if}
 
-        {#if Enum.count(@projects_remixed) > 0}
+        {#if Enum.count(@remixed_projects) > 0}
           <ProjectCard
-            id="projects_remixed_1"
+            id="remixed_projects_1"
             title="Remixed Projects Info"
             tooltip="Information about the projects that have been remixed into this section"
           >
             <ul class="list-group">
-              {#for project <- @projects_remixed}
+              {#for project <- @remixed_projects}
                 <li class="list-group-item">
                   <ProjectInfo
                     project={project}
@@ -201,17 +195,6 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
      |> hide_modal(modal_assigns: nil)}
   end
 
-  @spec handle_info(
-          {:update_progress, any, any, any},
-          atom
-          | %{
-              :assigns => %{
-                :section => atom | %{:id => any, optional(any) => any},
-                optional(any) => any
-              },
-              optional(any) => any
-            }
-        ) :: {:noreply, any}
   def handle_info({:update_progress, section_id, publication_id, :complete}, socket) do
     %{section: section} = socket.assigns
 
@@ -247,5 +230,3 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
     end
   end
 end
-
-E

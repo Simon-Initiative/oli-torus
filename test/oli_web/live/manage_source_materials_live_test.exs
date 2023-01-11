@@ -203,17 +203,17 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       project: project
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
-      [projects_remixed | _] = Sections.get_projects_remixed(section.id, project.id)
+      [remixed_projects | _] = Sections.get_remixed_projects(section.id, project.id)
       {:ok, view, _html} = live(conn, live_view_source_materials(section.slug))
 
       assert has_element?(view, "h6", "Remixed Projects Info")
-      assert has_element?(view, "h5", "#{projects_remixed.title}")
-      assert has_element?(view, "p", "#{projects_remixed.description}")
+      assert has_element?(view, "h5", "#{remixed_projects.title}")
+      assert has_element?(view, "p", "#{remixed_projects.description}")
 
       assert has_element?(
                view,
                ".badge-info",
-               ManageSourceMaterials.version_number(projects_remixed.publication)
+               ManageSourceMaterials.version_number(remixed_projects.publication)
              )
     end
 

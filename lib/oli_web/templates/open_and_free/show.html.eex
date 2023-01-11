@@ -61,6 +61,11 @@
   </p>
   <p>
     <h5>Manage Source Materials</h5>
-    <%= live_render(@conn, OliWeb.Delivery.ManageSourceMaterials, session: %{"section_slug" => @section.slug}) %>
+    <%= live_render(@conn, OliWeb.Delivery.ManageSourceMaterials,
+      session: %{
+        "section_slug" => @section.slug,
+        "current_author" => @current_author
+      }
+    ) %>
   </p>
 </div>

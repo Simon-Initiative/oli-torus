@@ -905,14 +905,14 @@ defmodule Oli.Delivery.Sections do
 
   ## Examples
 
-      iex> get_projects_remixed(1, 1)
+      iex> get_remixed_projects(1, 1)
       [%{id: 2, description: "description of project 2", title: "Project 2", ...}]
 
-      iex> get_projects_remixed(1, 2)
+      iex> get_remixed_projects(1, 2)
       []
   """
 
-  def get_projects_remixed(section_id, current_project_id) do
+  def get_remixed_projects(section_id, current_project_id) do
     Repo.all(
       from(
         project in Project,
