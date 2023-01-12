@@ -4,9 +4,6 @@
  * Theme-specific variables and custom styles
  */
 
-// html.authoring,
-// html.preview,
-// html.delivery {
 $white: #fff;
 $black: #000;
 
@@ -242,8 +239,6 @@ $objectives-border-color: lighten($cyan, 30%);
     background: $gray-100;
   }
 }
-
-// }
 
 :root {
   --primary: #{$primary};

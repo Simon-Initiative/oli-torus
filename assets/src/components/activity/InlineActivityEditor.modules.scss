@@ -1,23 +1,20 @@
-:global(html.authoring) {
-  .inlineActivityEditor {
-    margin: 0px auto;
-    flex: 1;
+.inlineActivityEditor {
+  margin: 0px auto;
+  flex: 1;
 
-    :global .tab-pane .card {
-      margin-bottom: 10px;
-    }
-
-    :global(.rich-text-editor > .slate-editor) {
-      padding: 0.5rem;
-      border: 1px solid var(--color-gray-400);
-      border-radius: 0.25em;
-
-      &.disabled {
-        background: var(--color-gray-100);
-      }
-    }
+  :global .tab-pane .card {
+    margin-bottom: 10px;
   }
 
+  :global(.rich-text-editor > .slate-editor) {
+    padding: 0.5rem;
+    border: 1px solid var(--color-gray-400);
+    border-radius: 0.25em;
+
+    &.disabled {
+      background: var(--color-gray-100);
+    }
+  }
   .toolbar {
     display: flex;
     flex-direction: row;

@@ -1,11 +1,9 @@
-:global(html.authoring) {
-  .deleteButton {
-    &:not([disabled]) {
-      color: rgba(var(--body-color), 0.8);
+.deleteButton {
+  &:not([disabled]) {
+    color: rgba(var(--body-color), 0.8);
 
-      &:hover {
-        color: var(--color-red-500);
-      }
+    &:hover {
+      color: var(--color-red-500);
     }
   }
 }

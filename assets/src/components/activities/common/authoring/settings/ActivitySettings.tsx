@@ -56,7 +56,6 @@ const Menu: React.FC<MenuProps> = ({ children }) => {
         <button
           className="dropdown-toggle p-3 hover:text-blue-500"
           type="button"
-          id="dropdownMenuButton1"
           data-bs-toggle="dropdown"
           data-bs-auto-close="outside"
           aria-expanded="false"
