@@ -109,6 +109,7 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
         aria-expanded="false"
       >
         <span className="sr-only">Toggle Table Cell Options</span>
+        <i className="fa-solid fa-ellipsis-vertical"></i>
       </button>
       <div className="dropdown-menu">
         <button type="button" className="dropdown-item" onClick={onToggleHeader}>

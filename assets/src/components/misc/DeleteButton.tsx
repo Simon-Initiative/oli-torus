@@ -26,6 +26,6 @@ export const DeleteButton = ({
     aria-label="delete"
     onClick={onClick}
   >
-    <i className="fa-solid fa-trash"></i>
+    <i className="fa-solid fa-trash fa-lg"></i>
   </button>
 );

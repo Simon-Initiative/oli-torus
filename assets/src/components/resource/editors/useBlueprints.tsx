@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import guid from 'utils/guid';
 import { Editor, Node, Transforms } from 'slate';
@@ -6,7 +7,7 @@ import {
   Command,
   CommandContext,
 } from '../../editing/elements/commands/interfaces';
-import { AllModelTypes, ModelTypes } from '../../../data/content/model/elements/types';
+import { ModelTypes } from '../../../data/content/model/elements/types';
 
 interface Blueprint {
   name: string;
@@ -19,7 +20,7 @@ interface Blueprint {
 
 // Any element with an id attribute gets a new value set for that attribute, recursive through children.
 export const generateIds = (
-  elements: { type: ModelTypes; id: string; children: any[] }[],
+  elements: { type: ModelTypes; id?: string; children: any[] }[],
 ): Node[] => {
   const withIds = elements.map((element) => {
     if ('id' in element) {
@@ -71,7 +72,7 @@ const createBlueprintCommand = (blueprint: Blueprint): Command => {
 
 const blueprintToCommand = (blueprint: Blueprint): CommandDescription => ({
   type: 'CommandDesc',
-  icon: () => blueprint.icon,
+  icon: () => <i className={blueprint.icon}></i>,
   command: createBlueprintCommand(blueprint),
   description: () => blueprint.name,
   active: () => false,

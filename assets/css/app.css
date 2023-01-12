@@ -121,6 +121,22 @@
     @apply flex-col;
   }
 
+  .dropdown {
+    @apply relative;
+  }
+
+  .dropdown .dropdown-header {
+    @apply text-gray-500
+            font-semibold
+            text-sm
+            py-2
+            px-4
+            block
+            w-full
+            whitespace-nowrap
+            bg-transparent;
+  }
+
   .dropdown hr.dropdown-divider {
     @apply h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25;
   }
@@ -137,7 +153,7 @@
             text-base
             z-50
             float-left
-            py-2
+            p-2
             list-none
             text-left
             rounded-lg
@@ -220,6 +236,18 @@
 
   .btn-group button.btn {
     @apply border-0;
+  }
+
+  .btn-group.btn-group-toggle .btn {
+    @apply rounded-none;
+  }
+
+  .btn-group.btn-group-toggle .btn:first-of-type {
+    @apply rounded-l;
+  }
+
+  .btn-group.btn-group-toggle .btn:last-of-type {
+    @apply rounded-r;
   }
 
   .form-check-input {
@@ -454,16 +482,24 @@
     @apply visually-hidden;
   }
 
-  .table {
+  table {
     @apply min-w-full border;
   }
-  .table thead th {
-    @apply border-b border-r p-2 bg-gray-100;
+  table thead th {
+    @apply border-b border-r p-2 bg-gray-100 font-semibold;
   }
-  .table tbody tr {
+  table tbody tr {
     @apply border-b;
   }
-  .table tbody td {
+  table tbody td {
     @apply border-r p-2;
+  }
+
+  table.table-striped tbody tr:nth-child(even) {
+    @apply bg-gray-100;
+  }
+
+  table.table-striped tbody tr:nth-child(odd) {
+    @apply bg-white;
   }
 }
