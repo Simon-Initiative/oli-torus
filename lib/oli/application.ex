@@ -57,7 +57,7 @@ defmodule Oli.Application do
         Oli.Publishing.Publications.DiffAgent,
 
         # Starts Cachex to store user/author info across requests
-        {Cachex, :cache_account}
+        {Cachex, OliWeb.AccountsCache.get_cache_key()}
 
       ] ++ maybe_node_js_config()
 

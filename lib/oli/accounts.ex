@@ -19,6 +19,7 @@ defmodule Oli.Accounts do
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.AccountsCache
   alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
 
   def browse_users(
@@ -229,16 +230,17 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_user(%User{} = user, attrs) do
-    updated_user =
+    res =
       user
       |> User.noauth_changeset(attrs)
       |> Repo.update()
 
-    case updated_user do
+    case res do
       {:ok, %User{id: user_id}} ->
-        Cachex.update(:cache_account, "user_#{user_id}", updated_user)
+        user = get_user_with_roles(user_id)
+        AccountsCache.update("user_#{user_id}", user)
 
-        updated_user
+        res
       error -> error
     end
   end
@@ -266,7 +268,7 @@ defmodule Oli.Accounts do
 
   """
   def insert_or_update_lms_user(%{sub: sub} = changes) do
-    inserted_or_updated_user =
+    res =
       case Repo.get_by(User, sub: sub) do
         nil -> %User{sub: sub, independent_learner: false}
         user -> user
@@ -274,11 +276,12 @@ defmodule Oli.Accounts do
       |> User.noauth_changeset(changes)
       |> Repo.insert_or_update()
 
-    case inserted_or_updated_user do
+    case res do
       {:ok, %User{id: user_id}} ->
-        Cachex.update(:cache_account, "user_#{user_id}", inserted_or_updated_user)
+        user = get_user_with_roles(user_id)
+        AccountsCache.update("user_#{user_id}", user)
 
-        inserted_or_updated_user
+        res
       error -> error
     end
   end
@@ -295,18 +298,19 @@ defmodule Oli.Accounts do
   def update_user_platform_roles(%User{} = user, roles) do
     roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
 
-    updated_user =
+    res =
       user
       |> Repo.preload([:platform_roles])
       |> User.noauth_changeset()
       |> Ecto.Changeset.put_assoc(:platform_roles, roles)
       |> Repo.update()
 
-    case updated_user do
+    case res do
       {:ok, %User{id: user_id}} ->
-        Cachex.update(:cache_account, "user_#{user_id}", updated_user)
+        user = get_user_with_roles(user_id)
+        AccountsCache.update("user_#{user_id}", user)
 
-        updated_user
+        res
       error -> error
     end
   end
@@ -402,7 +406,7 @@ defmodule Oli.Accounts do
       {:ok, %Author{}}
   """
   def insert_or_update_author(%{email: email} = changes) do
-    updated_author =
+    res =
       case Repo.get_by(Author, email: email) do
         nil -> %Author{}
         author -> author
@@ -410,11 +414,12 @@ defmodule Oli.Accounts do
       |> Author.noauth_changeset(changes)
       |> Repo.insert_or_update()
 
-    case updated_author do
+    case res do
       {:ok, %Author{id: author_id}} ->
-        Cachex.update(:cache_account, "author_#{author_id}", updated_author)
+        author = get_author_with_community_admin_count(author_id)
+        AccountsCache.update("author_#{author_id}", author)
 
-        updated_author
+        res
       error -> error
     end
   end
@@ -428,16 +433,17 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_author(%Author{} = author, attrs) do
-    updated_author =
+    res =
       author
       |> Author.noauth_changeset(attrs)
       |> Repo.update()
 
-    case updated_author do
+    case res do
       {:ok, %Author{id: author_id}} ->
-        Cachex.update(:cache_account, "author_#{author_id}", updated_author)
+        author = get_author_with_community_admin_count(author_id)
+        AccountsCache.update("author_#{author_id}", author)
 
-        updated_author
+        res
       error -> error
     end
   end

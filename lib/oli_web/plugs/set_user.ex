@@ -5,6 +5,7 @@ defmodule Oli.Plugs.SetCurrentUser do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
+  alias OliWeb.AccountsCache
 
   def init(_params) do
   end
@@ -57,18 +58,13 @@ defmodule Oli.Plugs.SetCurrentUser do
   end
 
   defp get_author(author_id) do
-    case Cachex.get(:cache_account, "author_#{author_id}") do
+    case AccountsCache.get("author_#{author_id}") do
       {:ok, %Author{}} = response -> response
       _ ->
         case Accounts.get_author_with_community_admin_count(author_id) do
           nil -> {:error, :not_found}
           author ->
-            Cachex.put(
-              :cache_account,
-              "author_#{author_id}",
-              author,
-              ttl: :timer.hours(24)
-            )
+            AccountsCache.put("author_#{author_id}", author)
 
             {:ok, author}
         end
@@ -76,18 +72,13 @@ defmodule Oli.Plugs.SetCurrentUser do
   end
 
   defp get_user(user_id) do
-    case Cachex.get(:cache_account, "user_#{user_id}") do
+    case AccountsCache.get("user_#{user_id}") do
       {:ok, %User{}} = response -> response
       _ ->
         case Accounts.get_user_with_roles(user_id) do
           nil -> {:error, :not_found}
           user ->
-            Cachex.put(
-              :cache_account,
-              "user_#{user_id}",
-              user,
-              ttl: :timer.hours(24)
-            )
+            AccountsCache.put("user_#{user_id}", user)
 
             {:ok, user}
         end

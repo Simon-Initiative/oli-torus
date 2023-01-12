@@ -3,6 +3,8 @@ defmodule OliWeb.SessionController do
 
   import Pow.Phoenix.Controller, only: [require_authenticated: 2]
 
+  alias OliWeb.AccountsCache
+
   plug :require_authenticated when action in [:signout]
 
   @shared_session_data_to_delete [:dismissed_messages]
@@ -30,8 +32,7 @@ defmodule OliWeb.SessionController do
       |> Map.get(String.to_existing_atom("current_#{type}"))
       |> Map.get(:id)
 
-    Cachex.del(:cache_account, "#{type}_#{id}")
-    Cachex.del(:cache_account, "other")
+    AccountsCache.delete("#{type}_#{id}")
 
     conn
   end
