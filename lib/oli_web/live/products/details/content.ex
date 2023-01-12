@@ -27,14 +27,14 @@ defmodule OliWeb.Products.Details.Content do
         {#elseif update_count == 1}
           <p>There is <b>one</b> update available for this product.</p>
           <Link
-              label={"Manage updates"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @product.slug)}
+              label={"Manage Source Materials"}
+              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
             />
         {#else}
           <p>There are <b>{update_count}</b> updates available for this product.</p>
           <Link
-              label={"Manage updates"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @product.slug)}
+              label={"Manage Source Materials"}
+              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
             />
         {/if}
           <p>
