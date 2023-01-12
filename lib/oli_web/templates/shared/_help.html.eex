@@ -1,7 +1,7 @@
 
 <script src="https://www.google.com/recaptcha/api.js"></script>
 
-<!-- Modal -->
+<!-- Help Modal -->
 <div class="modal help-modal fade fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto"
   id="help-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog relative w-auto pointer-events-none">
@@ -19,55 +19,51 @@
             data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body relative p-4">
-          <div class="container form-container">
-            <div class="grid grid-cols-12">
-              <div class="lg:col-span-8 mx-auto">
-                <h5 id="help-success-message" class="d-none text-success">Your help request submitted</h5>
-                <%= hidden_input f, :location, id: "location"%>
-                <%= hidden_input f, :cookies_enabled, id: "cookies_enabled"%>
-                <div class="form-group">
-                  <%= label f, :full_name, "Name", class: "control-label" %>
-                  <%= text_input f,
-                      :full_name,
-                      class: "form-control" <> error_class(f, :full_name, "is-invalid"),
-                      placeholder: "Enter Name",
-                      required: true,
-                      autofocus: true %>
-                  <%= error_tag f, :full_name %>
-                </div>
-                <div class="form-group">
-                  <%= label f, :email, "Email Address", class: "control-label" %>
-                  <%= email_input f,
-                    :email,
-                    class: "form-control" <> error_class(f, :email, "is-invalid"),
-                    placeholder: "Enter Email",
-                    required: true %>
-                  <%= error_tag f, :email %>
-                </div>
-                <div class="form-group mb-3">
-                  <%= label f, :subject, "Subject:", class: "control-label" %>
-                  <%= select f, :subject,
-                      Enum.map(Oli.Help.HelpContent.list_subjects(), fn {key, desc} -> [value: key, key: desc] end),
-                      prompt: "Select from the list of topics provided.",
-                      class: "form-control" <> error_class(f, :message, "is-invalid"),
-                      required: true %>
-                  </div>
-                  <div class="form-group mb-3">
-                    <%= label f, :message, "Questions or Comments:", class: "control-label" %>
-                    <%= textarea f,
-                      :message,
-                      class: "form-control" <> error_class(f, :message, "is-invalid"),
-                      required: true,
-                      rows: 8 %>
-                  <%= error_tag f, :message %>
-                </div>
-                <div class="input-group mb-3">
-                  <div id="help-captcha"></div>
-                  <%= error_tag f, :captcha %>
-                </div>
-                <div id="help-error-message" class="d-none input-group mb-3 alert alert-danger" role="alert">
-                </div>
+          <h5 id="help-success-message" class="hidden text-success">Your help request has been submitted</h5>
+          <div id="help-form">
+            <%= hidden_input f, :location, id: "location"%>
+            <%= hidden_input f, :cookies_enabled, id: "cookies_enabled"%>
+            <div class="form-group">
+              <%= label f, :full_name, "Name", class: "control-label" %>
+              <%= text_input f,
+                  :full_name,
+                  class: "form-control" <> error_class(f, :full_name, "is-invalid"),
+                  placeholder: "Enter Name",
+                  required: true,
+                  autofocus: true %>
+              <%= error_tag f, :full_name %>
             </div>
+            <div class="form-group">
+              <%= label f, :email, "Email Address", class: "control-label" %>
+              <%= email_input f,
+                :email,
+                class: "form-control" <> error_class(f, :email, "is-invalid"),
+                placeholder: "Enter Email",
+                required: true %>
+              <%= error_tag f, :email %>
+            </div>
+            <div class="form-group mb-3">
+              <%= label f, :subject, "Subject:", class: "control-label" %>
+              <%= select f, :subject,
+                  Enum.map(Oli.Help.HelpContent.list_subjects(), fn {key, desc} -> [value: key, key: desc] end),
+                  prompt: "Select from the list of topics provided.",
+                  class: "form-control" <> error_class(f, :message, "is-invalid"),
+                  required: true %>
+              </div>
+              <div class="form-group mb-3">
+                <%= label f, :message, "Questions or Comments:", class: "control-label" %>
+                <%= textarea f,
+                  :message,
+                  class: "form-control" <> error_class(f, :message, "is-invalid"),
+                  required: true,
+                  rows: 8 %>
+              <%= error_tag f, :message %>
+            </div>
+            <div class="input-group mb-3">
+              <div id="help-captcha"></div>
+              <%= error_tag f, :captcha %>
+            </div>
+            <div id="help-error-message" class="hidden input-group mb-3 alert alert-danger" role="alert"></div>
           </div>
         </div>
         <div
@@ -76,7 +72,6 @@
             id: "button-create-author",
             class: "btn btn-primary",
             phx_disable_with: "Requesting help..." %>
-        </div>
         </div>
       </form>
     </div>
@@ -113,24 +108,27 @@
       event.preventDefault();
       const form = event.target;
 
+      const errorElement = document.getElementById('help-error-message');
+      errorElement.classList.add('hidden');
+
       const result = await fetch('<%= Routes.help_path(@conn, :create) %>', {
         method: form.method,
         body: new URLSearchParams([...(new FormData(form))]),
       }).then((response) => response.json())
               .then((json) => {
+                const formElement = document.getElementById('help-form');
+                formElement.classList.add('hidden');
+
                 const successElement = document.getElementById('help-success-message');
                 successElement.innerHTML = json.info;
-                successElement.classList.remove('d-none');
-                successElement.classList.add('d-block');
-                const errorElement = document.getElementById('help-error-message');
-                errorElement.classList.remove('d-block');
-                errorElement.classList.add('d-none');
+                successElement.classList.remove('hidden');
+
                 return json
               })
               .catch((error) => {
                 const errorElement = document.getElementById('help-error-message');
                 errorElement.innerHTML = "We are unable to forward your help request at the moment";
-                errorElement.classList.add('d-block');
+                errorElement.classList.remove('hidden');
                 return error
               });
     });

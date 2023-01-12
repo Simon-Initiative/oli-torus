@@ -138,13 +138,13 @@
   </div>
   <div class="col-span-8">
     <div class="d-flex align-items-center">
-      <p>
+      <div>
         <%= button("Duplicate",
                     to: Routes.project_path(@conn, :clone_project, @project),
                     method: :post,
                     class: "btn btn-link action-button",
                     data_confirm: "Are you sure you want to duplicate this project?") %>
-      </p>
+      </div>
       <span>Create a complete copy of this project.</span>
     </div>
     <div class="d-flex align-items-center">

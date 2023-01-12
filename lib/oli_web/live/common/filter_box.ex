@@ -25,7 +25,7 @@ defmodule OliWeb.Common.FilterBox do
         <p class="mt-1 mb-4">{@card_body_text}</p>
         <div class="block filter-opts">
 
-          <div>
+          <div class="pb-2">
             <#slot />
           </div>
 
@@ -40,8 +40,8 @@ defmodule OliWeb.Common.FilterBox do
                     {/if}
                   {/for}
                 </select>
-                <Field name="sort_order" class="control w-100 d-flex align-items-center">
-                  <div class="btn-group btn-group-toggle">
+                <Field name="sort_order" class="control d-flex align-items-center">
+                  <div class="btn-group btn-group-toggle whitespace-nowrap">
                     <label class={"btn btn-outline-secondary" <> if @table_model.sort_order == :desc, do: " active", else: ""}>
                       <RadioButton value="desc" checked={@table_model.sort_order == :desc} opts={hidden: true}/>
                       <i class='fa fa-sort-amount-down'></i>

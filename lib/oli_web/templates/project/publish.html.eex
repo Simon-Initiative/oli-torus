@@ -1,7 +1,16 @@
 <div class="publish container">
-  <div class="grid grid-cols-12">
-    <div class="col-span-12">
+  <div class="flex flex-row">
+    <div class="flex-1">
       <p>Publish your project to give instructors access to the latest changes.</p>
+
+
+      <%= case @latest_published_publication do %>
+        <% %{edition: current_edition, major: current_major, minor: current_minor} -> %>
+          Latest Publication: v<%= current_edition %>.<%= current_major %>.<%= current_minor %>
+
+        <% _ -> %>
+
+      <% end %>
 
       <%= case {@has_changes, @active_publication_changes} do %>
         <% {true, nil} -> %>
@@ -9,16 +18,15 @@
             <b>This project has not been published yet</b>
           </div>
         <% {false, _} -> %>
-          <div class="my-3">
-            Last published <strong><%= Utils.render_date(@latest_published_publication, :published, @conn) %></strong>.
+          <div class="my-3">Published <strong><%= Utils.render_date(@latest_published_publication, :published, @conn) %></strong>.
             There are <strong>no changes</strong> since the latest publication.
           </div>
         <% {true, changes} -> %>
-          <div class="my-3">Last published <strong><%= Utils.render_date(@latest_published_publication, :published, @conn) %></strong>.
+          <div class="my-3">Published <strong><%= Utils.render_date(@latest_published_publication, :published, @conn) %></strong>.
           <% change_count =  Map.values(changes) |> Enum.count %>
             There <%= if change_count == 1 do "is" else "are" end %> <strong><%= change_count %></strong> pending <%= if change_count == 1 do "change" else "changes" end %> since last publish:</div>
           <%= for {status, %{revision: revision}}  <- Map.values(changes) do %>
-            <p>
+            <p class="my-1">
               <span class="badge badge-secondary badge-<%= status %>"><%= status %></span>
               <%= case status do %>
                 <% :deleted -> %>
@@ -30,21 +38,31 @@
             </p>
         <% end %>
       <% end %>
+    </div>
+    <div>
+      <%= render "_lti_connect_instructions.html", assigns%>
+    </div>
+  </div>
+  <div class="my-4 border-top pt-3">
+    <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn f -> %>
 
-      <div class="my-4 border-top pt-3">
-        <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn f -> %>
+      <%= if @has_changes && @active_publication_changes do %>
+        <h5>Publication Details</h5>
 
-          <%= if @has_changes && @active_publication_changes do %>
-            <h5>Publication Details</h5>
+        <p>The version number will be auto-incremented depending on the type of changes.</p>
 
-            <p class="pb-3">The version number is automatically determined by the nature of the changes.</p>
-
-            <%= case @version_change do %>
-              <% change_type -> %>
-                <div class="form-check form-switch">
-                  <div class="form-group" style="pointer-events: none">
-                    <%= label class: "form-check-label" do %>
-                      <%= radio_button :publish_type, :option, "major", class: "form-check-input", checked: change_type == :major, disabled: change_type != :major %>
+        <%= case @version_change do %>
+          <% {change_type, _} -> %>
+            <div class="py-2">
+              <ul class="bg-white rounded-lg border border-gray-200 text-gray-900">
+                <li class="px-6 py-2 border-b border-gray-200 w-full rounded-t-lg">
+                  <div class="flex flex-row p-2">
+                    <div class="w-10 py-3 pr-2">
+                      <%= if change_type == :major do %>
+                        <i class="fa-solid fa-arrow-right fa-xl text-blue-500"></i>
+                      <% end %>
+                    </div>
+                    <div class="flex-1">
                       <p>Major
                         <%= case {@version_change, @latest_published_publication} do %>
                           <% {{:major, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
@@ -54,11 +72,17 @@
                         <% end %>
                       </p>
                       <small>Changes alter the structure of materials such as additions and deletions.</small>
-                    <% end %>
+                    </div>
                   </div>
-                  <div class="form-group" style="pointer-events: none">
-                    <%= label class: "form-check-label" do %>
-                      <%= radio_button :publish_type, :option, "minor", class: "form-check-input", checked: change_type == :minor, disabled: change_type != :minor %>
+                </li>
+                <li class="px-6 py-2 border-b border-gray-200 w-full">
+                  <div class="flex flex-row p-2">
+                    <div class="w-10 py-3 pr-2">
+                      <%= if change_type == :minor do %>
+                        <i class="fa-solid fa-arrow-right fa-xl text-blue-500"></i>
+                      <% end %>
+                    </div>
+                    <div class="flex-1">
                       <p>Minor
                         <%= case {@version_change, @latest_published_publication} do %>
                           <% {{:minor, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
@@ -68,50 +92,47 @@
                         <% end %>
                       </p>
                       <small>Changes include small portions of reworked materials, grammar and spelling fixes.</small>
-                    <% end %>
+                    </div>
                   </div>
-                </div>
-
-            <% end %>
-
-            <div class="form-group">
-              <%= textarea f, :description, class: "form-control", required: true, rows: 3, placeholder: "Enter a short description of these changes..." %>
+                </li>
+              </ul>
             </div>
+        <% end %>
 
-          <% else %>
-            <%= if @active_publication_changes == nil do %>
-              <%= hidden_input f, :description, value: "Initial publish" %>
-            <% end %>
+      <div class="form-group">
+        <%= textarea f, :description, class: "form-control", required: true, rows: 3, placeholder: "Enter a short description of these changes..." %>
+      </div>
+
+      <div class="form-group">
+        <% else %>
+          <%= if @active_publication_changes == nil do %>
+            <%= hidden_input f, :description, value: "Initial publish" %>
           <% end %>
+        <% end %>
 
-          <%= hidden_input f, :active_publication_id, value: @active_publication_id %>
+        <%= hidden_input f, :active_publication_id, value: @active_publication_id %>
 
-          <%= submit "Publish",
-            id: "button-publish",
-            class: "btn btn-primary",
-            disabled: !@has_changes,
-            phx_disable_with: "Publishing..." %>
+        <%= submit "Publish",
+          id: "button-publish",
+          class: "btn btn-primary",
+          disabled: !@has_changes,
+          phx_disable_with: "Publishing..." %>
 
-          <div class="my-3">
-            <%= checkbox f, :auto_push_update, disabled: !@has_changes %>
-            <%= label f, :auto_push_update, "Automatically push this publication update to all products and sections" %>
-          </div>
+        <%= case @version_change do %>
+          <% {:no_changes, _} -> %>
 
-          <%= case @version_change do %>
-            <% {:no_changes, _} -> %>
+          <% {_, {edition, major, minor}} -> %>
+            <span class="ml-2"><%= "v#{edition}.#{major}.#{minor}" %></span>
 
-            <% {_, {edition, major, minor}} -> %>
-              <span class="ml-2"><%= "v#{edition}.#{major}.#{minor}" %></span>
-
-            <% _ -> %>
-          <% end %>
-
+          <% _ -> %>
         <% end %>
       </div>
 
-    </div>
+      <div class="my-3">
+        <%= checkbox f, :auto_push_update, disabled: !@has_changes %>
+        <%= label f, :auto_push_update, "Automatically push this publication update to all products and sections" %>
+      </div>
+
+    <% end %>
   </div>
-
-  <%= render "_lti_connect_instructions.html", assigns%>
-
 </div>

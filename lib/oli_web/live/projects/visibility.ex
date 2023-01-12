@@ -56,11 +56,11 @@ defmodule OliWeb.Projects.VisibilityLive do
         <form phx-change="option" id="visibility_option">
           <div class="form-check">
             <div class="form-group mb-2">
-              <%= label class: "form-check-label flex flex-row" do %>
+              <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
                 <%= radio_button :visibility, :option, "authors", class: "form-check-input", checked: @project.visibility == :authors or is_nil(@project.visibility) %>
                 <div class="block ml-2">
                   <div class="d-flex align-items-center">
-                    <p>Project authors</p>
+                    <div>Project authors</div>
                     <span class="ml-2 badge badge-xs badge-pill badge-primary">default</span>
                   </div>
                   <small>Only instructors with linked authoring accounts that are project collaborators</small>
@@ -68,19 +68,19 @@ defmodule OliWeb.Projects.VisibilityLive do
               <% end %>
             </div>
             <div class="form-group mb-2">
-              <%= label class: "form-check-label flex flex-row" do %>
+              <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
                 <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: @project.visibility == :global %>
                 <div class="block ml-2">
-                  <p>Open</p>
+                  <div>Open</div>
                   <small>Any instructor</small>
                 </div>
               <% end %>
             </div>
             <div class="form-group mb-2">
-              <%= label class: "form-check-label flex flex-row" do %>
-                <%= radio_button :visibility, :option, "selected", checked:  @project.visibility == :selected %>
+              <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
+                <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked:  @project.visibility == :selected %>
                 <div class="block ml-2">
-                  <p>Restricted</p>
+                  <div>Restricted</div>
                   <small>Only instructors with these linked authoring accounts or from these institutions...</small>
                 </div>
               <% end %>
@@ -106,7 +106,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                   <div>
                     <form phx-change="search" class="form-inline form-grow">
                       <%= text_input :search_field, :query, placeholder: "Enter an author email here",
-                                    class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
+                                    class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
                                     autofocus: true, "phx-debounce": "300", autocomplete: "off" %>
                       <%= hidden_input :search_field, :entity, value: "instructors" %>
                     </form>
@@ -146,45 +146,43 @@ defmodule OliWeb.Projects.VisibilityLive do
                 </div>
                 <div id="institutions"
                                     class={"container tab-pane pl-0 #{if  @tab == :institutions, do: "active", else: "fade"}"}>
-                  <div class="card">
-                    <div>
-                      <form phx-change="search" class="form-inline form-grow">
-                        <%= text_input :search_field, :query, placeholder: "Search for institutions by name here",
-                                    class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
-                                    autofocus: true, "phx-debounce": "300" %>
-                        <%= hidden_input :search_field, :entity, value: "institution" %>
-                      </form>
-                    </div>
-                    <div class="grid grid-cols-12 justify-content-center">
-                      <%= if !Enum.empty?(@institution_names) do %>
-                        <div class="flex-fill">
-                          <p>Select from the list below and submit</p>
-                          <form phx-submit="selected_institution" id="institutions_submit">
-                            <%= multiple_select :multi, :institutions, @institution_names , class: "form-control w-100" %>
-                            <%= submit "Submit", class: "btn btn-primary" %>
-                          </form>
-                        </div>
-                      <% end %>
+                  <div>
+                    <form phx-change="search" class="form-inline form-grow">
+                      <%= text_input :search_field, :query, placeholder: "Search for institutions by name here",
+                                  class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
+                                  autofocus: true, "phx-debounce": "300" %>
+                      <%= hidden_input :search_field, :entity, value: "institution" %>
+                    </form>
+                  </div>
+                  <div class="grid grid-cols-12 justify-content-center">
+                    <%= if !Enum.empty?(@institution_names) do %>
                       <div class="flex-fill">
-                        <ul class="list-group list-group-flush">
-                          <%= for v <- @project_visibilities do %>
-                            <%= if v.institution != nil do %>
-                              <li class="list-group-item">
-                                <div class="d-flex">
-                                  <div class="flex-fill"><%= v.institution.name %></div>
-                                  <div>
-                                    <button id={"delete_#{v.visibility.id}"}
-                                                    phx-click="delete_visibility"
-                                                    phx-value-id={v.visibility.id} data-backdrop="static"
-                                                    data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
-                                      <i class="fas fa-trash-alt fa-lg"></i>
-                                    </button></div>
-                                </div>
-                              </li>
-                            <% end %>
-                          <% end %>
-                        </ul>
+                        <p>Select from the list below and submit</p>
+                        <form phx-submit="selected_institution" id="institutions_submit">
+                          <%= multiple_select :multi, :institutions, @institution_names , class: "form-control w-100" %>
+                          <%= submit "Submit", class: "btn btn-primary" %>
+                        </form>
                       </div>
+                    <% end %>
+                    <div class="flex-fill">
+                      <ul class="list-group list-group-flush">
+                        <%= for v <- @project_visibilities do %>
+                          <%= if v.institution != nil do %>
+                            <li class="list-group-item">
+                              <div class="d-flex">
+                                <div class="flex-fill"><%= v.institution.name %></div>
+                                <div>
+                                  <button id={"delete_#{v.visibility.id}"}
+                                                  phx-click="delete_visibility"
+                                                  phx-value-id={v.visibility.id} data-backdrop="static"
+                                                  data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
+                                    <i class="fas fa-trash-alt fa-lg"></i>
+                                  </button></div>
+                              </div>
+                            </li>
+                          <% end %>
+                        <% end %>
+                      </ul>
                     </div>
                   </div>
                 </div>

@@ -2,13 +2,22 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-@layer base {
+@layer components {
   a:not(.btn) {
     @apply underline text-blue-500 hover:text-blue-600;
   }
-}
 
-@layer components {
+  a.external::after {
+    @apply mx-1 text-sm;
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 600;
+    content: '\f08e';
+  }
+
+  p {
+    @apply mb-3;
+  }
+
   /** Bootstrap Shims **/
   .btn {
     @apply px-3 py-2 rounded-sm cursor-pointer;
@@ -358,14 +367,14 @@
   }
 
   .badge {
-    @apply inline-block py-1.5 px-2.5 leading-none text-center text-sm whitespace-nowrap align-baseline font-bold bg-gray-600 text-white rounded;
+    @apply inline-block py-1 px-2 leading-none text-center text-sm whitespace-nowrap align-baseline font-bold bg-gray-600 text-white rounded;
   }
 
   .badge-xs {
     @apply py-0.5 px-1 text-xs;
   }
   .badge-sm {
-    @apply py-1 px-2 text-sm;
+    @apply py-0.5 px-1 text-sm;
   }
   .badge-lg {
     @apply text-lg;
@@ -501,5 +510,9 @@
 
   table.table-striped tbody tr:nth-child(odd) {
     @apply bg-white;
+  }
+
+  .d-none {
+    @apply hidden;
   }
 }
