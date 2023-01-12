@@ -74,19 +74,21 @@ interface ComponentProps {
 }
 
 const Component: React.FC<ComponentProps> = (props) => {
-  const scoreOrGraphic = props.graded
-    ? (props.score || props.outOf) && (
-        <div className="result">
-          <span aria-label="score" className="score">
-            {props.score}
-          </span>
-          <span className="result-divider">/</span>
-          <span aria-label="out of" className="out-of">
-            {props.outOf}
-          </span>
-        </div>
-      )
-    : graphicForResultClass(props.resultClass);
+  const scoreOrGraphic = props.graded ? (
+    (props.score || props.outOf) && (
+      <div className="result">
+        <span aria-label="score" className="score">
+          {props.score}
+        </span>
+        <span className="result-divider">/</span>
+        <span aria-label="out of" className="out-of">
+          {props.outOf}
+        </span>
+      </div>
+    )
+  ) : (
+    <div className="mr-2">{graphicForResultClass(props.resultClass)}</div>
+  );
 
   return (
     <div aria-label="result" className={`evaluation feedback ${props.resultClass} my-1`}>

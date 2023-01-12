@@ -27,7 +27,7 @@ export const Tooltip = ({
   return (
     <span
       ref={ref}
-      className={classNames(className)}
+      className={classNames(className, 'inline-flex items-center')}
       data-placement={placement ?? 'top'}
       title={title}
     >

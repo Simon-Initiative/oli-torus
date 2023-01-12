@@ -60,7 +60,7 @@ $(function() {
 
           <br>
 
-          <div id="lms-config-details" class="d-none">
+          <div id="lms-config-details">
             <hr class="my-3" />
 
             <p class="my-3 text-secondary">

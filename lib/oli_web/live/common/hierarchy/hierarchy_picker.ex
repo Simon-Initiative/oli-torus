@@ -220,7 +220,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   defp breadcrumb_item(assigns) do
     ~H"""
-    <li class="breadcrumb-item align-self-center pl-2">
+    <li class="breadcrumb-item self-center pl-2">
       <button class="btn btn-xs btn-link px-0" disabled={@is_last} phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
         <%= get_title(@breadcrumb, @show_short) %>
       </button>

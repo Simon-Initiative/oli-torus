@@ -27,7 +27,7 @@ defmodule OliWeb.Curriculum.EntryLive do
       phx-hook="DragSource"
       class={"p-3 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}>
 
-      <div class="flex-grow-1 d-flex flex-column align-self-center">
+      <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
           <%= icon(assigns) %>
           <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
