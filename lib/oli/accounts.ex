@@ -19,7 +19,7 @@ defmodule Oli.Accounts do
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.AccountsCache
+  alias OliWeb.AccountLookupCache
   alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
 
   def browse_users(
@@ -238,7 +238,7 @@ defmodule Oli.Accounts do
     case res do
       {:ok, %User{id: user_id}} ->
         user = get_user_with_roles(user_id)
-        AccountsCache.update("user_#{user_id}", user)
+        AccountLookupCache.update("user_#{user_id}", user)
 
         res
       error -> error
@@ -279,7 +279,7 @@ defmodule Oli.Accounts do
     case res do
       {:ok, %User{id: user_id}} ->
         user = get_user_with_roles(user_id)
-        AccountsCache.update("user_#{user_id}", user)
+        AccountLookupCache.update("user_#{user_id}", user)
 
         res
       error -> error
@@ -308,7 +308,7 @@ defmodule Oli.Accounts do
     case res do
       {:ok, %User{id: user_id}} ->
         user = get_user_with_roles(user_id)
-        AccountsCache.update("user_#{user_id}", user)
+        AccountLookupCache.update("user_#{user_id}", user)
 
         res
       error -> error
@@ -417,7 +417,7 @@ defmodule Oli.Accounts do
     case res do
       {:ok, %Author{id: author_id}} ->
         author = get_author_with_community_admin_count(author_id)
-        AccountsCache.update("author_#{author_id}", author)
+        AccountLookupCache.update("author_#{author_id}", author)
 
         res
       error -> error
@@ -441,7 +441,7 @@ defmodule Oli.Accounts do
     case res do
       {:ok, %Author{id: author_id}} ->
         author = get_author_with_community_admin_count(author_id)
-        AccountsCache.update("author_#{author_id}", author)
+        AccountLookupCache.update("author_#{author_id}", author)
 
         res
       error -> error

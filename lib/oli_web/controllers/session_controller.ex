@@ -3,7 +3,7 @@ defmodule OliWeb.SessionController do
 
   import Pow.Phoenix.Controller, only: [require_authenticated: 2]
 
-  alias OliWeb.AccountsCache
+  alias OliWeb.AccountLookupCache
 
   plug :require_authenticated when action in [:signout]
 
@@ -32,7 +32,7 @@ defmodule OliWeb.SessionController do
       |> Map.get(String.to_existing_atom("current_#{type}"))
       |> Map.get(:id)
 
-    AccountsCache.delete("#{type}_#{id}")
+    AccountLookupCache.delete("#{type}_#{id}")
 
     conn
   end
