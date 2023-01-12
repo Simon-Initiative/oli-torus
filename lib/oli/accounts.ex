@@ -229,9 +229,18 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_user(%User{} = user, attrs) do
-    user
-    |> User.noauth_changeset(attrs)
-    |> Repo.update()
+    updated_user =
+      user
+      |> User.noauth_changeset(attrs)
+      |> Repo.update()
+
+    case updated_user do
+      {:ok, %User{id: user_id}} ->
+        Cachex.update(:cache_account, "user_#{user_id}", updated_user)
+
+        updated_user
+      error -> error
+    end
   end
 
   @doc """
@@ -257,12 +266,21 @@ defmodule Oli.Accounts do
 
   """
   def insert_or_update_lms_user(%{sub: sub} = changes) do
-    case Repo.get_by(User, sub: sub) do
-      nil -> %User{sub: sub, independent_learner: false}
-      user -> user
+    inserted_or_updated_user =
+      case Repo.get_by(User, sub: sub) do
+        nil -> %User{sub: sub, independent_learner: false}
+        user -> user
+      end
+      |> User.noauth_changeset(changes)
+      |> Repo.insert_or_update()
+
+    case inserted_or_updated_user do
+      {:ok, %User{id: user_id}} ->
+        Cachex.update(:cache_account, "user_#{user_id}", inserted_or_updated_user)
+
+        inserted_or_updated_user
+      error -> error
     end
-    |> User.noauth_changeset(changes)
-    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -277,11 +295,20 @@ defmodule Oli.Accounts do
   def update_user_platform_roles(%User{} = user, roles) do
     roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
 
-    user
-    |> Repo.preload([:platform_roles])
-    |> User.noauth_changeset()
-    |> Ecto.Changeset.put_assoc(:platform_roles, roles)
-    |> Repo.update()
+    updated_user =
+      user
+      |> Repo.preload([:platform_roles])
+      |> User.noauth_changeset()
+      |> Ecto.Changeset.put_assoc(:platform_roles, roles)
+      |> Repo.update()
+
+    case updated_user do
+      {:ok, %User{id: user_id}} ->
+        Cachex.update(:cache_account, "user_#{user_id}", updated_user)
+
+        updated_user
+      error -> error
+    end
   end
 
   @doc """
@@ -375,12 +402,21 @@ defmodule Oli.Accounts do
       {:ok, %Author{}}
   """
   def insert_or_update_author(%{email: email} = changes) do
-    case Repo.get_by(Author, email: email) do
-      nil -> %Author{}
-      author -> author
+    updated_author =
+      case Repo.get_by(Author, email: email) do
+        nil -> %Author{}
+        author -> author
+      end
+      |> Author.noauth_changeset(changes)
+      |> Repo.insert_or_update()
+
+    case updated_author do
+      {:ok, %Author{id: author_id}} ->
+        Cachex.update(:cache_account, "author_#{author_id}", updated_author)
+
+        updated_author
+      error -> error
     end
-    |> Author.noauth_changeset(changes)
-    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -392,9 +428,18 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_author(%Author{} = author, attrs) do
-    author
-    |> Author.noauth_changeset(attrs)
-    |> Repo.update()
+    updated_author =
+      author
+      |> Author.noauth_changeset(attrs)
+      |> Repo.update()
+
+    case updated_author do
+      {:ok, %Author{id: author_id}} ->
+        Cachex.update(:cache_account, "author_#{author_id}", updated_author)
+
+        updated_author
+      error -> error
+    end
   end
 
   @doc """
