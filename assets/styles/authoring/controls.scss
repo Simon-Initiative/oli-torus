@@ -168,6 +168,11 @@
   display: inline-block;
 }
 
+.video-modal-content {
+  height: 400px;
+  padding: 15px;
+}
+
 .truncate-left {
   /* Gives us ellipses at the beginning of a string so we can see the end of it.
      ex: a long string like http://www.google.com/this/is/a/long/string/that/should/be/truncated

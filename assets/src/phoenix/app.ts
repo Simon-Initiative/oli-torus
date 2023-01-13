@@ -77,8 +77,7 @@ $(() => {
     const audioAttribute = this.attributes.getNamedItem('data-audio');
     if (audioAttribute && audioAttribute.value !== '') {
       const audio = ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0];
-      audio.currentTime = 0;
-      audio.play();
+      window.toggleAudio(audio);
     }
   });
 
@@ -121,9 +120,28 @@ $(() => {
   (window as any).hljs.highlightAll();
 });
 
+let currentlyPlaying: HTMLAudioElement | null = null;
+
+window.toggleAudio = (element: HTMLAudioElement) => {
+  if (!element) return;
+
+  if (currentlyPlaying && currentlyPlaying !== element) {
+    currentlyPlaying.pause();
+  }
+
+  if (element.paused) {
+    currentlyPlaying = element;
+    element.currentTime = 0;
+    element.play();
+  } else {
+    element.pause();
+  }
+};
+
 declare global {
   interface Window {
     liveSocket: typeof liveSocket;
+    toggleAudio: (element: HTMLAudioElement) => void;
     OLI: {
       initActivityBridge: typeof initActivityBridge;
       initPreviewActivityBridge: typeof initPreviewActivityBridge;

@@ -146,12 +146,12 @@ defmodule OliWeb.Progress.StudentResourceView do
           <Form as={:resource_access} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
             <Field name={:score} class="form-label-group">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-              <NumberInput class="form-control" opts={disabled: !@is_editing}/>
+              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"}/>
               <div class="text-muted">Scores are rounded up, limiting to two decimal points.</div>
             </Field>
             <Field name={:out_of} class="form-label-group mb-4">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-              <NumberInput class="form-control" opts={disabled: !@is_editing}/>
+              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"}/>
             </Field>
 
             {#if @is_editing}

@@ -1261,6 +1261,9 @@
         "poster": {
           "type": "string"
         },
+        "alt": {
+          "type": "string"
+        },
         "src": {
           "type": "array",
           "items": {
@@ -1272,6 +1275,7 @@
             }
           }
         },
+
         "captions": {
           "type": "array",
           "items": {

@@ -4,6 +4,12 @@
 
 ### Bug Fixes
 
+- Fix an issue with dynamic questions and variables that contain " or \
+
+## 0.22.0 (2022-12-20)
+
+### Bug Fixes
+
 - Fix an issue with duplicate part ids on ingest
 - Fix some performance issues related to published resources trigger
 - Allow admin users to review adaptive page attempts

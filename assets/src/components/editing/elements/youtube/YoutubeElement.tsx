@@ -15,6 +15,7 @@ import { YouTubeModal } from './YoutubeModal';
 import { modalActions } from 'actions/modal';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+import { youtubeUrlToId } from './youtubeActions';
 
 const toLink = (src = '') => 'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
 
@@ -139,7 +140,7 @@ const SettingsButton = (props: SettingsButtonProps) => (
               model={props.model}
               onDone={({ alt, width, src }: Partial<ContentModel.YouTube>) => {
                 window.oliDispatch(modalActions.dismiss());
-                props.onEdit({ alt, width, src });
+                props.onEdit({ alt, width, src: youtubeUrlToId(src) || '' });
               }}
               onCancel={() => window.oliDispatch(modalActions.dismiss())}
             />,

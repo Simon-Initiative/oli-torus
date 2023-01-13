@@ -60,10 +60,12 @@
     <%= link "Curriculum Remix", to: Routes.open_and_free_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug), class: "btn btn-sm btn-primary" %>
   </p>
   <p>
-    <h5>Updates</h5>
-    <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
-      "section" => @section,
-      "current_author" => @current_author
-      }) %>
+    <h5>Manage Source Materials</h5>
+    <%= live_render(@conn, OliWeb.Delivery.ManageSourceMaterials,
+      session: %{
+        "section_slug" => @section.slug,
+        "current_author" => @current_author
+      }
+    ) %>
   </p>
 </div>

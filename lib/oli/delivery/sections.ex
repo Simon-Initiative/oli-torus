@@ -561,6 +561,26 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+
+  @doc """
+  For a section resource record, map its children SR records to resource ids,
+  of course preserving the order of the children list.
+
+  ## Examples
+      iex> map_section_resource_children_to_resource_ids(root_resource)
+      [1, 2, 3, 4]
+  """
+  def map_section_resource_children_to_resource_ids(root_section_resource) do
+
+    srs = from(s in SectionResource,
+      where: s.id in ^root_section_resource.children
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
+
+    Enum.map(root_section_resource.children, fn sr_id -> Map.get(srs, sr_id) end)
+  end
+
   @doc """
   Creates a section resource.
   ## Examples
@@ -878,6 +898,39 @@ defmodule Oli.Delivery.Sections do
       where: sr.section_id == ^section_id
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Returns information about the projects that have been remixed in a section.
+
+  ## Examples
+
+      iex> get_remixed_projects(1, 1)
+      [%{id: 2, description: "description of project 2", title: "Project 2", ...}]
+
+      iex> get_remixed_projects(1, 2)
+      []
+  """
+
+  def get_remixed_projects(section_id, current_project_id) do
+    Repo.all(
+      from(
+        project in Project,
+        join: spp in SectionsProjectsPublications,
+        on: spp.project_id == project.id,
+        join: pub in Publication,
+        on: pub.id == spp.publication_id,
+        where:
+          spp.section_id == ^section_id and
+          spp.project_id != ^current_project_id,
+        select: %{
+          id: project.id,
+          title: project.title,
+          description: project.description,
+          publication: pub
+        }
+      )
+    )
   end
 
   def rebuild_section_resources(

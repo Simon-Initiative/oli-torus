@@ -2,7 +2,7 @@ import { Hints } from 'components/activities/common/hints/authoring/HintsAuthori
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Choices } from 'data/activities/model/choices';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
@@ -21,7 +21,7 @@ import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import { makeContent, MediaItemRequest } from '../types';
+import { MediaItemRequest } from '../types';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { CATAActions } from '../check_all_that_apply/actions';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
@@ -80,7 +80,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
   const addCircle = (_e: any) => {
     if (model.width && model.height) {
-      var hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
+      const hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
       addHotspot(hs);
       setSelectedHotspot(hs.id);
     }
@@ -88,7 +88,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
   const addRect = (_e: any) => {
     if (model.width && model.height) {
-      var hs = makeHotspot([
+      const hs = makeHotspot([
         Math.floor(model.width / 2) - 50,
         Math.floor(model.height / 2) - 50,
         Math.floor(model.width / 2) + 50,
