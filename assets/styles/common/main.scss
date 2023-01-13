@@ -113,15 +113,6 @@ form .form-label-group .help-block {
   }
 }
 
-/* fix dropdown menu */
-a:not([href]) {
-  cursor: pointer;
-
-  &:hover {
-    color: var(--color-white);
-  }
-}
-
 /* fix an issue with contenteditable (slate) not being selectable in safari */
 [contenteditable] {
   -webkit-user-select: text;

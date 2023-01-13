@@ -14,6 +14,16 @@
   }
 }
 
-.course-card-link:hover {
+a.course-card-link {
   text-decoration: none;
+  text-decoration-line: none;
+
+  .card {
+    display: flex;
+    flex-direction: column;
+
+    .card-body {
+      flex: 1;
+    }
+  }
 }

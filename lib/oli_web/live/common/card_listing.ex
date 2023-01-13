@@ -18,8 +18,8 @@ defmodule OliWeb.Common.CardListing do
             <div class="card mb-2 mr-1 ml-1 h-100">
               <img src={cover_image(item)} class="card-img-top" alt="course image">
               <div class="card-body">
-                <h5 class="card-title text-primary" title={render_title_column(item)}>{render_title_column(item)}</h5>
-                <div class="fade-text"><p class="card-text small">{render_description(item)}</p></div>
+                <h5 class="card-title mb-1" title={render_title_column(item)}>{render_title_column(item)}</h5>
+                <div class="fade-text"><p class="card-text text-sm">{render_description(item)}</p></div>
               </div>
               <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
                 <div class="badge badge-success mr-5">{TableModel.render_payment_column(assigns, item, nil)}</div>

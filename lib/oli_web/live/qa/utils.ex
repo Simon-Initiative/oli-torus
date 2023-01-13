@@ -68,7 +68,7 @@ defmodule OliWeb.Qa.Utils do
         </p>
         <p>
           For more information on the importance of attaching learning objectives to pages and activities, see the
-          <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">guide on learning objectives</a> from the CMU Eberly Center.
+          <a class="external" href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">guide on learning objectives</a> from the CMU Eberly Center.
         </p>
         """
 
@@ -89,7 +89,7 @@ defmodule OliWeb.Qa.Utils do
             </p>
             <p>
               For more information on the importance of providing practice opportunities in pages, see the
-              <a href="https://www.cmu.edu/teaching/designteach/design/assessments.html" target="_blank">guide on assessments</a> from the CMU Eberly Center.
+              <a class="external" href="https://www.cmu.edu/teaching/designteach/design/assessments.html" target="_blank">guide on assessments</a> from the CMU Eberly Center.
             </p>
             """
         end
