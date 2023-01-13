@@ -1,3 +1,5 @@
-@import 'preview.scss';
-// @import 'preview-tools-reset.scss';
-@import 'preview-tools.scss';
+.preview {
+  @import 'preview.scss';
+  @import 'preview-tools-reset.scss';
+  @import 'preview-tools.scss';
+}

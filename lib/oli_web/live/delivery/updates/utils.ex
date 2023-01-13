@@ -17,9 +17,9 @@ defmodule OliWeb.Delivery.Updates.Utils do
       |> assign(:updates_in_progress, updates_in_progress)
 
     ~H"""
-      <div class="available-updates list-group my-3">
+      <div class="available-updates my-3">
         <%= Enum.map(@updates, fn {project_id, publication} -> %>
-          <div class="list-group-item flex-column align-items-start">
+          <div class="flex-column align-items-start border rounded p-3">
             <%= render_update_details(assigns, publication) %>
             <div class="d-flex flex-row">
               <div class="flex-grow-1"></div>

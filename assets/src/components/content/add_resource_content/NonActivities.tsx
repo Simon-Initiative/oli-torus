@@ -46,7 +46,7 @@ export const NonActivities: React.FC<Props> = ({
       <div className="resource-choices non-activities">
         <ResourceChoice
           icon="paragraph"
-          label="Rich Text"
+          label="Paragraph"
           onHoverStart={() =>
             onSetTip('Rich content such as paragraphs, images, tables, YouTube, etc')
           }

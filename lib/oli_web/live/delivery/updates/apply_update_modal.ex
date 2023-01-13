@@ -20,7 +20,7 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
 
               <%= case Enum.find(@updates, fn {id, _} -> id == @project_id end) do %>
                 <% {_, publication} -> %>
-                <div class="list-group-item flex-column align-items-start my-2">
+                <div class="border rounded p-3 flex-column align-items-start my-2">
                   <%= render_update_details(assigns, publication) %>
                 </div>
 
@@ -44,12 +44,12 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
                 <b>This action cannot be undone.</b>
               </div>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <div class="modal-footer flex justify-end">
+              <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
               <button
                 phx-click="apply_update"
                 phx-key="enter"
-                class="btn btn-warning">
+                class="btn btn-warning ml-2">
                 Apply Update
               </button>
             </div>

@@ -22,6 +22,10 @@
     @apply mb-0;
   }
 
+  .structured-content code {
+    color: #e83e8c;
+  }
+
   /** Bootstrap Shims **/
   .btn {
     @apply px-3 py-2 rounded-sm cursor-pointer;
@@ -96,7 +100,7 @@
   }
 
   .btn-link {
-    @apply text-blue-500 underline hover:text-blue-600;
+    @apply text-blue-500 hover:underline hover:text-blue-600;
   }
 
   .btn-link.text-danger {

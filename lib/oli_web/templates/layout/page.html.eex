@@ -12,8 +12,8 @@
     end
   %>
   <div class="my-2">
-    <h2 class="mb-0"><%= @section.title %><h2>
-    <a href="<%= url %>" class="btn btn btn-link course-btn py-0 pl-0">
+    <h2 class="mb-0"><%= @section.title %></h2>
+    <a href="<%= url %>" class="btn btn-link course-btn py-0 pl-0">
       <i class="fa fa-arrow-left mr-1" aria-hidden="true"></i> Course Overview
     </a>
   </div>

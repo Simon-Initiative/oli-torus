@@ -4,7 +4,7 @@
   footer =  Application.fetch_env!(:oli, :footer)
 %>
 
-<footer class="footer bg-gray-200">
+<footer class="footer bg-gray-100">
   <div class="container">
     <div class="flex flex-row">
       <div class="text-left">

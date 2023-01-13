@@ -106,7 +106,7 @@ export const PageLinkEditor = ({ model, commandContext, attributes, children }: 
             <button className="btn btn-primary" onClick={showModal}>
               Select Page
             </button>
-            <a href={authoringHref} className="ml-3 my-1">
+            <a href={authoringHref} className="self-center p-2">
               <i className="fas fa-external-link-square-alt la-2x"></i>
             </a>
           </div>
