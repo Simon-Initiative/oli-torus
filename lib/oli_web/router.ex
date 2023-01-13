@@ -314,7 +314,7 @@ defmodule OliWeb.Router do
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
-    live("/products/:section_slug/updates", Delivery.ManageUpdates)
+    live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
     live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
 
     get(
@@ -803,7 +803,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-    live("/:section_slug/updates", Delivery.ManageUpdates, as: :section_updates)
+    live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
