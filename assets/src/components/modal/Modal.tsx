@@ -19,7 +19,7 @@ export interface ModalProps {
   okClassName?: string;
   cancelLabel?: string;
   disableOk?: boolean;
-  backdrop?: boolean;
+  backdrop?: boolean | 'static';
   keyboard?: boolean;
   hideDialogCloseButton?: boolean;
   title: string;
@@ -128,5 +128,5 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
 };
 
 Modal.defaultProps = {
-  backdrop: 'true',
+  backdrop: true,
 };

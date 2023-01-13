@@ -10,7 +10,7 @@ export const initCommands = (
 ): CommandDescription[] => {
   const makeCommand = (description: string, type: VlabInputType): CommandDescription => ({
     type: 'CommandDesc',
-    icon: () => '',
+    icon: () => undefined,
     description: () => description,
     active: () => model.inputType === type,
     command: {
