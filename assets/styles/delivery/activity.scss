@@ -24,71 +24,71 @@
     border-radius: 4px;
 
     &.correct {
-      background-color: var(--feedback-correct-bg);
-      color: var(--feedback-correct-color);
+      background-color: var(--oli-feedback-correct-bg);
+      color: var(--oli-feedback-correct-color);
 
       .graphic {
-        color: var(--feedback-correct-graphic-color);
+        color: var(--oli-feedback-correct-graphic-color);
       }
 
       .result {
-        border-color: var(--feedback-correct-color);
-        color: var(--feedback-correct-color);
+        border-color: var(--oli-feedback-correct-color);
+        color: var(--oli-feedback-correct-color);
 
         .score {
-          color: var(--feedback-correct-color);
+          color: var(--oli-feedback-correct-color);
         }
       }
     }
 
     &.partially-correct {
-      background-color: var(--feedback-partially-correct-bg);
-      color: var(--feedback-partially-correct-color);
+      background-color: var(--oli-feedback-partially-correct-bg);
+      color: var(--oli-feedback-partially-correct-color);
 
       .graphic {
-        color: var(--feedback-partially-correct-graphic-color);
+        color: var(--oli-feedback-partially-correct-graphic-color);
       }
 
       .result {
-        border-color: var(--feedback-partially-correct-color);
-        color: var(--feedback-partially-correct-color);
+        border-color: var(--oli-feedback-partially-correct-color);
+        color: var(--oli-feedback-partially-correct-color);
 
         .score {
-          color: var(--feedback-partially-correct-color);
+          color: var(--oli-feedback-partially-correct-color);
         }
       }
     }
 
     &.incorrect {
-      background-color: var(--feedback-incorrect-bg);
-      color: var(--feedback-incorrect-color);
+      background-color: var(--oli-feedback-incorrect-bg);
+      color: var(--oli-feedback-incorrect-color);
 
       .graphic {
-        color: var(--feedback-incorrect-graphic-color);
+        color: var(--oli-feedback-incorrect-graphic-color);
       }
 
       .result {
-        border-color: var(--feedback-incorrect-color);
-        color: var(--feedback-incorrect-color);
+        border-color: var(--oli-feedback-incorrect-color);
+        color: var(--oli-feedback-incorrect-color);
 
         .score {
-          color: var(--feedback-incorrect-color);
+          color: var(--oli-feedback-incorrect-color);
         }
       }
     }
 
     &.explanation {
-      background-color: var(--feedback-explanation-bg);
-      color: var(--feedback-explanation-color);
+      background-color: var(--oli-feedback-explanation-bg);
+      color: var(--oli-feedback-explanation-color);
 
       .graphic {
-        color: var(--feedback-explanation-graphic-color);
+        color: var(--oli-feedback-explanation-graphic-color);
       }
     }
 
     &.error {
-      background-color: var(--feedback-error-bg);
-      color: var(--feedback-error-color);
+      background-color: var(--oli-feedback-error-bg);
+      color: var(--oli-feedback-error-color);
     }
 
     .result {
@@ -123,7 +123,7 @@
         background-color: initial;
 
         &.selected {
-          background-color: var(--choice-selected-bg);
+          background-color: var(--oli-choice-selected-bg);
         }
       }
     }
@@ -144,20 +144,20 @@
     cursor: pointer;
 
     &:hover {
-      background-color: var(--choice-selected-bg-hover);
+      background-color: var(--oli-choice-selected-bg-hover);
     }
 
     &.selected {
-      color: var(--choice-selected-color);
-      background-color: var(--choice-selected-bg);
-      border-color: var(--choice-selected-border-color);
+      color: var(--oli-choice-selected-color);
+      background-color: var(--oli-choice-selected-bg);
+      border-color: var(--oli-choice-selected-border-color);
     }
   }
 
   .hints.card {
-    color: var(--hints-color);
-    background-color: var(--hints-bg);
-    border: var(--hints-border);
+    color: var(--oli-hints-color);
+    background-color: var(--oli-hints-bg);
+    border: var(--oli-hints-border);
   }
 
   p:last-of-type {

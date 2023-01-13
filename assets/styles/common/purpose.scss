@@ -22,10 +22,10 @@
   }
 
   &.objectives {
-    border: 1px solid var(--content-purpose-objectives-color);
+    border: 1px solid rgba(#0984e3, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-objectives-color);
+      background-color: rgba(#0984e3, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -44,10 +44,10 @@
   }
 
   &.checkpoint {
-    border: 1px solid var(--content-purpose-checkpoint-color);
+    border: 1px solid rgba(#0984e3, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-checkpoint-color);
+      background-color: rgba(#0984e3, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -62,10 +62,10 @@
   }
 
   &.didigetthis {
-    border: 1px solid var(--content-purpose-didigetthis-color);
+    border: 1px solid rgba(#8e44ad, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-didigetthis-color);
+      background-color: rgba(#8e44ad, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -80,10 +80,10 @@
   }
 
   &.example {
-    border-bottom: 1px dashed var(--content-purpose-example-color);
+    border-bottom: 1px dashed rgba(#74b9ff, 0.75);
 
     & > .content-purpose-label {
-      border-bottom: 1px dashed var(--content-purpose-example-color);
+      border-bottom: 1px dashed rgba(#74b9ff, 0.75);
       font-weight: 700;
 
       /** icon */
@@ -98,10 +98,10 @@
   }
 
   &.labactivity {
-    border: 1px solid var(--content-purpose-labactivity-color);
+    border: 1px solid rgba(#fdcb6e, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-labactivity-color);
+      background-color: rgba(#fdcb6e, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -116,10 +116,10 @@
   }
 
   &.learnbydoing {
-    border: 1px solid var(--content-purpose-learnbydoing-color);
+    border: 1px solid rgba(#00b894, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-learnbydoing-color);
+      background-color: rgba(#00b894, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -134,10 +134,10 @@
   }
 
   &.learnmore {
-    border: 1px solid var(--content-purpose-learnmore-color);
+    border: 1px solid rgba(#27ae60, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-learnmore-color);
+      background-color: rgba(#27ae60, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -152,10 +152,10 @@
   }
 
   &.manystudentswonder {
-    border: 1px solid var(--content-purpose-manystudentswonder-color);
+    border: 1px solid rgba(#42729b, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-manystudentswonder-color);
+      background-color: rgba(#42729b, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -170,10 +170,10 @@
   }
 
   &.quiz {
-    border: 1px solid var(--content-purpose-quiz-color);
+    border: 1px solid rgba(#3498db, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-quiz-color);
+      background-color: rgba(#3498db, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -188,10 +188,10 @@
   }
 
   &.myresponse {
-    border: 1px solid var(--content-purpose-myresponse-color);
+    border: 1px solid rgba(#3498db, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-myresponse-color);
+      background-color: rgba(#3498db, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -206,10 +206,10 @@
   }
 
   &.simulation {
-    border: 1px solid var(--content-purpose-simulation-color);
+    border: 1px solid rgba(#ff7675, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-simulation-color);
+      background-color: rgba(#ff7675, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -224,10 +224,10 @@
   }
 
   &.walkthrough {
-    border: 1px solid var(--content-purpose-walkthrough-color);
+    border: 1px solid rgba(#536d86, 0.75);
 
     & > .content-purpose-label {
-      background-color: var(--content-purpose-walkthrough-color);
+      background-color: rgba(#536d86, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -242,95 +242,93 @@
   }
 }
 
-// TODO: FIX
+@mixin page_link_style($color, $bg: $color) {
+  .content-purpose-content {
+    background-color: rgba($bg, 0.2);
+    padding: 1em;
+  }
 
-// @mixin page_link_style($color, $bg: $color) {
-//   .content-purpose-content {
-//     background-color: rgba($bg, 0.2);
-//     padding: 1em;
-//   }
+  a.internal-link,
+  a.internal-link:link,
+  a.internal-link:visited {
+    text-decoration: none;
 
-//   a.internal-link,
-//   a.internal-link:link,
-//   a.internal-link:visited {
-//     text-decoration: none;
+    .content-purpose-content {
+      .title {
+        font-size: 1.3em;
+        color: var(--oli-body-color);
+      }
 
-//     .content-purpose-content {
-//       .title {
-//         font-size: 1.3em;
-//         color: var(--body-color);
-//       }
+      i {
+        color: darken($color, 15%);
+      }
+    }
+  }
 
-//       i {
-//         color: darken($color, 15%);
-//       }
-//     }
-//   }
+  a.internal-link:hover,
+  a.internal-link:active {
+    .content-purpose-content {
+      background-color: rgba($bg, 0.3);
 
-//   a.internal-link:hover,
-//   a.internal-link:active {
-//     .content-purpose-content {
-//       background-color: rgba($bg, 0.3);
+      i {
+        color: darken($color, 25%);
+      }
+    }
+  }
+}
 
-//       i {
-//         color: darken($color, 25%);
-//       }
-//     }
-//   }
-// }
+.content-page-link {
+  &.none {
+    border: 1px solid #64748b;
+    @include page_link_style(#3d81f6, rgba(#64748b, 0.2));
+  }
 
-// .content-page-link {
-//   &.none {
-//     border: 1px solid var(--color-gray-500);
-//     @include page_link_style(var(--link-color), rgba(var(--color-gray-500), 0.2));
-//   }
+  &.checkpoint {
+    @include page_link_style(rgba(#0984e3, 0.75));
+  }
 
-//   &.checkpoint {
-//     @include page_link_style(var(--content-purpose-checkpoint-color));
-//   }
+  &.didigetthis {
+    @include page_link_style(rgba(#8e44ad, 0.75));
+  }
 
-//   &.didigetthis {
-//     @include page_link_style(var(--content-purpose-didigetthis-color));
-//   }
+  &.example {
+    @include page_link_style(#3d81f6, #ffffff);
+  }
 
-//   &.example {
-//     @include page_link_style(var(--link-color), var(--body-bg));
-//   }
+  &.labactivity {
+    @include page_link_style(darken(rgba(#fdcb6e, 0.75), 10%));
+  }
 
-//   &.labactivity {
-//     @include page_link_style(darken(var(--content-purpose-labactivity-color), 10%));
-//   }
+  &.learnbydoing {
+    @include page_link_style(rgba(#00b894, 0.75));
+  }
 
-//   &.learnbydoing {
-//     @include page_link_style(var(--content-purpose-learnbydoing-color));
-//   }
+  &.learnmore {
+    @include page_link_style(rgba(#27ae60, 0.75));
+  }
 
-//   &.learnmore {
-//     @include page_link_style(var(--content-purpose-learnmore-color));
-//   }
+  &.manystudentswonder {
+    @include page_link_style(rgba(#42729b, 0.75));
+  }
 
-//   &.manystudentswonder {
-//     @include page_link_style(var(--content-purpose-manystudentswonder-color));
-//   }
+  &.quiz {
+    @include page_link_style(rgba(#3498db, 0.75));
+  }
 
-//   &.quiz {
-//     @include page_link_style(var(--content-purpose-quiz-color));
-//   }
+  &.myresponse {
+    @include page_link_style(rgba(#3498db, 0.75));
+  }
 
-//   &.myresponse {
-//     @include page_link_style(var(--content-purpose-myresponse-color));
-//   }
+  &.simulation {
+    @include page_link_style(rgba(#ff7675, 0.75));
+  }
 
-//   &.simulation {
-//     @include page_link_style(var(--content-purpose-simulation-color));
-//   }
+  &.walkthrough {
+    @include page_link_style(rgba(#536d86, 0.75));
+  }
+}
 
-//   &.walkthrough {
-//     @include page_link_style(var(--content-purpose-walkthrough-color));
-//   }
-// }
-
-// activity-purpose is deprecated but is left here to support existing content
+// NOTICE: activity-purpose class is deprecated but is left here to support existing content
 .activity-purpose {
   padding: 4px 8px;
   font-weight: 200;
@@ -354,7 +352,7 @@
   }
 
   &.checkpoint {
-    background-color: var(--content-purpose-checkpoint-color);
+    background-color: rgba(#0984e3, 0.75);
 
     &::before {
       font-family: 'Font Awesome 6 Free';
@@ -365,7 +363,7 @@
   }
 
   &.didigetthis {
-    background-color: var(--content-purpose-didigetthis-color);
+    background-color: rgba(#8e44ad, 0.75);
 
     &::before {
       font-family: 'Font Awesome 6 Free';
@@ -376,7 +374,7 @@
   }
 
   &.learnbydoing {
-    background-color: var(--content-purpose-learnbydoing-color);
+    background-color: rgba(#00b894, 0.75);
 
     &::before {
       font-family: 'Font Awesome 6 Free';

@@ -2,9 +2,6 @@ footer.footer {
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: var(--footer-height);
-  line-height: var(--footer-height);
-
-  background-color: var(--footer-bg-color);
-  color: var(--footer-color);
+  height: 60px;
+  line-height: 60px;
 }

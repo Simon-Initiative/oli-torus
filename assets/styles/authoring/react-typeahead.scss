@@ -25,7 +25,7 @@
 
 .rbt-menu > .dropdown-item:hover {
   color: var(--color-white);
-  background-color: var(--primary);
+  background-color: var(--oli-primary);
 }
 
 .rbt-menu > .dropdown-item:focus {
@@ -105,7 +105,7 @@
  * Close Button
  */
 .rbt-close {
-  z-index: var(--z-content-1);
+  z-index: var(--z-10);
 }
 
 .rbt-close-lg {
@@ -206,7 +206,7 @@
 
 .input-group > .rbt .rbt-input-hint,
 .input-group > .rbt .rbt-aux {
-  z-index: var(--z-content-2);
+  z-index: var(--z-20);
 }
 
 .input-group > .rbt:not(:first-child) .form-control {

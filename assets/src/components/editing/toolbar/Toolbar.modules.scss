@@ -1,17 +1,17 @@
 .toolbar {
   display: flex;
   flex-direction: row;
-  background: var(--toolbar-bg);
-  border: 2px solid var(--toolbar-border-color);
+  background: #f8f9fb;
+  border: 2px solid #e5e6e8;
   border-radius: 8px;
 
-  z-index: var(--z-content-3);
+  z-index: var(--z-30);
   box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
   -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
 
   &.fixedToolbar {
     border: none;
-    border-bottom: 2px solid var(--toolbar-border-color);
+    border-bottom: 2px solid #e5e6e8;
     border-radius: 0px;
     margin-bottom: 0;
     box-shadow: none;
@@ -82,12 +82,12 @@
     border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 
   &:hover {
-    background-color: var(--toolbar-group-separator-color);
+    background-color: #edeef0;
   }
 
   &.active {
-    background: var(--toolbar-active-bg);
-    color: var(--toolbar-active-color);
+    background: #6b7281;
+    color: #f8f9fb;
   }
 }
 
@@ -122,8 +122,8 @@
   flex-direction: column;
   padding: 8px;
   overflow-y: auto;
-  background: var(--toolbar-bg);
-  border: 2px solid var(--toolbar-border-color);
+  background: #f8f9fb;
+  border: 2px solid #e5e6e8;
 
   .toolbarButton {
     display: inline-flex;

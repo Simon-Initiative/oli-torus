@@ -8,7 +8,7 @@
   position: fixed;
   top: 70px;
   left: 0;
-  z-index: var(--z-highest);
+  z-index: var(--z-50);
   width: 60px;
   min-width: 0;
   border-radius: 0px 5px 5px 0px;
@@ -94,7 +94,7 @@
         border-left: 4px solid var(--color-yellow-400);
       }
       .initState {
-        border-left: 4px solid var(--secondary);
+        border-left: 4px solid var(--oli-secondary);
       }
       .even {
         border-left: 4px solid var(--color-gray-600);
@@ -112,7 +112,7 @@
         }
       }
       .card-header button {
-        color: var(--body-color);
+        color: var(--oli-body-color);
       }
     }
   }

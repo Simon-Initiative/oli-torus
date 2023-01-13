@@ -2,7 +2,7 @@
   position: relative;
   width: 0px;
   flex-shrink: 0;
-  z-index: var(--z-content-1);
+  z-index: var(--z-10);
 
   transition: width 200ms ease-out;
 }
@@ -29,18 +29,18 @@
 .contentOutlineToggleButton {
   width: 30px;
   height: 30px;
-  color: var(--body-color);
+  color: var(--oli-body-color);
   font-size: 16px;
   font-weight: 800;
   border: 2px solid var(--color-gray-400);
   border-radius: 50%;
-  background: var(--body-bg);
+  background: var(--oli-body-bg);
   padding: 0 1px 0 0;
   cursor: pointer;
 
   &:hover {
-    color: var(--selection);
-    border-color: var(--selection);
+    color: var(--oli-selection);
+    border-color: var(--oli-selection);
   }
 }
 
@@ -77,7 +77,7 @@
   border: none;
   border-radius: 4px;
   padding: 2px 4px;
-  color: var(--body-color);
+  color: var(--oli-body-color);
   font-size: 14px;
 
   &:hover {
@@ -87,11 +87,11 @@
 }
 
 .buttonPrimary {
-  background-color: var(--primary);
+  background-color: var(--oli-primary);
   color: var(--color-white);
 
   &:hover {
-    background: var(--hover);
+    background: var(--oli-hover);
   }
 }
 
@@ -100,7 +100,7 @@
   flex-direction: row;
   padding: 6px 12px;
   border-radius: 4px;
-  background: var(--body-bg);
+  background: var(--oli-body-bg);
   min-height: 60px;
   margin-bottom: 4px;
 
@@ -126,7 +126,7 @@
 .groupContainer {
   display: flex;
   flex-direction: row;
-  background: var(--body-bg);
+  background: var(--oli-body-bg);
   overflow: hidden;
   padding: 6px 0px 6px 12px;
   border-radius: 4px;

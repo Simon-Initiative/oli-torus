@@ -127,14 +127,14 @@
 }
 
 .provider-google {
-  font-family: 'Roboto', sans-serif !important;
-  color: var(--google-button-font-color) !important;
-  background-color: var(--google-button-background-color) !important;
-  padding: 0 !important;
+  font-family: 'Roboto', sans-serif;
+  color: var(--oli-body-color);
+  background-color: var(--color-white);
+  padding: 0;
 
   &.btn {
     &:hover {
-      background-color: var(--google-button-background-color) !important;
+      background-color: var(--color-white);
     }
   }
 
@@ -160,12 +160,12 @@
 }
 
 .provider-github {
-  color: var(--github-button-font-color) !important;
-  background-color: var(--github-button-background-color) !important;
+  color: var(--oli-body-color);
+  background-color: var(--color-white);
 
   &.btn {
     &:hover {
-      background-color: var(--github-button-background-color) !important;
+      background-color: var(--color-white);
     }
   }
 

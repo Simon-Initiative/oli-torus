@@ -17,24 +17,19 @@ $workspace-sidebar-width: 65px;
     height: $workspace-header-height;
     position: sticky;
     top: 0;
-    z-index: var(--z-content-5);
-    background-color: var(--workspace-header-bg);
-    box-shadow: 0 2px 4px 0 var(--workspace-header-shadow);
+    z-index: var(--z-50);
+    background-color: #f5f8fb;
 
     .header-bar {
       height: 2.5em;
-      background-color: var(--workspace-logo-bg);
+      background-color: #f5f8fb;
     }
 
     .logo {
       position: relative;
       min-width: $workspace-sidebar-width;
-      background: var(--workspace-logo-bg);
-      background-image: radial-gradient(
-        70% 176%,
-        var(--workspace-header-bg) 0%,
-        var(--workspace-logo-bg) 100%
-      );
+      background: #f5f8fb;
+      background-image: radial-gradient(70% 176%, #f5f8fb 0%, #f5f8fb 100%);
 
       img {
         height: 50px;
@@ -51,7 +46,7 @@ $workspace-sidebar-width: 65px;
         height: 0;
         border-style: solid;
         border-width: 4px calc($workspace-sidebar-width / 2) 0 calc($workspace-sidebar-width / 2);
-        border-color: var(--workspace-logo-bg) transparent transparent transparent;
+        border-color: #f5f8fb transparent transparent transparent;
       }
     }
 
@@ -65,8 +60,7 @@ $workspace-sidebar-width: 65px;
 
     .breadcrumb-bar {
       height: 27px;
-      background: var(--workspace-breadcrumb-bg);
-      box-shadow: inset 0 1px 2px 0 var(--workspace-header-shadow);
+      background: #f5f8fb;
 
       .phx-connected {
         width: 100%;
@@ -85,7 +79,7 @@ $workspace-sidebar-width: 65px;
     position: sticky;
     top: $workspace-header-height;
     height: calc(100vh - #{$workspace-header-height});
-    z-index: var(--z-content-2);
+    z-index: var(--z-20);
   }
 
   .workspace-right {
@@ -106,7 +100,7 @@ $workspace-sidebar-width: 65px;
   .workspace-header {
     width: 100%;
     position: relative;
-    background-color: var(--workspace-header-bg);
+    background-color: #f5f8fb;
     align-items: center;
 
     &.with-breadcrumbs {
@@ -129,7 +123,7 @@ $workspace-sidebar-width: 65px;
   }
 
   .user-initials-icon {
-    background-color: var(--workspace-sidebar-bg);
+    background-color: #e3e7ec;
     border: 2px solid rgb(213, 207, 207);
     vertical-align: middle;
     text-align: center;
@@ -173,13 +167,13 @@ $workspace-sidebar-width: 65px;
   .workspace-sidebar {
     flex: 1;
     width: $workspace-sidebar-width;
-    background-color: var(--workspace-sidebar-bg);
+    background-color: #e3e7ec;
     box-shadow: inset -1px 0 3px 0 rgba(0, 0, 0, 0.09);
-    z-index: var(--z-content-1);
+    z-index: var(--z-10);
 
     .dropdown-menu {
       a {
-        color: var(--workspace-sidebar-link-color);
+        color: var(--color-gray-800);
       }
     }
 

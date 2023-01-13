@@ -9,7 +9,7 @@ $rounded: 4px;
 $ui-border-color: #ccc;
 $panel-section-title-bar-height: 39px;
 $panel-section-title-bar-color: #e8ebed;
-$workspace-bg: var(--body-bg);
+$workspace-bg: var(--oli-body-bg);
 $font-family-sans-serif: var(--font-sans);
 
 #aa-loading {
@@ -55,7 +55,7 @@ $font-family-sans-serif: var(--font-sans);
     transition-timing-function: ease-in-out;
     transition-duration: 0.3s;
     background-color: $panel-bg-color-light;
-    box-shadow: 0 2px 4px 0 rgba($black, 0.1);
+    box-shadow: 0 2px 4px 0 rgba(#000, 0.1);
     border-bottom: 1px solid $ui-border-color;
     // -ms-overflow-style: none; /* IE and Edge */
     // scrollbar-width: none; /* Firefox */
@@ -186,7 +186,7 @@ $font-family-sans-serif: var(--font-sans);
     }
     &:hover {
       .bg-circle {
-        background-color: $primary;
+        background-color: var(--oli-primary);
       }
     }
     &.left {
@@ -524,7 +524,7 @@ $font-family-sans-serif: var(--font-sans);
         min-height: 30px;
 
         .aa-isLayer {
-          color: $secondary;
+          color: var(--oli-secondary);
           opacity: 0.75;
         }
 
@@ -542,18 +542,18 @@ $font-family-sans-serif: var(--font-sans);
 
         & > .aa-sequence-details-wrapper,
         & > .aa-rules-list-details-wrapper {
-          color: $white;
-          background-color: $primary;
+          color: #fff;
+          background-color: var(--oli-primary);
 
           .aa-isLayer {
-            color: $white;
+            color: #fff;
           }
 
           .aa-sequence-item-toggle {
-            color: $white;
+            color: #fff;
           }
           .aa-context-menu-trigger {
-            color: $white;
+            color: #fff;
           }
         }
       }
@@ -602,7 +602,7 @@ $font-family-sans-serif: var(--font-sans);
         color: $panel-font-color-light;
         opacity: 1;
         background: none;
-        border-top: 4px solid $primary;
+        border-top: 4px solid var(--oli-primary);
         border-radius: 0;
         margin-top: -10px;
         padding-top: 6px;
@@ -670,7 +670,7 @@ $font-family-sans-serif: var(--font-sans);
     }
     .variable-picker-dropdown {
       font-size: 12px;
-      background: $white;
+      background: #fff;
       color: $panel-font-color-light;
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
@@ -687,7 +687,7 @@ $font-family-sans-serif: var(--font-sans);
         border-top: 1px solid $ui-border-color;
         display: flex;
         align-items: center;
-        background-color: $white;
+        background-color: #fff;
 
         &:first-of-type {
           border-top: none;
@@ -713,7 +713,7 @@ $font-family-sans-serif: var(--font-sans);
 
 .modal-dialog.config-modal {
   .modal-content {
-    box-shadow: 3px 3px 6px 1px rgba($black, 0.5);
+    box-shadow: 3px 3px 6px 1px rgba(#000, 0.5);
   }
   .modal-header {
     background: $panel-section-title-bar-color;
@@ -739,7 +739,7 @@ $font-family-sans-serif: var(--font-sans);
   }
   .modal-footer {
     background-color: $panel-bg-color-light;
-    box-shadow: 0 2px 4px 0 rgba($black, 0.1);
+    box-shadow: 0 2px 4px 0 rgba(#000, 0.1);
     border-bottom: 1px solid $ui-border-color;
   }
 }

@@ -74,7 +74,7 @@
     position: absolute;
     border: 2px solid rgb(0, 150, 253);
     background-color: rgba(0, 0, 0, 0);
-    z-index: var(--z-content-1);
+    z-index: var(--z-10);
     border-color: rgb(26, 115, 232);
   }
 
@@ -84,7 +84,7 @@
     width: 15px;
     height: 15px;
     font-size: 0px;
-    z-index: var(--z-content-2);
+    z-index: var(--z-20);
     background-color: white;
     position: absolute;
   }
@@ -94,6 +94,6 @@
     text-align: center;
     width: 100%;
     height: auto;
-    color: var(--body-color);
+    color: var(--oli-body-color);
   }
 }

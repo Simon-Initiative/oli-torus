@@ -30,7 +30,7 @@
 }
 
 .list-group .list-group-item:last-child {
-  border-bottom: var(--list-group-border-width) solid var(--list-group-border-color);
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 a.form-control {
@@ -39,12 +39,12 @@ a.form-control {
 
 button.icon-button {
   &:hover {
-    color: var(--primary);
+    color: var(--oli-primary);
   }
 }
 
 button.danger-icon-button {
   &:hover {
-    color: var(--danger);
+    color: var(--oli-danger);
   }
 }

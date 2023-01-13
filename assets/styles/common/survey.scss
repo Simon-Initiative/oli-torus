@@ -1,12 +1,12 @@
 .survey {
   border-radius: 4px;
   margin-bottom: 1rem;
-  border: 1px solid var(--content-survey-color);
+  border: 1px solid rgba(#22a6b3, 0.75);
 
   .survey-label {
     text-transform: uppercase;
     padding: 4px;
-    background-color: var(--content-survey-color);
+    background-color: rgba(#22a6b3, 0.75);
     color: var(--color-white);
 
     /** icon */

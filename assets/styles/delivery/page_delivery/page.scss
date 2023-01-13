@@ -1,6 +1,6 @@
 h1.title {
   font-weight: 600;
-  color: var(--title-color);
+  color: var(--oli-body-color);
   padding-bottom: 0.5em;
   border-bottom: 1px solid var(--color-gray-400);
   margin-bottom: 1em;
@@ -105,9 +105,9 @@ h1.title {
 .rolled-up-objectives {
   margin: 20px 10px;
   padding: 16px;
-  background-color: var(--objectives-background);
-  color: var(--objectives-text);
-  border: 2px solid var(--objectives-border-color);
+  background-color: var(--oli-objectives-background);
+  color: var(--oli-objectives-text);
+  border: 2px solid var(--oli-objectives-border-color);
   border-radius: 4px;
 
   .label {

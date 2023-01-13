@@ -77,7 +77,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   def group(assigns) do
     ~H"""
-      <div class="alternatives-group border p-3 my-2">
+      <div class="alternatives-group bg-gray-100 border p-3 my-2">
         <div class="d-flex flex-row align-items-center">
           <div><b><%= @group.title %></b></div>
           <div class="flex-grow-1"></div>

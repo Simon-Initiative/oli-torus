@@ -20,7 +20,7 @@ module.exports = {
   plugins: [
     tailwindFormsPlugin,
     tailwindElementsPlugin,
-    tailwindCSSVariablesPlugin({ oli: true }, {}),
+    tailwindCSSVariablesPlugin({ oli: 'oli' }, {}),
     plugin(({ addVariant }) =>
       addVariant('phx-no-feedback', ['&.phx-no-feedback', '.phx-no-feedback &']),
     ),

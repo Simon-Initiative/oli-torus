@@ -10,22 +10,22 @@
     max-width: 400px;
 
     &:hover {
-      border-color: var(--primary);
-      background-color: rgba(var(--primary), 10%);
-      box-shadow: 1px 1px 6px -2px rgba(var(--primary), 0.15);
+      border-color: var(--oli-primary);
+      background-color: rgba(var(--oli-primary), 10%);
+      box-shadow: 1px 1px 6px -2px rgba(var(--oli-primary), 0.15);
 
       .nav-title,
       .nav-icon {
-        color: var(--primary);
+        color: var(--oli-primary);
       }
     }
 
     &:active {
-      background-color: rgba(var(--primary), 25%);
+      background-color: rgba(var(--oli-primary), 25%);
 
       .nav-title,
       .nav-icon {
-        color: var(--primary);
+        color: var(--oli-primary);
       }
     }
   }

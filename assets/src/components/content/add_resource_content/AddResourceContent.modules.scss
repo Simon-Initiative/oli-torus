@@ -46,8 +46,8 @@
 
   .insertButtonContainer {
     .insertButton {
-      background-color: var(--primary);
-      border-color: var(--primary);
+      background-color: var(--oli-primary);
+      border-color: var(--oli-primary);
 
       svg {
         color: var(--color-white);
@@ -57,7 +57,7 @@
   }
 
   .insertAdornment {
-    background-color: var(--primary);
+    background-color: var(--oli-primary);
   }
 }
 
@@ -85,7 +85,7 @@
 
 .insertButton {
   border: 2px solid transparent;
-  background-color: rgba($color: var(--body-color), $alpha: 0.6);
+  background-color: rgba($color: var(--oli-body-color), $alpha: 0.6);
   color: white;
 }
 
@@ -95,7 +95,7 @@
   width: fit-content;
   z-index: 500;
   border-radius: 6px;
-  border-color: var(--light) !important;
+  border-color: var(--oli-light) !important;
 
   &:global(.popover) {
     max-width: unset !important;
@@ -110,8 +110,8 @@
   flex-direction: column;
   border-radius: 2px;
   overflow: hidden;
-  background-color: var(--body-bg);
-  border-color: var(--light);
+  background-color: var(--oli-body-bg);
+  border-color: var(--oli-light);
 
   :global(.header) {
     padding-left: 6px;
@@ -125,12 +125,12 @@
   }
 
   :global(.type-label) {
-    color: var(--body-color);
+    color: var(--oli-body-color);
     font-size: 0.8em;
     font-weight: 300;
   }
   :global(.resource-choice-header) {
-    color: var(--body-color);
+    color: var(--oli-body-color);
     font-size: 0.9em;
     font-weight: 400;
     text-transform: uppercase;
@@ -142,11 +142,11 @@
     min-height: 50px;
     max-width: 70px;
     min-width: 70px;
-    background-color: var(--body-bg);
-    color: var(--body-color);
+    background-color: var(--oli-body-bg);
+    color: var(--oli-body-color);
 
     &:hover {
-      color: var(--primary);
+      color: var(--oli-primary);
     }
     &:active {
       transform: translateY(4px);
@@ -174,14 +174,14 @@
   }
 
   :global(.resource-choices-divider) {
-    border-left-color: var(--light);
+    border-left-color: var(--oli-light);
     border-left-width: 1px;
     border-left-style: solid;
   }
 
   :global(.resource-choices-tip) {
     font-size: 0.8em;
-    color: var(--body-color);
+    color: var(--oli-body-color);
   }
 
   :global(.resource-choices) {
@@ -198,7 +198,7 @@
     max-width: 210px;
   }
   :global(.type-description) {
-    color: var(--body-color);
+    color: var(--oli-body-color);
     font-size: 0.8em;
   }
 }
