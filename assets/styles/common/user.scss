@@ -23,6 +23,10 @@
   align-self: center;
 }
 
+.user-icon img {
+  max-width: 28px;
+}
+
 .user::after {
   margin-left: 10px;
 }

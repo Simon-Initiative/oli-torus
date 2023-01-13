@@ -92,11 +92,11 @@
 
     <script>
       window.$ = $;
-      $('.dropdown-toggle').dropdown();
     </script>
 
-    <script>hljs.highlightAll();</script>
-
     <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+
+    <script>hljs.highlightAll();</script>
+    <script src="https://cdn.jsdelivr.net/npm/tw-elements/dist/js/index.min.js"></script>
   </body>
 </html>

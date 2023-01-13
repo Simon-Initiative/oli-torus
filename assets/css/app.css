@@ -396,7 +396,7 @@
     @apply bg-blue-600 text-white;
   }
   .badge-secondary {
-    @apply bg-purple-600 text-white;
+    @apply bg-gray-500 text-white;
   }
   .badge-success {
     @apply bg-green-500 text-white;

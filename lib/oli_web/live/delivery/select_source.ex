@@ -139,20 +139,22 @@ defmodule OliWeb.Delivery.SelectSource do
           <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
 
           <:extra_opts>
-            <Form for={:view} change="update_view_type">
-              <Field name={:type} class="control w-100 d-flex align-items-center">
-                <div class="btn-group btn-group-toggle">
-                  <label class={"btn btn-outline-secondary" <> if @view_type == :card, do: " active", else: ""}>
-                    <RadioButton value="card" checked={@view_type == :card} opts={hidden: true}/>
-                    <i class='fa fa-th'></i>
-                  </label>
-                  <label class={"btn btn-outline-secondary" <> if @view_type == :list, do: " active", else: ""}>
-                    <RadioButton value="list" checked={@view_type == :list} opts={hidden: true}/>
-                    <i class='fa fa-list'></i>
-                  </label>
-                </div>
-              </Field>
-            </Form>
+            <div class="flex flex-row justify-end py-3">
+              <Form for={:view} change="update_view_type">
+                <Field name={:type} class="control w-100 d-flex align-items-center">
+                  <div class="btn-group btn-group-toggle">
+                    <label class={"btn btn-outline-secondary" <> if @view_type == :card, do: " active", else: ""}>
+                      <RadioButton value="card" checked={@view_type == :card} opts={hidden: true}/>
+                      <i class='fa fa-th'></i>
+                    </label>
+                    <label class={"btn btn-outline-secondary" <> if @view_type == :list, do: " active", else: ""}>
+                      <RadioButton value="list" checked={@view_type == :list} opts={hidden: true}/>
+                      <i class='fa fa-list'></i>
+                    </label>
+                  </div>
+                </Field>
+              </Form>
+            </div>
           </:extra_opts>
         </FilterBox>
 
@@ -170,15 +172,11 @@ defmodule OliWeb.Delivery.SelectSource do
         />
 
         {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
-          <div class="grid grid-cols-12 mb-5">
-            <div class="col-span-8 mx-auto">
-              <div class="card">
-                <div class="card-body text-center">
-                  <h5 class="card-title">Have a Course Authoring Account?</h5>
-                  <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
-                  <a href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
-                </div>
-              </div>
+          <div class="card max-w-lg mx-auto">
+            <div class="card-body text-center">
+              <h5 class="card-title">Have a Course Authoring Account?</h5>
+              <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
+              <a href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
             </div>
           </div>
         {/if}

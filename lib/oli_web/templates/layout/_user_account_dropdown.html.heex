@@ -116,18 +116,17 @@
         <li>
           <%= link "My Courses", to: Routes.delivery_path(@conn, :open_and_free_index), class: "dropdown-item btn" %>
         </li>
-      <% end %>
 
-      <hr class="dropdown-divider" />
+        <hr class="dropdown-divider" />
+      <% end %>
 
       <%= if user_is_guest?(@conn) do %>
       <li>
-        <%= link "Sign out", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
+        <%= link "Leave course", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
       </li>
       <% else %>
-
       <li>
-        <%= link "Leave course", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
+        <%= link "Sign out", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
       </li>
       <% end  %>
     </ul>
