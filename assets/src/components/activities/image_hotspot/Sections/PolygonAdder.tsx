@@ -17,7 +17,7 @@ const outsideRect = (x: number, y: number, rect: DOMRect) => {
 // clean coordinate array by collapsing successive duplicate points into single point
 const collapseDups = (coords: number[]) => {
   const newCoords: number[] = [];
-  for (var i = 0, j = 0; i < coords.length; i += 2) {
+  for (let i = 0, j = 0; i < coords.length; i += 2) {
     // copy pair if first element or distinct from predecessor
     if (i === 0 || coords[i] !== coords[i - 2] || coords[i + 1] !== coords[i - 1]) {
       newCoords[j++] = coords[i];
