@@ -213,8 +213,27 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_account_from_user_email(email, attrs \\ %{}) do
-    case Accounts.get_user_by(%{email: email}) do
+  def create_community_account_from_user_email(email, attrs \\ %{}),
+    do: create_community_account_user(:email, email, attrs)
+
+  @doc """
+  Creates a community account from a user id (gets the user first).
+
+  ## Examples
+
+      iex> create_community_account_from_user_id(123 %{field: new_value})
+      {:ok, %CommunityAccount{}}
+
+      iex> create_community_account_from_user_id(123, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_account_from_user_id(id, attrs \\ %{}),
+    do: create_community_account_user(:id, id, attrs)
+
+  defp create_community_account_user(field, value, attrs) do
+    case Accounts.get_user_by(Map.put(%{}, field, value)) do
       %User{id: id} ->
         attrs |> Map.put(:user_id, id) |> create_community_account()
 

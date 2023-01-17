@@ -15,7 +15,8 @@ defmodule OliWeb.CommunityLive.ShowView do
     Form,
     IndexView,
     Invitation,
-    MembersIndexView
+    MembersIndexView,
+    SelectMemberModal
   }
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -267,6 +268,33 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, socket}
   end
 
+  def handle_event("add_member", %{"collaborator-id" => collaborator_id}, socket) do
+    socket = clear_flash(socket)
+
+    attrs = %{community_id: socket.assigns.community.id}
+
+    socket =
+      case Groups.create_community_account_from_user_id(collaborator_id, attrs) do
+        {:ok, _community_account} ->
+          updated_assigns = community_accounts_assigns("member", attrs.community_id)
+
+          socket
+          |> put_flash(:info, "Community member successfully added.")
+          |> assign(updated_assigns)
+          |> hide_modal(modal_assigns: nil)
+
+        {:error, _error} ->
+          message =
+            "Member couldn't be added because the user don't exist in the system or is already associated."
+
+          socket
+          |> put_flash(:error, message)
+          |> hide_modal(modal_assigns: nil)
+      end
+
+    {:noreply, socket}
+  end
+
   def handle_event("add_member", %{"collaborator" => %{"email" => email}}, socket) do
     socket = clear_flash(socket)
 
@@ -275,10 +303,22 @@ defmodule OliWeb.CommunityLive.ShowView do
 
     socket =
       if length(matches) > 1 do
-        socket
+        modal_assigns = %{
+          id: "select_member_community_modal",
+          members: matches,
+          select: "add_member"
+        }
+
+        modal = fn assigns ->
+          ~F"""
+            <SelectMemberModal {...@modal_assigns} />
+          """
+        end
+
+        show_modal(socket, modal, modal_assigns: modal_assigns)
       else
         case Groups.create_community_account_from_email("member", String.trim(email), attrs) do
-          {:ok, _community_accounts} ->
+          {:ok, _community_account} ->
             updated_assigns = community_accounts_assigns("member", attrs.community_id)
 
             socket
