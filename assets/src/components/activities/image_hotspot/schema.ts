@@ -35,8 +35,6 @@ export function makeHotspot(coords: number[] = []): Hotspot {
   hotspot.id = choice.id;
   hotspot.content = choice.content;
   hotspot.coords = coords;
-  // sync coords to text content as comma-separated list
-  hotspot.content = makeContent(coords.join(',')).content;
   return hotspot;
 }
 

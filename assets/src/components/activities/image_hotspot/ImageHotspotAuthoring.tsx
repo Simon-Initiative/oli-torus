@@ -31,6 +31,7 @@ import { PolygonEditor } from './Sections/PolygonEditor';
 import { Maybe } from 'tsmonad';
 import * as Immutable from 'immutable';
 import { defaultCoords } from './utils';
+import { PolygonAdder } from './Sections/PolygonAdder';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
   const { dispatch, model, editMode, projectSlug, onRequestMedia } =
@@ -42,6 +43,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
   });
 
   const [selectedHotspot, setSelectedHotspot] = useState<string | null>(null);
+  const [addPolyMode, setAddPolyMode] = useState<boolean>(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   function selectImage(): Promise<string> {
@@ -75,6 +77,8 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
   };
 
   const addHotspot = (hs: Hotspot) => {
+    // Set choice content to "Hotspot N" for display in UI
+    hs.content = makeContent('Hotspot ' + (model.choices.length + 1).toString()).content;
     model.multiple ? dispatch(CATAActions.addChoice(hs)) : dispatch(Choices.addOne(hs));
   };
 
@@ -97,6 +101,21 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
       addHotspot(hs);
       setSelectedHotspot(hs.id);
     }
+  };
+
+  const beginAddPolyMode = (e: any) => {
+    setAddPolyMode(true);
+    e.stopPropagation();
+  };
+
+  const addPolyMsg = 'Click to add points, Double-click last point to finish';
+
+  const onAddPoly = (coords: number[]) => {
+    // ignore incompletely defined polygons.
+    if (coords.length >= 6) {
+      addHotspot(makeHotspot(coords));
+    }
+    setAddPolyMode(false);
   };
 
   const onEditCoords = (id: string, coords: Immutable.List<number>) => {
@@ -143,7 +162,12 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                   onLoad={() => onImageLoad()}
                   style={{ position: 'absolute' }}
                 />
-                <svg width={model.width} height={model.height} style={{ position: 'relative' }}>
+                <svg
+                  width={model.width}
+                  height={model.height}
+                  style={{ position: 'relative' }}
+                  className={addPolyMode ? 'addPolyMode' : ''}
+                >
                   {zorderedHotspots.map((hotspot) => {
                     const shape: shapeType | undefined = getShape(hotspot);
                     if (shape) {
@@ -166,7 +190,18 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                       );
                     }
                   })}
+                  {addPolyMode && (
+                    <PolygonAdder
+                      onEdit={onAddPoly}
+                      boundingClientRect={imgRef.current!.getBoundingClientRect()}
+                    />
+                  )}
                 </svg>
+              </div>
+            )}
+            {addPolyMode && (
+              <div>
+                <p>{addPolyMsg}</p>
               </div>
             )}
             <button className="btn btn-primary mt-2" onClick={setImageURL}>
@@ -183,13 +218,21 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             &nbsp;&nbsp;
             <button
               className="btn btn-primary mt-2"
+              disabled={!model.imageURL || addPolyMode}
+              onClick={beginAddPolyMode}
+            >
+              Add Polygon
+            </button>
+            &nbsp;&nbsp;
+            <button
+              className="btn btn-primary mt-2"
               onClick={(_e) => removeHotspot(selectedHotspot!)}
               disabled={!selectedHotspot || model.choices.length <= 1}
             >
               Remove
             </button>
           </div>
-
+          <br />
           <div className="form-check mb-2">
             <input
               className="form-check-input"
@@ -205,16 +248,6 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
               Multiple Selection
             </label>
           </div>
-
-          <ChoicesAuthoring
-            icon={model.multiple ? <Checkbox.Unchecked /> : <Radio.Unchecked />}
-            choices={model.choices}
-            simpleText={true}
-            setAll={(choices: Hotspot[]) => dispatch(Choices.setAll(choices))}
-            onEdit={(id, content) => dispatch(ImageHotspotActions.setContent(id, content))}
-            addOne={() => addHotspot(makeHotspot(defaultCoords))}
-            onRemove={(id) => removeHotspot(id)}
-          />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
           <ChoicesDelivery
