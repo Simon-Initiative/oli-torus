@@ -57,6 +57,7 @@
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/annotation.js") %>"></script>
     <%= unless Plug.Conn.get_session(@conn, "browser_timezone") do %>
       <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
     <% end %>
@@ -92,5 +93,8 @@
     <script>hljs.highlightAll();</script>
 
     <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+    <div id="annotations-root">
+      <%= react_component("Components.Annotator", @context) %>
+    </div>
   </body>
 </html>

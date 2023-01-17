@@ -124,8 +124,12 @@ export class HtmlParser implements WriterImpl {
     );
   }
 
-  p(context: WriterContext, next: Next, _x: Paragraph) {
-    return <p>{next()}</p>;
+  p(context: WriterContext, next: Next, attrs: Paragraph) {
+    return (
+      <p id={'E' + attrs.id} data-annotate="text">
+        {next()}
+      </p>
+    );
   }
   h1(context: WriterContext, next: Next, _x: HeadingOne) {
     return <h1>{next()}</h1>;

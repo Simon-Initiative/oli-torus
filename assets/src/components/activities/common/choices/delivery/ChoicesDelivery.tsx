@@ -42,6 +42,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
     <div className={styles.choicesContainer} aria-label="answer choices">
       {choices.map((choice, index) => (
         <div
+          id={choice.id}
           key={choice.id}
           aria-label={`choice ${index + 1}`}
           onClick={onClicked(choice.id)}

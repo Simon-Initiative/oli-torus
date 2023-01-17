@@ -24,37 +24,37 @@ defmodule Oli.Rendering.Content.Html do
     ["<span class=\"callout-inline\">", next.(), "</span>\n"]
   end
 
-  def p(%Context{} = _context, next, _) do
-    ["<p>", next.(), "</p>\n"]
+  def p(%Context{} = _context, next, attrs) do
+    ["<p data-annotate='text' id='E#{attrs["id"]}'>", next.(), "</p>\n"]
   end
 
-  def h1(%Context{} = _context, next, _) do
-    ["<h1>", next.(), "</h1>\n"]
+  def h1(%Context{} = _context, next, attrs) do
+    ["<h1 data-annotate='text' id='E#{attrs["id"]}'>", next.(), "</h1>\n"]
   end
 
-  def h2(%Context{} = _context, next, _) do
-    ["<h2>", next.(), "</h2>\n"]
+  def h2(%Context{} = _context, next, attrs) do
+    ["<h2 data-annotate='text' id='E#{attrs["id"]}'>", next.(), "</h2>\n"]
   end
 
-  def h3(%Context{} = _context, next, _) do
-    ["<h3>", next.(), "</h3>\n"]
+  def h3(%Context{} = _context, next, attrs) do
+    ["<h3 data-annotate='text' id='E#{attrs["id"]}'>", next.(), "</h3>\n"]
   end
 
-  def h4(%Context{} = _context, next, _) do
-    ["<h4>", next.(), "</h4>\n"]
+  def h4(%Context{} = _context, next, attrs) do
+    ["<h4 data-annotate='text' id='E#{attrs["id"]}'>", next.(), "</h4>\n"]
   end
 
-  def h5(%Context{} = _context, next, _) do
-    ["<h5>", next.(), "</h5>\n"]
+  def h5(%Context{} = _context, next, attrs) do
+    ["<h5 data-annotate='text' id='E#{attrs["id"]}'>", next.(), "</h5>\n"]
   end
 
-  def h6(%Context{} = _context, next, _) do
-    ["<h6>", next.(), "</h6>\n"]
+  def h6(%Context{} = _context, next, attrs) do
+    ["<h6 data-annotate='text' id='E#{attrs["id"]}'>", next.(), "</h6>\n"]
   end
 
   def img(%Context{} = context, _, %{"src" => src} = attrs) do
     captioned_content(context, attrs, [
-      ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+      ~s|<img data-annotate='block' id='E#{attrs["id"]}' class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
     ])
   end
 
@@ -62,7 +62,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, %{"src" => src} = attrs) do
     [
-      ~s|<img class="img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
+      ~s|<img data-annotate='block' id='E#{attrs["id"]}' class="img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
     ]
   end
 
