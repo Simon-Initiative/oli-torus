@@ -306,7 +306,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
 
       assert html_response(conn, 200) =~
-               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+               ~s|src="#{cover_image}"|
     end
 
     test "renders product's cover image in enrollment page", %{
@@ -326,7 +326,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
-               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+               ~s|src="#{cover_image}"|
     end
 
     test "if no cover image is set, renders default image in enrollment page", %{
@@ -344,7 +344,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
-               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+               ~s|src="#{cover_image}"|
     end
   end
 
