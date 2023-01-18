@@ -277,12 +277,17 @@
     @apply inline-block text-gray-800;
   }
 
-  .custom-control input[type='checkbox'],
-  .form-check input[type='checkbox'],
-  .form-group input[type='checkbox'],
-  .form-control input[type='checkbox'] {
+  :not(.form-switch) .custom-control input[type='checkbox'],
+  :not(.form-switch).form-check input[type='checkbox'],
+  :not(.form-switch).form-group input[type='checkbox'],
+  :not(.form-switch).form-control input[type='checkbox'] {
     @apply border-gray-400 rounded-sm disabled:bg-gray-300 hover:border-gray-400;
   }
+
+  .form-switch input[type='checkbox'] {
+    @apply bg-contain;
+  }
+
   .form-group input[type='file'] {
     @apply border border-gray-300 p-1 rounded-md;
   }

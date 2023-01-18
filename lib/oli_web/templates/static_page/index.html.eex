@@ -10,7 +10,7 @@
 
   <% else %>
     <h1>Welcome to <%= Oli.VendorProperties.product_short_name() %></h1>
-    <p>Create, deliver and continuously improve your course content using your web browser.</p>
+    <p>Create, deliver and continuously improve course materials.</p>
 
     <p class="my-2 py-2">
       <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-outline-primary" do %>
