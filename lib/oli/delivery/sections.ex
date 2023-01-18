@@ -561,6 +561,50 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  @doc """
+  Gets all sections that use a particular project when their 'end_date' attribute is not nil and is later than the current date.
+
+  ## Examples
+      iex> get_active_sections_by_project(project, now_time)
+      [%Section{}, ...]
+
+      iex> get_active_sections_by_project(invalid_project, now_time)
+      []
+  """
+  def get_active_sections_by_project(project, now_time) do
+    Repo.all(
+      from(
+        section in Section,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == section.id,
+        where: spp.project_id == ^project.id and (not is_nil(section.end_date) and section.end_date > ^now_time),
+        select: section,
+        preload: [section_project_publications: [:publication]]
+      )
+    )
+  end
+
+  @doc """
+  Gets all sections that will be affected by forcing the publication update.
+
+  ## Examples
+      iex> get_push_force_affected_sections(project)
+      [%Section{}, ...]
+
+      iex> get_push_force_affected_sections(invalid_project)
+      []
+  """
+
+  def get_push_force_affected_sections(project) do
+    Repo.all(
+      from(
+        section in Section,
+        join: spp in SectionsProjectsPublications,
+        on: section.id == spp.section_id,
+        where: spp.project_id == ^project.id and section.status == :active
+      )
+    )
+  end
 
   @doc """
   For a section resource record, map its children SR records to resource ids,
