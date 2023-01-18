@@ -110,6 +110,7 @@ export interface MediaManagerProps {
   onResetMedia: () => void;
   onSelectionChange: (selection: MediaItem[]) => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
+  onNotFound?: () => void; // Emitted when the initial media item set is not found. Can be useful for selecting default tab on UrlOrUpload
 }
 
 export interface MediaManagerState {
@@ -174,6 +175,11 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           .map((path) => onLoadMediaItemByPath(this.props.projectSlug, path.replace(/^[./]+/, ''))),
       )
         .then((mediaItems) => {
+          if (mediaItems.length === 1 && Maybe.isNothing(mediaItems[0])) {
+            // Had a single initial entry and it was not found so an upstream component can decide what to do, such as display a text input instead.
+            this.props.onNotFound && this.props.onNotFound();
+          }
+
           this.setState({
             selection: Immutable.List(
               mediaItems
@@ -500,9 +506,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const { media } = this.props;
     const { selection, showDetails } = this.state;
 
-    const selectedMediaItems = selection.map((guid) =>
-      media.data.get(guid),
-    ) as Immutable.List<MediaItem>;
+    const selectedMediaItems = selection
+      .map((guid) => media.data.get(guid))
+      .filter((item) => !!item) as Immutable.List<MediaItem>;
 
     if (selectedMediaItems.size > 1) {
       return (

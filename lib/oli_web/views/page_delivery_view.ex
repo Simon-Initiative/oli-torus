@@ -108,23 +108,54 @@ defmodule OliWeb.PageDeliveryView do
     end
   end
 
-  def container?(rev) do
-    ResourceType.get_type_by_id(rev.resource_type_id) == "container"
-  end
+  def from_node(%HierarchyNode{revision: revision}, field), do: Map.get(revision, field)
+  def from_node(map, field), do: Map.get(map, Atom.to_string(field))
+
+  def node_index(%HierarchyNode{numbering: %Numbering{index: index}}), do: index
+  def node_index(%{"index" => index}), do: index
+
+  def node_children(%HierarchyNode{children: children}), do: children
+  def node_children(%{"children" => children}), do: children
+
+  def container?(%HierarchyNode{revision: %{resource_type_id: resource_type_id}}),
+    do: ResourceType.get_type_by_id(resource_type_id) == "container"
+  def container?(%{resource_type_id: resource_type_id}),
+    do: ResourceType.get_type_by_id(resource_type_id) == "container"
+  def container?(%{"type" => type}), do: type == "container"
+
+  def container_title(_node, display_curriculum_item_numbering \\ true)
 
   def container_title(
         %HierarchyNode{
           numbering: %Numbering{
-            level: level,
             index: index
           },
           revision: revision
-        },
-        display_curriculum_item_numbering \\ true
+        } = h,
+        display_curriculum_item_numbering
       ) do
     if display_curriculum_item_numbering,
-      do: "#{Numbering.container_type(level)} #{index}: #{revision.title}",
-      else: "#{Numbering.container_type(level)}: #{revision.title}"
+      do: "#{Numbering.container_type_label(h.numbering)} #{index}: #{revision.title}",
+      else: "#{Numbering.container_type_label(h.numbering)}: #{revision.title}"
+  end
+
+  def container_title(
+        %{
+          "index" => index,
+          "title" => title,
+          "level" => level
+        },
+        display_curriculum_item_numbering
+      ) do
+    numbering = %Numbering{
+      level: String.to_integer(level),
+      index: String.to_integer(index),
+      labels: Oli.Branding.CustomLabels.default()
+    }
+
+    if display_curriculum_item_numbering,
+      do: "#{Numbering.container_type_label(numbering)} #{index}: #{title}",
+      else: "#{Numbering.container_type_label(numbering)}: #{title}"
   end
 
   def has_submitted_attempt?(resource_access) do
@@ -176,7 +207,9 @@ defmodule OliWeb.PageDeliveryView do
       Oli.Activities.State.ActivityState.from_attempt(
         activity_attempt,
         Map.values(part_attempts_map),
-        model
+        model,
+        nil,
+        nil
       )
 
     activity_type_slug =

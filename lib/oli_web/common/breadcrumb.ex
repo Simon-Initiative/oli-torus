@@ -65,8 +65,8 @@ defmodule OliWeb.Common.Breadcrumb do
      [%Breadcrumb{ curriculum }, %Breadcrumb{ container_1 }, ..., %Breadcrumb{ revision_slug }]
 
   """
-  def trail_to(project_or_section_slug, revision_slug, resolver) do
-    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug),
+  def trail_to(project_or_section_slug, revision_slug, resolver, custom_labels) do
+    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug, custom_labels),
          numbering <-
            Numbering.path_from_root_to(
              resolver,
@@ -200,9 +200,9 @@ defmodule OliWeb.Common.Breadcrumb do
       "container" ->
         Breadcrumb.new(%{
           full_title:
-            Numbering.prefix(%{level: numbering.level, index: numbering.index}) <>
+            Numbering.prefix(numbering) <>
               ": " <> rev.title,
-          short_title: Numbering.prefix(%{level: numbering.level, index: numbering.index}),
+          short_title: Numbering.prefix(numbering),
           slug: uuid
         })
 

@@ -2,6 +2,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
   use Oli.DataCase
 
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.ResourceType
 
   describe "delivery resolution" do
     setup do
@@ -192,6 +193,25 @@ defmodule Oli.Publishing.DeliveryResolverTest do
              |> Enum.at(0)
              |> Map.get(:numbering)
              |> Map.get(:level) == 2
+    end
+
+    test "revisions_of_type/2 returns all revisions of a specified type", %{
+      section_1: section
+    } do
+      revisions =
+        DeliveryResolver.revisions_of_type(
+          section.slug,
+          ResourceType.get_id_by_type("page")
+        )
+
+      assert Enum.count(revisions) == 4
+
+      assert revisions |> Enum.map(& &1.title) |> Enum.sort() == [
+               "Nested Page One",
+               "Nested Page Two",
+               "Page one",
+               "Page two"
+             ]
     end
   end
 end

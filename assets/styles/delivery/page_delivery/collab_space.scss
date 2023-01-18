@@ -1,0 +1,64 @@
+.post-index {
+  border-right: 1px solid #73757e !important;
+  padding: 0.7rem;
+}
+
+.w-85 {
+  width: 85%;
+}
+
+.readonly {
+  pointer-events: none;
+  background: #80808029 !important;
+  opacity: 0.6;
+}
+
+.not-readonly {
+  pointer-events: all;
+}
+
+.members {
+  li {
+    display: inline-block;
+    padding-left: 2em;
+  }
+
+  li:before {
+    content: "\2022";
+    color: $green;
+    position: absolute;
+    top: -15px;
+    left: 0;
+    padding-left: 0.1em;
+    font-size: 3em;
+  }
+}
+
+.rounded-button {
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.post {
+  .post-index {
+    font-size: $h3-font-size;
+  }
+
+  .post-border {
+    border-left: 0.2rem solid #007bff !important;
+  }
+}
+
+.reply {
+  .post-index {
+    font-size: $h4-font-size;
+  }
+
+  .post-border {
+    border-left: 0.2rem solid #17a2b8 !important;
+  }
+}

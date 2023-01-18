@@ -452,6 +452,7 @@ defmodule Oli.TestHelpers do
                 institution.id
               end,
             base_project_id: project.id,
+            customizations: project.customizations,
             requires_payment: true,
             amount: "$100.00",
             grace_period_days: 5,
@@ -575,15 +576,17 @@ defmodule Oli.TestHelpers do
     %{publication: publication, project: project, unit_one_revision: unit_one_revision}
   end
 
-  def section_with_assessment(_context) do
-    project = insert(:project)
+  def section_with_assessment(_context, deployment \\ nil) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
 
     # Graded page revision
     page_revision =
       insert(:revision,
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Progress test revision",
-        graded: true
+        graded: true,
+        content: %{"advancedDelivery" => true}
       )
 
     # Associate nested graded page to the project
@@ -635,24 +638,45 @@ defmodule Oli.TestHelpers do
     insert(:published_resource, %{
       publication: publication,
       resource: container_resource,
-      revision: container_revision
+      revision: container_revision,
+      author: author
     })
 
     # Publish nested container resource
     insert(:published_resource, %{
       publication: publication,
       resource: unit_one_resource,
-      revision: unit_one_revision
+      revision: unit_one_revision,
+      author: author
     })
 
     # Publish nested page resource
     insert(:published_resource, %{
       publication: publication,
       resource: page_revision.resource,
-      revision: page_revision
+      revision: page_revision,
+      author: author
     })
 
-    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true, type: :enrollable)
+    section =
+      if deployment do
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          lti_1p3_deployment: deployment,
+          registration_open: true,
+          type: :enrollable
+        )
+      else
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+      end
+
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}

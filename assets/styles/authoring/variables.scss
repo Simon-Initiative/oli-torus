@@ -50,6 +50,7 @@ $content-purpose-learnbydoing-color: rgba(#00b894, 0.75) !default;
 $content-purpose-learnmore-color: rgba(#27ae60, 0.75) !default;
 $content-purpose-manystudentswonder-color: rgba(#42729b, 0.75) !default;
 $content-purpose-quiz-color: rgba(#3498db, 0.75) !default;
+$content-purpose-myresponse-color: rgba(#3498db, 0.75) !default;
 $content-purpose-simulation-color: rgba(#ff7675, 0.75) !default;
 $content-purpose-walkthrough-color: rgba(#536d86, 0.75) !default;
 $content-survey-color: rgba(#22a6b3, 0.75) !default;
@@ -66,6 +67,8 @@ $speaker2: #f8d7da !default;
 $speaker3: #cff4fc !default;
 $speaker4: #fff3cd !default;
 $speaker5: #ffe5d0 !default;
+
+$alternatives-group-background-color: $gray-100 !default;
 
 // Export all theme SASS variables to CSS
 & {
@@ -135,6 +138,7 @@ $speaker5: #ffe5d0 !default;
   --content-purpose-learnmore-color: #{$content-purpose-learnmore-color};
   --content-purpose-manystudentswonder-color: #{$content-purpose-manystudentswonder-color};
   --content-purpose-quiz-color: #{$content-purpose-quiz-color};
+  --content-purpose-myresponse-color: #{$content-purpose-myresponse-color};
   --content-purpose-simulation-color: #{$content-purpose-simulation-color};
   --content-purpose-walkthrough-color: #{$content-purpose-walkthrough-color};
 
@@ -144,4 +148,6 @@ $speaker5: #ffe5d0 !default;
   --authoring-toolbar-border-color: #{$toolbar-border-color};
   --authoring-toolbar-active-bg: #{$toolbar-active-bg};
   --authoring-toolbar-active-color: #{$toolbar-active-color};
+
+  --authoring-alternatives-group-background-color: #{$alternatives-group-background-color};
 }

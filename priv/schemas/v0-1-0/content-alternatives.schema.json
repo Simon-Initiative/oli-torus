@@ -1,0 +1,69 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-alternatives.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Content Alternatives",
+  "description": "A set of alternative content which is rendered according to a particular strategy",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "alternatives"
+    },
+    "id": {
+      "type": [
+        "integer",
+        "string"
+      ]
+    },
+    "strategy": {
+      "enum": [
+        "select_all",
+        "user_section_preference"
+      ]
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/alternative"
+      }
+    },
+    "alternatives_id": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "type",
+    "id",
+    "strategy",
+    "children"
+  ],
+  "$defs": {
+    "alternative": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "alternative"
+        },
+        "id": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "value": {
+          "type": [
+            "string"
+          ]
+        },
+        "children": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "value",
+        "children"
+      ]
+    }
+  }
+}

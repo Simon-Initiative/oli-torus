@@ -314,7 +314,8 @@ defmodule Oli.Resources do
           parameters: previous_revision.parameters,
           legacy: previous_revision.legacy |> convert_legacy,
           tags: previous_revision.tags,
-          explanation_strategy: previous_revision.explanation_strategy
+          explanation_strategy: previous_revision.explanation_strategy,
+          collab_space_config: previous_revision.collab_space_config
         },
         convert_strings_to_atoms(attrs)
       )
@@ -355,5 +356,28 @@ defmodule Oli.Resources do
     |> then(fn %Revision{title: title, slug: slug} ->
       %ResourceSummary{title: title, slug: slug}
     end)
+  end
+
+  @doc """
+  Returns a list of alternatives groups for a given project or section slug and resolver.
+  """
+  def alternatives_groups(project_or_section_slug, resolver) do
+    case resolver.revisions_of_type(
+           project_or_section_slug,
+           ResourceType.get_id_by_type("alternatives")
+         ) do
+      alternatives when is_list(alternatives) ->
+        {:ok,
+         Enum.map(alternatives, fn a ->
+           %{
+             id: a.resource_id,
+             title: a.title,
+             options: a.content["options"]
+           }
+         end)}
+
+      error ->
+        error
+    end
   end
 end

@@ -11,7 +11,7 @@ defmodule Oli.Seeder do
   alias Oli.Activities.Model.Part
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -425,6 +425,12 @@ defmodule Oli.Seeder do
         :parent4
       )
 
+    customizations =
+      case map.project.customizations do
+        nil -> nil
+        labels -> Map.from_struct(labels)
+      end
+
     # Create a course section, one for each publication
     {:ok, section_1} =
       Sections.create_section(%{
@@ -432,7 +438,8 @@ defmodule Oli.Seeder do
         registration_open: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
-        base_project_id: map.project.id
+        base_project_id: map.project.id,
+        customizations: customizations
       })
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub1)
@@ -443,7 +450,8 @@ defmodule Oli.Seeder do
         registration_open: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
-        base_project_id: map.project.id
+        base_project_id: map.project.id,
+        customizations: customizations
       })
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub2)
@@ -455,7 +463,8 @@ defmodule Oli.Seeder do
         open_and_free: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
-        base_project_id: map.project.id
+        base_project_id: map.project.id,
+        customizations: customizations
       })
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub2)
@@ -827,7 +836,10 @@ defmodule Oli.Seeder do
         true
 
       %Publication{published: nil} = p ->
-        Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
+        {:ok, pub} = Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
+        Oli.Publishing.insert_revision_part_records(pub.id)
+
+        {:ok, pub}
     end
   end
 

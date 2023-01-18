@@ -59,6 +59,19 @@ defmodule OliWeb.BrandControllerTest do
       conn = get(conn, Routes.brand_path(conn, :index))
       assert html_response(conn, 200) =~ "Brands"
       assert html_response(conn, 200) =~ "New Brand"
+      assert html_response(conn, 200) =~ "There are no brands"
+    end
+  end
+
+  describe "index with brand" do
+    setup [:create_and_signin_admin, :create_brand]
+
+    test "lists all brands", %{conn: conn} do
+      conn = get(conn, Routes.brand_path(conn, :index))
+      assert html_response(conn, 200) =~ "Brands"
+      assert html_response(conn, 200) =~ "New Brand"
+
+      assert html_response(conn, 200) =~ "some name"
     end
   end
 

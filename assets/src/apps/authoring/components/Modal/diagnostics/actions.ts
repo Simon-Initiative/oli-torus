@@ -51,7 +51,7 @@ export const updateRule = (rule: any, problem: any, activities: any) => {
     const rulesClone = activity ? [...activity.authoring.rules] : [];
     rulesClone[activity?.authoring.rules.indexOf(existing)] = rule;
     activityClone.authoring.rules = rulesClone;
-    return saveActivity({ activity: activityClone, undoable: true });
+    return saveActivity({ activity: activityClone, undoable: true, immediate: true });
   }
 };
 
@@ -129,7 +129,7 @@ export const updateInitComponentPath =
       const factsClone = activity ? [...activity.content.custom.facts] : [];
       factsClone[activity?.content.custom.facts.indexOf(existing)] = factClone;
       activityClone.content.custom.facts = factsClone;
-      return saveActivity({ activity: activityClone, undoable: true });
+      return saveActivity({ activity: activityClone, undoable: true, immediate: true });
     }
   };
 

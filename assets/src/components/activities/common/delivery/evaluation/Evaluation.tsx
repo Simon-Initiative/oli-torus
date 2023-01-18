@@ -16,13 +16,14 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
   const errorText = makeContent('There was an error processing this response');
   const error = partState.error;
   const feedback = partState.feedback?.content;
+  const resultCl = resultClass(partState.score, partState.outOf, partState.error);
   const explanation = partState.explanation?.content;
 
   return (
     <React.Fragment>
       <Component
         key={`${partState.partId}-feedback`}
-        resultClass={resultClass(partState.score, partState.outOf, partState.error)}
+        resultClass={resultCl}
         score={partState.score}
         outOf={partState.outOf}
         graded={context.graded}
@@ -32,7 +33,7 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
           context={context}
         />
       </Component>
-      {explanation && (
+      {explanation && resultCl !== 'correct' && (
         <Component
           key={`${partState.partId}-explanation`}
           resultClass="explanation"
@@ -71,6 +72,7 @@ interface ComponentProps {
   outOf?: number | null;
   graded?: boolean;
 }
+
 const Component: React.FC<ComponentProps> = (props) => {
   const scoreOrGraphic = props.graded
     ? (props.score || props.outOf) && (
@@ -97,16 +99,16 @@ const Component: React.FC<ComponentProps> = (props) => {
 
 const graphicForResultClass = (resultClass: string) => {
   if (resultClass === 'correct') {
-    return <span className="icon_30H-hYww material-icons mr-2">check_circle</span>;
+    return <span className="icon_30H-hYww material-icons mr-2 graphic">check_circle</span>;
   }
   if (resultClass === 'incorrect') {
-    return <span className="icon_30H-hYww material-icons mr-2">cancel</span>;
+    return <span className="icon_30H-hYww material-icons mr-2 graphic">cancel</span>;
   }
   if (resultClass === 'partially-correct') {
-    return <span className="icon_30H-hYww material-icons mr-2">check</span>;
+    return <span className="icon_30H-hYww material-icons mr-2 graphic">check</span>;
   }
 
-  return <span className="icon_30H-hYww material-icons mr-2">error</span>;
+  return <span className="icon_30H-hYww material-icons mr-2 graphic">error</span>;
 };
 
 const resultClass = (score: number | null, outOf: number | null, error: string | undefined) => {

@@ -73,6 +73,7 @@ export const positionRect = (
   { position, align, childRect, popoverRect, padding }: PopoverState,
   reposition?: boolean,
   parent?: HTMLElement | null,
+  headerOffsest = 0,
 ): DOMRect => {
   const targetMidX = childRect.left + childRect.width / 2;
   const targetMidY = childRect.top + childRect.height / 2;
@@ -110,8 +111,8 @@ export const positionRect = (
 
   // reposition to follow if scrolled off screen
   if (position === 'top' && reposition && parent) {
-    // a constant offset value to account for the header and other items at the top of the scroll view
-    const TOP_SCROLL_OFFSET = 130;
+    // offset value to account for the header and other items at the top of the scroll view
+    const topScrollOffset = headerOffsest + padding;
 
     const parentRect = parent.getBoundingClientRect();
 
@@ -127,9 +128,9 @@ export const positionRect = (
     // here we check to see if the view is scrolled past the top of the editor and if so
     // then we adjust the position the toolbar relative to the top of the window so it is
     // always in view
-    const topAdjustedScrollPos = parentRect.top - TOP_SCROLL_OFFSET;
+    const topAdjustedScrollPos = parentRect.top - topScrollOffset;
     if (topAdjustedScrollPos < 0) {
-      top = top - topAdjustedScrollPos + Math.min(0, parentRect.bottom - TOP_SCROLL_OFFSET);
+      top = top - topAdjustedScrollPos + Math.min(0, parentRect.bottom + padding - topScrollOffset);
     }
   }
 

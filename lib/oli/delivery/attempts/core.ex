@@ -592,8 +592,10 @@ defmodule Oli.Delivery.Attempts.Core do
         on:
           aa.resource_attempt_id == aa2.resource_attempt_id and aa.resource_id == aa2.resource_id and
             aa.id < aa2.id,
+        left_join: rev in assoc(aa, :revision),
         where: aa.resource_attempt_id == ^resource_attempt_id and is_nil(aa2),
-        select: aa
+        select: aa,
+        preload: [revision: rev]
       )
     )
   end
@@ -734,6 +736,23 @@ defmodule Oli.Delivery.Attempts.Core do
   """
   def get_resource_attempt_by(clauses),
     do: Repo.get_by(ResourceAttempt, clauses) |> Repo.preload([:activity_attempts, :revision])
+
+  @doc """
+  Gets a resource attempt by its id, preloading the resource revision
+  in the same query.
+  ## Examples
+      iex> get_resource_attempt_and_revision(1337)
+      %ResourceAttempt{}
+      iex> get_resource_attempt_and_revision(160605904)
+      nil
+  """
+  def get_resource_attempt_and_revision(resource_attempt_id) do
+    Repo.one(
+      ResourceAttempt
+      |> where([ra1], ra1.id == ^resource_attempt_id)
+      |> preload(:revision)
+    )
+  end
 
   @doc """
   Creates a part attempt.

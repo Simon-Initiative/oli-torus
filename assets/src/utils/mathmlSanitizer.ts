@@ -181,6 +181,89 @@ const allowedAttributes = {
   munderover: ['accent', 'accentunder', 'align', ...commonAttributes],
 
   semantics: ['src', 'definitionurl', 'encoding', 'cd', 'name', ...commonAttributes],
+
+  'm:maction': ['actiontype', 'selection', ...commonAttributes],
+
+  'm:math': ['dir', 'display', 'mode', ...mstyleAttributes, ...commonAttributes],
+
+  'm:menclose': ['notation', ...commonAttributes],
+
+  'm:merror': commonAttributes,
+
+  'm:mfenced': ['close', 'open', 'separators', ...commonAttributes],
+
+  'm:mfrac': ['bevelled', 'denomalign', 'linethickness', 'numalign', ...commonAttributes],
+
+  'm:mi': ['dir', 'mathvariant', ...commonAttributes],
+
+  'm:mmultiscripts': ['subscriptshift', 'superscriptshift', ...commonAttributes],
+
+  'm:mn': ['dir', 'mathvariant', ...commonAttributes],
+
+  'm:mo': [
+    'accent',
+    'fence',
+    'lspace',
+    'mathvariant',
+    'maxsize',
+    'minsize',
+    'movablelimits',
+    'rspace',
+    'separator',
+    'stretchy',
+    'symmetric',
+    ...commonAttributes,
+  ],
+
+  'm:mover': ['accent', 'align', ...commonAttributes],
+
+  'm:mpadded': ['depth', 'height', 'lspace', 'voffset', 'width', ...commonAttributes],
+
+  'm:mphantom': commonAttributes,
+
+  'm:mroot': commonAttributes,
+
+  'm:mrow': ['dir', ...commonAttributes],
+
+  'm:ms': ['dir', 'lquote', 'mathvariant', 'rquote', ...commonAttributes],
+
+  'm:mspace': ['depth', 'height', 'width', ...commonAttributes],
+
+  'm:msqrt': commonAttributes,
+
+  'm:mstyle': [...mstyleAttributes, ...commonAttributes],
+
+  'm:msub': ['subscriptshift', ...commonAttributes],
+
+  'm:msubsup': ['subscriptshift', 'superscriptshift', ...commonAttributes],
+
+  'm:msup': ['superscriptshift', ...commonAttributes],
+
+  'm:mtable': [
+    'align',
+    'columnalign',
+    'columnlines',
+    'columnspacing',
+    'frame',
+    'framespacing',
+    'rowalign',
+    'rowlines',
+    'width',
+
+    ...commonAttributes,
+  ],
+
+  'm:mtd': ['columnalign', 'columnspan', 'rowalign', 'rowspan', ...commonAttributes],
+
+  'm:mtext': ['dir', 'mathvariant', ...commonAttributes],
+
+  'm:mtr': ['columnalign', 'rowalign', ...commonAttributes],
+
+  'm:munder': ['accentunder', 'align', ...commonAttributes],
+
+  'm:munderover': ['accent', 'accentunder', 'align', ...commonAttributes],
+
+  'm:semantics': ['src', 'definitionurl', 'encoding', 'cd', 'name', ...commonAttributes],
 };
 
 const config: IOptions = {

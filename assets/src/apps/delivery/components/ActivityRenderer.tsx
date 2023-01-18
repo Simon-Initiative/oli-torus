@@ -220,7 +220,18 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     return result;
   };
 
-  const onReady = async (attemptGuid: string) => {
+  const onReady = async (attemptGuid: string, partAttemptGuid: string, response: any) => {
+    const isResumeMode = getValue('session.isResumeMode', defaultGlobalEnv) || false;
+    if (Array.isArray(response) && !isResumeMode) {
+      await Promise.all(
+        await response.map(async (partResponse) => {
+          const partAttemptGuid = partResponse[0];
+          const partAttemptResponses = partResponse[1];
+          await onActivitySavePart(activity.id, attemptGuid, partAttemptGuid, partAttemptResponses);
+        }),
+      );
+    }
+
     const results = await onActivityReady(activity.id, attemptGuid);
     const result: Success = {
       type: 'success',
@@ -272,7 +283,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       );
 
       if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
-        /* console.log('EVENT FOR ME', { e, activity, attempt, currentAttempt }); */
+        // console.log('EVENT FOR ME', { e, activity, attempt, currentAttempt });
         isForMe = true;
       }
       const handler = bridgeEvents[e.type];

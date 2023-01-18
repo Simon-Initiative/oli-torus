@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { templatizeText } from 'adaptivity/scripting';
+import { applyState, templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import {
@@ -43,6 +43,7 @@ import {
   selectResourceAttemptGuid,
   selectSectionSlug,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../page/slice';
 import { GroupsSlice } from '../name';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
@@ -150,6 +151,14 @@ export const initializeActivity = createAsyncThunk(
       value: 0,
     };
 
+    if (isHistoryMode) {
+      const targetIsResumeModeOp: ApplyStateOperation = {
+        target: 'session.isResumeMode',
+        operator: '=',
+        value: false,
+      };
+      applyState(targetIsResumeModeOp, defaultGlobalEnv);
+    }
     const sessionOps = [
       resumeTarget,
       timeStartOp,
@@ -161,22 +170,17 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
-
-    const globalSnapshot = getEnvState(defaultGlobalEnv);
     const trackingStampKey = `session.visitTimestamps.${currentSequenceId}`;
-    const isActivityAlreadyVisited = globalSnapshot[trackingStampKey];
-    // don't reset the time if student is revisiting that page
-    if (!isActivityAlreadyVisited) {
-      // looks like SS captures the date when we leave the page but it should
-      // show in the history as soon as we visit but it does not show the timestamp
-      // so we will capture the time on trigger check
-      const targetVisitTimeStampOp: ApplyStateOperation = {
-        target: trackingStampKey,
-        operator: '=',
-        value: 0,
-      };
-      sessionOps.push(targetVisitTimeStampOp);
-    }
+    // looks like SS captures the date when we leave the page but it should
+    // show in the history as soon as we visit but it does not show the timestamp
+    // so we will capture the time on trigger check
+    const targetVisitTimeStampOp: ApplyStateOperation = {
+      target: trackingStampKey,
+      operator: '=',
+      value: 0,
+    };
+    sessionOps.push(targetVisitTimeStampOp);
+
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
@@ -424,6 +428,8 @@ interface ActivityAttemptMapping {
 export const loadActivities = createAsyncThunk(
   `${GroupsSlice}/deck/loadActivities`,
   async (activityAttemptMapping: ActivityAttemptMapping[], thunkApi) => {
+    //reset the screen Idle Time
+    thunkApi.dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     const rootState = thunkApi.getState() as RootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
@@ -498,13 +504,29 @@ export const loadActivities = createAsyncThunk(
     // when resuming a session, we want to reset the current part attempt values
     const shouldResume = states.some((attempt: any) => attempt.dateEvaluated !== null);
     if (shouldResume) {
+      const targetIsResumeModeOp: ApplyStateOperation = {
+        target: 'session.isResumeMode',
+        operator: '=',
+        value: true,
+      };
+      applyState(targetIsResumeModeOp, defaultGlobalEnv);
       const snapshot = getEnvState(defaultGlobalEnv);
       const resumeId = snapshot['session.resume'];
       const currentResumeActivityAttempt = models.filter((model: any) => model.id === resumeId);
       if (currentResumeActivityAttempt?.length) {
+        const currentActivityAttempt = currentResumeActivityAttempt[0];
         states.forEach((state) => {
           if (state.attemptGuid === currentResumeActivityAttempt[0]?.attemptGuid) {
-            state.parts.forEach((part) => (part.response = []));
+            state.parts.forEach((part) => {
+              const isIFramePartComponent = currentActivityAttempt?.content?.partsLayout?.filter(
+                (customPart: any) =>
+                  customPart.id === part.partId && customPart.type === 'janus-capi-iframe',
+              );
+              //Reset the attempt for iFrame parts only
+              if (isIFramePartComponent?.length) {
+                part.response = [];
+              }
+            });
           }
         });
       }

@@ -24,32 +24,34 @@ export type ResourceContent =
   | StructuredContent
   | ActivityReference
   | ActivityBankSelection
-  | GroupContent
+  | PurposeGroupContent
   | SurveyContent
+  | AlternativesContent
+  | AlternativeContent
   | Break;
 
-export type NestableContainer = GroupContent | SurveyContent;
+export const isResourceContent = (content: any) =>
+  [
+    'content',
+    'activity-reference',
+    'selection',
+    'group',
+    'survey',
+    'alternatives',
+    'alternative',
+    'break',
+  ].some((t) => t == content.type);
 
-export const isNestableContainer = (content: ResourceContent) => {
-  switch (content.type) {
-    case 'group':
-      return true;
-    case 'survey':
-      return true;
-    default:
-      return false;
-  }
-};
+// Items that can be present as elements in a resource content array and contain
+// other resource content as children
+export type ResourceGroup =
+  | PurposeGroupContent
+  | SurveyContent
+  | AlternativesContent
+  | AlternativeContent;
 
-interface NestableContainerCaseOf {
-  nestable: (nc: NestableContainer) => any;
-  other: (c: ResourceContent) => any;
-}
-
-export const maybeNestableContainer = <V>(content: ResourceContent) => ({
-  caseOf: ({ nestable, other }: NestableContainerCaseOf) =>
-    isNestableContainer(content) ? nestable(content as NestableContainer) : other(content),
-});
+export const isResourceGroup = (content: ResourceContent) =>
+  ['group', 'survey', 'alternatives', 'alternative'].some((t) => t == content.type);
 
 export const getResourceContentName = (content: ResourceContent): string => {
   switch (content.type) {
@@ -61,6 +63,10 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Group';
     case 'survey':
       return 'Survey';
+    case 'alternatives':
+      return 'Alternatives';
+    case 'alternative':
+      return 'Alternative';
     case 'break':
       return 'Page Break';
     case 'selection':
@@ -68,23 +74,52 @@ export const getResourceContentName = (content: ResourceContent): string => {
   }
 };
 
-export const canInsert = (content: ResourceContent, parents: ResourceContent[]): boolean => {
+export const allElements = [
+  'content',
+  'activity-reference',
+  'group',
+  'survey',
+  'alternatives',
+  'break',
+  'selection',
+];
+
+export const allowedContentItems = (content: ResourceContent): string[] => {
   switch (content.type) {
-    case 'activity-reference':
-      return true;
-    case 'content':
-      return true;
+    case 'group':
+      return allElements;
+    case 'survey':
+      return allElements;
+    case 'alternatives':
+      return ['alternative'];
+    case 'alternative':
+      return allElements;
+    default:
+      return [];
+  }
+};
+
+export const canInsert = (content: ResourceContent, parents: ResourceContent[]): boolean => {
+  if (parents.length === 0) {
+    // top level root
+    return allElements.some((t) => t === content.type);
+  }
+
+  const parent = parents[parents.length - 1];
+  switch (content.type) {
     case 'group':
       return (
+        allowedContentItems(parent).some((t) => t === content.type) &&
         parents.every((p) => !isGroupWithPurpose(p)) &&
         !content.children.some((c) => groupOrDescendantHasPurpose(c))
       );
     case 'survey':
-      return parents.every((p) => !isSurvey(p));
-    case 'break':
-      return true;
-    case 'selection':
-      return true;
+      return (
+        allowedContentItems(parent).some((t) => t === content.type) &&
+        parents.every((p) => !isSurvey(p))
+      );
+    default:
+      return allowedContentItems(parent).some((t) => t === content.type);
   }
 };
 
@@ -96,8 +131,8 @@ export const groupOrDescendantHasPurpose = (c: ResourceContent): boolean => {
     return true;
   }
 
-  return isNestableContainer(c)
-    ? (c as NestableContainer).children.some(groupOrDescendantHasPurpose)
+  return isResourceGroup(c)
+    ? (c as ResourceGroup).children.some(groupOrDescendantHasPurpose)
     : false;
 };
 
@@ -150,12 +185,34 @@ export const createDefaultStructuredContent = (
 
 export const createGroup = (
   children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
-): GroupContent => ({
+): PurposeGroupContent => ({
   type: 'group',
   id: guid(),
   children,
   layout: 'vertical',
   purpose: 'didigetthis',
+});
+
+export const createAlternatives = (
+  alternatives_id: number,
+  strategy: AlternativesStrategy = 'user_section_preference',
+  children: Immutable.List<AlternativeContent> = Immutable.List(),
+): AlternativesContent => ({
+  type: 'alternatives',
+  id: guid(),
+  children,
+  strategy,
+  alternatives_id,
+});
+
+export const createAlternative = (
+  value: string,
+  children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
+): AlternativeContent => ({
+  type: 'alternative',
+  id: guid(),
+  children,
+  value,
 });
 
 export const createSurvey = (
@@ -204,14 +261,31 @@ export interface ActivityReference {
 
 export type GroupLayout = 'vertical' | 'deck';
 
+export type AlternativesStrategy = 'select_all' | 'user_section_preference';
+
 export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
 
-export interface GroupContent {
+export interface PurposeGroupContent {
   type: 'group';
   id: string;
   layout: GroupLayout; // TODO define layout types
   purpose: string;
   paginationMode?: PaginationMode;
+  children: Immutable.List<ResourceContent>;
+}
+
+export interface AlternativesContent {
+  type: 'alternatives';
+  id: string;
+  strategy: AlternativesStrategy;
+  children: Immutable.List<AlternativeContent>;
+  alternatives_id: number;
+}
+
+export interface AlternativeContent {
+  type: 'alternative';
+  id: string;
+  value: string;
   children: Immutable.List<ResourceContent>;
 }
 

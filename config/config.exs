@@ -53,7 +53,9 @@ config :oli,
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
-  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2"))
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+  screen_idle_timeout_in_seconds:
+    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
@@ -112,6 +114,7 @@ config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
+config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenLibrary
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
@@ -129,8 +132,7 @@ config :oli, Oban,
     snapshots: 20,
     selections: 2,
     updates: 10,
-    grades: 30,
-    part_mapping_refresh: 1
+    grades: 30
   ]
 
 config :ex_money,
@@ -193,6 +195,8 @@ config :mnesia,
   dump_log_write_threshold: 10000
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
+
+config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
 config :surface, :components, [
   {

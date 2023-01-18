@@ -11,13 +11,14 @@ defmodule OliWeb.Progress.ResourceTitle do
 
   def render(assigns) do
     length = length(assigns.node.ancestors)
+    numbering = assigns.node.numbering
 
     ~F"""
     <div>
       <div>
         <small class="text-muted">
           {#for {ancestor, index} <- Enum.with_index(@node.ancestors)}
-            <span>{Oli.Resources.Numbering.container_type(ancestor.section_resource.numbering_level)} {ancestor.section_resource.numbering_index}</span>
+            <span>{Oli.Resources.Numbering.container_type_label(%Oli.Resources.Numbering{numbering | level: ancestor.section_resource.numbering_level, index: ancestor.section_resource.numbering_index})} {ancestor.section_resource.numbering_index}</span>
             {#if index + 1 < length}
               <span> / </span>
             {/if}

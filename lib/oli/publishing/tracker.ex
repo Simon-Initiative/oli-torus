@@ -1,5 +1,6 @@
 defmodule Oli.Publishing.ChangeTracker do
   alias Oli.Publishing
+  alias Oli.Publishing.{PublishedResource}
 
   @doc """
   Tracks the creation of a new revision for the current
@@ -28,6 +29,13 @@ defmodule Oli.Publishing.ChangeTracker do
         c -> processor.(revision, c)
       end
 
-    Publishing.upsert_published_resource(publication, resultant_revision)
+    case Publishing.upsert_published_resource(publication, resultant_revision) do
+      {:ok, %PublishedResource{}} ->
+        # return the new revision
+        {:ok, resultant_revision}
+
+      other ->
+        other
+    end
   end
 end

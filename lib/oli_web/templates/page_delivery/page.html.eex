@@ -1,7 +1,18 @@
 
-<h1 class="title"><%= @title %><%= if @review_mode == true do %>
- (Review)
-<% end %></h1>
+
+<div class="d-flex">
+  <div class="flex-grow-1">
+    <h1 class="title"><%= @title %><%= if @review_mode == true do %>
+    (Review)
+    <% end %></h1>
+  </div>
+  <%= if @page_number != nil do %>
+    <div>
+      <div class="page-numbering"><%= @page_number %></div>
+    </div>
+  <% end %>
+</div>
+
 
 <script>
 window.userToken = "<%= assigns[:user_token] %>";
@@ -57,7 +68,9 @@ window.userToken = "<%= assigns[:user_token] %>";
 
 <%= if @graded && @activity_count > 0 && @review_mode == false do %>
   <div class="d-flex align-items-center justify-content-center">
-    <%= link "Submit Answers", to: Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg text-center" %>
+    <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick="window.OLI.finalize('<%= @section_slug %>', '<%= @slug %>', '<%= @attempt_guid %>', 'submit_answers')">
+      Submit Answers
+    </button>
   </div>
 <% end %>
 
@@ -74,3 +87,14 @@ __FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_at
 __ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__
 -->
 <% end %>
+
+<div class="container mt-5">
+  <%=
+    live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
+      session: %{
+        "collab_space_config" => @collab_space_config,
+        "section_slug" => @section_slug,
+        "page_slug" => @slug
+      })
+  %>
+</div>

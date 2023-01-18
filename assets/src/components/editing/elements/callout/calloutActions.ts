@@ -22,6 +22,6 @@ export const insertInlineCallout = createButtonCommandDesc({
     const at = editor.selection;
     if (!at) return;
 
-    Transforms.insertNodes(editor, Model.calloutInline(), { at, select: true });
+    Transforms.wrapNodes(editor, Model.calloutInline(), { at, split: true });
   },
 });

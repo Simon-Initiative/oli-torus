@@ -46,7 +46,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   alias Oli.Resources.Numbering
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Hierarchy.HierarchyNode
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Authoring.Course.Project
 
   def render(

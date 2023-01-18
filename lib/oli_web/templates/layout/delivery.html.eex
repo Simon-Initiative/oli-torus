@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="delivery">
+<html lang="en" class="delivery" xmlns:m="http://www.w3.org/1998/Math/MathML">
   <head>
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
@@ -15,11 +15,11 @@
     <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
 
     <%= if dev_mode?() do %>
-      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
-      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"></script>
     <% else %>
-      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
-      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+      <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
     <% end %>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
@@ -54,6 +54,7 @@
     <%= OliWeb.Common.MathJaxScript.render(@conn) %>
 
     <%= csrf_meta_tag() %>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
     <%= unless Plug.Conn.get_session(@conn, "browser_timezone") do %>

@@ -1,29 +1,25 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
-  require Logger
 
   import OliWeb.Common.FormatDateTime
-  alias Oli.Delivery.Page.PageContext
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Paywall
-  alias Oli.Delivery.Paywall.Discount
-  alias Oli.Rendering.Context
-  alias Oli.Rendering.Page
+
+  require Logger
+
+  alias Oli.Accounts
   alias Oli.Activities
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Utils.Slug
-  alias Oli.Utils.Time
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.{Core, PageLifecycle}
+  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Paywall.Discount
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Grading
   alias Oli.PartComponents
+  alias Oli.Rendering.{Context, Page}
   alias Oli.Rendering.Activity.ActivitySummary
-  alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
-  alias Oli.Resources.Revision
-  alias Oli.Utils.BibUtils
-  alias Oli.Resources.PageContent
+  alias Oli.Resources.{Collaboration, PageContent, Revision}
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -38,13 +34,11 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          hierarchy = Resolver.full_hierarchy(section.slug)
-
           render(conn, "index.html",
             title: section.title,
             description: section.description,
             section_slug: section_slug,
-            hierarchy: hierarchy,
+            hierarchy: build_hierarchy(section),
             display_curriculum_item_numbering: section.display_curriculum_item_numbering,
             preview_mode: false,
             page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
@@ -65,9 +59,10 @@ defmodule OliWeb.PageDeliveryController do
 
   def container(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
+    author = conn.assigns.current_author
     section = conn.assigns.section
 
-    if Sections.is_enrolled?(user.id, section_slug) do
+    if Accounts.is_admin?(author) or Sections.is_enrolled?(user.id, section_slug) do
       container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
       page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
@@ -98,7 +93,9 @@ defmodule OliWeb.PageDeliveryController do
         # revisions based on retrieval of child data from the PreviousNextIndex cache
         %Revision{resource_type_id: ^container_type_id, title: title} = revision ->
           {:ok, {previous, next, current}, previous_next_index} =
-            Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+            PreviousNextIndex.retrieve(section, revision.resource_id)
+
+          section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
           render(conn, "container.html",
             scripts: [],
@@ -110,6 +107,7 @@ defmodule OliWeb.PageDeliveryController do
             previous_page: previous,
             next_page: next,
             current_page: current,
+            page_number: section_resource.numbering_index,
             preview_mode: preview_mode,
             page_link_url: page_link_url,
             container_link_url: container_link_url,
@@ -203,12 +201,14 @@ defmodule OliWeb.PageDeliveryController do
       end)
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
+      PreviousNextIndex.retrieve(section, page.resource_id)
 
-    {:ok, summary} = Oli.Delivery.Student.Summary.get_summary(section_slug, user)
+    resource_access = Core.get_resource_access(page.resource_id, section.slug, user.id)
+
+    section_resource = Sections.get_section_resource(section.id, page.resource_id)
 
     render(conn, "prologue.html", %{
-      summary: summary,
+      resource_access: resource_access,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
       preview_mode: preview_mode,
@@ -216,6 +216,7 @@ defmodule OliWeb.PageDeliveryController do
       previous_page: previous,
       next_page: next,
       current_page: current,
+      page_number: section_resource.numbering_index,
       title: context.page.title,
       allow_attempt?: allow_attempt?,
       message: message,
@@ -253,12 +254,14 @@ defmodule OliWeb.PageDeliveryController do
     resource_attempt = Enum.at(context.resource_attempts, 0)
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
+      PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     previous_url = url_from_desc(conn, section_slug, previous)
     next_url = url_from_desc(conn, section_slug, next)
 
     activity_types = Activities.activities_for_section()
+
+    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
 
     render(conn, "advanced_delivery.html", %{
       app_params: %{
@@ -281,13 +284,11 @@ defmodule OliWeb.PageDeliveryController do
         reviewMode: context.review_mode,
         overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
         finalizeGradedURL:
-          Routes.page_delivery_path(
+          Routes.page_lifecycle_path(
             conn,
-            :finalize_attempt,
-            section.slug,
-            context.page.slug,
-            resource_attempt.attempt_guid
-          )
+            :transition
+          ),
+        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -299,6 +300,7 @@ defmodule OliWeb.PageDeliveryController do
       latest_attempts: %{},
       next_page: next,
       current_page: current,
+      page_number: section_resource.numbering_level,
       user_id: user.id,
       next_url: next_url,
       part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
@@ -327,6 +329,9 @@ defmodule OliWeb.PageDeliveryController do
   # handling review mode
   defp render_page(%PageContext{user: user} = context, conn, section_slug, _) do
     section = conn.assigns.section
+
+    # get_section_resource
+    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
@@ -362,6 +367,9 @@ defmodule OliWeb.PageDeliveryController do
         end,
       activity_map: context.activities,
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
+      alternatives_groups_fn: &Resources.alternatives_groups(&1, Resolver),
+      alternatives_selector_fn: &Resources.Alternatives.select/2,
+      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       bib_app_params: context.bib_revisions,
       submitted_surveys: submitted_surveys,
       historical_attempts: context.historical_attempts,
@@ -376,7 +384,7 @@ defmodule OliWeb.PageDeliveryController do
     all_activities = Activities.list_activity_registrations()
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
+      PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     render(
       conn,
@@ -394,6 +402,7 @@ defmodule OliWeb.PageDeliveryController do
         previous_page: previous,
         next_page: next,
         current_page: current,
+        page_number: section_resource.numbering_index,
         title: context.page.title,
         graded: context.page.graded,
         activity_count: map_size(context.activities),
@@ -411,7 +420,8 @@ defmodule OliWeb.PageDeliveryController do
         resource_slug: context.page.slug,
         bib_app_params: %{
           bibReferences: context.bib_revisions
-        }
+        },
+        collab_space_config: context.collab_space_config
       }
     )
   end
@@ -420,13 +430,15 @@ defmodule OliWeb.PageDeliveryController do
   # PREVIEW
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
-    section = conn.assigns.section
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
 
     render(conn, "index.html",
       title: section.title,
       description: section.description,
       section_slug: section_slug,
-      hierarchy: Resolver.full_hierarchy(section.slug),
+      hierarchy: build_hierarchy(section),
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       preview_mode: true,
       page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
@@ -447,43 +459,89 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
-    user = conn.assigns.current_user
-
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
-        activity_types = Activities.activities_for_section()
+        case conn.assigns.current_user do
+          nil ->
+            # instructor preview and user is nil, simply render a "preview unsupported" message for now
+            section = conn.assigns.section
 
-        conn
-        |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
-        |> put_view(OliWeb.ResourceView)
-        |> render("advanced_page_preview.html",
-          additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
-          activity_types: activity_types,
-          scripts: Activities.get_activity_scripts(:delivery_script),
-          part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-          user: user,
-          project_slug: section_slug,
-          title: revision.title,
-          preview_mode: true,
-          display_curriculum_item_numbering: true,
-          app_params: %{
-            activityTypes: activity_types,
-            resourceId: revision.resource_id,
-            sectionSlug: section_slug,
-            userId: user.id,
-            pageSlug: revision.slug,
-            pageTitle: revision.title,
-            content: revision.content,
-            graded: revision.graded,
-            resourceAttemptState: nil,
-            resourceAttemptGuid: nil,
-            activityGuidMapping: nil,
-            previousPageURL: nil,
-            nextPageURL: nil,
-            previewMode: true,
-            isInstructor: true
-          }
-        )
+            {:ok, {previous, next, current}, _} =
+              PreviousNextIndex.retrieve(section, revision.resource_id)
+
+            html =
+              ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
+
+            {:ok, collab_space_config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                revision.slug,
+                section_slug
+              )
+
+            conn
+            |> put_root_layout({OliWeb.LayoutView, "page.html"})
+            |> render(
+              "instructor_preview.html",
+              %{
+                summary: %{title: section.title},
+                section_slug: section_slug,
+                scripts: [],
+                preview_mode: true,
+                previous_page: previous,
+                next_page: next,
+                current_page: current,
+                title: revision.title,
+                html: html,
+                objectives: [],
+                section: section,
+                revision: revision,
+                page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+                container_link_url:
+                  &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
+                resource_slug: revision.slug,
+                display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+                bib_app_params: %{
+                  bibReferences: []
+                },
+                collab_space_config: collab_space_config
+              }
+            )
+
+          user ->
+            activity_types = Activities.activities_for_section()
+
+            conn
+            |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
+            |> put_view(OliWeb.ResourceView)
+            |> render("advanced_page_preview.html",
+              additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+              activity_types: activity_types,
+              scripts: Activities.get_activity_scripts(:delivery_script),
+              part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+              user: user,
+              project_slug: section_slug,
+              title: revision.title,
+              preview_mode: true,
+              display_curriculum_item_numbering: true,
+              app_params: %{
+                activityTypes: activity_types,
+                resourceId: revision.resource_id,
+                sectionSlug: section_slug,
+                userId: user.id,
+                pageSlug: revision.slug,
+                pageTitle: revision.title,
+                content: revision.content,
+                graded: revision.graded,
+                resourceAttemptState: nil,
+                resourceAttemptGuid: nil,
+                activityGuidMapping: nil,
+                previousPageURL: nil,
+                nextPageURL: nil,
+                previewMode: true,
+                isInstructor: true
+              }
+            )
+        end
 
       revision ->
         render_page_preview(conn, section_slug, revision)
@@ -494,7 +552,7 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
 
     {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+      PreviousNextIndex.retrieve(section, revision.resource_id)
 
     type_by_id =
       Activities.list_activity_registrations()
@@ -552,6 +610,8 @@ defmodule OliWeb.PageDeliveryController do
       mode: :instructor_preview,
       activity_map: activity_map,
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
+      alternatives_selector_fn: &Resources.Alternatives.select/2,
+      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
       bib_app_params: bib_entrys,
       learning_language: base_project_attributes.learning_language,
@@ -559,6 +619,11 @@ defmodule OliWeb.PageDeliveryController do
     }
 
     html = Page.render(render_context, revision.content, Page.Html)
+
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page_in_section(revision.slug, section_slug)
+
+    section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
@@ -572,6 +637,7 @@ defmodule OliWeb.PageDeliveryController do
         previous_page: previous,
         next_page: next,
         current_page: current,
+        page_number: section_resource.numbering_level,
         title: revision.title,
         html: html,
         objectives: [],
@@ -584,7 +650,8 @@ defmodule OliWeb.PageDeliveryController do
         display_curriculum_item_numbering: section.display_curriculum_item_numbering,
         bib_app_params: %{
           bibReferences: bib_entrys
-        }
+        },
+        collab_space_config: collab_space_config
       }
     )
   end
@@ -662,93 +729,6 @@ defmodule OliWeb.PageDeliveryController do
     else
       render(conn, "not_authorized.html")
     end
-  end
-
-  def finalize_attempt(conn, %{
-        "section_slug" => section_slug,
-        "revision_slug" => revision_slug,
-        "attempt_guid" => attempt_guid
-      }) do
-    user = conn.assigns.current_user
-    section = conn.assigns.section
-    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-
-    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
-      {:ok, %ResourceAccess{id: id}} ->
-        Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-
-        after_finalized(conn, section_slug, revision_slug, attempt_guid, user)
-
-      {:error, {:already_submitted}} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-
-      {:error, {:active_attempt_present}} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-
-      {:error, {:no_more_attempts}} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-
-      {:error, e} ->
-        Logger.error("Page finalization error encountered: #{e}")
-        Oli.Utils.Appsignal.capture_error(e)
-        render(conn, "error.html")
-
-      e ->
-        Logger.error("Page finalization error encountered: #{e}")
-        Oli.Utils.Appsignal.capture_error(e)
-        render(conn, "error.html")
-    end
-  end
-
-  def after_finalized(conn, section_slug, revision_slug, attempt_guid, user) do
-    section = conn.assigns.section
-    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-    context = PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
-
-    preview_mode = Map.get(conn.assigns, :preview_mode, false)
-
-    message =
-      if context.page.max_attempts == 0 do
-        "You have an unlimited number of attempts remaining"
-      else
-        taken = length(context.resource_attempts)
-        remaining = max(context.page.max_attempts - taken, 0)
-
-        "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{plural(remaining)} remaining"
-      end
-
-    grade_message =
-      case section.grade_passback_enabled do
-        true -> "Your grade will be updated in your LMS shortly"
-        _ -> ""
-      end
-
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
-
-    {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
-
-    render(conn, "after_finalized.html",
-      grade_message: grade_message,
-      section_slug: section_slug,
-      attempt_guid: attempt_guid,
-      scripts: Activities.get_activity_scripts(),
-      preview_mode: preview_mode,
-      previous_page: previous,
-      next_page: next,
-      current_page: current,
-      title: context.page.title,
-      message: message,
-      slug: context.page.slug,
-      section: section,
-      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
-      revision: context.page,
-      resource_slug: context.page.slug,
-      bib_app_params: %{
-        bibReferences: context.bib_revisions
-      }
-    )
   end
 
   defp plural(num) do
@@ -882,7 +862,7 @@ defmodule OliWeb.PageDeliveryController do
   defp simulate_children_nodes(current, previous_next_index) do
     Enum.map(current["children"], fn s ->
       {:ok, {_, _, child}, _} =
-        Oli.Delivery.PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
+        PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
 
       child
     end)
@@ -902,4 +882,32 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+
+  defp build_helper(id, previous_next_index) do
+
+    node = Map.get(previous_next_index, id)
+
+    Map.put(node, "children", Enum.map(node["children"], fn id ->
+      build_helper(id, previous_next_index)
+    end))
+  end
+
+  def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
+    Enum.map(resource_ids, fn resource_id -> build_helper(resource_id, previous_next_index) end)
+  end
+
+  defp build_hierarchy(section) do
+    {:ok, _, previous_next_index} =
+      PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
+
+    # Retrieve the top level resource ids, and convert them to strings
+    resource_ids = Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(section.root_section_resource)
+    |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
+
+    %{
+      id: "hierarchy_built_with_previous_next_index",
+      # Recursively build the map based hierarchy from the structure defined by previous_next_index
+      children: build_hierarchy_from_top_level(resource_ids, previous_next_index)
+    }
+  end
 end

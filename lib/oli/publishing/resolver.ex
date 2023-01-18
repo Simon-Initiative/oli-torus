@@ -42,6 +42,11 @@ defmodule Oli.Publishing.Resolver do
   @callback all_revisions(String.t()) :: [%Revision{}]
 
   @doc """
+  Resolves all the revisions of a particular type for a given context slug.
+  """
+  @callback revisions_of_type(String.t(), Integer.t()) :: [%Revision{}]
+
+  @doc """
   Resolves the revisions of all containers and pages.
   """
   @callback all_revisions_in_hierarchy(String.t()) :: [%Revision{}]

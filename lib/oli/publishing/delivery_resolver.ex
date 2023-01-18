@@ -12,6 +12,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
+  alias Oli.Branding.CustomLabels
 
   defp section_resources(section_slug) do
     from(sr in SectionResource,
@@ -146,6 +147,19 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
+  def revisions_of_type(section_slug, resource_type_id) do
+    fn ->
+      from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
+        where: rev.resource_type_id == ^resource_type_id and rev.deleted == false,
+        select: rev
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :delivery], :duration)
+  end
+
+  @impl Resolver
   def all_revisions_in_hierarchy(section_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -192,7 +206,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
         where: rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id,
         select:
-          {sr, rev,
+          {s, sr, rev,
            fragment(
              "CASE WHEN ? = ? THEN true ELSE false END",
              sr.id,
@@ -200,12 +214,19 @@ defmodule Oli.Publishing.DeliveryResolver do
            )}
       )
       |> Repo.all()
-      |> Enum.reduce({%{}, nil}, fn {sr, rev, is_root?}, {nodes, root} ->
+      |> Enum.reduce({%{}, nil}, fn {s, sr, rev, is_root?}, {nodes, root} ->
+        labels =
+          case s.customizations do
+            nil -> Map.from_struct(CustomLabels.default())
+            l -> Map.from_struct(l)
+          end
+
         node = %HierarchyNode{
           uuid: uuid(),
           numbering: %Numbering{
             index: sr.numbering_index,
-            level: sr.numbering_level
+            level: sr.numbering_level,
+            labels: labels
           },
           children: sr.children,
           resource_id: rev.resource_id,

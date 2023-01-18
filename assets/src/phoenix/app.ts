@@ -14,6 +14,7 @@ import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
 import 'react-phoenix';
+import { finalize } from './finalize';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 
 const csrfToken = (document as any)
@@ -52,6 +53,7 @@ window.OLI = {
   selectCookiePreferences,
   retrieveCookies,
   onReady,
+  finalize,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
@@ -75,8 +77,7 @@ $(() => {
     const audioAttribute = this.attributes.getNamedItem('data-audio');
     if (audioAttribute && audioAttribute.value !== '') {
       const audio = ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0];
-      audio.currentTime = 0;
-      audio.play();
+      window.toggleAudio(audio);
     }
   });
 
@@ -119,9 +120,28 @@ $(() => {
   (window as any).hljs.highlightAll();
 });
 
+let currentlyPlaying: HTMLAudioElement | null = null;
+
+window.toggleAudio = (element: HTMLAudioElement) => {
+  if (!element) return;
+
+  if (currentlyPlaying && currentlyPlaying !== element) {
+    currentlyPlaying.pause();
+  }
+
+  if (element.paused) {
+    currentlyPlaying = element;
+    element.currentTime = 0;
+    element.play();
+  } else {
+    element.pause();
+  }
+};
+
 declare global {
   interface Window {
     liveSocket: typeof liveSocket;
+    toggleAudio: (element: HTMLAudioElement) => void;
     OLI: {
       initActivityBridge: typeof initActivityBridge;
       initPreviewActivityBridge: typeof initPreviewActivityBridge;
@@ -131,6 +151,7 @@ declare global {
       selectCookiePreferences: typeof selectCookiePreferences;
       retrieveCookies: typeof retrieveCookies;
       onReady: typeof onReady;
+      finalize: typeof finalize;
       CreateAccountPopup: (node: any, props: any) => void;
     };
     keepAlive: () => void;

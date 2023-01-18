@@ -240,20 +240,28 @@ defmodule Oli.Delivery.ActivityProvider do
     end
   end
 
-  defp do_fulfill(fulfillment_state, %{"type" => "group"} = model_component, _, survey_id) do
-    Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-      do_fulfill(s, c, model_component["id"], survey_id)
-    end)
-  end
+  # fulfill any resource group types
+  defp do_fulfill(fulfillment_state, %{"type" => type} = model_component, group_id, survey_id) do
+    if PageContent.is_resource_group?(model_component) do
+      case type do
+        "group" ->
+          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+            do_fulfill(s, c, model_component["id"], survey_id)
+          end)
 
-  defp do_fulfill(fulfillment_state, %{"type" => "survey"} = model_component, group_id, _) do
-    Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-      do_fulfill(s, c, group_id, model_component["id"])
-    end)
-  end
+        "survey" ->
+          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+            do_fulfill(s, c, group_id, model_component["id"])
+          end)
 
-  defp do_fulfill(fulfillment_state, _, _, _) do
-    fulfillment_state
+        _ ->
+          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+            do_fulfill(s, c, group_id, survey_id)
+          end)
+      end
+    else
+      fulfillment_state
+    end
   end
 
   defp add_existing_for_selection(fulfillment_state, selection_id) do
@@ -363,12 +371,15 @@ defmodule Oli.Delivery.ActivityProvider do
   end
 
   defp transform_content_helper(
-         %{"type" => kind, "children" => children} = component,
+         %{"children" => children} = component,
          prototypes_by_selection
-       )
-       when kind in ["group", "survey"] do
-    children = transform_content_helper(children, prototypes_by_selection) |> List.flatten()
-    Map.put(component, "children", children)
+       ) do
+    if PageContent.is_resource_group?(component) do
+      children = transform_content_helper(children, prototypes_by_selection) |> List.flatten()
+      Map.put(component, "children", children)
+    else
+      component
+    end
   end
 
   defp transform_content_helper(other, _) do

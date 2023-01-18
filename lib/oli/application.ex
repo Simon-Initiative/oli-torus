@@ -31,17 +31,30 @@ defmodule Oli.Application do
         # Start the Pow MnesiaCache to persist session across multiple servers
         Oli.MnesiaClusterSupervisor,
 
+        OliWeb.Presence,
+
         # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
         %{
           id: "cleanup_nonce_store_daily",
           start: {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
         },
+        # Starts the login hint cleanup task
         %{
           id: "cleanup_login_hint_store_daily",
           start:
             {SchedEx, :run_every,
              [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
-        }
+        },
+        # Starts the publication diff cleanup task
+        %{
+          id: "cleanup_publication_diffs_daily",
+          start:
+            {SchedEx, :run_every,
+             [Oli.Publishing.Publications.DiffAgent, :cleanup_diff_store, [], "1 1 * * *"]}
+        },
+
+        # Starts the publication diff agent store
+        Oli.Publishing.Publications.DiffAgent
       ] ++ maybe_node_js_config()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -60,28 +73,9 @@ defmodule Oli.Application do
   # Returns the Oban configuration for the application.
   # It makes sure that only one node in the cluster has the part_mapping_refresh queue configured.
   defp oban_config do
-    env_oban_config = Application.fetch_env!(:oli, Oban)
+    Oban.Telemetry.attach_default_logger()
 
-    # Get the current oban config in all other nodes in the cluster
-    nodes_config = :erpc.multicall(Node.list(), Oli.Application, :current_oban_config, [])
-
-    # Check if a node already has the part_mapping_refresh queue configured
-    pm_refresh_already_setup? = Enum.any?(nodes_config, fn
-      {:ok, config} ->
-        config[:queues][:part_mapping_refresh]
-
-      _ -> false
-    end)
-
-    if pm_refresh_already_setup? do
-      # If the part_mapping_refresh queue is already setup somewhere else, we don't want to setup it in this node.
-      queues_without_pm = Keyword.delete(env_oban_config[:queues], :part_mapping_refresh)
-      Keyword.put(env_oban_config, :queues, queues_without_pm)
-    else
-      # If the part_mapping_refresh queue is not already setup, we need to setup it.
-      # We'll use the default queue configuration, but with the part_mapping_refresh queue configured.
-      env_oban_config
-    end
+    Application.fetch_env!(:oli, Oban)
   end
 
   def current_oban_config do

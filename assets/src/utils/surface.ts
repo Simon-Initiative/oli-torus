@@ -1,4 +1,3 @@
-import { Hooks } from 'hooks';
 import { Maybe } from 'tsmonad';
 
 interface SurfaceAttribute {

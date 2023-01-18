@@ -7,12 +7,13 @@ defmodule Oli.Publishing.AuthoringResolver do
   alias Oli.Publishing.Resolver
   alias Oli.Resources.Resource
   alias Oli.Resources.Revision
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course
+  alias Oli.Branding.CustomLabels
 
   @behaviour Resolver
 
@@ -133,6 +134,23 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
+  def revisions_of_type(project_slug, resource_type_id) do
+    fn ->
+      from(m in PublishedResource,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          m.publication_id in subquery(project_working_publication(project_slug)) and
+            rev.resource_type_id == ^resource_type_id and rev.deleted == false,
+        select: rev
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :authoring], :duration)
+  end
+
+  @impl Resolver
   def all_revisions_in_hierarchy(project_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -202,7 +220,7 @@ defmodule Oli.Publishing.AuthoringResolver do
     {root_node, _numbering_tracker} =
       hierarchy_node_with_children(
         root_revision,
-        project.id,
+        project,
         revisions_by_resource_id,
         numbering_tracker,
         level
@@ -213,7 +231,7 @@ defmodule Oli.Publishing.AuthoringResolver do
 
   def hierarchy_node_with_children(
         revision,
-        project_id,
+        project,
         revisions_by_resource_id,
         numbering_tracker,
         level
@@ -229,7 +247,7 @@ defmodule Oli.Publishing.AuthoringResolver do
           {node, numbering_tracker} =
             hierarchy_node_with_children(
               revisions_by_resource_id[resource_id],
-              project_id,
+              project,
               revisions_by_resource_id,
               numbering_tracker,
               level + 1
@@ -244,16 +262,23 @@ defmodule Oli.Publishing.AuthoringResolver do
         {Enum.reverse(children), numbering_tracker}
       end)
 
+    labels =
+      case project.customizations do
+        nil -> Map.from_struct(CustomLabels.default())
+        l -> Map.from_struct(l)
+      end
+
     {
       %HierarchyNode{
         uuid: uuid(),
         numbering: %Numbering{
           index: numbering_index,
-          level: level
+          level: level,
+          labels: labels
         },
         children: children,
         resource_id: revision.resource_id,
-        project_id: project_id,
+        project_id: project.id,
         revision: revision,
         section_resource: nil
       },

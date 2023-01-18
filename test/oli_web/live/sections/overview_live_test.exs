@@ -162,11 +162,9 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"][class*=\"disabled\"",
-               "Preview Course Content"
+               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "Preview Course as Instructor"
              )
-
-      assert has_element?(view, "span", "Coming Soon")
 
       assert has_element?(
                view,
@@ -185,7 +183,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug)}\"]"
+               "a[href=\"#{Routes.source_materials_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, section.slug)}\"]"
              )
 
       assert render(view) =~ "Manage"
@@ -366,9 +364,11 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert has_element?(view, "input[value=\"Direct Delivery\"]")
       assert has_element?(view, "input[value=\"#{section.lti_1p3_deployment.institution.name}\"]")
 
-      assert has_element?(view, "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]", "Preview Course Content")
-      refute has_element?(view, "a[class*=\"disabled\"", "Preview Course Content")
-      refute has_element?(view, "span", "Coming Soon")
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "Preview Course as Instructor"
+             )
     end
   end
 end

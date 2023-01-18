@@ -45,7 +45,7 @@ const _dropdownModel: MultiInputSchema = {
   authoring: {
     parts: [makePart(Responses.forMultipleChoice(choices[0].id), [makeHint('')], DEFAULT_PART_ID)],
     targeted: [],
-    transformations: [makeTransformation('choices', Transform.shuffle)],
+    transformations: [makeTransformation('choices', Transform.shuffle, true)],
     previewText: 'Example question with a fill in the blank',
   },
 };
@@ -58,7 +58,7 @@ const _numericModel: MultiInputSchema = {
   authoring: {
     parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
     targeted: [],
-    transformations: [makeTransformation('choices', Transform.shuffle)],
+    transformations: [makeTransformation('choices', Transform.shuffle, true)],
     previewText: 'Example question with a fill in the blank',
   },
 };

@@ -146,8 +146,9 @@ defmodule Oli.Resources.PageContent do
       content,
       %{},
       fn el, survey_activities, %TraversalContext{survey_id: survey_id} ->
-        case el do
-          %{"type" => "activity-reference", "activity_id" => activity_id} ->
+        case {survey_id, el} do
+          {survey_id, %{"type" => "activity-reference", "activity_id" => activity_id}}
+          when not is_nil(survey_id) ->
             {el,
              Map.put(
                survey_activities,
@@ -166,4 +167,10 @@ defmodule Oli.Resources.PageContent do
   def bibliography_rewire(%{"children" => _children} = item, acc, map_fn) do
     item_with_children(item, acc, map_fn, %TraversalContext{})
   end
+
+  def is_resource_group?(%{"type" => kind, "children" => _children})
+      when kind in ["group", "survey", "alternatives", "alternative"],
+      do: true
+
+  def is_resource_group?(%{"type" => _} = _component), do: false
 end

@@ -40,7 +40,7 @@
             <p class="pb-3">The version number is automatically determined by the nature of the changes.</p>
 
             <%= case @version_change do %>
-              <% {change_type, _} -> %>
+              <% change_type -> %>
                 <div class="form-check form-switch">
                   <div class="form-group" style="pointer-events: none">
                     <%= label class: "form-check-label" do %>
@@ -84,11 +84,18 @@
             <% end %>
           <% end %>
 
+          <%= hidden_input f, :active_publication_id, value: @active_publication_id %>
+
           <%= submit "Publish",
             id: "button-publish",
             class: "btn btn-primary",
             disabled: !@has_changes,
             phx_disable_with: "Publishing..." %>
+
+          <div class="my-3">
+            <%= checkbox f, :auto_push_update, disabled: !@has_changes %>
+            <%= label f, :auto_push_update, "Automatically push this publication update to all products and sections" %>
+          </div>
 
           <%= case @version_change do %>
             <% {:no_changes, _} -> %>

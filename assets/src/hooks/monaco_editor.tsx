@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { render } from 'react-dom';
 import * as monaco from 'monaco-editor';
-import ReactMonacoEditor from '@uiw/react-monacoeditor';
+import ReactMonacoEditor, { IMonacoEditor } from '@uiw/react-monacoeditor';
 import { Maybe } from 'tsmonad';
 import { surfaceHook } from 'utils/surface';
+import { registry } from 'components/monaco_lenses';
 
 export const MonacoEditor = {
   mounted() {
@@ -25,6 +26,7 @@ export const MonacoEditor = {
     const setWidthHeightEvent = this.maybeGetAttribute('data-set-width-height');
     const setValueEvent = this.maybeGetAttribute('data-set-value');
     const getValueEvent = this.maybeGetAttribute('data-get-value');
+    const useCodeLenses = this.maybeGetAttribute('data-use-code-lenses');
 
     const schemas = Maybe.all({ dataSchemaUri, dataSchemas }).map(
       ({ dataSchemaUri, dataSchemas }) =>
@@ -68,7 +70,10 @@ export const MonacoEditor = {
         );
       }, []);
 
-      const editorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
+      const editorDidMount = (
+        editor: monaco.editor.IStandaloneCodeEditor,
+        monaco: IMonacoEditor,
+      ) => {
         this.editor = editor;
 
         // configure the JSON language support with schemas and schema associations if
@@ -78,6 +83,10 @@ export const MonacoEditor = {
             validate: true,
             schemas: schemas,
           });
+        });
+
+        useCodeLenses.lift((useCodeLenses: { name: string; context: any }[]) => {
+          useCodeLenses.forEach(({ name, context }) => registry(name)(editor, monaco, context));
         });
 
         this.maybePushEvent(onMountEvent);

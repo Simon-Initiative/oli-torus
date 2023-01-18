@@ -72,11 +72,26 @@ defmodule Oli.Interop.Ingest.Processor.Products do
       Oli.Publishing.publish_project(project, "New containers for product")
     end
 
+    labels = Map.get(product, "children")
+    |> Enum.filter(fn c -> c["type"] == "labels" end)
+    |> Enum.reduce(%{}, fn item, acc ->
+      Map.merge(acc, %{
+        unit: Map.get(item, "unit"),
+        module: Map.get(item, "module"),
+        section: Map.get(item, "section")
+        }) end)
+
+    custom_labels =
+      case Map.equal?(labels, %{}) do
+        true -> if project.customizations == nil, do: nil, else: Map.from_struct(project.customizations)
+        _ -> labels
+      end
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
     # to mirror the product JSON.
     case Oli.Delivery.Sections.Blueprint.create_blueprint(
            project.slug,
            product["title"],
+           custom_labels,
            hierarchy_definition
          ) do
       {:ok, _} -> {:ok, %{state | container_id_map: container_id_map}}

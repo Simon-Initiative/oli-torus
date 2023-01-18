@@ -11,7 +11,7 @@ import {
 import guid from 'utils/guid';
 import { classNames } from 'utils/classNames';
 import { disableScrollWheelChange } from '../utils';
-import { Tooltip } from 'components/misc/Tooltip';
+import { InfoTip } from 'components/misc/InfoTip';
 
 // here we defined a "editable number" variant data type that contains information
 // about the number that is being edited. for example, a number input being edited
@@ -165,7 +165,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
           <option value="inclusive">Inclusive</option>
           <option value="exclusive">Exclusive</option>
         </select>
-        <Tooltip title="Inclusive will include the boundaries in the range. Exclusive does not include boundaries."></Tooltip>
+        <InfoTip title="Inclusive will include the boundaries in the range. Exclusive does not include boundaries."></InfoTip>
       </div>
       {lowerBoundInvalid && (
         <div className="d-flex flex-row">

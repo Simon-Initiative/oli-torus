@@ -3,22 +3,22 @@
   <h3 class="display-4"><%= @title %></h3>
   <p class="lead" style="color: #c0392b;">This is a <strong>scored</strong> page</p>
 
-  <%= if has_submitted_attempt?(Map.get(@summary.access_map, @resource_id)) do %>
+  <%= if has_submitted_attempt?(@resource_access) do %>
     <h4 class="mb-2">
-      <span>Score: </span><span><%= calculate_score_percentage(Map.get(@summary.access_map, @resource_id)) %></span>
+      <span>Score: </span><span><%= calculate_score_percentage(@resource_access) %></span>
     </h4>
   <% end %>
   <p><%= @message %></p>
   <div>
-  <%= for resource_attempt <- @resource_attempts do %>
+  <%= for {resource_attempt, attempt_number} <- Enum.with_index(@resource_attempts, 1) do %>
   <div class="mb-2">
     <h5 class="mb-0">
       <%= link to: Routes.page_delivery_path(@conn, :review_attempt, @section_slug, @slug, resource_attempt.attempt_guid) do %>
 
       <%= if @max_attempts == 0 do %>
-        <span>Attempt <%= resource_attempt.attempt_number %></span>
+        <span>Attempt <%= attempt_number %></span>
         <% else %>
-        <span>Attempt <%= resource_attempt.attempt_number %> of <%= @max_attempts %></span>
+        <span>Attempt <%= attempt_number %> of <%= @max_attempts %></span>
         <% end %>
       <% end %>
     </h5>

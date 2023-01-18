@@ -54,7 +54,7 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       a1: a1
     } do
       latest_attempts = Hierarchy.get_latest_attempts(attempt1.id)
-      m = ActivityContext.create_context_map(false, latest_attempts)
+      m = ActivityContext.create_context_map(false, latest_attempts, nil, nil)
 
       assert length(Map.keys(m)) == 1
       assert Map.get(m, a1.resource.id).model == "{&quot;stem&quot;:&quot;1&quot;}"

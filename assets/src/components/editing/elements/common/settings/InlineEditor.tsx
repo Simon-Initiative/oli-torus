@@ -1,5 +1,5 @@
-import React from 'react';
-import { CaptionV2 } from 'data/content/model/elements/types';
+import React, { FocusEventHandler } from 'react';
+
 import { getEditMode } from 'components/editing/elements/utils';
 import { useSlate } from 'slate-react';
 import { Descendant, Editor as SlateEditor } from 'slate';
@@ -20,6 +20,8 @@ interface Props {
   allowBlockElements?: boolean;
   editorOverride?: SlateEditor;
   fixedToolbar?: boolean;
+  onFocus?: FocusEventHandler | undefined;
+  onBlur?: FocusEventHandler | undefined;
 }
 
 export const InlineEditor: React.FC<Props> = ({
@@ -33,6 +35,8 @@ export const InlineEditor: React.FC<Props> = ({
   onRequestMedia,
   editorOverride = undefined,
   fixedToolbar = false,
+  onFocus = undefined,
+  onBlur = undefined,
 }) => {
   const editor = useSlate();
   const editMode = getEditMode(editor);
@@ -45,6 +49,8 @@ export const InlineEditor: React.FC<Props> = ({
         commandContext={commandContext}
         editMode={editMode}
         value={content}
+        onFocus={onFocus}
+        onBlur={onBlur}
         onEdit={onEdit}
         editorOverride={editorOverride}
         fixedToolbar={fixedToolbar}

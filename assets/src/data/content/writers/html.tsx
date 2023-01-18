@@ -312,7 +312,7 @@ export class HtmlParser implements WriterImpl {
     return this.captioned_content(
       context,
       attrs,
-      <audio controls src={this.escapeXml(attrs.src)}>
+      <audio aria-label={attrs.alt || ''} controls src={this.escapeXml(attrs.src)}>
         Your browser does not support the <code>audio</code> element.
       </audio>,
     );

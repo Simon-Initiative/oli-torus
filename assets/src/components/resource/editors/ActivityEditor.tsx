@@ -1,9 +1,11 @@
 import React from 'react';
-import { ActivityReference } from 'data/content/resource';
+import { ActivityReference, ResourceContent } from 'data/content/resource';
 import { ActivityBlock } from './ActivityBlock';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Undoable } from 'components/activities/types';
 import { EditorProps, EditorError } from './createEditor';
+import { ActivityEditContext } from 'data/content/activity';
+import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
 
 interface ActivityEditorProps extends EditorProps {
   contentItem: ActivityReference;
@@ -52,7 +54,7 @@ export const ActivityEditor = ({
           banked={false}
           contentBreaksExist={contentBreaksExist}
           canRemove={canRemove}
-          onRemove={onRemove}
+          onRemove={() => onRemove(contentItem.id)}
           onEdit={(update: EditorUpdate) => onEditActivity(activity.activitySlug, update)}
           onPostUndoable={(undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable)}
           onRegisterNewObjective={onRegisterNewObjective}
@@ -63,4 +65,22 @@ export const ActivityEditor = ({
   } else {
     return <EditorError />;
   }
+};
+
+interface ActivityEditorContentOutlineItemProps extends OutlineItemProps {
+  activity: ActivityEditContext;
+}
+
+export const ActivityEditorContentOutlineItem = (props: ActivityEditorContentOutlineItemProps) => {
+  const { activity } = props;
+  return (
+    <OutlineItem {...props}>
+      <Icon iconName="las la-shapes" />
+      <Description title={activity?.title}>{getActivityDescription(activity)}</Description>
+    </OutlineItem>
+  );
+};
+
+const getActivityDescription = (activity: ActivityEditContext) => {
+  return activity.model.authoring?.previewText || <i>No content</i>;
 };

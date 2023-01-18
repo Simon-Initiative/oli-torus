@@ -24,7 +24,7 @@ export const dragStartHandler =
       },
     ]);
 
-    dt.setData('CodeEditors', resource);
+    dt.setData('codeeditors', resource);
     dt.setData('application/x-oli-resource-content', JSON.stringify(dragPayload));
     dt.setData('text/html', toSimpleText(contentItem as any));
     dt.setData('text/plain', toSimpleText(contentItem as any));

@@ -2,12 +2,12 @@
   <li>
   <% props = Map.merge(assigns, %{
     node: node,
-    nodes: node.children,
+    nodes: node_children(node),
   }) %>
   <%= cond do %>
-    <% container?(node.revision) -> %>
+    <% container?(node) -> %>
       <%= render "_link_container.html", props %>
-    <% node.revision.graded -> %>
+    <% from_node(node, :graded) -> %>
       <%= render "_link_assessment.html", props %>
     <% true -> %>
       <%= render "_link_page.html", props %>

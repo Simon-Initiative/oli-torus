@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useRef } from 'react';
 import { lockScroll, unlockScroll } from './utils';
 
 interface Modal {

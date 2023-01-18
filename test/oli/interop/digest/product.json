@@ -43,6 +43,14 @@
       ],
       "id": "unit-new",
       "title": "Unit New"
+    },
+    {
+      "type": "labels",
+      "children": [],
+      "sequence": "Sequence",
+      "unit": "Volume",
+      "module": "Module",
+      "section": "Section"
     }
   ],
   "id": "product",

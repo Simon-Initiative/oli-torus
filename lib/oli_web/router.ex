@@ -314,7 +314,7 @@ defmodule OliWeb.Router do
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
-    live("/products/:section_slug/updates", Delivery.ManageUpdates)
+    live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
     live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
 
     get(
@@ -369,6 +369,9 @@ defmodule OliWeb.Router do
     # Project
     put("/:project_id", ProjectController, :update)
     delete("/:project_id", ProjectController, :delete)
+
+    # Alternatives Groups
+    live("/:project_id/alternatives", Resources.AlternativesEditor)
 
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)
@@ -467,6 +470,8 @@ defmodule OliWeb.Router do
 
     post("/:project/lock/:resource", Api.LockController, :acquire)
     delete("/:project/lock/:resource", Api.LockController, :release)
+
+    get("/:project/alternatives", Api.ResourceController, :alternatives)
   end
 
   # Storage Service
@@ -571,6 +576,11 @@ defmodule OliWeb.Router do
 
     post("/automation_setup", Api.AutomationSetupController, :setup)
     post("/automation_teardown", Api.AutomationSetupController, :teardown)
+  end
+
+  scope "/api/v1/page_lifecycle", OliWeb do
+    pipe_through([:api, :delivery_protected])
+    post("/", Api.PageLifecycleController, :transition)
   end
 
   scope "/api/v1/payments", OliWeb do
@@ -750,12 +760,6 @@ defmodule OliWeb.Router do
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
     get(
-      "/:section_slug/page/:revision_slug/attempt/:attempt_guid",
-      PageDeliveryController,
-      :finalize_attempt
-    )
-
-    get(
       "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review",
       PageDeliveryController,
       :review_attempt
@@ -799,7 +803,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-    live("/:section_slug/updates", Delivery.ManageUpdates, as: :section_updates)
+    live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
@@ -827,6 +831,8 @@ defmodule OliWeb.Router do
       :review_attempt,
       as: :instructor_review
     )
+
+    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor, as: :collab_spaces_index)
   end
 
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
@@ -918,6 +924,7 @@ defmodule OliWeb.Router do
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
+    live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
 
     live(
       "/products/:product_id/discounts/new",

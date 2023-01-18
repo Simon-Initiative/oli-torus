@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectVisibility
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   alias Oli.Groups.CommunityVisibility
@@ -127,30 +127,29 @@ defmodule Oli.Delivery.Sections.Blueprint do
   This creates the "section" record and "section resource" records to mirror
   the current published structure of the course project hierarchy.
   """
-  def create_blueprint(base_project_slug, title, hierarchy_definition \\ nil) do
+  def create_blueprint(base_project_slug, title, custom_labels, hierarchy_definition \\ nil) do
     Repo.transaction(fn _ ->
       case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
         nil ->
           {:error, {:invalid_project}}
 
         project ->
-          now = DateTime.utc_now()
-
           new_blueprint = %{
             "type" => :blueprint,
             "status" => :active,
             "base_project_id" => project.id,
             "open_and_free" => false,
             "context_id" => UUID.uuid4(),
-            "start_date" => now,
-            "end_date" => now,
+            "start_date" => nil,
+            "end_date" => nil,
             "title" => title,
             "requires_payment" => false,
             "pay_by_institution" => false,
             "registration_open" => false,
             "grace_period_days" => 1,
             "amount" => Money.new(:USD, "25.00"),
-            "publisher_id" => project.publisher_id
+            "publisher_id" => project.publisher_id,
+            "customizations" => custom_labels
           }
 
           case Sections.create_section(new_blueprint) do
@@ -195,6 +194,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   defp dupe_section(%Section{} = section, attrs) do
+    custom_labels =
+      if section.customizations == nil, do: nil, else: Map.from_struct(section.customizations)
+
     params =
       Map.merge(
         %{
@@ -212,7 +214,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
           lti_1p3_deployment_id: nil,
           institution_id: nil,
           brand_id: nil,
-          delivery_policy_id: nil
+          delivery_policy_id: nil,
+          customizations: custom_labels
         },
         attrs
       )
