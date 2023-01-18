@@ -74,6 +74,7 @@ defmodule OliWeb.ProjectController do
       case latest_published_publication do
         nil ->
           {true, nil, %{}}
+          {{:major, {0, 1, 0}}, nil, %{}}
 
         _ ->
           %PublicationDiff{
@@ -117,7 +118,7 @@ defmodule OliWeb.ProjectController do
 
     has_changes =
       case version_change do
-        :no_changes -> false
+        {:no_changes, _} -> false
         _ -> true
       end
 

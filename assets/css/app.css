@@ -270,20 +270,6 @@
     @apply rounded-r;
   }
 
-  .form-check-input {
-    @apply appearance-none rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain mr-2 cursor-pointer;
-  }
-  .form-check-label {
-    @apply inline-block text-gray-800;
-  }
-
-  :not(.form-switch) .custom-control input[type='checkbox'],
-  :not(.form-switch).form-check input[type='checkbox'],
-  :not(.form-switch).form-group input[type='checkbox'],
-  :not(.form-switch).form-control input[type='checkbox'] {
-    @apply border-gray-400 rounded-sm disabled:bg-gray-300 hover:border-gray-400;
-  }
-
   .form-switch input[type='checkbox'] {
     @apply bg-contain;
   }
