@@ -6,7 +6,11 @@ defmodule Oli.ConstellationTest do
 
   describe "ECL connection" do
     test "it connects" do
-      auth_token = Constellation.login("darrensiegel+torus@cmu.edu", "pvfr4BGT%")
+
+      user_name = Application.get_env(:ecl, :username)
+      password = Application.get_env(:ecl, :password)
+
+      auth_token = Constellation.login(user_name, password)
       me = Constellation.me(auth_token)
 
       Constellation.download(auth_token, Map.get(me, "Id"), ["Name", "Email", "CakePreference"])
