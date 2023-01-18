@@ -3,8 +3,11 @@
 @import 'tailwindcss/utilities';
 
 @layer base {
-  a:not(.btn) {
+  a {
     @apply text-blue-500 hover:text-blue-600 hover:underline;
+  }
+  a.btn {
+    @apply text-base hover:text-base hover:no-underline;
   }
 
   a.external::after {
