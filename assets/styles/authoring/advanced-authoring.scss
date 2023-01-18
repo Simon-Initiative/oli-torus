@@ -48,7 +48,7 @@ $font-family-sans-serif: var(--font-sans);
   .aa-panel,
   .aa-header-nav {
     position: fixed;
-    z-index: 49;
+    z-index: 10;
     overflow-y: auto;
     visibility: hidden;
     align-items: start;
@@ -307,7 +307,7 @@ $font-family-sans-serif: var(--font-sans);
   }
   .aa-stage {
     position: fixed;
-    z-index: 48;
+    z-index: 9;
     top: 65px;
     left: 65px;
     right: 0;
