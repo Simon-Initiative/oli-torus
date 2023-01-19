@@ -271,7 +271,9 @@ const AdaptiveRulesList: React.FC = () => {
           aria-expanded="false"
           onClick={(e) => {
             e.stopPropagation();
-            ($(`#rule-list-item-${id}-context-trigger`) as any).dropdown('toggle');
+            new (window as any).Dropdown(
+              document.getElementById(`rule-list-item-${id}-context-trigger`),
+            ).toggle();
           }}
         >
           <i className="fas fa-ellipsis-v" />
@@ -287,7 +289,6 @@ const AdaptiveRulesList: React.FC = () => {
                 className="dropdown-item"
                 onClick={(e) => {
                   e.stopPropagation();
-                  ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                   setRuleToEdit(item);
                 }}
               >
@@ -302,7 +303,6 @@ const AdaptiveRulesList: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCopyRule(item);
-                  ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                 }}
               >
                 <i className="fas fa-copy mr-2" /> Copy
@@ -313,7 +313,6 @@ const AdaptiveRulesList: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePasteRule(copied, copiedType, index);
-                  ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                 }}
               >
                 <i className="fas fa-clipboard mr-2" /> Insert copied rule
@@ -328,7 +327,6 @@ const AdaptiveRulesList: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMoveRule(index, 'down');
-                    ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                   }}
                 >
                   <i className="fas fa-arrow-down mr-2" /> Move Down
@@ -342,7 +340,6 @@ const AdaptiveRulesList: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDuplicateRule(item, index);
-                      ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                     }}
                   >
                     <i className="fas fa-copy mr-2" /> Duplicate
@@ -351,7 +348,6 @@ const AdaptiveRulesList: React.FC = () => {
                     className="dropdown-item text-danger"
                     onClick={(e) => {
                       e.stopPropagation();
-                      ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                       setItemToDelete(item);
                       setShowConfirmDelete(true);
                     }}
@@ -367,7 +363,6 @@ const AdaptiveRulesList: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMoveRule(index, 'up');
-                    ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                   }}
                 >
                   <i className="fas fa-arrow-up mr-2" /> Move Up
@@ -379,7 +374,6 @@ const AdaptiveRulesList: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMoveRule(index, 'down');
-                    ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
                   }}
                 >
                   <i className="fas fa-arrow-down mr-2" /> Move Down
@@ -429,13 +423,10 @@ const AdaptiveRulesList: React.FC = () => {
               <button
                 className="dropdown-toggle btn btn-link p-0 ml-1"
                 type="button"
-                id={`rules-list-add-context-trigger`}
+                id="rules-list-add-context-trigger"
                 data-toggle="dropdown"
                 aria-haspopup="true"
                 aria-expanded="false"
-                onClick={() => {
-                  ($(`#rules-list-add-context-trigger`) as any).dropdown('toggle');
-                }}
               >
                 <i className="fa fa-plus" />
               </button>
@@ -514,7 +505,7 @@ const AdaptiveRulesList: React.FC = () => {
                     {ruleToEdit && ruleToEdit?.id === rule.id && (
                       <input
                         id="input-rule-name"
-                        className="form-control form-control-sm"
+                        className="form-control form-control-sm text-black"
                         type="text"
                         placeholder="Rule name"
                         value={ruleToEdit.name}

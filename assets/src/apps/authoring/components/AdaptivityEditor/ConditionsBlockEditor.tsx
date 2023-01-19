@@ -256,9 +256,6 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
           data-toggle="dropdown"
           aria-haspopup="true"
           aria-expanded="false"
-          onClick={() => {
-            ($(`#cb-editor-add-context-trigger`) as any).dropdown('toggle');
-          }}
         >
           <i className="fa fa-plus" />
         </button>
@@ -338,9 +335,6 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                   data-toggle="dropdown"
                   aria-haspopup="true"
                   aria-expanded="false"
-                  onClick={() => {
-                    ($(`#add-condition-${id}-context-trigger-${index}`) as any).dropdown('toggle');
-                  }}
                 >
                   <i className="fa fa-plus" />
                 </button>

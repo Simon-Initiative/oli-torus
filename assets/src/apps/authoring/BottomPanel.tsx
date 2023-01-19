@@ -238,9 +238,6 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                       data-toggle="dropdown"
                       aria-haspopup="true"
                       aria-expanded="false"
-                      onClick={() => {
-                        ($(`#bottom-panel-add-context-trigger`) as any).dropdown('toggle');
-                      }}
                     >
                       <i className="fa fa-plus" />
                     </button>
@@ -270,8 +267,16 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                 </OverlayTrigger>
               )}
               <button className="btn btn-link p-0 ml-1" onClick={() => onToggle()}>
-                {panelState['bottom'] && <i className="fa fa-angle-down" />}
-                {!panelState['bottom'] && <i className="fa fa-angle-right" />}
+                {panelState['bottom'] && (
+                  <span>
+                    <i className="fa fa-angle-down" />
+                  </span>
+                )}
+                {!panelState['bottom'] && (
+                  <span>
+                    <i className="fa fa-angle-up" />
+                  </span>
+                )}
               </button>
             </div>
           </div>

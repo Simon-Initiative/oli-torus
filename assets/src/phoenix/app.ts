@@ -66,10 +66,10 @@ liveSocket.connect();
 window.liveSocket = liveSocket;
 
 $(() => {
-  ($('[data-toggle="popover"]') as any).popover();
-  ($('[data-toggle="tooltip"]') as any).tooltip();
-  ($('.ui.dropdown') as any).dropdown();
-  ($('.ui.dropdown.item') as any).dropdown();
+  // ($('[data-toggle="popover"]') as any).popover();
+  // ($('[data-toggle="tooltip"]') as any).tooltip();
+  // ($('.ui.dropdown') as any).dropdown();
+  // ($('.ui.dropdown.item') as any).dropdown();
 
   $('[data-action="command-button"]').on('click', commandButtonClicked);
 

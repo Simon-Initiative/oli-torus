@@ -28,13 +28,6 @@ interface Props {
 }
 
 export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' }) => {
-  const ref = useCallback((reference: HTMLButtonElement) => {
-    if (reference) {
-      // TODO - probably be nice to get rid of the jquery dependency for a dropdown.
-      (window.$(reference) as any).dropdown();
-    }
-  }, []);
-
   const onToggleHeader = () => {
     const path = ReactEditor.findPath(editor, model);
     const cellType = mode == 'conjugation' ? 'tc' : 'td';
@@ -100,7 +93,6 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
   return (
     <div className="dropdown table-dropdown" contentEditable={false}>
       <button
-        ref={ref}
         type="button"
         className="dropdown-toggle btn"
         data-reference="parent"
