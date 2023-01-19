@@ -21,7 +21,7 @@ import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import { makeContent, MediaItemRequest } from '../types';
+import { makeChoice, makeContent, MediaItemRequest } from '../types';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { CATAActions } from '../check_all_that_apply/actions';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
@@ -30,8 +30,8 @@ import { RectangleEditor } from './Sections/RectangleEditor';
 import { PolygonEditor } from './Sections/PolygonEditor';
 import { Maybe } from 'tsmonad';
 import * as Immutable from 'immutable';
-import { defaultCoords } from './utils';
 import { PolygonAdder } from './Sections/PolygonAdder';
+import { clone } from 'utils/common';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
   const { dispatch, model, editMode, projectSlug, onRequestMedia } =
@@ -77,8 +77,6 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
   };
 
   const addHotspot = (hs: Hotspot) => {
-    // Set choice content to "Hotspot N" for display in UI
-    hs.content = makeContent('Hotspot ' + (model.choices.length + 1).toString()).content;
     model.multiple ? dispatch(CATAActions.addChoice(hs)) : dispatch(Choices.addOne(hs));
   };
 
@@ -128,9 +126,15 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
       : dispatch(MCActions.removeChoice(id, model.authoring.parts[0].id));
   };
 
-  const hotspotLabel = (model: ImageHotspotModelSchema, id: string) => {
+  const hotspotNumeral = (model: ImageHotspotModelSchema, id: string) => {
     const index = model.choices.findIndex((h) => h.id === id);
     return index !== undefined ? (index + 1).toString() : '?';
+  };
+
+  // map hotspot to list of Choices with identifying label 'Hotspot N' as content
+  // for passing to Choice-based components that show content (Answer, TargetedFeedback)
+  const hotspotsToChoices = (hotspots: Hotspot[]) => {
+    return hotspots.map((hs, i) => makeChoice('Hotspot ' + (i + 1), hs.id));
   };
 
   const shapeEditors = {
@@ -176,7 +180,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                         <ShapeEditor
                           key={hotspot.id}
                           id={hotspot.id}
-                          label={hotspotLabel(model, hotspot.id)}
+                          label={hotspotNumeral(model, hotspot.id)}
                           selected={hotspot.id === selectedHotspot}
                           boundingClientRect={
                             imgRef.current
@@ -253,7 +257,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
           <ChoicesDelivery
             unselectedIcon={model.multiple ? <Checkbox.Unchecked /> : <Radio.Unchecked />}
             selectedIcon={model.multiple ? <Checkbox.Checked /> : <Radio.Checked />}
-            choices={model.choices}
+            choices={hotspotsToChoices(model.choices)}
             selected={
               model.multiple
                 ? getCorrectChoiceIds(model)
@@ -272,6 +276,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
           />
           <SimpleFeedback partId={selectedPartId} />
           <TargetedFeedback
+            choices={hotspotsToChoices(model.choices)}
             toggleChoice={(choiceId, mapping) => {
               dispatch(MCActions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
             }}

@@ -7,14 +7,9 @@ import { Responses } from 'data/activities/model/responses';
 // small circle near upper left to fit within any reasonably sized image.
 export const defaultCoords = [50, 50, 40];
 
-export const hotSpotContent = (i: number) => {
-  return makeContent('Hotspot ' + i.toString()).content;
-};
-
 export const defaultImageHotspotModel: () => ImageHotspotModelSchema = () => {
   // As with MCQ, should always have at least one hotspot to serve as correct answer choice.
   const hotspot1: Hotspot = makeHotspot(defaultCoords);
-  hotspot1.content = hotSpotContent(1);
   // initialize respnses for default single selection. Will need different CATA-style
   // response structure if dynamically changed to multiple selection
   const responses = Responses.forMultipleChoice(hotspot1.id);
