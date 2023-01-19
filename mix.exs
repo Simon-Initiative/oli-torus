@@ -189,7 +189,7 @@ defmodule Oli.MixProject do
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
       {:sweet_xml, "~> 0.7.1"},
-      {:tailwind, "~> 0.1.9", only: [:dev, :test, :hound]},
+      {:tailwind, "~> 0.1.9"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
