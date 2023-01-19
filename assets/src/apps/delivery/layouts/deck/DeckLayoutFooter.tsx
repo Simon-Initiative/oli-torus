@@ -391,7 +391,9 @@ const DeckLayoutFooter: React.FC = () => {
       });
 
       const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
-      saveMutateStateValuesToServer(mutations);
+      if (!isPreviewMode) {
+        saveMutateStateValuesToServer(mutations);
+      }
       // should respond to scripting errors?
       console.log('MUTATE ACTIONS', {
         mutateResults,
