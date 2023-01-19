@@ -1,4 +1,4 @@
-name: Package & Deploy Test
+name: Package
 on:
   push:
     branches:
