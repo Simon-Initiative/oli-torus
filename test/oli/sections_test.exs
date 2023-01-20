@@ -338,6 +338,65 @@ defmodule Oli.SectionsTest do
       remixed_projects = Sections.get_remixed_projects(section.id, section.base_project_id)
       assert 2 = length(remixed_projects)
     end
+
+    test "get_active_sections_by_project/2 returns course sections actives for a project" do
+      %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      section1 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      section2 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      {:ok, _sr} = Sections.create_section_resources(section1, publication)
+      {:ok, _sr} = Sections.create_section_resources(section2, publication)
+
+      assert length(Sections.get_active_sections_by_project(project, now())) == 2
+    end
+
+    test "get_push_force_affected_sections/1 returns all sections that will be affected by forcing the publication update" do
+      %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      section1 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      section2 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      product1 = insert(:section, base_project: project)
+
+      {:ok, _sr} = Sections.create_section_resources(section1, publication)
+      {:ok, _sr} = Sections.create_section_resources(section2, publication)
+      {:ok, _sr} = Sections.create_section_resources(product1, publication)
+
+      %{product_count: product_count, section_count: section_count} =
+        Sections.get_push_force_affected_sections(project)
+
+      assert section_count == 2
+      assert product_count == 1
+    end
   end
 
   describe "section resources" do
