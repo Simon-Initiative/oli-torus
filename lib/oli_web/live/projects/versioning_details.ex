@@ -14,15 +14,16 @@ defmodule OliWeb.Projects.VersioningDetails do
 
   prop active_publication, :struct, required: true
   prop active_publication_changes, :map, required: true
-  prop push_force_affected_sections_count, :integer, default: 0
   prop changeset, :any, required: true
   prop force_push, :event, required: true
   prop has_changes, :boolean, required: true
   prop is_force_push, :boolean, default: false
   prop latest_published_publication, :struct, required: true
+  prop product_count, :integer, default: 0
   prop project, :struct, required: true
   prop publish_active, :event, required: true
-  prop version_change, :atom, required: true
+  prop section_count, :integer, default: 0
+  prop version_change, :tuple, required: true
 
   def render(assigns) do
     ~F"""
@@ -33,18 +34,18 @@ defmodule OliWeb.Projects.VersioningDetails do
             <h5>Versioning Details</h5>
             <h6 class="pb-3">The version number is automatically determined by the nature of the changes.</h6>
             {#case @version_change}
-              {#match change_type}
+              {#match {change_type, _}}
                 <div class="form-check form-switch">
                   <Field name={:publish_type}>
                     <div class="form-group" style="pointer-events: none">
                       <RadioButton class="form-check-input" checked={change_type == :major} value={:major}/>
                       <Label class="form-check-label">
                         <p>Major
-                          <!-- {#case {@version_change, @latest_published_publication}}
-                            {#match {:major, %{edition: current_edition, major: current_major, minor: current_minor}}}
-                              <small><i class="fa fa-arrow-right mx-2"></i>{"v#{current_edition}.#{current_major + 1}.#{current_minor}"}</small>
+                          {#case {@version_change, @latest_published_publication}}
+                            {#match {{:major, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}}}
+                            <small class="ml-1">{render_version(current_edition, current_major, current_minor)}<i class="fa fa-arrow-right mx-2"></i>{render_version(edition, major, minor)}</small>
                             {#match _}
-                          {/case} -->
+                          {/case}
                         </p>
                         <small>Changes alter the structure of materials such as additions and deletions.</small>
                       </Label>
@@ -54,11 +55,11 @@ defmodule OliWeb.Projects.VersioningDetails do
                       <RadioButton class="form-check-input" checked={change_type == :minor} value={:minor}/>
                       <Label class="form-check-label">
                         <p>Minor
-                          <!-- {#case {@version_change, @latest_published_publication}}
-                            {#match {:minor, %{edition: current_edition, major: current_major, minor: current_minor}}}
-                              <small><i class="fa fa-arrow-right mx-1"></i>{"v#{current_edition}.#{current_major}.#{current_minor}"}</small>
+                          {#case {@version_change, @latest_published_publication}}
+                            {#match {{:minor, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}}}
+                            <small class="ml-1">{render_version(current_edition, current_major, current_minor)}<i class="fa fa-arrow-right mx-1"></i>{render_version(edition, major, minor)}</small>
                             {#match _}
-                          {/case} -->
+                          {/case}
                         </p>
                         <small>Changes include small portions of reworked materials, grammar and spelling fixes.</small>
                       </Label>
@@ -87,21 +88,50 @@ defmodule OliWeb.Projects.VersioningDetails do
           </div>
           {#if @is_force_push}
             <div class="alert alert-warning" role="alert">
-              This force push update will affect {@push_force_affected_sections_count} sections
+              {#if @section_count > 0 or @product_count > 0}
+                This force push update will affect
+                {render_section_count(assigns, @section_count)}
+                {render_product_count(assigns, @product_count, @section_count)}
+              {#else}
+                This force push update will not affect any product or course section.
+              {/if}
             </div>
           {/if}
-          <!-- {#case @version_change}
-            {#match {:no_changes, _}}
-
-            {#match {_, {edition, major, minor}}}
-              <span class="ml-2">{"v#{edition}.#{major}.#{minor}"}</span>
-
-            {#match _}
-          {/case} -->
 
         </Form>
       </div>
     """
   end
 
+  defp render_product_count(assigns, product_count, section_count) do
+    ~F"""
+      {#case product_count}
+        {#match 0}
+
+        {#match 1}
+          {#if section_count > 0}and{/if}<strong> {product_count} product</strong>
+
+        {#match _}
+          {#if section_count > 0}and{/if}<strong> {product_count} products</strong>
+      {/case}
+    """
+  end
+
+  defp render_section_count(assigns, section_count) do
+    ~F"""
+      {#case section_count}
+        {#match 0}
+
+        {#match 1}
+          <strong> {section_count} course section</strong>
+
+        {#match _}
+          <strong> {section_count} course sections</strong>
+      {/case}
+    """
+  end
+
+  defp render_version(edition, major, minor) do
+    "v#{edition}.#{major}.#{minor}"
+  end
 end

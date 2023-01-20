@@ -44,7 +44,9 @@ defmodule OliWeb.Projects.PublishView do
     project = Course.get_project_by_slug(project_slug)
     {:ok, now_time} = DateTime.now("Etc/UTC")
     active_sections = Sections.get_active_sections_by_project(project, now_time)
-    push_force_affected_sections = Sections.get_push_force_affected_sections(project)
+
+    %{product_count: product_count, section_count: section_count} =
+      Sections.get_push_force_affected_sections(project)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project_slug) || %Publication{}
@@ -57,8 +59,13 @@ defmodule OliWeb.Projects.PublishView do
           {true, nil, %{}}
 
         _ ->
-          %PublicationDiff{classification: classification, changes: changes} =
-            Publishing.diff_publications(latest_published_publication, active_publication)
+          %PublicationDiff{
+            classification: classification,
+            edition: edition,
+            major: major,
+            minor: minor,
+            changes: changes
+          } = Publishing.diff_publications(latest_published_publication, active_publication)
 
           parent_pages =
             case classification do
@@ -77,7 +84,7 @@ defmodule OliWeb.Projects.PublishView do
                 )
             end
 
-          {classification, changes, parent_pages}
+          {{classification, {edition, major, minor}}, changes, parent_pages}
       end
 
     base_url = Oli.Utils.get_base_url()
@@ -93,7 +100,7 @@ defmodule OliWeb.Projects.PublishView do
 
     has_changes =
       case version_change do
-        :no_changes -> false
+        {:no_changes, _} -> false
         _ -> true
       end
 
@@ -110,14 +117,15 @@ defmodule OliWeb.Projects.PublishView do
        canvas_developer_key_url: canvas_developer_key_url,
        changeset: Publishing.change_publication(active_publication),
        context: context,
-       push_force_affected_sections: push_force_affected_sections,
        has_changes: has_changes,
        initiate_login_url: initiate_login_url,
        latest_published_publication: latest_published_publication,
        now_time: now_time,
        parent_pages: parent_pages,
+       product_count: product_count,
        project: project,
        public_keyset_url: public_keyset_url,
+       section_count: section_count,
        redirect_uris: redirect_uris,
        table_model: table_model,
        tool_url: tool_url,
@@ -131,55 +139,58 @@ defmodule OliWeb.Projects.PublishView do
         <div class="row">
           <div class="col-12">
             <PublicationDetails
-              active_publication_changes= {@active_publication_changes}
-              context= {@context}
-              has_changes= {@has_changes}
-              latest_published_publication= {@latest_published_publication}
-              parent_pages= {@parent_pages}
-              project= {@project}
+              active_publication_changes={@active_publication_changes}
+              context={@context}
+              has_changes={@has_changes}
+              latest_published_publication={@latest_published_publication}
+              parent_pages={@parent_pages}
+              project={@project}
             />
 
             {#if @has_changes}
               <VersioningDetails
-                active_publication= {@active_publication}
-                active_publication_changes= {@active_publication_changes}
-                changeset= {@changeset}
-                force_push= "force_push"
-                has_changes= {@has_changes}
-                is_force_push= {@is_force_push}
-                latest_published_publication= {@latest_published_publication}
-                project= {@project}
-                publish_active= "publish_active"
-                push_force_affected_sections_count= {length(@push_force_affected_sections)}
-                version_change= {@version_change}
+                active_publication={@active_publication}
+                active_publication_changes={@active_publication_changes}
+                changeset={@changeset}
+                force_push="force_push"
+                has_changes={@has_changes}
+                is_force_push={@is_force_push}
+                latest_published_publication={@latest_published_publication}
+                product_count={@product_count}
+                project={@project}
+                publish_active="publish_active"
+                section_count={@section_count}
+                version_change={@version_change}
               />
             {/if}
 
             <hr class="mt-3 mb-5">
             {#if length(@active_sections) > 0}
               <h5>This project has {length(@active_sections)} active course sections</h5>
-              <Listing
-                filter={@query}
-                limit={@limit}
-                offset={@offset}
-                page_change={@page_change}
-                show_bottom_paging={@show_bottom_paging}
-                sort={@sort}
-                table_model={@table_model}
-                total_count={length(@active_sections)}
-              />
+              <div id="active-course-sections-table">
+                <Listing
+                  filter={@query}
+                  limit={@limit}
+                  offset={@offset}
+                  page_change={@page_change}
+                  show_bottom_paging={@show_bottom_paging}
+                  sort={@sort}
+                  table_model={@table_model}
+                  total_count={length(@active_sections)}
+                />
+              </div>
             {#else}
               <h5>This project has no active course sections</h5>
             {/if}
 
             <hr class="mb-5 mt-3">
             <LtiConnectInstructions
-              blackboard_application_client_id= {@blackboard_application_client_id}
-              canvas_developer_key_url= {@canvas_developer_key_url}
-              initiate_login_url= {@initiate_login_url}
-              public_keyset_url= {@public_keyset_url}
-              redirect_uris= {@redirect_uris}
-              tool_url= {@tool_url}
+              blackboard_application_client_id={@blackboard_application_client_id}
+              canvas_developer_key_url={@canvas_developer_key_url}
+              initiate_login_url={@initiate_login_url}
+              public_keyset_url={@public_keyset_url}
+              redirect_uris={@redirect_uris}
+              tool_url={@tool_url}
             />
           </div>
         </div>

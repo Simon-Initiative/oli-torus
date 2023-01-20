@@ -589,19 +589,19 @@ defmodule Oli.Delivery.Sections do
 
   ## Examples
       iex> get_push_force_affected_sections(project)
-      [%Section{}, ...]
-
-      iex> get_push_force_affected_sections(invalid_project)
-      []
+      %{product_count: 1, section_count: 1}
   """
-
   def get_push_force_affected_sections(project) do
-    Repo.all(
+    Repo.one(
       from(
         section in Section,
         join: spp in SectionsProjectsPublications,
         on: section.id == spp.section_id,
-        where: spp.project_id == ^project.id and section.status == :active
+        where: spp.project_id == ^project.id and section.status == :active,
+        select: %{
+          product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
+          section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
+        }
       )
     )
   end
