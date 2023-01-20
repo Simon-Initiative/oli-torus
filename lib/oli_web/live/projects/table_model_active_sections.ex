@@ -11,11 +11,6 @@ defmodule OliWeb.Projects.TableModelActiveSections do
         label: "Title"
       },
       %ColumnSpec{
-        name: :blueprint_id,
-        label: "Type",
-        render_fn: &__MODULE__.custom_render/3
-      },
-      %ColumnSpec{
         name: :section_project_publications,
         label: "Current Publication",
         render_fn: &__MODULE__.custom_render/3
@@ -63,9 +58,6 @@ defmodule OliWeb.Projects.TableModelActiveSections do
 
       :base_project_id ->
         if section.base_project_id == assigns.project.id, do: "Base Project", else: "Remixed"
-
-      :blueprint_id ->
-        if is_nil(section.blueprint_id), do: "Enrollable", else: "Blueprint"
     end
   end
 
