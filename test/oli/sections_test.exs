@@ -362,7 +362,7 @@ defmodule Oli.SectionsTest do
       {:ok, _sr} = Sections.create_section_resources(section1, publication)
       {:ok, _sr} = Sections.create_section_resources(section2, publication)
 
-      assert length(Sections.get_active_sections_by_project(project, now())) == 2
+      assert length(Sections.get_active_sections_by_project(project.id)) == 2
     end
 
     test "get_push_force_affected_sections/1 returns all sections that will be affected by forcing the publication update" do
@@ -392,7 +392,7 @@ defmodule Oli.SectionsTest do
       {:ok, _sr} = Sections.create_section_resources(product1, publication)
 
       %{product_count: product_count, section_count: section_count} =
-        Sections.get_push_force_affected_sections(project)
+        Sections.get_push_force_affected_sections(project.id)
 
       assert section_count == 2
       assert product_count == 1

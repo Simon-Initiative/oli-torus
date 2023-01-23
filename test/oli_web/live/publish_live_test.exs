@@ -143,7 +143,7 @@ defmodule OliWeb.PublishLiveTest do
     end
   end
 
-  describe "user cannot access when is logged in as an author but is not a system admin" do
+  describe "user cannot access when is logged in as an author but is not an author of the project" do
     setup [:author_conn]
 
     test "redirects to projects view", %{
