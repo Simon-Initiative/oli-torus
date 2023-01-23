@@ -571,13 +571,17 @@ defmodule Oli.Delivery.Sections do
       iex> get_active_sections_by_project(invalid_project, now_time)
       []
   """
-  def get_active_sections_by_project(project, now_time) do
+  def get_active_sections_by_project(project_id) do
+    today = DateTime.utc_now()
+
     Repo.all(
       from(
         section in Section,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == section.id,
-        where: spp.project_id == ^project.id and (not is_nil(section.end_date) and section.end_date > ^now_time),
+        where:
+          spp.project_id == ^project_id and
+            (not is_nil(section.end_date) and section.end_date >= ^today),
         select: section,
         preload: [section_project_publications: [:publication]]
       )
@@ -591,13 +595,17 @@ defmodule Oli.Delivery.Sections do
       iex> get_push_force_affected_sections(project)
       %{product_count: 1, section_count: 1}
   """
-  def get_push_force_affected_sections(project) do
+  def get_push_force_affected_sections(project_id) do
+    today = DateTime.utc_now()
+
     Repo.one(
       from(
         section in Section,
         join: spp in SectionsProjectsPublications,
         on: section.id == spp.section_id,
-        where: spp.project_id == ^project.id and section.status == :active,
+        where:
+          spp.project_id == ^project_id and section.status == :active and
+            (is_nil(section.end_date) or section.end_date >= ^today),
         select: %{
           product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
           section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
