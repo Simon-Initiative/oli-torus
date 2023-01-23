@@ -38,7 +38,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
       return;
     }
     setIsOpen(false);
-    if (graded || isPreviewMode) {
+    if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
       window.location.href = overviewURL;

@@ -45,7 +45,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
       );
       /* console.log('finalizeResult', finalizeResult); */
     }
-    if (graded || isPreviewMode) {
+    if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
       // FIXME: for hotfix purposes, just reverting the code
