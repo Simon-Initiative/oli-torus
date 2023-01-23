@@ -3,12 +3,7 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
 
   alias OliWeb.Projects.LmsUrlToCopy
 
-  prop blackboard_application_client_id, :integer, required: true
-  prop canvas_developer_key_url, :string, required: true
-  prop initiate_login_url, :string, required: true
-  prop public_keyset_url, :string, required: true
-  prop redirect_uris, :string, required: true
-  prop tool_url, :string, required: true
+  prop lti_connect_info, :map, required: true
 
   def render(assigns) do
     ~F"""
@@ -33,7 +28,7 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                   <li class="nav-item">
                     <a class="nav-link active" id="pills-canvas-tab" data-toggle="pill" href="#pills-canvas" role="tab" aria-controls="pills-canvas" aria-selected="true">Canvas</a>
                   </li>
-                  {#if @blackboard_application_client_id}
+                  {#if @lti_connect_info.blackboard_application_client_id}
                     <li class="nav-item">
                       <a class="nav-link" id="pills-blackboard-tab" data-toggle="pill" href="#pills-blackboard" role="tab" aria-controls="pills-blackboard" aria-selected="false">Blackboard</a>
                     </li>
@@ -53,7 +48,7 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                     <div class="mt-2">
                       <strong>Developer Key JSON URL:</strong>
                       <div class="input-group input-group-sm mb-3">
-                        <input type="text" id="canvas_developer_key_url" class="form-control" value={@canvas_developer_key_url} readonly>
+                        <input type="text" id="canvas_developer_key_url" class="form-control" value={@lti_connect_info.canvas_developer_key_url} readonly>
                         <div class="input-group-append">
                           <button class="clipboardjs btn btn-xs btn-outline-primary" data-clipboard-target="#canvas_developer_key_url">
                             <i class="lar la-clipboard"></i> Copy
@@ -67,7 +62,7 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                     </div>
                   </div>
 
-                  {#if @blackboard_application_client_id}
+                  {#if @lti_connect_info.blackboard_application_client_id}
                     <div class="tab-pane fade" id="pills-blackboard" role="tabpanel" aria-labelledby="pills-other-tab">
                       <p>
                         Please refer to the <a href="https://help.blackboard.com/Learn/Administrator/SaaS/Integrations/Learning_Tools_Interoperability" target="_blank">Blackboard Documentation on LTI 1.3 tool configuration</a> for full configuration instructions.
@@ -77,7 +72,7 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                       <div>
                         <strong>Client ID:</strong>
                         <div class="input-group input-group-sm mb-3">
-                          <input type="text" id="blackboard_application_client_id" class="form-control" value={@blackboard_application_client_id} readonly>
+                          <input type="text" id="blackboard_application_client_id" class="form-control" value={@lti_connect_info.blackboard_application_client_id} readonly>
                           <div class="input-group-append">
                             <button class="clipboardjs btn btn-xs btn-outline-primary" data-clipboard-target="#blackboard_application_client_id">
                               <i class="lar la-clipboard"></i> Copy
@@ -92,25 +87,25 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                     <LmsUrlToCopy
                       title= "Tool URL"
                       id= "tool_url"
-                      value= {@tool_url}
+                      value= {@lti_connect_info.tool_url}
                     />
 
                     <LmsUrlToCopy
                       title= "Initiate login URL"
                       id= "initiate_login_url"
-                      value= {@initiate_login_url}
+                      value= {@lti_connect_info.initiate_login_url}
                     />
 
                     <LmsUrlToCopy
                       title= "Public Keyset URL"
                       id= "public_keyset_url"
-                      value= {@public_keyset_url}
+                      value= {@lti_connect_info.public_keyset_url}
                     />
 
                     <LmsUrlToCopy
                       title= "Redirection URI(s)"
                       id= "redirect_uris"
-                      value= {@redirect_uris}
+                      value= {@lti_connect_info.redirect_uris}
                     />
                   </div>
                 </div>

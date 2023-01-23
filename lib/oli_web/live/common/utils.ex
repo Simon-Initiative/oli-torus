@@ -72,4 +72,8 @@ defmodule OliWeb.Common.Utils do
   defp has_value(v) do
     !is_nil(v) and v != ""
   end
+
+  def render_version(edition, major, minor) do
+    "v#{edition}.#{major}.#{minor}"
+  end
 end

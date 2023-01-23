@@ -11,9 +11,9 @@ defmodule OliWeb.Projects.PublishView do
   alias OliWeb.Common.{Breadcrumb, Listing, SessionContext}
 
   alias OliWeb.Projects.{
+    ActiveSectionsTableModel,
     LtiConnectInstructions,
     PublicationDetails,
-    TableModelActiveSections,
     VersioningDetails
   }
 
@@ -36,17 +36,16 @@ defmodule OliWeb.Projects.PublishView do
     do: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
 
   def mount(
-        %{"project_id" => project_slug} = _params,
+        %{"project_id" => project_slug},
         session,
         socket
       ) do
     context = SessionContext.init(session)
     project = Course.get_project_by_slug(project_slug)
-    {:ok, now_time} = DateTime.now("Etc/UTC")
-    active_sections = Sections.get_active_sections_by_project(project, now_time)
+    active_sections = Sections.get_active_sections_by_project(project.id)
 
     %{product_count: product_count, section_count: section_count} =
-      Sections.get_push_force_affected_sections(project)
+      Sections.get_push_force_affected_sections(project.id)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project_slug) || %Publication{}
@@ -88,15 +87,16 @@ defmodule OliWeb.Projects.PublishView do
       end
 
     base_url = Oli.Utils.get_base_url()
-    canvas_developer_key_url = "#{base_url}/lti/developer_key.json"
 
-    blackboard_application_client_id =
-      Application.get_env(:oli, :blackboard_application_client_id)
-
-    tool_url = "#{base_url}/lti/launch"
-    initiate_login_url = "#{base_url}/lti/login"
-    public_keyset_url = "#{base_url}/.well-known/jwks.json"
-    redirect_uris = "#{base_url}/lti/launch"
+    lti_connect_info = %{
+      canvas_developer_key_url: "#{base_url}/lti/developer_key.json",
+      blackboard_application_client_id:
+        Application.get_env(:oli, :blackboard_application_client_id),
+      tool_url: "#{base_url}/lti/launch",
+      initiate_login_url: "#{base_url}/lti/login",
+      public_keyset_url: "#{base_url}/.well-known/jwks.json",
+      redirect_uris: "#{base_url}/lti/launch"
+    }
 
     has_changes =
       case version_change do
@@ -104,32 +104,25 @@ defmodule OliWeb.Projects.PublishView do
         _ -> true
       end
 
-    {:ok, table_model} = TableModelActiveSections.new(context, active_sections, project)
+    {:ok, table_model} = ActiveSectionsTableModel.new(context, active_sections, project)
 
     {:ok,
      assign(socket,
        active_publication: active_publication,
        active_publication_changes: active_publication_changes,
        active_sections: active_sections,
-       base_url: base_url,
-       blackboard_application_client_id: blackboard_application_client_id,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
-       canvas_developer_key_url: canvas_developer_key_url,
        changeset: Publishing.change_publication(active_publication),
        context: context,
        has_changes: has_changes,
-       initiate_login_url: initiate_login_url,
        latest_published_publication: latest_published_publication,
-       now_time: now_time,
        parent_pages: parent_pages,
        product_count: product_count,
        project: project,
-       public_keyset_url: public_keyset_url,
        section_count: section_count,
-       redirect_uris: redirect_uris,
        table_model: table_model,
-       tool_url: tool_url,
-       version_change: version_change
+       version_change: version_change,
+       lti_connect_info: lti_connect_info
      )}
   end
 
@@ -184,21 +177,14 @@ defmodule OliWeb.Projects.PublishView do
             {/if}
 
             <hr class="mb-5 mt-3">
-            <LtiConnectInstructions
-              blackboard_application_client_id={@blackboard_application_client_id}
-              canvas_developer_key_url={@canvas_developer_key_url}
-              initiate_login_url={@initiate_login_url}
-              public_keyset_url={@public_keyset_url}
-              redirect_uris={@redirect_uris}
-              tool_url={@tool_url}
-            />
+            <LtiConnectInstructions lti_connect_info={@lti_connect_info}/>
           </div>
         </div>
       </div>
     """
   end
 
-  def handle_event("publish_active", %{"publication" => publication} = _params, socket) do
+  def handle_event("publish_active", %{"publication" => publication}, socket) do
     project = socket.assigns.project
 
     with {:ok, description} <- Map.get(publication, "description") |> trap_nil(),

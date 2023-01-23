@@ -1,6 +1,8 @@
 defmodule OliWeb.Projects.VersioningDetails do
   use Surface.Component
 
+  alias OliWeb.Common.Utils
+
   alias Surface.Components.{Form}
 
   alias Surface.Components.Form.{
@@ -34,7 +36,7 @@ defmodule OliWeb.Projects.VersioningDetails do
             <h5>Versioning Details</h5>
             <h6 class="pb-3">The version number is automatically determined by the nature of the changes.</h6>
             {#case @version_change}
-              {#match {change_type, _}}
+              {#match {change_type, _} when change_type == :major or change_type == :minor}
                 <div class="form-check form-switch">
                   <Field name={:publish_type}>
                     <div class="form-group" style="pointer-events: none">
@@ -43,7 +45,11 @@ defmodule OliWeb.Projects.VersioningDetails do
                         <p>Major
                           {#case {@version_change, @latest_published_publication}}
                             {#match {{:major, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}}}
-                            <small class="ml-1">{render_version(current_edition, current_major, current_minor)}<i class="fa fa-arrow-right mx-2"></i>{render_version(edition, major, minor)}</small>
+                              <small class="ml-1">
+                                {Utils.render_version(current_edition, current_major, current_minor)}
+                                <i class="fa fa-arrow-right mx-2"></i>
+                                {Utils.render_version(edition, major, minor)}
+                              </small>
                             {#match _}
                           {/case}
                         </p>
@@ -57,7 +63,11 @@ defmodule OliWeb.Projects.VersioningDetails do
                         <p>Minor
                           {#case {@version_change, @latest_published_publication}}
                             {#match {{:minor, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}}}
-                            <small class="ml-1">{render_version(current_edition, current_major, current_minor)}<i class="fa fa-arrow-right mx-1"></i>{render_version(edition, major, minor)}</small>
+                              <small class="ml-1">
+                                {Utils.render_version(current_edition, current_major, current_minor)}
+                                <i class="fa fa-arrow-right mx-1"></i>
+                                {Utils.render_version(edition, major, minor)}
+                              </small>
                             {#match _}
                           {/case}
                         </p>
@@ -66,6 +76,7 @@ defmodule OliWeb.Projects.VersioningDetails do
                     </div>
                   </Field>
                 </div>
+              {#match {:no_changes, _}}
             {/case}
             <Field name={:description} class="form-group">
               <TextArea class="form-control" rows="3" opts={placeholder: "Enter a short description of these changes..."} />
@@ -89,9 +100,11 @@ defmodule OliWeb.Projects.VersioningDetails do
           {#if @is_force_push}
             <div class="alert alert-warning" role="alert">
               {#if @section_count > 0 or @product_count > 0}
-                This force push update will affect
-                {render_section_count(assigns, @section_count)}
-                {render_product_count(assigns, @product_count, @section_count)}
+                <h6>This force push update will affect:</h6>
+                <ul class="mb-0">
+                  <li>{@section_count} course section(s)</li>
+                  <li>{@product_count} product(s)</li>
+                </ul>
               {#else}
                 This force push update will not affect any product or course section.
               {/if}
@@ -101,37 +114,5 @@ defmodule OliWeb.Projects.VersioningDetails do
         </Form>
       </div>
     """
-  end
-
-  defp render_product_count(assigns, product_count, section_count) do
-    ~F"""
-      {#case product_count}
-        {#match 0}
-
-        {#match 1}
-          {#if section_count > 0}and{/if}<strong> {product_count} product</strong>
-
-        {#match _}
-          {#if section_count > 0}and{/if}<strong> {product_count} products</strong>
-      {/case}
-    """
-  end
-
-  defp render_section_count(assigns, section_count) do
-    ~F"""
-      {#case section_count}
-        {#match 0}
-
-        {#match 1}
-          <strong> {section_count} course section</strong>
-
-        {#match _}
-          <strong> {section_count} course sections</strong>
-      {/case}
-    """
-  end
-
-  defp render_version(edition, major, minor) do
-    "v#{edition}.#{major}.#{minor}"
   end
 end
