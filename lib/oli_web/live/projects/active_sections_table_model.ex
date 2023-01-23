@@ -1,8 +1,9 @@
-defmodule OliWeb.Projects.TableModelActiveSections do
+defmodule OliWeb.Projects.ActiveSectionsTableModel do
   use Surface.LiveComponent
 
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Utils
 
   def new(%SessionContext{} = context, sections, project) do
     column_specs = [
@@ -46,24 +47,21 @@ defmodule OliWeb.Projects.TableModelActiveSections do
     )
   end
 
-  def custom_render(assigns, section, %ColumnSpec{name: name}) do
-    case name do
-      :section_project_publications ->
-        %{edition: edition, major: major, minor: minor} =
-          List.first(section.section_project_publications).publication
+  def custom_render(assigns, section, %ColumnSpec{name: :section_project_publications}) do
+    %{edition: edition, major: major, minor: minor} =
+      List.first(section.section_project_publications).publication
 
-        ~F"""
-          <span class="badge badge-primary">{"v#{edition}.#{major}.#{minor}"}</span>
-        """
-
-      :base_project_id ->
-        if section.base_project_id == assigns.project.id, do: "Base Project", else: "Remixed"
-    end
+    ~F"""
+      <span class="badge badge-primary">{Utils.render_version(edition, major, minor)}</span>
+    """
   end
+
+  def custom_render(assigns, section, %ColumnSpec{name: :base_project_id}),
+    do: if(section.base_project_id == assigns.project.id, do: "Base Project", else: "Remixed")
 
   def render(assigns) do
     ~F"""
-    <div>nothing</div>
+      <div>nothing</div>
     """
   end
 end
