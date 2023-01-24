@@ -1,0 +1,93 @@
+<nav class="flex flex-col w-[200px] bg-white dark:bg-black relative shadow">
+  <a class="block h-[40px] mt-2 mb-14 mx-auto" href={
+    case assigns[:logo_link] do
+      nil ->
+        logo_link_path(@conn)
+      logo_link ->
+        logo_link
+    end}>
+    <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top"})) %>
+  </a>
+
+  <%= for {name, href, active} <- [{"Home", "#", true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
+    <a
+      href={href}
+      class={"
+        block
+        no-underline
+        mx-6
+        my-2
+        hover:no-underline
+        border-b
+        border-transparent
+        text-current
+        hover:text-delivery-primary-400
+        #{active && "font-bold border-b border-delivery-primary text-delivery-primary"}
+      "}><%= name %></a>
+  <% end %>
+
+  <div class="flex-1"></div>
+
+  <%= cond do %>
+    <% assigns[:hide_user] == true -> %>
+
+    <% preview_mode(@conn) -> %>
+      <div class="dropdown relative">
+        <button
+          class="
+            dropdown-toggle
+            px-6
+            py-2.5
+            font-medium
+            text-sm
+            leading-tight
+            transition
+            duration-150
+            ease-in-out
+            flex
+            items-center
+            whitespace-nowrap
+          "
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <div class="user-icon">
+            <%= user_icon(%{}) %>
+          </div>
+          <div class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4">
+            <div class="username">
+              Preview
+            </div>
+          </div>
+        </button>
+      </div>
+
+
+    <% user_signed_in?(@conn) -> %>
+      <%= render "_user_account_dropdown.html", assigns %>
+
+    <% true -> %>
+
+  <% end %>
+
+  <hr class="border-t border-gray-300" />
+
+  <button
+    class="
+      block
+      no-underline
+      m-4
+      text-delivery-body-color
+      font-bold
+      hover:no-underline
+      border-b
+      border-transparent
+      hover:text-delivery-primary
+      active:text-delivery-primary-600
+    "
+    data-bs-toggle="modal"
+    data-bs-target="#help-modal">
+   Tech Support
+  </button>
+</nav>

@@ -1,11 +1,88 @@
 /* eslint-disable */
+const colors = require('tailwindcss/colors');
 
 module.exports = {
-  extend: ({ theme }) => ({
+  fontFamily: {
+    sans: ['Open Sans', 'sans-serif'],
+  },
+  extend: {
+    colors: {
+      body: {
+        DEFAULT: colors.white,
+        50: '#f9f9f9',
+        100: '#f2f2f2',
+        200: '#d9d9d9',
+        300: '#bfbfbf',
+        400: '#a6a6a6',
+        500: '#8c8c8c',
+        600: '#737373',
+        700: '#595959',
+        800: '#404040',
+        900: '#262626',
+        dark: {
+          DEFAULT: colors.gray['900'],
+          50: '#262626',
+          100: '#404040',
+          200: '#595959',
+          300: '#737373',
+          400: '#8c8c8c',
+          500: '#a6a6a6',
+          600: '#bfbfbf',
+          700: '#d9d9d9',
+          800: '#f2f2f2',
+          900: '#f9f9f9',
+        },
+      },
+      'body-color': {
+        DEFAULT: '#373A44',
+        dark: {
+          DEFAULT: colors.white,
+        },
+      },
+      delivery: {
+        body: {
+          DEFAULT: '#f3f5f8',
+          dark: {
+            DEFAULT: colors.gray['900'],
+          },
+        },
+        'body-color': {
+          DEFAULT: '#373A44',
+          dark: {
+            DEFAULT: colors.white,
+          },
+        },
+        footer: {
+          DEFAULT: '#e9ecef',
+          dark: {
+            DEFAULT: '#222439',
+          },
+        },
+        header: {
+          DEFAULT: '#222439',
+          dark: {
+            DEFAULT: '#222439',
+          },
+        },
+        primary: {
+          DEFAULT: '#5B1EEA',
+          50: '#eee8fd',
+          100: '#ccb9f8',
+          200: '#aa8af4',
+          300: '#885cf0',
+          400: '#662deb',
+          500: '#5B1EEA',
+          600: '#4d14d2',
+          700: '#3c0fa3',
+          800: '#2b0b75',
+          900: '#1a0746',
+        },
+      },
+    },
     forms: {
       borderRadius: 4,
     },
-  }),
+  },
   oli: ({ theme }) => ({
     primary: theme('colors.blue.500'),
     secondary: theme('colors.gray.600'),

@@ -68,18 +68,26 @@
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
   </head>
-  <body class="dark:bg-slate-800 dark:text-white">
+  <body class="min-h-screen flex flex-row bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
     <input type="hidden" id="layout-id" data-layout-id="delivery">
 
-    <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
-    <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
-    <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
+    <%= render OliWeb.LayoutView, "_delivery_nav_sidebar.html", assigns %>
 
-    <main role="main" class="container mx-auto">
+    <div class="relative flex-1">
+      <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
+      <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
+      <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
-      <%= Map.get(assigns, :inner_layout) || @inner_content %>
+      <%= render OliWeb.LayoutView, "_delivery_exploration_shade.html", assigns %>
 
-    </main>
+      <main role="main" class="container mx-auto px-10">
+
+        <%= Map.get(assigns, :inner_layout) || @inner_content %>
+
+      </main>
+
+      <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+    </div>
 
     <script>
       // disable sign out if inside an iframe
@@ -93,8 +101,6 @@
     <script>
       window.$ = $;
     </script>
-
-    <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
 
     <script>hljs.highlightAll();</script>
     <script src="https://cdn.jsdelivr.net/npm/tw-elements/dist/js/index.min.js"></script>

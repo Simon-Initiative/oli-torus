@@ -1,5 +1,5 @@
 
-<div class="dropdown relative">
+<div class="dropdown relative w-full">
   <button
     class="
       dropdown-toggle
@@ -12,40 +12,26 @@
       duration-150
       ease-in-out
       flex
-      items-center
+      w-full
       whitespace-nowrap
+      text-left
     "
     type="button"
     data-bs-toggle="dropdown"
     aria-expanded="false"
   >
-    <div class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4">
-      <div class="username">
-        <%= user_name @current_user %>
-      </div>
-      <div class="role text-right" style={"color: #{user_role_color(@conn, @current_user)};"}>
-        <%= user_role_text @conn, @current_user %>
-      </div>
-    </div>
-    <div class="user-icon">
+    <div class="user-icon mr-4">
       <%= user_icon(assigns) %>
     </div>
 
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      data-prefix="fas"
-      data-icon="caret-down"
-      class="w-2 ml-2"
-      role="img"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 320 512"
-    >
-      <path
-        fill="currentColor"
-        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
-      ></path>
-    </svg>
+    <div class="block">
+      <div class="username">
+        <%= user_name @current_user %>
+      </div>
+      <div class="role" style={"color: #{user_role_color(@conn, @current_user)};"}>
+        <%= user_role_text @conn, @current_user %>
+      </div>
+    </div>
   </button>
 
   <ul
