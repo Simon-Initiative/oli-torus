@@ -42,6 +42,7 @@ import {
   TableRow,
   UnorderedList,
   Video,
+  ECLRepl,
   Webpage,
   YouTube,
   Conjugation as ConjugationModel,
@@ -71,6 +72,7 @@ import { Figure as FigureElement } from '../../../components/common/Figure';
 import { Dialog } from '../../../components/Dialog';
 import { Conjugation } from '../../../components/common/Conjugation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
+import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { Popup } from '../../../components/common/Popup';
 import { CommandButton } from '../../../components/common/CommandButton';
 import { DescriptionList } from '../../../components/common/DescriptionList';
@@ -285,6 +287,10 @@ export class HtmlParser implements WriterImpl {
 
   video(context: WriterContext, next: Next, attrs: Video) {
     return <VideoPlayer video={attrs} />;
+  }
+
+  ecl(context: WriterContext, next: Next, attrs: ECLRepl) {
+    return <ECLReplView code={attrs.code} />;
   }
 
   youtube(context: WriterContext, next: Next, attrs: YouTube) {

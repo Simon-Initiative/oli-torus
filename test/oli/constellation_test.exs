@@ -7,8 +7,8 @@ defmodule Oli.ConstellationTest do
   describe "ECL connection" do
     test "it connects" do
 
-      user_name = Application.get_env(:ecl, :username)
-      password = Application.get_env(:ecl, :password)
+      user_name = System.get_env("ECL_USERNAME", "")
+      password = System.get_env("ECL_PASSWORD", "")
 
       auth_token = Constellation.login(user_name, password)
       me = Constellation.me(auth_token)
@@ -16,7 +16,7 @@ defmodule Oli.ConstellationTest do
       Constellation.download(auth_token, Map.get(me, "Id"), ["Name", "Email", "CakePreference"])
       |> IO.inspect()
 
-      result = Constellation.execute_sll_expression(auth_token, "Inspect[Object[Resource]]")
+      result = Constellation.execute_sll_expression(auth_token, "1 + 1")
       IO.inspect(result)
     end
   end

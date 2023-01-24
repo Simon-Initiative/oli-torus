@@ -665,6 +665,15 @@ defmodule OliWeb.Router do
     )
   end
 
+  # routes for content element api endpoints
+  scope "/api/v1/content_types", OliWeb do
+    pipe_through([:api])
+
+    post("/ecl", Api.ECLController, :eval)
+  end
+
+
+
   scope "/api/v1/lti", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
@@ -1125,6 +1134,7 @@ defmodule OliWeb.Router do
       ])
 
       get("/flame_graphs", DevController, :flame_graphs)
+
     end
   end
 end

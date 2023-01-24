@@ -24,6 +24,7 @@ export interface WriterImpl {
   img: ElementWriter;
   img_inline: ElementWriter;
   video: ElementWriter;
+  ecl: ElementWriter;
   youtube: ElementWriter;
   iframe: ElementWriter;
   audio: ElementWriter;
@@ -146,6 +147,8 @@ export class ContentWriter {
         return impl.img_inline(context, next, content);
       case 'video':
         return impl.video(context, next, content);
+      case 'ecl':
+        return impl.ecl(context, next, content);
       case 'youtube':
         return impl.youtube(context, next, content);
       case 'iframe':

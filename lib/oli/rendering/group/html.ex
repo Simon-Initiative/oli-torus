@@ -29,6 +29,7 @@ defmodule Oli.Rendering.Group.Html do
     group(context, next, params)
   end
 
+
   def elements(%Context{} = context, elements) do
     Elements.render(context, elements, Elements.Html)
   end

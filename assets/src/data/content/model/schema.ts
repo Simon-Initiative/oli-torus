@@ -85,6 +85,12 @@ export interface SchemaConfig {
 export type ModelTypes = AllModelElements['type'];
 interface Schema extends Record<ModelTypes, SchemaConfig> {}
 export const schema: Schema = {
+  ecl: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: {},
+  },
   p: {
     isVoid: false,
     isBlock: true,

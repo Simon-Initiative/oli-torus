@@ -1,4 +1,5 @@
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
+import { insertEcl } from 'components/editing/elements/ecl/actions';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { ActivityEditorMap } from 'data/content/editors';
@@ -23,6 +24,7 @@ import { insertDescriptionListCommand } from '../../../elements/description/desc
 export const extendedBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
   insertImage(onRequestMedia),
+  insertEcl,
   insertYoutube,
   insertCodeblock,
   insertVideo,
@@ -40,6 +42,7 @@ export const extendedBlockInsertActions = (onRequestMedia: any) => [
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
   insertImage(onRequestMedia),
+  insertEcl,
   insertYoutube,
   insertCodeblock,
   insertVideo,
@@ -76,6 +79,7 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
         ytCmdDesc,
         insertVideo,
         insertCodeblock,
+        insertEcl,
         insertAudio(onRequestMedia),
         insertFormula,
       ];

@@ -45,6 +45,7 @@ import {
   DescriptionListTerm,
   DescriptionListDefinition,
   DescriptionList,
+  ECLRepl,
   ModelElement,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
@@ -173,6 +174,12 @@ export const Model = {
       type: 'code',
       code,
       language: 'Text',
+    }),
+
+  ecl: (code = '') =>
+    create<ECLRepl>({
+      type: 'ecl',
+      code
     }),
 
   inputRef: () => create<InputRef>({ type: 'input_ref' }),

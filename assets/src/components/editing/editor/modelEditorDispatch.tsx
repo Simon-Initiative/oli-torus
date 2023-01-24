@@ -31,6 +31,7 @@ import { TcEditor } from '../elements/table/TcElement';
 import { ForeignEditor } from '../elements/foreign/ForeignEditor';
 import { CommandButtonEditor } from '../elements/command_button/CommandButtonEditor';
 import { DescriptionListEditor } from '../elements/description/DescriptionListEditor';
+import { ECLReplEditor } from '../elements/ecl/ECLReplEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -96,6 +97,8 @@ export function editorFor(
       return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
       return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
+    case 'ecl':
+      return <ECLReplEditor {...(editorProps as EditorProps<ContentModel.ECLRepl>)} />;
     case 'iframe':
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':

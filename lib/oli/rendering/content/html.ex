@@ -75,6 +75,13 @@ defmodule Oli.Rendering.Content.Html do
     video_player
   end
 
+  def ecl(%Context{} = _context, _, attrs) do
+    {:safe, ecl} =
+      ReactPhoenix.ClientSide.react_component("Components.ECLRepl", %{"code" => attrs["code"]})
+
+    ecl
+  end
+
   def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
     iframe(
       context,
