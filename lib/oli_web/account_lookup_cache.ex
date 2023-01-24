@@ -57,7 +57,7 @@ defmodule OliWeb.AccountLookupCache do
   def handle_call({:delete, key}, _from, state) do
     case Cachex.del(@cache_name, key) do
       {:ok, true} ->
-        PubSub.broadcast(Oli.PubSub, cache_topic(), {:delete, key})
+        PubSub.broadcast_from(Oli.PubSub, self(), cache_topic(), {:delete, key})
         {:reply, :ok, state}
 
       _ ->
@@ -70,7 +70,7 @@ defmodule OliWeb.AccountLookupCache do
 
     case Cachex.put(@cache_name, key, value, ttl: ttl) do
       {:ok, true} ->
-        PubSub.broadcast(Oli.PubSub, cache_topic(), {:put, key, value, ttl})
+        PubSub.broadcast_from(Oli.PubSub, self(), cache_topic(), {:put, key, value, ttl})
         {:reply, :ok, state}
 
       _ ->
@@ -81,7 +81,7 @@ defmodule OliWeb.AccountLookupCache do
   def handle_call({:update, key, value}, _from, state) do
     case Cachex.update(@cache_name, key, value) do
       {:ok, _value} ->
-        PubSub.broadcast(Oli.PubSub, cache_topic(), {:update, key, value})
+        PubSub.broadcast_from(Oli.PubSub, self(), cache_topic(), {:update, key, value})
         {:reply, :ok, state}
 
       _ ->
