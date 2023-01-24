@@ -6,7 +6,6 @@ defmodule OliWeb.ViewHelpers do
   import Oli.Utils, only: [value_or: 2]
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
   alias Oli.Branding.Brand
 
   def brand_logo(%{brand: %Brand{}} = assigns) do
@@ -44,18 +43,24 @@ defmodule OliWeb.ViewHelpers do
     Sections.is_instructor?(user, section_slug)
   end
 
+  def is_independent_instructor?(user), do: Sections.is_independent_instructor?(user)
+
   def is_admin?(section_slug, user) do
     Sections.is_admin?(user, section_slug)
   end
 
-  def maybe_section_slug(conn) do
-    case conn.assigns[:section] do
-      %Section{slug: slug} ->
-        slug
+  @doc """
+  Returns true if a user is signed in
+  """
+  def user_signed_in?(conn) do
+    conn.assigns[:current_user]
+  end
 
-      _ ->
-        ""
-    end
+  @doc """
+  Returns true if a author is signed in
+  """
+  def author_signed_in?(conn) do
+    conn.assigns[:current_author]
   end
 
   def delivery_breadcrumbs?(%{assigns: assigns} = _conn),

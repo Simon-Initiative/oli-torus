@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <%= get_title(assigns) %>
 
-    <link rel="apple-touch-icon" sizes="180x180" href="<%= favicons("apple-touch-icon.png", assigns[:section]) %>">
-    <link rel="icon" type="image/png" sizes="16x16" href="<%= favicons("favicon-16x16.png", assigns[:section]) %>">
-    <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png", assigns[:section]) %>">
+    <link rel="apple-touch-icon" sizes="180x180" href={favicons("apple-touch-icon.png", assigns[:section])}>
+    <link rel="icon" type="image/png" sizes="16x16" href={favicons("favicon-16x16.png", assigns[:section])}>
+    <link rel="icon" type="image/png" sizes="32x32" href={favicons("favicon-32x32.png", assigns[:section])}>
     <link rel="manifest" href="/site.webmanifest">
 
     <!-- Tailwind CSS -->
@@ -60,34 +60,20 @@
     <%= OliWeb.Common.MathJaxScript.render(@conn) %>
 
     <%= csrf_meta_tag() %>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
+    <script type="text/javascript" src={Routes.static_path(@conn, "/js/vendor.js")}></script>
+    <script type="text/javascript" src={Routes.static_path(@conn, "/js/app.js")}></script>
+    <script type="text/javascript" src={Routes.static_path(@conn, "/js/components.js")}></script>
     <%= unless Plug.Conn.get_session(@conn, "browser_timezone") do %>
-      <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
+      <script type="text/javascript" src={Routes.static_path(@conn, "/js/timezone.js")}></script>
     <% end %>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
+    <script type="text/javascript" src={Routes.static_path(@conn, "/js/dark.js")}></script>
   </head>
-  <body class="min-h-screen flex flex-row bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
+  <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
     <input type="hidden" id="layout-id" data-layout-id="delivery">
 
-    <%= render OliWeb.LayoutView, "_delivery_nav_sidebar.html", assigns %>
+    <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
 
-    <div class="relative flex-1">
-      <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
-      <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
-      <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
-
-      <%= render OliWeb.LayoutView, "_delivery_exploration_shade.html", assigns %>
-
-      <main role="main" class="container mx-auto px-10">
-
-        <%= Map.get(assigns, :inner_layout) || @inner_content %>
-
-      </main>
-
-      <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
-    </div>
+    <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     <script>
       // disable sign out if inside an iframe

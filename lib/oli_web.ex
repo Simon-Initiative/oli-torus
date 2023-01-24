@@ -130,12 +130,9 @@ defmodule OliWeb do
       import OliWeb.ViewHelpers
       import OliWeb.Common.FormatDateTime
 
-      import Oli.Accounts,
+      import OliWeb.Components.Delivery.Utils,
         only: [
-          author_signed_in?: 1,
-          user_signed_in?: 1,
-          user_is_guest?: 1,
-          user_is_independent_learner?: 1
+          user_is_guest?: 1
         ]
 
       import Oli.Utils

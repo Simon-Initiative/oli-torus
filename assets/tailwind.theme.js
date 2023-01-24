@@ -53,13 +53,15 @@ module.exports = {
           },
         },
         footer: {
-          DEFAULT: '#e9ecef',
+          DEFAULT: '#eceef1',
           dark: {
             DEFAULT: '#222439',
           },
         },
         header: {
           DEFAULT: '#222439',
+          700: '#3b3b4d',
+          800: '#2a2a3e',
           dark: {
             DEFAULT: '#222439',
           },

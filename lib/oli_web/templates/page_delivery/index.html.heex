@@ -1,0 +1,50 @@
+<main role="main" class="flex-1 flex flex-row">
+  <OliWeb.Components.Delivery.NavSidebar.nav_sidebar {assigns} />
+
+  <div class="relative flex-1 flex flex-col pb-[60px]">
+    <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
+
+    <OliWeb.Components.Delivery.ExplorationShade.exploration_shade />
+    <OliWeb.Components.Delivery.UpNext.up_next username="Ava" />
+
+    <div class="container mx-auto px-10 mt-3 mb-5">
+      <div class="bg-white p-8 shadow">
+        <h1><%= @title %></h1>
+        <p class="text-secondary"><%= @description %></p>
+        <%= if is_section_instructor_or_admin?(@section_slug, @current_user) and not @preview_mode do %>
+          <div class="d-flex flex-row my-2">
+            <div class="flex-1"></div>
+            <div>
+              <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
+            </div>
+          </div>
+        <% end %>
+        <div class="d-flex text-secondary border-b border-secondary mb-2">
+          <div class="flex-grow-1">
+            <h5>
+              Course Overview
+            </h5>
+          </div>
+          <div class="mr-2">
+            Pages
+          </div>
+        </div>
+        <ol id="index-container" class="course-outline well" style="list-style: none; padding-left: 0px;">
+          <%= render "_outline.html", Map.merge(assigns, %{
+            nodes: @hierarchy.children,
+            active_page: nil,
+          }) %>
+        </ol>
+      </div>
+    </div>
+
+    <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+  </div>
+</main>
+
+
+<%= if Oli.Utils.LoadTesting.enabled?() do %>
+  <!--
+__OVERVIEW_PAGES__<%= encode_pages(@conn, @section_slug, @hierarchy) %>__OVERVIEW_PAGES__
+-->
+<% end %>
