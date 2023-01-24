@@ -10,7 +10,7 @@
     </div>
 
     <%= if user_signed_in?(@conn) do %>
-        <%= render "_user_account_dropdown.html", assigns %>
+        <%= render "_user_account_menu.html", assigns %>
     <% else %>
       <%= if @conn.request_path == "/" do %>
         <%= link "Learner/Educator Sign In", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary btn-sm my-2" %>
