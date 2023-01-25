@@ -128,7 +128,7 @@
 
 .provider-google {
   font-family: 'Roboto', sans-serif;
-  color: var(--oli-body-color);
+  color: var(--color-body-color);
   background-color: var(--color-white);
   padding: 0;
 
@@ -160,7 +160,7 @@
 }
 
 .provider-github {
-  color: var(--oli-body-color);
+  color: var(--color-body-color);
   background-color: var(--color-white);
 
   &.btn {

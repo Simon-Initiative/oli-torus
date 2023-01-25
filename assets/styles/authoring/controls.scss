@@ -29,8 +29,8 @@
   font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.5;
-  color: var(--oli-body-color);
-  background-color: var(--oli-body-bg);
+  color: var(--color-body-color);
+  background-color: var(--color-body-bg);
   background-clip: padding-box;
   position: relative;
 }
@@ -45,11 +45,11 @@
   padding: 5px;
   border-radius: 4px;
   border: 1px solid var(--color-gray-600);
-  background-color: var(--oli-body-bg);
+  background-color: var(--color-body-bg);
 }
 
 .table-size-picker-label {
-  color: var(--oli-body-color);
+  color: var(--color-body-color);
   text-align: center;
 }
 
@@ -121,7 +121,7 @@
 .audio-clip-browser-modal {
   position: absolute;
   min-height: 618px;
-  background-color: var(--oli-body-bg);
+  background-color: var(--color-body-bg);
   left: 0px;
   top: 0px;
   right: 0px;
@@ -140,7 +140,7 @@
   position: absolute;
   top: 0px;
   left: 0px;
-  background-color: var(--oli-body-bg);
+  background-color: var(--color-body-bg);
   right: 0px;
   height: 0px;
   overflow: hidden;

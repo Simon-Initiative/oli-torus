@@ -19,9 +19,9 @@
     margin-top: -5px;
   }
 }
-@each $name, $color in (default, var(--color-gray-700)), (primary, var(--oli-primary)),
-  (success, var(--color-success)), (danger, var(--oli-danger)), (warning, var(--oli-warning)),
-  (info, var(--oli-info))
+@each $name, $color in (default, var(--color-gray-700)), (primary, var(--color-primary)),
+  (success, var(--color-success)), (danger, var(--color-danger)), (warning, var(--color-warning)),
+  (info, var(--color-info))
 {
   .callout-#{$name} {
     border-left-color: $color;

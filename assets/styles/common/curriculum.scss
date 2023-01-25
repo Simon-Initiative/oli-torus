@@ -20,7 +20,7 @@
   }
 
   .no-objectives {
-    color: var(--oli-warning);
+    color: var(--color-warning);
   }
 
   .curriculum-entry {
@@ -28,16 +28,16 @@
     border-radius: 4px;
     box-shadow: 1px 1px 8px 1px var(--color-gray-200);
     cursor: grab;
-    background-color: var(--oli-body-bg);
-    color: var(--oli-body-color);
+    background-color: var(--color-body-bg);
+    color: var(--color-body-color);
 
     &:active {
       cursor: grabbing;
-      border-color: var(--oli-primary);
+      border-color: var(--color-primary);
     }
 
     &.active {
-      border-color: var(--oli-primary);
+      border-color: var(--color-primary);
     }
 
     .badge {

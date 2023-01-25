@@ -9,7 +9,7 @@ $rounded: 4px;
 $ui-border-color: #ccc;
 $panel-section-title-bar-height: 39px;
 $panel-section-title-bar-color: #e8ebed;
-$workspace-bg: var(--oli-body-bg);
+$workspace-bg: var(--color-body-bg);
 $font-family-sans-serif: var(--font-sans);
 
 #aa-loading {
@@ -186,7 +186,7 @@ $font-family-sans-serif: var(--font-sans);
     }
     &:hover {
       .bg-circle {
-        background-color: var(--oli-primary);
+        background-color: var(--color-primary);
       }
     }
     &.left {
@@ -524,7 +524,7 @@ $font-family-sans-serif: var(--font-sans);
         min-height: 30px;
 
         .aa-isLayer {
-          color: var(--oli-secondary);
+          color: var(--color-secondary);
           opacity: 0.75;
         }
 
@@ -543,7 +543,7 @@ $font-family-sans-serif: var(--font-sans);
         & > .aa-sequence-details-wrapper,
         & > .aa-rules-list-details-wrapper {
           color: #fff;
-          background-color: var(--oli-primary);
+          background-color: var(--color-primary);
 
           .aa-isLayer {
             color: #fff;
@@ -602,7 +602,7 @@ $font-family-sans-serif: var(--font-sans);
         color: $panel-font-color-light;
         opacity: 1;
         background: none;
-        border-top: 4px solid var(--oli-primary);
+        border-top: 4px solid var(--color-primary);
         border-radius: 0;
         margin-top: -10px;
         padding-top: 6px;
