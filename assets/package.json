@@ -140,7 +140,6 @@
     "mini-css-extract-plugin": "^2.6.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
     "prettier": "^2.2.1",
-    "prettier-plugin-tailwindcss": "^0.2.1",
     "redux-devtools-extension": "^2.13.8",
     "regenerator-runtime": "^0.13.7",
     "sass": "^1.26.8",

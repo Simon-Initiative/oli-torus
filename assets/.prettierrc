@@ -5,8 +5,5 @@
   "useTabs": false,
   "trailingComma": "all",
   "arrowParens": "always",
-  "printWidth": 100,
-  "plugins": [
-    "prettier-plugin-tailwindcss"
-  ]
+  "printWidth": 100
 }
