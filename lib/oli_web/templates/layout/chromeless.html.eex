@@ -36,7 +36,7 @@
 
     <%= if @preview_mode == true do %>
     <!-- Preview Mode Styles -->
-      <link id="preview-theme-light" rel="stylesheet" href="/css/preview_default.css" />
+      <link id="preview-theme-light" rel="stylesheet" href="/css/preview.css" />
     <% end %>
 
     <!-- Janus Part Component external CSS Files -->

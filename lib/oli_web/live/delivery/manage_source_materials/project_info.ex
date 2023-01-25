@@ -23,9 +23,9 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ProjectInfo do
 
       {#unless @newest_publication == nil}
         <hr class="bg-light">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mt-3">
           <div class="d-flex">
-            <h6 class="mb-0">An update is available for this section</h6>
+            <div>An update is available for this section</div>
             <span class="badge badge-success ml-2">{ManageSourceMaterials.version_number(@newest_publication)}</span>
           </div>
           {#if Map.has_key?(@updates_in_progress, @newest_publication.id)}

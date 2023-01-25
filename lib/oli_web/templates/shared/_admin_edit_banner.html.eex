@@ -1,16 +1,18 @@
 
 <%= if @is_admin? do %>
-  <div class="alert alert-warning alert-dismissible fade show container mt-2" role="alert">
-  <strong>You are editing as an administrator</strong>
+  <div class="alert alert-warning alert-dismissible flex flex-row fade show container mt-2 mx-auto" role="alert">
+  <div class="flex-1">
+    <strong>You are editing as an administrator</strong>
+  </div>
 
-  <span style="float: right;">
+  <div>
     <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
       <span style="margin-right: 5px"><i class="fas fa-history"></i></span><span>View History</span>
     <% end %>
-  </span>
+  </div>
 
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
+  <button type="button" class="close ml-4" data-dismiss="alert" aria-label="Close">
+    <i class="fa-solid fa-xmark fa-lg"></i>
   </button>
 
 </div>

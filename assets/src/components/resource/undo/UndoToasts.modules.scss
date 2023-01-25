@@ -1,23 +1,22 @@
-@use 'authoring/theme' as authoring;
-
 .undoToasts {
   position: fixed;
   top: 60px;
   right: 20px;
-  z-index: authoring.$z-highest;
+  z-index: var(--z-50);
 }
 
 .undoToast {
-  background-color: authoring.$gray-100;
-  color: authoring.$body-color;
+  background-color: var(--color-gray-100);
+  color: var(--color-body-color);
   position: relative;
-  z-index: authoring.$z-highest;
+  z-index: var(--z-50);
   width: 270px;
   font-size: 1em;
-  border: 1px solid authoring.$gray-200;
+  border: 1px solid var(--color-gray-200);
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 10%);
   border-radius: 0.25rem;
   margin-top: 20px;
+  padding: 10px 20px;
 }
 
 .undoToastEnter {

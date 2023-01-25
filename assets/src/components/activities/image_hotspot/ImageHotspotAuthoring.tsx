@@ -2,7 +2,7 @@ import { Hints } from 'components/activities/common/hints/authoring/HintsAuthori
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Choices } from 'data/activities/model/choices';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';

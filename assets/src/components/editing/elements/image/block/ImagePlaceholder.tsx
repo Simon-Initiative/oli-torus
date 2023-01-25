@@ -14,7 +14,7 @@ export function ImagePlaceholder(props: Props) {
     <Placeholder
       heading={
         <h3 className="d-flex align-items-center">
-          <span className="material-icons mr-2">image</span>Image
+          <i className="fa-solid fa-image mr-2"></i>Image
         </h3>
       }
       attributes={props.attributes}

@@ -132,7 +132,7 @@ export const Editors = (props: EditorsProps) => {
   });
 
   return (
-    <div className={classNames(className, 'editors d-flex flex-column flex-grow-1')}>
+    <div className={classNames(className, 'editors d-flex flex-column flex-grow-1 shadow-lg')}>
       {editors}
 
       <AddResource

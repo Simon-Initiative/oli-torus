@@ -1,3 +1,4 @@
+import React from 'react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { commandDesc as linkCmd } from 'components/editing/elements/link/LinkCmd';
@@ -18,7 +19,7 @@ import { toggleHeading } from 'components/editing/elements/heading/headingAction
 import { toggleParagraph } from 'components/editing/elements/paragraph/paragraphActions';
 
 export const formattingDropdownAction = createButtonCommandDesc({
-  icon: 'expand_more',
+  icon: <i className="fa-solid fa-caret-down"></i>,
   description: 'More',
   execute: (_context, _editor, _action) => {},
   active: (e) => additionalFormattingOptions.some((opt) => opt.active?.(e)),
@@ -31,7 +32,7 @@ export const activeBlockType = (editor: Editor) =>
 
 export const addItemDropdown: CommandDescription = {
   type: 'CommandDesc',
-  icon: () => 'add',
+  icon: () => <i className="fa-solid fa-plus"></i>,
   description: () => 'Add item',
   command: {} as any,
   active: (_e) => false,
@@ -47,7 +48,7 @@ export const addItemActions = (onRequestMedia: any) => [
 ];
 
 export const formatMenuCommands = [
-  toggleFormat({ icon: 'format_bold', mark: 'strong', description: 'Bold' }),
-  toggleFormat({ icon: 'format_italic', mark: 'em', description: 'Italic' }),
+  toggleFormat({ icon: <i className="fa-solid fa-bold"></i>, mark: 'strong', description: 'Bold' }),
+  toggleFormat({ icon: <i className="fa-solid fa-italic"></i>, mark: 'em', description: 'Italic' }),
   linkCmd,
 ];

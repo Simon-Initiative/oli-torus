@@ -39,7 +39,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: 'record_voice_over',
+      icon: <i className="fa-regular fa-comment-dots"></i>,
       description: props.editing ? 'Preview' : 'Edit',
       execute: (_context, _editor, _params) => props.toggleEdit(),
     })}

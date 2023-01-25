@@ -181,7 +181,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     ~H"""
       <ol class="breadcrumb custom-breadcrumb p-1 px-2">
         <div>
-          <button class="btn btn-sm btn-link" disabled><i class="las la-book"></i> Select a Publication</button>
+          <button class="btn btn-sm btn-link" disabled><i class="fas fa-book"></i> Select a Publication</button>
         </div>
       </ol>
     """
@@ -202,11 +202,11 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
           <% selected_publication -> %>
             <div class="border-right border-light">
-              <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication"><i class="las la-book"></i> <%= publication_title(selected_publication) %></button>
+              <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication"><i class="fas fa-book"></i> <%= publication_title(selected_publication) %></button>
             </div>
         <% end %>
 
-        <button class="btn btn-sm btn-link" {@maybe_disabled} phx-click="HierarchyPicker.update_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="las la-arrow-left"></i></button>
+        <button class="btn btn-sm btn-link" {@maybe_disabled} phx-click="HierarchyPicker.update_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="fas fa-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <.breadcrumb_item
@@ -220,7 +220,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   defp breadcrumb_item(assigns) do
     ~H"""
-    <li class="breadcrumb-item align-self-center pl-2">
+    <li class="breadcrumb-item self-center pl-2">
       <button class="btn btn-xs btn-link px-0" disabled={@is_last} phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
         <%= get_title(@breadcrumb, @show_short) %>
       </button>

@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
-import * as Settings from 'components/editing/elements/common/settings/Settings';
-import { selectAudio } from 'components/editing/elements/audio/audioActions';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { useDispatch } from 'react-redux';
 import { DescriptiveButton } from '../../toolbar/buttons/DescriptiveButton';
@@ -25,7 +23,7 @@ export const SettingsButton = (props: SettingsButtonProps) => {
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
-        icon: 'play_circle_filled',
+        icon: <i className="fa-solid fa-circle-play"></i>,
         description: 'Settings',
         execute: (_context, _editor, _params) =>
           dispatch(

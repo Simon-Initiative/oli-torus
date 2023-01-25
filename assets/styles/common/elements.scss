@@ -1,5 +1,3 @@
-@import 'bootstrap';
-
 .popup__anchorText,
 span.term {
   font-weight: bold;
@@ -8,13 +6,13 @@ span.term {
 }
 
 .structured-content,
-.activity-editor,
+.activity-editor .rich-text-editor,
 .content {
   blockquote {
     margin-top: 12px;
     font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
-    color: $body-color;
-    border-left: 3px solid $gray-400;
+    color: var(--color-body-color);
+    border-left: 3px solid var(--color-gray-400);
     padding-left: 20px;
     padding-bottom: 2px;
     word-break: break-word;
@@ -26,8 +24,8 @@ span.term {
 
   pre {
     text-align: left;
-    color: $body-color;
-    background: darken($body-bg, 5%);
+    color: var(--color-body-color);
+    background: var(--color-body-bg);
     font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
     letter-spacing: -0.003em;
     border-radius: 6px;
@@ -44,7 +42,7 @@ span.term {
   }
 
   .dl-title {
-    color: $green;
+    color: var(--color-green-400);
     font-size: 1.3em;
     font-weight: bold;
   }
@@ -67,8 +65,6 @@ span.term {
   }
 
   table {
-    @extend .table-bordered;
-    @extend .table;
     width: auto;
     -webkit-box-sizing: content-box;
     -moz-box-sizing: content-box;
@@ -80,7 +76,7 @@ span.term {
     overflow: hidden;
 
     th {
-      background-color: rgba($blue, 15%);
+      background-color: rgba(var(--color-blue-400), 15%);
     }
 
     th,
@@ -88,10 +84,6 @@ span.term {
       p:last-of-type {
         margin-bottom: 0;
       }
-    }
-
-    caption {
-      @extend .text-center;
     }
   }
 
@@ -124,55 +116,11 @@ span.term {
   iframe.float-md-right,
   iframe.float-md-left {
     max-width: 400px;
-    @extend .mb-2;
-  }
-  img.float-md-left,
-  iframe.float-md-left,
-  div.float-md-left {
-    @extend .mr-4;
-  }
-  img.float-md-right,
-  iframe.float-md-right,
-  div.float-md-right {
-    @extend .ml-4;
-  }
-  div.float-md-left,
-  dv.float-md-right {
-    max-width: 410px;
-    img.float-md-right,
-    img.float-md-left,
-    iframe.float-md-right,
-    iframe.float-md-left {
-      @extend .ml-0;
-      @extend .mr-0;
-      @extend .mb-0;
-    }
-  }
-
-  img {
-    @extend .img-fluid;
-  }
-
-  .youtube-wrapper {
-    @extend .embed-responsive;
-    @extend .embed-responsive-16by9;
-    @extend .img-thumbnail;
-  }
-
-  .webpage-wrapper {
-    @extend .embed-responsive;
-    @extend .embed-responsive-16by9;
-    @extend .img-thumbnail;
-  }
-
-  .youtube-wrapper,
-  .webpage-wrapper iframe {
-    @extend .embed-responsive-item;
   }
 
   .definition {
     .term {
-      color: $green;
+      color: var(--color-green-400);
       font-size: 1.3em;
       font-weight: bold;
     }
@@ -236,7 +184,7 @@ span.term {
 
   .pronunciation-player {
     text-decoration: underline;
-    color: $link-color;
+    color: var(--link-color);
     cursor: pointer;
   }
 
@@ -254,7 +202,7 @@ span.term {
 
   .callout-inline,
   .callout {
-    background-color: darken($body-bg, 5%);
+    background-color: var(--color-body-bg);
   }
 
   .callout-block,
@@ -281,25 +229,25 @@ span.term {
     border-radius: 2px;
     .dialog-line {
       &.speaker-1 {
-        background-color: $speaker1;
+        background-color: #d1e7dd;
       }
       &.speaker-2 {
-        background-color: $speaker2;
+        background-color: #f8d7da;
       }
       &.speaker-3 {
-        background-color: $speaker3;
+        background-color: #cff4fc;
       }
       &.speaker-4 {
-        background-color: $speaker4;
+        background-color: #fff3cd;
       }
       &.speaker-5 {
-        background-color: $speaker5;
+        background-color: #ffe5d0;
       }
       display: flex;
       flex-direction: row;
       margin-bottom: 0.5rem;
       align-items: center;
-      background-color: darken($body-bg, 5%);
+      background-color: var(--color-body-bg);
       .dialog-content {
         flex-grow: 1;
       }
@@ -325,10 +273,8 @@ span.term {
     justify-content: center;
     figure {
       figcaption {
-        color: $primary;
+        color: var(--color-primary);
       }
-      @extend .img-fluid;
-      @extend .img-thumbnail;
       padding: 1rem;
     }
   }
@@ -339,9 +285,7 @@ span.term {
 
     figure {
       display: inline-block;
-      background-color: $gray-100;
-      @extend .img-fluid;
-      @extend .img-thumbnail;
+      background-color: var(--color-gray-100);
 
       figcaption {
         margin-bottom: 8px;
@@ -365,7 +309,7 @@ span.term {
 
 .conjugation {
   .title {
-    color: $green;
+    color: var(--color-green-400);
     font-size: 2em;
     line-height: 2.1em;
     font-weight: bold;
@@ -383,7 +327,7 @@ span.term {
   table {
     margin-top: 1rem;
     .clickable {
-      color: $primary;
+      color: var(--color-primary);
       cursor: pointer;
     }
     .clickable:hover {

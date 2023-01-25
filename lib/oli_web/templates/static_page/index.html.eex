@@ -1,20 +1,22 @@
-
-<section class="my-5" style="text-align: center">
+<div class="container mx-auto my-5 text-center">
   <%= if author_signed_in?(@conn) do %>
     <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.name %></h1>
 
-    <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-outline-primary mx-2" do %>
-      Authoring Workspace <i class="fa fa-arrow-right"></i>
-    <% end %>
+    <p class="my-2 py-2">
+      <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-outline-primary mx-2" do %>
+        Authoring Workspace <i class="fa fa-arrow-right"></i>
+      <% end %>
+    </p>
 
   <% else %>
     <h1>Welcome to <%= Oli.VendorProperties.product_short_name() %></h1>
-    <p>Create, deliver and continuously improve your course content using your web browser.</p>
+    <p>Create, deliver and continuously improve course materials.</p>
 
-    <p>
-      <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-outline-primary my-2 my-sm-0" do %>
+    <p class="my-2 py-2">
+      <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-outline-primary" do %>
         Authoring Sign In <i class="fa fa-arrow-right"></i>
       <% end %>
     </p>
   <% end %>
-</section>
+
+</div>

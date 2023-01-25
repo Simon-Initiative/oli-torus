@@ -31,7 +31,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
   const overlayContent = (
     <Popover id={popup.id}>
       <Popover.Content className="popup__content">
-        {isEmptyContent(popup.content) ? <i className="material-icons">volume_up</i> : popupContent}
+        {isEmptyContent(popup.content) ? <i className="fa-solid fa-volume-high"></i> : popupContent}
       </Popover.Content>
     </Popover>
   );

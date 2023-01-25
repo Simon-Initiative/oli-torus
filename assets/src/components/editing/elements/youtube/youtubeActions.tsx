@@ -29,7 +29,7 @@ export const youtubeUrlToId = (src?: string | null) => {
 };
 
 export const insertYoutube = createButtonCommandDesc({
-  icon: 'smart_display',
+  icon: <i className="fa-brands fa-youtube"></i>,
   description: 'YouTube',
   execute: (_context, editor, _params) => {
     const at = editor.selection;

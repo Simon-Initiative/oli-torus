@@ -1,5 +1,5 @@
 
-<div class="border-bottom mb-2" style="border-color: #dee2e6;">
+<div class="border-b mb-2" style="border-color: #dee2e6;">
   <h5 class="text-primary border-primary mb-2">
     <%= link to: @container_link_url.(from_node(@node, :slug)),
       class: resource_link_class(@active_page == from_node(@node, :slug)) do %>

@@ -28,8 +28,8 @@ export const SurveyBlock = ({
   return (
     <div id={`resource-editor-${contentItem.id}`} className={classNames(styles.surveyBlock)}>
       <div className={styles.surveyBlockHeader}>
-        <div className="align-self-center">
-          <i className="las la-poll la-lg"></i>
+        <div className="self-center">
+          <i className="fas fa-poll la-lg"></i>
         </div>
         <TextEditor
           label="Edit Survey Title"

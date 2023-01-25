@@ -1,6 +1,6 @@
 <div class="insights container">
-  <div class="row">
-    <div class="col-12">
+  <div class="grid grid-cols-12">
+    <div class="col-span-12">
       <p>
       Insights can help you improve your course by providing a statistical analysis of
       the skills covered by each question to find areas where students are struggling.
@@ -10,8 +10,8 @@
       </div>
     </div>
   </div>
-  <div class="row mt-4">
-    <div class="col-12">
+  <div class="grid grid-cols-12 mt-4">
+    <div class="col-span-12">
       <%= live_render @conn, OliWeb.Insights, session: %{ "project_slug" => @project.slug } %>
     </div>
   </div>

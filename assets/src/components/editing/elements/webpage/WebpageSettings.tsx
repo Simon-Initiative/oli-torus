@@ -19,15 +19,15 @@ export const WebpageSettings = (props: SettingsProps) => {
       <Toolbar.Group>
         <CommandButton
           description={createButtonCommandDesc({
-            icon: 'open_in_new',
-            description: 'Open Video',
+            icon: <i className="fa-solid fa-arrow-up-right-from-square"></i>,
+            description: 'Open Webpage',
             execute: () => window.open(props.model.src, '_blank'),
           })}
         />
         <CommandButton
           description={createButtonCommandDesc({
-            icon: 'content_copy',
-            description: 'Copy Video Link',
+            icon: <i className="fa-regular fa-copy"></i>,
+            description: 'Copy Webpage Link',
             execute: () => navigator.clipboard.writeText(props.model.src ?? ''),
           })}
         />
@@ -45,7 +45,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: '',
+      icon: <i className="fa-solid fa-globe"></i>,
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

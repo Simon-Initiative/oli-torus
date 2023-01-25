@@ -148,7 +148,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
       return (
         <TextInput
           editMode={props.editMode}
-          label="Enter search text"
+          label="Enter search text..."
           value={props.expression.value as string}
           type="text"
           onEdit={(value) => {

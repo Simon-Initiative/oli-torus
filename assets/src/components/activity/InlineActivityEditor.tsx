@@ -169,41 +169,37 @@ export class InlineActivityEditor extends React.Component<
     ) : null;
 
     return (
-      <div className="col-12">
-        <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
-          <div className="d-flex align-items-baseline flex-grow-1 mr-2">
-            <TextEditor
-              onEdit={onTitleEdit}
-              model={this.props.title}
-              showAffordances={true}
-              size="large"
-              allowEmptyContents={false}
-              editMode={this.props.editMode}
-            />
-            <div className="flex-grow-1"></div>
-            <div className={styles.toolbar}>
-              {this.props.customToolbarItems && <this.props.customToolbarItems />}
-              <DeleteButton
-                className="ml-2"
-                editMode={this.props.editMode && this.props.canRemove}
-                onClick={this.props.onRemove}
-              />
-            </div>
-          </div>
-          <ActivityLOs
-            partIds={partIds}
+      <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
+        <div className="d-flex align-items-baseline flex-grow-1 mr-2">
+          <TextEditor
+            onEdit={onTitleEdit}
+            model={this.props.title}
+            showAffordances={true}
+            size="large"
+            allowEmptyContents={false}
             editMode={this.props.editMode}
-            projectSlug={webComponentProps.projectslug}
-            objectives={this.props.objectives}
-            allObjectives={this.props.allObjectives}
-            onRegisterNewObjective={this.props.onRegisterNewObjective}
-            onEdit={(objectives) => this.update({ objectives })}
           />
-          {maybeTags}
-          <div ref={this.ref}>
-            {React.createElement(authoringElement, webComponentProps as any)}
+          <div className="flex-grow-1"></div>
+          <div className={styles.toolbar}>
+            {this.props.customToolbarItems && <this.props.customToolbarItems />}
+            <DeleteButton
+              className="ml-2"
+              editMode={this.props.editMode && this.props.canRemove}
+              onClick={this.props.onRemove}
+            />
           </div>
         </div>
+        <ActivityLOs
+          partIds={partIds}
+          editMode={this.props.editMode}
+          projectSlug={webComponentProps.projectslug}
+          objectives={this.props.objectives}
+          allObjectives={this.props.allObjectives}
+          onRegisterNewObjective={this.props.onRegisterNewObjective}
+          onEdit={(objectives) => this.update({ objectives })}
+        />
+        {maybeTags}
+        <div ref={this.ref}>{React.createElement(authoringElement, webComponentProps as any)}</div>
       </div>
     );
   }

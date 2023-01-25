@@ -51,7 +51,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
         onClick={onClick}
       >
         <ButtonContent {...props} />
-        {showDropdownArrow && <span className="material-icons">keyboard_arrow_down</span>}
+        {showDropdownArrow && <i className="fa-solid fa-angle-down"></i>}
       </button>
     </Popover>
   );

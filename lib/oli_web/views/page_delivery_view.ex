@@ -63,7 +63,7 @@ defmodule OliWeb.PageDeliveryView do
           <div>
             <i class="fas fa-arrow-left nav-icon"></i>
           </div>
-          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-right">
+          <div class="d-flex flex-column flex-1 flex-ellipsis-fix text-right">
             <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>
@@ -76,7 +76,7 @@ defmodule OliWeb.PageDeliveryView do
     ~H"""
       <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
         <div class="d-flex flex-row">
-          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-left">
+          <div class="d-flex flex-column flex-1 flex-ellipsis-fix text-left">
             <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>

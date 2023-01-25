@@ -11,15 +11,15 @@ defmodule OliWeb.ViewHelpers do
 
   def brand_logo(%{brand: %Brand{}} = assigns) do
     ~H"""
-      <img src={@brand.logo} height="40" class={[value_or(assigns[:class], ""), "d-dark-none"]} alt={@brand.name}>
-      <img src={value_or(@brand.logo_dark, @brand.logo)} height="40" class={[value_or(assigns[:class], ""), "d-light-none"]}  alt={@brand.name}>
+      <img src={@brand.logo} class={[value_or(assigns[:class], ""), "inline-block dark:hidden"]} alt={@brand.name}>
+      <img src={value_or(@brand.logo_dark, @brand.logo)} class={[value_or(assigns[:class], ""), "hidden dark:inline-block"]}  alt={@brand.name}>
     """
   end
 
   def brand_logo(assigns) do
     ~H"""
-      <img src={brand_logo_url(assigns[:section])} height="40" class={[value_or(assigns[:class], ""), "d-dark-none"]} alt={brand_name(assigns[:section])}>
-      <img src={brand_logo_url_dark(assigns[:section])} height="40" class={[value_or(assigns[:class], ""), "d-light-none"]}  alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url(assigns[:section])} class={[value_or(assigns[:class], ""), "inline-block dark:hidden"]} alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url_dark(assigns[:section])} class={[value_or(assigns[:class], ""), "hidden dark:inline-block"]}  alt={brand_name(assigns[:section])}>
     """
   end
 
@@ -32,7 +32,7 @@ defmodule OliWeb.ViewHelpers do
   """
   def external_link(text, opts \\ []) do
     link Keyword.merge([target: "_blank"], opts) do
-      [text, content_tag("i", "", class: "las la-external-link-alt ml-1")]
+      [text, content_tag("i", "", class: "fas fa-external-link-alt ml-1")]
     end
   end
 

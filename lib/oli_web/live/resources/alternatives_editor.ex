@@ -77,11 +77,11 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   def group(assigns) do
     ~H"""
-      <div class="alternatives-group border p-3 my-2">
+      <div class="alternatives-group bg-gray-100 border p-3 my-2">
         <div class="d-flex flex-row align-items-center">
           <div><b><%= @group.title %></b></div>
           <div class="flex-grow-1"></div>
-          <.materials_icon_button class="mr-1" icon="edit" on_click="show_edit_group_modal" values={["phx-value-resource-id": @group.resource_id]} />
+          <.icon_button class="mr-1" icon="fa-solid fa-pencil" on_click="show_edit_group_modal" values={["phx-value-resource-id": @group.resource_id]} />
           <button class="btn btn-danger btn-sm mr-2" phx-click="show_delete_group_modal" phx-value-resource_id={@group.resource_id}>Delete</button>
         </div>
         <div class="mt-3">

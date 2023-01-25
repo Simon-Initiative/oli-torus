@@ -282,7 +282,7 @@ defmodule Oli.Resources.Collaboration do
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
             (post.status in [:approved, :archived] or
-              (post.status == :submitted and post.user_id == ^user_id)),
+               (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_enter_time,
         select: post,
         order_by: [asc: :inserted_at],
@@ -306,8 +306,9 @@ defmodule Oli.Resources.Collaboration do
     Repo.all(
       from(
         post in Post,
-        where: post.section_id == ^section_id and post.resource_id == ^resource_id and
-          post.status != :deleted,
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            post.status != :deleted,
         select: post,
         order_by: [asc: :inserted_at],
         preload: [:user]

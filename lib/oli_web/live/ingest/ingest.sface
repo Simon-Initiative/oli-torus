@@ -21,7 +21,7 @@
 
           <ul class="list-group">
             {#for {err, path} <- errors}
-              <li class="list-group-item"><i class="las la-times-circle mr-2"></i>{err} {path}</li>
+              <li class="list-group-item"><i class="fas fa-times-circle mr-2"></i>{err} {path}</li>
             {/for}
           </ul>
 

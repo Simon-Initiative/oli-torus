@@ -13,7 +13,7 @@ import { VideoSource } from '../../../../data/content/model/elements/types';
 import { Maybe } from 'tsmonad';
 
 export const insertVideo = createButtonCommandDesc({
-  icon: 'play_circle_filled',
+  icon: <i className="fa-solid fa-circle-play"></i>,
   description: 'Video',
   execute: (_context, editor) => {
     const at = editor.selection;

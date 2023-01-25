@@ -621,7 +621,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     ~H"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="las la-arrow-left"></i></button>
+        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="fas fa-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{

@@ -30,28 +30,28 @@ defmodule OliWeb.Users.Common do
             Accounts.user_confirmation_pending?(row) ->
               ~F"""
               <span data-toggle="tooltip" data-html="true" title={"Confirmation Pending sent to #{email}"}>
-                <i class="las la-paper-plane text-secondary"></i>
+                <i class="fas fa-paper-plane text-secondary"></i>
               </span>
               """
 
             not is_nil(email_confirmed_at) ->
               ~F"""
               <span data-toggle="tooltip" data-html="true" title={"Email Confirmed on #{Utils.render_precise_date(row, :email_confirmed_at, @context)}"}>
-                <i class="las la-check text-success"></i>
+                <i class="fas fa-check text-success"></i>
               </span>
               """
 
             not is_nil(invitation_accepted_at) ->
               ~F"""
               <span data-toggle="tooltip" data-html="true" title={"Invitation Accepted on #{Utils.render_precise_date(row, :invitation_accepted_at, @context)}"}>
-                <i class="las la-check text-success"></i>
+                <i class="fas fa-check text-success"></i>
               </span>
               """
 
             true ->
               ~F"""
               <span data-toggle="tooltip" data-html="true" title={"Invitation Pending sent to #{email}"}>
-                <i class="las la-paper-plane text-secondary"></i>
+                <i class="fas fa-paper-plane text-secondary"></i>
               </span>
               """
           end
@@ -63,7 +63,7 @@ defmodule OliWeb.Users.Common do
       </div>
       <div>
         {#if !is_nil(locked_at)}
-          <span class="badge badge-warning"><i class="las la-user-lock"></i> Account Locked</span>
+          <span class="badge badge-warning"><i class="fas fa-user-lock"></i> Account Locked</span>
         {/if}
       </div>
     """

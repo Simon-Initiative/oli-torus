@@ -17,7 +17,7 @@ const display = (c: any) => window.oliDispatch(modalActions.display(c));
 const store = configureStore();
 
 export const insertDialog = createButtonCommandDesc({
-  icon: 'record_voice_over',
+  icon: <i className="fa-regular fa-comment-dots"></i>,
   description: 'Dialog',
   execute: (_context, editor) => {
     const at = editor.selection;

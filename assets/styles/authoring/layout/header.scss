@@ -1,3 +1,7 @@
+nav.navbar {
+  height: 50px;
+}
+
 nav.navbar .navbar-brand {
-  color: $body-color;
+  color: var(--color-body-color);
 }

@@ -8,7 +8,11 @@ export const PlayButton: React.FC<ControlButtonProps> = ({ actions, player }) =>
 
   return (
     <button className="video-react-control video-react-button" onClick={toggle}>
-      <span className="material-icons-outlined">{player?.paused ? 'pause' : 'play_arrow'}</span>
+      {player?.paused ? (
+        <i className="fa-solid fa-pause"></i>
+      ) : (
+        <i className="fa-solid fa-play"></i>
+      )}
     </button>
   );
 };

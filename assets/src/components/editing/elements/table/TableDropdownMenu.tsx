@@ -28,13 +28,6 @@ interface Props {
 }
 
 export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' }) => {
-  const ref = useCallback((reference: HTMLButtonElement) => {
-    if (reference) {
-      // TODO - probably be nice to get rid of the jquery dependency for a dropdown.
-      (window.$(reference) as any).dropdown();
-    }
-  }, []);
-
   const onToggleHeader = () => {
     const path = ReactEditor.findPath(editor, model);
     const cellType = mode == 'conjugation' ? 'tc' : 'td';
@@ -100,7 +93,6 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
   return (
     <div className="dropdown table-dropdown" contentEditable={false}>
       <button
-        ref={ref}
         type="button"
         className="dropdown-toggle btn"
         data-reference="parent"
@@ -109,6 +101,7 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
         aria-expanded="false"
       >
         <span className="sr-only">Toggle Table Cell Options</span>
+        <i className="fa-solid fa-ellipsis-vertical"></i>
       </button>
       <div className="dropdown-menu">
         <button type="button" className="dropdown-item" onClick={onToggleHeader}>
@@ -256,13 +249,13 @@ const AlignmentOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
       <h6 className="dropdown-header">Alignment</h6>
       <div className="ml-3 btn-group btn-group-toggle">
         <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('left')}>
-          <i className="material-icons-outlined">format_align_left</i>
+          <i className="fa-solid fa-align-left"></i>
         </button>
         <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('center')}>
-          <i className="material-icons-outlined">format_align_center</i>
+          <i className="fa-solid fa-align-center"></i>
         </button>
         <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('right')}>
-          <i className="material-icons-outlined">format_align_right</i>
+          <i className="fa-solid fa-align-right"></i>
         </button>
       </div>
     </>

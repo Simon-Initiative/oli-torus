@@ -55,7 +55,7 @@ const ItemEditor: React.FC<{
         type="button"
         onClick={onDelete}
       >
-        <span className="material-icons">delete</span>
+        <i className="fa-solid fa-trash"></i>
       </button>
     </Root>
   );

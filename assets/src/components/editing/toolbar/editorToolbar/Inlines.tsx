@@ -35,7 +35,7 @@ export const Inlines = (_props: Props) => {
   const moreInlineOptions = additionalFormattingOptions.concat(inlineInsertions);
 
   const seeMoreInlineOptions = createButtonCommandDesc({
-    icon: 'more_horiz',
+    icon: <i className="fa-solid fa-ellipsis"></i>,
     description: 'More',
     execute: () => {},
     active: (e) => moreInlineOptions.some(({ active }) => active?.(e)),

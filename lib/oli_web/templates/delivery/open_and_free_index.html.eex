@@ -1,5 +1,5 @@
-<div class="row">
-  <div class="col-12">
+<div class="grid grid-cols-12">
+  <div class="col-span-12">
     <h3 class="mt-4 mb-4">My Courses</h3>
 
     <%= if Sections.is_independent_instructor?(@user) do %>
@@ -13,17 +13,17 @@
     <%= if length(@sections) == 0 do %>
       <p>You are not enrolled in any courses.</p>
     <% else %>
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-4">
+      <div class="flex flex-wrap">
         <%= for section <- @sections do %>
-          <div class="col my-1">
-            <a href="<%= Routes.page_delivery_path(@conn, :index, section.slug) %>" class="course-card-link card h-100">
-              <img src="<%= cover_image(section) %>" class="card-img-top" alt="course image">
-              <div class="card-body">
-                <h5 class="card-title"><%= section.title %></h5>
-                <p class="card-text"><%= section.description %></p>
-              </div>
-            </a>
-          </div>
+          <a href="<%= Routes.page_delivery_path(@conn, :index, section.slug) %>" class="rounded-lg shadow-lg bg-white max-w-xs m-3 border border-transparent hover:border-blue-500 hover:no-underline">
+            <img class="rounded-t-lg" src="<%= cover_image(section) %>" alt="course image"/>
+            <div class="p-6">
+              <h5 class="text-gray-900 text-xl font-medium mb-2"><%= section.title %></h5>
+              <p class="text-gray-700 text-base mb-4">
+                <%= section.description %>
+              </p>
+            </div>
+          </a>
         <% end %>
       </div>
     <% end %>

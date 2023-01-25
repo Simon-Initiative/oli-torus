@@ -1,10 +1,8 @@
-@import 'delivery/variables';
-
 h1.title {
   font-weight: 600;
-  color: $title-color;
+  color: var(--color-body-color);
   padding-bottom: 0.5em;
-  border-bottom: 1px solid $gray-400;
+  border-bottom: 1px solid var(--color-gray-400);
   margin-bottom: 1em;
 }
 
@@ -30,7 +28,7 @@ h1.title {
 
   &.outline {
     .list-group-item.list-group-item-action.active .text-secondary {
-      color: $gray-200 !important;
+      color: var(--color-gray-200);
     }
   }
 }
@@ -69,8 +67,8 @@ h1.title {
 }
 
 .selection {
-  border-top: 1px solid $gray-400;
-  border-bottom: 1px solid $gray-400;
+  border-top: 1px solid var(--color-gray-400);
+  border-bottom: 1px solid var(--color-gray-400);
   padding: 10px;
 
   .title {
@@ -104,23 +102,12 @@ h1.title {
   }
 }
 
-/** override styles for devices medium-sized and smaller */
-@include media-breakpoint-down(md) {
-  #sidebar {
-    display: none;
-  }
-
-  #page-content {
-    margin-left: 0px;
-  }
-}
-
 .rolled-up-objectives {
   margin: 20px 10px;
   padding: 16px;
-  background-color: $objectives-background;
-  color: $objectives-text;
-  border: 2px solid $objectives-border-color;
+  background-color: var(--color-objectives-background);
+  color: var(--color-objectives-text);
+  border: 2px solid var(--color-objectives-border-color);
   border-radius: 4px;
 
   .label {

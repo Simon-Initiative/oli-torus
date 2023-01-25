@@ -353,9 +353,6 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
                 data-toggle="dropdown"
                 aria-haspopup="true"
                 aria-expanded="false"
-                onClick={() => {
-                  ($(`#adaptive-editor-add-context-trigger`) as any).dropdown('toggle');
-                }}
               >
                 <i className="fa fa-plus" />
               </button>

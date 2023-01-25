@@ -3,7 +3,7 @@ import { Choice, makeContent } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { Draggable } from 'components/common/DraggableColumn';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { Descendant } from 'slate';
 import { classNames } from 'utils/classNames';
@@ -41,7 +41,7 @@ export const Choices: React.FC<Props> = ({
     <>
       <Draggable.Column items={choices} setItems={setAll}>
         {choices.map((choice) => (
-          <Draggable.Item key={choice.id} id={choice.id} item={choice}>
+          <Draggable.Item key={choice.id} id={choice.id} className="mb-4" item={choice}>
             {(_choice, index) => (
               <>
                 <Draggable.DragIndicator />

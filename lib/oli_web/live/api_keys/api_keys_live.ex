@@ -46,8 +46,8 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
   def render(assigns) do
     ~H"""
     <div class="container">
-      <div class="row">
-        <div class="col-12">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12">
           <p class="mb-3">
             Enter a description/hint for a new API key:
           </p>
@@ -63,15 +63,15 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
           <% end %>
         </div>
       </div>
-      <div class="row">
-        <div class="col-12">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12">
           <p class="mb-3 mt-5">
             Change the status of existing API
           </p>
         </div>
       </div>
-      <div class="row">
-        <div class="col-12">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12">
           <table class="table table-striped table-bordered">
             <thead>
               <tr>

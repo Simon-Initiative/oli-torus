@@ -4,19 +4,19 @@
   footer =  Application.fetch_env!(:oli, :footer)
 %>
 
-<footer class="footer">
+<footer class="footer bg-gray-100">
   <div class="container">
-    <div class="row">
-      <div class="col-sm-auto text-left">
+    <div class="flex flex-row">
+      <div class="text-left">
         <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
       </div>
-      <div class="col-sm-auto text-center">
+      <div class="text-center">
         <%= footer[:text] %><a href="<%= footer[:link_1_location] %>" target="_blank"><%= footer[:link_1_text] %></a>
       </div>
-      <div class="col-sm-auto text-center">
+      <div class="text-center">
         <a href="<%= footer[:link_2_location] %>" target="_blank"> <%= footer[:link_2_text] %></a>
       </div>
-      <div class="col-sm text-right">
+      <div class="text-right">
       </div>
     </div>
   </div>

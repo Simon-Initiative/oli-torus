@@ -1,5 +1,3 @@
-
-
 <div class="d-flex">
   <div class="flex-grow-1">
     <h1 class="title"><%= @title %><%= if @review_mode == true do %>
@@ -25,20 +23,20 @@ window.userToken = "<%= assigns[:user_token] %>";
 <%= if @review_mode == true do %>
   <%= if @resource_attempt.lifecycle_state == :evaluated do  %>
     <div class="mb-2">
-    <div class="row justify-content-start">
-      <div class="col-sm-3">Started:</div>
+    <div class="grid grid-cols-12 justify-content-start">
+      <div class="sm:col-span-3">Started:</div>
       <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
-    <div class="row">
-      <div class="col-sm-3">Submitted:</div>
+    <div class="grid grid-cols-12">
+      <div class="sm:col-span-3">Submitted:</div>
       <div><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
     </div>
-    <div class="row">
-      <div class="col-sm-3">Score:</div>
+    <div class="grid grid-cols-12">
+      <div class="sm:col-span-3">Score:</div>
       <div><%= show_score(@resource_attempt.score, @resource_attempt.out_of) %>%</div>
     </div>
-    <div class="row">
-      <div class="col-sm-3">Points:</div>
+    <div class="grid grid-cols-12">
+      <div class="sm:col-span-3">Points:</div>
       <div><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
     </div>
     </div>
@@ -46,12 +44,12 @@ window.userToken = "<%= assigns[:user_token] %>";
   <%= if @resource_attempt.lifecycle_state == :submitted do  %>
     <div class="mb-2">
     <h3>Awaiting Instructor Grading</h3>
-    <div class="row justify-content-start">
-      <div class="col-sm-3">Started:</div>
+    <div class="grid grid-cols-12 justify-content-start">
+      <div class="sm:col-span-3">Started:</div>
       <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
-    <div class="row">
-      <div class="col-sm-3">Submitted:</div>
+    <div class="grid grid-cols-12">
+      <div class="sm:col-span-3">Submitted:</div>
       <div><%= Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
     </div>
     </div>

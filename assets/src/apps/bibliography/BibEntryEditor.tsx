@@ -74,10 +74,10 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
             <label className="control-label" htmlFor={k}>
               {renderLabel(k)}
             </label>
-            <div className="col-sm-12">
+            <div className="sm:col-span-12">
               {k === 'date-parts' ? (
                 <div className="d-flex">
-                  <div className="col-sm-4">
+                  <div className="sm:col-span-4">
                     <TextInput
                       editMode={true}
                       width="100%"
@@ -89,7 +89,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
                       }}
                     />
                   </div>
-                  <div className="col-sm-4">
+                  <div className="sm:col-span-4">
                     <TextInput
                       editMode={true}
                       width="100%"
@@ -101,7 +101,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
                       }}
                     />
                   </div>
-                  <div className="col-sm-4">
+                  <div className="sm:col-span-4">
                     <TextInput
                       editMode={true}
                       width="100%"
@@ -137,7 +137,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
     return (
       <div className="d-flex">
         {Object.entries(value).map(([k, val]) => (
-          <div key={k} className="col-sm-6">
+          <div key={k} className="sm:col-span-6">
             <TextInput
               editMode={true}
               width="100%"
@@ -167,7 +167,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
             setModel({ ...model, [key]: [...values, { given: '', family: '' }] });
           }}
         >
-          <i className="las la-solid la-plus"></i> {'Add ' + toFriendlyLabel(key)}
+          <i className="fas fa-solid la-plus"></i> {'Add ' + toFriendlyLabel(key)}
         </button>
       </div>
     );
@@ -230,9 +230,9 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
           title="Delete this field"
           aria-pressed="false"
         >
-          <i className="las la-trash-alt"></i>
+          <i className="fas fa-trash-alt"></i>
         </button>
-        <div className="col-sm-12">{renderAttributeEditor(key1, value1)}</div>
+        <div className="sm:col-span-12">{renderAttributeEditor(key1, value1)}</div>
       </div>
     );
   };

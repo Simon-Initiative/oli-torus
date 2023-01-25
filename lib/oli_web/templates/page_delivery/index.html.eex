@@ -3,13 +3,13 @@
   <p class="text-secondary"><%= @description %></p>
   <%= if is_section_instructor_or_admin?(@section_slug, @current_user) and not @preview_mode do %>
     <div class="d-flex flex-row my-2">
-      <div class="flex-fill"></div>
+      <div class="flex-1"></div>
       <div>
         <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
       </div>
     </div>
   <% end %>
-  <div class="d-flex text-secondary border-bottom border-secondary mb-2">
+  <div class="d-flex text-secondary border-b border-secondary mb-2">
     <div class="flex-grow-1">
       <h5>
         Course Overview

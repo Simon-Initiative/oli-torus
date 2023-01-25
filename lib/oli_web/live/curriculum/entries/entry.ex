@@ -25,9 +25,9 @@ defmodule OliWeb.Curriculum.EntryLive do
       data-drag-index={assigns.index}
       data-drag-slug={@child.slug}
       phx-hook="DragSource"
-      class={"p-2 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}>
+      class={"p-3 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}>
 
-      <div class="flex-grow-1 d-flex flex-column align-self-center">
+      <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
           <%= icon(assigns) %>
           <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
@@ -36,14 +36,14 @@ defmodule OliWeb.Curriculum.EntryLive do
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
 
             <%= link(
-                class: "entry-title ml-3",
+                class: "entry-title mx-3",
                 to: Routes.resource_path(
                   OliWeb.Endpoint,
                   :edit,
                   @project.slug,
                   @child.slug
                 )) do %>
-                <i class="las la-edit"></i> Edit
+                Edit Page
             <% end %>
           <% end %>
           <%= if @editor do %>
@@ -76,16 +76,16 @@ defmodule OliWeb.Curriculum.EntryLive do
   def icon(%{child: child} = assigns) do
     if is_container?(child) do
       ~H"""
-      <i class="las la-archive font-bold fa-lg mx-2"></i>
+      <i class="fa fa-archive fa-lg mx-2 text-gray-700"></i>
       """
     else
       if child.graded do
         ~H"""
-        <i class="lar la-list-alt fa-lg mx-2"></i>
+        <i class="fa-solid fa-file-pen fa-lg mx-2 text-gray-700"></i>
         """
       else
         ~H"""
-        <i class="lar la-file-alt fa-lg mx-2"></i>
+        <i class="fa-solid fa-file-lines fa-lg mx-2 text-gray-700"></i>
         """
       end
     end

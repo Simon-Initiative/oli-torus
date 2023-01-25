@@ -3,7 +3,7 @@ import { CommandDescription, Command } from './interfaces';
 import { Mark } from 'data/content/model/text';
 
 interface CommandWrapperProps {
-  icon: string;
+  icon?: JSX.Element;
   description: string;
   execute: Command['execute'];
   mark?: Mark;

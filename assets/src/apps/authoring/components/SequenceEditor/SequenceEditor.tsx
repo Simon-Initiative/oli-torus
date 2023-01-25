@@ -382,7 +382,9 @@ const SequenceEditor: React.FC<any> = () => {
               aria-expanded="false"
               onClick={(e) => {
                 e.stopPropagation();
-                ($(`#sequence-item-${id}-context-trigger`) as any).dropdown('toggle');
+                new (window as any).Dropdown(
+                  document.getElementById(`sequence-item-${id}-context-trigger`),
+                ).toggle();
               }}
             >
               <i className="fas fa-ellipsis-v" />
@@ -396,8 +398,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemAdd(item);
                   }}
                 >
@@ -408,8 +408,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemAdd(item, true);
                   }}
                 >
@@ -420,8 +418,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemAdd(item, false, true);
                   }}
                 >
@@ -432,8 +428,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemConvert(item);
                   }}
                 >
@@ -443,8 +437,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemConvert(item);
                   }}
                 >
@@ -454,8 +446,6 @@ const SequenceEditor: React.FC<any> = () => {
               <button
                 className="dropdown-item"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                   setItemToRename(item);
                 }}
               >
@@ -465,8 +455,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemClone(item);
                   }}
                 >
@@ -476,8 +464,6 @@ const SequenceEditor: React.FC<any> = () => {
               <button
                 className="dropdown-item"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                   navigator.clipboard.writeText(item.custom.sequenceId);
                 }}
               >
@@ -489,8 +475,6 @@ const SequenceEditor: React.FC<any> = () => {
                   <button
                     className="dropdown-item text-danger"
                     onClick={(e) => {
-                      e.stopPropagation();
-                      ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                       setShowConfirmDelete(true);
                       setItemToDelete(item);
                     }}
@@ -504,8 +488,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemReorder(e, item, ReorderDirection.UP);
                   }}
                 >
@@ -516,8 +498,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemReorder(e, item, ReorderDirection.DOWN);
                   }}
                 >
@@ -528,8 +508,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemReorder(e, item, ReorderDirection.OUT);
                   }}
                 >
@@ -540,8 +518,6 @@ const SequenceEditor: React.FC<any> = () => {
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                     handleItemReorder(e, item, ReorderDirection.IN);
                   }}
                 >
@@ -554,8 +530,6 @@ const SequenceEditor: React.FC<any> = () => {
                   <button
                     className="dropdown-item text-info"
                     onClick={(e) => {
-                      e.stopPropagation();
-                      ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
                       // open revistion history in new tab
                       window.open(`/project/${projectSlug}/history/resource_id/${item.resourceId}`);
                     }}
@@ -568,28 +542,19 @@ const SequenceEditor: React.FC<any> = () => {
               {/* <div className="dropdown-divider"></div>
           <button
             className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
+            onClick={(e) => {}}
           >
             <i className="fas fa-copy mr-2" /> Copy
           </button>
           <button
             className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
+            onClick={(e) => {}}
           >
             <i className="fas fa-paste mr-2" /> Paste as Child
           </button>
           <button
             className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
+            onClick={(e) => {}}
           >
             <i className="fas fa-paste mr-2" /> Paste as Sibling
           </button> */}

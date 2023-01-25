@@ -77,7 +77,7 @@ defmodule OliWeb.ProjectControllerTest do
       assert html_response(conn, 200) =~ "Publish"
 
       assert html_response(conn, 200) =~
-               "Last published <strong>" <>
+               "Published <strong>" <>
                  OliWeb.Common.Utils.render_date(publication, :published, session_context)
     end
   end
