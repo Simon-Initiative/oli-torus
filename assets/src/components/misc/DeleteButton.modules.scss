@@ -1,6 +1,6 @@
 .deleteButton {
   &:not([disabled]) {
-    color: rgba(var(--oli-body-color), 0.8);
+    color: rgba(var(--color-body-color), 0.8);
 
     &:hover {
       color: var(--color-red-500);

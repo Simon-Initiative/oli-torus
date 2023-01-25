@@ -39,12 +39,12 @@ a.form-control {
 
 button.icon-button {
   &:hover {
-    color: var(--oli-primary);
+    color: var(--color-primary);
   }
 }
 
 button.danger-icon-button {
   &:hover {
-    color: var(--oli-danger);
+    color: var(--color-danger);
   }
 }

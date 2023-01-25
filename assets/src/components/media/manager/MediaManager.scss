@@ -43,7 +43,7 @@
 
           &:active {
             background-color: initial;
-            color: var(--oli-selection);
+            color: var(--color-selection);
           }
         }
       }
@@ -51,8 +51,8 @@
 
     .layout-control {
       button {
-        color: var(--oli-secondary);
-        border: 1px solid var(--oli-secondary);
+        color: var(--color-secondary);
+        border: 1px solid var(--color-secondary);
         border-right: none;
 
         &:first-child {
@@ -61,7 +61,7 @@
         }
 
         &:last-child {
-          border-right: 1px solid var(--oli-secondary);
+          border-right: 1px solid var(--color-secondary);
           border-top-left-radius: 0px;
           border-bottom-left-radius: 0px;
         }
@@ -72,9 +72,9 @@
 
         &:active,
         &.selected {
-          background-color: var(--oli-secondary);
+          background-color: var(--color-secondary);
           color: var(--color-white);
-          border-color: var(--oli-secondary);
+          border-color: var(--color-secondary);
           box-shadow: none;
         }
       }
@@ -102,7 +102,7 @@
         width: 100%;
         padding: 10px;
         text-align: center;
-        color: var(--oli-body-color);
+        color: var(--color-body-color);
         cursor: pointer;
 
         &.video {
@@ -128,7 +128,7 @@
         flex-direction: column;
         border-top: 1px solid var(--color-gray-200);
         font-size: 0.9em;
-        color: var(--oli-body-color);
+        color: var(--color-body-color);
         @include enable-select;
 
         .details-title {
@@ -248,7 +248,7 @@
             cursor: pointer;
 
             &:hover {
-              border: 1px solid var(--oli-selection);
+              border: 1px solid var(--color-selection);
 
               .selection-check {
                 display: block;
@@ -258,7 +258,7 @@
             &:active,
             &.selected {
               background-color: rgba(var(--selection, 0.3));
-              border: 1px solid var(--oli-selection);
+              border: 1px solid var(--color-selection);
 
               .selection-check {
                 display: block;
@@ -386,7 +386,7 @@
             }
 
             &:hover {
-              border: 1px solid var(--oli-selection);
+              border: 1px solid var(--color-selection);
 
               .selection-check {
                 visibility: visible;
@@ -396,7 +396,7 @@
             &:active,
             &.selected {
               background-color: rgba(var(--selection, 0.3));
-              border: 1px solid var(--oli-selection);
+              border: 1px solid var(--color-selection);
 
               .selection-check {
                 visibility: visible;
@@ -412,7 +412,7 @@
     display: flex;
     flex-direction: row;
     margin-top: 5px;
-    color: var(--oli-body-color);
+    color: var(--color-body-color);
     height: 24px;
   }
 

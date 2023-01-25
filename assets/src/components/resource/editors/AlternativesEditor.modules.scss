@@ -23,10 +23,10 @@
 
       &.active {
         color: var(--color-white);
-        background-color: var(--oli-primary);
+        background-color: var(--color-primary);
 
         &:hover {
-          background-color: var(--oli-primary);
+          background-color: var(--color-primary);
         }
       }
 
@@ -42,7 +42,7 @@
         vertical-align: baseline;
 
         &:hover {
-          background-color: var(--oli-hover);
+          background-color: var(--color-hover);
         }
       }
     }

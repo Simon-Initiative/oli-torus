@@ -4,7 +4,7 @@ html {
 }
 
 body {
-  color: var(--oli-body-color);
+  color: var(--color-body-color);
 
   h1,
   .h1 {
@@ -71,7 +71,7 @@ main.main {
 
 form .form-label-group .help-block,
 form .form-group .help-block {
-  color: var(--oli-danger);
+  color: var(--color-danger);
 }
 
 i.unicode-icon {

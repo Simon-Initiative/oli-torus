@@ -1,4 +1,4 @@
-$border-color: var(--oli-selection);
+$border-color: var(--color-selection);
 
 .switchToggle {
   display: flex;
@@ -35,7 +35,7 @@ $border-color: var(--oli-selection);
   }
 
   &:hover {
-    background: var(--oli-hover);
+    background: var(--color-hover);
     color: var(--color-white);
   }
 }
