@@ -4,6 +4,7 @@ import { Modal, ModalSize } from 'components/modal/Modal';
 import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
 import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
 import { iso639_language_codes } from '../../../../utils/language-codes-iso639';
+import { Tab, Tabs } from 'react-bootstrap';
 
 const MAX_DISPLAY_LENGTH = 40;
 
@@ -54,6 +55,12 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
   const setSrc = useCallback(
     (src) => {
       setWorkingCopy({ ...workingCopy, src });
+    },
+    [workingCopy],
+  );
+  const setAlt = useCallback(
+    (alt) => {
+      setWorkingCopy({ ...workingCopy, alt });
     },
     [workingCopy],
   );
@@ -109,6 +116,12 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
   const pickPoster = useCallback(() => setPosterPickerOpen(true), []);
   const removePoster = useCallback(() => setPoster(undefined), [setPoster]);
 
+  const onAltChange = useCallback(
+    (event) => {
+      setAlt(event.target.value);
+    },
+    [setAlt],
+  );
   const removeCaption = useCallback(
     (caption: ContentModel.VideoCaptionTrack) => () =>
       setCaptions(workingCopy.captions?.filter((c) => c !== caption)),
@@ -162,130 +175,168 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
       onCancel={onCancel}
       onOk={onModalDone}
     >
-      <h4 className="mb-2">Video Source(s)</h4>
-      <p className="mb-2">
-        Specify at least one source for the video to play. You may specify additional sources to
-        provide multiple formats for the video. Each viewer will only see one of them depending on
-        their web browser capabilities.
-      </p>
-      <div className="mb-4">
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Content Type</th>
-              <th>URL</th>
-              <th>Remove</th>
-            </tr>
-          </thead>
-          <tbody>
-            {workingCopy.src.map((src, i) => (
-              <VideoSRC key={i} src={src} onDelete={removeSrc(src)} />
-            ))}
-            <tr>
-              <td colSpan={2}></td>
-              <td>
-                <button className="btn btn-success" type="button" onClick={addVideo}>
-                  Add New
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h4 className="mb-2">Captions</h4>
-      <p className="mb-2">
-        Optionally provide captions for the video. These will be displayed to viewers who choose to
-        turn them on and can be supplied in multiple languages. You must provide a file formatted as
-        a{' '}
-        <a
-          href="https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Web Video Text Tracks
-        </a>{' '}
-        (WebVTT) file.
-      </p>
-      <div className="mb-4">
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Label</th>
-              <th>Language</th>
-              <th>URL</th>
-              <th>Remove</th>
-            </tr>
-          </thead>
-          <tbody>
-            {workingCopy.captions?.map((caption, i) => (
-              <VideoCaption
-                key={i}
-                caption={caption}
-                onDelete={removeCaption(caption)}
-                onChange={modifyCaption}
-              />
-            ))}
-            <tr>
-              <td colSpan={3}></td>
-              <td>
-                <button className="btn btn-success" type="button" onClick={addCaption}>
-                  Add New
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h4 className="mb-2">Poster Image</h4>
-      <p className="mb-4">Provide an optional image to display before the video is playing.</p>
-      <div className="mb-4">
-        {workingCopy.poster && (
-          <img src={workingCopy.poster} className="img-fluid" style={{ maxWidth: '100%' }} />
-        )}
-        <button className="btn btn-success" type="button" onClick={pickPoster}>
-          Choose Poster Image
-        </button>
-        {workingCopy.poster && (
-          <button className="btn btn-danger" type="button" onClick={removePoster}>
-            Remove Poster Image
-          </button>
-        )}
-      </div>
-
-      <h4 className="mb-2">Size</h4>
-      <p className="mb-2">
-        You can optionally set the video width and height. If you do not, the video will be
-        automatically resized for the user&apos;s browser (recommended).
-      </p>
-      <div className="container">
-        <div className="row">
-          <div className="col-sm">
-            Width:{' '}
-            <input
-              type="number"
-              className="form-control"
-              value={workingCopy.width}
-              onChange={(e) => {
-                setWidth(e.target.value);
-              }}
-            />
+      <Tabs>
+        <Tab eventKey="source" title="Video Source">
+          <div className="video-modal-content">
+            <h4 className="mb-2">Video Source(s)</h4>
+            <p className="mb-2">
+              Specify at least one source for the video to play. You may specify additional sources
+              to provide multiple formats for the video. Each viewer will only see one of them
+              depending on their web browser capabilities.
+            </p>
+            <div className="mb-4">
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>URL</th>
+                    <th>Content Type</th>
+                    <th>Remove</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workingCopy.src.map((src, i) => (
+                    <VideoSRC key={i} src={src} onDelete={removeSrc(src)} />
+                  ))}
+                  <tr>
+                    <td colSpan={2}></td>
+                    <td>
+                      <button className="btn btn-success" type="button" onClick={addVideo}>
+                        Add New
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
+        </Tab>
 
-          <div className="col-sm">
-            Height:{' '}
+        <Tab eventKey="captions" title="Accessibility">
+          <div className="video-modal-content">
+            <h4 className="mb-2">Alt-Text</h4>
+            <p className="mb-2">
+              Text that will be presented to learners using assistive devices before the video
+              plays.
+            </p>
             <input
-              type="number"
+              type="text"
+              value={workingCopy.alt || ''}
+              onChange={onAltChange}
               className="form-control"
-              value={workingCopy.height}
-              onChange={(e) => {
-                setHeight(e.target.value);
-              }}
             />
+
+            <hr />
+            <h4 className="mb-2">Captions</h4>
+            <p className="mb-2">
+              Optionally provide captions for the video. These will be displayed to viewers who
+              choose to turn them on and can be supplied in multiple languages. You must provide a
+              file formatted as a{' '}
+              <a
+                href="https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Web Video Text Tracks
+              </a>{' '}
+              (WebVTT) file.
+            </p>
+            <div className="mb-4">
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Label</th>
+                    <th>Language</th>
+                    <th>URL</th>
+                    <th>Remove</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workingCopy.captions?.map((caption, i) => (
+                    <VideoCaption
+                      key={i}
+                      caption={caption}
+                      onDelete={removeCaption(caption)}
+                      onChange={modifyCaption}
+                    />
+                  ))}
+                  <tr>
+                    <td colSpan={3}></td>
+                    <td>
+                      <button className="btn btn-success" type="button" onClick={addCaption}>
+                        Add New
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </div>
+        </Tab>
+        <Tab eventKey="poster" title="Poster Image">
+          <div className="video-modal-content">
+            <h4 className="mb-2">Poster Image</h4>
+            <p className="mb-4">
+              Provide an optional image to display before the video is playing.
+            </p>
+            <div className="mb-4">
+              {workingCopy.poster && (
+                <img
+                  src={workingCopy.poster}
+                  className="img-fluid"
+                  style={{ maxWidth: '100%', maxHeight: 250 }}
+                />
+              )}
+              <button className="btn btn-success" type="button" onClick={pickPoster}>
+                Choose Poster Image
+              </button>
+              {workingCopy.poster && (
+                <button className="btn btn-danger" type="button" onClick={removePoster}>
+                  Remove Poster Image
+                </button>
+              )}
+            </div>
+          </div>
+        </Tab>
+
+        <Tab eventKey="size" title="Size">
+          <div className="video-modal-content">
+            <h4 className="mb-2">Size</h4>
+            <p className="mb-2">Optionally set the video width and height.</p>
+            <p className="alert alert-info">
+              In most cases, it is best to leave this blank so the video automatically sizes to the
+              learner&apos;s screen.
+            </p>
+            <hr />
+            <div className="container">
+              <div className="row">
+                <div className="col-sm">
+                  Width:{' '}
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={workingCopy.width}
+                    onChange={(e) => {
+                      setWidth(e.target.value);
+                    }}
+                  />
+                </div>
+
+                <div className="col-sm">
+                  Height:{' '}
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={workingCopy.height}
+                    onChange={(e) => {
+                      setHeight(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Tab>
+      </Tabs>
 
       <MediaPickerPanel
         projectSlug={projectSlug}

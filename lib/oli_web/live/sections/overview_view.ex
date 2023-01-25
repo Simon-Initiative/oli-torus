@@ -112,8 +112,8 @@ defmodule OliWeb.Sections.OverviewView do
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>Gating and Scheduling</a></li>
           <li>
-            <a disabled={@updates_count == 0} href={Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @section.slug)}>
-              Manage Updates
+            <a disabled={@updates_count == 0} href={Routes.source_materials_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @section.slug)}>
+              Manage Source Materials
               {#if @updates_count > 0}
                 <span class="badge badge-primary">{@updates_count} available</span>
               {/if}

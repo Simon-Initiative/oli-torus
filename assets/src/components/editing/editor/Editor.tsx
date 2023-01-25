@@ -1,6 +1,6 @@
 import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { FocusEventHandler, useCallback, useMemo } from 'react';
 import { createEditor, Descendant, Editor as SlateEditor, Operation, Transforms } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
@@ -37,6 +37,8 @@ export type EditorProps = {
   children?: React.ReactNode;
   onPaste?: React.ClipboardEventHandler<HTMLDivElement>;
   editorOverride?: SlateEditor;
+  onFocus?: FocusEventHandler | undefined;
+  onBlur?: FocusEventHandler | undefined;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -81,6 +83,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     quoteOnKeyDown(editor, e);
     titleOnKeyDown(editor, e);
     hotkeyHandler(editor, e.nativeEvent, props.commandContext);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
@@ -129,7 +132,8 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           renderLeaf={renderLeaf}
           placeholder={props.placeholder ?? 'Type here or use + to begin...'}
           onKeyDown={onKeyDown}
-          onFocus={emptyOnFocus}
+          onFocus={props.onFocus || emptyOnFocus}
+          onBlur={props.onBlur}
           onPaste={(e: React.ClipboardEvent<HTMLDivElement>) => {
             if (props.onPaste) return props.onPaste(e);
 

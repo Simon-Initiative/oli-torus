@@ -287,7 +287,8 @@ defmodule OliWeb.PageDeliveryController do
           Routes.page_lifecycle_path(
             conn,
             :transition
-          )
+          ),
+        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -419,7 +420,8 @@ defmodule OliWeb.PageDeliveryController do
         resource_slug: context.page.slug,
         bib_app_params: %{
           bibReferences: context.bib_revisions
-        }
+        },
+        collab_space_config: context.collab_space_config
       }
     )
   end

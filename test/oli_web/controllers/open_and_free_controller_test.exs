@@ -1,5 +1,6 @@
 defmodule OliWeb.OpenAndFreeControllerTest do
   use OliWeb.ConnCase
+  import Oli.Factory
   alias Oli.Delivery.Sections
   alias Lti_1p3.Tool.ContextRoles
 
@@ -209,6 +210,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         start_date: DateTime.utc_now(),
         end_date: DateTime.add(DateTime.utc_now(), 3600)
       })
+
+    insert(:section_project_publication, %{project: project, section: section, publication: publication})
 
     %{
       section: section,

@@ -101,7 +101,13 @@ export const VideoPlayer: React.FC<{ video: ContentModel.Video; children?: React
     useCommandTarget(video.id, onCommandReceived);
 
     return (
-      <div className="video-player" onClick={preventDefault}>
+      <div
+        className="video-player"
+        aria-role="img"
+        aria-roledescription="Video Player"
+        aria-aria-label={video.alt}
+        onClick={preventDefault}
+      >
         <Player poster={video.poster} {...sizeAttributes} ref={onPlayer} crossOrigin="anonymous">
           {/* Hide the video-react big play button so we can render our own that fits with our icon styles */}
           <BigPlayButton className="big-play-button-hide" />

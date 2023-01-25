@@ -1,4 +1,5 @@
 import { applyState, templatizeText } from 'adaptivity/scripting';
+import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -36,13 +37,17 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentActivityTreeAttemptState,
+} from '../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
@@ -221,9 +226,8 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
-
   const isPreviewMode = useSelector(selectPreviewMode);
-
+  const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -257,6 +261,68 @@ const DeckLayoutFooter: React.FC = () => {
       return hasNavigation;
     });
     return resultHavingNavigation.length === results.length && navigationTargets.length === 1;
+  };
+
+  const saveMutateStateValuesToServer = (mutations: any) => {
+    const activityAttemptTree = currentActivityAttemptTree;
+    const currentAttempt: any = activityAttemptTree
+      ? activityAttemptTree[activityAttemptTree.length - 1]
+      : null;
+
+    const currentActivity: any = currentActivityTree
+      ? currentActivityTree[currentActivityTree?.length - 1]
+      : null;
+    const currentActivityAttemptGuid = currentActivity?.attemptGuid;
+    if (!currentAttempt || !currentActivityAttemptGuid) {
+      return;
+    }
+    mutations.forEach((op: any) => {
+      let scopedTarget = op.params.target;
+      if (scopedTarget.indexOf('stage') === 0) {
+        const lstVar = scopedTarget.split('.');
+        if (lstVar?.length > 1) {
+          const partId = lstVar[1];
+          const partKey = lstVar[2];
+          let partAttemptGuid = '';
+          const partAttempt = currentAttempt?.parts.filter(
+            (attempt: any) => attempt.partId == partId,
+          );
+          if (partAttempt?.length) {
+            const ownerActivity = currentActivityTree?.find(
+              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+            );
+            scopedTarget = ownerActivity
+              ? `${ownerActivity.id}|${op.params.target}`
+              : `${currentActivityId}|${op.params.target}`;
+
+            partAttemptGuid = partAttempt[0].attemptGuid;
+            const response: any = [
+              {
+                id: op.params.target,
+                key: partKey,
+                type: op.params.targetType || op.params.type,
+                value: getValue(`${scopedTarget}`, defaultGlobalEnv),
+                path: scopedTarget,
+              },
+            ];
+            const responseMap = response.reduce(
+              (result: { [x: string]: any }, item: { key: string; path: string }) => {
+                result[item.key] = { ...item };
+                return result;
+              },
+              {},
+            );
+            dispatch(
+              savePartState({
+                attemptGuid: currentActivityAttemptGuid,
+                partAttemptGuid,
+                response: responseMap,
+              }),
+            );
+          }
+        }
+      }
+    });
   };
 
   useEffect(() => {
@@ -325,6 +391,9 @@ const DeckLayoutFooter: React.FC = () => {
       });
 
       const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      if (!isPreviewMode) {
+        saveMutateStateValuesToServer(mutations);
+      }
       // should respond to scripting errors?
       console.log('MUTATE ACTIONS', {
         mutateResults,
@@ -460,6 +529,7 @@ const DeckLayoutFooter: React.FC = () => {
   };
 
   const checkHandler = () => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsLoading(true);
     /* console.log('CHECK BUTTON CLICKED', {
       isGoodFeedback,
@@ -473,7 +543,12 @@ const DeckLayoutFooter: React.FC = () => {
       `session.visitTimestamps.${currentActivityId}`,
       defaultGlobalEnv,
     );
-    console.log({ activityHistoryTimeStamp });
+    const targetIsResumeModeOp: ApplyStateOperation = {
+      target: 'session.isResumeMode',
+      operator: '=',
+      value: false,
+    };
+    applyState(targetIsResumeModeOp, defaultGlobalEnv);
 
     if (displayFeedback) setDisplayFeedback(false);
 

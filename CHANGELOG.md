@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Enhancements
+
+- Add ability to author polygonal image hotspots with mouse
+
 ## 0.22.1 (2022-1-5)
 
 ### Bug Fixes

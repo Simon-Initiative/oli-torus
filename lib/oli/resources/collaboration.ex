@@ -258,6 +258,64 @@ defmodule Oli.Resources.Collaboration do
   # Posts
 
   @doc """
+  Returns the list of posts that a user can see.
+
+  ## Examples
+
+      iex> list_posts_for_user_in_page_section(1, 1, 1))
+      [%Post{status: :archived}, ...]
+
+      iex> list_posts_for_user_in_page_section(2, 2, 2)
+      []
+  """
+  def list_posts_for_user_in_page_section(section_id, resource_id, user_id, enter_time \\ nil) do
+    filter_by_enter_time =
+      if is_nil(enter_time) do
+        true
+      else
+        dynamic([p], p.inserted_at >= ^enter_time or p.updated_at >= ^enter_time)
+      end
+
+    Repo.all(
+      from(
+        post in Post,
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            (post.status in [:approved, :archived] or
+              (post.status == :submitted and post.user_id == ^user_id)),
+        where: ^filter_by_enter_time,
+        select: post,
+        order_by: [asc: :inserted_at],
+        preload: [:user]
+      )
+    )
+  end
+
+  @doc """
+  Returns the list of posts that a instructor can see.
+
+  ## Examples
+
+      iex> list_posts_for_instructor_in_page_section(1, 1)
+      [%Post{status: :submitted}, ...]
+
+      iex> list_posts_for_instructor_in_page_section(2, 2)
+      []
+  """
+  def list_posts_for_instructor_in_page_section(section_id, resource_id) do
+    Repo.all(
+      from(
+        post in Post,
+        where: post.section_id == ^section_id and post.resource_id == ^resource_id and
+          post.status != :deleted,
+        select: post,
+        order_by: [asc: :inserted_at],
+        preload: [:user]
+      )
+    )
+  end
+
+  @doc """
   Returns the list of posts that meets the criteria passed in the filter.
 
   ## Examples
@@ -326,6 +384,22 @@ defmodule Oli.Resources.Collaboration do
     post
     |> Post.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Delete a post or a set of posts.
+
+  ## Examples
+
+      iex> delete_posts(post)
+      {number, nil | returned data}` where number is the number of deleted entries
+  """
+  def delete_posts(%Post{} = post) do
+    from(
+      p in Post,
+      where: ^post.id == p.id or ^post.id == p.parent_post_id or ^post.id == p.thread_root_id
+    )
+    |> Repo.update_all(set: [status: :deleted])
   end
 
   @doc """

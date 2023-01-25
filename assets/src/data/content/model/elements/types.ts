@@ -265,6 +265,7 @@ export interface Video extends SlateElement<VoidChildren> {
   captions?: VideoCaptionTrack[];
   height?: number;
   width?: number;
+  alt?: string;
 }
 
 export interface YouTube extends SlateElement<VoidChildren> {
