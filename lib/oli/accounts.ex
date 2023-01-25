@@ -237,8 +237,7 @@ defmodule Oli.Accounts do
 
     case res do
       {:ok, %User{id: user_id}} ->
-        user = get_user_with_roles(user_id)
-        AccountLookupCache.update("user_#{user_id}", user)
+        AccountLookupCache.delete("user_#{user_id}")
 
         res
       error -> error
@@ -278,8 +277,7 @@ defmodule Oli.Accounts do
 
     case res do
       {:ok, %User{id: user_id}} ->
-        user = get_user_with_roles(user_id)
-        AccountLookupCache.update("user_#{user_id}", user)
+        AccountLookupCache.delete("user_#{user_id}")
 
         res
       error -> error
@@ -307,8 +305,7 @@ defmodule Oli.Accounts do
 
     case res do
       {:ok, %User{id: user_id}} ->
-        user = get_user_with_roles(user_id)
-        AccountLookupCache.update("user_#{user_id}", user)
+        AccountLookupCache.delete("user_#{user_id}")
 
         res
       error -> error
@@ -416,8 +413,7 @@ defmodule Oli.Accounts do
 
     case res do
       {:ok, %Author{id: author_id}} ->
-        author = get_author_with_community_admin_count(author_id)
-        AccountLookupCache.update("author_#{author_id}", author)
+        AccountLookupCache.delete("author_#{author_id}")
 
         res
       error -> error
@@ -440,8 +436,7 @@ defmodule Oli.Accounts do
 
     case res do
       {:ok, %Author{id: author_id}} ->
-        author = get_author_with_community_admin_count(author_id)
-        AccountLookupCache.update("author_#{author_id}", author)
+        AccountLookupCache.delete("author_#{author_id}")
 
         res
       error -> error

@@ -26,9 +26,6 @@ defmodule OliWeb.AccountLookupCache do
   def put(key, value),
     do: GenServer.call(__MODULE__, {:put, key, value})
 
-  def update(key, value),
-    do: GenServer.call(__MODULE__, {:update, key, value})
-
   # ----------------
   # Server callbacks
 
@@ -78,17 +75,6 @@ defmodule OliWeb.AccountLookupCache do
     end
   end
 
-  def handle_call({:update, key, value}, _from, state) do
-    case Cachex.update(@cache_name, key, value) do
-      {:ok, _value} ->
-        PubSub.broadcast_from(Oli.PubSub, self(), cache_topic(), {:update, key, value})
-        {:reply, :ok, state}
-
-      _ ->
-        {:reply, :error, state}
-    end
-  end
-
   # ----------------
   # PubSub/Messages callbacks
 
@@ -116,12 +102,6 @@ defmodule OliWeb.AccountLookupCache do
 
   def handle_info({:put, key, value, ttl}, state) do
     Cachex.put(@cache_name, key, value, ttl: ttl)
-
-    {:noreply, state}
-  end
-
-  def handle_info({:update, key, value}, state) do
-    Cachex.update(@cache_name, key, value)
 
     {:noreply, state}
   end
