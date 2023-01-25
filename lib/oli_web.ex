@@ -140,6 +140,8 @@ defmodule OliWeb do
 
       alias OliWeb.Router.Helpers, as: Routes
 
+      alias OliWeb.Components
+
       import ReactPhoenix.ClientSide
     end
   end
