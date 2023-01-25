@@ -106,7 +106,7 @@ jobs:
     steps:
       - name: Check whether AUTO_DEPLOY_ENABLED is set to TRUE
         id: check_auto_deploy_enabled
-        run: echo "enabled=$(if [ "${{ secrets.AUTO_DEPLOY_ENABLED }}" == "TRUE" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
+        run: echo "enabled=$(if [ "${{ vars.AUTO_DEPLOY_ENABLED }}" == "TRUE" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
 
   deployment:
     runs-on: ubuntu-latest

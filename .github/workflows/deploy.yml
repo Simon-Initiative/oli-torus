@@ -11,6 +11,7 @@ on:
         type: choice
         options:
           - tokamak.oli.cmu.edu
+          - stellarator.oli.cmu.edu
           - loadtest.oli.cmu.edu
           - proton.oli.cmu.edu
 
