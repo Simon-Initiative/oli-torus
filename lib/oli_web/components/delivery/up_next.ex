@@ -1,14 +1,16 @@
 defmodule OliWeb.Components.Delivery.UpNext do
   use Phoenix.Component
 
-  attr(:username, :string, required: true)
+  import OliWeb.Components.Delivery.Utils
+
+  attr(:user, :any, required: true)
 
   def up_next(assigns) do
     ~H"""
       <div class="bg-delivery-header text-white border-b border-slate-300">
         <div class="container mx-auto flex flex-col justify-between">
           <h4 class="leading-loose px-8 py-4">
-            Up Next for <span class="font-bold"><%= @username %></span>
+            Up Next for <span class="font-bold"><%= user_name(@user) %></span>
           </h4>
 
           <div class="flex flex-col md:flex-row md:px-8 md:pb-4">
