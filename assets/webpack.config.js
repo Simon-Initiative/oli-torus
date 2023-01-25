@@ -56,11 +56,11 @@ const populateEntries = () => {
     };
   });
 
-  const foundThemes = [{ styles: './styles/index.scss' }];
+  const styleSheets = [{ styles: './styles/index.scss' }, { preview: './styles/preview.scss' }];
 
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.
-  const merged = [...foundActivities, ...foundParts, ...foundThemes].reduce(
+  const merged = [...foundActivities, ...foundParts, ...styleSheets].reduce(
     (p, c) => Object.assign({}, p, c),
     initialEntries,
   );
@@ -72,7 +72,7 @@ const populateEntries = () => {
     Object.keys(initialEntries).length +
       2 * foundActivities.length +
       2 * foundParts.length +
-      foundThemes.length
+      styleSheets.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',
