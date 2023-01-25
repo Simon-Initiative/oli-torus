@@ -108,19 +108,12 @@ defmodule OliWeb.PageDeliveryView do
     end
   end
 
-  def from_node(%HierarchyNode{revision: revision}, field), do: Map.get(revision, field)
-  def from_node(map, field), do: Map.get(map, Atom.to_string(field))
-
-  def node_index(%HierarchyNode{numbering: %Numbering{index: index}}), do: index
-  def node_index(%{"index" => index}), do: index
-
-  def node_children(%HierarchyNode{children: children}), do: children
-  def node_children(%{"children" => children}), do: children
-
   def container?(%HierarchyNode{revision: %{resource_type_id: resource_type_id}}),
     do: ResourceType.get_type_by_id(resource_type_id) == "container"
+
   def container?(%{resource_type_id: resource_type_id}),
     do: ResourceType.get_type_by_id(resource_type_id) == "container"
+
   def container?(%{"type" => type}), do: type == "container"
 
   def container_title(_node, display_curriculum_item_numbering \\ true)
@@ -253,8 +246,4 @@ defmodule OliWeb.PageDeliveryView do
         end
     end
   end
-
-  def base_resource_link_class(), do: ""
-  def resource_link_class(_active = true), do: base_resource_link_class() <> " active"
-  def resource_link_class(_active = false), do: base_resource_link_class()
 end
