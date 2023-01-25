@@ -4677,6 +4677,11 @@ envinfo@^7.7.3:
   resolved "https://registry.npmjs.org/envinfo/-/envinfo-7.8.1.tgz"
   integrity sha512-/o+BXHmB7ocbHEAs6F2EnG0ogybVVUdkRunTT2glZU9XAaGmhqskrvKwqXuDfNjEO0LZKWdejEEpnq8aM0tOaw==
 
+epoq@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/epoq/-/epoq-1.0.4.tgz#acaa1efce91bcf9371480e4d330ef34cfcedf059"
+  integrity sha512-K48x+7J565Y5rzfVgdjvcrLy33PmKbixQfT8AjeRhp0y1qlDzqy8jCohsisyU4UrmXCM7zBOM8Zquv23s+bWtA==
+
 error-ex@^1.3.1:
   version "1.3.2"
   resolved "https://registry.npmjs.org/error-ex/-/error-ex-1.3.2.tgz"

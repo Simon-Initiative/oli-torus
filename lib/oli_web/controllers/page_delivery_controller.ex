@@ -57,6 +57,26 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def schedule(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "schedule.html",
+      title: section.title,
+      context: %{
+        # TODO: Deliver these dates in the correct timezone for the section
+        start_date: section.start_date,
+        end_date: section.end_date,
+        title: section.title,
+        description: section.description,
+        section_slug: section_slug,
+        hierarchy: build_hierarchy(section),
+        display_curriculum_item_numbering: section.display_curriculum_item_numbering
+      }
+    )
+  end
+
   def container(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     author = conn.assigns.current_author
@@ -200,8 +220,7 @@ defmodule OliWeb.PageDeliveryController do
         r1.date_submitted <= r2.date_submitted
       end)
 
-    {:ok, {previous, next, current}, _} =
-      PreviousNextIndex.retrieve(section, page.resource_id)
+    {:ok, {previous, next, current}, _} = PreviousNextIndex.retrieve(section, page.resource_id)
 
     resource_access = Core.get_resource_access(page.resource_id, section.slug, user.id)
 
@@ -884,12 +903,15 @@ defmodule OliWeb.PageDeliveryController do
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
 
   defp build_helper(id, previous_next_index) do
-
     node = Map.get(previous_next_index, id)
 
-    Map.put(node, "children", Enum.map(node["children"], fn id ->
-      build_helper(id, previous_next_index)
-    end))
+    Map.put(
+      node,
+      "children",
+      Enum.map(node["children"], fn id ->
+        build_helper(id, previous_next_index)
+      end)
+    )
   end
 
   def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
@@ -901,8 +923,11 @@ defmodule OliWeb.PageDeliveryController do
       PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
 
     # Retrieve the top level resource ids, and convert them to strings
-    resource_ids = Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(section.root_section_resource)
-    |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
+    resource_ids =
+      Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
+        section.root_section_resource
+      )
+      |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
 
     %{
       id: "hierarchy_built_with_previous_next_index",

@@ -286,3 +286,8 @@ export const formatNumber = (number: number) => {
 
   return modifiedNumber;
 };
+
+export const padLeft = (inp: string | number, length: number, char = '0') => {
+  const str = String(inp);
+  return str.length >= length ? str : new Array(length - str.length + 1).join(char) + str;
+};

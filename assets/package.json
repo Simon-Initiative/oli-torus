@@ -38,6 +38,7 @@
     "bootstrap": "^4.5.0",
     "chroma-js": "^2.1.1",
     "deep-object-diff": "^1.1.0",
+    "epoq": "^1.0.4",
     "file-loader": "^6.2.0",
     "immer": "^9.0.5",
     "immutable": "^4.0.0-rc.12",
