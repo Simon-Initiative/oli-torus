@@ -49,7 +49,10 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :section_project_publications}) do
     %{edition: edition, major: major, minor: minor} =
-      List.first(section.section_project_publications).publication
+      section
+      |> Map.get(:section_project_publications)
+      |> hd()
+      |> Map.get(:publication)
 
     ~F"""
       <span class="badge badge-primary">{Utils.render_version(edition, major, minor)}</span>

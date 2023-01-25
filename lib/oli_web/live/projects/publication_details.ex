@@ -1,8 +1,7 @@
 defmodule OliWeb.Projects.PublicationDetails do
   use Surface.Component
 
-  alias Oli.Utils
-  alias OliWeb.Common.{Utils}
+  alias OliWeb.Common.Utils
 
   prop active_publication_changes, :map, required: true
   prop context, :struct, required: true
@@ -18,7 +17,7 @@ defmodule OliWeb.Projects.PublicationDetails do
 
       {#case {@has_changes, @active_publication_changes}}
         {#match {true, nil}}
-          <strong class="my-3">This project has not been published yet</strong>
+          <h6 class="my-3"><strong class="my-3">This project has not been published yet</strong></h6>
         {#match {false, _}}
           <h6 class="my-3">
             Last published <strong>{Utils.render_date(@latest_published_publication, :published, @context)}</strong>.
@@ -43,6 +42,8 @@ defmodule OliWeb.Projects.PublicationDetails do
   end
 
   defp change_count(changes),
-    do: Map.values(changes) |> Enum.count()
-
+    do:
+      changes
+      |> Map.values()
+      |> Enum.count()
 end
