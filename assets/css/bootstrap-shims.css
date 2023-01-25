@@ -23,28 +23,28 @@
 }
 
 .btn-primary {
-  @apply text-white bg-blue-500 hover:bg-blue-600;
+  @apply text-white hover:text-white bg-blue-500 hover:bg-blue-600;
 }
 .btn-secondary {
-  @apply text-white bg-gray-500 hover:bg-gray-600;
+  @apply text-white hover:text-white bg-gray-500 hover:bg-gray-600;
 }
 .btn-success {
-  @apply text-white bg-green-500 hover:bg-green-600;
+  @apply text-white hover:text-white bg-green-500 hover:bg-green-600;
 }
 .btn-danger {
-  @apply text-white bg-red-500 hover:bg-red-600;
+  @apply text-white hover:text-white bg-red-500 hover:bg-red-600;
 }
 .btn-warning {
-  @apply text-white bg-yellow-500 hover:bg-yellow-600;
+  @apply text-white hover:text-white bg-yellow-500 hover:bg-yellow-600;
 }
 .btn-info {
-  @apply text-white bg-blue-400 hover:bg-blue-500;
+  @apply text-white hover:text-white bg-blue-400 hover:bg-blue-500;
 }
 .btn-light {
-  @apply text-gray-800 bg-gray-100 hover:bg-gray-200;
+  @apply text-gray-800 hover:text-gray-800 bg-gray-100 hover:bg-gray-200;
 }
 .btn-dark {
-  @apply text-white bg-gray-700 hover:bg-gray-900;
+  @apply text-white hover:text-white bg-gray-700 hover:bg-gray-900;
 }
 .btn-outline-primary {
   @apply text-blue-600 border border-solid border-blue-600 hover:bg-blue-600 hover:text-white;
