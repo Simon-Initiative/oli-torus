@@ -19,7 +19,7 @@ defmodule Oli.Accounts do
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.AccountLookupCache
+  alias Oli.AccountLookupCache
   alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
 
   def browse_users(

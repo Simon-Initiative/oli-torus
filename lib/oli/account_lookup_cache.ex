@@ -1,4 +1,4 @@
-defmodule OliWeb.AccountLookupCache do
+defmodule Oli.AccountLookupCache do
   @moduledoc """
     Provides a cache that can be used for account lookups. This cache is backed by
     Cachex for local storage and PubSub for remote distribution. Keys are set to expire

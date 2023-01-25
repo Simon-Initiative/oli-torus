@@ -5,7 +5,7 @@ defmodule Oli.Plugs.SetCurrentUser do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
-  alias OliWeb.AccountLookupCache
+  alias Oli.AccountLookupCache
 
   def init(_params) do
   end

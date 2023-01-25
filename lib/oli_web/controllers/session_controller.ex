@@ -3,7 +3,7 @@ defmodule OliWeb.SessionController do
 
   import Pow.Phoenix.Controller, only: [require_authenticated: 2]
 
-  alias OliWeb.AccountLookupCache
+  alias Oli.AccountLookupCache
 
   plug :require_authenticated when action in [:signout]
 
