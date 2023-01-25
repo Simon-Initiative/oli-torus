@@ -23,7 +23,7 @@
         <%= label f, :description, "Latest Publication", class: "control-label" %>
         <%= case @latest_published_publication do %>
           <% %{edition: edition, major: major, minor: minor} -> %>
-            <p class="text-secondary"><%= "v#{edition}.#{major}.#{minor}" %></p>
+            <p class="text-secondary"><%= OliWeb.Common.Utils.render_version(edition, major, minor) %></p>
           <% _ -> %>
             <p class="text-secondary">This project has not been published</p>
         <% end %>

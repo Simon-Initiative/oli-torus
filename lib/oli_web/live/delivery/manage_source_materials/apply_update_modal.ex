@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
 
   import OliWeb.Common.FormatDateTime
 
-  alias OliWeb.Delivery.ManageSourceMaterials
+  alias OliWeb.Common.Utils
 
   prop changes, :map, required: true
   prop current_publication, :struct, required: true
@@ -28,7 +28,9 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
             <div class="modal-body pb-0">
 
               <h6 class="mb-3">Do you want to apply this update from
-                <strong>{ManageSourceMaterials.version_number(@current_publication)}</strong> to <strong>{ManageSourceMaterials.version_number(@newest_publication)}</strong>?
+                <strong>{Utils.render_version(@current_publication.edition, @current_publication.major, @current_publication.minor)}</strong>
+                to
+                <strong>{Utils.render_version(@newest_publication.edition, @newest_publication.major, @newest_publication.minor)}</strong>?
               </h6>
 
               <small>Latest publication description</small>

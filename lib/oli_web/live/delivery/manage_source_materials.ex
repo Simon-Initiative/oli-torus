@@ -128,9 +128,6 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
     """
   end
 
-  def version_number(%Publication{edition: edition, major: major, minor: minor}),
-    do: "v#{edition}.#{major}.#{minor}"
-
   defp newest_publication(project_id, updates) do
     case Enum.find(updates, fn {id, _} -> id == project_id end) do
       {_project, %Publication{} = newest_publication} -> newest_publication
