@@ -44,11 +44,14 @@ defmodule OliWeb.Projects.PublishView do
     project = Course.get_project_by_slug(project_slug)
     active_sections = Sections.get_active_sections_by_project(project.id)
 
-    %{product_count: product_count, section_count: section_count} =
-      Sections.get_push_force_affected_sections(project.id)
-
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project_slug) || %Publication{}
+
+    push_affected =
+      if is_nil(latest_published_publication.id),
+        do: %{product_count: 0, section_count: 0},
+        else:
+          Sections.get_push_force_affected_sections(project.id, latest_published_publication.id)
 
     active_publication = Publishing.project_working_publication(project_slug)
 
@@ -116,13 +119,12 @@ defmodule OliWeb.Projects.PublishView do
        context: context,
        has_changes: has_changes,
        latest_published_publication: latest_published_publication,
+       lti_connect_info: lti_connect_info,
        parent_pages: parent_pages,
-       product_count: product_count,
        project: project,
-       section_count: section_count,
+       push_affected: push_affected,
        table_model: table_model,
-       version_change: version_change,
-       lti_connect_info: lti_connect_info
+       version_change: version_change
      )}
   end
 
@@ -149,10 +151,9 @@ defmodule OliWeb.Projects.PublishView do
                 has_changes={@has_changes}
                 is_force_push={@is_force_push}
                 latest_published_publication={@latest_published_publication}
-                product_count={@product_count}
                 project={@project}
                 publish_active="publish_active"
-                section_count={@section_count}
+                push_affected={@push_affected}
                 version_change={@version_change}
               />
             {/if}

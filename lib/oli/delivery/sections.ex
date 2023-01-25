@@ -565,10 +565,10 @@ defmodule Oli.Delivery.Sections do
   Gets all sections that use a particular project when their 'end_date' attribute is not nil and is later than the current date.
 
   ## Examples
-      iex> get_active_sections_by_project(project, now_time)
+      iex> get_active_sections_by_project(project_id)
       [%Section{}, ...]
 
-      iex> get_active_sections_by_project(invalid_project, now_time)
+      iex> get_active_sections_by_project(invalid_project_id)
       []
   """
   def get_active_sections_by_project(project_id) do
@@ -589,13 +589,13 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Gets all sections that will be affected by forcing the publication update.
+  Gets all sections and products that will be affected by forcing the publication update.
 
   ## Examples
-      iex> get_push_force_affected_sections(project)
+      iex> get_push_force_affected_sections(project_id, previous_publication_id)
       %{product_count: 1, section_count: 1}
   """
-  def get_push_force_affected_sections(project_id) do
+  def get_push_force_affected_sections(project_id, previous_publication_id) do
     today = DateTime.utc_now()
 
     Repo.one(
@@ -605,6 +605,7 @@ defmodule Oli.Delivery.Sections do
         on: section.id == spp.section_id,
         where:
           spp.project_id == ^project_id and section.status == :active and
+            spp.publication_id == ^previous_publication_id and
             (is_nil(section.end_date) or section.end_date >= ^today),
         select: %{
           product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),

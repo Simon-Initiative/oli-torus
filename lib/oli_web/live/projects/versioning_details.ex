@@ -3,7 +3,7 @@ defmodule OliWeb.Projects.VersioningDetails do
 
   alias OliWeb.Common.Utils
 
-  alias Surface.Components.{Form}
+  alias Surface.Components.Form
 
   alias Surface.Components.Form.{
     Checkbox,
@@ -21,10 +21,9 @@ defmodule OliWeb.Projects.VersioningDetails do
   prop has_changes, :boolean, required: true
   prop is_force_push, :boolean, default: false
   prop latest_published_publication, :struct, required: true
-  prop product_count, :integer, default: 0
   prop project, :struct, required: true
   prop publish_active, :event, required: true
-  prop section_count, :integer, default: 0
+  prop push_affected, :map, required: true
   prop version_change, :tuple, required: true
 
   def render(assigns) do
@@ -99,11 +98,11 @@ defmodule OliWeb.Projects.VersioningDetails do
           </div>
           {#if @is_force_push}
             <div class="alert alert-warning" role="alert">
-              {#if @section_count > 0 or @product_count > 0}
+              {#if @push_affected.section_count > 0 or @push_affected.product_count > 0}
                 <h6>This force push update will affect:</h6>
                 <ul class="mb-0">
-                  <li>{@section_count} course section(s)</li>
-                  <li>{@product_count} product(s)</li>
+                  <li>{@push_affected.section_count} course section(s)</li>
+                  <li>{@push_affected.product_count} product(s)</li>
                 </ul>
               {#else}
                 This force push update will not affect any product or course section.

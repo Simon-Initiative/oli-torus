@@ -339,7 +339,7 @@ defmodule Oli.SectionsTest do
       assert 2 = length(remixed_projects)
     end
 
-    test "get_active_sections_by_project/2 returns course sections actives for a project" do
+    test "get_active_sections_by_project/1 returns course sections actives for a project" do
       %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
         base_project_with_curriculum(%{})
 
@@ -362,10 +362,21 @@ defmodule Oli.SectionsTest do
       {:ok, _sr} = Sections.create_section_resources(section1, publication)
       {:ok, _sr} = Sections.create_section_resources(section2, publication)
 
-      assert length(Sections.get_active_sections_by_project(project.id)) == 2
+      assert project.id
+             |> Sections.get_active_sections_by_project()
+             |> length == 2
     end
 
-    test "get_push_force_affected_sections/1 returns all sections that will be affected by forcing the publication update" do
+    test "get_active_sections_by_project/1 does not return active course sections for a project" do
+      %{publication: _publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      assert project.id
+             |> Sections.get_active_sections_by_project()
+             |> length == 0
+    end
+
+    test "get_push_force_affected_sections/2 returns all sections that will be affected by forcing the publication update" do
       %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
         base_project_with_curriculum(%{})
 
@@ -392,10 +403,21 @@ defmodule Oli.SectionsTest do
       {:ok, _sr} = Sections.create_section_resources(product1, publication)
 
       %{product_count: product_count, section_count: section_count} =
-        Sections.get_push_force_affected_sections(project.id)
+        Sections.get_push_force_affected_sections(project.id, publication.id)
 
       assert section_count == 2
       assert product_count == 1
+    end
+
+    test "get_push_force_affected_sections/2 does not return sections or products that will be affected by forcing the publication update" do
+      %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      %{product_count: product_count, section_count: section_count} =
+        Sections.get_push_force_affected_sections(project.id, publication.id)
+
+      assert section_count == 0
+      assert product_count == 0
     end
   end
 

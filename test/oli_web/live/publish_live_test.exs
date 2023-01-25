@@ -7,6 +7,7 @@ defmodule OliWeb.PublishLiveTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
+  alias OliWeb.Common.Utils
 
   defp live_view_publish_route(project_slug),
     do: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, project_slug)
@@ -246,11 +247,51 @@ defmodule OliWeb.PublishLiveTest do
 
       assert has_element?(view, "h5", "Versioning Details")
       assert has_element?(view, "p", "Major")
-      assert has_element?(view, "small", "v#{edition}.#{major}.#{minor}")
-      assert has_element?(view, "small", "v#{edition}.#{major + 1}.#{minor}")
+      assert has_element?(view, "small", Utils.render_version(edition, major, minor))
+      assert has_element?(view, "small", Utils.render_version(edition, major + 1, minor))
     end
 
     test "shows a message when course sections and products will be affected by push forced publication",
+         %{
+           conn: conn,
+           project: project
+         } do
+      new_publication = insert(:publication, project: project, published: now())
+      new_product = insert(:section)
+
+      new_section =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      insert(:section_project_publication, %{
+        project: project,
+        section: new_product,
+        publication: new_publication
+      })
+
+      insert(:section_project_publication, %{
+        project: project,
+        section: new_section,
+        publication: new_publication
+      })
+
+      push_affected = Sections.get_push_force_affected_sections(project.id, new_publication.id)
+
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      view
+      |> element("input[phx-click=\"force_push\"]")
+      |> render_click()
+
+      assert has_element?(view, "li", "#{push_affected.product_count} product(s)")
+      assert has_element?(view, "li", "#{push_affected.section_count} course section(s)")
+    end
+
+    test "shows a message when course sections and products will not be affected by push forced publication",
          %{
            conn: conn,
            project: project
@@ -263,7 +304,8 @@ defmodule OliWeb.PublishLiveTest do
 
       assert view
              |> element("div.alert.alert-warning")
-             |> render() =~ "This force push update will affect"
+             |> render() =~
+               "This force push update will not affect any product or course section."
     end
 
     test "shows active course sections information", %{
