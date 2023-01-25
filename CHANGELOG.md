@@ -6,6 +6,10 @@
 
 - Fix an issue with dynamic questions and variables that contain " or \
 
+### Enhancements
+
+- Add ability to author polygonal image hotspots with mouse
+
 ## 0.22.0 (2022-12-20)
 
 ### Bug Fixes
