@@ -224,7 +224,7 @@ export class PolygonEditor extends React.PureComponent<PolygonEditorProps, Polyg
           )
           .map((coord, i) => (
             <circle
-              className="shape-handle"
+              className="shape-handle shape-move"
               key={i}
               cx={coord.x}
               cy={coord.y}
