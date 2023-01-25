@@ -35,7 +35,6 @@
             </tr>
         </table>
       </div>
-
       <p>For help and more information regarding your request, please <a href='javascript:;' onclick="showHelpModal();">contact support</a>.</p>
     </div>
 

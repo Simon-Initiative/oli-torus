@@ -22,4 +22,6 @@ html.preview {
     font-size: 1em;
     font-weight: normal;
   }
+
+  @import 'preview/preview-tools.scss';
 }

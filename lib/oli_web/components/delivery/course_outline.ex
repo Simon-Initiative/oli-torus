@@ -2,12 +2,9 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
   use Phoenix.Component
 
   import Phoenix.HTML.Link
-  import OliWeb.Components.Delivery.Utils
-  import OliWeb.ViewHelpers
 
   import OliWeb.PageDeliveryView, only: [container?: 1, container_title: 2]
 
-  alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
 

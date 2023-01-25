@@ -183,6 +183,82 @@
             <%= error_tag f, :line_items_service_domain %>
           </div>
 
+      <hr class="my-4" />
+
+      <h6>LTI 1.3 Configuration</h6>
+
+      <select id="lms-family" class="form-control mb-4">
+        <option>Select LMS Family</option>
+        <%= for option <- @lti_config_defaults do %>
+          <option value="<%= option.product_family_code %>"><%= option.name %></option>
+        <% end %>
+        <option value="other">Other LMS</option>
+      </select>
+
+      <script>
+        const base_url = issuer
+          .replace(/^http\:\/\//, "https://")
+          .replace(/\/$/, "");
+
+        function full_url(config, key) {
+          if (config[`${key}_url`]) {
+            return config[`${key}_url`];
+          } else if (config[`${key}_path`]) {
+            return base_url + config[`${key}_path`];
+          } else {
+            return '';
+          }
+        };
+
+        $('#lms-family').change(function({ target: target }) {
+          selection = $(target).val();
+          let config = lti_config_defaults.find(c => c.product_family_code === selection);
+
+          if (config) {
+            // show #suggestion-msg and set config values
+            $('#lms-details').show();
+            $('.submit').prop('disabled', false);
+
+            if (base_url) {
+              $('#suggested-values-msg').show();
+
+              $('.key_set_url').val(full_url(config, 'key_set'));
+              $('.auth_token_url').val(full_url(config, 'auth_token'));
+              $('.auth_login_url').val(full_url(config, 'auth_login'));
+              $('.auth_server').val(full_url(config, 'auth_server'));
+              $('.line_items_service_domain').val(full_url(config, 'line_items_service_domain'));
+            }
+          } else {
+            // hide #suggestion-msg and reset config values
+            $('#suggested-values-msg').hide();
+            $('#lms-details').show();
+            $('.submit').prop( "disabled", false );
+
+            $('.key_set_url').val('');
+            $('.auth_token_url').val('');
+            $('.auth_login_url').val('');
+            $('.auth_server').val('');
+            $('.line_items_service_domain').val('');
+          }
+        })
+      </script>
+
+
+      <p id="suggested-values-msg" class="text-secondary mb-3" style="display: none">
+        Below are some suggested values based on your LMS family. <b>Please confirm these</b> with your
+        LMS administrator and change as necessary before proceeding.
+      </p>
+
+      <div id="lms-details" style="display: none">
+
+        <%= hidden_input f, :issuer, value: @issuer  %>
+        <%= hidden_input f, :client_id, value: @client_id  %>
+
+        <div class="form-label-group">
+          <%= text_input f, :key_set_url, class: "key_set_url form-control " <> error_class(f, :key_set_url, "is-invalid"),
+            placeholder: "Keyset URL", required: true, autofocus: focusHelper(f, :key_set_url) %>
+          <%= label f, :key_set_url, "Keyset URL", class: "control-label" %>
+          <%= error_tag f, :key_set_url %>
         </div>
 
         <%= if @deployment_id do %>

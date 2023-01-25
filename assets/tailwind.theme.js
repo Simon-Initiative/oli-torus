@@ -68,7 +68,6 @@ module.exports = {
       'hints-bg': colors.gray['200'],
       'hints-border': colors.gray['500'],
       'hints-color': colors.black,
-
       delivery: {
         body: {
           DEFAULT: '#f3f5f8',

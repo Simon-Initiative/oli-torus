@@ -54,7 +54,11 @@ defmodule Oli.Application do
         },
 
         # Starts the publication diff agent store
-        Oli.Publishing.Publications.DiffAgent
+        Oli.Publishing.Publications.DiffAgent,
+
+        # Starts Cachex to store user/author info across requests
+        Oli.AccountLookupCache,
+
       ] ++ maybe_node_js_config()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
