@@ -1,4 +1,4 @@
-defmodule OliWeb.Components.Delivery.Header do
+defmodule OliWeb.Components.Header do
   use Phoenix.Component
 
   import Phoenix.HTML.Link
@@ -9,6 +9,7 @@ defmodule OliWeb.Components.Delivery.Header do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Delivery.HelpButton
+  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   def header(assigns) do
     ~H"""
@@ -76,6 +77,15 @@ defmodule OliWeb.Components.Delivery.Header do
         <% end %>
       </div>
     </nav>
+    <%= if delivery_breadcrumbs?(assigns) do %>
+      <div class="container">
+        <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
+          <div class="flex-1">
+            <%= live_render(@conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
+          </div>
+        </nav>
+      </div>
+    <% end %>
     """
   end
 end

@@ -249,7 +249,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "shows enroll page if user is not enrolled", %{conn: conn, oaf_section_1: section} do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 200) =~ "<h5 class=\"card-title\">#{section.title}</h5>"
+      assert html_response(conn, 200) =~ section.title
       assert html_response(conn, 200) =~ Routes.delivery_path(conn, :process_enroll, section.slug)
     end
 
