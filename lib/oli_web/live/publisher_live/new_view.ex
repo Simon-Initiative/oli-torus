@@ -30,9 +30,9 @@ defmodule OliWeb.PublisherLive.NewView do
 
   def render(assigns) do
     ~F"""
-      <FormContainer title={@title}>
-        <Form changeset={@publisher} save="save" display_labels={false}/>
-      </FormContainer>
+    <FormContainer title={@title}>
+      <Form changeset={@publisher} save="save" display_labels={false} />
+    </FormContainer>
     """
   end
 

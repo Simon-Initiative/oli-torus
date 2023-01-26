@@ -11,7 +11,12 @@ defmodule Oli.Repo.Migrations.CreateCommunitiesAccounts do
       timestamps(type: :timestamptz)
     end
 
-    create unique_index(:communities_accounts, [:community_id, :author_id], name: :index_community_author)
-    create unique_index(:communities_accounts, [:community_id, :user_id], name: :index_community_user)
+    create unique_index(:communities_accounts, [:community_id, :author_id],
+             name: :index_community_author
+           )
+
+    create unique_index(:communities_accounts, [:community_id, :user_id],
+             name: :index_community_user
+           )
   end
 end

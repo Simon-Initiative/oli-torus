@@ -15,22 +15,31 @@ defmodule OliWeb.Common.EnrollmentBrowser.SelectUserModal do
         } = assigns
       ) do
     ~F"""
-    <div class="modal fade show" style="display: block" id={id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div
+      class="modal fade show"
+      style="display: block"
+      id={id}
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Select Student</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            {live_component EnrollmentPicker,
-                id: "#{id}_enrollment_picker",
-                section: assigns.section,
-                context: assigns.context}
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" :on-click={@on_cancel}>Cancel</button>
-            </div>
+          <div class="modal-header">
+            <h5 class="modal-title">Select Student</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+          </div>
+          <div class="modal-body">
+            {live_component(EnrollmentPicker,
+              id: "#{id}_enrollment_picker",
+              section: assigns.section,
+              context: assigns.context
+            )}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" :on-click={@on_cancel}>Cancel</button>
+          </div>
         </div>
       </div>
     </div>

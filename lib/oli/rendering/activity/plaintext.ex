@@ -15,7 +15,7 @@ defmodule Oli.Rendering.Activity.Plaintext do
           activity_map: activity_map,
           mode: mode,
           group_id: group_id,
-          survey_id: survey_id,
+          survey_id: survey_id
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do

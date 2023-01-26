@@ -18,45 +18,57 @@ defmodule OliWeb.Products.Payments.Discounts.Form do
 
   def render(assigns) do
     ~F"""
-      <Form for={@changeset} submit={@save} change={@change}>
-        {#if @live_action != :product_new}
-          <ReadOnly label="Institution" value={@institution_name}/>
-        {#else}
-          <Field name={:institution_id} class="form-group">
-            <Label/>
-            <Select
-              prompt="Select institution"
-              class="form-control"
-              options={Enum.map(@institutions, &{&1.name, &1.id})}
-              selected={get_field(@changeset, :institution_id)}/>
-            <ErrorTag/>
-          </Field>
-        {/if}
-
-        <Field name={:type} class="form-group">
+    <Form for={@changeset} submit={@save} change={@change}>
+      {#if @live_action != :product_new}
+        <ReadOnly label="Institution" value={@institution_name} />
+      {#else}
+        <Field name={:institution_id} class="form-group">
           <Label />
-          <Select class="form-control" options={"Percentage": "percentage", "Fixed price": "fixed_amount"} selected={get_field(@changeset, :type)}/>
-          <ErrorTag/>
+          <Select
+            prompt="Select institution"
+            class="form-control"
+            options={Enum.map(@institutions, &{&1.name, &1.id})}
+            selected={get_field(@changeset, :institution_id)}
+          />
+          <ErrorTag />
         </Field>
-
-        <Field name={:amount} class="form-group">
-          <Label text="Price"/>
-          <TextInput class="form-control" opts={disabled: get_field(@changeset, :type) == :percentage} />
-          <ErrorTag/>
-        </Field>
-
-        <Field name={:percentage} class="form-group">
-          <Label/>
-          <NumberInput class="form-control" opts={min: 0, max: 100, step: 0.1, disabled: get_field(@changeset, :type) == :fixed_amount} />
-          <ErrorTag/>
-        </Field>
-
-        <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
-      </Form>
-
-      {#if @live_action == :institution}
-        <button class="btn btn-md btn-outline-danger float-right mt-3" phx-click="clear" disabled={is_nil(@discount)}>Clear</button>
       {/if}
+
+      <Field name={:type} class="form-group">
+        <Label />
+        <Select
+          class="form-control"
+          options={Percentage: "percentage", "Fixed price": "fixed_amount"}
+          selected={get_field(@changeset, :type)}
+        />
+        <ErrorTag />
+      </Field>
+
+      <Field name={:amount} class="form-group">
+        <Label text="Price" />
+        <TextInput class="form-control" opts={disabled: get_field(@changeset, :type) == :percentage} />
+        <ErrorTag />
+      </Field>
+
+      <Field name={:percentage} class="form-group">
+        <Label />
+        <NumberInput
+          class="form-control"
+          opts={min: 0, max: 100, step: 0.1, disabled: get_field(@changeset, :type) == :fixed_amount}
+        />
+        <ErrorTag />
+      </Field>
+
+      <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
+    </Form>
+
+    {#if @live_action == :institution}
+      <button
+        class="btn btn-md btn-outline-danger float-right mt-3"
+        phx-click="clear"
+        disabled={is_nil(@discount)}
+      >Clear</button>
+    {/if}
     """
   end
 end

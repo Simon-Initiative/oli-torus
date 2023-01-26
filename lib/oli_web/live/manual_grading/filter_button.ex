@@ -18,15 +18,18 @@ defmodule OliWeb.ManualGrading.FilterButton do
 
   def do_render(assigns, classes, active) do
     ~F"""
-      <button
-        disabled={!@selection}
-        type="button"
-        data-toggle="tooltip"
-        title={@tooltip}
-        class={classes}
-        :on-click={@clicked} phx-value-key={@key} phx-value-active={active}>
-        {@label}
-      </button>
+    <button
+      disabled={!@selection}
+      type="button"
+      data-toggle="tooltip"
+      title={@tooltip}
+      class={classes}
+      :on-click={@clicked}
+      phx-value-key={@key}
+      phx-value-active={active}
+    >
+      {@label}
+    </button>
     """
   end
 end

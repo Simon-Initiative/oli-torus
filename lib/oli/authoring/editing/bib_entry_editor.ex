@@ -49,12 +49,16 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project) do
       case paged_bib_entrys(project_slug, %Paging{limit: limit, offset: offset}) do
-        nil -> {:error, {:not_found}}
+        nil ->
+          {:error, {:not_found}}
+
         revisions ->
-          revision_list = Enum.reduce(revisions, %{total_count: 0, rows: []}, fn e, m ->
-            Map.put(m, :total_count, e.full_count)
-            |> Map.put(:rows,  Map.get(m, :rows) ++ [e.rev])
-          end)
+          revision_list =
+            Enum.reduce(revisions, %{total_count: 0, rows: []}, fn e, m ->
+              Map.put(m, :total_count, e.full_count)
+              |> Map.put(:rows, Map.get(m, :rows) ++ [e.rev])
+            end)
+
           {:ok, revision_list}
       end
     else
@@ -66,20 +70,21 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
     publication_id = Oli.Publishing.project_working_publication(project_slug).id
     resource_type_id = ResourceType.get_id_by_type("bibentry")
 
-    query = from rev in Revision,
-      join: mapping in PublishedResource,
-      on: mapping.revision_id == rev.id,
-      distinct: rev.resource_id,
-      where:
-        mapping.publication_id == ^publication_id and
-          rev.resource_type_id == ^resource_type_id and
-          rev.deleted == false,
-      limit: ^limit,
-      offset: ^offset,
-      preload: :resource_type,
-      select: %{rev: rev, full_count: fragment("COUNT(?) OVER()", rev.id)}
+    query =
+      from rev in Revision,
+        join: mapping in PublishedResource,
+        on: mapping.revision_id == rev.id,
+        distinct: rev.resource_id,
+        where:
+          mapping.publication_id == ^publication_id and
+            rev.resource_type_id == ^resource_type_id and
+            rev.deleted == false,
+        limit: ^limit,
+        offset: ^offset,
+        preload: :resource_type,
+        select: %{rev: rev, full_count: fragment("COUNT(?) OVER()", rev.id)}
 
-      Repo.all(query)
+    Repo.all(query)
   end
 
   @doc """
@@ -125,6 +130,7 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
           | {:error, {:not_authorized}}
   def delete(project_slug, resource_id, author) do
     update = %{"deleted" => true}
+
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, revision} <-
@@ -135,36 +141,38 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
     end
   end
 
-
   @doc """
   Creates a new tag resource with given attributes as part of its initial revision.
   """
   def create(project_slug, author, attrs) do
     Repo.transaction(fn ->
-    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
-         {:ok} <- authorize_user(author, project),
-         {:ok, publication} <-
-           Oli.Publishing.project_working_publication(project_slug) |> trap_nil(),
-         {:ok, revision} <-
-           Oli.Resources.create_new(attrs, Oli.Resources.ResourceType.get_id_by_type("bibentry")),
-         {:ok, _} <-
-           Course.create_project_resource(%{
-             project_id: project.id,
-             resource_id: revision.resource_id
-           })
-           |> trap_nil(),
-         {:ok, _mapping} <-
-           Oli.Publishing.create_published_resource(%{
-             publication_id: publication.id,
-             resource_id: revision.resource_id,
-             revision_id: revision.id
-           }) do
-      {:ok, revision}
-    else
-      error ->
-        Repo.rollback(error)
-        error
-    end
-  end)
+      with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+           {:ok} <- authorize_user(author, project),
+           {:ok, publication} <-
+             Oli.Publishing.project_working_publication(project_slug) |> trap_nil(),
+           {:ok, revision} <-
+             Oli.Resources.create_new(
+               attrs,
+               Oli.Resources.ResourceType.get_id_by_type("bibentry")
+             ),
+           {:ok, _} <-
+             Course.create_project_resource(%{
+               project_id: project.id,
+               resource_id: revision.resource_id
+             })
+             |> trap_nil(),
+           {:ok, _mapping} <-
+             Oli.Publishing.create_published_resource(%{
+               publication_id: publication.id,
+               resource_id: revision.resource_id,
+               revision_id: revision.id
+             }) do
+        {:ok, revision}
+      else
+        error ->
+          Repo.rollback(error)
+          error
+      end
+    end)
   end
 end

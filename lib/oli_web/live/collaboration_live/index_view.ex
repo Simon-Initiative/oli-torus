@@ -32,15 +32,18 @@ defmodule OliWeb.CollaborationLive.IndexView do
     Enum.filter(socket.assigns.collab_spaces, fn cs ->
       String.contains?(String.downcase(cs.page.title), query_str) or
         (socket.assigns.live_action == :admin and
-          String.contains?(String.downcase(cs.project.title), query_str))
+           String.contains?(String.downcase(cs.project.title), query_str))
     end)
   end
 
   def live_path(%{assigns: %{live_action: :admin}} = socket, params),
     do: Routes.collab_spaces_index_path(socket, :admin, params)
 
-  def live_path(%{assigns: %{live_action: :instructor, section_slug: section_slug}} = socket, params),
-    do: Routes.collab_spaces_index_path(socket, :instructor, section_slug, params)
+  def live_path(
+        %{assigns: %{live_action: :instructor, section_slug: section_slug}} = socket,
+        params
+      ),
+      do: Routes.collab_spaces_index_path(socket, :instructor, section_slug, params)
 
   def breadcrumb(:admin, _) do
     AdminView.breadcrumb() ++
@@ -72,14 +75,14 @@ defmodule OliWeb.CollaborationLive.IndexView do
         get_collab_spaces_and_table_model(live_action, context, section_slug)
 
       {:ok,
-        assign(socket,
-          delivery_breadcrumb: true,
-          breadcrumbs: breadcrumb(live_action, section_slug),
-          section_slug: section_slug,
-          collab_spaces: collab_spaces,
-          table_model: table_model,
-          total_count: length(collab_spaces)
-        )}
+       assign(socket,
+         delivery_breadcrumb: true,
+         breadcrumbs: breadcrumb(live_action, section_slug),
+         section_slug: section_slug,
+         collab_spaces: collab_spaces,
+         table_model: table_model,
+         total_count: length(collab_spaces)
+       )}
     end
 
     case live_action do
@@ -91,32 +94,31 @@ defmodule OliWeb.CollaborationLive.IndexView do
           {_type, _user, _section} ->
             do_mount.()
         end
-      :admin -> do_mount.()
+
+      :admin ->
+        do_mount.()
     end
   end
 
   def render(assigns) do
     ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
-      </div>
+    <div class="d-flex p-3 justify-content-between">
+      <Filter change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+    </div>
 
-      <div id="collaborative-spaces-table" class="p-4">
-        <Listing
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div id="collaborative-spaces-table" class="p-4">
+      <Listing
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort={@sort}
+        page_change={@page_change}
+        show_bottom_paging={@show_bottom_paging}
+        additional_table_class={@additional_table_class}
+      />
+    </div>
     """
   end
 

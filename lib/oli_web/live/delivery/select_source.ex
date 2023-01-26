@@ -134,53 +134,61 @@ defmodule OliWeb.Delivery.SelectSource do
 
   def render(assigns) do
     ~F"""
-      <div class="d-flex flex-column mt-4">
-        <FilterBox table_model={@table_model} show_sort={is_cards_view?(@live_action, @view_type)} show_more_opts={is_instructor?(@live_action)}>
-          <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
+    <div class="d-flex flex-column mt-4">
+      <FilterBox
+        table_model={@table_model}
+        show_sort={is_cards_view?(@live_action, @view_type)}
+        show_more_opts={is_instructor?(@live_action)}
+      >
+        <Filter query={@applied_query} apply="apply_search" change="change_search" reset="reset_search" />
 
-          <:extra_opts>
-            <div class="flex flex-row justify-end py-3">
-              <Form for={:view} change="update_view_type">
-                <Field name={:type} class="control w-100 d-flex align-items-center">
-                  <div class="btn-group btn-group-toggle">
-                    <label class={"btn btn-outline-secondary" <> if @view_type == :card, do: " active", else: ""}>
-                      <RadioButton value="card" checked={@view_type == :card} opts={hidden: true}/>
-                      <i class='fa fa-th'></i>
-                    </label>
-                    <label class={"btn btn-outline-secondary" <> if @view_type == :list, do: " active", else: ""}>
-                      <RadioButton value="list" checked={@view_type == :list} opts={hidden: true}/>
-                      <i class='fa fa-list'></i>
-                    </label>
-                  </div>
-                </Field>
-              </Form>
-            </div>
-          </:extra_opts>
-        </FilterBox>
-
-        <Listing
-          filter={@applied_query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          selected="selected"
-          sort="sort"
-          page_change="page_change"
-          show_bottom_paging={false}
-          cards_view={is_cards_view?(@live_action, @view_type)}
-        />
-
-        {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
-          <div class="card max-w-lg mx-auto">
-            <div class="card-body text-center">
-              <h5 class="card-title">Have a Course Authoring Account?</h5>
-              <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
-              <a href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
-            </div>
+        <:extra_opts>
+          <div class="flex flex-row justify-end py-3">
+            <Form for={:view} change="update_view_type">
+              <Field name={:type} class="control w-100 d-flex align-items-center">
+                <div class="btn-group btn-group-toggle">
+                  <label class={"btn btn-outline-secondary" <> if @view_type == :card, do: " active", else: ""}>
+                    <RadioButton value="card" checked={@view_type == :card} opts={hidden: true} />
+                    <i class="fa fa-th" />
+                  </label>
+                  <label class={"btn btn-outline-secondary" <> if @view_type == :list, do: " active", else: ""}>
+                    <RadioButton value="list" checked={@view_type == :list} opts={hidden: true} />
+                    <i class="fa fa-list" />
+                  </label>
+                </div>
+              </Field>
+            </Form>
           </div>
-        {/if}
-      </div>
+        </:extra_opts>
+      </FilterBox>
+
+      <Listing
+        filter={@applied_query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        selected="selected"
+        sort="sort"
+        page_change="page_change"
+        show_bottom_paging={false}
+        cards_view={is_cards_view?(@live_action, @view_type)}
+      />
+
+      {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
+        <div class="card max-w-lg mx-auto">
+          <div class="card-body text-center">
+            <h5 class="card-title">Have a Course Authoring Account?</h5>
+            <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
+            <a
+              href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}
+              target="_blank"
+              class="btn btn-primary link-account"
+            >Link Authoring Account</a>
+          </div>
+        </div>
+      {/if}
+    </div>
     """
   end
 

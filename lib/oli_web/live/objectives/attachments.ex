@@ -43,58 +43,58 @@ defmodule OliWeb.ObjectivesLive.Attachments do
 
   def render(assigns) do
     ~F"""
-      <div id={@id}>
-        {#if length(@resources_not_locked) == 0 and length(@resources_locked) == 0}
-          <p class="mb-4">Are you sure you want to delete this objective? This action cannot be undone.</p>
-        {/if}
+    <div id={@id}>
+      {#if length(@resources_not_locked) == 0 and length(@resources_locked) == 0}
+        <p class="mb-4">Are you sure you want to delete this objective? This action cannot be undone.</p>
+      {/if}
 
-        {#if length(@resources_not_locked) > 0}
-          <p class="mb-4">Proceeding will automatically remove this objective from the following resources:</p>
+      {#if length(@resources_not_locked) > 0}
+        <p class="mb-4">Proceeding will automatically remove this objective from the following resources:</p>
 
-          <table class="table table-sm table-bordered">
-            <thead class="thead-dark">
+        <table class="table table-sm table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th>Title</th>
+              <th>Resource Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#for r <- @resources_not_locked}
               <tr>
-                <th>Title</th>
-                <th>Resource Type</th>
+                <td><a href={link_route(@project.slug, @parent_pages, r.resource_id, r.slug)} target="_blank">{r.title}</a></td>
+                <td>{get_type(r)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {#for r <- @resources_not_locked}
-                <tr>
-                  <td><a href={link_route(@project.slug, @parent_pages, r.resource_id, r.slug)} target="_blank">{r.title}</a></td>
-                  <td>{get_type(r)}</td>
-                </tr>
-              {/for}
-            </tbody>
-          </table>
-        {/if}
+            {/for}
+          </tbody>
+        </table>
+      {/if}
 
-        {#if length(@resources_locked) > 0}
-          <p class="mb-4">Deleting this objective is <strong>blocked</strong> because the following resources that have this objective
+      {#if length(@resources_locked) > 0}
+        <p class="mb-4">Deleting this objective is <strong>blocked</strong> because the following resources that have this objective
           attached to it are currently being edited:</p>
 
-          <table class="table table-sm table-bordered">
-            <thead class="thead-dark">
+        <table class="table table-sm table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th>Title</th>
+              <th>Resource Type</th>
+              <th>Edited By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#for r <- @resources_locked}
               <tr>
-                <th>Title</th>
-                <th>Resource Type</th>
-                <th>Edited By</th>
+                <td>
+                  <a href={link_route(@project.slug, @parent_pages, r.resource_id, r.slug)} target="_blank">{r.title}</a>
+                </td>
+                <td>{get_type(r)}</td>
+                <td>{locked_by_email(@parent_pages, @locked_by, r.resource_id)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {#for r <- @resources_locked}
-                <tr>
-                  <td>
-                    <a href={link_route(@project.slug, @parent_pages, r.resource_id, r.slug)} target="_blank">{r.title}</a>
-                  </td>
-                  <td>{get_type(r)}</td>
-                  <td>{locked_by_email(@parent_pages, @locked_by, r.resource_id)}</td>
-                </tr>
-              {/for}
-            </tbody>
-          </table>
-        {/if}
-      </div>
+            {/for}
+          </tbody>
+        </table>
+      {/if}
+    </div>
     """
   end
 

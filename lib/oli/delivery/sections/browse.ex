@@ -121,13 +121,29 @@ defmodule Oli.Delivery.Sections.Browse do
     # sorting
     query =
       case field do
-        :enrollments_count -> order_by(query, [_, e], {^direction, count(e.id)})
-        :institution -> order_by(query, [_, _, i], {^direction, i.name})
-        :instructor -> order_by(query, [_, _, _, _, _, u], {^direction, fragment("coalesce(?, '')", u.name)})
-        :requires_payment -> order_by(query, [s, _, _], [{^direction, s.requires_payment}, {^direction, s.amount}])
-        :type -> order_by(query, [s, _, _], {^direction, s.open_and_free})
-        :base -> order_by(query, [_, _, _, proj, prod], [{^direction, prod.title}, {^direction, proj.title}])
-        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+        :enrollments_count ->
+          order_by(query, [_, e], {^direction, count(e.id)})
+
+        :institution ->
+          order_by(query, [_, _, i], {^direction, i.name})
+
+        :instructor ->
+          order_by(query, [_, _, _, _, _, u], {^direction, fragment("coalesce(?, '')", u.name)})
+
+        :requires_payment ->
+          order_by(query, [s, _, _], [{^direction, s.requires_payment}, {^direction, s.amount}])
+
+        :type ->
+          order_by(query, [s, _, _], {^direction, s.open_and_free})
+
+        :base ->
+          order_by(query, [_, _, _, proj, prod], [
+            {^direction, prod.title},
+            {^direction, proj.title}
+          ])
+
+        _ ->
+          order_by(query, [p, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)

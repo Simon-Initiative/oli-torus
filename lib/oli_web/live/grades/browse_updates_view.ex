@@ -122,17 +122,17 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
   def render(assigns) do
     ~F"""
     <div>
+      <TextSearch id="text-search" />
 
-      <TextSearch id="text-search"/>
-
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end

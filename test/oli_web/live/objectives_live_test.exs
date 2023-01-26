@@ -276,6 +276,7 @@ defmodule OliWeb.ObjectivesLiveTest do
                ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_2.slug)}\"]",
                "#{page_2.title}"
              )
+
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 

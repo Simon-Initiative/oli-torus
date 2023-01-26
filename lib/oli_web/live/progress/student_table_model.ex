@@ -73,59 +73,59 @@ defmodule OliWeb.Progress.StudentTabelModel do
         }
       end)
 
-      SortableTableModel.new(
-        rows: rows,
-        column_specs: [
-          %ColumnSpec{
-            name: :index,
-            label: "Order"
-          },
-          %ColumnSpec{
-            name: :title,
-            label: "Resource Title",
-            render_fn: &__MODULE__.custom_render/3
-          },
-          %ColumnSpec{
-            name: :type,
-            label: "Type"
-          },
-          %ColumnSpec{
-            name: :score,
-            label: "Score",
-            render_fn: &__MODULE__.custom_render/3,
-            sort_fn: &__MODULE__.custom_sort/2
-          },
-          %ColumnSpec{
-            name: :number_attempts,
-            label: "# Attempts",
-            render_fn: &__MODULE__.custom_render/3
-          },
-          %ColumnSpec{
-            name: :number_accesses,
-            label: "# Accesses",
-            render_fn: &__MODULE__.custom_render/3
-          },
-          %ColumnSpec{
-            name: :inserted_at,
-            label: "First Visited",
-            render_fn: &OliWeb.Common.Table.Common.render_date/3,
-            sort_fn: &OliWeb.Common.Table.Common.sort_date/2
-          },
-          %ColumnSpec{
-            name: :updated_at,
-            label: "Last Visited",
-            render_fn: &OliWeb.Common.Table.Common.render_date/3,
-            sort_fn: &OliWeb.Common.Table.Common.sort_date/2
-          }
-        ],
-        event_suffix: "",
-        id_field: [:index],
-        data: %{
-          context: context,
-          section_slug: section.slug,
-          user_id: user.id
+    SortableTableModel.new(
+      rows: rows,
+      column_specs: [
+        %ColumnSpec{
+          name: :index,
+          label: "Order"
+        },
+        %ColumnSpec{
+          name: :title,
+          label: "Resource Title",
+          render_fn: &__MODULE__.custom_render/3
+        },
+        %ColumnSpec{
+          name: :type,
+          label: "Type"
+        },
+        %ColumnSpec{
+          name: :score,
+          label: "Score",
+          render_fn: &__MODULE__.custom_render/3,
+          sort_fn: &__MODULE__.custom_sort/2
+        },
+        %ColumnSpec{
+          name: :number_attempts,
+          label: "# Attempts",
+          render_fn: &__MODULE__.custom_render/3
+        },
+        %ColumnSpec{
+          name: :number_accesses,
+          label: "# Accesses",
+          render_fn: &__MODULE__.custom_render/3
+        },
+        %ColumnSpec{
+          name: :inserted_at,
+          label: "First Visited",
+          render_fn: &OliWeb.Common.Table.Common.render_date/3,
+          sort_fn: &OliWeb.Common.Table.Common.sort_date/2
+        },
+        %ColumnSpec{
+          name: :updated_at,
+          label: "Last Visited",
+          render_fn: &OliWeb.Common.Table.Common.render_date/3,
+          sort_fn: &OliWeb.Common.Table.Common.sort_date/2
         }
-      )
+      ],
+      event_suffix: "",
+      id_field: [:index],
+      data: %{
+        context: context,
+        section_slug: section.slug,
+        user_id: user.id
+      }
+    )
   end
 
   def custom_sort(direction, %ColumnSpec{name: name}) do
@@ -145,7 +145,14 @@ defmodule OliWeb.Progress.StudentTabelModel do
     ~F"""
     <ResourceTitle
       node={row.node}
-      url={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.user_id, row.resource_id)}/>
+      url={Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Progress.StudentResourceView,
+        assigns.section_slug,
+        assigns.user_id,
+        row.resource_id
+      )}
+    />
     """
   end
 

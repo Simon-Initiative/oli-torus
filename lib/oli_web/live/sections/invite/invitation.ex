@@ -17,15 +17,28 @@ defmodule OliWeb.Sections.Invites.Invitation do
     <li class="list-group-item list-group-action flex-column align-items-start">
       <div class="d-flex w-100 justify-content-between">
         <div class="input-group mb-3" style="max-width: 50%;">
-          <input readonly type="text" id={"invite-link-#{@invitation.id}"} class="form-control" placeholder="Section Invite Link" aria-label="Section Invite Link" value={Routes.delivery_url(OliWeb.Endpoint, :enroll_independent, @invitation.slug)}>
+          <input
+            readonly
+            type="text"
+            id={"invite-link-#{@invitation.id}"}
+            class="form-control"
+            placeholder="Section Invite Link"
+            aria-label="Section Invite Link"
+            value={Routes.delivery_url(OliWeb.Endpoint, :enroll_independent, @invitation.slug)}
+          />
           <div class="input-group-append">
-            <button id="copy-invite-link-button" class="btn btn-outline-secondary" data-clipboard-target={"#invite-link-#{@invitation.id}"} phx-hook="CopyListener">
-              <i class="far fa-clipboard"></i> Copy
+            <button
+              id="copy-invite-link-button"
+              class="btn btn-outline-secondary"
+              data-clipboard-target={"#invite-link-#{@invitation.id}"}
+              phx-hook="CopyListener"
+            >
+              <i class="far fa-clipboard" /> Copy
             </button>
           </div>
         </div>
         <div>
-          <button class="btn btn-link" :on-click={@delete} phx-value-id={@invitation.id}><i class="fas fa-trash-alt fa-lg"></i></button>
+          <button class="btn btn-link" :on-click={@delete} phx-value-id={@invitation.id}><i class="fas fa-trash-alt fa-lg" /></button>
         </div>
       </div>
       {#if active}

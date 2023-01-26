@@ -5,7 +5,6 @@ defmodule Oli.Delivery.CustomLogs.CustomActivityLog do
   # Activity attempt logs designed to power analytic queries
 
   schema "custom_activity_logs" do
-
     belongs_to(:resource, Oli.Resources.Resource)
 
     # Which user and section
@@ -38,8 +37,7 @@ defmodule Oli.Delivery.CustomLogs.CustomActivityLog do
       :activity_type,
       :attempt_number,
       :action,
-      :info,
-
+      :info
     ])
     |> validate_required([
       :resource_id,
@@ -50,7 +48,7 @@ defmodule Oli.Delivery.CustomLogs.CustomActivityLog do
       :activity_type,
       :attempt_number,
       :action,
-      :info,
+      :info
     ])
   end
 end

@@ -172,7 +172,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   describe "page duplication" do
     setup do
       Seeder.base_project_with_resource2()
-        |> Seeder.add_objective("objective 1", :obj1)
+      |> Seeder.add_objective("objective 1", :obj1)
     end
 
     test "duplicate_page/1 duplicates a page correctly", %{
@@ -193,7 +193,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
                   "score" => 10,
                   "id" => "r1",
                   "feedback" => %{"id" => "1", "content" => "yes"}
-                },
+                }
               ],
               "scoringStrategy" => "best",
               "evaluationStrategy" => "regex"
@@ -202,15 +202,16 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         }
       }
 
-      {:ok, {activity_revision, _}} = ActivityEditor.create(
-        project.slug,
-        "oli_short_answer",
-        author,
-        embeded_activity_content,
-        [obj1.resource.id],
-        "embedded",
-        "An embedded activity"
-      )
+      {:ok, {activity_revision, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_short_answer",
+          author,
+          embeded_activity_content,
+          [obj1.resource.id],
+          "embedded",
+          "An embedded activity"
+        )
 
       page = %{
         objectives: %{"attached" => [obj1.resource.id]},
@@ -235,7 +236,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
               "type" => "activity-reference",
               "children" => [],
               "activity_id" => activity_revision.resource_id
-            },
+            }
           ]
         },
         title: "New Page",
@@ -252,14 +253,19 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         ContainerEditor.duplicate_page(root_container, page_revision.id, author, project)
 
       assert duplicated_page_revision.title == "Copy of New Page"
-      assert length(duplicated_page_revision.content["model"]) == length(page_revision.content["model"])
+
+      assert length(duplicated_page_revision.content["model"]) ==
+               length(page_revision.content["model"])
+
       assert duplicated_page_revision.objectives == page.objectives
 
       # Verify that it deep copied the activities, id should't be the same as the previous one
       activity_reference = duplicated_page_revision.content["model"] |> Enum.at(1)
       refute activity_reference["activity_id"] == activity_revision.resource_id
 
-      created_activity = Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference["activity_id"]})
+      created_activity =
+        Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference["activity_id"]})
+
       assert created_activity.objectives["1"] == activity_revision.objectives["1"]
     end
   end

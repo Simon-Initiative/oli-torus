@@ -81,7 +81,13 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="md:col-span-8">
-          <Edit product={@product} changeset={@changeset} available_brands={@available_brands} publishers={@publishers} is_admin={@is_admin}/>
+          <Edit
+            product={@product}
+            changeset={@changeset}
+            available_brands={@available_brands}
+            publishers={@publishers}
+            is_admin={@is_admin}
+          />
         </div>
       </div>
       <div class="grid grid-cols-12 py-5 border-b">
@@ -92,7 +98,7 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="md:col-span-8">
-          <Content product={@product} changeset={@changeset} save="save" updates={@updates}/>
+          <Content product={@product} changeset={@changeset} save="save" updates={@updates} />
         </div>
       </div>
 
@@ -104,7 +110,15 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="md:col-span-8">
-          <ImageUpload product={@product} uploads={@uploads} changeset={@changeset} upload_event="update_image" change="change" cancel_upload="cancel_upload" updates={@updates}/>
+          <ImageUpload
+            product={@product}
+            uploads={@uploads}
+            changeset={@changeset}
+            upload_event="update_image"
+            change="change"
+            cancel_upload="cancel_upload"
+            updates={@updates}
+          />
         </div>
       </div>
 
@@ -113,7 +127,7 @@ defmodule OliWeb.Products.DetailsView do
           <h4>Actions</h4>
         </div>
         <div class="md:col-span-8">
-          <Actions product={@product} is_admin={@is_admin}/>
+          <Actions product={@product} is_admin={@is_admin} />
         </div>
       </div>
       {#if @show_confirm}

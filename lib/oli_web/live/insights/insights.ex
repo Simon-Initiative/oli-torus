@@ -65,7 +65,9 @@ defmodule OliWeb.Insights do
     ~H"""
     <ul class="nav nav-pills">
       <li class="nav-item my-2 mr-2">
-        <button {is_disabled(@selected, :by_activity)} class="btn btn-primary" phx-click="by-activity">By Activity</button>
+        <button {is_disabled(@selected, :by_activity)} class="btn btn-primary" phx-click="by-activity">
+          By Activity
+        </button>
       </li>
       <li class="nav-item my-2 mr-2">
         <button {is_disabled(@selected, :by_page)} class="btn btn-primary" phx-click="by-page">
@@ -76,7 +78,11 @@ defmodule OliWeb.Insights do
         </button>
       </li>
       <li class="nav-item my-2 mr-2">
-        <button {is_disabled(@selected, :by_objective)} class="btn btn-primary" phx-click="by-objective">
+        <button
+          {is_disabled(@selected, :by_objective)}
+          class="btn btn-primary"
+          phx-click="by-objective"
+        >
           <%= if is_loading?(assigns) and @selected == :by_objective do %>
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <% end %>
@@ -87,29 +93,40 @@ defmodule OliWeb.Insights do
     <div class="card">
       <div class="card-header">
         <form phx-change="search">
-          <input type="text" class="form-control" name="query" value={@query} placeholder="Search by title..." />
+          <input
+            type="text"
+            class="form-control"
+            name="query"
+            value={@query}
+            placeholder="Search by title..."
+          />
         </form>
       </div>
       <div class="card-body">
         <h5 class="card-title">
           Viewing analytics by <%= case @selected do
-          :by_page -> "page"
-          :by_activity -> "activity"
-          :by_objective -> "objective"
-          _ -> "activity"
-        end %></h5>
+            :by_page -> "page"
+            :by_activity -> "activity"
+            :by_objective -> "objective"
+            _ -> "activity"
+          end %>
+        </h5>
 
         <%= if !is_loading?(assigns) do %>
           <table class="table table-sm">
-            <%= live_component TableHeader, assigns %>
+            <%= live_component(TableHeader, assigns) %>
             <tbody>
               <%= for row <- @active_rows do %>
-                <%= live_component TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project, selected: @selected %>
+                <%= live_component(TableRow,
+                  row: row,
+                  parent_pages: assigns.parent_pages,
+                  project: assigns.project,
+                  selected: @selected
+                ) %>
               <% end %>
             </tbody>
           </table>
         <% end %>
-
       </div>
     </div>
     """

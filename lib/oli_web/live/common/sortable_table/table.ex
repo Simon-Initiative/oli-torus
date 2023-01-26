@@ -38,10 +38,15 @@ defmodule OliWeb.Common.SortableTable.Table do
       end
 
     ~F"""
-    <th class="border-b border-r p-2 bg-gray-100" style="cursor: pointer;" :on-click={@sort} phx-value-sort_by={column_spec.name}>
+    <th
+      class="border-b border-r p-2 bg-gray-100"
+      style="cursor: pointer;"
+      :on-click={@sort}
+      phx-value-sort_by={column_spec.name}
+    >
       {column_spec.label}
       {#if @model.sort_by_spec == column_spec}
-        <i class={"fas fa-sort-" <> sort_direction_cls}></i>
+        <i class={"fas fa-sort-" <> sort_direction_cls} />
       {/if}
     </th>
     """
@@ -60,18 +65,23 @@ defmodule OliWeb.Common.SortableTable.Table do
       end
 
     ~F"""
-    <tr id={id_field(row, @model)} class={row_class} :on-click={@select} phx-value-id={id_field(row, @model)}>
-    {#for column_spec <- @model.column_specs}
-      <td class="border-r p-2">
-        <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
-          {#if is_nil(column_spec.render_fn)}
-            {ColumnSpec.default_render_fn(column_spec, row)}
-          {#else}
-            {column_spec.render_fn.(assigns, row, column_spec)}
-          {/if}
-        </div>
-      </td>
-    {/for}
+    <tr
+      id={id_field(row, @model)}
+      class={row_class}
+      :on-click={@select}
+      phx-value-id={id_field(row, @model)}
+    >
+      {#for column_spec <- @model.column_specs}
+        <td class="border-r p-2">
+          <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
+            {#if is_nil(column_spec.render_fn)}
+              {ColumnSpec.default_render_fn(column_spec, row)}
+            {#else}
+              {column_spec.render_fn.(assigns, row, column_spec)}
+            {/if}
+          </div>
+        </td>
+      {/for}
     </tr>
     """
   end
@@ -81,15 +91,15 @@ defmodule OliWeb.Common.SortableTable.Table do
     <table class={"min-w-full border " <> @additional_table_class}>
       <thead>
         <tr>
-        {#for column_spec <- @model.column_specs}
-          {render_th(with_data(assigns, @model.data), column_spec)}
-        {/for}
+          {#for column_spec <- @model.column_specs}
+            {render_th(with_data(assigns, @model.data), column_spec)}
+          {/for}
         </tr>
       </thead>
       <tbody>
-      {#for row <- @model.rows}
-        {render_row(with_data(assigns, @model.data), row)}
-      {/for}
+        {#for row <- @model.rows}
+          {render_row(with_data(assigns, @model.data), row)}
+        {/for}
       </tbody>
     </table>
     """

@@ -28,7 +28,7 @@ defmodule OliWeb.RevisionHistory.Table do
 
       _ ->
         ~F"""
-        <span></span>
+        <span />
         """
     end
   end
@@ -51,17 +51,17 @@ defmodule OliWeb.RevisionHistory.Table do
         <tr><th>Id</th><th>Project</th><th>Created</th><th>Updated</th><th>Author</th><th>Slug</th><th>Published</th></tr>
       </thead>
       <tbody id="revisions">
-      {#for rev <- to_display }
-        <tr id={"revision-#{rev.id}"} {...tr_props.(rev.id)}>
-          <td>{ rev.id }</td>
-          <td>{ Map.get(@tree, rev.id).project_id }</td>
-          <td>{ Utils.render_date(rev, :inserted_at, @context) }</td>
-          <td>{ Utils.render_date(rev, :updated_at, @context) }</td>
-          <td>{ rev.author.email }</td>
-          <td>{ rev.slug }</td>
-          <td>{ publication_state(assigns, rev.id) }</td>
-        </tr>
-      {/for}
+        {#for rev <- to_display}
+          <tr id={"revision-#{rev.id}"} {...tr_props.(rev.id)}>
+            <td>{rev.id}</td>
+            <td>{Map.get(@tree, rev.id).project_id}</td>
+            <td>{Utils.render_date(rev, :inserted_at, @context)}</td>
+            <td>{Utils.render_date(rev, :updated_at, @context)}</td>
+            <td>{rev.author.email}</td>
+            <td>{rev.slug}</td>
+            <td>{publication_state(assigns, rev.id)}</td>
+          </tr>
+        {/for}
       </tbody>
     </table>
     """

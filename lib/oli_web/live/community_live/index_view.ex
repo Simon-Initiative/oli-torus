@@ -78,40 +78,42 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   def render(assigns) do
     ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
+    <div class="d-flex p-3 justify-content-between">
+      <Filter change="change_search" reset="reset_search" apply="apply_search" query={@query} />
 
-        {#if @is_system_admin}
-          <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView)}>
-            Create Community
-          </Link>
-        {/if}
-      </div>
-      <div id="community-filters" class="p-3">
-        <Form for={:filter} change="apply_filter" class="pl-4">
-          <Field name={:status} class="form-group">
-            <Checkbox value={Map.get(@filter, "status", "active")} checked_value="active" unchecked_value="active,deleted" class="form-check-input"/>
-            <Label class="form-check-label" text="Show only active communities"/>
-          </Field>
-        </Form>
-      </div>
+      {#if @is_system_admin}
+        <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView)}>
+          Create Community
+        </Link>
+      {/if}
+    </div>
+    <div id="community-filters" class="p-3">
+      <Form for={:filter} change="apply_filter" class="pl-4">
+        <Field name={:status} class="form-group">
+          <Checkbox
+            value={Map.get(@filter, "status", "active")}
+            checked_value="active"
+            unchecked_value="active,deleted"
+            class="form-check-input"
+          />
+          <Label class="form-check-label" text="Show only active communities" />
+        </Field>
+      </Form>
+    </div>
 
-      <div id="communities-table" class="p-4">
-        <Listing
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div id="communities-table" class="p-4">
+      <Listing
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort={@sort}
+        page_change={@page_change}
+        show_bottom_paging={@show_bottom_paging}
+        additional_table_class={@additional_table_class}
+      />
+    </div>
     """
   end
 end

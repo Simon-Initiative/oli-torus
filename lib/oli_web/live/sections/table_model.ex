@@ -72,12 +72,12 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :title}) do
     ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}>{section.title}</a>
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}>{section.title}</a>
     """
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :type}),
-    do: if section.open_and_free, do: "Open", else: "LMS"
+    do: if(section.open_and_free, do: "Open", else: "LMS")
 
   def custom_render(_assigns, section, %ColumnSpec{name: :requires_payment}) do
     if section.requires_payment do
@@ -116,7 +116,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
   def render(assigns) do
     ~F"""
-      <div>nothing</div>
+    <div>nothing</div>
     """
   end
 end

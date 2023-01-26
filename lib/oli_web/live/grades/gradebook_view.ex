@@ -163,11 +163,16 @@ defmodule OliWeb.Grades.GradebookView do
   def render(assigns) do
     ~F"""
     <div>
-
       <div class="d-flex justify-content-between">
-        <TextSearch id="text-search"/>
+        <TextSearch id="text-search" />
         <div class="form-check mt-2">
-          <input type="checkbox" id="toggle_show_all_links" class="form-check-input" checked={@show_all_links} phx-hook="CheckboxListener" />
+          <input
+            type="checkbox"
+            id="toggle_show_all_links"
+            class="form-check-input"
+            checked={@show_all_links}
+            phx-hook="CheckboxListener"
+          />
           <label for="toggle_show_all_links" class="form-check-label">
             <div>Shows links for all gradebook entries</div>
             <small class="text-muted">Allows access to pages that students have not finished or started</small>
@@ -175,14 +180,15 @@ defmodule OliWeb.Grades.GradebookView do
         </div>
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end

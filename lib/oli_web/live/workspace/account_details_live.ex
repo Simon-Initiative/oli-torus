@@ -45,7 +45,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
                 {#for provider <- providers_for(@current_author)}
                   <div class="my-2">
                     <span class={"provider provider-#{OliWeb.Pow.PowHelpers.provider_class(provider)}"}>
-                    {OliWeb.Pow.PowHelpers.provider_icon(provider)} {OliWeb.Pow.PowHelpers.provider_name(provider)}
+                      {OliWeb.Pow.PowHelpers.provider_icon(provider)} {OliWeb.Pow.PowHelpers.provider_name(provider)}
                     </span>
                   </div>
                 {/for}
@@ -54,7 +54,10 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
           </div>
           <div class="grid grid-cols-12 my-4">
             <div class="col-span-12">
-            {link "Change Account Details", to: Routes.authoring_pow_registration_path(OliWeb.Endpoint, :edit), class: "btn btn-outline-primary"}
+              {link("Change Account Details",
+                to: Routes.authoring_pow_registration_path(OliWeb.Endpoint, :edit),
+                class: "btn btn-outline-primary"
+              )}
             </div>
           </div>
         </div>
@@ -64,7 +67,7 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
 
         <div class="my-4">
           <div class="mb-1">Dark Mode</div>
-          <div id="theme-toggle" phx-hook="ThemeToggle" phx-update="ignore"></div>
+          <div id="theme-toggle" phx-hook="ThemeToggle" phx-update="ignore" />
         </div>
       </Group>
     </Groups>
@@ -77,7 +80,13 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
     ~F"""
     <div>
       <div class="form-check mt-2">
-        <input type="checkbox" id="show_relative_dates" class="form-check-input" checked={show_relative_dates} phx-hook="CheckboxListener" />
+        <input
+          type="checkbox"
+          id="show_relative_dates"
+          class="form-check-input"
+          checked={show_relative_dates}
+          phx-hook="CheckboxListener"
+        />
         <label for="show_relative_dates" class="form-check-label">Show dates formatted as relative to today</label>
       </div>
     </div>

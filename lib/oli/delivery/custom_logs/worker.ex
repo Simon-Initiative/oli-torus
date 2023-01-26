@@ -9,7 +9,7 @@ defmodule Oli.Delivery.CustomLogs.Worker do
     ResourceAccess,
     ResourceAttempt,
     ActivityAttempt
-    }
+  }
 
   import Oli.Delivery.CustomLogs.Utils
 
@@ -20,15 +20,13 @@ defmodule Oli.Delivery.CustomLogs.Worker do
   """
 
   @impl Oban.Worker
-  def perform(
-        %Oban.Job{
-          args: %{
-            "activity_attempt_guid" => activity_attempt_guid,
-            "action" => action,
-            "info" => info
-          }
+  def perform(%Oban.Job{
+        args: %{
+          "activity_attempt_guid" => activity_attempt_guid,
+          "action" => action,
+          "info" => info
         }
-      ) do
+      }) do
     perform_now(activity_attempt_guid, action, info)
   end
 
@@ -57,12 +55,10 @@ defmodule Oli.Delivery.CustomLogs.Worker do
     # transaction call will return  either {:ok, _} or {:error, _}. In the case of the {:ok, _} Oban
     # marks the job as completed.  In the case of an error, it scheduled it for a retry.
 
-    Repo.transaction(
-      fn ->
-        to_attrs(result, action, info)
-        |> create_activity_log()
-      end
-    )
+    Repo.transaction(fn ->
+      to_attrs(result, action, info)
+      |> create_activity_log()
+    end)
   end
 
   def to_attrs(
@@ -77,6 +73,7 @@ defmodule Oli.Delivery.CustomLogs.Worker do
         info
       ) do
     activity_revision = Repo.preload(activity_revision, :activity_type)
+
     now =
       DateTime.utc_now()
       |> DateTime.truncate(:second)

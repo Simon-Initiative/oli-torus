@@ -52,7 +52,11 @@ defmodule OliWeb.Admin.RegistrationsTableModel do
         _
       ) do
     ~F"""
-    <Link label="Details" to={Routes.registration_path(OliWeb.Endpoint, :show, id)} class="btn btn-sm btn-outline-primary" />
+    <Link
+      label="Details"
+      to={Routes.registration_path(OliWeb.Endpoint, :show, id)}
+      class="btn btn-sm btn-outline-primary"
+    />
     """
   end
 end

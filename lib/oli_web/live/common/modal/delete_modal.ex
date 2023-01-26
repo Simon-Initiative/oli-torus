@@ -13,29 +13,33 @@ defmodule OliWeb.Common.Modal.DeleteModal do
 
   def modal(assigns) do
     ~H"""
-    <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div
+      class="modal fade show"
+      id={@id}
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title"><%= @title %></h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <div class="modal-header">
+            <h5 class="modal-title"><%= @title %></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+            </button>
+          </div>
+          <div class="modal-body">
+            <p><%= @message %></p>
+            <div class="my-2">
+              <.preview {assigns} />
             </div>
-            <div class="modal-body">
-              <p><%= @message %></p>
-              <div class="my-2">
-                <.preview {assigns} />
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
-              <button
-                class="btn btn-danger"
-                phx-key="enter"
-                phx-click={@on_delete}
-                {@phx_values}>
-                Delete
-              </button>
-            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-danger" phx-key="enter" phx-click={@on_delete} {@phx_values}>
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -34,7 +34,7 @@ defmodule Oli.Rendering.Utils do
       "SQL" => "sql",
       "Text" => "text",
       "TypeScript" => "typescript",
-      "XML" => "xml",
+      "XML" => "xml"
     }
   end
 end

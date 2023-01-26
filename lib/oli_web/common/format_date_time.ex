@@ -108,7 +108,8 @@ defmodule OliWeb.Common.FormatDateTime do
   def maybe_localized_datetime(%DateTime{} = datetime, %SessionContext{local_tz: local_tz}),
     do: maybe_localized_datetime(datetime, local_tz)
 
-  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when local_tz == @utc_timezone, do: {:not_localized, datetime}
+  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when local_tz == @utc_timezone,
+    do: {:not_localized, datetime}
 
   def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
     # ensure timezone is a valid
@@ -196,7 +197,8 @@ defmodule OliWeb.Common.FormatDateTime do
       iex> datestring_to_utc_datetime("2022-05-18T12:35", "US/Arizona")
       ~U[2022-05-18 19:35:00Z]
   """
-  def datestring_to_utc_datetime(date, _) when is_nil(date) or date == "" or not is_binary(date), do: nil
+  def datestring_to_utc_datetime(date, _) when is_nil(date) or date == "" or not is_binary(date),
+    do: nil
 
   def datestring_to_utc_datetime(date_string, %SessionContext{local_tz: local_tz}) do
     datestring_to_utc_datetime(date_string, local_tz)
@@ -221,7 +223,10 @@ defmodule OliWeb.Common.FormatDateTime do
     #DateTime<2022-06-22 10:58:23.316111-03:00 -03 America/Montevideo>
   """
   def convert_datetime(date, _) when is_nil(date) or date == "", do: nil
-  def convert_datetime(datetime, %SessionContext{local_tz: local_tz}), do: convert_datetime(datetime, local_tz)
+
+  def convert_datetime(datetime, %SessionContext{local_tz: local_tz}),
+    do: convert_datetime(datetime, local_tz)
+
   def convert_datetime(datetime, timezone), do: Timex.to_datetime(datetime, timezone)
 
   @doc """

@@ -31,45 +31,60 @@ defmodule OliWeb.Projects.VisibilityLive do
     <div class="grid grid-cols-12 py-5 border-b">
       <div class="md:col-span-4">
         <h4>Allow Duplication</h4>
-        <div class="text-muted">Control whether other users can create duplicates of your projects for their own development.</div>
+        <div class="text-muted">
+          Control whether other users can create duplicates of your projects for their own development.
+        </div>
       </div>
       <div class="md:col-span-8">
         <form phx-change="duplication" id="duplication_option">
           <div class="form-check">
             <%= label class: "form-check-label" do %>
-              <%= checkbox :duplication, :allow_duplication, id: "dupe_check", checked: @project.allow_duplication %>
-              Allow duplication by non-collaborators
+              <%= checkbox(:duplication, :allow_duplication,
+                id: "dupe_check",
+                checked: @project.allow_duplication
+              ) %> Allow duplication by non-collaborators
             <% end %>
           </div>
         </form>
         <div class="alert alert-info mt-5" role="alert">
-          <strong>Note:</strong> Edits made to duplicates created by other users will not affect your project in any way.
+          <strong>Note:</strong>
+          Edits made to duplicates created by other users will not affect your project in any way.
         </div>
       </div>
     </div>
     <div class="grid grid-cols-12 py-5 border-b">
       <div class="md:col-span-4">
         <h4>Publishing Visibility</h4>
-        <div class="text-muted">Control who can create course sections for this project once it is published.</div>
+        <div class="text-muted">
+          Control who can create course sections for this project once it is published.
+        </div>
       </div>
       <div class="md:col-span-8">
         <form phx-change="option" id="visibility_option">
           <div class="form-check">
             <div class="form-group mb-2">
               <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                <%= radio_button :visibility, :option, "authors", class: "form-check-input", checked: @project.visibility == :authors or is_nil(@project.visibility) %>
+                <%= radio_button(:visibility, :option, "authors",
+                  class: "form-check-input",
+                  checked: @project.visibility == :authors or is_nil(@project.visibility)
+                ) %>
                 <div class="block ml-2">
                   <div class="d-flex align-items-center">
                     <div>Project authors</div>
                     <span class="ml-2 badge badge-xs badge-pill badge-primary">default</span>
                   </div>
-                  <small>Only instructors with linked authoring accounts that are project collaborators</small>
+                  <small>
+                    Only instructors with linked authoring accounts that are project collaborators
+                  </small>
                 </div>
               <% end %>
             </div>
             <div class="form-group mb-2">
               <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: @project.visibility == :global %>
+                <%= radio_button(:visibility, :option, "global",
+                  class: "form-check-input",
+                  checked: @project.visibility == :global
+                ) %>
                 <div class="block ml-2">
                   <div>Open</div>
                   <small>Any instructor</small>
@@ -78,10 +93,15 @@ defmodule OliWeb.Projects.VisibilityLive do
             </div>
             <div class="form-group mb-2">
               <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked:  @project.visibility == :selected %>
+                <%= radio_button(:visibility, :option, "selected",
+                  class: "form-check-input",
+                  checked: @project.visibility == :selected
+                ) %>
                 <div class="block ml-2">
                   <div>Restricted</div>
-                  <small>Only instructors with these linked authoring accounts or from these institutions...</small>
+                  <small>
+                    Only instructors with these linked authoring accounts or from these institutions...
+                  </small>
                 </div>
               <% end %>
             </div>
@@ -92,23 +112,42 @@ defmodule OliWeb.Projects.VisibilityLive do
             <div class="sm:col-span-12">
               <ul class="nav nav-tabs">
                 <li class="nav-item">
-                  <a phx-click="users_tab" class={"nav-link #{if  @tab == :users, do: "active"}"}
-                                        data-toggle="tab" href="#users">Authors</a>
+                  <a
+                    phx-click="users_tab"
+                    class={"nav-link #{if  @tab == :users, do: "active"}"}
+                    data-toggle="tab"
+                    href="#users"
+                  >
+                    Authors
+                  </a>
                 </li>
                 <li class="nav-item">
-                  <a phx-click="institutions_tab" class={"nav-link #{if  @tab == :institutions, do: "active"}"}
-                                        data-toggle="tab" href="#institutions">Institutions</a>
+                  <a
+                    phx-click="institutions_tab"
+                    class={"nav-link #{if  @tab == :institutions, do: "active"}"}
+                    data-toggle="tab"
+                    href="#institutions"
+                  >
+                    Institutions
+                  </a>
                 </li>
               </ul>
               <!-- Tab panes -->
               <div class="tab-content mt-2">
-                <div id="users" class={"container tab-pane pl-0 #{if  @tab == :users, do: "active", else: "fade"}"}>
+                <div
+                  id="users"
+                  class={"container tab-pane pl-0 #{if  @tab == :users, do: "active", else: "fade"}"}
+                >
                   <div>
                     <form phx-change="search" class="form-inline form-grow">
-                      <%= text_input :search_field, :query, placeholder: "Enter an author email here",
-                                    class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
-                                    autofocus: true, "phx-debounce": "300", autocomplete: "off" %>
-                      <%= hidden_input :search_field, :entity, value: "instructors" %>
+                      <%= text_input(:search_field, :query,
+                        placeholder: "Enter an author email here",
+                        class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
+                        autofocus: true,
+                        "phx-debounce": "300",
+                        autocomplete: "off"
+                      ) %>
+                      <%= hidden_input(:search_field, :entity, value: "instructors") %>
                     </form>
                   </div>
                   <div class="grid grid-cols-12 justify-content-center">
@@ -116,8 +155,10 @@ defmodule OliWeb.Projects.VisibilityLive do
                       <div class="flex-fill">
                         <p>Select from the list below and submit</p>
                         <form phx-submit="selected_email" id="user_submit">
-                          <%= multiple_select :multi, :emails, @user_emails, class: "form-control w-100" %>
-                          <%= submit "Submit", class: "btn btn-primary" %>
+                          <%= multiple_select(:multi, :emails, @user_emails,
+                            class: "form-control w-100"
+                          ) %>
+                          <%= submit("Submit", class: "btn btn-primary") %>
                         </form>
                       </div>
                     <% end %>
@@ -127,15 +168,19 @@ defmodule OliWeb.Projects.VisibilityLive do
                           <%= if v.author != nil do %>
                             <li class="list-group-item">
                               <div class="d-flex">
-                                <div class="flex-fill"><%= v.author.email %>
-                                </div>
+                                <div class="flex-fill"><%= v.author.email %></div>
                                 <div>
-                                  <button id={"delete_#{v.visibility.id}"}
-                                                    phx-click="delete_visibility"
-                                                    phx-value-id={v.visibility.id} data-backdrop="static"
-                                                    data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
+                                  <button
+                                    id={"delete_#{v.visibility.id}"}
+                                    phx-click="delete_visibility"
+                                    phx-value-id={v.visibility.id}
+                                    data-backdrop="static"
+                                    data-keyboard="false"
+                                    class="ml-1 btn btn-sm btn-danger"
+                                  >
                                     <i class="fas fa-trash-alt fa-lg"></i>
-                                  </button></div>
+                                  </button>
+                                </div>
                               </div>
                             </li>
                           <% end %>
@@ -144,14 +189,19 @@ defmodule OliWeb.Projects.VisibilityLive do
                     </div>
                   </div>
                 </div>
-                <div id="institutions"
-                                    class={"container tab-pane pl-0 #{if  @tab == :institutions, do: "active", else: "fade"}"}>
+                <div
+                  id="institutions"
+                  class={"container tab-pane pl-0 #{if  @tab == :institutions, do: "active", else: "fade"}"}
+                >
                   <div>
                     <form phx-change="search" class="form-inline form-grow">
-                      <%= text_input :search_field, :query, placeholder: "Search for institutions by name here",
-                                  class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
-                                  autofocus: true, "phx-debounce": "300" %>
-                      <%= hidden_input :search_field, :entity, value: "institution" %>
+                      <%= text_input(:search_field, :query,
+                        placeholder: "Search for institutions by name here",
+                        class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
+                        autofocus: true,
+                        "phx-debounce": "300"
+                      ) %>
+                      <%= hidden_input(:search_field, :entity, value: "institution") %>
                     </form>
                   </div>
                   <div class="grid grid-cols-12 justify-content-center">
@@ -159,8 +209,10 @@ defmodule OliWeb.Projects.VisibilityLive do
                       <div class="flex-fill">
                         <p>Select from the list below and submit</p>
                         <form phx-submit="selected_institution" id="institutions_submit">
-                          <%= multiple_select :multi, :institutions, @institution_names , class: "form-control w-100" %>
-                          <%= submit "Submit", class: "btn btn-primary" %>
+                          <%= multiple_select(:multi, :institutions, @institution_names,
+                            class: "form-control w-100"
+                          ) %>
+                          <%= submit("Submit", class: "btn btn-primary") %>
                         </form>
                       </div>
                     <% end %>
@@ -172,12 +224,17 @@ defmodule OliWeb.Projects.VisibilityLive do
                               <div class="d-flex">
                                 <div class="flex-fill"><%= v.institution.name %></div>
                                 <div>
-                                  <button id={"delete_#{v.visibility.id}"}
-                                                  phx-click="delete_visibility"
-                                                  phx-value-id={v.visibility.id} data-backdrop="static"
-                                                  data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
+                                  <button
+                                    id={"delete_#{v.visibility.id}"}
+                                    phx-click="delete_visibility"
+                                    phx-value-id={v.visibility.id}
+                                    data-backdrop="static"
+                                    data-keyboard="false"
+                                    class="ml-1 btn btn-sm btn-danger"
+                                  >
                                     <i class="fas fa-trash-alt fa-lg"></i>
-                                  </button></div>
+                                  </button>
+                                </div>
                               </div>
                             </li>
                           <% end %>

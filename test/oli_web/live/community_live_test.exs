@@ -750,9 +750,9 @@ defmodule OliWeb.CommunityLiveTest do
       |> render_click(%{"collaborator-id": user_1.id})
 
       assert view
-        |> element("div.alert.alert-info")
-        |> render() =~
-          "Community member successfully added."
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member successfully added."
 
       assert 1 == length(Groups.list_community_members(community.id))
     end

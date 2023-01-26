@@ -72,13 +72,18 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
 
   def render_select_column(assigns, item, _) do
     ~F"""
-      <button class="btn btn-primary" phx-click="select" phx-value-type={item.unique_type} phx-value-id={item.id}>Select</button>
+    <button
+      class="btn btn-primary"
+      phx-click="select"
+      phx-value-type={item.unique_type}
+      phx-value-id={item.id}
+    >Select</button>
     """
   end
 
   def render_remove_column(assigns, item, _) do
     ~F"""
-      <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
+    <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
     """
   end
 
@@ -91,7 +96,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
 
   def render(assigns) do
     ~F"""
-      <div>nothing</div>
+    <div>nothing</div>
     """
   end
 end

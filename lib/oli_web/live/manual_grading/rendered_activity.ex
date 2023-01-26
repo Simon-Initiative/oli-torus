@@ -5,14 +5,13 @@ defmodule OliWeb.ManualGrading.RenderedActivity do
 
   def render(%{rendered_activity: nil} = assigns) do
     ~F"""
-      <div/>
+    <div />
     """
   end
 
   def render(assigns) do
     ~F"""
-    <div class="mt-5 rendered-activity" id={@id} >{raw(@rendered_activity)}</div>
+    <div class="mt-5 rendered-activity" id={@id}>{raw(@rendered_activity)}</div>
     """
   end
-
 end

@@ -86,7 +86,12 @@ defmodule OliWeb.Curriculum.ContainerLive do
            children: children,
            active: :curriculum,
            breadcrumbs:
-             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver, project.customizations),
+             Breadcrumb.trail_to(
+               project_slug,
+               container.slug,
+               Oli.Publishing.AuthoringResolver,
+               project.customizations
+             ),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
@@ -96,11 +101,12 @@ defmodule OliWeb.Curriculum.ContainerLive do
            view: view_pref,
            selected: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(
-            Oli.Publishing.AuthoringResolver,
-            project_slug,
-            project.customizations
-            ),
+           numberings:
+             Numbering.number_full_tree(
+               Oli.Publishing.AuthoringResolver,
+               project_slug,
+               project.customizations
+             ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title
          )}
@@ -227,7 +233,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <OptionsModal.render {@modal_assigns} />
+      <OptionsModal.render {@modal_assigns} />
       """
     end
 
@@ -295,7 +301,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <MoveModal.render {@modal_assigns} />
+      <MoveModal.render {@modal_assigns} />
       """
     end
 
@@ -445,11 +451,12 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       numberings: Numbering.number_full_tree(
-        Oli.Publishing.AuthoringResolver,
-        socket.assigns.project.slug,
-        socket.assigns.project.customizations
-        )
+       numberings:
+         Numbering.number_full_tree(
+           Oli.Publishing.AuthoringResolver,
+           socket.assigns.project.slug,
+           socket.assigns.project.customizations
+         )
      )}
   end
 
@@ -557,16 +564,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
            socket.assigns.project,
            socket.assigns.numberings
          ) do
-
       {:ok, _} ->
-
         {:noreply,
          assign(socket,
-           numberings: Numbering.number_full_tree(
-            Oli.Publishing.AuthoringResolver,
-            socket.assigns.project.slug,
-            socket.assigns.project.customizations
-            )
+           numberings:
+             Numbering.number_full_tree(
+               Oli.Publishing.AuthoringResolver,
+               socket.assigns.project.slug,
+               socket.assigns.project.customizations
+             )
          )}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
@@ -600,7 +606,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <DeleteModal.render {@modal_assigns} />
+      <DeleteModal.render {@modal_assigns} />
       """
     end
 
@@ -623,7 +629,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-        <NotEmptyModal.render {@modal_assigns} />
+      <NotEmptyModal.render {@modal_assigns} />
       """
     end
 
@@ -729,10 +735,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
         container: revision,
         children: children,
         rollup: rollup,
-        numberings: Numbering.number_full_tree(
-          Oli.Publishing.AuthoringResolver,
-          socket.assigns.project.slug,
-          socket.assigns.project.customizations
+        numberings:
+          Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            socket.assigns.project.slug,
+            socket.assigns.project.customizations
           )
       )
     else

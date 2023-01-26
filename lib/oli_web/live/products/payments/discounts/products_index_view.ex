@@ -24,7 +24,9 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
   @table_push_patch_path &__MODULE__.live_path/2
 
   def filter_rows(socket, _, _), do: socket.assigns.discounts
-  def live_path(socket, params), do: Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
+
+  def live_path(socket, params),
+    do: Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
 
   def set_breadcrumbs(product) do
     OliWeb.Products.DetailsView.set_breadcrumbs(product) ++
@@ -44,39 +46,46 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
 
         {:ok, table_model} = TableModel.new(discounts, context)
 
-        {:ok, assign(socket,
-          context: context,
-          breadcrumbs: set_breadcrumbs(product),
-          discounts: discounts,
-          table_model: table_model,
-          total_count: length(discounts),
-          product: product
-        )}
+        {:ok,
+         assign(socket,
+           context: context,
+           breadcrumbs: set_breadcrumbs(product),
+           discounts: discounts,
+           table_model: table_model,
+           total_count: length(discounts),
+           product: product
+         )}
 
-      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      _ ->
+        {:ok,
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
     end
   end
 
   def render(assigns) do
     ~F"""
-      <Link
-        to={Routes.discount_path(OliWeb.Endpoint, :product_new, @product.slug)}
-        class="btn btn-outline-primary float-right">
-        Create Discount
-      </Link>
+    <Link
+      to={Routes.discount_path(OliWeb.Endpoint, :product_new, @product.slug)}
+      class="btn btn-outline-primary float-right"
+    >
+      Create Discount
+    </Link>
 
-      <div id="discounts-table" class="p-4">
-        <Listing
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div id="discounts-table" class="p-4">
+      <Listing
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort={@sort}
+        page_change={@page_change}
+        show_bottom_paging={@show_bottom_paging}
+        additional_table_class={@additional_table_class}
+      />
+    </div>
     """
   end
 
@@ -91,9 +100,9 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
         {:ok, table_model} = TableModel.new(discounts, socket.assigns.context)
 
         {:noreply,
-          socket
-          |> put_flash(:info, "Discount successfully removed.")
-          |> assign(discounts: discounts, table_model: table_model, total_count: length(discounts))}
+         socket
+         |> put_flash(:info, "Discount successfully removed.")
+         |> assign(discounts: discounts, table_model: table_model, total_count: length(discounts))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Discount couldn't be removed.")}

@@ -6,7 +6,9 @@ defmodule Oli.Resources.Collaboration.Post do
   schema "posts" do
     embeds_one :content, Oli.Resources.Collaboration.PostContent, on_replace: :update
 
-    field :status, Ecto.Enum, values: [:submitted, :approved, :deleted, :archived], default: :approved
+    field :status, Ecto.Enum,
+      values: [:submitted, :approved, :deleted, :archived],
+      default: :approved
 
     belongs_to :user, Oli.Accounts.User
     belongs_to :section, Oli.Delivery.Sections.Section

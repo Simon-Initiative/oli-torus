@@ -28,13 +28,13 @@ defmodule OliWeb.CommunityLive.MembersTableModel do
 
   def render_remove_button(assigns, item, _) do
     ~F"""
-      <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
+    <button class="btn btn-primary" phx-click="remove" phx-value-id={item.id}>Remove</button>
     """
   end
 
   def render(assigns) do
     ~F"""
-      <div>nothing</div>
+    <div>nothing</div>
     """
   end
 end

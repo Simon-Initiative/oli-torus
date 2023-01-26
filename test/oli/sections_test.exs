@@ -328,7 +328,9 @@ defmodule Oli.SectionsTest do
       assert Sections.has_student_data?(section.slug)
     end
 
-    test "get_remixed_projects/2 returns a list of remixed projects for a section", %{section: section} do
+    test "get_remixed_projects/2 returns a list of remixed projects for a section", %{
+      section: section
+    } do
       remixed_projects = Sections.get_remixed_projects(section.id, section.base_project_id)
       assert 0 = length(remixed_projects)
 

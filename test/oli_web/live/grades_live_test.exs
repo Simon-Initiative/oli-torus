@@ -28,11 +28,8 @@ defmodule OliWeb.GradesLiveTest do
 
     deployment = insert(:lti_deployment, %{registration: registration})
 
-    {:ok,
-      section: section,
-      unit_one_revision: _unit_one_revision,
-      page_revision: page_revision
-    } = section_with_assessment(%{}, deployment)
+    {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+      section_with_assessment(%{}, deployment)
 
     [section: section, page_revision: page_revision]
   end
@@ -45,11 +42,8 @@ defmodule OliWeb.GradesLiveTest do
 
     deployment = insert(:lti_deployment, %{registration: registration})
 
-    {:ok,
-      section: section,
-      unit_one_revision: _unit_one_revision,
-      page_revision: _page_revision
-    } = section_with_assessment(%{}, deployment)
+    {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+      section_with_assessment(%{}, deployment)
 
     [section: section]
   end
@@ -143,11 +137,11 @@ defmodule OliWeb.GradesLiveTest do
 
       expect(MockHTTP, :get, fn ^url_line_items, _headers ->
         {:ok,
-          %HTTPoison.Response{
-            status_code: 200,
-            body:
-              "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
-          }}
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
+         }}
       end)
 
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
@@ -201,10 +195,11 @@ defmodule OliWeb.GradesLiveTest do
 
       expect(MockHTTP, :get, fn ^url_line_items, _headers ->
         {:ok,
-          %HTTPoison.Response{
-            status_code: 200,
-            body: "[{\"id\": \"1\", \"label\":\"#{page_revision.title}\", \"resourceId\":\"oli-torus-#{page_revision.resource_id}\", \"scoreMaximum\":1.0}]"
-          }}
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             "[{\"id\": \"1\", \"label\":\"#{page_revision.title}\", \"resourceId\":\"oli-torus-#{page_revision.resource_id}\", \"scoreMaximum\":1.0}]"
+         }}
       end)
 
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
@@ -227,21 +222,21 @@ defmodule OliWeb.GradesLiveTest do
       line_items_service_url = section.line_items_service_url
 
       expect(MockHTTP, :get, fn ^url_line_items, _headers ->
-          {:ok,
-          %HTTPoison.Response{
-            status_code: 200,
-            body:
-              "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
-          }}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             "[{ \"id\": \"id\", \"scoreMaximum\": \"scoreMaximum\", \"resourceId\": \"resourceId\", \"label\": \"label\" }]"
+         }}
       end)
 
       expect(MockHTTP, :post, fn ^line_items_service_url, _body, _headers ->
-          {:ok,
-          %HTTPoison.Response{
-            status_code: 200,
-            body:
-              "{\"id\": \"1\", \"label\":\"Progress test revision\", \"resourceId\":\"oli-torus-1744\", \"scoreMaximum\":1.0}"
-          }}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             "{\"id\": \"1\", \"label\":\"Progress test revision\", \"resourceId\":\"oli-torus-1744\", \"scoreMaximum\":1.0}"
+         }}
       end)
 
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
@@ -375,7 +370,7 @@ defmodule OliWeb.GradesLiveTest do
         )
 
       assert response(conn, 200) =~
-              "Student,Progress test revision\r\n    Points Possible,#{@out_of}\r\n#{user_1.name} (#{user_1.email}),#{resource_access_1.score}\r\n#{user_2.name} (#{user_2.email}),#{resource_access_2.score}\r\n"
+               "Student,Progress test revision\r\n    Points Possible,#{@out_of}\r\n#{user_1.name} (#{user_1.email}),#{resource_access_1.score}\r\n#{user_2.name} (#{user_2.email}),#{resource_access_2.score}\r\n"
     end
 
     test "download gradebook - download file without grades succesfully", %{
@@ -403,9 +398,8 @@ defmodule OliWeb.GradesLiveTest do
         )
 
       assert response(conn, 200) =~
-              "Student,Progress test revision\r\n    Points Possible,\r\n#{user_1.name} (#{user_1.email}),\r\n#{user_2.name} (#{user_2.email}),\r\n"
+               "Student,Progress test revision\r\n    Points Possible,\r\n#{user_1.name} (#{user_1.email}),\r\n#{user_2.name} (#{user_2.email}),\r\n"
     end
-
   end
 
   describe "fetching invalid access token" do
@@ -427,10 +421,10 @@ defmodule OliWeb.GradesLiveTest do
     end
 
     test "update line items - shows error on failure to obtain access token",
-    %{
-      conn: conn,
-      section: section
-    } do
+         %{
+           conn: conn,
+           section: section
+         } do
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 
       view
@@ -444,10 +438,10 @@ defmodule OliWeb.GradesLiveTest do
     end
 
     test "sync grades - shows error on failure to obtain access token",
-    %{
-      conn: conn,
-      section: section
-    } do
+         %{
+           conn: conn,
+           section: section
+         } do
       user = insert(:user)
       enroll_user_to_section(user, section, :context_learner)
 

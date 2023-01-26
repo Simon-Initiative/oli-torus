@@ -1,13 +1,10 @@
 defmodule Oli.Interop.CustomActivities.ItemInfo do
-
   alias Oli.Interop.CustomActivities.{ResourceInfo}
   import XmlBuilder
 
-  def setup(
-        %{
-          context: context
-        }
-      ) do
+  def setup(%{
+        context: context
+      }) do
     element(
       :item_info,
       %{
@@ -18,11 +15,9 @@ defmodule Oli.Interop.CustomActivities.ItemInfo do
         scoring_mode: context.activity_attempt.revision.scoring_strategy.type
       },
       [
-        ResourceInfo.setup(
-          %{
-            context: context
-          }
-        )
+        ResourceInfo.setup(%{
+          context: context
+        })
       ]
     )
   end

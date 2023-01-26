@@ -7,7 +7,16 @@ defmodule OliWeb.CommunityLive.SelectMemberModal do
 
   def render(assigns) do
     ~F"""
-    <div class="modal fade show" id={@id} style="display: block" tabindex="-1" role="dialog" aria-labelledby="delete-modal" aria-hidden="true" phx-hook="ModalLaunch">
+    <div
+      class="modal fade show"
+      id={@id}
+      style="display: block"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="delete-modal"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">

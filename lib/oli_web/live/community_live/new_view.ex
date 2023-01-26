@@ -30,9 +30,9 @@ defmodule OliWeb.CommunityLive.NewView do
 
   def render(assigns) do
     ~F"""
-      <FormContainer title={@title}>
-        <Form changeset={@community} save="save" display_labels={false}/>
-      </FormContainer>
+    <FormContainer title={@title}>
+      <Form changeset={@community} save="save" display_labels={false} />
+    </FormContainer>
     """
   end
 

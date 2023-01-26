@@ -1,5 +1,4 @@
 defmodule Oli.Utils.S3Storage do
-
   alias ExAws.S3
   alias Oli.HTTP
 
@@ -22,7 +21,6 @@ defmodule Oli.Utils.S3Storage do
       {:ok, %{status_code: 200}} -> {:ok, full_upload_path}
       {_, payload} -> {:error, payload}
     end
-
   end
 
   defp upload(bucket_name, upload_path, contents) do

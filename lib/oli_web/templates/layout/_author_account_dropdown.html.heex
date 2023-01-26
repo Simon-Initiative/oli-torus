@@ -16,10 +16,13 @@
     "
     type="button"
     data-bs-toggle="dropdown"
-    aria-expanded="false">
+    aria-expanded="false"
+  >
     <div class="user block lg:inline-block lg:mt-0 text-grey-darkest no-underline mr-4">
       <div class="username"><%= @current_author.name %></div>
-      <div class={"role text-right #{author_role_color(@current_author)}"}><%= author_role_text @current_author %></div>
+      <div class={"role text-right #{author_role_color(@current_author)}"}>
+        <%= author_role_text(@current_author) %>
+      </div>
     </div>
     <div class="user-icon"><%= author_icon(assigns) %></div>
 
@@ -31,11 +34,13 @@
       class="w-2 ml-2"
       role="img"
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 320 512">
+      viewBox="0 0 320 512"
+    >
       <path
         fill="currentColor"
         d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
-      ></path>
+      >
+      </path>
     </svg>
   </button>
 
@@ -60,21 +65,30 @@
       bg-clip-padding
       border-none
     "
-    aria-labelledby="accountDropdownMenu">
+    aria-labelledby="accountDropdownMenu"
+  >
     <li>
-      <%= link "Edit Account", to: Routes.live_path(@conn, OliWeb.Workspace.AccountDetailsLive), class: "dropdown-item btn" %>
+      <%= link("Edit Account",
+        to: Routes.live_path(@conn, OliWeb.Workspace.AccountDetailsLive),
+        class: "dropdown-item btn"
+      ) %>
     </li>
     <div class="dropdown-item no-hover">
-      Dark Mode
-      <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
+      Dark Mode <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{
+        showLabels: false
+      }) %>
     </div>
     <div class="dropdown-item no-hover">
-      Timezone
-      <br />
+      Timezone <br />
       <OliWeb.Common.SelectTimezone.render conn={@conn} />
     </div>
     <hr class="dropdown-divider" />
 
-    <%= link "Sign out", to: Routes.authoring_session_path(@conn, :signout, type: :author), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
+    <%= link("Sign out",
+      to: Routes.authoring_session_path(@conn, :signout, type: :author),
+      method: :delete,
+      id: "signout-link",
+      class: "dropdown-item btn"
+    ) %>
   </ul>
 </div>

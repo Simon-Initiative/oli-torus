@@ -53,26 +53,26 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
 
   def sort_value_column(sort_order, sort_spec) do
     {fn
-      %{type: :percentage} = item -> %{value: item.percentage}
-      %{type: :fixed_amount} = item -> %{value: item.amount}
-    end,
-    ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+       %{type: :percentage} = item -> %{value: item.percentage}
+       %{type: :fixed_amount} = item -> %{value: item.amount}
+     end, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
   def render_actions_column(assigns, item, _) do
     ~F"""
-      <Link
-        to={Routes.discount_path(OliWeb.Endpoint, :product, item.section.slug, item.id)}
-        class="btn btn-outline-primary">
-        Edit
-      </Link>
-      <button class="btn btn-outline-danger" phx-click="remove" phx-value-id={item.id}>Remove</button>
+    <Link
+      to={Routes.discount_path(OliWeb.Endpoint, :product, item.section.slug, item.id)}
+      class="btn btn-outline-primary"
+    >
+      Edit
+    </Link>
+    <button class="btn btn-outline-danger" phx-click="remove" phx-value-id={item.id}>Remove</button>
     """
   end
 
   def render(assigns) do
     ~F"""
-      <div>nothing</div>
+    <div>nothing</div>
     """
   end
 

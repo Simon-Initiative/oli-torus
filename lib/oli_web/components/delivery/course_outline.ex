@@ -10,8 +10,8 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
 
   def outline(assigns) do
     ~H"""
-      <%= for node <- @nodes do %>
-        <li>
+    <%= for node <- @nodes do %>
+      <li>
         <%= cond do %>
           <% container?(node) -> %>
             <.link_container {link_props(assigns, node)} />
@@ -20,84 +20,83 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
           <% true -> %>
             <.link_page {link_props(assigns, node)} />
         <% end %>
-        </li>
-      <% end %>
+      </li>
+    <% end %>
     """
   end
 
   def link_container(assigns) do
     ~H"""
-      <div class="border-b mb-2" style="border-color: #dee2e6;">
-        <h5 class="text-primary border-primary mb-2">
-          <%= link to: @container_link_url.(from_node(@node, :slug)),
+    <div class="border-b mb-2" style="border-color: #dee2e6;">
+      <h5 class="text-primary border-primary mb-2">
+        <%= link to: @container_link_url.(from_node(@node, :slug)),
             class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
-            <span class="container-title my-2">
-              <%= container_title(@node, @display_curriculum_item_numbering) %>
-            </span>
-          <% end %>
-        </h5>
-      </div>
+          <span class="container-title my-2">
+            <%= container_title(@node, @display_curriculum_item_numbering) %>
+          </span>
+        <% end %>
+      </h5>
+    </div>
 
-      <%= if Enum.empty?(node_children(@node)) do %>
-        <div class="text-secondary">There are no items</div>
-      <% else %>
-        <ol style="list-style: none; padding-left: 24px;">
-          <.outline {Map.merge(assigns, %{
+    <%= if Enum.empty?(node_children(@node)) do %>
+      <div class="text-secondary">There are no items</div>
+    <% else %>
+      <ol style="list-style: none; padding-left: 24px;">
+        <.outline {Map.merge(assigns, %{
             nodes: node_children(@node),
             active_page: nil,
           })} />
-        </ol>
-      <% end %>
+      </ol>
+    <% end %>
     """
   end
 
   def link_shallow_container(assigns) do
     ~H"""
-      <div class="border-b mb-2" style="border-color: #dee2e6;">
-        <%= link to: @container_link_url.(from_node(@node, :slug)),
+    <div class="border-b mb-2" style="border-color: #dee2e6;">
+      <%= link to: @container_link_url.(from_node(@node, :slug)),
           class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
-          <span class="container-title my-2">
-            <%= container_title(@node, @display_curriculum_item_numbering) %>
-          </span>
-        <% end %>
-      </div>
-
+        <span class="container-title my-2">
+          <%= container_title(@node, @display_curriculum_item_numbering) %>
+        </span>
+      <% end %>
+    </div>
     """
   end
 
   def link_assessment(assigns) do
     ~H"""
-      <div class="d-flex border-b mb-2" style="border-color: #dee2e6;">
-        <div class="flex-grow-1">
-          <%= link to: @page_link_url.(from_node(@node, :slug)),
+    <div class="d-flex border-b mb-2" style="border-color: #dee2e6;">
+      <div class="flex-grow-1">
+        <%= link to: @page_link_url.(from_node(@node, :slug)),
             class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
-            <span class="page-title">
-              <i class="fa fa-file-pen mr-2"></i> <%= from_node(@node, :title) %>
-            </span>
-          <% end %>
-        </div>
-        <div class="mr-2">
-          <%= node_index(@node) %>
-        </div>
+          <span class="page-title">
+            <i class="fa fa-file-pen mr-2"></i> <%= from_node(@node, :title) %>
+          </span>
+        <% end %>
       </div>
+      <div class="mr-2">
+        <%= node_index(@node) %>
+      </div>
+    </div>
     """
   end
 
   def link_page(assigns) do
     ~H"""
-      <div class="d-flex border-b mb-2" style="border-color: #dee2e6;">
-        <div class="flex-grow-1">
-          <%= link to: @page_link_url.(from_node(@node, :slug)),
+    <div class="d-flex border-b mb-2" style="border-color: #dee2e6;">
+      <div class="flex-grow-1">
+        <%= link to: @page_link_url.(from_node(@node, :slug)),
             class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
-            <span class="page-title">
-              <i class="far fa-file mr-2"></i> <%= from_node(@node, :title) %>
-            </span>
-          <% end %>
-        </div>
-        <div class="mr-2">
-          <%= node_index(@node) %>
-        </div>
+          <span class="page-title">
+            <i class="far fa-file mr-2"></i> <%= from_node(@node, :title) %>
+          </span>
+        <% end %>
       </div>
+      <div class="mr-2">
+        <%= node_index(@node) %>
+      </div>
+    </div>
     """
   end
 

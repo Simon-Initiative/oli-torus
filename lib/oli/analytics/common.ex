@@ -173,7 +173,7 @@ defmodule Oli.Analytics.Common do
                 correctness.is_eventually_correct
               )
             ) /
-             fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id),
+              fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id),
           first_try_correct_ratio:
             sum(
               fragment(

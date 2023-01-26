@@ -144,18 +144,20 @@ defmodule OliWeb.OpenAndFreeController do
          } <-
            section_params,
          %{id: project_id} <- Course.get_project_by_slug(project_slug),
-         publication <- Publishing.get_latest_published_publication_by_slug(project_slug) |> Repo.preload(:project) do
-
+         publication <-
+           Publishing.get_latest_published_publication_by_slug(project_slug)
+           |> Repo.preload(:project) do
       context = SessionContext.init(conn)
 
       utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, context)
       utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, context)
 
-      customizations = case publication.project.customizations do
-        nil -> nil
-        labels -> Map.from_struct(labels)
-      end
-      
+      customizations =
+        case publication.project.customizations do
+          nil -> nil
+          labels -> Map.from_struct(labels)
+        end
+
       section_params =
         section_params
         |> Map.put("type", :enrollable)
@@ -242,9 +244,7 @@ defmodule OliWeb.OpenAndFreeController do
 
   def update(conn, %{
         "id" => id,
-        "section" =>
-          %{"start_date" => start_date, "end_date" => end_date} =
-            section_params
+        "section" => %{"start_date" => start_date, "end_date" => end_date} = section_params
       }) do
     section = Sections.get_section_preloaded!(id)
 

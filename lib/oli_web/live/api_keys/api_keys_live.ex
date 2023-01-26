@@ -51,15 +51,15 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
           <p class="mb-3">
             Enter a description/hint for a new API key:
           </p>
-          <input type="text" phx-change="hint" phx-keyup="hint" phx-blur="hint"/>
+          <input type="text" phx-change="hint" phx-keyup="hint" phx-blur="hint" />
 
           <button type="button" class="btn btn-primary" phx-click="create" disabled={@hint == ""}>
             Create New
           </button>
 
           <%= if @created_key != "" do %>
-          <p>This is the API key.  Copy this now, this is the only time you will see this.</p>
-          <p><strong><code><%= @created_key %></code></strong></p>
+            <p>This is the API key.  Copy this now, this is the only time you will see this.</p>
+            <p><strong><code><%= @created_key %></code></strong></p>
           <% end %>
         </div>
       </div>
@@ -81,7 +81,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                 <th>Prodcuts Enabled</th>
                 <th>Registration Enabled</th>
                 <th>Registration Namespace</th>
-                <th>Automation Data<br/>Setup Enabled</th>
+                <th>Automation Data<br />Setup Enabled</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -91,32 +91,96 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                   <td><%= key.hint %></td>
                   <td><%= current(key.status) %></td>
                   <td>
-                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="payments_enabled" phx-value-id={key.id} phx-value-action={if key.payments_enabled do "false" else "true" end}>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      phx-click="update"
+                      phx-value-field="payments_enabled"
+                      phx-value-id={key.id}
+                      phx-value-action={
+                        if key.payments_enabled do
+                          "false"
+                        else
+                          "true"
+                        end
+                      }
+                    >
                       <%= key.payments_enabled %>
                     </button>
                   </td>
                   <td>
-                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="products_enabled" phx-value-id={key.id} phx-value-action={if key.products_enabled do "false" else "true" end}>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      phx-click="update"
+                      phx-value-field="products_enabled"
+                      phx-value-id={key.id}
+                      phx-value-action={
+                        if key.products_enabled do
+                          "false"
+                        else
+                          "true"
+                        end
+                      }
+                    >
                       <%= key.products_enabled %>
                     </button>
                   </td>
                   <td>
-                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="registration_enabled" phx-value-id={key.id} phx-value-action={if key.registration_enabled do "false" else "true" end}>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      phx-click="update"
+                      phx-value-field="registration_enabled"
+                      phx-value-id={key.id}
+                      phx-value-action={
+                        if key.registration_enabled do
+                          "false"
+                        else
+                          "true"
+                        end
+                      }
+                    >
                       <%= key.registration_enabled %>
                     </button>
                   </td>
-                  <td><input id={"text_#{key.id}"} type="text" phx-hook="TextInputListener" value={key.registration_namespace}/></td>
                   <td>
-                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="automation_setup_enabled" phx-value-id={key.id} phx-value-action={if key.automation_setup_enabled do "false" else "true" end}>
+                    <input
+                      id={"text_#{key.id}"}
+                      type="text"
+                      phx-hook="TextInputListener"
+                      value={key.registration_namespace}
+                    />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      phx-click="update"
+                      phx-value-field="automation_setup_enabled"
+                      phx-value-id={key.id}
+                      phx-value-action={
+                        if key.automation_setup_enabled do
+                          "false"
+                        else
+                          "true"
+                        end
+                      }
+                    >
                       <%= key.automation_setup_enabled %>
                     </button>
                   </td>
                   <td>
-                    <button type="button" class="btn btn-outline-danger" phx-click="toggle" phx-value-id={key.id} phx-value-action={action(key.status)}>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      phx-click="toggle"
+                      phx-value-id={key.id}
+                      phx-value-action={action(key.status)}
+                    >
                       <%= action(key.status) %>
                     </button>
                   </td>
-
                 </tr>
               <% end %>
             </tbody>

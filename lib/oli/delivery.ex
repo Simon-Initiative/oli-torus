@@ -20,7 +20,8 @@ defmodule Oli.Delivery do
       Institutions.get_institution_registration_deployment(
         lti_params["iss"],
         LtiParams.peek_client_id(lti_params),
-        lti_params[@deployment_claims])
+        lti_params[@deployment_claims]
+      )
 
     Publishing.retrieve_visible_sources(user, institution)
   end
@@ -45,6 +46,7 @@ defmodule Oli.Delivery do
             "product:" <> product_id ->
               {&create_from_product/6, String.to_integer(product_id)}
           end
+
         create_fn.(id, user, institution, lti_params, deployment, registration)
 
       section ->
@@ -81,20 +83,29 @@ defmodule Oli.Delivery do
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
+
       enroll(user.id, section.id, lti_params)
 
       section
     end)
   end
 
-  defp create_from_publication(publication_id, user, institution, lti_params, deployment, registration) do
+  defp create_from_publication(
+         publication_id,
+         user,
+         institution,
+         lti_params,
+         deployment,
+         registration
+       ) do
     Repo.transaction(fn ->
       publication = Publishing.get_publication!(publication_id) |> Repo.preload(:project)
 
-      customizations = case publication.project.customizations do
-        nil -> nil
-        labels -> Map.from_struct(labels)
-      end
+      customizations =
+        case publication.project.customizations do
+          nil -> nil
+          labels -> Map.from_struct(labels)
+        end
 
       {:ok, section} =
         Sections.create_section(%{
@@ -110,6 +121,7 @@ defmodule Oli.Delivery do
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
           customizations: customizations
         })
+
       {:ok, %Section{}} = Sections.create_section_resources(section, publication)
       enroll(user.id, section.id, lti_params)
 
@@ -220,9 +232,9 @@ defmodule Oli.Delivery do
     resource_id = attrs["resource_id"] || attrs.resource_id
 
     case get_delivery_setting_by(%{
-      section_id: section_id,
-      resource_id: resource_id
-    }) do
+           section_id: section_id,
+           resource_id: resource_id
+         }) do
       nil -> create_delivery_setting(attrs)
       ds -> update_delivery_setting(ds, attrs)
     end

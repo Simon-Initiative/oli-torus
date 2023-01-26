@@ -10,5 +10,4 @@ defmodule Oli.Repo.Migrations.AddTags do
              name: :index_published_resources_pub_rev
            )
   end
-
 end

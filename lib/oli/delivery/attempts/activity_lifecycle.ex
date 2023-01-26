@@ -318,7 +318,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         }
       end)
 
-    part_input_values =  Enum.join(part_input_values, ",")
+    part_input_values = Enum.join(part_input_values, ",")
 
     sql = """
       UPDATE part_attempts

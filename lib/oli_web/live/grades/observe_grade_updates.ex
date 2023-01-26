@@ -57,11 +57,12 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
     ~F"""
     <div>
       <PagedTable
-        filter={""}
+        filter=""
         table_model={@table_model}
         total_count={@total_count}
         offset={0}
-        limit={@retain_count}/>
+        limit={@retain_count}
+      />
     </div>
     """
   end
@@ -98,10 +99,10 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
     {:ok, table_model} = ObserveTableModel.new(updates)
 
     {:noreply,
-      assign(socket,
-        updates: updates,
-        table_model: table_model,
-        total_count: Enum.count(updates)
-      )}
+     assign(socket,
+       updates: updates,
+       table_model: table_model,
+       total_count: Enum.count(updates)
+     )}
   end
 end

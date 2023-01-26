@@ -9,7 +9,10 @@
         <%= if is_independent_instructor?(@user) do %>
           <div class="d-flex flex-row mb-2">
             <div>
-              <%= link "New Section", to: Routes.select_source_path(OliWeb.Endpoint, :independent_learner), class: "btn btn-md btn-outline-primary" %>
+              <%= link("New Section",
+                to: Routes.select_source_path(OliWeb.Endpoint, :independent_learner),
+                class: "btn btn-md btn-outline-primary"
+              ) %>
             </div>
           </div>
         <% end %>
@@ -19,8 +22,11 @@
         <% else %>
           <div class="flex flex-wrap">
             <%= for section <- @sections do %>
-              <a href={Routes.page_delivery_path(@conn, :index, section.slug)} class="rounded-lg shadow-lg bg-white max-w-xs mr-3 mb-3 border border-transparent hover:border-blue-500 hover:no-underline">
-                <img class="rounded-t-lg" src={cover_image(section)} alt="course image"/>
+              <a
+                href={Routes.page_delivery_path(@conn, :index, section.slug)}
+                class="rounded-lg shadow-lg bg-white max-w-xs mr-3 mb-3 border border-transparent hover:border-blue-500 hover:no-underline"
+              >
+                <img class="rounded-t-lg" src={cover_image(section)} alt="course image" />
                 <div class="p-6">
                   <h5 class="text-gray-900 text-xl font-medium mb-2"><%= section.title %></h5>
                   <p class="text-gray-700 text-base mb-4">
@@ -35,5 +41,5 @@
     </div>
   </div>
 
-  <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+  <%= render(OliWeb.LayoutView, "_delivery_footer.html", assigns) %>
 </main>

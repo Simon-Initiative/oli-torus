@@ -102,24 +102,22 @@ defmodule OliWeb.Users.UsersView do
   def render(assigns) do
     ~F"""
     <div>
-
       <Check class="mr-4" checked={@options.include_guests} click="include_guests">Show guest users</Check>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <TextSearch id="text-search" text={@options.text_search} />
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
-
+        limit={@limit}
+      />
     </div>
-
     """
   end
 

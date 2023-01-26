@@ -19,13 +19,13 @@ defmodule OliWeb.Common.Properties.ReadOnly do
 
   defp render_property(%{type: "link"} = assigns) do
     ~F"""
-    <Link label={@link_label} to={@value} class="form-control"/>
+    <Link label={@link_label} to={@value} class="form-control" />
     """
   end
 
   defp render_property(assigns) do
     ~F"""
-    <input class="form-control" type={@type} disabled value={@value}/>
+    <input class="form-control" type={@type} disabled value={@value}>
     """
   end
 end

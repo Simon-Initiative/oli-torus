@@ -1,32 +1,28 @@
 <h5 class="text-primary border-b border-primary mb-2">
-  <%= container_title(@container,  @display_curriculum_item_numbering) %>
+  <%= container_title(@container, @display_curriculum_item_numbering) %>
 </h5>
-
 
 <%= if Enum.empty?(@children) do %>
   <span class="text-secondary">
     There are no items
   </span>
 <% else %>
-
   <ol class="course-outline well" style="list-style: none; padding-left: 24px;">
-
-  <%= for child <- @children do %>
-    <% props = Map.merge(assigns, %{
-      node: child,
-    }) %>
-    <li>
-    <%= cond do %>
-      <% container?(child.revision) -> %>
-        <Components.Delivery.CourseOutline.link_shallow_container {props} />
-      <% child.revision.graded -> %>
-        <Components.Delivery.CourseOutline.link_assessment {props} />
-      <% true -> %>
-        <Components.Delivery.CourseOutline.link_page {props} />
+    <%= for child <- @children do %>
+      <% props =
+        Map.merge(assigns, %{
+          node: child
+        }) %>
+      <li>
+        <%= cond do %>
+          <% container?(child.revision) -> %>
+            <Components.Delivery.CourseOutline.link_shallow_container {props} />
+          <% child.revision.graded -> %>
+            <Components.Delivery.CourseOutline.link_assessment {props} />
+          <% true -> %>
+            <Components.Delivery.CourseOutline.link_page {props} />
+        <% end %>
+      </li>
     <% end %>
-    </li>
-  <% end %>
-
   </ol>
-
- <% end %>
+<% end %>

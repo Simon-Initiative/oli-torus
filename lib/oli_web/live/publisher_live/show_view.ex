@@ -63,47 +63,56 @@ defmodule OliWeb.PublisherLive.ShowView do
 
   def render(assigns) do
     ~F"""
-      {render_modal(assigns)}
-      <div id="publisher-overview" class="overview container">
-        <ShowSection
-          section_title="Details"
-          section_description="Main publisher fields that will be shown to system admins."
-        >
-          <Form changeset={@changeset} save="save"/>
-        </ShowSection>
+    {render_modal(assigns)}
+    <div id="publisher-overview" class="overview container">
+      <ShowSection
+        section_title="Details"
+        section_description="Main publisher fields that will be shown to system admins."
+      >
+        <Form changeset={@changeset} save="save" />
+      </ShowSection>
 
-        <ShowSection section_title="Actions">
-          <div>
-            <SurfaceForm for={@changeset} change="save" class="d-flex">
-              <div class="form-group">
-                <div class="form-row">
-                  <div class="custom-control custom-switch">
-                    <Field name={:available_via_api} class="form-check">
-                      <Checkbox class="custom-control-input" value={get_field(@changeset, :available_via_api)}/>
-                      <Label class="custom-control-label">Available via API</Label>
-                      <p class="text-muted">Make the publisher available through the publishers API</p>
-                    </Field>
-                  </div>
+      <ShowSection section_title="Actions">
+        <div>
+          <SurfaceForm for={@changeset} change="save" class="d-flex">
+            <div class="form-group">
+              <div class="form-row">
+                <div class="custom-control custom-switch">
+                  <Field name={:available_via_api} class="form-check">
+                    <Checkbox class="custom-control-input" value={get_field(@changeset, :available_via_api)} />
+                    <Label class="custom-control-label">Available via API</Label>
+                    <p class="text-muted">Make the publisher available through the publishers API</p>
+                  </Field>
                 </div>
               </div>
-            </SurfaceForm>
-            {#unless @publisher.default}
-              <div class="d-flex align-items-center">
-                <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
-                <span>Permanently delete this publisher.</span>
-              </div>
-              <div class="d-flex align-items-center">
-                <button type="button" class="btn btn-link action-button" :on-click="show_set_default_modal">Set this publisher as the default</button>
-              </div>
-            {/unless}
-          </div>
-        </ShowSection>
-      </div>
-      {#if @show_confirm_default}
-        <Confirm title="Confirm Default" id="set_default_modal" ok="set_default" cancel="cancel_set_default_modal">
-          Are you sure that you wish to set this publisher as the default?
-        </Confirm>
-      {/if}
+            </div>
+          </SurfaceForm>
+          {#unless @publisher.default}
+            <div class="d-flex align-items-center">
+              <button
+                type="button"
+                class="btn btn-link text-danger action-button"
+                :on-click="show_delete_modal"
+              >Delete</button>
+              <span>Permanently delete this publisher.</span>
+            </div>
+            <div class="d-flex align-items-center">
+              <button type="button" class="btn btn-link action-button" :on-click="show_set_default_modal">Set this publisher as the default</button>
+            </div>
+          {/unless}
+        </div>
+      </ShowSection>
+    </div>
+    {#if @show_confirm_default}
+      <Confirm
+        title="Confirm Default"
+        id="set_default_modal"
+        ok="set_default"
+        cancel="cancel_set_default_modal"
+      >
+        Are you sure that you wish to set this publisher as the default?
+      </Confirm>
+    {/if}
     """
   end
 
@@ -175,7 +184,7 @@ defmodule OliWeb.PublisherLive.ShowView do
 
     modal = fn assigns ->
       ~F"""
-        <DeleteModal {...@modal_assigns} />
+      <DeleteModal {...@modal_assigns} />
       """
     end
 

@@ -18,7 +18,10 @@ defmodule OliWeb.ManualGrading.Tabs do
   end
 
   def active(assigns, key) do
-    if assigns.active == key do "nav-link active" else "nav-link" end
+    if assigns.active == key do
+      "nav-link active"
+    else
+      "nav-link"
+    end
   end
-
 end

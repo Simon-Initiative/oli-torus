@@ -47,7 +47,6 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     )
   end
 
-
   describe "applying scores and feedback" do
     setup do
       map = Seeder.base_project_with_resource2()
@@ -96,7 +95,6 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       attempt_3c: attempt_3c,
       publication: publication
     } do
-
       Seeder.ensure_published(publication.id)
 
       results =
@@ -142,10 +140,11 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       assert ra.lifecycle_state == :evaluated
 
       # Verify that manual scoring of the last activity triggers grade roll up to the resource access
-      resource_access = Oli.Repo.get!(Oli.Delivery.Attempts.Core.ResourceAccess, ra.resource_access_id)
+      resource_access =
+        Oli.Repo.get!(Oli.Delivery.Attempts.Core.ResourceAccess, ra.resource_access_id)
+
       assert resource_access.out_of == 2.0
       assert resource_access.score == 2.0
-
     end
   end
 

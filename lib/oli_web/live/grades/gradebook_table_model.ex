@@ -61,7 +61,13 @@ defmodule OliWeb.Grades.GradebookTableModel do
         case assigns.show_all_links do
           true ->
             ~F"""
-            <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+            <a href={Routes.live_path(
+              OliWeb.Endpoint,
+              OliWeb.Progress.StudentResourceView,
+              row.section.slug,
+              row.id,
+              resource_id
+            )}>
               <span class="text-muted">Never Visited</span>
             </a>
             """
@@ -75,7 +81,13 @@ defmodule OliWeb.Grades.GradebookTableModel do
         case assigns.show_all_links do
           true ->
             ~F"""
-            <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+            <a href={Routes.live_path(
+              OliWeb.Endpoint,
+              OliWeb.Progress.StudentResourceView,
+              row.section.slug,
+              row.id,
+              resource_id
+            )}>
               <span>Not Finished</span>
             </a>
             """
@@ -108,7 +120,16 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
     if out_of == 0 or out_of == 0.0 do
       ~F"""
-      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+      <a
+        class={link_type}
+        href={Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          row.section.slug,
+          row.id,
+          resource_id
+        )}
+      >
         <span>{score}/{out_of} 0%</span>
       </a>
       """
@@ -139,8 +160,17 @@ defmodule OliWeb.Grades.GradebookTableModel do
         end
 
       ~F"""
-      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
-      {safe_score}/{safe_out_of} <small class="text-muted">{percentage}</small>
+      <a
+        class={link_type}
+        href={Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          row.section.slug,
+          row.id,
+          resource_id
+        )}
+      >
+        {safe_score}/{safe_out_of} <small class="text-muted">{percentage}</small>
       </a>
       """
     end

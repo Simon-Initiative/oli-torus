@@ -8,21 +8,22 @@ defmodule Oli.Repo.Migrations.UpdateSnapshotsAddProjectIds do
     drop index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
 
     execute """
-      UPDATE snapshots
-      SET project_id = sect.base_project_id
-      FROM sections sect WHERE sect.id = snapshots.section_id;
-      """
+    UPDATE snapshots
+    SET project_id = sect.base_project_id
+    FROM sections sect WHERE sect.id = snapshots.section_id;
+    """
 
     create index(:snapshots, [:objective_id])
     create index(:snapshots, [:activity_id])
     create index(:snapshots, [:section_id])
+
     create unique_index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
   end
 
   def down do
     execute """
-      UPDATE snapshots
-      SET project_id = NULL
-      """
+    UPDATE snapshots
+    SET project_id = NULL
+    """
   end
 end

@@ -144,17 +144,16 @@ defmodule OliWeb.Resources.PagesView do
     ~F"""
     {render_modal(assigns)}
     <div>
-
       <FilterBox
         card_header_text="Browse All Pages"
         card_body_text=""
         table_model={@table_model}
         show_sort={false}
-        show_more_opts={true}>
-        <TextSearch id="text-search" text={@options.text_search}/>
+        show_more_opts
+      >
+        <TextSearch id="text-search" text={@options.text_search} />
 
         <:extra_opts>
-
           <form :on-change="change_graded" class="d-flex">
             <select name="graded" id="select_graded" class="custom-select custom-select mr-2">
               <option value="" selected>Grading Type</option>
@@ -177,18 +176,39 @@ defmodule OliWeb.Resources.PagesView do
 
       <div class="my-3 d-flex flex-row">
         <div class="flex-grow-1" />
-          <div class="btn-group">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Create
-            </button>
-            <div class="dropdown-menu dropdown-menu-right">
-              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Unscored">Practice Page</button>
-              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Scored">Graded Assessment</button>
-              {#if Oli.Features.enabled?("adaptivity")}
-                <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Adaptive">Adaptive Page</button>
-              {/if}
-            </div>
+        <div class="btn-group">
+          <button
+            type="button"
+            class="btn btn-primary dropdown-toggle"
+            data-toggle="dropdown"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            Create
+          </button>
+          <div class="dropdown-menu dropdown-menu-right">
+            <button
+              type="button"
+              class="dropdown-item btn btn-primary"
+              :on-click="create_page"
+              phx-value-type="Unscored"
+            >Practice Page</button>
+            <button
+              type="button"
+              class="dropdown-item btn btn-primary"
+              :on-click="create_page"
+              phx-value-type="Scored"
+            >Graded Assessment</button>
+            {#if Oli.Features.enabled?("adaptivity")}
+              <button
+                type="button"
+                class="dropdown-item btn btn-primary"
+                :on-click="create_page"
+                phx-value-type="Adaptive"
+              >Adaptive Page</button>
+            {/if}
           </div>
+        </div>
       </div>
 
       <PagedTable
@@ -196,7 +216,8 @@ defmodule OliWeb.Resources.PagesView do
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={limit()}/>
+        limit={limit()}
+      />
     </div>
     """
   end
@@ -454,7 +475,7 @@ defmodule OliWeb.Resources.PagesView do
 
     modal = fn assigns ->
       ~F"""
-        <MoveModal.render {...@modal_assigns} />
+      <MoveModal.render {...@modal_assigns} />
       """
     end
 

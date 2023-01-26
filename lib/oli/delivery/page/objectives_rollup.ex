@@ -4,7 +4,6 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
   # if an attached objective is a parent, include that in the return list
   def rollup_objectives(page_revision, _, resolver, section_slug) do
     case page_revision.objectives["attached"] do
-
       # If there are no objectives attached to this page
       [] ->
         []
@@ -14,8 +13,8 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
         list
 
       # All other shapes of data (maps, nil, etc) we ignore
-      _ -> []
-
+      _ ->
+        []
     end
     |> rollup(resolver, section_slug)
   end
@@ -48,5 +47,4 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
     |> MapSet.to_list()
     |> Enum.sort()
   end
-
 end

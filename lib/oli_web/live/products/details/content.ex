@@ -28,28 +28,28 @@ defmodule OliWeb.Products.Details.Content do
         {#elseif update_count == 1}
           <p>There is <b>one</b> update available for this product.</p>
           <Link
-              label={"Manage Source Materials"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
-            />
+            label="Manage Source Materials"
+            to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
+          />
         {#else}
           <p>There are <b>{update_count}</b> updates available for this product.</p>
           <Link
-              label={"Manage Source Materials"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
-            />
+            label="Manage Source Materials"
+            to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)}
+          />
         {/if}
-          <p>
-            <Link
-              label={"Customize content"}
-              to={Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @product.slug)}
-            />
-          </p>
-          <p>
-            <Link
-              label={"Gating and scheduling"}
-              to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)}
-            />
-          </p>
+        <p>
+          <Link
+            label="Customize content"
+            to={Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @product.slug)}
+          />
+        </p>
+        <p>
+          <Link
+            label="Gating and scheduling"
+            to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)}
+          />
+        </p>
       </div>
 
       <div class="grid grid-cols-12 my-4" id="content-form">
@@ -59,7 +59,10 @@ defmodule OliWeb.Products.Details.Content do
               <div class="form-row">
                 <div class="custom-control custom-switch pl-4">
                   <Field name={:display_curriculum_item_numbering} class="form-check">
-                    <Checkbox class="custom-control-input" value={get_field(@changeset, :display_curriculum_item_numbering)}/>
+                    <Checkbox
+                      class="custom-control-input"
+                      value={get_field(@changeset, :display_curriculum_item_numbering)}
+                    />
                     <Label class="custom-control-label">Display curriculum item numbers</Label>
                     <p class="text-muted">Enable students to see the curriculum's module and unit numbers</p>
                   </Field>

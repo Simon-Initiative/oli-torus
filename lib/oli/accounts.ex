@@ -240,7 +240,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("user_#{user_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -280,7 +282,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("user_#{user_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -308,7 +312,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("user_#{user_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -383,7 +389,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("author_#{author_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -406,7 +414,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("author_#{author_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 

@@ -19,37 +19,49 @@ defmodule OliWeb.Common.Listing do
 
   def render(assigns) do
     ~F"""
-      <div class="pb-5">
-        {#if @filter != ""}
-          <strong>Results filtered on &quot;{@filter}&quot;</strong>
-        {/if}
+    <div class="pb-5">
+      {#if @filter != ""}
+        <strong>Results filtered on &quot;{@filter}&quot;</strong>
+      {/if}
 
-        {#if @total_count > 0 and @total_count > @limit}
-          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-          {render_table(assigns)}
-          {#if @show_bottom_paging}
-            <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-          {/if}
-        {#elseif @total_count > 0}
-          <div>Showing all results ({@total_count} total)</div>
-          <br>
-          {render_table(assigns)}
-        {#else}
-          <p>None exist</p>
+      {#if @total_count > 0 and @total_count > @limit}
+        <Paging
+          id="header_paging"
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          click={@page_change}
+        />
+        {render_table(assigns)}
+        {#if @show_bottom_paging}
+          <Paging
+            id="footer_paging"
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            click={@page_change}
+          />
         {/if}
-      </div>
+      {#elseif @total_count > 0}
+        <div>Showing all results ({@total_count} total)</div>
+        <br>
+        {render_table(assigns)}
+      {#else}
+        <p>None exist</p>
+      {/if}
+    </div>
     """
   end
 
   defp render_table(assigns) do
     ~F"""
-      {#if @cards_view}
-        <CardListing model={@table_model} selected={@selected}/>
-      {#elseif @with_body}
-        <#slot />
-      {#else}
-        <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class}/>
-      {/if}
+    {#if @cards_view}
+      <CardListing model={@table_model} selected={@selected} />
+    {#elseif @with_body}
+      <#slot />
+    {#else}
+      <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class} />
+    {/if}
     """
   end
 end

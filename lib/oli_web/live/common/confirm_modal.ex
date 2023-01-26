@@ -8,7 +8,14 @@ defmodule OliWeb.Common.Confirm do
 
   def render(assigns) do
     ~F"""
-    <div id={@id} class={"modal fade show"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div
+      id={@id}
+      class="modal fade show"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">

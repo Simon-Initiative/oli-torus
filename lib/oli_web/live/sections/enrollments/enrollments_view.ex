@@ -119,27 +119,28 @@ defmodule OliWeb.Sections.EnrollmentsView do
   def render(assigns) do
     ~F"""
     <div>
-
       <div class="d-flex justify-content-between">
-        <TextSearch id="text-search"/>
+        <TextSearch id="text-search" />
 
         {#if @is_admin}
           <Link
             label="Download as .CSV"
             to={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
             class="btn btn-outline-primary"
-            method={:post} />
+            method={:post}
+          />
         {/if}
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end

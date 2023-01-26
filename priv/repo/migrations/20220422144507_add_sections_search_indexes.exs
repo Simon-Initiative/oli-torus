@@ -19,9 +19,18 @@ defmodule Oli.Repo.Migrations.AddSectionsSearchIndexes do
     create index(:sections, [:start_date, :end_date])
 
     # full text search indexes
-    execute("CREATE INDEX sections_title_trgm_idx ON sections USING GIN (to_tsvector('english', title))")
-    execute("CREATE INDEX institutions_name_trgm_idx ON institutions USING GIN (to_tsvector('english', name))")
-    execute("CREATE INDEX projects_title_trgm_idx ON projects USING GIN (to_tsvector('english', title))")
+    execute(
+      "CREATE INDEX sections_title_trgm_idx ON sections USING GIN (to_tsvector('english', title))"
+    )
+
+    execute(
+      "CREATE INDEX institutions_name_trgm_idx ON institutions USING GIN (to_tsvector('english', name))"
+    )
+
+    execute(
+      "CREATE INDEX projects_title_trgm_idx ON projects USING GIN (to_tsvector('english', title))"
+    )
+
     execute("CREATE INDEX users_name_trgm_idx ON users USING GIN (to_tsvector('english', name))")
   end
 

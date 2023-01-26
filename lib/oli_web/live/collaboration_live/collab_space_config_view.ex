@@ -90,67 +90,67 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
   def render(assigns) do
     ~F"""
-      <div class="card max-w-full">
-        <div class="card-body d-flex justify-content-between">
-          <div class="d-flex flex-1">
-            <h3 class="card-title">Collaborative Space Config</h3>
-            <h6 class="d-flex align-items-center">Current status <span class="badge badge-info ml-2">{humanize(@collab_space_status)}</span></h6>
-          </div>
-
-          <div>
-            {#case @collab_space_status}
-              {#match :disabled}
-                <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
-              {#match :enabled}
-                <button class="btn btn-outline-primary" :on-click="archive">Archive</button>
-                <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
-              {#match _}
-                <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
-                <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
-            {/case}
-          </div>
+    <div class="card max-w-full">
+      <div class="card-body d-flex justify-content-between">
+        <div class="d-flex flex-1">
+          <h3 class="card-title">Collaborative Space Config</h3>
+          <h6 class="d-flex align-items-center">Current status <span class="badge badge-info ml-2">{humanize(@collab_space_status)}</span></h6>
         </div>
-        {#if @collab_space_status == :enabled}
-          <div class="card-footer bg-transparent d-flex justify-content-center">
-            <Form for={@changeset} submit="save">
-              <Inputs for={:collab_space_config}>
-                <HiddenInput field={:status}/>
 
-                <Field name={:threaded} class="form-check mt-1">
-                  <Checkbox class="form-check-input"/>
-                  <Label class="form-check-label" text="Allow threading of posts with replies"/>
-                </Field>
-
-                <Field name={:auto_accept} class="form-check mt-1">
-                  <Checkbox class="form-check-input"/>
-                  <Label class="form-check-label" text="Allow posts to be visible without approval"/>
-                </Field>
-
-                <Field name={:show_full_history} class="form-check mt-1">
-                  <Checkbox class="form-check-input"/>
-                  <Label class="form-check-label" />
-                </Field>
-
-                <br>
-                Participation requirements
-                <div class="ml-4">
-                  <Field name={:participation_min_replies} class="form-group mt-1">
-                    <Label text="Minimum replies"/>
-                    <NumberInput class="form-control" opts={min: 0}/>
-                  </Field>
-
-                  <Field name={:participation_min_posts} class="form-group mt-1">
-                    <Label text="Minimum posts" />
-                    <NumberInput class="form-control" opts={min: 0}/>
-                  </Field>
-                </div>
-              </Inputs>
-
-              <button class="form-button btn btn-md btn-primary mt-3" type="submit">Save</button>
-            </Form>
-          </div>
-        {/if}
+        <div>
+          {#case @collab_space_status}
+            {#match :disabled}
+              <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
+            {#match :enabled}
+              <button class="btn btn-outline-primary" :on-click="archive">Archive</button>
+              <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
+            {#match _}
+              <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
+              <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
+          {/case}
+        </div>
       </div>
+      {#if @collab_space_status == :enabled}
+        <div class="card-footer bg-transparent d-flex justify-content-center">
+          <Form for={@changeset} submit="save">
+            <Inputs for={:collab_space_config}>
+              <HiddenInput field={:status} />
+
+              <Field name={:threaded} class="form-check mt-1">
+                <Checkbox class="form-check-input" />
+                <Label class="form-check-label" text="Allow threading of posts with replies" />
+              </Field>
+
+              <Field name={:auto_accept} class="form-check mt-1">
+                <Checkbox class="form-check-input" />
+                <Label class="form-check-label" text="Allow posts to be visible without approval" />
+              </Field>
+
+              <Field name={:show_full_history} class="form-check mt-1">
+                <Checkbox class="form-check-input" />
+                <Label class="form-check-label" />
+              </Field>
+
+              <br>
+              Participation requirements
+              <div class="ml-4">
+                <Field name={:participation_min_replies} class="form-group mt-1">
+                  <Label text="Minimum replies" />
+                  <NumberInput class="form-control" opts={min: 0} />
+                </Field>
+
+                <Field name={:participation_min_posts} class="form-group mt-1">
+                  <Label text="Minimum posts" />
+                  <NumberInput class="form-control" opts={min: 0} />
+                </Field>
+              </div>
+            </Inputs>
+
+            <button class="form-button btn btn-md btn-primary mt-3" type="submit">Save</button>
+          </Form>
+        </div>
+      {/if}
+    </div>
     """
   end
 

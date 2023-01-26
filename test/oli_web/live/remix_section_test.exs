@@ -19,7 +19,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         unit1_container: unit1_container,
         revision1: revision1,
         revision2: revision2
-      },
+      }
     } do
       conn =
         get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
@@ -60,7 +60,8 @@ defmodule OliWeb.RemixSectionLiveTest do
         section_1: section_1
       }
     } do
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
 
       {:ok, _view, html} = live(conn)
 
@@ -189,7 +190,11 @@ defmodule OliWeb.RemixSectionLiveTest do
       revision1: revision1,
       revision2: revision2
     } do
-      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug))
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug)
+        )
 
       {:ok, view, _html} = live(conn)
 
@@ -201,7 +206,11 @@ defmodule OliWeb.RemixSectionLiveTest do
       conn: conn,
       prod: prod
     } do
-      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug))
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug)
+        )
 
       {:ok, view, _html} = live(conn)
 
@@ -263,7 +272,10 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("#save")
       |> render_click()
 
-      assert_redirect(view, Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, oaf_section_1))
+      assert_redirect(
+        view,
+        Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, oaf_section_1)
+      )
     end
 
     test "remix section items and add materials items are ordered correctly", %{

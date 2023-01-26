@@ -5,6 +5,6 @@ defmodule Oli.Repo.Migrations.RemoveJanusCarousel do
     execute "DELETE FROM part_component_registrations
       WHERE delivery_element = 'janus-carousel';"
 
-      flush()
+    flush()
   end
 end

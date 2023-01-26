@@ -236,25 +236,26 @@ defmodule OliWeb.Resources.ActivitiesView do
   def render(assigns) do
     ~F"""
     <div id="activity_review" phx-hook="ReviewActivity">
-
       <FilterBox
         card_header_text="Browse All Activities"
         card_body_text=""
         table_model={@table_model}
         show_sort={false}
-        show_more_opts={false}>
-        <TextSearch id="text-search" text={@options.text_search}/>
+        show_more_opts={false}
+      >
+        <TextSearch id="text-search" text={@options.text_search} />
       </FilterBox>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
-        allow_selection={true}
+        allow_selection
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={limit()}/>
+        limit={limit()}
+      />
 
       <a href={Routes.activity_review_path(OliWeb.Endpoint, :index)}>Open Sync View</a>
     </div>

@@ -61,30 +61,27 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
 
   def render(assigns) do
     ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
+    <div class="d-flex p-3 justify-content-between">
+      <Filter change="change_search" reset="reset_search" apply="apply_search" query={@query} />
 
-        <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView, @community_id)}>
-          Add new +
-        </Link>
-      </div>
+      <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView, @community_id)}>
+        Add new +
+      </Link>
+    </div>
 
-      <div id="projects-products-table" class="p-4">
-        <Listing
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={false}
-          additional_table_class=""/>
-      </div>
+    <div id="projects-products-table" class="p-4">
+      <Listing
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort={@sort}
+        page_change={@page_change}
+        show_bottom_paging={false}
+        additional_table_class=""
+      />
+    </div>
     """
   end
 

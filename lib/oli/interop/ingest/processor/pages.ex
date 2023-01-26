@@ -26,26 +26,26 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
   # Read the collab space config in a robust manner, falling back to defaults if
   # the entire collabSpace key is missing or if any sub keys are missing
   defp read_collab_space(%{"collabSpace" => config}) do
-
     # Read the status in a way that falls back to the proper default
     # status if no status is specified or if an unsupported status is specified
     default_status_str = CollabSpaceConfig.default_status() |> Atom.to_string()
     candidate_status = Map.get(config, "status", default_status_str)
 
-    status = case CollabSpaceConfig.status_values()
-      |> Enum.map(fn a -> Atom.to_string(a) end)
-      |> Enum.any?(fn status_str -> status_str == candidate_status end) do
-      true -> String.to_existing_atom(candidate_status)
-      _ -> CollabSpaceConfig.default_status()
-    end
+    status =
+      case CollabSpaceConfig.status_values()
+           |> Enum.map(fn a -> Atom.to_string(a) end)
+           |> Enum.any?(fn status_str -> status_str == candidate_status end) do
+        true -> String.to_existing_atom(candidate_status)
+        _ -> CollabSpaceConfig.default_status()
+      end
 
     %CollabSpaceConfig{
       status: status,
-      threaded:  Map.get(config, "threaded", true),
+      threaded: Map.get(config, "threaded", true),
       auto_accept: Map.get(config, "auto_accept", true),
       show_full_history: Map.get(config, "show_full_history", true),
       participation_min_replies: Map.get(config, "participation_min_replies", 0),
-      participation_min_posts: Map.get(config, "participation_min_posts", 0),
+      participation_min_posts: Map.get(config, "participation_min_posts", 0)
     }
   end
 

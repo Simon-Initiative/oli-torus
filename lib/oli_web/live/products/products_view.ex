@@ -72,7 +72,11 @@ defmodule OliWeb.Products.ProductsView do
       ]
   end
 
-  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id} = session, socket) do
+  def mount(
+        %{"project_id" => project_slug},
+        %{"current_author_id" => author_id} = session,
+        socket
+      ) do
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
     products = Blueprint.list_for_project(project)
@@ -118,14 +122,13 @@ defmodule OliWeb.Products.ProductsView do
   def render(assigns) do
     ~F"""
     <div>
-
       {#if @is_admin_view == false}
-        <Create id="creation" title={@creation_title} change="title" click="create"/>
+        <Create id="creation" title={@creation_title} change="title" click="create" />
       {#else}
-        <Filter change={"change_search"} reset="reset_search" apply="apply_search"/>
+        <Filter change="change_search" reset="reset_search" apply="apply_search" />
       {/if}
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <Listing
         filter={@query}
@@ -134,10 +137,9 @@ defmodule OliWeb.Products.ProductsView do
         offset={@offset}
         limit={@limit}
         sort="sort"
-        page_change="page_change"/>
-
+        page_change="page_change"
+      />
     </div>
-
     """
   end
 
@@ -146,11 +148,17 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def handle_event("create", _, socket) do
-    customizations = case socket.assigns.project.customizations do
-      nil -> nil
-      labels -> Map.from_struct(labels)
-    end
-    case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title, customizations) do
+    customizations =
+      case socket.assigns.project.customizations do
+        nil -> nil
+        labels -> Map.from_struct(labels)
+      end
+
+    case Blueprint.create_blueprint(
+           socket.assigns.project.slug,
+           socket.assigns.creation_title,
+           customizations
+         ) do
       {:ok, blueprint} ->
         {:noreply,
          socket

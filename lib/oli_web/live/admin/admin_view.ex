@@ -30,7 +30,7 @@ defmodule OliWeb.Admin.AdminView do
         <ul class="link-list">
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}>Manage Students and Instructor Accounts</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}>Manage Authoring Accounts</a></li>
-          <li><a href={Routes.institution_path(OliWeb.Endpoint, :index)}>Manage Institutions {badge(assigns, (Oli.Institutions.count_pending_registrations() |> Oli.Utils.positive_or_nil))}</a></li>
+          <li><a href={Routes.institution_path(OliWeb.Endpoint, :index)}>Manage Institutions {badge(assigns, Oli.Institutions.count_pending_registrations() |> Oli.Utils.positive_or_nil())}</a></li>
           <li><a href={Routes.invite_path(OliWeb.Endpoint, :index)}>Invite New Authors</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}>Manage Communities</a></li>
         </ul>
@@ -57,7 +57,7 @@ defmodule OliWeb.Admin.AdminView do
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}>Manage Third-Party API Keys</a></li>
           <li>
             <a href={Routes.live_dashboard_path(OliWeb.Endpoint, :home)} target="_blank">
-              <span>View System Performance Dashboard</span> <i class="fas fa-external-link-alt self-center ml-1"></i>
+              <span>View System Performance Dashboard</span> <i class="fas fa-external-link-alt self-center ml-1" />
             </a>
           </li>
         </ul>

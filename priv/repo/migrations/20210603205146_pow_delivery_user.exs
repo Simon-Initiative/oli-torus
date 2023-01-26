@@ -4,7 +4,6 @@ defmodule Oli.Repo.Migrations.PowDeliveryUser do
   import Ecto.Query, warn: false
 
   def change do
-
     alter table(:users) do
       add :password_hash, :string
       add :email_confirmation_token, :string
@@ -27,7 +26,10 @@ defmodule Oli.Repo.Migrations.PowDeliveryUser do
     create unique_index(:users, [:email_confirmation_token])
 
     # guarantee that independent learners have unique emails
-    create unique_index(:users, [:email], where: "independent_learner = true", name: :users_email_independent_learner_index)
+    create unique_index(:users, [:email],
+             where: "independent_learner = true",
+             name: :users_email_independent_learner_index
+           )
 
     # rename current user_identities to author_identities
     drop unique_index(:user_identities, [:uid, :provider])

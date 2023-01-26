@@ -62,10 +62,10 @@ defmodule OliWeb.PublisherLive.TableModel do
 
   def render_name(assigns, %Publisher{name: name, default: default}, _) do
     ~F"""
-      {name}
-      {#if default}
-        <span class="badge badge-info">default</span>
-      {/if}
+    {name}
+    {#if default}
+      <span class="badge badge-info">default</span>
+    {/if}
     """
   end
 

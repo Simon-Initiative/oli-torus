@@ -130,7 +130,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  part_attempt_guids: part_attempt_guids
                }}
 
-            error -> error
+            error ->
+              error
           end
 
         %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->

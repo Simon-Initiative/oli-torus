@@ -47,7 +47,9 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
         %{page: %{title: title, slug: page_revision_slug}, section: %{slug: section_slug}},
         _
       ) do
-    route_path = Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, page_revision_slug)
+    route_path =
+      Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, page_revision_slug)
+
     SortableTableModel.render_link_column(assigns, title, route_path)
   end
 end

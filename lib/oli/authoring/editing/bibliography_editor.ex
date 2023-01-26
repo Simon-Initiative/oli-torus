@@ -15,8 +15,7 @@ defmodule Oli.Authoring.Editing.BibliographyEditor do
     with {:ok, _publication} <-
            Publishing.project_working_publication(project_slug)
            |> trap_nil(),
-         {:ok, bib_entries} <- Oli.Authoring.Editing.BibEntryEditor.list(project_slug, author)
-    do
+         {:ok, bib_entries} <- Oli.Authoring.Editing.BibEntryEditor.list(project_slug, author) do
       {:ok,
        %Oli.Authoring.Editing.BibliographyContext{
          authorEmail: author.email,

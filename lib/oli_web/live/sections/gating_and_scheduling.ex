@@ -190,21 +190,22 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     ~F"""
     <div class="container">
       <div class="d-flex">
-        <TextSearch id="text-search"/>
-        <div class="flex-grow-1"></div>
+        <TextSearch id="text-search" />
+        <div class="flex-grow-1" />
         <Link class="btn btn-primary ml-2" to={link_new(assigns)}>
-          <i class="fas fa-plus"></i> New {render_type(assigns)}
+          <i class="fas fa-plus" /> New {render_type(assigns)}
         </Link>
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
         filter={@text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end

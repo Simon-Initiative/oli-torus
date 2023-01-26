@@ -29,24 +29,30 @@ defmodule OliWeb.Common.SelectTimezone do
           timezones
       end
 
-    assigns = assign(assigns, :timezones, timezones)
-    |> assign(:context, context)
+    assigns =
+      assign(assigns, :timezones, timezones)
+      |> assign(:context, context)
 
     ~H"""
-      <script>
-        function submitForm(){
-          const relativePath = window.location.pathname+window.location.search;
-          $('#hidden-redirect-to').val(relativePath);
-          $('#timezone-form').submit()
-        }
-      </script>
+    <script>
+      function submitForm(){
+        const relativePath = window.location.pathname+window.location.search;
+        $('#hidden-redirect-to').val(relativePath);
+        $('#timezone-form').submit()
+      }
+    </script>
 
-      <%= form_for @conn, Routes.static_page_path(OliWeb.Endpoint, :update_timezone), [id: "timezone-form"], fn f -> %>
-        <%= hidden_input f, :redirect_to, id: "hidden-redirect-to" %>
-        <div class="form-label-group">
-          <%= select f, :timezone, @timezones, onchange: "submitForm()", selected: selected_timezone(@context.local_tz), class: "form-control dropdown-select", required: true %>
-        </div>
-      <% end %>
+    <%= form_for @conn, Routes.static_page_path(OliWeb.Endpoint, :update_timezone), [id: "timezone-form"], fn f -> %>
+      <%= hidden_input(f, :redirect_to, id: "hidden-redirect-to") %>
+      <div class="form-label-group">
+        <%= select(f, :timezone, @timezones,
+          onchange: "submitForm()",
+          selected: selected_timezone(@context.local_tz),
+          class: "form-control dropdown-select",
+          required: true
+        ) %>
+      </div>
+    <% end %>
     """
   end
 

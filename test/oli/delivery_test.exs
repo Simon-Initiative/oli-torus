@@ -10,8 +10,9 @@ defmodule Oli.DeliveryTest do
   describe "delivery settings" do
     test "create_delivery_setting/1 with valid data creates a delivery_setting" do
       params = params_with_assocs(:delivery_setting)
+
       assert {:ok, %DeliverySetting{} = delivery_setting} =
-        Delivery.create_delivery_setting(params)
+               Delivery.create_delivery_setting(params)
 
       assert delivery_setting.collab_space_config.status == params.collab_space_config.status
       assert delivery_setting.collab_space_config.threaded == params.collab_space_config.threaded
@@ -55,7 +56,8 @@ defmodule Oli.DeliveryTest do
       [delivery_setting | _] = insert_pair(:delivery_setting, section: section)
       insert(:delivery_setting, section: other_section)
 
-      assert [returned_delivery_setting | _] = Delivery.search_delivery_settings(%{section_id: section.id})
+      assert [returned_delivery_setting | _] =
+               Delivery.search_delivery_settings(%{section_id: section.id})
 
       assert returned_delivery_setting.id == delivery_setting.id
       assert returned_delivery_setting.collab_space_config == %CollabSpaceConfig{}
@@ -69,8 +71,9 @@ defmodule Oli.DeliveryTest do
 
     test "upsert_delivery_setting/1 with valid data creates a delivery_setting" do
       params = params_with_assocs(:delivery_setting)
+
       assert {:ok, %DeliverySetting{} = delivery_setting} =
-        Delivery.upsert_delivery_setting(params)
+               Delivery.upsert_delivery_setting(params)
 
       assert delivery_setting.collab_space_config.status == params.collab_space_config.status
       assert delivery_setting.collab_space_config.threaded == params.collab_space_config.threaded
@@ -84,7 +87,9 @@ defmodule Oli.DeliveryTest do
       new_attrs = params_for(:collab_space_config, status: :archived)
 
       {:ok, updated_delivery_setting} =
-        Delivery.upsert_delivery_setting(Map.merge(Map.from_struct(delivery_setting), %{collab_space_config: new_attrs}))
+        Delivery.upsert_delivery_setting(
+          Map.merge(Map.from_struct(delivery_setting), %{collab_space_config: new_attrs})
+        )
 
       assert delivery_setting.id == updated_delivery_setting.id
       assert updated_delivery_setting.collab_space_config.status == :archived

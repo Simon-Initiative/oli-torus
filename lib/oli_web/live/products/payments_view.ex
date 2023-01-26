@@ -73,14 +73,21 @@ defmodule OliWeb.Products.PaymentsView do
   def render(assigns) do
     ~F"""
     <div>
+      <CreateCodes
+        id="create_codes"
+        disabled={!@product.requires_payment}
+        count={@code_count}
+        product_slug={@product_slug}
+        download_enabled={@download_enabled}
+        create_codes="create"
+        change="change_count"
+      />
 
-      <CreateCodes id="create_codes" disabled={!@product.requires_payment} count={@code_count} product_slug={@product_slug} download_enabled={@download_enabled} create_codes="create" change="change_count"/>
+      <hr class="mt-5 mb-5">
 
-      <hr class="mt-5 mb-5"/>
+      <Filter apply="apply_search" change="change_search" reset="reset_search" />
 
-      <Filter apply={"apply_search"} change={"change_search"} reset="reset_search"/>
-
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <Listing
         filter={@applied_query}
@@ -89,10 +96,9 @@ defmodule OliWeb.Products.PaymentsView do
         offset={@offset}
         limit={@limit}
         sort="sort"
-        page_change="page_change"/>
-
+        page_change="page_change"
+      />
     </div>
-
     """
   end
 

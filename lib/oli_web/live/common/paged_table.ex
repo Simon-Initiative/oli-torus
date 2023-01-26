@@ -16,36 +16,48 @@ defmodule OliWeb.Common.PagedTable do
 
   def render(assigns) do
     ~F"""
-      <div>
-        {#if @filter != ""}
-          <strong>Results filtered on &quot;{@filter}&quot;</strong>
-        {/if}
+    <div>
+      {#if @filter != ""}
+        <strong>Results filtered on &quot;{@filter}&quot;</strong>
+      {/if}
 
-        {#if @total_count > 0 and @total_count > @limit}
-          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-          {render_table(assigns)}
-          {#if @show_bottom_paging}
-            <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-          {/if}
-        {#elseif @total_count > 0}
-          <div>Showing all results ({@total_count} total)</div>
-          <br>
-          {render_table(assigns)}
-        {#else}
-          <p>None exist</p>
+      {#if @total_count > 0 and @total_count > @limit}
+        <Paging
+          id="header_paging"
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          click={@page_change}
+        />
+        {render_table(assigns)}
+        {#if @show_bottom_paging}
+          <Paging
+            id="footer_paging"
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            click={@page_change}
+          />
         {/if}
-      </div>
+      {#elseif @total_count > 0}
+        <div>Showing all results ({@total_count} total)</div>
+        <br>
+        {render_table(assigns)}
+      {#else}
+        <p>None exist</p>
+      {/if}
+    </div>
     """
   end
 
   def render_table(assigns) do
     if assigns.allow_selection do
       ~F"""
-      <Table model={@table_model} sort={@sort} select={@selection_change}/>
+      <Table model={@table_model} sort={@sort} select={@selection_change} />
       """
     else
       ~F"""
-      <Table model={@table_model} sort={@sort}/>
+      <Table model={@table_model} sort={@sort} />
       """
     end
   end

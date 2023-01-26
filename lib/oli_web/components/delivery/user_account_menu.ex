@@ -10,9 +10,9 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   def menu(assigns) do
     ~H"""
-      <div class="dropdown relative w-full">
-        <button
-          class="
+    <div class="dropdown relative w-full">
+      <button
+        class="
             dropdown-toggle
             px-6
             py-2.5
@@ -27,26 +27,26 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
             whitespace-nowrap
             text-left
           "
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
-          <div class="user-icon mr-4">
-            <%= user_icon(assigns) %>
-          </div>
+        type="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        <div class="user-icon mr-4">
+          <%= user_icon(assigns) %>
+        </div>
 
-          <div class="block">
-            <div class="username">
-              <%= user_name @current_user %>
-            </div>
-            <div class="role" style={"color: #{user_role_color(assigns, @current_user)};"}>
-              <%= user_role_text assigns, @current_user %>
-            </div>
+        <div class="block">
+          <div class="username">
+            <%= user_name(@current_user) %>
           </div>
-        </button>
+          <div class="role" style={"color: #{user_role_color(assigns, @current_user)};"}>
+            <%= user_role_text(assigns, @current_user) %>
+          </div>
+        </div>
+      </button>
 
-        <ul
-          class="
+      <ul
+        class="
             dropdown-menu
             min-w-max
             absolute
@@ -66,68 +66,107 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
             bg-clip-padding
             border-none
           "
-          aria-labelledby="accountDropdownMenu"
-        >
-          <%= if user_is_guest?(assigns) do %>
-            <li>
-              <%= link "Sign in / Create account", to: Routes.delivery_path(OliWeb.Endpoint, :signin, section: maybe_section_slug(assigns)), class: "dropdown-item btn" %>
-            </li>
+        aria-labelledby="accountDropdownMenu"
+      >
+        <%= if user_is_guest?(assigns) do %>
+          <li>
+            <%= link("Sign in / Create account",
+              to:
+                Routes.delivery_path(OliWeb.Endpoint, :signin, section: maybe_section_slug(assigns)),
+              class: "dropdown-item btn"
+            ) %>
+          </li>
 
-            <div id="create-account-popup"></div>
-            <script>
-              OLI.CreateAccountPopup(document.querySelector('#create-account-popup'), {sectionSlug: '<%= maybe_section_slug(assigns) %>'})
-            </script>
-          <% end %>
-            <%= if (not user_role_is_student(assigns, @current_user)) or Sections.is_independent_instructor?(@current_user) do %>
-              <li>
-                <%= if account_linked?(@current_user) do %>
-                  <h6 class="dropdown-item">Linked: <%= @current_user.author.email %></h6>
-                  <a class="dropdown-item" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)} target="_blank">Go to Course Author <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i></a>
-                  <a class="dropdown-item" href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank">Link a different account</a>
-                <% else %>
-                  <a class="dropdown-item" href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank">Link Existing Account</a>
-                <% end %>
-              </li>
-            <% end %>
-
-            <%= if user_is_independent_learner?(@current_user) do %>
-              <li>
-                <%= link "Edit Account", to: Routes.pow_registration_path(OliWeb.Endpoint, :edit), class: "dropdown-item btn" %>
-                <div class="dropdown-item no-hover">
-                  Dark Mode
-                  <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
-                </div>
-              </li>
-            <% end %>
-
-            <li>
-              <div class="dropdown-item no-hover">
-                Timezone
-                <br>
-                <OliWeb.Common.SelectTimezone.render {assigns} />
-              </div>
-            </li>
-            <hr class="dropdown-divider" />
-
-            <%= if user_is_independent_learner?(@current_user) or Sections.is_independent_instructor?(@current_user) do %>
-              <li>
-                <%= link "My Courses", to: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index), class: "dropdown-item btn" %>
-              </li>
-
-              <hr class="dropdown-divider" />
-            <% end %>
-
-            <%= if user_is_guest?(assigns) do %>
-            <li>
-              <%= link "Leave course", to: Routes.session_path(OliWeb.Endpoint, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
-            </li>
+          <div id="create-account-popup"></div>
+          <script>
+            OLI.CreateAccountPopup(document.querySelector('#create-account-popup'), {sectionSlug: '<%= maybe_section_slug(assigns) %>'})
+          </script>
+        <% end %>
+        <%= if (not user_role_is_student(assigns, @current_user)) or Sections.is_independent_instructor?(@current_user) do %>
+          <li>
+            <%= if account_linked?(@current_user) do %>
+              <h6 class="dropdown-item">Linked: <%= @current_user.author.email %></h6>
+              <a
+                class="dropdown-item"
+                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}
+                target="_blank"
+              >
+                Go to Course Author
+                <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i>
+              </a>
+              <a
+                class="dropdown-item"
+                href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}
+                target="_blank"
+              >
+                Link a different account
+              </a>
             <% else %>
-            <li>
-              <%= link "Sign out", to: Routes.session_path(OliWeb.Endpoint, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
-            </li>
-            <% end  %>
-          </ul>
-      </div>
+              <a
+                class="dropdown-item"
+                href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}
+                target="_blank"
+              >
+                Link Existing Account
+              </a>
+            <% end %>
+          </li>
+        <% end %>
+
+        <%= if user_is_independent_learner?(@current_user) do %>
+          <li>
+            <%= link("Edit Account",
+              to: Routes.pow_registration_path(OliWeb.Endpoint, :edit),
+              class: "dropdown-item btn"
+            ) %>
+            <div class="dropdown-item no-hover">
+              Dark Mode <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{
+                showLabels: false
+              }) %>
+            </div>
+          </li>
+        <% end %>
+
+        <li>
+          <div class="dropdown-item no-hover">
+            Timezone <br />
+            <OliWeb.Common.SelectTimezone.render {assigns} />
+          </div>
+        </li>
+        <hr class="dropdown-divider" />
+
+        <%= if user_is_independent_learner?(@current_user) or Sections.is_independent_instructor?(@current_user) do %>
+          <li>
+            <%= link("My Courses",
+              to: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index),
+              class: "dropdown-item btn"
+            ) %>
+          </li>
+
+          <hr class="dropdown-divider" />
+        <% end %>
+
+        <%= if user_is_guest?(assigns) do %>
+          <li>
+            <%= link("Leave course",
+              to: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
+              method: :delete,
+              id: "signout-link",
+              class: "dropdown-item btn"
+            ) %>
+          </li>
+        <% else %>
+          <li>
+            <%= link("Sign out",
+              to: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
+              method: :delete,
+              id: "signout-link",
+              class: "dropdown-item btn"
+            ) %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
     """
   end
 end

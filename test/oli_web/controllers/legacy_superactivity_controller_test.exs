@@ -234,7 +234,6 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
 
       assert conn.resp_body =~ ~s(command not supported)
-
     end
   end
 

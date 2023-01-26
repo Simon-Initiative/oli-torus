@@ -84,36 +84,37 @@ defmodule OliWeb.Admin.IngestV2 do
   defp render_preprocessed(assigns) do
     ~F"""
     {#if @ingestion_step == :preprocessed}
-    <Groups>
-      <Group label="Project" description="Details about the project">
-        <ReadOnly label="Title" value={@state.project_details["title"]}/>
-        <ReadOnly label="Description" value={@state.project_details["description"]}/>
-        <ReadOnly label="SVN URL" value={@state.project_details["svnRoot"]}/>
-      </Group>
-      <Group label="Resource Counts" description="Details about the resources">
-        <ReadOnly label="Tags" value={@resource_counts.tags}/>
-        <ReadOnly label="Bibliography Entries" value={@resource_counts.bib_entries}/>
-        <ReadOnly label="Objectives" value={@resource_counts.objectives}/>
-        <ReadOnly label="Activities" value={@resource_counts.activities}/>
-        <ReadOnly label="Pages" value={@resource_counts.pages}/>
-        <ReadOnly label="Products" value={@resource_counts.products}/>
-        <ReadOnly label="Media Items" value={@resource_counts.media_items}/>
-      </Group>
-      <Group label="Errors" description="Errors encountered during preprocessing">
-        <PagedTable
-          allow_selection={false}
-          filter={nil}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}/>
-      </Group>
-      <Group label="Process" description="">
-        <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
-          Proceed and ingest this course project
-        </button>
-      </Group>
-    </Groups>
+      <Groups>
+        <Group label="Project" description="Details about the project">
+          <ReadOnly label="Title" value={@state.project_details["title"]} />
+          <ReadOnly label="Description" value={@state.project_details["description"]} />
+          <ReadOnly label="SVN URL" value={@state.project_details["svnRoot"]} />
+        </Group>
+        <Group label="Resource Counts" description="Details about the resources">
+          <ReadOnly label="Tags" value={@resource_counts.tags} />
+          <ReadOnly label="Bibliography Entries" value={@resource_counts.bib_entries} />
+          <ReadOnly label="Objectives" value={@resource_counts.objectives} />
+          <ReadOnly label="Activities" value={@resource_counts.activities} />
+          <ReadOnly label="Pages" value={@resource_counts.pages} />
+          <ReadOnly label="Products" value={@resource_counts.products} />
+          <ReadOnly label="Media Items" value={@resource_counts.media_items} />
+        </Group>
+        <Group label="Errors" description="Errors encountered during preprocessing">
+          <PagedTable
+            allow_selection={false}
+            filter={nil}
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+          />
+        </Group>
+        <Group label="Process" description="">
+          <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
+            Proceed and ingest this course project
+          </button>
+        </Group>
+      </Groups>
     {/if}
     """
   end
@@ -130,18 +131,24 @@ defmodule OliWeb.Admin.IngestV2 do
 
   defp render_progress(assigns) do
     ~F"""
-      {#if @progress_step != ""}
+    {#if @progress_step != ""}
       <div class="alert alert-secondary" role="alert">
         <h4 class="alert-heading">{@progress_step}</h4>
 
-      {#if @progress_total_tasks > 0}
-        <div class="progress">
-          <div id={@progress_step} class="progress-bar" role="progressbar" style={width(assigns)} aria-valuenow={now(assigns)} aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-      {/if}
-
+        {#if @progress_total_tasks > 0}
+          <div class="progress">
+            <div
+              id={@progress_step}
+              class="progress-bar"
+              role="progressbar"
+              style={width(assigns)}
+              aria-valuenow={now(assigns)}
+              aria-valuemin="0"
+              aria-valuemax="100"
+            />
+          </div>
+        {/if}
       </div>
-
     {/if}
     """
   end
@@ -149,10 +156,10 @@ defmodule OliWeb.Admin.IngestV2 do
   defp render_failed(assigns) do
     ~F"""
     {#if @ingestion_step == :failed}
-    <div class="alert alert-danger" role="alert">
-      <h4 class="alert-heading">Ingest Processing Failed</h4>
-      {@error}
-    </div>
+      <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Ingest Processing Failed</h4>
+        {@error}
+      </div>
     {/if}
     """
   end
@@ -162,14 +169,13 @@ defmodule OliWeb.Admin.IngestV2 do
     ~F"""
     <div class="container">
       <h3 class="display-6">Course Ingestion</h3>
-      <hr class="my-4"/>
+      <hr class="my-4">
 
       {render_ready(assigns)}
       {render_preprocessed(assigns)}
       {render_processed(assigns)}
       {render_failed(assigns)}
       {render_progress(assigns)}
-
     </div>
     """
   end

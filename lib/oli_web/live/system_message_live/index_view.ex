@@ -41,26 +41,30 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
   def render(assigns) do
     ~F"""
-      {#for message <- @messages}
-        <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} {=@context}/>
-      {/for}
-      <Form for={:system_message} submit="create">
-        <Field name={:message} class="form-group">
-          <TextArea
-            class="form-control"
-            rows="3"
-            opts={placeholder: "Type a message for all users in the system", maxlength: "140"}
-          />
-          <ErrorTag/>
-        </Field>
+    {#for message <- @messages}
+      <EditMessage
+        save="save"
+        system_message={current_message(@unsaved_system_message, message)}
+        {=@context}
+      />
+    {/for}
+    <Form for={:system_message} submit="create">
+      <Field name={:message} class="form-group">
+        <TextArea
+          class="form-control"
+          rows="3"
+          opts={placeholder: "Type a message for all users in the system", maxlength: "140"}
+        />
+        <ErrorTag />
+      </Field>
 
-        <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Create</button>
-      </Form>
-      {#if @show_confirm}
-        <Confirm title="Confirm Message" id="dialog" ok="broadcast_message" cancel="cancel_modal">
-          Are you sure that you wish to <b>{if @message_will_be_displayed, do: "send", else: "hide"}</b> this message to all users in the system?
-        </Confirm>
-      {/if}
+      <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Create</button>
+    </Form>
+    {#if @show_confirm}
+      <Confirm title="Confirm Message" id="dialog" ok="broadcast_message" cancel="cancel_modal">
+        Are you sure that you wish to <b>{if @message_will_be_displayed, do: "send", else: "hide"}</b> this message to all users in the system?
+      </Confirm>
+    {/if}
     """
   end
 

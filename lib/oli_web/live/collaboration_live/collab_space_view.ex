@@ -120,53 +120,55 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   def render(assigns) do
     ~F"""
-      {#if show_collab_space?(@collab_space_config)}
-        {render_modal(assigns)}
+    {#if show_collab_space?(@collab_space_config)}
+      {render_modal(assigns)}
 
-        <div class="card">
-          <div class="card-body d-flex align-items-center">
-            <h3 class="card-title">Collaborative Space</h3>
+      <div class="card">
+        <div class="card-body d-flex align-items-center">
+          <h3 class="card-title">Collaborative Space</h3>
 
-            {#if is_archived?(@collab_space_config.status)}
-              <h6 class="badge badge-info ml-2">Archived</h6>
-            {/if}
+          {#if is_archived?(@collab_space_config.status)}
+            <h6 class="badge badge-info ml-2">Archived</h6>
+          {/if}
+        </div>
+
+        <div class="card-footer bg-transparent row">
+          <div class="col-xs-12 col-lg-9 order-lg-first">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center border border-light p-3 rounded">
+                <strong class="mr-2">Sort by</strong>
+                <Sort sort={@sort} />
+              </div>
+
+              <button
+                type="button"
+                :on-click="display_create_modal"
+                class="btn btn-primary h-25"
+                disabled={is_archived?(@collab_space_config.status)}
+              >
+                + New
+              </button>
+            </div>
+
+            <div class="accordion mt-5 vh-100 overflow-auto" id="post-accordion">
+              <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
+                <PostList
+                  posts={@posts}
+                  collab_space_config={@collab_space_config}
+                  selected={@selected}
+                  user_id={@user.id}
+                  is_instructor={@is_instructor}
+                />
+              </div>
+            </div>
           </div>
 
-          <div class="card-footer bg-transparent row">
-            <div class="col-xs-12 col-lg-9 order-lg-first">
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center border border-light p-3 rounded">
-                  <strong class="mr-2">Sort by</strong>
-                  <Sort sort={@sort} />
-                </div>
-
-                <button
-                  type="button"
-                  :on-click="display_create_modal"
-                  class="btn btn-primary h-25"
-                  disabled={is_archived?(@collab_space_config.status)}>
-                    + New
-                </button>
-              </div>
-
-              <div class="accordion mt-5 vh-100 overflow-auto" id="post-accordion">
-                <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
-                  <PostList
-                    posts={@posts}
-                    collab_space_config={@collab_space_config}
-                    selected={@selected}
-                    user_id={@user.id}
-                    is_instructor={@is_instructor} />
-                </div>
-              </div>
-            </div>
-
-            <div class="col-xs-12 col-lg-3 order-first mb-5">
-              <ActiveUsers users={@active_users} />
-            </div>
+          <div class="col-xs-12 col-lg-3 order-first mb-5">
+            <ActiveUsers users={@active_users} />
           </div>
         </div>
-      {/if}
+      </div>
+    {/if}
     """
   end
 
@@ -512,7 +514,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     modal = fn assigns ->
       ~F"""
-        <Modal {...@modal_assigns} />
+      <Modal {...@modal_assigns} />
       """
     end
 
@@ -527,7 +529,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp display_confirm_modal(modal_assigns, action, index, socket, opt_text \\ "") do
     modal = fn assigns ->
       ~F"""
-        <Confirm {...@modal_assigns}> Are you sure you want to {action} post #{index}? {opt_text}</Confirm>
+      <Confirm {...@modal_assigns}>
+        Are you sure you want to {action} post #{index}? {opt_text}</Confirm>
       """
     end
 

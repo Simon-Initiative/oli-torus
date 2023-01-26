@@ -53,7 +53,8 @@ defmodule OliWeb.DeliveryController do
           Institutions.get_institution_registration_deployment(
             lti_params["iss"],
             LtiParams.peek_client_id(lti_params),
-            lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"])
+            lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+          )
 
         if institution.research_consent != :no_form and is_nil(user.research_opt_out) do
           render_research_consent(conn)

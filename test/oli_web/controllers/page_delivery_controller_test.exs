@@ -11,12 +11,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
 
-
   describe "page_delivery_controller build_hierarchy" do
     setup [:setup_lti_session]
 
     test "properly converts a deeply nested  student access by an enrolled student", %{} do
-
       # Defines a hierachry of:
 
       # Page one
@@ -142,7 +140,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       }
 
       # Build the hierarchy and check the correctness of the deeply nested containers
-      hierarchy = OliWeb.PageDeliveryController.build_hierarchy_from_top_level(["2", "3", "5", "10429", "10430"], previous_next_index)
+      hierarchy =
+        OliWeb.PageDeliveryController.build_hierarchy_from_top_level(
+          ["2", "3", "5", "10429", "10430"],
+          previous_next_index
+        )
+
       assert Enum.count(hierarchy) == 5
 
       unit_two = Enum.at(hierarchy, 4)
@@ -159,7 +162,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       deep_page = nested_section["children"] |> Enum.at(0)
       assert deep_page["title"] == "Deep Page"
-
     end
   end
 

@@ -80,18 +80,18 @@ defmodule OliWeb.Users.UsersDetailView do
       <Groups>
         <Group label="Details" description="User details">
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
-            <ReadOnly label="Sub" value={@user.sub}/>
-            <ReadOnly label="Name" value={@user.name}/>
-            <ReadOnly label="First Name" value={@user.given_name}/>
-            <ReadOnly label="Last Name" value={@user.family_name}/>
-            <ReadOnly label="Email" value={@user.email}/>
-            <ReadOnly label="Guest" value={boolean(@user.guest)}/>
+            <ReadOnly label="Sub" value={@user.sub} />
+            <ReadOnly label="Name" value={@user.name} />
+            <ReadOnly label="First Name" value={@user.given_name} />
+            <ReadOnly label="Last Name" value={@user.family_name} />
+            <ReadOnly label="Email" value={@user.email} />
+            <ReadOnly label="Guest" value={boolean(@user.guest)} />
             {#if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true"}
-              <ReadOnly label="Confirmed is 13 or older on creation" value={boolean(@user.age_verified)}/>
+              <ReadOnly label="Confirmed is 13 or older on creation" value={boolean(@user.age_verified)} />
             {/if}
             <div class="form-control mb-3">
               <Field name={:independent_learner}>
-                <Checkbox/>
+                <Checkbox />
                 <Label class="form-check-label mr-2">Independent Learner</Label>
               </Field>
             </div>
@@ -107,10 +107,10 @@ defmodule OliWeb.Users.UsersDetailView do
                 </Field>
               </div>
             </section>
-            <ReadOnly label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
-            <ReadOnly label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @context)}/>
-            <ReadOnly label="Created" value={render_date(@user, :inserted_at, @context)}/>
-            <ReadOnly label="Last Updated" value={render_date(@user, :updated_at, @context)}/>
+            <ReadOnly label="Research Opt Out" value={boolean(@user.research_opt_out)} />
+            <ReadOnly label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @context)} />
+            <ReadOnly label="Created" value={render_date(@user, :inserted_at, @context)} />
+            <ReadOnly label="Last Updated" value={render_date(@user, :updated_at, @context)} />
             <Submit class="float-right btn btn-md btn-primary mt-2">Save</Submit>
           </Form>
         </Group>
@@ -124,8 +124,7 @@ defmodule OliWeb.Users.UsersDetailView do
                     <div>Last Updated: {render_date(lti_params, :updated_at, @context)}</div>
                   </div>
                   <div style="max-height: 400px; overflow: scroll;">
-                    <pre> <code
-                      id="lit_params_#{lti_params.id}" class="lti-params language-json" phx-update="ignore">{Jason.encode!(lti_params.params) |> Jason.Formatter.pretty_print()}</code>
+                    <pre> <code id="lit_params_#{lti_params.id}" class="lti-params language-json" phx-update="ignore">{Jason.encode!(lti_params.params) |> Jason.Formatter.pretty_print()}</code>
                     </pre>
                   </div>
                 </li>
@@ -135,7 +134,7 @@ defmodule OliWeb.Users.UsersDetailView do
         {/if}
         <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.independent_learner}
-            <Actions user={@user} csrf_token={@csrf_token}/>
+            <Actions user={@user} csrf_token={@csrf_token} />
           {#else}
             <div>No actions available</div>
             <div class="text-secondary">LTI users are managed by their LMS</div>
@@ -154,7 +153,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <ConfirmEmailModal.render {...@modal_assigns} />
+      <ConfirmEmailModal.render {...@modal_assigns} />
       """
     end
 
@@ -188,7 +187,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <LockAccountModal.render {...@modal_assigns} />
+      <LockAccountModal.render {...@modal_assigns} />
       """
     end
 
@@ -217,7 +216,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <UnlockAccountModal.render {...@modal_assigns} />
+      <UnlockAccountModal.render {...@modal_assigns} />
       """
     end
 
@@ -246,7 +245,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <DeleteAccountModal.render {...@modal_assigns} />
+      <DeleteAccountModal.render {...@modal_assigns} />
       """
     end
 

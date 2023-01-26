@@ -281,8 +281,7 @@ defmodule OliWeb.LtiController do
                 },
                 %{
                   "type" => "mrkdwn",
-                  "text" =>
-                    "*Location:*\n#{pending_registration.country_code}"
+                  "text" => "*Location:*\n#{pending_registration.country_code}"
                 },
                 %{
                   "type" => "mrkdwn",
@@ -420,7 +419,9 @@ defmodule OliWeb.LtiController do
 
                   # make sure section details are up to date
                   %{"title" => context_title} = context
-                  {:ok, _section} = update_section_details(context_title, section, lti_params, registration)
+
+                  {:ok, _section} =
+                    update_section_details(context_title, section, lti_params, registration)
                 end
 
                 # sign current user in and redirect to home page

@@ -45,12 +45,12 @@ defmodule OliWeb.Users.UsersTableModel do
     case author do
       nil ->
         ~F"""
-          <span class="text-secondary"><em>None</em></span>
+        <span class="text-secondary"><em>None</em></span>
         """
 
       author ->
         ~F"""
-          <span class="badge badge-dark">{author.email}</span>
+        <span class="badge badge-dark">{author.email}</span>
         """
     end
   end
@@ -61,7 +61,7 @@ defmodule OliWeb.Users.UsersTableModel do
         _
       ) do
     ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{name(name, given_name, family_name)}</a>
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{name(name, given_name, family_name)}</a>
     """
   end
 
@@ -73,24 +73,24 @@ defmodule OliWeb.Users.UsersTableModel do
     primary_badge =
       if independent_learner do
         ~F"""
-          <span class="badge badge-primary">Independent Learner</span>
+        <span class="badge badge-primary">Independent Learner</span>
         """
       else
         ~F"""
-          <span class="badge badge-dark">LTI</span>
+        <span class="badge badge-dark">LTI</span>
         """
       end
 
     secondary_badge =
       if can_create_sections do
         ~F"""
-          <span class="badge badge-light">Can Create Sections</span>
+        <span class="badge badge-light">Can Create Sections</span>
         """
       else
         ~F"""
         """
       end
 
-      ~F({primary_badge} {secondary_badge})
+    ~F({primary_badge} {secondary_badge})
   end
 end

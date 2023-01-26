@@ -39,7 +39,9 @@ defmodule Oli.Delivery.Paywall.Discount do
     case changeset do
       %Ecto.Changeset{valid?: true} = changeset ->
         get_field(changeset, :type) == :percentage
-      _ -> false
+
+      _ ->
+        false
     end
   end
 
@@ -47,7 +49,9 @@ defmodule Oli.Delivery.Paywall.Discount do
     case changeset do
       %Ecto.Changeset{valid?: true} = changeset ->
         get_field(changeset, :type) == :fixed_amount
-      _ -> false
+
+      _ ->
+        false
     end
   end
 end

@@ -51,12 +51,12 @@ defmodule OliWeb.Users.AuthorsTableModel do
     case system_role_id do
       ^admin_role_id ->
         ~F"""
-          <span class="badge badge-warning">Administrator</span>
+        <span class="badge badge-warning">Administrator</span>
         """
 
       _ ->
         ~F"""
-          <span class="badge badge-dark">Author</span>
+        <span class="badge badge-dark">Author</span>
         """
     end
   end

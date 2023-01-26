@@ -22,7 +22,6 @@ defmodule Oli.Resources.Collaboration.CollabSpaceConfig do
     field :participation_min_posts, :integer, default: 0
   end
 
-
   def changeset(collab_space_config, attrs \\ %{})
 
   def changeset(collab_space_config, %Oli.Resources.Collaboration.CollabSpaceConfig{} = attrs) do

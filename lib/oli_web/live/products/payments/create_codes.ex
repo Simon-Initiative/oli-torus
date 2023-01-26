@@ -13,17 +13,26 @@ defmodule OliWeb.Products.Payments.CreateCodes do
     ~F"""
     <div class="d-flex justify-content-between align-items-center">
       <div class="form-inline">
-
         <p>Download a new batch of payment codes:</p>
-        <input class="ml-2 form-control form-control-sm" disabled={@disabled} type="number" value={@count} style="width: 90px;" :on-blur={@change} :on-focus={@change}/>
+        <input
+          class="ml-2 form-control form-control-sm"
+          disabled={@disabled}
+          type="number"
+          value={@count}
+          style="width: 90px;"
+          :on-blur={@change}
+          :on-focus={@change}
+        />
 
         <button class="btn btn-primary btn-sm ml-1" :on-click={@create_codes}>Create</button>
-
       </div>
       <div>
-        <a class={"btn btn-outline-primary btn-sm ml-1 fs-button-download" <> if @download_enabled, do: "", else: " disabled"} href={route_or_disabled(assigns)}>Download last created</a>
+        <a
+          class={"btn btn-outline-primary btn-sm ml-1 fs-button-download" <>
+            if @download_enabled, do: "", else: " disabled"}
+          href={route_or_disabled(assigns)}
+        >Download last created</a>
       </div>
-
     </div>
     """
   end

@@ -159,47 +159,49 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
   def render(assigns) do
     ~F"""
-      {render_modal(assigns)}
+    {render_modal(assigns)}
 
-      <FilterBox table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
-        <Filter
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query} />
-      </FilterBox>
+    <FilterBox
+      table_model={@table_model}
+      show_more_opts={false}
+      card_header_text="Learning Objectives"
+      card_body_text={card_body_text(assigns)}
+    >
+      <Filter change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+    </FilterBox>
 
-      <div class="d-flex flex-row-reverse">
-        <button class="btn btn-primary" :on-click="display_new_modal">Create new Objective</button>
-      </div>
+    <div class="d-flex flex-row-reverse">
+      <button class="btn btn-primary" :on-click="display_new_modal">Create new Objective</button>
+    </div>
 
-      <div id="objectives-table" class="p-4">
-        <Table
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}
-          with_body={true}>
-
-          <Listing
-            rows={@table_model.rows}
-            selected={@selected}
-            project_slug={@project.slug} />
-        </Table>
-      </div>
+    <div id="objectives-table" class="p-4">
+      <Table
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort={@sort}
+        page_change={@page_change}
+        show_bottom_paging={@show_bottom_paging}
+        additional_table_class={@additional_table_class}
+        with_body
+      >
+        <Listing rows={@table_model.rows} selected={@selected} project_slug={@project.slug} />
+      </Table>
+    </div>
     """
   end
 
   defp card_body_text(assigns) do
     ~F"""
-      Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-      <br/>
-      Refer to the <a class="external" href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+    Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
+    <br>
+    Refer to the <a
+      class="external"
+      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
+      target="_blank"
+    >CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
     """
   end
 
@@ -213,7 +215,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     modal = fn assigns ->
       ~F"""
-        <FormModal {...@modal_assigns} />
+      <FormModal {...@modal_assigns} />
       """
     end
 
@@ -279,7 +281,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     modal = fn assigns ->
       ~F"""
-        <FormModal {...@modal_assigns} />
+      <FormModal {...@modal_assigns} />
       """
     end
 
@@ -333,7 +335,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     modal = fn assigns ->
       ~F"""
-        <SelectExistingSubModal {...@modal_assigns} />
+      <SelectExistingSubModal {...@modal_assigns} />
       """
     end
 
@@ -371,7 +373,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
           modal = fn assigns ->
             ~F"""
-              <DeleteModal {...@modal_assigns} />
+            <DeleteModal {...@modal_assigns} />
             """
           end
 
@@ -391,7 +393,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
           modal = fn assigns ->
             ~F"""
-              <SelectionsModal {...@modal_assigns} />
+            <SelectionsModal {...@modal_assigns} />
             """
           end
 

@@ -1,4 +1,4 @@
-{ render_modal(assigns) }
+{render_modal(assigns)}
 
 <div class="container">
   <h2>Revision History</h2>
@@ -12,10 +12,26 @@
         </div>
         <div class="card-body">
           <div class="border rounded mb-2">
-            { live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size }
+            {live_component(Graph,
+              tree: @tree,
+              root: @root,
+              selected: @selected,
+              project: @project,
+              initial_size: @initial_size
+            )}
           </div>
-          { live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: @page_size }
-          <Table id="table" tree={@tree} publication={@publication} mappings={@mappings} revisions={@revisions} selected={@selected} page_offset={@page_offset} page_size={@page_size} context={@context} />
+          {live_component(Pagination, revisions: @revisions, page_offset: @page_offset, page_size: @page_size)}
+          <Table
+            id="table"
+            tree={@tree}
+            publication={@publication}
+            mappings={@mappings}
+            revisions={@revisions}
+            selected={@selected}
+            page_offset={@page_offset}
+            page_size={@page_size}
+            context={@context}
+          />
         </div>
       </div>
     </div>
@@ -28,17 +44,21 @@
           <div>
             {#if @edited_json}
               <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="save_edits">
-                <i class="fas fa-save"></i> Save as New Revision
+                <i class="fas fa-save" /> Save as New Revision
               </button>
               <button type="button" class="btn btn-outline-primary btn-sm" phx-click="cancel_edits">
                 Cancel
               </button>
-            {#else }
+            {#else}
               <button type="button" class="btn btn-outline-primary btn-sm mr-2" phx-click="edit_json">
                 Edit JSON Content
               </button>
 
-              <button type="button" class="btn btn-outline-danger btn-sm" phx-click="show_restore_revision_modal">
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                phx-click="show_restore_revision_modal"
+              >
                 Restore
               </button>
             {/if}
@@ -50,7 +70,7 @@
             {#for error <- @edit_errors}
               <div class="alert alert-warning d-flex" role="alert">
                 <div class="flex-grow-1">{error}</div>
-                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="fas fa-external-link-alt"></i></a></div>
+                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="fas fa-external-link-alt" /></a></div>
               </div>
             {/for}
           {/if}
@@ -80,30 +100,30 @@
             </div>
           </div>
           <div class="card-body">
-
             <p>Select a <code>.json</code> file to upload and set as the content of this resource.</p>
 
-              <div class="flex my-3" phx-drop-target={@uploads.json.ref}>
-                <.live_file_input upload={@uploads.json} />
+            <div class="flex my-3" phx-drop-target={@uploads.json.ref}>
+              <.live_file_input upload={@uploads.json} />
+            </div>
+
+            {#for entry <- @uploads.json.entries}
+              {#for err <- upload_errors(@uploads.json, entry)}
+                <p class="alert alert-danger">{friendly_error(err)}</p>
+              {#else}
+                {#if entry.progress}
+                  <p>
+                    <progress value={entry.progress} max="100">{entry.progress}%
+                    </progress>
+                  </p>
+                {/if}
+              {/for}
+            {/for}
+
+            {#for {msg, el} <- @upload_errors}
+              <div class="alert alert-danger" role="alert">
+                JSON validation failed: {msg} {el}
               </div>
-
-              {#for entry <- @uploads.json.entries }
-                {#for err <- upload_errors(@uploads.json, entry) }
-                  <p class="alert alert-danger">{friendly_error(err)}</p>
-                {#else}
-                  {#if entry.progress}
-                    <p>
-                      <progress value={entry.progress} max="100">{ entry.progress }% </progress>
-                    </p>
-                  {/if}
-                {/for}
-              {/for}
-
-              {#for {msg, el} <- @upload_errors}
-                <div class="alert alert-danger" role="alert">
-                  JSON validation failed: {msg} {el}
-                </div>
-              {/for}
+            {/for}
           </div>
         </div>
       </div>

@@ -8,7 +8,8 @@ defmodule Oli.Delivery.DeliverySetting do
     belongs_to :section, Oli.Delivery.Sections.Section
     belongs_to :resource, Oli.Resources.Resource
 
-    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :update
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
+      on_replace: :update
 
     timestamps(type: :utc_datetime)
   end

@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
 
   def render(assigns) do
     ~F"""
-    <div></div>
+    <div />
     """
   end
 
@@ -87,20 +87,21 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         %{context: context} = assigns,
         %GatingCondition{
           type: :schedule,
-          data: %GatingConditionData{
-            start_datetime: start_datetime,
-            end_datetime: end_datetime
-          } = data
+          data:
+            %GatingConditionData{
+              start_datetime: start_datetime,
+              end_datetime: end_datetime
+            } = data
         },
         _
       ) do
     ~F"""
-      <div :if={start_datetime}>
-        <b>Start:</b> {Utils.render_precise_date(data, :start_datetime, context)}
-      </div>
-      <div :if={end_datetime}>
-        <b>End:</b> {Utils.render_precise_date(data, :end_datetime, context)}
-      </div>
+    <div :if={start_datetime}>
+      <b>Start:</b> {Utils.render_precise_date(data, :start_datetime, context)}
+    </div>
+    <div :if={end_datetime}>
+      <b>End:</b> {Utils.render_precise_date(data, :end_datetime, context)}
+    </div>
     """
   end
 
@@ -157,9 +158,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         _
       ) do
     ~F"""
-      <div>
-        Allows access to this resource
-      </div>
+    <div>
+      Allows access to this resource
+    </div>
     """
   end
 
@@ -173,10 +174,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         _
       ) do
     ~F"""
-      <div :if={user_id}>
-        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{user.name}</Link>
-
-      </div>
+    <div :if={user_id}>
+      <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{user.name}</Link>
+    </div>
     """
   end
 end

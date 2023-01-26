@@ -21,6 +21,5 @@ defmodule Oli.Repo.Migrations.CreateActivityCustomLogs do
     create index(:custom_activity_logs, [:resource_id])
     create index(:custom_activity_logs, [:activity_attempt_id])
     create index(:custom_activity_logs, [:activity_type])
-
   end
 end

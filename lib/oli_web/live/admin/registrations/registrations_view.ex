@@ -117,26 +117,28 @@ defmodule OliWeb.Admin.RegistrationsView do
   def render(assigns) do
     ~F"""
     <div>
-
       <div class="d-flex flex-row">
         <TextSearch id="text-search" text={@options.text_search} />
-        <div class="flex-grow-1"></div>
+        <div class="flex-grow-1" />
         <div>
-          <Link label="Create Registration" to={Routes.registration_path(OliWeb.Endpoint, :new)} class="btn btn-sm btn-outline-primary ml-2" />
+          <Link
+            label="Create Registration"
+            to={Routes.registration_path(OliWeb.Endpoint, :new)}
+            class="btn btn-sm btn-outline-primary ml-2"
+          />
         </div>
       </div>
 
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
-
+        limit={@limit}
+      />
     </div>
-
     """
   end
 

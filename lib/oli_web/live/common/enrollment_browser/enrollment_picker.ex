@@ -51,10 +51,9 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
   def render(assigns) do
     ~F"""
     <div id={@id}>
+      <TextSearch id="text-search" event_target={"#" <> assigns.id} />
 
-      <TextSearch id="text-search" event_target={"#" <> assigns.id}/>
-
-      <div class="mb-3"/>
+      <div class="mb-3" />
 
       <PagedTable
         sort="paged_table_sort"
@@ -63,7 +62,8 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
-        limit={@limit}/>
+        limit={@limit}
+      />
     </div>
     """
   end

@@ -75,15 +75,15 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {render_modal(assigns)}
       <Groups>
         <Group label="Details" description="User details">
-          <ReadOnly label="Name" value={@user.name}/>
-          <ReadOnly label="First Name" value={@user.given_name}/>
-          <ReadOnly label="Last Name" value={@user.family_name}/>
-          <ReadOnly label="Email" value={@user.email}/>
-          <ReadOnly label="Role" value={role(@user.system_role_id)}/>
+          <ReadOnly label="Name" value={@user.name} />
+          <ReadOnly label="First Name" value={@user.given_name} />
+          <ReadOnly label="Last Name" value={@user.family_name} />
+          <ReadOnly label="Email" value={@user.email} />
+          <ReadOnly label="Role" value={role(@user.system_role_id)} />
         </Group>
         <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu")}
-            <Actions user={@user} csrf_token={@csrf_token} for_author={true}/>
+            <Actions user={@user} csrf_token={@csrf_token} for_author />
           {/if}
         </Group>
       </Groups>
@@ -99,7 +99,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <ConfirmEmailModal.render {...@modal_assigns} />
+      <ConfirmEmailModal.render {...@modal_assigns} />
       """
     end
 
@@ -133,7 +133,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <UnlockAccountModal.render {...@modal_assigns} />
+      <UnlockAccountModal.render {...@modal_assigns} />
       """
     end
 
@@ -162,7 +162,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <DeleteAccountModal.render {...@modal_assigns} />
+      <DeleteAccountModal.render {...@modal_assigns} />
       """
     end
 
@@ -197,7 +197,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <LockAccountModal.render {...@modal_assigns} />
+      <LockAccountModal.render {...@modal_assigns} />
       """
     end
 
@@ -226,7 +226,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <GrantAdminModal.render {...@modal_assigns} />
+      <GrantAdminModal.render {...@modal_assigns} />
       """
     end
 
@@ -251,7 +251,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     modal = fn assigns ->
       ~F"""
-        <RevokeAdminModal.render {...@modal_assigns} />
+      <RevokeAdminModal.render {...@modal_assigns} />
       """
     end
 

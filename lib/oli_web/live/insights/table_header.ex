@@ -17,7 +17,13 @@ defmodule OliWeb.Insights.TableHeader do
       phx-value-sort-by={@sort_by}
       scope="col"
       data-trigger="hover focus"
-      data-toggle={if @tooltip do "popover" else "" end}
+      data-toggle={
+        if @tooltip do
+          "popover"
+        else
+          ""
+        end
+      }
       data-placement="top"
       data-content={@tooltip}
     >
@@ -37,7 +43,8 @@ defmodule OliWeb.Insights.TableHeader do
           phx-click="sort"
           phx-value-sort-by="title"
           scope="col"
-          phx-keyup="sort">
+          phx-keyup="sort"
+        >
           <%= case @selected do
             :by_page -> "Page Title"
             :by_activity -> "Activity Title"
@@ -49,26 +56,30 @@ defmodule OliWeb.Insights.TableHeader do
         <%= if @selected == :by_page do %>
           <th>Activity</th>
         <% end %>
-        <%= th(assigns,
+        <%= th(
+          assigns,
           "number_of_attempts",
           "Number of Attempts",
-          "Number of total student submissions")
-        %>
-        <%= th(assigns,
+          "Number of total student submissions"
+        ) %>
+        <%= th(
+          assigns,
           "relative_difficulty",
           "Relative Difficulty",
-          "(Number of hints requested + Number of incorrect submissions) / Total submissions")
-        %>
-        <%= th(assigns,
+          "(Number of hints requested + Number of incorrect submissions) / Total submissions"
+        ) %>
+        <%= th(
+          assigns,
           "eventually_correct",
           "Eventually Correct",
-          "Ratio of the time a student with at least one submission eventually gets the correct answer")
-        %>
-        <%= th(assigns,
+          "Ratio of the time a student with at least one submission eventually gets the correct answer"
+        ) %>
+        <%= th(
+          assigns,
           "first_try_correct",
           "First Try Correct",
-          "Ratio of the time a student gets the correct answer on their first submission")
-        %>
+          "Ratio of the time a student gets the correct answer on their first submission"
+        ) %>
       </tr>
     </thead>
     """

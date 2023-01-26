@@ -44,7 +44,7 @@ defmodule OliWeb.Projects.TableModel do
     case name do
       :title ->
         ~F"""
-          <a href={Routes.project_path(OliWeb.Endpoint, :overview, project.slug)}>{project.title}</a>
+        <a href={Routes.project_path(OliWeb.Endpoint, :overview, project.slug)}>{project.title}</a>
         """
 
       :status ->

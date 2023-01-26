@@ -61,19 +61,18 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
 
   def sort_payment_column(sort_order, sort_spec) do
     {fn item ->
-      amount =
-        if is_product?(item) and item.requires_payment do
-          case Money.to_string(item.amount) do
-            {:ok, m} -> m
-            _ -> 0
-          end
-        else
-          0
-        end
+       amount =
+         if is_product?(item) and item.requires_payment do
+           case Money.to_string(item.amount) do
+             {:ok, m} -> m
+             _ -> 0
+           end
+         else
+           0
+         end
 
-      %{requires_payment: amount}
-    end,
-    ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+       %{requires_payment: amount}
+     end, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
   def render_title_column(assigns, item, _) do
@@ -87,27 +86,27 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
   end
 
   def sort_title_column(sort_order, sort_spec) do
-    {fn item -> if is_product?(item),
-      do: Map.put(item, :title, String.downcase(item.title)),
-      else: Map.put(item.project, :title, String.downcase(item.project.title))
-    end,
-    ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+    {fn item ->
+       if is_product?(item),
+         do: Map.put(item, :title, String.downcase(item.title)),
+         else: Map.put(item.project, :title, String.downcase(item.project.title))
+     end, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
   def render_action_column(assigns, item, _) do
     id = if is_product?(item), do: "product:#{item.id}", else: "publication:#{item.id}"
 
     ~F"""
-      <button class="btn btn-primary" phx-click="selected" phx-value-id={id}>Select</button>
+    <button class="btn btn-primary" phx-click="selected" phx-value-id={id}>Select</button>
     """
   end
 
   def render_type_column(_, item, _),
-    do: if is_product?(item), do: "Product", else: "Project"
+    do: if(is_product?(item), do: "Product", else: "Project")
 
   def render(assigns) do
     ~F"""
-      <div>nothing</div>
+    <div>nothing</div>
     """
   end
 end

@@ -11,5 +11,4 @@ defmodule OliWeb.ManualGrading.Apply do
     </div>
     """
   end
-
 end

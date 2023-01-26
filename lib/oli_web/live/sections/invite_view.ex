@@ -50,31 +50,41 @@ defmodule OliWeb.Sections.InviteView do
   def render(assigns) do
     ~F"""
     <div>
-
       <div class="mb-5">
         Create new invite link expiring after:
         <div class="btn-group" role="group">
           <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="one_day">One day</button>
           <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="one_week">One week</button>
-          <button disabled={is_nil(@section.start_date)} type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_start">Section start</button>
-          <button disabled={is_nil(@section.end_date)} type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_end">Section end</button>
+          <button
+            disabled={is_nil(@section.start_date)}
+            type="button"
+            class="btn btn-secondary"
+            :on-click="new"
+            phx-value-option="section_start"
+          >Section start</button>
+          <button
+            disabled={is_nil(@section.end_date)}
+            type="button"
+            class="btn btn-secondary"
+            :on-click="new"
+            phx-value-option="section_end"
+          >Section end</button>
         </div>
       </div>
 
+      {#if length(@invitations) > 0}
+        <div class="list-group">
+          {#for invitation <- @invitations}
+            <Invitation id={invitation.id} invitation={invitation} delete="request_delete" {=@context} />
+          {/for}
+        </div>
+      {/if}
 
-    {#if length(@invitations) > 0}
-      <div class="list-group">
-      {#for invitation <- @invitations}
-        <Invitation id={invitation.id} invitation={invitation} delete="request_delete" {=@context}/>
-      {/for}
-      </div>
-    {/if}
-
-    {#if @show_confirm}
-      <Confirm title="Confirm Deletion" id="dialog" ok="delete" cancel="cancel_modal">
-        Are you sure that you wish to delete this course section invitation?
-      </Confirm>
-    {/if}
+      {#if @show_confirm}
+        <Confirm title="Confirm Deletion" id="dialog" ok="delete" cancel="cancel_modal">
+          Are you sure that you wish to delete this course section invitation?
+        </Confirm>
+      {/if}
     </div>
     """
   end

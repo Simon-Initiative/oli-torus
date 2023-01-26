@@ -14,13 +14,11 @@ defmodule OliWeb.ManualGrading.PartScoring do
           {feedback(assigns)}
         </div>
         <div class="col">
-
           <div class="input-group mb-3">
             <div class="input-group-prepend">
               <span class="input-group-text">Score</span>
             </div>
             <input type="text" disabled class="form-control" value={@part_attempt.score}>
-
           </div>
 
           <div class="input-group mb-3">
@@ -40,18 +38,33 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form>
       <div class="form-row">
         <div class="col-span-10">
-          <textarea id={"feedback_" <> @part_attempt.attempt_guid} phx-hook="TextInputListener" phx-value-change={@feedback_changed.name}
-            class="form-control" placeholder="Enter feedback for the student..." autocomplete="on" wrap="soft" maxlength="2000">{@part_scoring.feedback}</textarea>
+          <textarea
+            id={"feedback_" <> @part_attempt.attempt_guid}
+            phx-hook="TextInputListener"
+            phx-value-change={@feedback_changed.name}
+            class="form-control"
+            placeholder="Enter feedback for the student..."
+            autocomplete="on"
+            wrap="soft"
+            maxlength="2000"
+          >{@part_scoring.feedback}</textarea>
         </div>
         <div class="col">
-
           <div class="input-group mb-3">
             <div class="input-group-prepend">
               <span class="input-group-text">Score</span>
             </div>
-            <input id={"score_" <> @part_attempt.attempt_guid} phx-hook="TextInputListener" phx-value-change={@score_changed.name}
-              type="number" class="form-control" step="1" min="0" max={@part_scoring.out_of} value={@part_scoring.score}>
-
+            <input
+              id={"score_" <> @part_attempt.attempt_guid}
+              phx-hook="TextInputListener"
+              phx-value-change={@score_changed.name}
+              type="number"
+              class="form-control"
+              step="1"
+              min="0"
+              max={@part_scoring.out_of}
+              value={@part_scoring.score}
+            />
           </div>
 
           <div class="input-group mb-3">
@@ -62,13 +75,29 @@ defmodule OliWeb.ManualGrading.PartScoring do
           </div>
 
           <div class="btn-group" role="group" aria-label="Scoring shortcut group">
-            <button type="button" class="btn btn-sm btn-secondary" :on-click={@score_changed} phx-value-id={"score_" <> @part_attempt.attempt_guid} phx-value-score={0}>0%</button>
-            <button type="button" class="btn btn-sm btn-secondary" :on-click={@score_changed} phx-value-id={"score_" <> @part_attempt.attempt_guid} phx-value-score={@part_scoring.out_of / 2}>50%</button>
-            <button type="button" class="btn btn-sm btn-secondary" :on-click={@score_changed} phx-value-id={"score_" <> @part_attempt.attempt_guid} phx-value-score={@part_scoring.out_of}>100%</button>
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary"
+              :on-click={@score_changed}
+              phx-value-id={"score_" <> @part_attempt.attempt_guid}
+              phx-value-score={0}
+            >0%</button>
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary"
+              :on-click={@score_changed}
+              phx-value-id={"score_" <> @part_attempt.attempt_guid}
+              phx-value-score={@part_scoring.out_of / 2}
+            >50%</button>
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary"
+              :on-click={@score_changed}
+              phx-value-id={"score_" <> @part_attempt.attempt_guid}
+              phx-value-score={@part_scoring.out_of}
+            >100%</button>
           </div>
-
         </div>
-
       </div>
     </form>
     """
@@ -82,7 +111,13 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
   defp feedback(assigns) do
     ~F"""
-    <textarea id={@part_attempt.attempt_guid} disabled class="form-control" wrap="soft" maxlength="2000">{@part_scoring.feedback}</textarea>
+    <textarea
+      id={@part_attempt.attempt_guid}
+      disabled
+      class="form-control"
+      wrap="soft"
+      maxlength="2000"
+    >{@part_scoring.feedback}</textarea>
     """
   end
 end

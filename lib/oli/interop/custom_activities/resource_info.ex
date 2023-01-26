@@ -1,13 +1,10 @@
 defmodule Oli.Interop.CustomActivities.ResourceInfo do
-
   alias Oli.Interop.CustomActivities.{File, ResourceFiles}
   import XmlBuilder
 
-  def setup(
-        %{
-          context: context
-        }
-      ) do
+  def setup(%{
+        context: context
+      }) do
     element(
       :resource_info,
       %{
@@ -17,16 +14,12 @@ defmodule Oli.Interop.CustomActivities.ResourceInfo do
         type: context.activity_attempt.revision.activity_type.slug
       },
       [
-        File.setup(
-          %{
-            context: context
-          }
-        ),
-        ResourceFiles.setup(
-          %{
-            context: context
-          }
-        )
+        File.setup(%{
+          context: context
+        }),
+        ResourceFiles.setup(%{
+          context: context
+        })
       ]
     )
   end

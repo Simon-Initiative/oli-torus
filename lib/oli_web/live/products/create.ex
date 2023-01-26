@@ -8,9 +8,8 @@ defmodule OliWeb.Products.Create do
   def render(assigns) do
     ~F"""
     <div>
-
       <p>Create a new product with title:</p>
-      <input type="text" style="width: 40%;" :on-blur={@change} :on-keyup={@change}/>
+      <input type="text" style="width: 40%;" :on-blur={@change} :on-keyup={@change}>
 
       <button class="btn btn-primary" :on-click={@click} disabled={@title == ""}>Create Product</button>
     </div>

@@ -72,59 +72,57 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
 
   def render(assigns) do
     ~F"""
-      {render_modal(assigns)}
-      <div class="pb-5">
+    {render_modal(assigns)}
+    <div class="pb-5">
+      <ProjectCard
+        id={"project_info_#{@base_project_details.id}"}
+        title="Base Project Info"
+        tooltip="Information about the base project curriculum"
+      >
+        <ProjectInfo
+          project={@base_project_details}
+          current_publication={@current_publication}
+          newest_publication={newest_publication(@base_project_details.id, @updates)}
+          updates={@updates}
+          updates_in_progress={@updates_in_progress}
+        />
+      </ProjectCard>
 
+      {#if not is_nil(@section.blueprint_id)}
         <ProjectCard
-          id={"project_info_#{@base_project_details.id}"}
-          title="Base Project Info"
-          tooltip="Information about the base project curriculum"
+          id={"product_info_#{@section.blueprint_id}"}
+          title="Product Info"
+          tooltip="Information about the product on which this section is based"
         >
-          <ProjectInfo
-            project={@base_project_details}
-            current_publication={@current_publication}
-            newest_publication={newest_publication(@base_project_details.id, @updates)}
-            updates={@updates}
-            updates_in_progress={@updates_in_progress}
-          />
+          <div class="card-title">
+            <h5>{@section.blueprint.title}</h5>
+          </div>
+          <p class="card-text">{@section.blueprint.description}</p>
         </ProjectCard>
+      {/if}
 
-        {#if not is_nil(@section.blueprint_id)}
-          <ProjectCard
-            id={"product_info_#{@section.blueprint_id}"}
-            title="Product Info"
-            tooltip="Information about the product on which this section is based"
-          >
-            <div class="card-title">
-              <h5>{@section.blueprint.title}</h5>
-            </div>
-            <p class="card-text">{@section.blueprint.description}</p>
-          </ProjectCard>
-        {/if}
-
-        {#if Enum.count(@remixed_projects) > 0}
-          <ProjectCard
-            id="remixed_projects_1"
-            title="Remixed Projects Info"
-            tooltip="Information about the projects that have been remixed into this section"
-          >
-            <ul class="list-group">
-              {#for project <- @remixed_projects}
-                <li class="list-group-item">
-                  <ProjectInfo
-                    project={project}
-                    current_publication={project.publication}
-                    newest_publication={newest_publication(project.id, @updates)}
-                    updates={@updates}
-                    updates_in_progress={@updates_in_progress}
-                  />
-                </li>
-              {/for}
-            </ul>
-          </ProjectCard>
-        {/if}
-
-      </div>
+      {#if Enum.count(@remixed_projects) > 0}
+        <ProjectCard
+          id="remixed_projects_1"
+          title="Remixed Projects Info"
+          tooltip="Information about the projects that have been remixed into this section"
+        >
+          <ul class="list-group">
+            {#for project <- @remixed_projects}
+              <li class="list-group-item">
+                <ProjectInfo
+                  project={project}
+                  current_publication={project.publication}
+                  newest_publication={newest_publication(project.id, @updates)}
+                  updates={@updates}
+                  updates_in_progress={@updates_in_progress}
+                />
+              </li>
+            {/for}
+          </ul>
+        </ProjectCard>
+      {/if}
+    </div>
     """
   end
 
@@ -163,7 +161,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
 
     modal = fn assigns ->
       ~F"""
-        <ApplyUpdateModal {...@modal_assigns} />
+      <ApplyUpdateModal {...@modal_assigns} />
       """
     end
 

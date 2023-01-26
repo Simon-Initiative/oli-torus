@@ -9,15 +9,25 @@
         Customize your curriculum by adding, removing and rearranging course materials.
         <div class="flex-grow-1"></div>
         <div class="flex-shrink-0">
-          <button id="cancel" class="btn btn-outline-primary ml-1" phx-click="cancel">Cancel</button>
-          <button id="save" disabled={!@has_unsaved_changes} class="btn btn-primary ml-1" phx-click="save" phx-disabled-with="Saving...">Save</button>
+          <button id="cancel" class="btn btn-outline-primary ml-1" phx-click="cancel">
+            Cancel
+          </button>
+          <button
+            id="save"
+            disabled={!@has_unsaved_changes}
+            class="btn btn-primary ml-1"
+            phx-click="save"
+            phx-disabled-with="Saving..."
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="curriculum-navigation">
-    <%= render_breadcrumb assigns %>
+    <%= render_breadcrumb(assigns) %>
   </div>
 
   <div class="grid grid-cols-12" phx-window-keydown="keydown">
@@ -30,23 +40,22 @@
         <% end %>
         <%= for {node, index} <- filter_items(@active.children, @dragging) do %>
           <DropTarget.droptarget id={index} index={index} />
-          <Entry.entry
-              index={index}
-              selected={@selected == node.uuid}
-              node={node} />
+          <Entry.entry index={index} selected={@selected == node.uuid} node={node} />
         <% end %>
-        <DropTarget.droptarget id={"last"} index={length(@active.children)} />
+        <DropTarget.droptarget id="last" index={length(@active.children)} />
       </div>
       <div class="mt-5">
-        <%# <span class="text-secondary mr-2">Add</span> %>
-        <button phx-click="show_add_materials_modal"` class="btn btn-xs btn-primary p-2 mr-1" type="button">
+        <button
+          phx-click="show_add_materials_modal"
+          `
+          class="btn btn-xs btn-primary p-2 mr-1"
+          type="button"
+        >
           Add Materials
         </button>
-        <%
-        #<button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+        <% # <button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
         #  <%= new_container_name(@active)
-        # </button>
-         %>
+        # </button> %>
       </div>
     </div>
   </div>

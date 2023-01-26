@@ -22,7 +22,12 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
       <div class="form-group">
         <label for="conditionTypeSelect">Type</label>
-        <select class="form-control" id="conditionTypeSelect" phx-hook="SelectListener" phx-value-change="select-condition">
+        <select
+          class="form-control"
+          id="conditionTypeSelect"
+          phx-hook="SelectListener"
+          phx-value-change="select-condition"
+        >
           <option {...maybe_type_selected(assigns, :default)} disabled hidden>Choose a condition...</option>
           {#for {name, c} <- ConditionTypes.types()}
             <option value={c.type()} {...maybe_type_selected(assigns, c.type())}>{name}</option>
@@ -32,7 +37,12 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
       <div class="form-group">
         <label for="gradingPolicySelect">Graded Resource Policy</label>
-        <select class="form-control" id="gradingPolicySelect" phx-hook="SelectListener" phx-value-change="select-grading-policy">
+        <select
+          class="form-control"
+          id="gradingPolicySelect"
+          phx-hook="SelectListener"
+          phx-value-change="select-grading-policy"
+        >
           {#for policy <- Oli.Delivery.Gating.GatingCondition.graded_resource_policies()}
             <option value={policy} {...policy_selected(assigns, policy)}>{policy_desc(policy)}</option>
           {/for}
@@ -43,13 +53,24 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
       <div class="d-flex mb-5">
         <div :if={@create_or_update == :update}>
-          <button class="btn btn-danger ml-2" phx-click="show-delete-gating-condition" phx-value-id={@gating_condition.id}>Delete</button>
+          <button
+            class="btn btn-danger ml-2"
+            phx-click="show-delete-gating-condition"
+            phx-value-id={@gating_condition.id}
+          >Delete</button>
         </div>
-        <div class="flex-grow-1"></div>
-        <Link class="btn btn-outline-primary" to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>
+        <div class="flex-grow-1" />
+        <Link
+          class="btn btn-outline-primary"
+          to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}
+        >
           Cancel
         </Link>
-        <button class="btn btn-primary ml-2" disabled={create_disabled(@gating_condition, @parent_gate)} phx-click={create_or_update_action(@create_or_update)}>{create_or_update_name(@create_or_update)}</button>
+        <button
+          class="btn btn-primary ml-2"
+          disabled={create_disabled(@gating_condition, @parent_gate)}
+          phx-click={create_or_update_action(@create_or_update)}
+        >{create_or_update_name(@create_or_update)}</button>
       </div>
 
       {render_exceptions(assigns)}
@@ -64,7 +85,17 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     <div class="form-group">
       <label for="resource">Student</label>
       <div class="input-group mb-3">
-        <input type="text" id="user" readonly class="form-control" placeholder="Select a student..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-user-picker" {...maybe_user_value(assigns)}>
+        <input
+          type="text"
+          id="user"
+          readonly
+          class="form-control"
+          placeholder="Select a student..."
+          aria-label="resource-title"
+          aria-describedby="basic-addon2"
+          phx-click="show-user-picker"
+          {...maybe_user_value(assigns)}
+        />
         <div class="input-group-append">
           <button class="btn btn-outline-primary" type="button" phx-click="show-user-picker">Select</button>
         </div>
@@ -78,7 +109,17 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     <div class="form-group">
       <label for="resource">Resource</label>
       <div class="input-group mb-3">
-        <input type="text" id="resource" readonly class="form-control" placeholder="Select a target resource..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-resource-picker" {...maybe_resource_value(assigns)}>
+        <input
+          type="text"
+          id="resource"
+          readonly
+          class="form-control"
+          placeholder="Select a target resource..."
+          aria-label="resource-title"
+          aria-describedby="basic-addon2"
+          phx-click="show-resource-picker"
+          {...maybe_resource_value(assigns)}
+        />
         <div class="input-group-append">
           <button class="btn btn-outline-primary" type="button" phx-click="show-resource-picker">Select</button>
         </div>
@@ -92,11 +133,19 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   defp render_exceptions(%{parent_gate: nil, gating_condition: gating_condition} = assigns) do
     if Map.has_key?(gating_condition, :id) do
       ~F"""
-      <hr class="mt-5"/>
+      <hr class="mt-5">
       <div class="alert alert-primary" role="alert">
         <div class="d-flex w-100 justify-content-between">
           This gate has {render_count(assigns.count_exceptions)}.
-          <a class="btn btn-primary" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, assigns.section.slug, assigns.gating_condition.id)}>
+          <a
+            class="btn btn-primary"
+            href={Routes.live_path(
+              OliWeb.Endpoint,
+              OliWeb.Sections.GatingAndScheduling,
+              assigns.section.slug,
+              assigns.gating_condition.id
+            )}
+          >
             Manage Student Exceptions
           </a>
         </div>
@@ -202,14 +251,28 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
     ~F"""
     <div class="form-group">
-      <label for="conditionTypeSelect">Start Date <small> ({context.local_tz}) </small></label>
-      <div id="start_date" phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_start_date_changed" phx-update="ignore">
-        <DateTimeLocalInput class="form-control" value={initial_start_date}/>
+      <label for="conditionTypeSelect">Start Date <small>
+          ({context.local_tz})
+        </small></label>
+      <div
+        id="start_date"
+        phx-hook="DateTimeLocalInputListener"
+        phx-value-change="schedule_start_date_changed"
+        phx-update="ignore"
+      >
+        <DateTimeLocalInput class="form-control" value={initial_start_date} />
       </div>
     </div>
     <div class="form-group">
-      <label for="conditionTypeSelect">End Date <small> ({context.local_tz}) </small></label>
-      <div id="end_date" phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_end_date_changed" phx-update="ignore">
+      <label for="conditionTypeSelect">End Date <small>
+          ({context.local_tz})
+        </small></label>
+      <div
+        id="end_date"
+        phx-hook="DateTimeLocalInputListener"
+        phx-value-change="schedule_end_date_changed"
+        phx-update="ignore"
+      >
         <DateTimeLocalInput class="form-control" value={initial_end_date} />
       </div>
     </div>
@@ -221,7 +284,17 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     <div class="form-group">
       <label for="source">Resource That Must Be Started</label>
       <div class="input-group mb-3">
-        <input type="text" id="source" readonly class="form-control" placeholder="Select a source resource..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-all-picker" {...maybe_source_value(assigns)}>
+        <input
+          type="text"
+          id="source"
+          readonly
+          class="form-control"
+          placeholder="Select a source resource..."
+          aria-label="resource-title"
+          aria-describedby="basic-addon2"
+          phx-click="show-all-picker"
+          {...maybe_source_value(assigns)}
+        />
         <div class="input-group-append">
           <button class="btn btn-outline-primary" type="button" phx-click="show-all-picker">Select</button>
         </div>
@@ -235,7 +308,17 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     <div class="form-group">
       <label for="source">Resource That Must Be Finished</label>
       <div class="input-group mb-3">
-        <input type="text" id="source" readonly class="form-control" placeholder="Select a source resource..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-graded-picker" {...maybe_source_value(assigns)}>
+        <input
+          type="text"
+          id="source"
+          readonly
+          class="form-control"
+          placeholder="Select a source resource..."
+          aria-label="resource-title"
+          aria-describedby="basic-addon2"
+          phx-click="show-graded-picker"
+          {...maybe_source_value(assigns)}
+        />
         <div class="input-group-append">
           <button class="btn btn-outline-primary" type="button" phx-click="show-graded-picker">Select</button>
         </div>
@@ -243,16 +326,31 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     </div>
 
     <div class="form-check">
-      <input class="form-check-input" type="checkbox" value="" id="min-score" checked={checked_from_min_score(data)} phx-click="toggle_min_score">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        value=""
+        id="min-score"
+        checked={checked_from_min_score(data)}
+        phx-click="toggle_min_score"
+      />
       <label class="form-check-label" for="min-score">
         Require a minimum score (as a percentage)
       </label>
     </div>
     <div class="mb-4 row mt-2 ml-3">
       <div class="sm:col-span-2">
-        <input type="number" class="form-control" id="min-score-value"
+        <input
+          type="number"
+          class="form-control"
+          id="min-score-value"
           disabled={!checked_from_min_score(data)}
-          min="0" max="100" value={value_from_min_score(data)} phx-hook="TextInputListener" phx-value-change="change_min_score">
+          min="0"
+          max="100"
+          value={value_from_min_score(data)}
+          phx-hook="TextInputListener"
+          phx-value-change="change_min_score"
+        />
       </div>
       <label for="min-score-value" class="sm:col-span-1 col-form-label">%</label>
     </div>

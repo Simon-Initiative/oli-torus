@@ -34,5 +34,4 @@ defmodule OliWeb.CookieConsentController do
       json(conn, %{"result" => "no-op"})
     end
   end
-
 end

@@ -11,32 +11,44 @@ defmodule OliWeb.ObjectivesLive.FormModal do
 
   def render(assigns) do
     ~F"""
-      <div class="modal fade show" id={@id} style="display: block" tabindex="-1" role="dialog" aria-labelledby="show-existing-sub-modal" aria-hidden="true" phx-hook="ModalLaunch">
-        <div class="modal-dialog modal-lg" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">{title(@action)}</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <p>At the end of the course, students should be able to...</p>
-              <div class="col-span-12 mt-4">
-                <Form for={@changeset} submit={@on_click}>
-                  <HiddenInput field={:slug}/>
-                  <HiddenInput field={:parent_slug}/>
+    <div
+      class="modal fade show"
+      id={@id}
+      style="display: block"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="show-existing-sub-modal"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{title(@action)}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+          </div>
+          <div class="modal-body">
+            <p>At the end of the course, students should be able to...</p>
+            <div class="col-span-12 mt-4">
+              <Form for={@changeset} submit={@on_click}>
+                <HiddenInput field={:slug} />
+                <HiddenInput field={:parent_slug} />
 
-                  <Field name={:title} class="form-group">
-                    <TextInput class="form-control" opts={placeholder: "e.g. Recognize the structures of amino acids, carbohydrates, lipids..."}/>
-                    <ErrorTag/>
-                  </Field>
+                <Field name={:title} class="form-group">
+                  <TextInput
+                    class="form-control"
+                    opts={placeholder: "e.g. Recognize the structures of amino acids, carbohydrates, lipids..."}
+                  />
+                  <ErrorTag />
+                </Field>
 
-                  <button class="form-button btn btn-md btn-primary btn-block w-auto float-right" type="submit">{button(@action)}</button>
-                </Form>
-              </div>
+                <button class="form-button btn btn-md btn-primary btn-block w-auto float-right" type="submit">{button(@action)}</button>
+              </Form>
             </div>
           </div>
         </div>
       </div>
+    </div>
     """
   end
 

@@ -28,21 +28,20 @@ defmodule OliWeb.RevisionHistory.Details do
         set_options="monaco_editor_set_options"
         set_value="monaco_editor_set_value"
         get_value="monaco_editor_get_value"
-        use_code_lenses={[%{name: "activity-links", context: %{ "projectSlug" => assigns.project.slug }}]} />
+        use_code_lenses={[%{name: "activity-links", context: %{"projectSlug" => assigns.project.slug}}]}
+      />
       <div>
-        <table
-        style="table-layout: fixed;"
-        class="table table-bordered table-sm mt-3">
+        <table style="table-layout: fixed;" class="table table-bordered table-sm mt-3">
           <tbody>
-            <tr><td style="width:200px;"><strong>Title</strong></td><td>{ @revision.title }</td></tr>
+            <tr><td style="width:200px;"><strong>Title</strong></td><td>{@revision.title}</td></tr>
             <tr>
               <td style="width:200px;"><strong>Objectives</strong></td>
               <td>
                 {#case Map.get(@revision.objectives, "attached")}
                   {#match nil}
-                      <em>None</em>
+                    <em>None</em>
                   {#match []}
-                      <em>None</em>
+                    <em>None</em>
                   {#match objectives}
                     <ul>
                       {#for objective <- objectives}
@@ -55,8 +54,8 @@ defmodule OliWeb.RevisionHistory.Details do
             </tr>
             {#for k <- attrs}
               <tr>
-              <td style="width:200px;"><strong>{ Phoenix.Naming.humanize(k) }</strong></td>
-              <td>{ Map.get(@revision, String.to_existing_atom(k)) }</td>
+                <td style="width:200px;"><strong>{Phoenix.Naming.humanize(k)}</strong></td>
+                <td>{Map.get(@revision, String.to_existing_atom(k))}</td>
               </tr>
             {/for}
           </tbody>

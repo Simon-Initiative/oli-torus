@@ -25,8 +25,8 @@ defmodule OliWeb.Curriculum.EntryLive do
       data-drag-index={assigns.index}
       data-drag-slug={@child.slug}
       phx-hook="DragSource"
-      class={"p-3 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}>
-
+      class={"p-3 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}
+    >
       <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
           <%= icon(assigns) %>
@@ -43,7 +43,7 @@ defmodule OliWeb.Curriculum.EntryLive do
                   @project.slug,
                   @child.slug
                 )) do %>
-                Edit Page
+              Edit Page
             <% end %>
           <% end %>
           <%= if @editor do %>
@@ -51,23 +51,23 @@ defmodule OliWeb.Curriculum.EntryLive do
               <%= Map.get(@editor, :name) || "Someone" %> is editing this
             </span>
           <% end %>
-
         </div>
         <div>
           <%= case @view do
             "Detailed" ->
-              live_component DetailsLive, assigns
+              live_component(DetailsLive, assigns)
+
             "Learning Summary" ->
-              live_component LearningSummaryLive, assigns
+              live_component(LearningSummaryLive, assigns)
+
             _ ->
               nil
           end %>
         </div>
       </div>
 
-      <%# prevent dragging of actions menu and modals using this draggable wrapper %>
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        <%= live_component Actions, assigns %>
+        <%= live_component(Actions, assigns) %>
       </div>
     </div>
     """

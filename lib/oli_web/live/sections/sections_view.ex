@@ -112,50 +112,52 @@ defmodule OliWeb.Sections.SectionsView do
     type_opts = @type_opts
 
     ~F"""
-      <div class="container mx-auto">
-        <FilterBox
-          card_header_text="Browse Course Sections"
-          card_body_text=""
+    <div class="container mx-auto">
+      <FilterBox
+        card_header_text="Browse Course Sections"
+        card_body_text=""
+        table_model={@table_model}
+        show_sort={false}
+        show_more_opts
+      >
+        <TextSearch id="text-search" text={@options.text_search} />
+
+        <:extra_opts>
+          <Check checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check>
+
+          <form :on-change="change_type" class="d-flex">
+            <select name="type" id="select_type" class="custom-select custom-select mr-2">
+              <option value="" selected>Type</option>
+              {#for type_opt <- type_opts}
+                <option value={type_opt} selected={@options.filter_type == type_opt}>{humanize_type_opt(type_opt)}</option>
+              {/for}
+            </select>
+          </form>
+
+          <form :on-change="change_status" class="d-flex">
+            <select name="status" id="select_status" class="custom-select custom-select mr-2">
+              <option value="" selected>Status</option>
+              {#for status_opt <- Ecto.Enum.values(Section, :status)}
+                <option value={status_opt} selected={@options.filter_status == status_opt}>{Phoenix.Naming.humanize(status_opt)}</option>
+              {/for}
+            </select>
+          </form>
+        </:extra_opts>
+      </FilterBox>
+
+      <div class="mb-5" />
+
+      <div class="sections-table">
+        <PagedTable
+          filter={@options.text_search}
           table_model={@table_model}
-          show_sort={false}
-          show_more_opts={true}>
-          <TextSearch id="text-search" text={@options.text_search}/>
-
-          <:extra_opts>
-            <Check checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check>
-
-            <form :on-change="change_type" class="d-flex">
-              <select name="type" id="select_type" class="custom-select custom-select mr-2">
-                <option value="" selected>Type</option>
-                {#for type_opt <- type_opts}
-                  <option value={type_opt} selected={@options.filter_type == type_opt}>{humanize_type_opt(type_opt)}</option>
-                {/for}
-              </select>
-            </form>
-
-            <form :on-change="change_status" class="d-flex">
-              <select name="status" id="select_status" class="custom-select custom-select mr-2">
-                <option value="" selected>Status</option>
-                {#for status_opt <- Ecto.Enum.values(Section, :status)}
-                  <option value={status_opt} selected={@options.filter_status == status_opt}>{Phoenix.Naming.humanize(status_opt)}</option>
-                {/for}
-              </select>
-            </form>
-          </:extra_opts>
-        </FilterBox>
-
-        <div class="mb-5"/>
-
-        <div class="sections-table">
-          <PagedTable
-            filter={@options.text_search}
-            table_model={@table_model}
-            total_count={@total_count}
-            offset={@offset}
-            limit={@limit}
-            show_bottom_paging={false}/>
-        </div>
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          show_bottom_paging={false}
+        />
       </div>
+    </div>
     """
   end
 
@@ -169,8 +171,11 @@ defmodule OliWeb.Sections.SectionsView do
     do: patch_with(socket, %{filter_type: type})
 
   def handle_event(event, params, socket),
-    do: delegate_to({event, params, socket, &__MODULE__.patch_with/2},
-        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4])
+    do:
+      delegate_to(
+        {event, params, socket, &__MODULE__.patch_with/2},
+        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4]
+      )
 
   defp determine_total(projects) do
     case projects do

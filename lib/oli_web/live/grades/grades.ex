@@ -121,23 +121,34 @@ defmodule OliWeb.Grades.GradesLive do
     <h2><%= dgettext("grades", "Manage Grades") %></h2>
 
     <p>
-      <%= dgettext("grades", "Grades for this section can be viewed by students and instructors using the LMS gradebook.") %>
+      <%= dgettext(
+        "grades",
+        "Grades for this section can be viewed by students and instructors using the LMS gradebook."
+      ) %>
     </p>
 
     <div class="card-group">
-      <%= live_component OliWeb.Grades.TestConnection, assigns %>
-      <%= live_component OliWeb.Grades.Export, assigns %>
+      <%= live_component(OliWeb.Grades.TestConnection, assigns) %>
+      <%= live_component(OliWeb.Grades.Export, assigns) %>
     </div>
 
     <div class="card-group">
-      <%= live_component OliWeb.Grades.LineItems, assigns %>
-      <%= live_component OliWeb.Grades.GradeSync, assigns %>
+      <%= live_component(OliWeb.Grades.LineItems, assigns) %>
+      <%= live_component(OliWeb.Grades.GradeSync, assigns) %>
     </div>
 
     <div class={"mt-4 #{@progress_visible}"}>
       <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
       <div class="progress">
-        <div class="progress-bar" role="progressbar" style={"width: #{@percent_progress}%;"} aria-valuenow={"#{@percent_progress}"} aria-valuemin="0" aria-valuemax="100"></div>
+        <div
+          class="progress-bar"
+          role="progressbar"
+          style={"width: #{@percent_progress}%;"}
+          aria-valuenow={"#{@percent_progress}"}
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+        </div>
       </div>
     </div>
     """

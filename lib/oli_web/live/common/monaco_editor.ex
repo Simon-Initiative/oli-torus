@@ -36,7 +36,8 @@ defmodule OliWeb.Common.MonacoEditor do
       data-set-width-height={encode_attr(@set_width_height)}
       data-set-value={encode_attr(@set_value)}
       data-get-value={encode_attr(@get_value)}
-      data-use-code-lenses={if @use_code_lenses, do: encode_attr(@use_code_lenses)}>
+      data-use-code-lenses={if @use_code_lenses, do: encode_attr(@use_code_lenses)}
+    >
       <div class="text-center">
         <div class="spinner-border text-secondary" role="status">
           <span class="sr-only">Loading...</span>

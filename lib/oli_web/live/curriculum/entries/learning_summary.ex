@@ -81,18 +81,21 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
 
   def render(assigns) do
     ~H"""
-      <div>
-        <%= if !is_container?(@child) do %>
-            <div class="col-span-4 entry-section">
-              <%= render_objectives(assigns, determine_objectives(@activity_ids, @activity_map, @objective_map)) %>
-            </div>
-            <div class="col-span-4 entry-section">
-              <%= render_activities(assigns, determine_activities(@activity_ids, @activity_map)) %>
-            </div>
-        <% else %>
-          <div></div>
-        <% end %>
-      </div>
+    <div>
+      <%= if !is_container?(@child) do %>
+        <div class="col-span-4 entry-section">
+          <%= render_objectives(
+            assigns,
+            determine_objectives(@activity_ids, @activity_map, @objective_map)
+          ) %>
+        </div>
+        <div class="col-span-4 entry-section">
+          <%= render_activities(assigns, determine_activities(@activity_ids, @activity_map)) %>
+        </div>
+      <% else %>
+        <div></div>
+      <% end %>
+    </div>
     """
   end
 end

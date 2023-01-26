@@ -25,13 +25,19 @@ defmodule OliWeb.SystemMessageLive.ShowView do
     ~F"""
     {#for active_message <- @messages}
       <div class="system-banner alert alert-warning" role="alert">
-
         {active_message.message |> Oli.Utils.find_and_linkify_urls_in_string() |> raw()}
 
-        <button id={"system-message-close-#{active_message.id}"} type="button" class="close" data-dismiss="alert" aria-label="Close" phx-hook="SystemMessage" message-id={active_message.id}>
-          <i class="fa-solid fa-xmark fa-lg"></i>
+        <button
+          id={"system-message-close-#{active_message.id}"}
+          type="button"
+          class="close"
+          data-dismiss="alert"
+          aria-label="Close"
+          phx-hook="SystemMessage"
+          message-id={active_message.id}
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
         </button>
-
       </div>
     {/for}
     """

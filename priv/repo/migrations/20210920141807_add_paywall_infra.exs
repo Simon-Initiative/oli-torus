@@ -4,7 +4,6 @@ defmodule Oli.Repo.Migrations.AddPaywallInfra do
   import Ecto.Query, warn: false
 
   def change do
-
     execute "CREATE EXTENSION IF NOT EXISTS pgcrypto"
 
     create table(:api_keys) do
@@ -76,7 +75,15 @@ defmodule Oli.Repo.Migrations.AddPaywallInfra do
     from(p in "sections",
       where: is_nil(p.type)
     )
-    |> Oli.Repo.update_all(set: [type: "enrollable", visibility: "global", requires_payment: false, has_grace_period: false, grace_period_days: 0, grace_period_strategy: "relative_to_section"])
+    |> Oli.Repo.update_all(
+      set: [
+        type: "enrollable",
+        visibility: "global",
+        requires_payment: false,
+        has_grace_period: false,
+        grace_period_days: 0,
+        grace_period_strategy: "relative_to_section"
+      ]
+    )
   end
-
 end

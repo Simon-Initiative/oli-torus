@@ -223,22 +223,19 @@ defmodule OliWeb.Common.Table.SortableTableModel do
 
   def render_link_column(assigns, label, route_path, class \\ "") do
     ~F"""
-      <Link
-        label={label}
-        to={route_path}
-        class={class}/>
+    <Link label={label} to={route_path} class={class} />
     """
   end
 
   def render_span_column(assigns, text, class \\ "") do
     ~F"""
-      <span class={class}>{text}</span>
+    <span class={class}>{text}</span>
     """
   end
 
   def render(assigns) do
     ~F"""
-      <div>nothing</div>
+    <div>nothing</div>
     """
   end
 end

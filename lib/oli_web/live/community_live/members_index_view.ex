@@ -56,26 +56,23 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
 
   def render(assigns) do
     ~F"""
-      <div class="d-flex p-3 justify-content-between">
-        <Filter
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}/>
-      </div>
+    <div class="d-flex p-3 justify-content-between">
+      <Filter change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+    </div>
 
-      <div class="p-4">
-        <Listing
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}/>
-      </div>
+    <div class="p-4">
+      <Listing
+        filter={@query}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort={@sort}
+        page_change={@page_change}
+        show_bottom_paging={@show_bottom_paging}
+        additional_table_class={@additional_table_class}
+      />
+    </div>
     """
   end
 

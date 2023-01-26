@@ -10,7 +10,7 @@ defmodule OliWeb.Progress.AttemptHistory do
     ~F"""
     <div class="list-group">
       {#for attempt <- @resource_attempts}
-        <PageAttemptSummary id={attempt.id} attempt={attempt} section={@section} {=@context}/>
+        <PageAttemptSummary id={attempt.id} attempt={attempt} section={@section} {=@context} />
       {/for}
     </div>
     """

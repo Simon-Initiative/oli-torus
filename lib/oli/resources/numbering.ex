@@ -197,16 +197,24 @@ defmodule Oli.Resources.Numbering do
 
   This method returns a map of revision id to %Numbering structs.
   """
-  @spec number_full_tree(resolver, project_or_section_slug, %CustomLabels{}) :: %{revision_id => %__MODULE__{}}
+  @spec number_full_tree(resolver, project_or_section_slug, %CustomLabels{}) :: %{
+          revision_id => %__MODULE__{}
+        }
   def number_full_tree(resolver, project_or_section_slug, labels) do
-    full_tree = number_tree_from(
-      resolver.root_container(project_or_section_slug),
-      resolver.all_revisions_in_hierarchy(project_or_section_slug)
-    )
+    full_tree =
+      number_tree_from(
+        resolver.root_container(project_or_section_slug),
+        resolver.all_revisions_in_hierarchy(project_or_section_slug)
+      )
+
     case labels do
-        nil -> full_tree
-        _ -> Enum.reduce(full_tree, %{}, fn {k, val}, acc ->
-          Map.put(acc, k, %__MODULE__{val | labels: Map.from_struct(labels)}) end)
+      nil ->
+        full_tree
+
+      _ ->
+        Enum.reduce(full_tree, %{}, fn {k, val}, acc ->
+          Map.put(acc, k, %__MODULE__{val | labels: Map.from_struct(labels)})
+        end)
     end
   end
 

@@ -13,7 +13,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
   def render(assigns) do
     ~F"""
-    <div>nothing </div>
+    <div>nothing
+    </div>
     """
   end
 
@@ -141,7 +142,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     modal = fn assigns ->
       ~F"""
-        <OliWeb.Common.EnrollmentBrowser.SelectUserModal.render {...@modal_assigns} />
+      <OliWeb.Common.EnrollmentBrowser.SelectUserModal.render {...@modal_assigns} />
       """
     end
 
@@ -213,7 +214,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     modal = fn assigns ->
       ~F"""
-        <SelectResourceModal.render {...@modal_assigns} />
+      <SelectResourceModal.render {...@modal_assigns} />
       """
     end
 
@@ -258,7 +259,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     modal = fn assigns ->
       ~F"""
-        <SelectResourceModal {...@modal_assigns} />
+      <SelectResourceModal {...@modal_assigns} />
       """
     end
 
@@ -284,7 +285,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     modal = fn assigns ->
       ~F"""
-        <SelectResourceModal {...@modal_assigns} />
+      <SelectResourceModal {...@modal_assigns} />
       """
     end
 
@@ -590,7 +591,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     modal = fn assigns ->
       ~F"""
-        <DeleteModalNoConfirmation {...@modal_assigns} />
+      <DeleteModalNoConfirmation {...@modal_assigns} />
       """
     end
 

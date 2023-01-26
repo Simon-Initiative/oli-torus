@@ -1,7 +1,6 @@
 defmodule Oli.Repo.Migrations.AddPageTransformationFields do
   use Ecto.Migration
 
-
   def change do
     alter table(:resource_attempts) do
       add :content, :map

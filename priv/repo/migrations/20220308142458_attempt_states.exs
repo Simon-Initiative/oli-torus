@@ -39,5 +39,4 @@ defmodule Oli.Repo.Migrations.AttemptStates do
 
     flush()
   end
-
 end

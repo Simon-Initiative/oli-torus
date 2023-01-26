@@ -5,7 +5,6 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
   alias Oli.Repo
 
   def up do
-
     alter table(:lti_1p3_deployments) do
       add :institution_id, references(:institutions)
     end
@@ -25,18 +24,23 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
         join: r in "lti_1p3_registrations",
         on: r.id == d.registration_id,
         select: %{id: d.id, institution_id: r.institution_id, brand_id: r.brand_id}
-    )
-    |> Repo.all()
-    |> Enum.reduce({%{}, %{}}, fn %{id: d_id, institution_id: institution_id, brand_id: brand_id}, {deployment_institution, institution_brand} ->
-      {
-        Map.put(deployment_institution, d_id, institution_id),
-        if brand_id == nil do
-          institution_brand
-        else
-          Map.put_new(institution_brand, institution_id, brand_id)
-        end
-      }
-    end)
+      )
+      |> Repo.all()
+      |> Enum.reduce({%{}, %{}}, fn %{
+                                      id: d_id,
+                                      institution_id: institution_id,
+                                      brand_id: brand_id
+                                    },
+                                    {deployment_institution, institution_brand} ->
+        {
+          Map.put(deployment_institution, d_id, institution_id),
+          if brand_id == nil do
+            institution_brand
+          else
+            Map.put_new(institution_brand, institution_id, brand_id)
+          end
+        }
+      end)
 
     # populate all existing deployments with the institution_id inferred from registration
     deployment_institution
@@ -58,11 +62,9 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
       remove :institution_id, references(:institutions)
       remove :brand_id, references(:brands)
     end
-
   end
 
   def down do
-
     alter table(:lti_1p3_registrations) do
       add :brand_id, references(:brands)
       add :institution_id, references(:institutions)
@@ -102,6 +104,5 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
     alter table(:lti_1p3_deployments) do
       remove :institution_id, references(:institutions)
     end
-
   end
 end

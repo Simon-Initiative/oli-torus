@@ -23,34 +23,45 @@ defmodule OliWeb.ObjectivesLive.SelectExistingSubModal do
 
   def render(assigns) do
     ~F"""
-      <div class="modal fade show" id={@id} style="display: block" tabindex="-1" role="dialog" aria-labelledby="show-existing-sub-modal" aria-hidden="true" phx-hook="ModalLaunch">
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Select existing Sub-Objective</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <div class="container form-container">
-                <TextSearch id="text-search" text={@query} event_target={@myself} />
-                <div class="d-flex flex-column mt-3">
-                  {#for sub_objective <- @filtered_sub_objectives}
-                    <div class="my-2 d-flex">
-                      <div class="p-1 mr-3 flex-grow-1 overflow-auto text-truncate">{sub_objective.title}</div>
-                      <button
-                        class="btn btn-outline-primary py-1"
-                        phx-value-slug={sub_objective.slug}
-                        phx-value-parent_slug={@parent_slug}
-                        phx-click={@add}> Add
-                      </button>
-                    </div>
-                  {/for}
-                </div>
+    <div
+      class="modal fade show"
+      id={@id}
+      style="display: block"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="show-existing-sub-modal"
+      aria-hidden="true"
+      phx-hook="ModalLaunch"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Select existing Sub-Objective</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+          </div>
+          <div class="modal-body">
+            <div class="container form-container">
+              <TextSearch id="text-search" text={@query} event_target={@myself} />
+              <div class="d-flex flex-column mt-3">
+                {#for sub_objective <- @filtered_sub_objectives}
+                  <div class="my-2 d-flex">
+                    <div class="p-1 mr-3 flex-grow-1 overflow-auto text-truncate">{sub_objective.title}</div>
+                    <button
+                      class="btn btn-outline-primary py-1"
+                      phx-value-slug={sub_objective.slug}
+                      phx-value-parent_slug={@parent_slug}
+                      phx-click={@add}
+                    >
+                      Add
+                    </button>
+                  </div>
+                {/for}
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
     """
   end
 

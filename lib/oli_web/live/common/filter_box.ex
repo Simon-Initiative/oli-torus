@@ -24,7 +24,6 @@ defmodule OliWeb.Common.FilterBox do
       <div>
         <p class="mt-1 mb-4">{@card_body_text}</p>
         <div class="block filter-opts">
-
           <div class="pb-2">
             <#slot />
           </div>
@@ -43,12 +42,12 @@ defmodule OliWeb.Common.FilterBox do
                 <Field name="sort_order" class="control d-flex align-items-center">
                   <div class="btn-group btn-group-toggle whitespace-nowrap">
                     <label class={"btn btn-outline-secondary" <> if @table_model.sort_order == :desc, do: " active", else: ""}>
-                      <RadioButton value="desc" checked={@table_model.sort_order == :desc} opts={hidden: true}/>
-                      <i class='fa fa-sort-amount-down'></i>
+                      <RadioButton value="desc" checked={@table_model.sort_order == :desc} opts={hidden: true} />
+                      <i class="fa fa-sort-amount-down" />
                     </label>
                     <label class={"btn btn-outline-secondary" <> if @table_model.sort_order == :asc, do: " active", else: ""}>
-                      <RadioButton value="asc" checked={@table_model.sort_order == :asc} opts={hidden: true}/>
-                      <i class='fa fa-sort-amount-up'></i>
+                      <RadioButton value="asc" checked={@table_model.sort_order == :asc} opts={hidden: true} />
+                      <i class="fa fa-sort-amount-up" />
                     </label>
                   </div>
                 </Field>

@@ -79,24 +79,27 @@ defmodule Oli.Delivery.Snapshots.Worker do
     # transaction call will return  either {:ok, _} or {:error, _}. In the case of the {:ok, _} Oban
     # marks the job as completed.  In the case of an error, it scheduled it for a retry.
     Repo.transaction(fn ->
+      attrs_list =
+        Enum.reduce(results, [], fn {part_attempt, _, _, _, _, activity_revision} = result,
+                                    all_bulk_attrs ->
+          # Look at the attached objectives for that part for that revision
+          attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
 
-      attrs_list = Enum.reduce(results, [], fn {part_attempt, _, _, _, _, activity_revision} = result, all_bulk_attrs ->
-        # Look at the attached objectives for that part for that revision
-        attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
+          bulk_attrs =
+            case attached_objectives do
+              # If there are no attached objectives, create one record recoring nils for the objectives
+              [] ->
+                [to_attrs(result, nil, nil, project_id)]
 
-        bulk_attrs = case attached_objectives do
-          # If there are no attached objectives, create one record recoring nils for the objectives
-          [] -> [to_attrs(result, nil, nil, project_id)]
+              # Otherwise create one record for each objective
+              objective_ids ->
+                Enum.map(objective_ids, fn id ->
+                  to_attrs(result, id, Map.get(objective_revisions_by_id, id), project_id)
+                end)
+            end
 
-          # Otherwise create one record for each objective
-          objective_ids ->
-            Enum.map(objective_ids, fn id ->
-              to_attrs(result, id, Map.get(objective_revisions_by_id, id), project_id)
-            end)
-        end
-
-        bulk_attrs ++ all_bulk_attrs
-      end)
+          bulk_attrs ++ all_bulk_attrs
+        end)
 
       Repo.insert_all(Snapshot, attrs_list)
     end)

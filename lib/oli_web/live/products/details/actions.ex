@@ -18,16 +18,17 @@ defmodule OliWeb.Products.Details.Actions do
       </div>
 
       {#if @is_admin}
-
         <div class="d-flex align-items-center">
           <div>
-            <a class="btn btn-link action-button" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, @product.slug)}>
+            <a
+              class="btn btn-link action-button"
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, @product.slug)}
+            >
               Manage Payments
             </a>
           </div>
           <div>Audit payments and manage payment codes.</div>
         </div>
-
       {/if}
 
       <div class="d-flex align-items-center">
@@ -39,7 +40,6 @@ defmodule OliWeb.Products.Details.Actions do
         <div>View course section usage.</div> <div class="badge badge-info">Coming Soon</div>
       </div>
     </div>
-
     """
   end
 end

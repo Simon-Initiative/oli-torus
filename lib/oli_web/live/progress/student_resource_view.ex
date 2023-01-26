@@ -137,21 +137,26 @@ defmodule OliWeb.Progress.StudentResourceView do
     ~F"""
     <Groups>
       <Group label="Details" description="">
-        <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
-        <ReadOnly label="Resource" value={@revision.title}/>
+        <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)} />
+        <ReadOnly label="Resource" value={@revision.title} />
       </Group>
       {#if @revision.graded}
-      <Group label="Current Grade" description="">
-
-          <Form as={:resource_access} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
+        <Group label="Current Grade" description="">
+          <Form
+            as={:resource_access}
+            for={@changeset}
+            change="validate"
+            submit="save"
+            opts={autocomplete: "off"}
+          >
             <Field name={:score} class="form-label-group">
-              <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"}/>
+              <div class="d-flex justify-content-between"><Label /><ErrorTag class="help-block" /></div>
+              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"} />
               <div class="text-muted">Scores are rounded up, limiting to two decimal points.</div>
             </Field>
             <Field name={:out_of} class="form-label-group mb-4">
-              <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
-              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"}/>
+              <div class="d-flex justify-content-between"><Label /><ErrorTag class="help-block" /></div>
+              <NumberInput class="form-control" opts={disabled: !@is_editing, step: "0.01"} />
             </Field>
 
             {#if @is_editing}
@@ -163,14 +168,22 @@ defmodule OliWeb.Progress.StudentResourceView do
           </Form>
 
           {#if !@section.open_and_free}
-            <div class="mb-3"/>
-            <Passback click="passback" last_failed={@last_failed} resource_access={@resource_access} grade_sync_result={@grade_sync_result}/>
+            <div class="mb-3" />
+            <Passback
+              click="passback"
+              last_failed={@last_failed}
+              resource_access={@resource_access}
+              grade_sync_result={@grade_sync_result}
+            />
           {/if}
-
-      </Group>
+        </Group>
       {/if}
       <Group label="Attempt History" description="">
-        <AttemptHistory section={@section} resource_attempts={@resource_access.resource_attempts} {=@context}/>
+        <AttemptHistory
+          section={@section}
+          resource_attempts={@resource_access.resource_attempts}
+          {=@context}
+        />
       </Group>
     </Groups>
     """
@@ -180,8 +193,8 @@ defmodule OliWeb.Progress.StudentResourceView do
     ~F"""
     <Groups>
       <Group label="Details" description="">
-        <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)}/>
-        <ReadOnly label="Resource" value={@revision.title}/>
+        <ReadOnly label="Student" value={OliWeb.Common.Utils.name(@user)} />
+        <ReadOnly label="Resource" value={@revision.title} />
       </Group>
       <Group label="Attempt History" description="">
         <p>The student has not yet accessed this course resource.</p>
@@ -190,7 +203,6 @@ defmodule OliWeb.Progress.StudentResourceView do
           <p>If there is a need to manually set the grade for this student without the student ever having visited this page, first create the access record:</p>
           <button class="btn btn-primary mt-4" type="button" :on-click="create_access_record">Create Access Record</button>
         {/if}
-
       </Group>
     </Groups>
     """

@@ -6,9 +6,9 @@ defmodule Oli.Interop.CustomActivities.ActivityAttempt do
   def setup(%{
         activity_attempt: activity_attempt
       }) do
-
     attributes = fetchAttributes(activity_attempt)
     children = fetchChildren(activity_attempt)
+
     element(
       :activity_attempt,
       attributes,
@@ -46,16 +46,16 @@ defmodule Oli.Interop.CustomActivities.ActivityAttempt do
   end
 
   defp fetchChildren(activity_attempt) do
-
     case activity_attempt.score do
       nil ->
         []
+
       _ ->
-        [Score.setup(
-          %{
+        [
+          Score.setup(%{
             activity_attempt: activity_attempt
-          }
-                     )]
+          })
+        ]
     end
   end
 end

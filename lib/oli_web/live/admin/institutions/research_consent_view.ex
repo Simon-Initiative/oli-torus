@@ -30,37 +30,42 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
   def mount(%{"institution_id" => institution_id}, _session, socket) do
     case Institutions.get_institution_by!(%{id: institution_id}) do
       %Institution{} = institution ->
-        {:ok, assign(socket,
-          breadcrumbs: set_breadcrumbs(institution),
-          institution: institution,
-          changeset: Institutions.change_institution(institution)
-        )}
+        {:ok,
+         assign(socket,
+           breadcrumbs: set_breadcrumbs(institution),
+           institution: institution,
+           changeset: Institutions.change_institution(institution)
+         )}
 
-      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      _ ->
+        {:ok,
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
     end
   end
 
   def render(assigns) do
     ~F"""
-      <FormContainer title={@title}>
-        <Form for={@changeset} submit="save">
-          <Field name={:research_consent} class="form-group">
-            <div class="form-check p-2">
-              <div class="p-2">
-                <RadioButton value={:oli_form} />
-                <label class="form-check-label ml-1">OLI Research Consent Form</label><br>
-              </div>
-              <div class="p-2">
-                <RadioButton value={:no_form} />
-                <label class="form-check-label ml-1">No Research Consent Form</label>
-              </div>
+    <FormContainer title={@title}>
+      <Form for={@changeset} submit="save">
+        <Field name={:research_consent} class="form-group">
+          <div class="form-check p-2">
+            <div class="p-2">
+              <RadioButton value={:oli_form} />
+              <label class="form-check-label ml-1">OLI Research Consent Form</label><br>
             </div>
-            <ErrorTag/>
-          </Field>
+            <div class="p-2">
+              <RadioButton value={:no_form} />
+              <label class="form-check-label ml-1">No Research Consent Form</label>
+            </div>
+          </div>
+          <ErrorTag />
+        </Field>
 
-          <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
-        </Form>
-      </FormContainer>
+        <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
+      </Form>
+    </FormContainer>
     """
   end
 
@@ -70,15 +75,18 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
     case Institutions.update_institution(socket.assigns.institution, params) do
       {:ok, %Institution{id: institution_id}} ->
         {:noreply,
-          socket
-          |> put_flash(:info, "Institution successfully updated.")
-          |> redirect(to: institution_route(institution_id))}
+         socket
+         |> put_flash(:info, "Institution successfully updated.")
+         |> redirect(to: institution_route(institution_id))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
-          socket
-          |> put_flash(:error, "Institution couldn't be created/updated. Please check the errors below.")
-          |> assign(changeset: changeset)}
+         socket
+         |> put_flash(
+           :error,
+           "Institution couldn't be created/updated. Please check the errors below."
+         )
+         |> assign(changeset: changeset)}
     end
   end
 end

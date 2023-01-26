@@ -16,7 +16,11 @@ defmodule OliWeb.Qa.WarningDetails do
     <div class="review-card active" id={"#{@selected.id}"}>
       <h4 class="d-flex">
         <div>
-          Improvement opportunity on <%= OliWeb.Common.Links.resource_link(@selected.revision, @parent_pages, @project) %>
+          Improvement opportunity on <%= OliWeb.Common.Links.resource_link(
+            @selected.revision,
+            @parent_pages,
+            @project
+          ) %>
         </div>
         <div class="flex-fill"></div>
         <button class="btn btn-sm btn-secondary" phx-click="dismiss">
@@ -24,11 +28,15 @@ defmodule OliWeb.Qa.WarningDetails do
         </button>
       </h4>
       <div class="bd-callout bd-callout-info">
-        <h3><%= String.capitalize(@selected.subtype) %> on <%= @selected.revision.resource_type.type %></h3>
-        <%= explanatory_text(@selected.subtype, %{ graded: @selected.revision.graded }) %>
+        <h3>
+          <%= String.capitalize(@selected.subtype) %> on <%= @selected.revision.resource_type.type %>
+        </h3>
+        <%= explanatory_text(@selected.subtype, %{graded: @selected.revision.graded}) %>
       </div>
       <div class="alert alert-info">
-        <strong>Action item</strong> <%= action_item(@selected.subtype, %{ graded: @selected.revision.graded }) %>
+        <strong>Action item</strong> <%= action_item(@selected.subtype, %{
+          graded: @selected.revision.graded
+        }) %>
         <%= if @selected.content do %>
           <div class="delivery-container">
             <%= if @selected.content["type"] == "selection" do %>
@@ -41,17 +49,28 @@ defmodule OliWeb.Qa.WarningDetails do
                 Fix this issue by one of two ways:
               </p>
               <ol>
-                <li>Edit the <a href={"#{Routes.resource_url(OliWeb.Endpoint, :edit, @project.slug, @selected.revision.slug)}##{@selected.content["id"]}"}>
-                  selection logic in the page</a> to allow it to select more activities</li>
-                <li>Create more banked activities to allow the selection to fill the specified count</li>
+                <li>
+                  Edit the
+                  <a href={"#{Routes.resource_url(OliWeb.Endpoint, :edit, @project.slug, @selected.revision.slug)}##{@selected.content["id"]}"}>
+                    selection logic in the page
+                  </a>
+                  to allow it to select more activities
+                </li>
+                <li>
+                  Create more banked activities to allow the selection to fill the specified count
+                </li>
               </ol>
-
             <% else %>
-              <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @author}, @selected.content, Oli.Rendering.Content.Html)) %>
+              <%= Phoenix.HTML.raw(
+                Oli.Rendering.Content.render(
+                  %Oli.Rendering.Context{user: @author},
+                  @selected.content,
+                  Oli.Rendering.Content.Html
+                )
+              ) %>
             <% end %>
-
           </div>
-          <% end %>
+        <% end %>
       </div>
     </div>
     """

@@ -22,5 +22,4 @@ defmodule Oli.Branding.CustomLabels do
       section: "Section"
     }
   end
-
 end

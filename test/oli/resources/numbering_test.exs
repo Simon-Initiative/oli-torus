@@ -128,14 +128,22 @@ defmodule Oli.Resources.NumberingTest do
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
       page_1_node = hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)
-      section_2_node = hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(1) |> Map.get(:children) |> Enum.at(1)
+
+      section_2_node =
+        hierarchy.children
+        |> Enum.at(0)
+        |> Map.get(:children)
+        |> Enum.at(1)
+        |> Map.get(:children)
+        |> Enum.at(1)
 
       hierarchy = Hierarchy.move_node(hierarchy, page_1_node, section_2_node.uuid)
 
       module_2_node = hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)
       unit_2_node = hierarchy.children |> Enum.at(1)
 
-      hierarchy = Hierarchy.move_node(hierarchy, module_2_node, unit_2_node.uuid)
+      hierarchy =
+        Hierarchy.move_node(hierarchy, module_2_node, unit_2_node.uuid)
         |> Hierarchy.finalize()
 
       assert hierarchy.numbering.level == 0
@@ -144,30 +152,120 @@ defmodule Oli.Resources.NumberingTest do
       assert (hierarchy.children |> Enum.at(0)).numbering.level == 1
       assert (hierarchy.children |> Enum.at(0)).numbering.index == 1
 
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.level == 2
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.index == 1
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.level == 2
 
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.level == 3
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.index == 1
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(1)).numbering.level == 3
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(1)).numbering.index == 2
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(2)).numbering.level == 3
-      assert (hierarchy.children |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(2)).numbering.index == 3
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.index == 1
+
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.level == 3
+
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.index == 1
+
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(1)).numbering.level == 3
+
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(1)).numbering.index == 2
+
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(2)).numbering.level == 3
+
+      assert (hierarchy.children
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(2)).numbering.index == 3
 
       assert (hierarchy.children |> Enum.at(1)).numbering.level == 1
       assert (hierarchy.children |> Enum.at(1)).numbering.index == 2
 
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.level == 3
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.index == 4
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.level == 3
 
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.level == 4
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(0)).numbering.index == 1
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.index == 4
 
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(1)).numbering.level == 3
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(1)).numbering.index == 5
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(2)).numbering.level == 3
-      assert (hierarchy.children |> Enum.at(1) |> Map.get(:children) |> Enum.at(0) |> Map.get(:children) |> Enum.at(2)).numbering.index == 6
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.level == 4
 
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(0)).numbering.index == 1
+
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(1)).numbering.level == 3
+
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(1)).numbering.index == 5
+
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(2)).numbering.level == 3
+
+      assert (hierarchy.children
+              |> Enum.at(1)
+              |> Map.get(:children)
+              |> Enum.at(0)
+              |> Map.get(:children)
+              |> Enum.at(2)).numbering.index == 6
     end
 
     test "custom labels", %{project: project, institution: institution} do
@@ -192,8 +290,9 @@ defmodule Oli.Resources.NumberingTest do
 
       assert hierarchy.numbering.labels == %{unit: "Volume", module: "Chapter", section: "Lesson"}
 
-      page_2_crumb = Breadcrumb.trail_to(project.slug, "page_2", AuthoringResolver, project.customizations)
-      |> List.last()
+      page_2_crumb =
+        Breadcrumb.trail_to(project.slug, "page_2", AuthoringResolver, project.customizations)
+        |> List.last()
 
       assert page_2_crumb.full_title == "Lesson 1: Page 2"
     end

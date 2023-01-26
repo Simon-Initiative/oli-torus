@@ -143,11 +143,18 @@ defmodule OliWeb.Qa.QaLive do
     <div class="container review">
       <div class="grid grid-cols-12">
         <div class="col-span-12">
-          <p>Run an automated review before publishing to check for broken links and other common issues that may be present in your course.</p>
+          <p>
+            Run an automated review before publishing to check for broken links and other common issues that may be present in your course.
+          </p>
 
-          <button class="btn btn-primary mt-3" id="button-publish"
+          <button
+            class="btn btn-primary mt-3"
+            id="button-publish"
             phx-click="review"
-            phx-disable-with="Reviewing...">Run Review</button>
+            phx-disable-with="Reviewing..."
+          >
+            Run Review
+          </button>
 
           <%= link to: Routes.resource_path(OliWeb.Endpoint, :preview, @project.slug), class: "btn btn-outline-primary mt-3 ml-2", target: "preview-#{@project.slug}" do %>
             Preview Course <i class="fas fa-external-link-alt ml-1"></i>
@@ -160,29 +167,39 @@ defmodule OliWeb.Qa.QaLive do
           <div class="col-span-12">
             <p class="mb-3">
               Last reviewed <strong><%= Utils.render_date(hd(@qa_reviews), :inserted_at, @context) %></strong>,
-              with <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %> found.
+              with <strong><%= length(@warnings) %></strong>
+              potential improvement <%= if length(@warnings) == 1 do
+                "opportunity"
+              else
+                "opportunities"
+              end %> found.
             </p>
             <%= if !Enum.empty?(@warnings_by_type) do %>
               <div class="d-flex">
                 <%= for type <- @warning_types do %>
-                  <%= live_component WarningFilter, active: MapSet.member?(@filters, type), type: type, warnings: Map.get(@warnings_by_type, type) %>
+                  <%= live_component(WarningFilter,
+                    active: MapSet.member?(@filters, type),
+                    type: type,
+                    warnings: Map.get(@warnings_by_type, type)
+                  ) %>
                 <% end %>
               </div>
 
               <div class="reviews">
                 <ul class="review-links">
                   <%= for warning <- @filtered_warnings do %>
-                    <%= live_component WarningSummary, warning: warning, selected: @selected %>
+                    <%= live_component(WarningSummary, warning: warning, selected: @selected) %>
                   <% end %>
                 </ul>
                 <div class="review-cards">
                   <%= if @selected != nil do %>
-                    <%= live_component WarningDetails,
+                    <%= live_component(WarningDetails,
                       parent_pages: @parent_pages,
                       selected: @selected,
                       author: @author,
                       project: @project,
-                      warning: @selected %>
+                      warning: @selected
+                    ) %>
                   <% end %>
                 </div>
               </div>

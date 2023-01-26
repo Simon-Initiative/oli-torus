@@ -74,85 +74,95 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   def render(assigns) do
     ~F"""
-      {render_modal(assigns)}
-      <div id="community-overview" class="overview container">
-        <ShowSection
-          section_title="Details"
-          section_description="Main community fields that will be shown to system admins and community admins."
+    {render_modal(assigns)}
+    <div id="community-overview" class="overview container">
+      <ShowSection
+        section_title="Details"
+        section_description="Main community fields that will be shown to system admins and community admins."
+      >
+        <Form changeset={@changeset} save="save" />
+      </ShowSection>
+
+      <ShowSection
+        section_title="Community Admins"
+        section_description="Add other authors by email to administrate the community."
+      >
+        <Invitation
+          to_invite={:admin}
+          list_id="admin_matches"
+          invite="add_admin"
+          remove="remove_admin"
+          suggest="suggest_admin"
+          matches={@matches["admin"]}
+          placeholder="admin@example.edu"
+          button_text="Add"
+          collaborators={@community_admins}
+          allow_removal={@is_system_admin}
+        />
+      </ShowSection>
+
+      <ShowSection
+        section_title="Community Members"
+        section_description="Add users by email as members of the community (one at a time). Only showing the last 3 additions here."
+      >
+        <Invitation
+          list_id="member_matches"
+          invite="add_member"
+          remove="remove_member"
+          suggest="suggest_member"
+          matches={@matches["member"]}
+          placeholder="user@example.edu"
+          button_text="Add"
+          collaborators={@community_members}
+        />
+
+        <Link
+          class="btn btn-link float-right mt-4"
+          to={Routes.live_path(@socket, MembersIndexView, @community.id)}
         >
-          <Form changeset={@changeset} save="save"/>
-        </ShowSection>
+          See all >
+        </Link>
+      </ShowSection>
 
-        <ShowSection
-          section_title="Community Admins"
-          section_description="Add other authors by email to administrate the community."
-        >
-          <Invitation
-            to_invite={:admin}
-            list_id="admin_matches"
-            invite="add_admin"
-            remove="remove_admin"
-            suggest="suggest_admin"
-            matches={@matches["admin"]}
-            placeholder="admin@example.edu"
-            button_text="Add"
-            collaborators={@community_admins}
-            allow_removal={@is_system_admin}/>
-        </ShowSection>
+      <ShowSection
+        section_title="Projects and Products"
+        section_description="Make selected Projects and Products available to members of this Community."
+      >
+        <Link class="btn btn-link" to={Routes.live_path(@socket, IndexAssociated, @community_id)}>
+          See associated
+        </Link>
+      </ShowSection>
 
-        <ShowSection
-          section_title="Community Members"
-          section_description="Add users by email as members of the community (one at a time). Only showing the last 3 additions here."
-        >
-          <Invitation
-            list_id="member_matches"
-            invite="add_member"
-            remove="remove_member"
-            suggest="suggest_member"
-            matches={@matches["member"]}
-            placeholder="user@example.edu"
-            button_text="Add"
-            collaborators={@community_members}/>
-
-          <Link class="btn btn-link float-right mt-4" to={Routes.live_path(@socket, MembersIndexView, @community.id)}>
-            See all >
-          </Link>
-        </ShowSection>
-
-        <ShowSection
-          section_title="Projects and Products"
-          section_description="Make selected Projects and Products available to members of this Community."
-        >
-          <Link class="btn btn-link" to={Routes.live_path(@socket, IndexAssociated, @community_id)}>
-            See associated
-          </Link>
-        </ShowSection>
-
-        <ShowSection
+      <ShowSection
         section_title="Institutions"
         section_description="Add institutions to be part of the community."
-        >
-          <Invitation
-            list_id="institution_matches"
-            to_invite={:institution}
-            search_field={:name}
-            invite="add_institution"
-            remove="remove_institution"
-            suggest="suggest_institution"
-            matches={@matches["institution"]}
-            main_fields={[primary: :name, secondary: :institution_email]}
-            placeholder="Institution name"
-            button_text="Add"
-            collaborators={@community_institutions}/>
-        </ShowSection>
+      >
+        <Invitation
+          list_id="institution_matches"
+          to_invite={:institution}
+          search_field={:name}
+          invite="add_institution"
+          remove="remove_institution"
+          suggest="suggest_institution"
+          matches={@matches["institution"]}
+          main_fields={[primary: :name, secondary: :institution_email]}
+          placeholder="Institution name"
+          button_text="Add"
+          collaborators={@community_institutions}
+        />
+      </ShowSection>
 
-        <ShowSection section_title="Actions">
-          <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
-            <span>Permanently delete this community.</span>
-          </div>
-        </ShowSection>
-      </div>
+      <ShowSection section_title="Actions">
+        <div class="d-flex align-items-center">
+          <button
+            type="button"
+            class="btn btn-link text-danger action-button"
+            :on-click="show_delete_modal"
+          >Delete</button>
+          <span>Permanently delete this community.</span>
+        </div>
+      </ShowSection>
+    </div>
     """
   end
 
@@ -229,7 +239,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
     modal = fn assigns ->
       ~F"""
-        <DeleteModal {...@modal_assigns} />
+      <DeleteModal {...@modal_assigns} />
       """
     end
 
@@ -311,7 +321,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
         modal = fn assigns ->
           ~F"""
-            <SelectMemberModal {...@modal_assigns} />
+          <SelectMemberModal {...@modal_assigns} />
           """
         end
 

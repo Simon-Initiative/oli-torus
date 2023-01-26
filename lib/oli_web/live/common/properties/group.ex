@@ -15,7 +15,7 @@ defmodule OliWeb.Common.Properties.Group do
         </div>
       </div>
       <div class="md:col-span-8">
-      <#slot />
+        <#slot />
       </div>
     </div>
     """
