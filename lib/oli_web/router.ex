@@ -117,7 +117,7 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
-    plug :delivery
+    plug(:delivery)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -131,12 +131,12 @@ defmodule OliWeb.Router do
 
     plug(Oli.Plugs.RemoveXFrameOptions)
 
-    plug :delivery_layout
+    plug(:delivery_layout)
   end
 
   pipeline :delivery_and_admin do
-    plug :delivery
-    plug :authoring
+    plug(:delivery)
+    plug(:authoring)
     plug(Oli.Plugs.GiveAdminPriority)
 
     plug(PowAssent.Plug.Reauthorization,
@@ -155,7 +155,7 @@ defmodule OliWeb.Router do
   end
 
   pipeline :authoring_protected do
-    plug :authoring
+    plug(:authoring)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -292,10 +292,10 @@ defmodule OliWeb.Router do
     post("/timezone", StaticPageController, :timezone)
 
     # update limited session information
-    post "/set_session", StaticPageController, :set_session
+    post("/set_session", StaticPageController, :set_session)
 
     # general health check for application & db
-    get "/healthz", HealthController, :index
+    get("/healthz", HealthController, :index)
   end
 
   scope "/.well-known", OliWeb do
@@ -572,7 +572,7 @@ defmodule OliWeb.Router do
   scope "/api/v1", OliWeb do
     pipe_through([:api])
     # These endpoints are secured via an API token
-    resources "/registration/", Api.ActivityRegistrationController, only: [:create]
+    resources("/registration/", Api.ActivityRegistrationController, only: [:create])
 
     post("/automation_setup", Api.AutomationSetupController, :setup)
     post("/automation_teardown", Api.AutomationSetupController, :teardown)
@@ -832,7 +832,9 @@ defmodule OliWeb.Router do
       as: :instructor_review
     )
 
-    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor, as: :collab_spaces_index)
+    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor,
+      as: :collab_spaces_index
+    )
   end
 
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do

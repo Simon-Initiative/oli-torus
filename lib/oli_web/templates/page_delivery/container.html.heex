@@ -18,11 +18,11 @@
     <li>
     <%= cond do %>
       <% container?(child.revision) -> %>
-        <%= render "_link_shallow_container.html", props %>
+        <Components.Delivery.CourseOutline.link_shallow_container {props} />
       <% child.revision.graded -> %>
-        <%= render "_link_assessment.html", props %>
+        <Components.Delivery.CourseOutline.link_assessment {props} />
       <% true -> %>
-        <%= render "_link_page.html", props %>
+        <Components.Delivery.CourseOutline.link_page {props} />
     <% end %>
     </li>
   <% end %>

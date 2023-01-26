@@ -10,15 +10,15 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
 
-  prop user, :any
-  data modal, :any, default: nil
-  data breadcrumbs, :any
-  data title, :string, default: "Section Details"
-  data section, :any, default: nil
-  data instructors, :list, default: []
-  data updates_count, :integer
-  data submission_count, :integer
-  data section_has_student_data, :boolean
+  prop(user, :any)
+  data(modal, :any, default: nil)
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Section Details")
+  data(section, :any, default: nil)
+  data(instructors, :list, default: [])
+  data(updates_count, :integer)
+  data(submission_count, :integer)
+  data(section_has_student_data, :boolean)
 
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
@@ -128,10 +128,8 @@ defmodule OliWeb.Sections.OverviewView do
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)} class={"btn btn-link"}>Invite Students</a></li>
           {/if}
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)} class={"btn btn-link"}>Edit Section Details</a></li>
-          <li>
-            <button type="button" class="p-0 btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button>
-          </li>
           <li><a href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)} class={"btn btn-link"}>Browse Collaborative Spaces</a></li>
+          <li><button type="button" class=" btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button></li>
         </ul>
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">

@@ -110,7 +110,7 @@
   flex-direction: column;
   border-radius: 2px;
   overflow: hidden;
-  background-color: var(--color-body-bg);
+  background-color: var(--color-body);
   border-color: var(--color-light);
 
   :global(.header) {
@@ -142,7 +142,7 @@
     min-height: 50px;
     max-width: 70px;
     min-width: 70px;
-    background-color: var(--color-body-bg);
+    background-color: var(--color-body);
     color: var(--color-body-color);
 
     &:hover {

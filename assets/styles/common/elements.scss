@@ -25,7 +25,7 @@ span.term {
   pre {
     text-align: left;
     color: var(--color-body-color);
-    background: var(--color-body-bg);
+    background: var(--color-body);
     font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
     letter-spacing: -0.003em;
     border-radius: 6px;
@@ -202,7 +202,7 @@ span.term {
 
   .callout-inline,
   .callout {
-    background-color: var(--color-body-bg);
+    background-color: var(--color-body);
   }
 
   .callout-block,
@@ -247,7 +247,7 @@ span.term {
       flex-direction: row;
       margin-bottom: 0.5rem;
       align-items: center;
-      background-color: var(--color-body-bg);
+      background-color: var(--color-body);
       .dialog-content {
         flex-grow: 1;
       }

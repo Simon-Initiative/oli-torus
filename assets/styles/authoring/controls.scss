@@ -30,7 +30,7 @@
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-body-color);
-  background-color: var(--color-body-bg);
+  background-color: var(--color-body);
   background-clip: padding-box;
   position: relative;
 }
@@ -45,7 +45,7 @@
   padding: 5px;
   border-radius: 4px;
   border: 1px solid var(--color-gray-600);
-  background-color: var(--color-body-bg);
+  background-color: var(--color-body);
 }
 
 .table-size-picker-label {
@@ -121,7 +121,7 @@
 .audio-clip-browser-modal {
   position: absolute;
   min-height: 618px;
-  background-color: var(--color-body-bg);
+  background-color: var(--color-body);
   left: 0px;
   top: 0px;
   right: 0px;
@@ -140,7 +140,7 @@
   position: absolute;
   top: 0px;
   left: 0px;
-  background-color: var(--color-body-bg);
+  background-color: var(--color-body);
   right: 0px;
   height: 0px;
   overflow: hidden;

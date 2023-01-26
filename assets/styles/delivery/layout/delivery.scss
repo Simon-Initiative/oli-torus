@@ -1,13 +1,4 @@
 html.delivery {
-  body {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column;
-
-    // padding for footer
-    padding-bottom: 60px;
-  }
-
   .select-sources {
     .custom-select {
       width: 13em;
@@ -60,20 +51,6 @@ html.delivery {
     .btn-card:hover,
     .card:hover {
       border: 1px solid #007bff;
-    }
-  }
-
-  main.container {
-    @include clearfix;
-    padding-right: 0;
-    padding-left: 0;
-    display: block;
-  }
-
-  @media (min-width: 0) {
-    main.container {
-      padding-left: 1em;
-      padding-right: 1em;
     }
   }
 }

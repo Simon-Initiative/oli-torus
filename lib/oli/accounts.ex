@@ -336,39 +336,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns true if a user is signed in
-  """
-  def user_signed_in?(conn) do
-    conn.assigns[:current_user]
-  end
-
-  @doc """
-  Returns true if a user is signed in as guest
-  """
-  def user_is_guest?(conn) do
-    case conn.assigns[:current_user] do
-      %{guest: true} ->
-        true
-
-      _ ->
-        false
-    end
-  end
-
-  @doc """
-  Returns true if a user is signed in as an independent learner
-  """
-  def user_is_independent_learner?(current_user) do
-    case current_user do
-      %{independent_learner: true} ->
-        true
-
-      _ ->
-        false
-    end
-  end
-
-  @doc """
   Returns true if a user belongs to an LMS.
   """
   def is_lms_user?(email) do
@@ -547,13 +514,6 @@ defmodule Oli.Accounts do
       nil -> false
       _author -> true
     end
-  end
-
-  @doc """
-  Returns true if a author is signed in
-  """
-  def author_signed_in?(conn) do
-    conn.assigns[:current_author]
   end
 
   @doc """

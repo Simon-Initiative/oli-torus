@@ -34,7 +34,7 @@
   font-weight: 800;
   border: 2px solid var(--color-gray-400);
   border-radius: 50%;
-  background: var(--color-body-bg);
+  background: var(--color-body);
   padding: 0 1px 0 0;
   cursor: pointer;
 
@@ -100,7 +100,7 @@
   flex-direction: row;
   padding: 6px 12px;
   border-radius: 4px;
-  background: var(--color-body-bg);
+  background: var(--color-body);
   min-height: 60px;
   margin-bottom: 4px;
 
@@ -126,7 +126,7 @@
 .groupContainer {
   display: flex;
   flex-direction: row;
-  background: var(--color-body-bg);
+  background: var(--color-body);
   overflow: hidden;
   padding: 6px 0px 6px 12px;
   border-radius: 4px;

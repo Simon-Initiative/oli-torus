@@ -1,0 +1,39 @@
+<main role="main" class="relative flex-1 pb-[60px]">
+  <Components.Header.header {assigns} />
+
+  <div class="container mx-auto px-8">
+    <div class="grid grid-cols-12">
+      <div class="col-span-12">
+        <h3 class="mt-4 mb-4">My Courses</h3>
+
+        <%= if is_independent_instructor?(@user) do %>
+          <div class="d-flex flex-row mb-2">
+            <div>
+              <%= link "New Section", to: Routes.select_source_path(OliWeb.Endpoint, :independent_learner), class: "btn btn-md btn-outline-primary" %>
+            </div>
+          </div>
+        <% end %>
+
+        <%= if length(@sections) == 0 do %>
+          <p>You are not enrolled in any courses.</p>
+        <% else %>
+          <div class="flex flex-wrap">
+            <%= for section <- @sections do %>
+              <a href={Routes.page_delivery_path(@conn, :index, section.slug)} class="rounded-lg shadow-lg bg-white max-w-xs mr-3 mb-3 border border-transparent hover:border-blue-500 hover:no-underline">
+                <img class="rounded-t-lg" src={cover_image(section)} alt="course image"/>
+                <div class="p-6">
+                  <h5 class="text-gray-900 text-xl font-medium mb-2"><%= section.title %></h5>
+                  <p class="text-gray-700 text-base mb-4">
+                    <%= section.description %>
+                  </p>
+                </div>
+              </a>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+</main>
