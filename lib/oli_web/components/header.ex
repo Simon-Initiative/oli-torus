@@ -72,7 +72,7 @@ defmodule OliWeb.Components.Header do
             </div>
 
           <% true -> %>
-            <%= link "Learner/Educator Sign In", to: Routes.pow_session_path(OliWeb.Endpoint, :new), class: "btn btn-primary btn-sm my-2" %>
+            <%= link "Learner/Educator Sign In", to: Routes.pow_session_path(OliWeb.Endpoint, :new), class: "btn btn-primary btn-sm my-2 flex items-center" %>
 
         <% end %>
       </div>
