@@ -37,6 +37,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
     if (onRestart) {
       onRestart();
     }
+    let redirectTo = overviewURL;
     if (!isPreviewMode && graded) {
       const finalizeResult = await finalizePageAttempt(
         sectionSlug,
@@ -47,20 +48,21 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
       if (finalizeResult.result === 'success') {
         if ((finalizeResult as ActionResult).commandResult === 'failure') {
           console.error('failed to finalize attempt', finalizeResult);
-          return;
+          // try again the other way
+          redirectTo = finalizeGradedURL;
+        } else {
+          redirectTo = finalizeResult.redirectTo;
         }
       } else {
         console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);
-        return;
+        // try again the other way
+        redirectTo = finalizeGradedURL;
       }
     }
     if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
-      // FIXME: for hotfix purposes, just reverting the code
-      // going fwd however it should use a parameter sent from the backend instead
-      const newAttemptUrl = `/sections/${sectionSlug}/page/${revisionSlug}/attempt`;
-      window.location.href = newAttemptUrl;
+      window.location.href = redirectTo;
     }
   };
 
