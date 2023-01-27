@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
+import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from '../../store/features/adaptivity/slice';
@@ -43,7 +43,16 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         revisionSlug,
         resourceAttemptGuid,
       );
-      /* console.log('finalizeResult', finalizeResult); */
+      console.log('finalize attempt result: ', finalizeResult);
+      if (finalizeResult.result === 'success') {
+        if ((finalizeResult as ActionResult).commandResult === 'failure') {
+          console.error('failed to finalize attempt', finalizeResult);
+          return;
+        }
+      } else {
+        console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);
+        return;
+      }
     }
     if (!graded || isPreviewMode) {
       window.location.reload();
