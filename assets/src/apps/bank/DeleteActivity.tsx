@@ -18,7 +18,7 @@ export const DeleteActivity = (props: DeleteActivityProps) => {
       title="Delete this activity"
       aria-pressed="false"
     >
-      <i className="las la-trash-alt"></i>
+      <i className="fas fa-trash-alt"></i>
     </button>
   );
 };

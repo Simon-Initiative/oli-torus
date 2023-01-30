@@ -279,8 +279,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def dialog_speaker_portrait() do
-    # "<div class=\"material-icons speaker-portrait\">person</div>"
-    ""
+    ~s|<i class="fa-solid fa-image-portrait"></i>|
   end
 
   def dialog_speaker(speaker_id, %{"speakers" => speakers}) do
@@ -349,7 +348,7 @@ defmodule Oli.Rendering.Content.Html do
 
         [
           "<span class='pronunciation'>",
-          "<span class='material-icons-outlined play-button' onClick='#{play_code}'>play_circle</span>",
+          ~s|<span class='play-button' onClick='#{play_code}'><i class="fa-solid fa-circle-play"></i></span>|,
           "<span class='pronunciation-player' onClick='#{play_code}'>",
           audio_element,
           next.(),
@@ -656,7 +655,7 @@ defmodule Oli.Rendering.Content.Html do
             ~s|<div class="title flex-grow-1">|,
             escape_xml!(title),
             "</div>",
-            ~s|<i class="las la-external-link-square-alt la-2x"></i>|,
+            ~s|<i class="fas fa-external-link-square-alt la-2x self-center"></i>|,
             "</div>\n"
           ]
         end,
@@ -690,7 +689,7 @@ defmodule Oli.Rendering.Content.Html do
 
     popup_content =
       case parse_html_content(content) do
-        "" -> "<i class='material-icons'>volume_up</i>"
+        "" -> ~s|<i class="fa-solid fa-volume-high"></i>|
         content -> content
       end
 

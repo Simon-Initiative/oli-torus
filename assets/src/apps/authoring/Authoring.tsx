@@ -301,7 +301,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
                 className="text-dark"
                 onClick={() => window.open(url, windowName)}
               >
-                Open Preview <i className="las la-external-link-alt ml-1"></i>
+                Open Preview <i className="fas fa-external-link-alt ml-1"></i>
               </Button>
             </div>
           </Alert>

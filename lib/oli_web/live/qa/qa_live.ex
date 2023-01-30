@@ -141,8 +141,8 @@ defmodule OliWeb.Qa.QaLive do
   def render(assigns) do
     ~H"""
     <div class="container review">
-      <div class="row">
-        <div class="col-12">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12">
           <p>Run an automated review before publishing to check for broken links and other common issues that may be present in your course.</p>
 
           <button class="btn btn-primary mt-3" id="button-publish"
@@ -150,14 +150,14 @@ defmodule OliWeb.Qa.QaLive do
             phx-disable-with="Reviewing...">Run Review</button>
 
           <%= link to: Routes.resource_path(OliWeb.Endpoint, :preview, @project.slug), class: "btn btn-outline-primary mt-3 ml-2", target: "preview-#{@project.slug}" do %>
-            Preview Course <i class="las la-external-link-alt ml-1"></i>
+            Preview Course <i class="fas fa-external-link-alt ml-1"></i>
           <% end %>
         </div>
       </div>
 
       <%= if !Enum.empty?(@qa_reviews) do %>
-        <div class="row mt-4">
-          <div class="col-12">
+        <div class="grid grid-cols-12 mt-4">
+          <div class="col-span-12">
             <p class="mb-3">
               Last reviewed <strong><%= Utils.render_date(hd(@qa_reviews), :inserted_at, @context) %></strong>,
               with <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %> found.

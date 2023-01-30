@@ -24,8 +24,8 @@
   }
 
   li:before {
-    content: "\2022";
-    color: $green;
+    content: '\2022';
+    color: var(--color-green-400);
     position: absolute;
     top: -15px;
     left: 0;
@@ -45,7 +45,7 @@
 
 .post {
   .post-index {
-    font-size: $h3-font-size;
+    font-size: 1.5em;
   }
 
   .post-border {
@@ -55,7 +55,7 @@
 
 .reply {
   .post-index {
-    font-size: $h4-font-size;
+    font-size: 1.25em;
   }
 
   .post-border {

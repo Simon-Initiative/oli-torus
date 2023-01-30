@@ -26,7 +26,7 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState(0);
   return (
     <>
-      <ul className="nav nav-tabs my-3" id="activity-authoring-tabs" role="tablist">
+      <ul className="nav nav-tabs my-2" role="tablist">
         {React.Children.map(children, (child, index) => {
           if (React.isValidElement(child) && isValidChild(child, TabbedNavigation)) {
             return (

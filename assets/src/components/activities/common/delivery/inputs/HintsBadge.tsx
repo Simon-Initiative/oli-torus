@@ -11,7 +11,11 @@ export const HintsBadge: React.FC<Props> = (props) => {
     return null;
   }
 
-  const className = active ? 'material-icons' : 'material-icons-outlined';
+  const icon = active ? (
+    <i className="fa-regular fa-lightbulb"></i>
+  ) : (
+    <i className="fa-solid fa-lightbulb"></i>
+  );
 
   const action = () => {
     props.toggleHints();
@@ -25,9 +29,9 @@ export const HintsBadge: React.FC<Props> = (props) => {
       onClick={action}
       onKeyPress={(e) => (e.key === 'Enter' ? action() : null)}
       aria-label="Toggle hints"
-      className={'px-1 btn btn-link ' + className}
+      className="px-1 btn btn-link"
     >
-      lightbulb
+      {icon}
     </span>
   );
 };

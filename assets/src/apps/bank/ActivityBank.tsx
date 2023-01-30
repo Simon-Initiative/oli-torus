@@ -571,8 +571,8 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     );
 
     return (
-      <div className="resource-editor row">
-        <div className="col-12">
+      <div className="resource-editor">
+        <div>
           <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
           <Banner
@@ -585,15 +585,14 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
           <div className="d-flex justify-content-end">
             <PersistenceStatus persistence={this.state.persistence} />
           </div>
-          <div className="d-flex justify-content-between">
-            {overviewLabel}
+          <div className="d-flex justify-content-between mb-4">
+            <div className="flex-1">{overviewLabel}</div>
             <CreateActivity
               projectSlug={props.projectSlug}
               editorMap={props.editorMap}
               onAdd={this.onActivityAdd}
             />
           </div>
-          <hr />
 
           <LogicFilter
             expressions={this.state.filterExpressions}
@@ -611,7 +610,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             onRemove={() => true}
           />
 
-          <div className="d-flex justify-content-end">
+          <div className="d-flex justify-end my-4">
             <button
               className="btn btn-secondary mr-3"
               disabled={isEmptyFilterLogic(this.state.filterExpressions)}

@@ -9,9 +9,11 @@ export const FullScreenButton: React.FC<ControlButtonProps> = ({ actions, player
 
   return (
     <button className="video-react-control video-react-button" onClick={toggle}>
-      <span className="material-icons-outlined">
-        {isFullscreen ? 'close_fullscreen' : 'fullscreen'}
-      </span>
+      {isFullscreen ? (
+        <i className="fa-solid fa-down-left-and-up-right-to-center"></i>
+      ) : (
+        <i className="fa-solid fa-up-right-and-down-left-from-center"></i>
+      )}
     </button>
   );
 };

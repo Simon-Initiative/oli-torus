@@ -66,7 +66,7 @@ export class Message extends React.PureComponent<MessageProps, {}> {
         className="close"
         aria-label="Close"
       >
-        <span aria-hidden="true">&times;</span>
+        <i className="fa-solid fa-xmark fa-lg"></i>
       </button>
     );
   }

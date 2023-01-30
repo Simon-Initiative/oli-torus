@@ -18,13 +18,13 @@
     width: 100%;
   }
 
-  .social-signin.btn {
+  .social-signin {
     transition: all 0.2s;
-    width: fit-content;
     margin: 0.5em auto;
     padding: 0;
-    border: 0.05rem solid $secondary;
+    border: 0.05rem solid var(--color-gray-300);
     border-radius: 0.25rem;
+    border-radius: 6px;
   }
 
   .form-label-group {
@@ -33,6 +33,7 @@
   }
 
   .form-label-group input {
+    width: 100%;
     height: auto;
   }
 
@@ -126,14 +127,14 @@
 }
 
 .provider-google {
-  font-family: 'Roboto', sans-serif !important;
-  color: $google-button-font-color !important;
-  background-color: $google-button-background-color !important;
-  padding: 0 !important;
+  font-family: 'Roboto', sans-serif;
+  color: var(--color-body-color);
+  background-color: var(--color-white);
+  padding: 0;
 
   &.btn {
     &:hover {
-      background-color: darken($google-button-background-color, 3%) !important;
+      background-color: var(--color-white);
     }
   }
 
@@ -159,12 +160,12 @@
 }
 
 .provider-github {
-  color: $github-button-font-color !important;
-  background-color: $github-button-background-color !important;
+  color: var(--color-body-color);
+  background-color: var(--color-white);
 
   &.btn {
     &:hover {
-      background-color: darken($github-button-background-color, 3%) !important;
+      background-color: var(--color-white);
     }
   }
 

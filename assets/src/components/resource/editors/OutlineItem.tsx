@@ -195,7 +195,7 @@ export const ExpandToggle = ({ expanded, onClick }: ExpandToggleProps) => (
       onClick();
     }}
   >
-    {expanded ? <i className="las la-chevron-down"></i> : <i className="las la-chevron-right"></i>}
+    {expanded ? <i className="fas fa-chevron-down"></i> : <i className="fas fa-chevron-right"></i>}
   </div>
 );
 

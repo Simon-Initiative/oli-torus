@@ -27,7 +27,7 @@ export const ForeignModal = (props: Props) => {
       onOk={() => props.onDone({ lang })}
     >
       <div className="row">
-        <div className="col-12">
+        <div className="col-span-12">
           <p className="mb-4">
             Set this text as belonging to a foreign language for screen readers to pronounce
             properly. This has no visual effect for the learner. You can set a project-wide default

@@ -7,16 +7,16 @@ defmodule OliWeb.Common.Properties.WideGroup do
 
   def render(assigns) do
     ~F"""
-    <div class="row py-5">
-      <div class="col-md-12">
+    <div class="grid grid-cols-12 py-5">
+      <div class="md:col-span-12">
         <h4>{@label}</h4>
         <div class="text-muted">
           {@description}
         </div>
       </div>
     </div>
-    <div class="row border-bottom">
-      <div class="col-md-12">
+    <div class="grid grid-cols-12 border-b">
+      <div class="md:col-span-12">
         <#slot />
       </div>
     </div>

@@ -13,5 +13,5 @@ yarn --cwd ./assets
 NODE_ENV=production npm run deploy --prefix ./assets
 NODE_ENV=production npm run deploy-node --prefix ./assets
 
-MIX_ENV=prod mix phx.digest
+MIX_ENV=prod mix assets.deploy
 MIX_ENV=prod SHA=$RELEASE_SHA mix release

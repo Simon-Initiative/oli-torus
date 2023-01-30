@@ -1,6 +1,4 @@
-@use 'authoring/theme' as authoring;
-
-$border-color: authoring.$primary;
+$border-color: var(--color-selection);
 
 .switchToggle {
   display: flex;
@@ -12,8 +10,8 @@ $border-color: authoring.$primary;
   display: none;
 
   &:checked + .label {
-    background: authoring.$selection;
-    color: authoring.$white;
+    background: $border-color;
+    color: var(--color-white);
   }
 }
 
@@ -37,7 +35,7 @@ $border-color: authoring.$primary;
   }
 
   &:hover {
-    background: authoring.$hover;
-    color: authoring.$white;
+    background: var(--color-hover);
+    color: var(--color-white);
   }
 }

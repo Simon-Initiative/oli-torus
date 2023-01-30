@@ -142,7 +142,7 @@ export const SelectionOutlineItem = (props: SelectionOutlineItemProps) => {
   const { contentItem } = props;
   return (
     <OutlineItem {...props}>
-      <Icon iconName="las la-cogs" />
+      <Icon iconName="fas fa-cogs" />
       <Description title="Activity Bank Selection">
         {getActivitySelectionDescription(contentItem)}
       </Description>

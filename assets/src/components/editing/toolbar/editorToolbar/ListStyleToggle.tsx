@@ -1,8 +1,7 @@
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
-import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
-
 import React from 'react';
 
+import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { createButtonCommandDesc } from '../../elements/commands/commandFactories';
 
@@ -20,7 +19,7 @@ export const ListStyleToggle = ({ listStyleOptions }: ListStyleProps) => {
   return (
     <DropdownButton
       description={createButtonCommandDesc({
-        icon: 'list_alt',
+        icon: <i className="fa-regular fa-rectangle-list"></i>,
         description: 'List Style',
         active: (_editor) => false,
         execute: (_ctx, _editor) => null,

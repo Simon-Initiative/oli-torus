@@ -7,11 +7,11 @@
 <%= render OliWeb.SharedView, "_admin_edit_banner.html", %{is_admin?: @is_admin?, project_slug: @project_slug, revision_slug: @revision_slug} %>
 
 
-<div id="editor" class="container">
+<div id="editor" class="container mx-auto">
   <%= react_component("Components.PageEditor", @raw_context) %>
 </div>
 
-<div class="container mt-5">
+<div class="container mx-auto mt-5">
   <%=
     live_render(@conn, OliWeb.CollaborationLive.CollabSpaceConfigView,
       session: %{

@@ -114,7 +114,7 @@ defmodule OliWeb.Grades.GradesLive do
     ~H"""
     <div class="mb-2">
       <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section.slug) do %>
-        <i class="las la-arrow-left"></i> Back
+        <i class="fas fa-arrow-left"></i> Back
       <% end %>
     </div>
 

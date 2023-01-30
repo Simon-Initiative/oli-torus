@@ -43,7 +43,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
               <hr class="bg-light">
               <h6 class="my-3">The following materials from this project will be updated to match the latest publication</h6>
 
-              <ul>
+              <ul class="my-3">
                 {#for {status, %{revision: revision}} <- Map.values(@changes)}
                   <li>
                     <span>{revision.title}</span>
@@ -57,7 +57,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
 
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-              <button class="btn btn-warning" phx-click="apply_update" phx-key="enter">Apply Update</button>
+              <button class="btn btn-warning ml-2" phx-click="apply_update" phx-key="enter">Apply Update</button>
             </div>
 
           </div>

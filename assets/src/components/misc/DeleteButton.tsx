@@ -26,8 +26,6 @@ export const DeleteButton = ({
     aria-label="delete"
     onClick={onClick}
   >
-    <span className="material-icons" aria-hidden="true">
-      delete
-    </span>
+    <i className="fa-solid fa-trash fa-lg"></i>
   </button>
 );

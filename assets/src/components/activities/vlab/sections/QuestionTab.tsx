@@ -1,5 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Dropdown, VlabInput, VlabSchema } from 'components/activities/vlab/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
 import { VlabParameterSelector } from 'components/activities/vlab/sections/VlabParameterSelector';

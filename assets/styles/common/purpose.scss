@@ -22,15 +22,15 @@
   }
 
   &.objectives {
-    border: 1px solid $content-purpose-objectives-color;
+    border: 1px solid rgba(#0984e3, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-objectives-color;
-      color: $white;
+      background-color: rgba(#0984e3, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -44,15 +44,15 @@
   }
 
   &.checkpoint {
-    border: 1px solid $content-purpose-checkpoint-color;
+    border: 1px solid rgba(#0984e3, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-checkpoint-color;
-      color: $white;
+      background-color: rgba(#0984e3, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -62,15 +62,15 @@
   }
 
   &.didigetthis {
-    border: 1px solid $content-purpose-didigetthis-color;
+    border: 1px solid rgba(#8e44ad, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-didigetthis-color;
-      color: $white;
+      background-color: rgba(#8e44ad, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -80,15 +80,15 @@
   }
 
   &.example {
-    border-bottom: 1px dashed $content-purpose-example-color;
+    border-bottom: 1px dashed rgba(#74b9ff, 0.75);
 
     & > .content-purpose-label {
-      border-bottom: 1px dashed $content-purpose-example-color;
+      border-bottom: 1px dashed rgba(#74b9ff, 0.75);
       font-weight: 700;
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -98,15 +98,15 @@
   }
 
   &.labactivity {
-    border: 1px solid $content-purpose-labactivity-color;
+    border: 1px solid rgba(#fdcb6e, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-labactivity-color;
-      color: $white;
+      background-color: rgba(#fdcb6e, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -116,15 +116,15 @@
   }
 
   &.learnbydoing {
-    border: 1px solid $content-purpose-learnbydoing-color;
+    border: 1px solid rgba(#00b894, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-learnbydoing-color;
-      color: $white;
+      background-color: rgba(#00b894, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -134,15 +134,15 @@
   }
 
   &.learnmore {
-    border: 1px solid $content-purpose-learnmore-color;
+    border: 1px solid rgba(#27ae60, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-learnmore-color;
-      color: $white;
+      background-color: rgba(#27ae60, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -152,15 +152,15 @@
   }
 
   &.manystudentswonder {
-    border: 1px solid $content-purpose-manystudentswonder-color;
+    border: 1px solid rgba(#42729b, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-manystudentswonder-color;
-      color: $white;
+      background-color: rgba(#42729b, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -170,15 +170,15 @@
   }
 
   &.quiz {
-    border: 1px solid $content-purpose-quiz-color;
+    border: 1px solid rgba(#3498db, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-quiz-color;
-      color: $white;
+      background-color: rgba(#3498db, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -188,15 +188,15 @@
   }
 
   &.myresponse {
-    border: 1px solid $content-purpose-myresponse-color;
+    border: 1px solid rgba(#3498db, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-myresponse-color;
-      color: $white;
+      background-color: rgba(#3498db, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -206,15 +206,15 @@
   }
 
   &.simulation {
-    border: 1px solid $content-purpose-simulation-color;
+    border: 1px solid rgba(#ff7675, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-simulation-color;
-      color: $white;
+      background-color: rgba(#ff7675, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -224,15 +224,15 @@
   }
 
   &.walkthrough {
-    border: 1px solid $content-purpose-walkthrough-color;
+    border: 1px solid rgba(#536d86, 0.75);
 
     & > .content-purpose-label {
-      background-color: $content-purpose-walkthrough-color;
-      color: $white;
+      background-color: rgba(#536d86, 0.75);
+      color: var(--color-white);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -256,7 +256,7 @@
     .content-purpose-content {
       .title {
         font-size: 1.3em;
-        color: $body-color;
+        color: var(--color-body-color);
       }
 
       i {
@@ -279,56 +279,56 @@
 
 .content-page-link {
   &.none {
-    border: 1px solid $gray-500;
-    @include page_link_style($link-color, rgba($gray-500, 0.2));
+    border: 1px solid #64748b;
+    @include page_link_style(#3d81f6, rgba(#64748b, 0.2));
   }
 
   &.checkpoint {
-    @include page_link_style($content-purpose-checkpoint-color);
+    @include page_link_style(rgba(#0984e3, 0.75));
   }
 
   &.didigetthis {
-    @include page_link_style($content-purpose-didigetthis-color);
+    @include page_link_style(rgba(#8e44ad, 0.75));
   }
 
   &.example {
-    @include page_link_style($link-color, $body-bg);
+    @include page_link_style(#3d81f6, #ffffff);
   }
 
   &.labactivity {
-    @include page_link_style(darken($content-purpose-labactivity-color, 10%));
+    @include page_link_style(darken(rgba(#fdcb6e, 0.75), 10%));
   }
 
   &.learnbydoing {
-    @include page_link_style($content-purpose-learnbydoing-color);
+    @include page_link_style(rgba(#00b894, 0.75));
   }
 
   &.learnmore {
-    @include page_link_style($content-purpose-learnmore-color);
+    @include page_link_style(rgba(#27ae60, 0.75));
   }
 
   &.manystudentswonder {
-    @include page_link_style($content-purpose-manystudentswonder-color);
+    @include page_link_style(rgba(#42729b, 0.75));
   }
 
   &.quiz {
-    @include page_link_style($content-purpose-quiz-color);
+    @include page_link_style(rgba(#3498db, 0.75));
   }
 
   &.myresponse {
-    @include page_link_style($content-purpose-myresponse-color);
+    @include page_link_style(rgba(#3498db, 0.75));
   }
 
   &.simulation {
-    @include page_link_style($content-purpose-simulation-color);
+    @include page_link_style(rgba(#ff7675, 0.75));
   }
 
   &.walkthrough {
-    @include page_link_style($content-purpose-walkthrough-color);
+    @include page_link_style(rgba(#536d86, 0.75));
   }
 }
 
-// activity-purpose is deprecated but is left here to support existing content
+// NOTICE: activity-purpose class is deprecated but is left here to support existing content
 .activity-purpose {
   padding: 4px 8px;
   font-weight: 200;
@@ -352,10 +352,10 @@
   }
 
   &.checkpoint {
-    background-color: $content-purpose-checkpoint-color;
+    background-color: rgba(#0984e3, 0.75);
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: 'Font Awesome 6 Free';
       font-weight: 900;
       margin-right: 8px;
       content: '\f46c';
@@ -363,10 +363,10 @@
   }
 
   &.didigetthis {
-    background-color: $content-purpose-didigetthis-color;
+    background-color: rgba(#8e44ad, 0.75);
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: 'Font Awesome 6 Free';
       font-weight: 900;
       margin-right: 8px;
       content: '\f256';
@@ -374,10 +374,10 @@
   }
 
   &.learnbydoing {
-    background-color: $content-purpose-learnbydoing-color;
+    background-color: rgba(#00b894, 0.75);
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: 'Font Awesome 6 Free';
       font-weight: 900;
       margin-right: 8px;
       content: '\f51c';

@@ -1,8 +1,8 @@
 defmodule OliWeb.Sections.UnlinkSection do
   use Surface.Component
 
-  prop section, :struct, required: true
-  prop unlink, :event, required: true
+  prop(section, :struct, required: true)
+  prop(unlink, :event, required: true)
 
   def render(assigns) do
     ~F"""
@@ -14,9 +14,7 @@ defmodule OliWeb.Sections.UnlinkSection do
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="deleteSectionModal">Confirm Unlink Section</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               Are you sure you want to unlink this section?
@@ -25,8 +23,8 @@ defmodule OliWeb.Sections.UnlinkSection do
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-danger" :on-click={@unlink} phx-disable-with="Unlinking...">Confirm Unlink Section</button>
+              <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger ml-2" :on-click={@unlink} phx-disable-with="Unlinking...">Confirm Unlink Section</button>
             </div>
           </div>
         </div>

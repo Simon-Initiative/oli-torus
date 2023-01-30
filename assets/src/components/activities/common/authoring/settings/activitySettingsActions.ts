@@ -10,7 +10,7 @@ export const shuffleAnswerChoiceSetting = (
   dispatch: (action: any) => void,
 ) => ({
   isEnabled: isShuffled(model.authoring.transformations),
-  label: 'Shuffle answer choice order',
+  label: 'Shuffle answer choices',
   onToggle: () => dispatch(toggleAnswerChoiceShuffling()),
 });
 

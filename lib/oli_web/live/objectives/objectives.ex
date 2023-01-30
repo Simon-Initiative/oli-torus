@@ -199,7 +199,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     ~F"""
       Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
       <br/>
-      Refer to the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+      Refer to the <a class="external" href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
     """
   end
 

@@ -60,7 +60,7 @@ export const ContentOutlineItem = (props: ContentOutlineItemProps) => {
 
   return (
     <OutlineItem {...props}>
-      <Icon iconName="las la-paragraph" />
+      <Icon iconName="fas fa-paragraph" />
       <Description title="Paragraph">{getContentDescription(contentItem)}</Description>
     </OutlineItem>
   );

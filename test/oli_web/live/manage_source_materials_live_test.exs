@@ -227,7 +227,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       new_publication = insert(:publication, %{project: project})
       {:ok, view, _html} = live(conn, live_view_source_materials(section.slug))
 
-      assert has_element?(view, "h6", "An update is available for this section")
+      assert has_element?(view, "div", "An update is available for this section")
 
       assert has_element?(
                view,

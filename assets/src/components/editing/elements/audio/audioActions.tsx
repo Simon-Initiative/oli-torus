@@ -56,7 +56,7 @@ export function selectAudio(
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const insertAudio = (onRequestMedia: any) =>
   createButtonCommandDesc({
-    icon: 'audiotrack',
+    icon: <i className="fa-solid fa-music"></i>,
     description: 'Audio Clip',
 
     execute: (context, editor: Editor) => {

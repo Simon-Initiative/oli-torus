@@ -19,6 +19,7 @@ defmodule Oli.Accounts do
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.AccountLookupCache
   alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
 
   def browse_users(
@@ -229,9 +230,18 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_user(%User{} = user, attrs) do
-    user
-    |> User.noauth_changeset(attrs)
-    |> Repo.update()
+    res =
+      user
+      |> User.noauth_changeset(attrs)
+      |> Repo.update()
+
+    case res do
+      {:ok, %User{id: user_id}} ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+      error -> error
+    end
   end
 
   @doc """
@@ -257,12 +267,21 @@ defmodule Oli.Accounts do
 
   """
   def insert_or_update_lms_user(%{sub: sub} = changes) do
-    case Repo.get_by(User, sub: sub) do
-      nil -> %User{sub: sub, independent_learner: false}
-      user -> user
+    res =
+      case Repo.get_by(User, sub: sub) do
+        nil -> %User{sub: sub, independent_learner: false}
+        user -> user
+      end
+      |> User.noauth_changeset(changes)
+      |> Repo.insert_or_update()
+
+    case res do
+      {:ok, %User{id: user_id}} ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+      error -> error
     end
-    |> User.noauth_changeset(changes)
-    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -277,11 +296,20 @@ defmodule Oli.Accounts do
   def update_user_platform_roles(%User{} = user, roles) do
     roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
 
-    user
-    |> Repo.preload([:platform_roles])
-    |> User.noauth_changeset()
-    |> Ecto.Changeset.put_assoc(:platform_roles, roles)
-    |> Repo.update()
+    res =
+      user
+      |> Repo.preload([:platform_roles])
+      |> User.noauth_changeset()
+      |> Ecto.Changeset.put_assoc(:platform_roles, roles)
+      |> Repo.update()
+
+    case res do
+      {:ok, %User{id: user_id}} ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+      error -> error
+    end
   end
 
   @doc """
@@ -305,39 +333,6 @@ defmodule Oli.Accounts do
 
   def link_user_author_account(user, author) do
     update_user(user, %{author_id: author.id})
-  end
-
-  @doc """
-  Returns true if a user is signed in
-  """
-  def user_signed_in?(conn) do
-    conn.assigns[:current_user]
-  end
-
-  @doc """
-  Returns true if a user is signed in as guest
-  """
-  def user_is_guest?(conn) do
-    case conn.assigns[:current_user] do
-      %{guest: true} ->
-        true
-
-      _ ->
-        false
-    end
-  end
-
-  @doc """
-  Returns true if a user is signed in as an independent learner
-  """
-  def user_is_independent_learner?(current_user) do
-    case current_user do
-      %{independent_learner: true} ->
-        true
-
-      _ ->
-        false
-    end
   end
 
   @doc """
@@ -375,12 +370,21 @@ defmodule Oli.Accounts do
       {:ok, %Author{}}
   """
   def insert_or_update_author(%{email: email} = changes) do
-    case Repo.get_by(Author, email: email) do
-      nil -> %Author{}
-      author -> author
+    res =
+      case Repo.get_by(Author, email: email) do
+        nil -> %Author{}
+        author -> author
+      end
+      |> Author.noauth_changeset(changes)
+      |> Repo.insert_or_update()
+
+    case res do
+      {:ok, %Author{id: author_id}} ->
+        AccountLookupCache.delete("author_#{author_id}")
+
+        res
+      error -> error
     end
-    |> Author.noauth_changeset(changes)
-    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -392,9 +396,18 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_author(%Author{} = author, attrs) do
-    author
-    |> Author.noauth_changeset(attrs)
-    |> Repo.update()
+    res =
+      author
+      |> Author.noauth_changeset(attrs)
+      |> Repo.update()
+
+    case res do
+      {:ok, %Author{id: author_id}} ->
+        AccountLookupCache.delete("author_#{author_id}")
+
+        res
+      error -> error
+    end
   end
 
   @doc """
@@ -501,13 +514,6 @@ defmodule Oli.Accounts do
       nil -> false
       _author -> true
     end
-  end
-
-  @doc """
-  Returns true if a author is signed in
-  """
-  def author_signed_in?(conn) do
-    conn.assigns[:current_author]
   end
 
   @doc """

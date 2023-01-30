@@ -1,12 +1,8 @@
-@use 'authoring/theme' as authoring;
-@import 'bootstrap';
-
 .draggableColumnContainer {
-  @extend .mt-3;
 }
 
 .draggableColumnIndicator {
-  color: rgba($color: authoring.$body-color, $alpha: 0.6);
+  color: var(--color-gray-700);
   cursor: grab !important;
   width: 24px;
   margin-right: 0.5rem;
@@ -16,12 +12,12 @@
 }
 
 .draggableColumnCard {
-  @extend .d-flex;
-  @extend .mb-2;
-  @extend .align-items-center;
   cursor: default !important;
   border-radius: 4px;
-  background: authoring.$body-bg;
+  background: var(--color-body);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 .draggableColumnOutlined {

@@ -538,7 +538,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           )
         }
       >
-        Preview <i className="las la-external-link-alt ml-1"></i>
+        Preview <i className="fas fa-external-link-alt ml-1"></i>
       </a>
     );
 
@@ -547,7 +547,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         <AppsignalContext.Provider value={this.state.appsignal}>
           <ErrorBoundary>
             <div className="resource-editor row">
-              <div className="col-12">
+              <div className="col-span-12">
                 <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
                 <Banner

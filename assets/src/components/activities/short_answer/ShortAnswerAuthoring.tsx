@@ -102,7 +102,7 @@ const ShortAnswer = () => {
               </ResponseCard>
             ))}
             <AuthoringButtonConnected
-              className="align-self-start btn btn-link"
+              className="self-start btn btn-link"
               action={() =>
                 dispatch(
                   ResponseActions.addResponse(

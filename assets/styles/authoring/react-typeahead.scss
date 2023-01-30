@@ -1,5 +1,3 @@
-@use 'authoring/theme' as authoring;
-
 /**
  * Inlined react-bootstrap-typeahead styles
  */
@@ -18,15 +16,16 @@
 .rbt-menu > .dropdown-item {
   overflow: hidden;
   text-overflow: ellipsis;
-  color: $gray-900;
+  color: var(--color-gray-900);
 }
 
 .rbt-menu > .dropdown-item.active {
-  color: $white;
+  color: var(--color-white);
 }
 
 .rbt-menu > .dropdown-item:hover {
-  color: $white;
+  color: var(--color-white);
+  background-color: var(--color-primary);
 }
 
 .rbt-menu > .dropdown-item:focus {
@@ -45,17 +44,24 @@
   overflow: hidden;
   position: relative;
   height: auto;
+  color: var(--color-gray-900);
+  background-color: var(--color-white);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--color-gray-300);
+  border-radius: 4px;
+  padding: 0.5em 0.8em;
 }
 
 .rbt-input-multi.focus {
   border-color: #80bdff;
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-  color: $gray-900;
+  color: var(--color-gray-900);
   outline: 0;
 }
 
 .rbt-input-multi.form-control[disabled] {
-  background-color: authoring.$gray-100;
+  background-color: var(--color-gray-100);
   opacity: 1;
 }
 
@@ -70,16 +76,16 @@
 }
 
 .rbt-input-multi input::-moz-placeholder {
-  color: $gray-900;
+  color: var(--color-gray-500);
   opacity: 1;
 }
 
 .rbt-input-multi input:-ms-input-placeholder {
-  color: $gray-900;
+  color: var(--color-gray-500);
 }
 
 .rbt-input-multi input::-webkit-input-placeholder {
-  color: $gray-900;
+  color: var(--color-gray-500);
 }
 
 .rbt-input-multi .rbt-input-wrapper {
@@ -99,7 +105,7 @@
  * Close Button
  */
 .rbt-close {
-  z-index: $z-content-1;
+  z-index: var(--z-10);
 }
 
 .rbt-close-lg {
@@ -124,7 +130,7 @@
 
 .rbt-token-disabled {
   background-color: rgba(0, 0, 0, 0.1);
-  color: $gray-900;
+  color: var(--color-gray-900);
   pointer-events: none;
 }
 
@@ -200,7 +206,7 @@
 
 .input-group > .rbt .rbt-input-hint,
 .input-group > .rbt .rbt-aux {
-  z-index: $z-content-2;
+  z-index: var(--z-20);
 }
 
 .input-group > .rbt:not(:first-child) .form-control {

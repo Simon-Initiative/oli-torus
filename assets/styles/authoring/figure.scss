@@ -6,7 +6,7 @@
   .figure-title-editor {
     padding: 0.5rem;
     min-width: 40rem;
-    border: 1px dashed $gray-400;
+    border: 1px dashed var(--color-gray-400);
   }
   .title {
     cursor: pointer;
@@ -15,6 +15,6 @@
     opacity: 0.5;
   }
   input {
-    color: $primary;
+    color: var(--color-primary);
   }
 }

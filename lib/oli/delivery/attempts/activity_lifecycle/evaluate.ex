@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id)
 
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
-        submit_active_part_attempts(part_attempts)
+        part_attempts_submitted = submit_active_part_attempts(part_attempts)
 
         custom = Map.get(delivery, "custom", %{})
 
@@ -77,7 +77,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           rules,
           activitiesRequiredForEvaluation,
           variablesRequiredForEvaluation,
-          datashop_session_id
+          datashop_session_id,
+          part_attempts_submitted
         )
 
       e ->
@@ -86,25 +87,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp submit_active_part_attempts(part_attempts) do
-    update_values =
-      Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
-      |> Enum.map(fn pa -> "('#{pa.attempt_guid}')" end)
-      |> Enum.join(",")
+    now = Timex.now()
 
-    sql = """
-      UPDATE part_attempts
-      SET
-        lifecycle_state = 'submitted',
-        date_submitted = NOW(),
-        updated_at = NOW()
-      FROM (
-          VALUES
-          #{update_values}
-      ) AS batch_values (attempt_guid)
-      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
-    """
-
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    part_attempts
+    |> Enum.filter(fn pa -> pa.lifecycle_state == :active end)
+    |> Enum.map(fn pa ->
+      %{pa | lifecycle_state: :submitted, date_submitted: now, updated_at: now}
+    end)
   end
 
   def evaluate_from_rules(
@@ -116,7 +105,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         rules,
         activitiesRequiredForEvaluation,
         variablesRequiredForEvaluation,
-        datashop_session_id
+        datashop_session_id,
+        part_attempts
       ) do
     state =
       case variablesRequiredForEvaluation do
@@ -158,7 +148,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  activity_attempt_guid,
                  client_evaluations,
                  :do_not_normalize,
-                 datashop_session_id
+                 datashop_session_id,
+                 part_attempts
                ) do
             {:ok, _} ->
               {:ok, decodedResults}
@@ -484,7 +475,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         activity_attempt_guid,
         client_evaluations,
         normalize_mode \\ :normalize,
-        datashop_session_id
+        datashop_session_id,
+        part_attempts_input \\ nil
       ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
@@ -501,7 +493,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
       %Oli.Activities.ActivityRegistration{allow_client_evaluation: true} ->
         Repo.transaction(fn ->
-          part_attempts = get_latest_part_attempts(activity_attempt_guid)
+          part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
           part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
           roll_up_fn =

@@ -120,7 +120,7 @@ const ComponentSearchContextMenu: React.FC = () => {
                     action
                     onClick={() => handlePartClick(part)}
                     key={part.id}
-                    className="d-flex align-items-center justify-content-between"
+                    className="d-flex w-full align-items-center justify-content-between"
                   >
                     <div>
                       <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>

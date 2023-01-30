@@ -49,29 +49,27 @@ export const AlternativesPreferenceSelector = ({
   };
 
   return (
-    <div className="form-inline">
-      <div className="form-group mb-2">
-        <select
-          className="form-control mr-2"
-          value={selectedValue}
-          onChange={({ target: { value } }) => {
-            setSelectedValue(value);
-            onChangeSelection(alternativesId, value);
-          }}
-          style={{ minWidth: '300px' }}
-        >
-          <option key="none" value="" hidden>
-            Select an alternative preference
-          </option>
-          {options.map((o) => (
-            <Option key={o.id} value={o.id} title={o.name} />
-          ))}
-        </select>
-        <InfoTip
-          className="text-secondary"
-          title="Alternative versions are available, use this selector to switch"
-        />
-      </div>
+    <div className="inline-flex mb-2">
+      <select
+        className="form-control mr-2 max-w-md"
+        value={selectedValue}
+        onChange={({ target: { value } }) => {
+          setSelectedValue(value);
+          onChangeSelection(alternativesId, value);
+        }}
+        style={{ minWidth: '300px' }}
+      >
+        <option key="none" value="" hidden>
+          Select an alternative preference
+        </option>
+        {options.map((o) => (
+          <Option key={o.id} value={o.id} title={o.name} />
+        ))}
+      </select>
+      <InfoTip
+        className="inline-flex items-center text-secondary"
+        title="Alternative versions are available, use this selector to switch"
+      />
     </div>
   );
 };

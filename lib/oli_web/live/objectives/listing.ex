@@ -10,12 +10,12 @@ defmodule OliWeb.ObjectivesLive.Listing do
 
   def render(assigns) do
     ~F"""
-      <div id="accordion" class="accordion p-3">
+      <div id="accordion" class="accordion">
         {#for {item, index} <- Enum.with_index(@rows)}
-          <div id={item.slug} class="card border border-light mb-2">
+          <div id={item.slug} class="card max-w-full border border-light mb-3 p-0">
             <div class="card-header d-flex justify-content-between p-2" id={"heading#{index}"}>
               <button
-                class="btn w-75 text-left"
+                class="flex-1 btn w-75 text-left"
                 data-toggle="collapse"
                 data-target={"#collapse#{index}"}
                 aria-expanded="true"
@@ -24,7 +24,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
                 phx-value-slug={item.slug}>
                 {item.title}
               </button>
-              <div class="d-flex flex-column font-weight-light small bg-secondary p-2 rounded mr-2">
+              <div class="d-flex flex-column font-weight-light small bg-secondary p-2 rounded pr-4">
                 <div><i class="fa fa-cubes c0183 mr-1"></i>Sub-Objectives {item.sub_objectives_count}</div>
                 <div><i class="far fa-file c0183 mr-1"></i>Pages {item.page_attachments_count}</div>
                 <div><i class="fa fa-list mr-1"></i>Activities {item.activity_attachments_count}</div>
@@ -32,7 +32,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
             </div>
 
             <div id={"collapse#{index}"} class={"collapse" <> if item.slug == @selected, do: " show", else: ""} aria-labelledby={"heading#{index}"} data-parent="#accordion">
-              <div class="card-body">
+              <div class="card-body p-4">
                 <div class="mb-3">
                   <u>Sub-Objectives</u>
                   <ul class="list-group list-group-flush">
@@ -44,7 +44,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
                             phx-click="display_edit_modal"
                             phx-value-slug={sub_objective.slug}
                             class="ml-1 btn btn-sm btn-light">
-                            <i class="las la-i-cursor"></i>
+                            <i class="fas fa-i-cursor"></i>
                           </button>
                           <button
                             phx-click="delete"
@@ -70,7 +70,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
                           {page.title}
                         </a>
                       </li>
-                      <div class="border border-light w-75"></div>
+                      <hr class="h-0 my-2 border border-solid border-t-0 border-gray-700 opacity-25 w-75" />
                     {/for}
                   </ul>
                 </div>

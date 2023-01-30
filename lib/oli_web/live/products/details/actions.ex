@@ -9,34 +9,34 @@ defmodule OliWeb.Products.Details.Actions do
     ~F"""
     <div>
       <div class="d-flex align-items-center">
-        <p>
+        <div>
           <button class="btn btn-link action-button" :on-click="request_duplicate">
             Duplicate
           </button>
-        </p>
-        <span>Create a complete copy of this product.</span>
+        </div>
+        <div>Create a complete copy of this product.</div>
       </div>
 
       {#if @is_admin}
 
         <div class="d-flex align-items-center">
-          <p>
+          <div>
             <a class="btn btn-link action-button" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, @product.slug)}>
               Manage Payments
             </a>
-          </p>
-          <span>Audit payments and manage payment codes.</span>
+          </div>
+          <div>Audit payments and manage payment codes.</div>
         </div>
 
       {/if}
 
       <div class="d-flex align-items-center">
-        <p>
+        <div>
           <button class="btn btn-link action-button">
             View Usage
           </button>
-        </p>
-        <span>View course section usage.</span> <span class="badge badge-info">Coming Soon</span>
+        </div>
+        <div>View course section usage.</div> <div class="badge badge-info">Coming Soon</div>
       </div>
     </div>
 

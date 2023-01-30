@@ -18,10 +18,26 @@ export const SidePanel: React.FC<SidePanelProps> = (props: SidePanelProps) => {
         onClick={() => onToggle()}
       >
         <span className="bg-circle">
-          {position === 'left' && panelState[position] && <i className="fa fa-angle-left" />}
-          {position === 'left' && !panelState[position] && <i className="fa fa-angle-right" />}
-          {position === 'right' && panelState[position] && <i className="fa fa-angle-right" />}
-          {position === 'right' && !panelState[position] && <i className="fa fa-angle-left" />}
+          {position === 'left' && panelState[position] && (
+            <span>
+              <i className="fa fa-angle-left" />
+            </span>
+          )}
+          {position === 'left' && !panelState[position] && (
+            <span>
+              <i className="fa fa-angle-right" />
+            </span>
+          )}
+          {position === 'right' && panelState[position] && (
+            <span>
+              <i className="fa fa-angle-right" />
+            </span>
+          )}
+          {position === 'right' && !panelState[position] && (
+            <span>
+              <i className="fa fa-angle-left" />
+            </span>
+          )}
         </span>
       </button>
       <section className={`aa-panel ${position}-panel${panelState[position] ? ' open' : ''}`}>

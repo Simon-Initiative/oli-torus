@@ -83,6 +83,7 @@
     "swiper": "^8.0.6",
     "terser-webpack-plugin": "^5.2.4",
     "tsmonad": "^0.8.0",
+    "tw-elements": "^1.0.0-alpha13",
     "typedoc": "^0.22.15",
     "typedoc-plugin-markdown": "^3.12.1",
     "typescript": "^4.6.4",
@@ -144,12 +145,15 @@
     "sass": "^1.26.8",
     "sass-loader": "^11.1.1",
     "style-loader": "^3.3.1",
+    "tailwind-css-variables": "^3.0.1",
+    "tailwindcss": "^3.2.4",
     "ts-jest": "^26.5.4",
     "ts-loader": "^9.2.1",
     "type-coverage": "^2.18.0",
     "webpack": "^5.36.0",
     "webpack-bundle-analyzer": "^4.7.0",
-    "webpack-cli": "^4.7.0"
+    "webpack-cli": "^4.7.0",
+    "webpack-license-plugin": "^4.2.2"
   },
   "typeCoverage": {
     "atLeast": 84.5,

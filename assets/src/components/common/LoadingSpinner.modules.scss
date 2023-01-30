@@ -1,7 +1,7 @@
 @import 'common/mixins';
 
 .loadingSpinner {
-  color: var(--authoring-gray-600);
+  color: var(--color-gray-600);
   @include disable-select;
 
   & i {

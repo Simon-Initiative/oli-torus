@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
-import { Definition } from '../../../common/Definition';
 import { ContentWriter } from '../../../../data/content/writers/writer';
 import { HtmlParser } from '../../../../data/content/writers/html';
 import { defaultWriterContext, WriterContext } from '../../../../data/content/writers/context';

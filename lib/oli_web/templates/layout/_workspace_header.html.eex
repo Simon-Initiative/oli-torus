@@ -1,7 +1,38 @@
-<div class="workspace-header d-flex justify-content-between">
-  <h3><%= @title %></h3>
-  <div class='d-flex flex-nowrap align-items-center'>
-    <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
-    <%= account_dropdown @conn %>
+
+<div class="workspace-header-container flex-1 flex flex-column shadow">
+  <div class="workspace-header flex-grow-1 flex flex-row flex-nowrap px-6 <%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: "with-breadcrumbs", else: "" %>">
+    <h3><%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: hd(Enum.reverse(@breadcrumbs)).short_title, else: @title %></h3>
+    <div class="flex-1"></div>
+    <div>
+      <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
+    </div>
+    <div>
+      <%= account_dropdown @conn %>
+    </div>
   </div>
+
+  <%= case assigns do %>
+    <% %{breadcrumbs: breadcrumbs, project: project}  when not is_nil(project) -> %>
+      <%= if length(breadcrumbs) > 0 do %>
+        <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300">
+          <%= live_render(@conn, BreadcrumbTrailLive, session: %{
+          "container_slug" => container_slug(@conn.assigns),
+          "project_slug" => project.slug,
+          "breadcrumbs" => breadcrumbs }) %>
+        </nav>
+      <% end %>
+
+    <% %{breadcrumbs: breadcrumbs}  when not is_nil(breadcrumbs) -> %>
+      <%= if length(breadcrumbs) > 0 do %>
+        <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300">
+          <%= live_render(@conn, BreadcrumbTrailLive, session: %{
+          "container_slug" => container_slug(@conn.assigns),
+          "breadcrumbs" => breadcrumbs }) %>
+        </nav>
+      <% end %>
+
+    <% _ -> %>
+
+  <% end %>
+
 </div>

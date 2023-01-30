@@ -1,0 +1,21 @@
+<main role="main" class="flex-1 flex flex-row">
+  <Components.Delivery.NavSidebar.nav_sidebar {assigns} />
+
+  <div class="relative flex-1 flex flex-col pb-[60px]">
+    <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
+
+    <Components.Delivery.ExplorationShade.exploration_shade />
+    <Components.Delivery.UpNext.up_next user={@current_user} />
+
+    <Components.Delivery.CourseContentPanel.course_content_panel {assigns} />
+
+    <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+  </div>
+</main>
+
+
+<%= if Oli.Utils.LoadTesting.enabled?() do %>
+  <!--
+__OVERVIEW_PAGES__<%= encode_pages(@conn, @section_slug, @hierarchy) %>__OVERVIEW_PAGES__
+-->
+<% end %>

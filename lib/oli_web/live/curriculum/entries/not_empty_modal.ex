@@ -11,9 +11,7 @@ defmodule OliWeb.Curriculum.NotEmptyModal do
         <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Delete <%= resource_type_label(@revision) |> String.capitalize() %></h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               This resource cannot be deleted because it is not empty.  Remove all pages

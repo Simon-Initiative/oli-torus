@@ -74,10 +74,16 @@ defmodule OliWeb.ProjectController do
       case latest_published_publication do
         nil ->
           {true, nil, %{}}
+          {{:major, {0, 1, 0}}, nil, %{}}
 
         _ ->
-          %PublicationDiff{classification: classification, changes: changes} =
-            Publishing.diff_publications(latest_published_publication, active_publication)
+          %PublicationDiff{
+            classification: classification,
+            edition: edition,
+            major: major,
+            minor: minor,
+            changes: changes
+          } = Publishing.diff_publications(latest_published_publication, active_publication)
 
           parent_pages =
             case classification do
@@ -96,7 +102,7 @@ defmodule OliWeb.ProjectController do
                 )
             end
 
-          {classification, changes, parent_pages}
+          {{classification, {edition, major, minor}}, changes, parent_pages}
       end
 
     base_url = Oli.Utils.get_base_url()
@@ -112,7 +118,7 @@ defmodule OliWeb.ProjectController do
 
     has_changes =
       case version_change do
-        :no_changes -> false
+        {:no_changes, _} -> false
         _ -> true
       end
 

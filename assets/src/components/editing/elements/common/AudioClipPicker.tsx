@@ -47,7 +47,7 @@ export const AudioClipPicker: React.FC<Props> = ({
         data-placement="top"
         title="Browse for audio"
       >
-        <span className="material-icons ">audio_file</span>
+        <i className="fa-regular fa-file-audio"></i>
       </button>
       {clipSrc && (
         <>
@@ -60,7 +60,11 @@ export const AudioClipPicker: React.FC<Props> = ({
             data-placement="top"
             title="Preview audio file"
           >
-            <span className="material-icons">{isPlaying ? 'stop_circle' : 'play_circle'}</span>
+            {isPlaying ? (
+              <i className="fa-solid fa-circle-stop"></i>
+            ) : (
+              <i className="fa-solid fa-circle-play"></i>
+            )}
           </button>
           <button
             type="button"
@@ -70,7 +74,7 @@ export const AudioClipPicker: React.FC<Props> = ({
             data-placement="top"
             title="Remove audio file"
           >
-            <span className="material-icons">delete</span>
+            <i className="fa-solid fa-trash"></i>
           </button>
         </>
       )}
