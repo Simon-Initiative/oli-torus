@@ -228,6 +228,7 @@ defmodule OliWeb.PublishLiveTest do
       page_revision: page_revision,
       container_revision: container_revision
     } do
+      insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       assert has_element?(view, "h5", "Publication Details")
@@ -237,11 +238,22 @@ defmodule OliWeb.PublishLiveTest do
       assert has_element?(view, "a", container_revision.title)
     end
 
+    test "shows a message when the project has not been published yet", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      assert has_element?(view, "h5", "Publication Details")
+      assert has_element?(view, "h6", "This project has not been published yet")
+    end
+
     test "shows versioning details", %{
       conn: conn,
       publication: publication,
       project: project
     } do
+      insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
       %{edition: edition, major: major, minor: minor} = publication
 
@@ -296,6 +308,7 @@ defmodule OliWeb.PublishLiveTest do
            conn: conn,
            project: project
          } do
+      insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
@@ -320,8 +333,6 @@ defmodule OliWeb.PublishLiveTest do
       assert has_element?(view, "#active-course-sections-table")
       assert has_element?(view, "td", section1.title)
       assert has_element?(view, "td", section2.title)
-
-      assert has_element?(view, "h5", "Deliver this course through your institution's LMS")
     end
 
     test "shows message when there are not active course sections", %{
@@ -331,6 +342,19 @@ defmodule OliWeb.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       assert has_element?(view, "h5", "This project has no active course sections")
+    end
+
+    test "open connect to LMS instructions modal", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      view
+        |> element("button[phx-click=\"display_lti_connect_modal\"]")
+        |> render_click()
+
+      assert has_element?(view, "h4", "Deliver this course through your institution's LMS")
     end
 
     test "applies sorting", %{
@@ -403,6 +427,7 @@ defmodule OliWeb.PublishLiveTest do
       conn: conn,
       project: project
     } do
+      insert(:publication, project: project, published: yesterday())
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view

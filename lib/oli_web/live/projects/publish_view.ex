@@ -1,13 +1,14 @@
 defmodule OliWeb.Projects.PublishView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.SortableTable.TableHandlers
+  use OliWeb.Common.Modal
 
   import Oli.Utils, only: [trap_nil: 1, log_error: 2]
 
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
   alias Oli.Publishing
-  alias Oli.Publishing.Publications.{Publication, PublicationDiff}
+  alias Oli.Publishing.Publications.PublicationDiff
   alias OliWeb.Common.{Breadcrumb, Listing, SessionContext}
 
   alias OliWeb.Projects.{
@@ -21,6 +22,7 @@ defmodule OliWeb.Projects.PublishView do
 
   data is_force_push, :boolean, default: false
   data limit, :integer, default: 10
+  data modal, :any, default: nil
   data offset, :integer, default: 0
   data page_change, :string, default: "page_change"
   data query, :string, default: ""
@@ -45,10 +47,10 @@ defmodule OliWeb.Projects.PublishView do
     active_sections = Sections.get_active_sections_by_project(project.id)
 
     latest_published_publication =
-      Publishing.get_latest_published_publication_by_slug(project_slug) || %Publication{}
+      Publishing.get_latest_published_publication_by_slug(project_slug)
 
     push_affected =
-      if is_nil(latest_published_publication.id),
+      if is_nil(latest_published_publication),
         do: %{product_count: 0, section_count: 0},
         else:
           Sections.get_push_force_affected_sections(project.id, latest_published_publication.id)
@@ -130,9 +132,10 @@ defmodule OliWeb.Projects.PublishView do
 
   def render(assigns) do
     ~F"""
+      {render_modal(assigns)}
       <div class="publish container">
-        <div class="row">
-          <div class="col-12">
+        <div class="flex flex-row">
+          <div class="flex-1">
             <PublicationDetails
               active_publication_changes={@active_publication_changes}
               context={@context}
@@ -176,9 +179,6 @@ defmodule OliWeb.Projects.PublishView do
             {#else}
               <h5>This project has no active course sections</h5>
             {/if}
-
-            <hr class="mb-5 mt-3">
-            <LtiConnectInstructions lti_connect_info={@lti_connect_info}/>
           </div>
         </div>
       </div>
@@ -224,6 +224,26 @@ defmodule OliWeb.Projects.PublishView do
 
   def handle_event("force_push", _, socket) do
     {:noreply, assign(socket, is_force_push: !socket.assigns.is_force_push)}
+  end
+
+  def handle_event("display_lti_connect_modal", %{}, socket) do
+    modal_assigns = %{
+      id: "lti_connect_modal",
+      lti_connect_info: socket.assigns.lti_connect_info
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <LtiConnectInstructions {...@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   defp check_active_publication_id(project_slug, active_publication_id) do
