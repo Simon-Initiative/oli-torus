@@ -13,6 +13,11 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :numbering_index, :integer
     field :numbering_level, :integer
 
+    # soft scheduling
+    field(:scheduling_type, Ecto.Enum, values: [:read_by, :inclass_activity], default: :read_by)
+    field(:start_date, :date)
+    field(:end_date, :date)
+
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []
 
@@ -27,6 +32,9 @@ defmodule Oli.Delivery.Sections.SectionResource do
     # resource delivery policy
     belongs_to :delivery_policy, DeliveryPolicy
 
+    field(:title, :string, virtual: true)
+    field(:resource_type_id, :integer, virtual: true)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -38,6 +46,9 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :numbering_level,
       :children,
       :slug,
+      :scheduling_type,
+      :start_date,
+      :end_date,
       :resource_id,
       :project_id,
       :section_id,
@@ -59,6 +70,9 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :id,
       :numbering_index,
       :numbering_level,
+      :scheduling_type,
+      :start_date,
+      :end_date,
       :children,
       :slug,
       :resource_id,
