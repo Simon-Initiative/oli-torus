@@ -67,7 +67,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
 
         case Ecto.Adapters.SQL.query(Repo, sql, [section_id | params]) do
           {:ok, %{num_rows: num_rows}} -> {:ok, num_rows}
-          e -> IO.inspect(e)
+          e -> e
         end
     end
   end
@@ -90,16 +90,24 @@ defmodule Oli.Delivery.Sections.Scheduling do
           ],
         params ++
           [
-            sr.id,
-            sr.scheduling_type,
-            sr.start_date |> parse_date(),
-            sr.end_date |> parse_date()
+            val(sr, :id),
+            val(sr, :scheduling_type),
+            val(sr, :start_date) |> parse_date(),
+            val(sr, :end_date) |> parse_date()
           ],
         i + 4
       }
     end)
 
     {values, params}
+  end
+
+  # support both atom and string keys
+  defp val(sr, atom) do
+    case Map.get(sr, atom) do
+      nil -> Map.get(sr, Atom.to_string(atom))
+      v -> v
+    end
   end
 
 end

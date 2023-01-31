@@ -1,0 +1,171 @@
+defmodule OliWeb.Api.SchedulingController do
+  @moduledoc """
+  Endpoint for accessing and updating soft scheduled
+  course resources.
+  """
+
+  alias OpenApiSpex.Schema
+
+  alias Oli.Delivery.Sections.Scheduling
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResource
+
+  import OliWeb.Api.Helpers
+
+  use OliWeb, :controller
+  use OpenApiSpex.Controller
+
+  @moduledoc tags: ["Scheduling"]
+
+  defmodule ScheduledResourcesUpdateRequest do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Scheduled resources batch update request",
+      description: "The request body to update a batch of section resources",
+      type: :object,
+      properties: %{
+        updates: %Schema{
+          type: :list,
+          description: "List of the resources"
+        }
+      },
+      required: [:updates],
+      example: %{
+        "updates" => [
+          %{"id" => 1, "start_date" => nil, "end_date" => "2023-03-19", "scheduling_type" => "read_by"},
+          %{"id" => 2, "start_date" => nil, "end_date" => "2023-03-29", "scheduling_type" => "read_by"}
+        ]
+      }
+    })
+  end
+
+  defmodule ScheduledResourceUpdateResult do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Scheduled resource update result",
+      description: "A count of number of scheduled resources updated",
+      type: :object,
+      properties: %{
+        count: %Schema{
+          type: :number,
+          description: "Count of the resources updated"
+        },
+        result: %Schema{type: :string, description: "success"}
+      },
+      required: [:count, :result],
+      example: %{
+        "result" => "success",
+        "count" => 5
+      }
+    })
+  end
+
+  defmodule ScheduledResourceResult do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Scheduled resource result",
+      description: "A collection of scheduled resources",
+      type: :object,
+      properties: %{
+        resources: %Schema{
+          type: :list,
+          description: "List of the resources"
+        },
+        result: %Schema{type: :string, description: "success"}
+      },
+      required: [:resources, :result],
+      example: %{
+        "result" => "success",
+        "resources" => [
+          %{
+            "id" => 1,
+            "title" => "Introduction",
+            "children" => [],
+            "resource_type_id" => 1,
+            "start_date" => "2023-02-03",
+            "start_date" => "2023-02-09",
+            "scheduling_type" => "read_by",
+            "resource_id" => 24523
+          }
+
+        ]
+      }
+    })
+  end
+
+  @doc """
+  Access all schedulable section resources for a course section.
+  """
+  @doc parameters: [],
+       responses: %{
+         200 =>
+           {"Scheduled resources result", "application/json",
+            OliWeb.Api.SchedulingController.ScheduledResourceResult}
+       }
+  def index(conn, _) do
+
+    section = conn.assigns.section
+
+    if can_access_section?(conn, section) do
+
+      resources = Scheduling.retrieve(section)
+      |> serialize_resource()
+
+      json(conn, %{"result" => "success", "resources" => resources})
+    else
+      error(conn, 401, "Unauthorized")
+    end
+  end
+
+  @doc """
+  Access all schedulable section resources for a course section.
+  """
+  @doc parameters: [],
+       request_body:
+        {"Request body for issuing an update request", "application/json",
+         OliWeb.Api.SchedulingController.ScheduledResourcesUpdateRequest, required: true},
+       responses: %{
+         200 =>
+           {"Scheduled resources update result", "application/json",
+            OliWeb.Api.SchedulingController.ScheduledResourceUpdateResult}
+       }
+  def update(conn, %{"updates" => updates}) do
+
+    section = conn.assigns.section
+
+    if can_access_section?(conn, section) do
+
+      case Scheduling.update(section, updates) do
+        {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
+        {:error, e} -> error(conn, 500, e)
+      end
+    else
+      error(conn, 401, "Unauthorized")
+    end
+  end
+
+  defp can_access_section?(conn, section) do
+    Sections.is_instructor?(conn.assigns.current_user, section.slug)
+      or Sections.is_admin?(conn.assigns.current_author, section.slug)
+  end
+
+  defp serialize_resource(resources) when is_list(resources) do
+    Enum.map(resources, fn p -> serialize_resource(p) end)
+  end
+
+  defp serialize_resource(%SectionResource{} = sr) do
+    %{
+      "id" => sr.id,
+      "title" => sr.title,
+      "children" => sr.children,
+      "resource_type_id" => sr.resource_type_id,
+      "start_date" => sr.start_date,
+      "end_date" => sr.end_date,
+      "scheduling_type" => sr.scheduling_type,
+      "resource_id" => sr.resource_id
+    }
+  end
+end

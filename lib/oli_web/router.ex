@@ -591,6 +591,14 @@ defmodule OliWeb.Router do
     post("/s/failure", PaymentProviders.StripeController, :failure)
   end
 
+  # Endpoints for client-side scheduling UI
+  scope "/api/v1/scheduling/:section_slug", OliWeb.Api do
+    pipe_through([:api, :delivery_protected, :require_section])
+
+    put("/", SchedulingController, :update)
+    get("/", SchedulingController, :index)
+  end
+
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([:api, :delivery_protected])
