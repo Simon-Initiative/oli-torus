@@ -9,7 +9,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
   alias Oli.Resources.ResourceType
   alias Oli.Publishing
   alias Oli.Publishing.Publications.PublicationDiff
-  alias OliWeb.Delivery.ManageSourceMaterials
+  alias OliWeb.Common.Utils
 
   defp live_view_source_materials(section_slug),
     do:
@@ -179,7 +179,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       assert has_element?(
                view,
                ".badge-info",
-               ManageSourceMaterials.version_number(publication)
+               Utils.render_version(publication.edition, publication.major, publication.minor)
              )
     end
 
@@ -204,6 +204,8 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
       [remixed_projects | _] = Sections.get_remixed_projects(section.id, project.id)
+      %{publication: publication} = remixed_projects
+
       {:ok, view, _html} = live(conn, live_view_source_materials(section.slug))
 
       assert has_element?(view, "h6", "Remixed Projects Info")
@@ -213,7 +215,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       assert has_element?(
                view,
                ".badge-info",
-               ManageSourceMaterials.version_number(remixed_projects.publication)
+               Utils.render_version(publication.edition, publication.major, publication.minor)
              )
     end
 
@@ -232,7 +234,11 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       assert has_element?(
                view,
                ".badge-success",
-               ManageSourceMaterials.version_number(new_publication)
+               Utils.render_version(
+                 new_publication.edition,
+                 new_publication.major,
+                 new_publication.minor
+               )
              )
 
       assert has_element?(
@@ -302,7 +308,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       refute has_element?(
                view,
                ".badge-success",
-               ManageSourceMaterials.version_number(publication)
+               Utils.render_version(publication.edition, publication.major, publication.minor)
              )
 
       refute has_element?(

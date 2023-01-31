@@ -359,8 +359,7 @@ defmodule OliWeb.Router do
     # Project display pages
     get("/:project_id", ProjectController, :overview)
     get("/:project_id/overview", ProjectController, :overview)
-    get("/:project_id/publish", ProjectController, :publish)
-    post("/:project_id/publish", ProjectController, :publish_active)
+    live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/insights", ProjectController, :download_analytics)
