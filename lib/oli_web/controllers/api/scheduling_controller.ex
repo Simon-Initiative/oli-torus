@@ -167,9 +167,12 @@ defmodule OliWeb.Api.SchedulingController do
     end
   end
 
+  # Restrict access to enrolled instructors, LMS admins, or system
+  # (authoring) admins
   defp can_access_section?(conn, section) do
     Sections.is_instructor?(conn.assigns.current_user, section.slug) or
-      Sections.is_admin?(conn.assigns.current_author, section.slug)
+      Oli.Accounts.is_admin?(conn.assigns.current_author) or
+      Sections.is_admin?(conn.assigns.current_user, section.slug)
   end
 
   defp serialize_resource(resources) when is_list(resources) do
