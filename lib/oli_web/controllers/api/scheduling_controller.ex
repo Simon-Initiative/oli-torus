@@ -188,7 +188,10 @@ defmodule OliWeb.Api.SchedulingController do
       "start_date" => sr.start_date,
       "end_date" => sr.end_date,
       "scheduling_type" => sr.scheduling_type,
-      "resource_id" => sr.resource_id
+      "resource_id" => sr.resource_id,
+      "manually_scheduled" => sr.manually_scheduled,
+      "numbering_index" => sr.numbering_index,
+      "numbering_level" => sr.numbering_level
     }
   end
 end

@@ -38,7 +38,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   function can guarantee that only those section resources that pertain to this
   course section can be edited.  The shape of the maps that are the elements
   within the updates list must at least contain attributes for "id", "scheduling_type",
-  "start_date", and "end_date". Other attributes will be ignored.
+  "start_date", "end_date" and "manually_scheduled". Other attributes will be ignored.
 
   Returns a {:ok, num_rows} tuple, with num_rows indicating the number of rows
   updated - or a {:error, error} tuple.
@@ -58,10 +58,11 @@ defmodule Oli.Delivery.Sections.Scheduling do
             scheduling_type = batch_values.scheduling_type,
             start_date = batch_values.start_date,
             end_date = batch_values.end_date,
+            manually_scheduled = batch_values.manually_scheduled,
             updated_at = NOW()
           FROM (
               VALUES #{values}
-          ) AS batch_values (id, scheduling_type, start_date, end_date)
+          ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled)
           WHERE section_resources.id = batch_values.id and section_resources.section_id = $1
         """
 
@@ -86,16 +87,17 @@ defmodule Oli.Delivery.Sections.Scheduling do
       {
         values ++
           [
-            "($#{i + 1}::bigint, $#{i + 2}, $#{i + 3}::date, $#{i + 4}::date)"
+            "($#{i + 1}::bigint, $#{i + 2}, $#{i + 3}::date, $#{i + 4}::date, $#{i + 5}::boolean)"
           ],
         params ++
           [
             val(sr, :id),
             val(sr, :scheduling_type),
             val(sr, :start_date) |> parse_date(),
-            val(sr, :end_date) |> parse_date()
+            val(sr, :end_date) |> parse_date(),
+            val(sr, :manually_scheduled)
           ],
-        i + 4
+        i + 5
       }
     end)
 
