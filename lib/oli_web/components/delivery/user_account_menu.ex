@@ -130,4 +130,39 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
       </div>
     """
   end
+
+  def preview_user(assigns) do
+    ~H"""
+      <div>
+        <button
+          class="
+            dropdown-toggle
+            px-6
+            py-2.5
+            font-medium
+            text-sm
+            leading-tight
+            transition
+            duration-150
+            ease-in-out
+            flex
+            items-center
+            whitespace-nowrap
+          "
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <div class="user-icon">
+            <%= user_icon(%{}) %>
+          </div>
+          <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
+            <div class="username">
+              Preview
+            </div>
+          </div>
+        </button>
+      </div>
+    """
+  end
 end

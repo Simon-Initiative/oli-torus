@@ -7,86 +7,90 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.UserAccountMenu
 
-  def nav_sidebar(assigns) do
+  slot :inner_block, required: true
+
+  def main_with_nav(assigns) do
     ~H"""
-      <nav class="flex-col w-[200px] bg-white dark:bg-black relative shadow hidden lg:flex">
-        <a class="block h-[40px] mt-2 mb-14 mx-auto" href={
+      <main role="main" class="flex-1 flex flex-col lg:flex-row">
+        <.navbar {assigns} />
+
+        <div class="flex-1 flex flex-col">
+
+          <%= render_slot(@inner_block) %>
+
+        </div>
+      </main>
+    """
+  end
+
+  @spec navbar(any) :: Phoenix.LiveView.Rendered.t()
+  def navbar(assigns) do
+    ~H"""
+      <nav class="flex flex-col w-full lg:w-[200px] py-2 bg-white dark:bg-black relative shadow-lg lg:flex">
+        <div class="w-full">
+          <a class="block w-[200px] lg:mb-14 mx-auto" href={
           case assigns[:logo_link] do
             nil ->
               logo_link_path(assigns)
             logo_link ->
               logo_link
           end}>
-          <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top"})) %>
-        </a>
+          <%= brand_logo(Map.merge(assigns, %{class: "h-[40px] inline-block align-top"})) %>
+          </a>
 
-        <%= if assigns[:section] do %>
-          <%= for {name, href, active} <- [{"Home", home_url(assigns), true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
-            <a
-              href={href}
-              class={"
-                block
-                no-underline
-                mx-6
-                my-2
-                hover:no-underline
-                border-b
-                border-transparent
-                text-current
-                hover:text-delivery-primary-400
-                #{active && "font-bold border-b border-delivery-primary text-delivery-primary"}
-              "}><%= name %></a>
-          <% end %>
-        <% end %>
+          <button class="
+              navbar-toggler
+              lg:hidden
+              text-gray-500
+              border-0
+              absolute right-2 top-2
+              hover:shadow-none hover:no-underline
+              py-2
+              px-2.5
+              bg-transparent
+              focus:outline-none focus:ring-0 focus:shadow-none focus:no-underline
+            " type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bars"
+              class="w-6" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+              <path fill="currentColor"
+                d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z">
+              </path>
+            </svg>
+          </button>
+        </div>
 
-        <div class="flex-1"></div>
+        <div class="collapse lg:!flex navbar-collapse flex-grow flex flex-col " id="navbarSupportedContent">
 
-        <%= cond do %>
+          <div class="flex-1 items-center lg:items-start">
+            <%= if assigns[:section] do %>
+              <%= for {name, href, active} <- [{"Home", home_url(assigns), true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
+                <.nav_link name={name} href={href} active={active} />
+              <% end %>
+            <% end %>
+
+            <%= if is_preview_mode?(assigns) do %>
+              <%= for {name, href, active} <- [{"Home", "#", true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
+                <.nav_link name={name} href={href} active={active} />
+              <% end %>
+            <% end %>
+          </div>
+
+          <%= cond do %>
           <% assigns[:hide_user] == true -> %>
 
           <% is_preview_mode?(assigns) -> %>
-            <div class="dropdown relative">
-              <button
-                class="
-                  dropdown-toggle
-                  px-6
-                  py-2.5
-                  font-medium
-                  text-sm
-                  leading-tight
-                  transition
-                  duration-150
-                  ease-in-out
-                  flex
-                  items-center
-                  whitespace-nowrap
-                "
-                type="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <div class="user-icon">
-                  <%= user_icon(%{}) %>
-                </div>
-                <div class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4">
-                  <div class="username">
-                    Preview
-                  </div>
-                </div>
-              </button>
-            </div>
-
+            <UserAccountMenu.preview_user {assigns} />
 
           <% user_signed_in?(assigns) -> %>
             <UserAccountMenu.menu {assigns} />
 
           <% true -> %>
 
-        <% end %>
+          <% end %>
 
-        <hr class="border-t border-gray-300" />
+          <hr class="border-t border-gray-300" />
 
-        <button
+          <button
           class="
             block
             no-underline
@@ -101,9 +105,33 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           "
           data-bs-toggle="modal"
           data-bs-target="#help-modal">
-        Tech Support
-        </button>
+          Tech Support
+          </button>
+        </div>
       </nav>
+    """
+  end
+
+  attr :name, :string, required: true
+  attr :href, :string, required: true
+  attr :active, :boolean, required: true
+
+  defp nav_link(assigns) do
+    ~H"""
+      <a
+        href={@href}
+        class={"
+          block
+          no-underline
+          mx-6
+          my-2
+          hover:no-underline
+          border-b
+          border-transparent
+          text-current
+          hover:text-delivery-primary-400
+          #{@active && "font-bold border-b border-delivery-primary text-delivery-primary"}
+        "}><%= @name %></a>
     """
   end
 
