@@ -33,8 +33,18 @@ defmodule OliWeb.Api.SchedulingController do
       required: [:updates],
       example: %{
         "updates" => [
-          %{"id" => 1, "start_date" => nil, "end_date" => "2023-03-19", "scheduling_type" => "read_by"},
-          %{"id" => 2, "start_date" => nil, "end_date" => "2023-03-29", "scheduling_type" => "read_by"}
+          %{
+            "id" => 1,
+            "start_date" => nil,
+            "end_date" => "2023-03-19",
+            "scheduling_type" => "read_by"
+          },
+          %{
+            "id" => 2,
+            "start_date" => nil,
+            "end_date" => "2023-03-29",
+            "scheduling_type" => "read_by"
+          }
         ]
       }
     })
@@ -90,7 +100,6 @@ defmodule OliWeb.Api.SchedulingController do
             "scheduling_type" => "read_by",
             "resource_id" => 24523
           }
-
         ]
       }
     })
@@ -99,20 +108,26 @@ defmodule OliWeb.Api.SchedulingController do
   @doc """
   Access all schedulable section resources for a course section.
   """
-  @doc parameters: [],
+  @doc parameters: [
+         section_slug: [
+           in: :path,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The section identifier"
+         ]
+       ],
        responses: %{
          200 =>
            {"Scheduled resources result", "application/json",
             OliWeb.Api.SchedulingController.ScheduledResourceResult}
        }
   def index(conn, _) do
-
     section = conn.assigns.section
 
     if can_access_section?(conn, section) do
-
-      resources = Scheduling.retrieve(section)
-      |> serialize_resource()
+      resources =
+        Scheduling.retrieve(section)
+        |> serialize_resource()
 
       json(conn, %{"result" => "success", "resources" => resources})
     else
@@ -123,21 +138,26 @@ defmodule OliWeb.Api.SchedulingController do
   @doc """
   Access all schedulable section resources for a course section.
   """
-  @doc parameters: [],
+  @doc parameters: [
+         section_slug: [
+           in: :path,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The section identifier"
+         ]
+       ],
        request_body:
-        {"Request body for issuing an update request", "application/json",
-         OliWeb.Api.SchedulingController.ScheduledResourcesUpdateRequest, required: true},
+         {"Request body for issuing an update request", "application/json",
+          OliWeb.Api.SchedulingController.ScheduledResourcesUpdateRequest, required: true},
        responses: %{
          200 =>
            {"Scheduled resources update result", "application/json",
             OliWeb.Api.SchedulingController.ScheduledResourceUpdateResult}
        }
   def update(conn, %{"updates" => updates}) do
-
     section = conn.assigns.section
 
     if can_access_section?(conn, section) do
-
       case Scheduling.update(section, updates) do
         {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
         {:error, e} -> error(conn, 500, e)
@@ -148,8 +168,8 @@ defmodule OliWeb.Api.SchedulingController do
   end
 
   defp can_access_section?(conn, section) do
-    Sections.is_instructor?(conn.assigns.current_user, section.slug)
-      or Sections.is_admin?(conn.assigns.current_author, section.slug)
+    Sections.is_instructor?(conn.assigns.current_user, section.slug) or
+      Sections.is_admin?(conn.assigns.current_author, section.slug)
   end
 
   defp serialize_resource(resources) when is_list(resources) do
