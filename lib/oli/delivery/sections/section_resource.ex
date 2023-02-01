@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
 
     # soft scheduling
     field(:scheduling_type, Ecto.Enum, values: [:read_by, :inclass_activity], default: :read_by)
+    field(:manually_scheduled, :boolean)
     field(:start_date, :date)
     field(:end_date, :date)
 
@@ -49,6 +50,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :scheduling_type,
       :start_date,
       :end_date,
+      :manually_scheduled,
       :resource_id,
       :project_id,
       :section_id,

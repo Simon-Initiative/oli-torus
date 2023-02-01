@@ -57,8 +57,8 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert page_two.scheduling_type == :read_by
 
       assert {:ok, 2} = Scheduling.update(section, [
-        %{id: root.id, scheduling_type: "inclass_activity", start_date: "2023-02-03", end_date: "2023-02-06"},
-        %{id: page_one.id, scheduling_type: "inclass_activity", start_date: nil, end_date: "2023-02-06"}
+        %{id: root.id, scheduling_type: "inclass_activity", start_date: "2023-02-03", end_date: "2023-02-06", manually_scheduled: true},
+        %{id: page_one.id, scheduling_type: "inclass_activity", start_date: nil, end_date: "2023-02-06", manually_scheduled: false}
       ])
 
       scheduled_resources = Scheduling.retrieve(section)
@@ -70,6 +70,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert root.title == "Root Container"
       assert root.start_date == ~D[2023-02-03]
       assert root.end_date == ~D[2023-02-06]
+      assert root.manually_scheduled == true
       assert root.scheduling_type == :inclass_activity
 
       page_one = by_slug.(scheduled_resources, "page_one")
@@ -77,6 +78,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert page_one.title == "Page one"
       assert is_nil(page_one.start_date)
       assert page_one.end_date == ~D[2023-02-06]
+      assert page_one.manually_scheduled == false
       assert page_one.scheduling_type == :inclass_activity
 
     end
@@ -125,7 +127,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       # Simulate a malicious client-side attempt to bulk edit section resource
       # schedule of srs from not this section
       assert {:ok, 0} = Scheduling.update(section2, [
-        %{id: root.id, scheduling_type: "inclass_activity", start_date: "2023-02-03", end_date: "2023-02-06"}
+        %{id: root.id, scheduling_type: "inclass_activity", start_date: "2023-02-03", end_date: "2023-02-06", manually_scheduled: true}
       ])
 
     end
