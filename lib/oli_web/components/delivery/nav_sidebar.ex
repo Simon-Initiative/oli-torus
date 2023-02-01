@@ -11,10 +11,10 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   def main_with_nav(assigns) do
     ~H"""
-      <main role="main" class="flex-1 flex flex-col lg:flex-row">
+      <main role="main" class="h-screen flex flex-col relative lg:flex-row">
         <.navbar {assigns} />
 
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col lg:pl-[200px]">
 
           <%= render_slot(@inner_block) %>
 
@@ -26,7 +26,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   @spec navbar(any) :: Phoenix.LiveView.Rendered.t()
   def navbar(assigns) do
     ~H"""
-      <nav class="flex flex-col w-full lg:w-[200px] py-2 bg-white dark:bg-black relative shadow-lg lg:flex">
+      <nav class="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-black relative shadow-lg lg:flex">
         <div class="w-full">
           <a class="block w-[200px] lg:mb-14 mx-auto" href={
           case assigns[:logo_link] do
