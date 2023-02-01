@@ -86,7 +86,7 @@ defmodule OliWeb.Api.SchedulingController do
             "children" => [],
             "resource_type_id" => 1,
             "start_date" => "2023-02-03",
-            "start_date" => "2023-02-09",
+            "end_date" => "2023-02-09",
             "scheduling_type" => "read_by",
             "resource_id" => 24523
           }
