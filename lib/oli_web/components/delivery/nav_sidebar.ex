@@ -124,13 +124,13 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           block
           no-underline
           mx-6
-          my-2
+          my-4
           hover:no-underline
           border-b
           border-transparent
           text-current
           hover:text-delivery-primary-400
-          #{@active && "font-bold border-b border-delivery-primary text-delivery-primary"}
+          #{@active && "font-bold border-b border-delivery-primary !text-delivery-primary"}
         "}><%= @name %></a>
     """
   end

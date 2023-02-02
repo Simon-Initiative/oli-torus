@@ -27,7 +27,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
 
             <.card
               badge_name="Graded Assignment"
-              badge_bg_color="bg-violet-700"
+              badge_bg_color="bg-fuchsia-800"
               title="Unit 3.1: Understanding Chem 101"
               percent_complete={0}
               complete_by_date={Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1)}

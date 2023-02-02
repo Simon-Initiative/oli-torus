@@ -30,10 +30,10 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
     ~H"""
       <div class="bg-white dark:bg-gray-800 shadow">
         <div class="p-4">
-          <h6 class="font-semibold mb-2">Opportunities <span class="hidden lg:inline">for further learning</span></h6>
-          <div>
+          <h6>Opportunities <span class="hidden lg:inline">for further learning</span></h6>
+          <small class="text-gray-500">
             These are areas you could revisit.
-          </div>
+          </small>
         </div>
         <%= for lo <- [
           %LearningOpportunity{
@@ -117,6 +117,6 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
   defp badge_name(%LearningOpportunity{type: :mission_activities}), do: "Mission Activities"
 
   defp badge_bg_color(%LearningOpportunity{type: :course_content}), do: "bg-green-700"
-  defp badge_bg_color(%LearningOpportunity{type: :graded_assignment}), do: "bg-violet-700"
+  defp badge_bg_color(%LearningOpportunity{type: :graded_assignment}), do: "bg-fuchsia-800"
   defp badge_bg_color(%LearningOpportunity{type: :mission_activities}), do: "bg-blue-500"
 end
