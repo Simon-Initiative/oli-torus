@@ -51,11 +51,11 @@ defmodule OliWeb.Components.Delivery.UpNext do
   attr(:percent_students_completed, :integer, required: true)
   attr(:request_extension_href, :string)
 
-  defp card(assigns) do
+  def card(assigns) do
     ~H"""
-    <div class="flex-1 bg-delivery-header-800 rounded p-8 py-4 mb-2 last:mb-0 md:mr-2">
+    <div class={"flex-1 rounded p-8 py-4 mb-2 last:mb-0 md:last:mb-2 md:mr-2 bg-delivery-header-800"}>
       <div class="flex my-2">
-        <span class={"rounded-full py-1 px-6 #{@badge_bg_color}"}>
+        <span class={"rounded-full py-1 px-6 #{@badge_bg_color} text-white"}>
           <%= @badge_name %>
         </span>
       </div>
@@ -74,8 +74,8 @@ defmodule OliWeb.Components.Delivery.UpNext do
         <div class="flex-1 bg-delivery-header-700 rounded p-2 text-center">
           Read by <%= @complete_by_date %>
         </div>
-        <div>
-          <a href={@open_href} class="btn inline-flex text-current hover:text-current ml-2 bg-delivery-primary">Open</a>
+        <div class="text-white">
+          <a href={@open_href} class="btn inline-flex ml-2 bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>
         </div>
       </div>
       <%= if assigns[:request_extension_href] do %>

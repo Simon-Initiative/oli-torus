@@ -6,6 +6,8 @@
     <Components.Delivery.ExplorationShade.exploration_shade />
     <Components.Delivery.UpNext.up_next user={@current_user} />
 
+    <Components.Delivery.LearningOpportunities.opportunities user={@current_user} />
+
     <Components.Delivery.CourseContentPanel.course_content_panel {assigns} />
 
     <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
