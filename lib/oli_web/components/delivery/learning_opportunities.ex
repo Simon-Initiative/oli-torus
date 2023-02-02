@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Delivery.LearningOpportunities do
   use Phoenix.Component
 
+  import OliWeb.Components.Delivery.Utils
+
   defmodule LearningOpportunity do
     @enforce_keys [:type, :title, :progress, :complete_by_date, :open_href]
 
@@ -26,40 +28,38 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
 
   def opportunities(assigns) do
     ~H"""
-      <div class="container mx-auto px-10 mt-3 mb-5">
-        <div class="bg-white shadow">
-          <div class="p-4">
-            <h6 class="font-semibold mb-2">Opportunities <span class="hidden lg:inline">for further learning</span></h6>
-            <div>
-              These are areas you could revisit.
-            </div>
+      <div class="bg-white dark:bg-gray-800 shadow">
+        <div class="p-4">
+          <h6 class="font-semibold mb-2">Opportunities <span class="hidden lg:inline">for further learning</span></h6>
+          <div>
+            These are areas you could revisit.
           </div>
-          <%= for lo <- [
-            %LearningOpportunity{
-              type: :course_content,
-              title: "1.0 Intro to Chemistry 101: Foundational Content",
-              progress: {:percent_complete, 20},
-              complete_by_date: Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1),
-              open_href: "#"
-            },
-            %LearningOpportunity{
-              type: :graded_assignment,
-              title: "1.0 Intro to Chemistry 101: Chemistry Assignment",
-              progress: {:score, 3, 10},
-              complete_by_date: Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1),
-              open_href: "#"
-            },
-            %LearningOpportunity{
-              type: :mission_activities,
-              title: "Mission Activity: Water Pollution on Planet Earth",
-              progress: {:activities_completed, 5, 10},
-              complete_by_date: Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1),
-              open_href: "#"
-            }
-          ] do %>
-            <.learning_opportunity learning_opportunity={lo} />
-          <% end %>
         </div>
+        <%= for lo <- [
+          %LearningOpportunity{
+            type: :course_content,
+            title: "1.0 Intro to Chemistry 101: Foundational Content",
+            progress: {:percent_complete, 20},
+            complete_by_date: Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1),
+            open_href: "#"
+          },
+          %LearningOpportunity{
+            type: :graded_assignment,
+            title: "1.0 Intro to Chemistry 101: Chemistry Assignment",
+            progress: {:score, 3, 10},
+            complete_by_date: Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1),
+            open_href: "#"
+          },
+          %LearningOpportunity{
+            type: :mission_activities,
+            title: "Mission Activity: Water Pollution on Planet Earth",
+            progress: {:activities_completed, 5, 10},
+            complete_by_date: Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1),
+            open_href: "#"
+          }
+        ] do %>
+          <.learning_opportunity learning_opportunity={lo} />
+        <% end %>
       </div>
     """
   end
@@ -68,7 +68,7 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
 
   def learning_opportunity(assigns) do
     ~H"""
-      <div class="my-2 border-t border-gray-200">
+      <div class="my-2 border-t border-gray-200 dark:border-gray-700">
         <div class={"flex-1 rounded p-8 py-4 mb-2 last:mb-0 md:last:mb-2 md:mr-2"}>
           <div class="flex my-2">
             <span class={"rounded-full py-1 px-6 #{badge_bg_color(@learning_opportunity)} text-white"}>
@@ -80,14 +80,7 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
           </div>
           <%= case @learning_opportunity.progress do %>
             <% {:percent_complete, percent} -> %>
-              <div class="my-2 flex flex-row items-center">
-                <div class="font-bold"><%= percent %>%</div>
-                <div class="flex-1 ml-3">
-                  <div class="w-[200px] rounded-full bg-gray-200 h-2">
-                    <div class="rounded-full bg-green-600 h-2" style={"width: #{percent}%"}></div>
-                  </div>
-                </div>
-              </div>
+              <.progress_bar width="200px" percent={percent} />
 
             <% {:score, score, out_of} -> %>
               <div class="my-2 flex flex-row items-center">
@@ -107,7 +100,7 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
 
           <% end %>
           <div class="my-2 flex flex-row">
-            <div class="flex-1 bg-gray-100 rounded p-2 text-center">
+            <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
               Read by <%= @learning_opportunity.complete_by_date %>
             </div>
             <div class="text-white">

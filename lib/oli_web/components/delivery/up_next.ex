@@ -62,14 +62,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
       <div class="my-2">
         <span class="font-bold"><%= @title %></span>
       </div>
-      <div class="my-2 flex flex-row items-center">
-        <div class="font-bold"><%= @percent_complete %>%</div>
-        <div class="flex-1 ml-3">
-          <div class="w-[200px] rounded-full bg-gray-200 h-2">
-            <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent_complete}%"}></div>
-          </div>
-        </div>
-      </div>
+      <.progress_bar width="200px" percent={@percent_complete} />
       <div class="my-2 flex flex-row">
         <div class="flex-1 bg-delivery-header-700 rounded p-2 text-center">
           Read by <%= @complete_by_date %>
