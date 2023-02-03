@@ -3,77 +3,83 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
 
 import { resetScheduleItem } from './schedule-reset';
+import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
+import { getSchedule } from './schedule-selectors';
 
+export enum ScheduleItemType {
+  Page = 1,
+  Container,
+}
+
+export type StringDate = string;
+export type SchedulingType = 'read_by';
 // Version that comes from torus
 export interface HierarchyItemSrc {
-  children: HierarchyItemSrc[];
-  id: string;
-  graded: string;
-  index: string;
-  next: string;
-  prev: string;
-  slug: string;
+  children: number[];
+  end_date: StringDate;
+  start_date: StringDate;
+  id: number;
+  resource_id: number;
+  resource_type_id: ScheduleItemType;
+  scheduling_type: SchedulingType;
   title: string;
-  type: string;
+  numbering_index: number;
+  numbering_level: number;
+  manually_scheduled: boolean;
 }
 
 export interface HierarchyItem extends HierarchyItemSrc {
-  start_date: DateWithoutTime | null;
-  end_date: DateWithoutTime | null;
-  children: HierarchyItem[];
+  startDate: DateWithoutTime | null;
+  endDate: DateWithoutTime | null;
 }
 
 export interface SchedulerState {
-  schedule: HierarchyItem | null;
-  start_date: DateWithoutTime | null;
-  end_date: DateWithoutTime | null;
-  selectedId: string | null;
+  schedule: HierarchyItem[] | [];
+  startDate: DateWithoutTime | null;
+  endDate: DateWithoutTime | null;
+  selectedId: number | null;
+  appLoading: boolean;
+  saving: boolean;
+  title: string;
+  displayCurriculumItemNumbering: boolean;
+  dirty: number[];
+  sectionSlug: string;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
-  schedule: null,
-  end_date: null,
-  start_date: null,
+  schedule: [],
+  endDate: null,
+  startDate: null,
   selectedId: null,
+  appLoading: false,
+  saving: false,
+  title: '',
+  displayCurriculumItemNumbering: true,
+  dirty: [],
+  sectionSlug: '',
 });
 
-const buildHierarchyItem = (item: HierarchyItemSrc, startDate: DateWithoutTime): HierarchyItem => {
-  const endDate = new DateWithoutTime(startDate.getDaysSinceEpoch());
-  endDate.addDays(3);
-  return {
+const buildHierarchyItems = (items: HierarchyItemSrc[]): HierarchyItem[] => {
+  return items.map((item) => ({
     ...item,
-    start_date: startDate,
-    end_date: endDate,
-    children: item.children.map((i) => buildHierarchyItem(i, startDate)),
-  };
+    startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
+    endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
+  }));
 };
 
-const initialState = { schedule: null } as SchedulerState;
-
-interface InitPayload {
-  hierarchy: HierarchyItemSrc;
-  start_date: string;
-  end_date: string;
-}
+const initialState = { schedule: [] } as SchedulerState;
 
 interface MovePayload {
-  itemId: string;
+  itemId: number;
   startDate: DateWithoutTime;
   endDate: DateWithoutTime;
 }
 
-const findItem = (root: HierarchyItem | null, itemId: string): HierarchyItem | null => {
-  if (root?.id === itemId) {
-    return root;
-  }
-  for (const child of root?.children || []) {
-    const found = findItem(child, itemId);
-    if (found) {
-      return found;
-    }
-  }
-  return null;
-};
+export const getScheduleRoot = (schedule: HierarchyItem[]) =>
+  schedule.find((item) => item.numbering_level === 0);
+
+export const getScheduleItem = (itemId: number, schedule: HierarchyItem[]) =>
+  schedule.find((item) => item.id === itemId);
 
 const calcDuration = (start: DateWithoutTime | null, end: DateWithoutTime | null): number => {
   if (!start) {
@@ -85,33 +91,18 @@ const calcDuration = (start: DateWithoutTime | null, end: DateWithoutTime | null
   return end.getDaysSinceEpoch() - start.getDaysSinceEpoch();
 };
 
-const moveChildren = (
-  item: HierarchyItem,
-  delta: number,
-  scheduleStart: DateWithoutTime,
-  scheduleEnd: DateWithoutTime,
-) => {
-  for (const child of item.children) {
-    if (!child.start_date || !child.end_date) {
-      continue;
+const descendentIds = (item: HierarchyItem, schedule: HierarchyItem[]) => {
+  const ids = [item.id];
+  for (const childId of item.children) {
+    const child = getScheduleItem(childId, schedule);
+    if (child) {
+      ids.push(...descendentIds(child, schedule));
     }
-
-    // Don't want to move past the end on either side, but we do want to keep the same duration.
-    const effectiveDelta =
-      delta > 0
-        ? Math.min(delta, scheduleEnd.getDaysSinceEpoch() - child.end_date.getDaysSinceEpoch())
-        : Math.max(
-            delta,
-            -1 * (child.start_date.getDaysSinceEpoch() - scheduleStart.getDaysSinceEpoch()),
-          );
-
-    child.start_date.addDays(effectiveDelta);
-    child.end_date.addDays(effectiveDelta);
-
-    moveChildren(child, delta, scheduleStart, scheduleEnd);
   }
+  return ids;
 };
 
+const neverScheduled = (schedule: HierarchyItem[]) => !schedule.find((i) => i.manually_scheduled);
 // const isParent = (item: HierarchyItem, test: HierarchyItem): boolean => {
 //   for (const child of item.children) {
 //     if (child.id === test.id) {
@@ -128,74 +119,81 @@ const schedulerSlice = createSlice({
   name: 'scheduler',
   initialState,
   reducers: {
-    initSchedule(state, action: PayloadAction<InitPayload>) {
-      state.start_date = new DateWithoutTime(action.payload.start_date);
-      state.end_date = new DateWithoutTime(action.payload.end_date);
-      state.schedule = buildHierarchyItem(action.payload.hierarchy, state.start_date);
-      if (state.schedule && state.start_date && state.end_date) {
-        resetScheduleItem(state.schedule, state.start_date, state.end_date);
-      } // TODO - should only do this if it's the first time to the scheduler.
-    },
     moveScheduleItem(state, action: PayloadAction<MovePayload>) {
-      const mutableItem = findItem(state.schedule, action.payload.itemId);
+      const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
 
       if (mutableItem) {
-        const durationBefore = calcDuration(mutableItem.start_date, mutableItem.end_date);
-        const durationAfter = calcDuration(action.payload.startDate, action.payload.endDate);
-
-        // console.info({
-        //   ms: mutableItem.start_date?.utcMidnightDateObj.toUTCString(),
-        //   me: mutableItem.end_date?.utcMidnightDateObj.toUTCString(),
-        //   ps: action.payload.startDate?.utcMidnightDateObj.toUTCString(),
-        //   pe: action.payload.endDate?.utcMidnightDateObj.toUTCString(),
-        // });
-
-        const isMoveOperation = durationAfter === durationBefore;
-
-        // I tried some variations of expanding parents when children are moved around, and really didn't like the
-        //   UX interactions I was seeing. I dont think we want this.
-        // if (state.schedule) {
-        //   expandParents(
-        //     mutableItem,
-        //     state.schedule,
-        //     action.payload.startDate,
-        //     action.payload.endDate,
-        //   );
-        // }
-
-        if (isMoveOperation && mutableItem.start_date) {
-          const delta = Math.floor(
-            action.payload.startDate.getDaysSinceEpoch() -
-              mutableItem.start_date.getDaysSinceEpoch() || 0,
+        mutableItem.startDate = action.payload.startDate;
+        mutableItem.endDate = action.payload.endDate;
+        mutableItem.manually_scheduled = true;
+        state.dirty.push(mutableItem.id);
+        if (mutableItem.startDate && mutableItem.endDate) {
+          resetScheduleItem(
+            mutableItem,
+            mutableItem.startDate,
+            mutableItem.endDate,
+            state.schedule,
+            false,
           );
 
-          state.start_date &&
-            state.end_date &&
-            moveChildren(mutableItem, delta, state.start_date, state.end_date);
+          state.dirty.push(...descendentIds(mutableItem, state.schedule));
         } else {
           console.info(
             'Not moving children',
-            isMoveOperation,
-            mutableItem.start_date,
-            durationAfter,
-            durationBefore,
+
+            mutableItem.startDate,
           );
         }
-
-        mutableItem.start_date = action.payload.startDate;
-        mutableItem.end_date = action.payload.endDate;
       }
     },
     resetSchedule(state) {
-      if (state.schedule && state.start_date && state.end_date) {
-        resetScheduleItem(state.schedule, state.start_date, state.end_date);
+      if (state.schedule && state.startDate && state.endDate) {
+        const root = getScheduleRoot(state.schedule);
+        root && resetScheduleItem(root, state.startDate, state.endDate, state.schedule);
+        state.dirty = state.schedule.map((item) => item.id);
       }
     },
-    selectItem(state, action: PayloadAction<string | null>) {
+    selectItem(state, action: PayloadAction<number | null>) {
       state.selectedId = action.payload;
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(scheduleAppStartup.pending, (state, action) => {
+      state.appLoading = true;
+    });
+
+    builder.addCase(scheduleAppFlushChanges.pending, (state, action) => {
+      state.saving = true;
+    });
+
+    builder.addCase(scheduleAppFlushChanges.fulfilled, (state, action) => {
+      state.dirty = [];
+      state.saving = false;
+    });
+
+    builder.addCase(scheduleAppStartup.fulfilled, (state, action) => {
+      const {
+        start_date,
+        end_date,
+        title,
+        display_curriculum_item_numbering,
+        schedule,
+        section_slug,
+      } = action.payload;
+      state.appLoading = true;
+      state.title = title;
+      state.displayCurriculumItemNumbering = display_curriculum_item_numbering;
+      state.startDate = new DateWithoutTime(start_date);
+      state.endDate = new DateWithoutTime(end_date);
+      state.schedule = buildHierarchyItems(schedule);
+      state.sectionSlug = section_slug;
+      if (state.startDate && state.endDate && neverScheduled(state.schedule)) {
+        const root = getScheduleRoot(state.schedule);
+        root && resetScheduleItem(root, state.startDate, state.endDate, state.schedule);
+      }
+    });
+  },
 });
 
-export const { initSchedule, moveScheduleItem, resetSchedule, selectItem } = schedulerSlice.actions;
+export const { moveScheduleItem, resetSchedule, selectItem } = schedulerSlice.actions;
 export const schedulerSliceReducer = schedulerSlice.reducer;

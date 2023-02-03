@@ -11,6 +11,7 @@ interface DragBarProps {
   dayGeometry: DayGeometry;
   onChange?: (start: DateWithoutTime, end: DateWithoutTime) => void;
   onStartDrag?: () => void;
+  manual: boolean;
 }
 
 export const DragBar: React.FC<DragBarProps> = ({
@@ -21,6 +22,7 @@ export const DragBar: React.FC<DragBarProps> = ({
   onStartDrag,
   dayGeometry,
   children,
+  manual,
 }) => {
   const [isDragging, , enableDrag, disableDrag] = useToggle();
   const [isResize, , enableResize, disableResize] = useToggle();
@@ -121,6 +123,8 @@ export const DragBar: React.FC<DragBarProps> = ({
     </div>
   );
 
+  const color = manual ? 'bg-sky-500' : 'bg-sky-300';
+
   return (
     <>
       {label}
@@ -142,7 +146,7 @@ export const DragBar: React.FC<DragBarProps> = ({
       ) : (
         <div
           onMouseDown={startDrag}
-          className="rounded absolute bg-sky-500 h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-move"
+          className={`rounded absolute ${color} h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-move`}
           style={barStyles}
         >
           <div

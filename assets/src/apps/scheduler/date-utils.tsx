@@ -5,11 +5,12 @@ import { padLeft } from '../../utils/common';
 /*
   When translating a date to a position along our graphical schedule, there are several points that correlate to each date.
   Each coordinate should correspond to exactly one date.
+
   The first coordinate is the start of the schedule, the last coordinate is the end of the schedule.
 
   So if we have 10 days, and 100 pixels, each day is 10 pixels wide with day 0 being 0-9 and day 9 being 90-99
 
-  Rarely with the math work out, so we're going ot have fractional pixels to worry about. Whenever a boundary between
+  Rarely will the math work out, so we're going to have fractional pixels to worry about. Whenever a boundary between
   dates occurs, the rounded pixel before that decimal is the day before and the rounded pixel after is the day after.
 
   So if we have 10 days, and 105 pixels, each day is 10.5 pixels wide with day 0 being 0-10, day 1 being 11-20 since the boundary was 10.5

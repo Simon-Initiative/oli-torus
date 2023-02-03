@@ -801,7 +801,7 @@ defmodule OliWeb.Router do
 
     live("/:section_slug", Sections.OverviewView)
 
-    get("/:section_slug/schedule", PageDeliveryController, :schedule)
+    get("/:section_slug/schedule", SectionScheduleController, :schedule)
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
     live("/:section_slug/grades/failed", Grades.FailedGradeSyncLive)

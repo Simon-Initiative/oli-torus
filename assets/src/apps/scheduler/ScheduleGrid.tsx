@@ -6,12 +6,14 @@ import { ScheduleLine } from './ScheduleLine';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { useSelector } from 'react-redux';
 import { getTopLevelSchedule } from './schedule-selectors';
+import { ScheduleItemType } from './scheduler-slice';
 
 interface GridProps {
   startDate: string;
   endDate: string;
+  onModification: () => void;
 }
-export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate }) => {
+export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onModification }) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
 
@@ -46,9 +48,15 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate }) => {
       </thead>
       <tbody>
         {schedule
-          .filter((item) => item.type !== 'page')
+          .filter((item) => item.resource_type_id !== ScheduleItemType.Page)
           .map((item) => (
-            <ScheduleLine key={item.id} indent={0} item={item} dayGeometry={dayGeometry} />
+            <ScheduleLine
+              onModification={onModification}
+              key={item.id}
+              indent={0}
+              item={item}
+              dayGeometry={dayGeometry}
+            />
           ))}
       </tbody>
     </table>

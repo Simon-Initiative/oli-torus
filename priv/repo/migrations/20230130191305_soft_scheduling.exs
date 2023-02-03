@@ -11,5 +11,4 @@ defmodule Oli.Repo.Migrations.SoftScheduling do
 
     create index(:section_resources, [:section_id, :end_date])
   end
-
 end

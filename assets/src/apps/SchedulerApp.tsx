@@ -1,29 +1,30 @@
 import { ScheduleEditor } from './scheduler/ScheduleEditor';
-
 import { registerApplication } from './app';
 import React from 'react';
 import { configureStore } from '../state/store';
-import { HierarchyItemSrc } from './scheduler/scheduler-slice';
 import { Provider } from 'react-redux';
 import { initState, schedulerAppReducer } from './scheduler/scheduler-reducer';
+import { StringDate } from './scheduler/scheduler-slice';
 
 export interface SchedulerAppProps {
+  start_date: StringDate;
+  end_date: StringDate;
   title: string;
-  hierarchy: HierarchyItemSrc;
-  start_date: string;
-  end_date: string;
+  section_slug: string;
+  display_curriculum_item_numbering: boolean;
 }
 
 const store = configureStore(initState(), schedulerAppReducer);
 
 const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
-  ({ hierarchy, title, start_date, end_date }) => (
+  ({ start_date, end_date, title, section_slug, display_curriculum_item_numbering }) => (
     <Provider store={store}>
       <ScheduleEditor
-        title={title}
-        hierarchy={hierarchy}
         start_date={start_date}
         end_date={end_date}
+        title={title}
+        section_slug={section_slug}
+        display_curriculum_item_numbering={display_curriculum_item_numbering}
       />
     </Provider>
   ),

@@ -57,26 +57,6 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  def schedule(conn, %{"section_slug" => section_slug}) do
-    section =
-      conn.assigns.section
-      |> Oli.Repo.preload([:base_project, :root_section_resource])
-
-    render(conn, "schedule.html",
-      title: section.title,
-      context: %{
-        # TODO: Deliver these dates in the correct timezone for the section
-        start_date: section.start_date,
-        end_date: section.end_date,
-        title: section.title,
-        description: section.description,
-        section_slug: section_slug,
-        hierarchy: build_hierarchy(section),
-        display_curriculum_item_numbering: section.display_curriculum_item_numbering
-      }
-    )
-  end
-
   def container(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     author = conn.assigns.current_author

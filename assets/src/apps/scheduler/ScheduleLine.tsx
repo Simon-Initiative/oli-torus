@@ -4,21 +4,34 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useToggle } from '../../components/hooks/useToggle';
 import { DayGeometry } from './date-utils';
 import { DragBar } from './DragBar';
-import { getSelectedId } from './schedule-selectors';
+import { getSchedule, getSelectedId } from './schedule-selectors';
 import { ScheduleHeader } from './ScheduleHeader';
 // import { SchedulePlaceholder } from './SchedulePlaceholder';
-import { HierarchyItem, moveScheduleItem, selectItem } from './scheduler-slice';
+import {
+  getScheduleItem,
+  HierarchyItem,
+  moveScheduleItem,
+  ScheduleItemType,
+  selectItem,
+} from './scheduler-slice';
 
 interface ScheduleLineProps {
   item: HierarchyItem;
   indent: number;
   dayGeometry: DayGeometry;
+  onModification: () => void;
 }
 
-export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeometry }) => {
+export const ScheduleLine: React.FC<ScheduleLineProps> = ({
+  item,
+  indent,
+  dayGeometry,
+  onModification,
+}) => {
   const [expanded, toggleExpanded] = useToggle(false);
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
+  const schedule = useSelector(getSchedule);
 
   const onSelect = useCallback(() => {
     if (isSelected) {
@@ -40,8 +53,9 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
       // console.info(`Start: ${item.start_date} => ${newStart.date}`);
       // console.info(`End: ${item.end_date} => ${newEnd.date}`);
       dispatch(moveScheduleItem({ itemId: item.id, startDate, endDate }));
+      onModification();
     },
-    [dispatch, item],
+    [dispatch, item.id, onModification],
   );
 
   // const onStartDrag = useCallback(() => {
@@ -49,7 +63,9 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
   //   dispatch(selectItem(item.id));
   // }, [dispatch, item.id]);
 
-  const containerChildren = item.children.filter((item) => item.type !== 'page');
+  const containerChildren = item.children
+    .map((itemId) => getScheduleItem(itemId, schedule))
+    .filter((item) => item?.resource_type_id === ScheduleItemType.Container) as HierarchyItem[];
   const expansionIcon = containerChildren.length === 0 ? null : expanded ? '-' : '+';
 
   const rowClass = isSelected ? 'bg-green-50' : '';
@@ -61,16 +77,17 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
           {expansionIcon}
         </td>
         <td className="w-48" style={{ paddingLeft: (1 + indent) * 10 }} onClick={onSelect}>
-          {item.title} {item.index}
+          {item.title} {item.numbering_index}
         </td>
         <td className="relative p-0">
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
-          {item.start_date && item.end_date && (
+          {item.startDate && item.endDate && (
             <DragBar
               // onStartDrag={onStartDrag}
               onChange={onChange}
-              startDate={item.start_date}
-              endDate={item.end_date}
+              startDate={item.startDate}
+              endDate={item.endDate}
+              manual={item.manually_scheduled}
               dayGeometry={dayGeometry}
               isContainer={expanded && containerChildren.length > 0}
             />
@@ -80,7 +97,13 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
 
       {expanded &&
         containerChildren.map((child) => (
-          <ScheduleLine key={child.id} item={child} indent={indent + 1} dayGeometry={dayGeometry} />
+          <ScheduleLine
+            key={child?.resource_id}
+            item={child}
+            indent={indent + 1}
+            dayGeometry={dayGeometry}
+            onModification={onModification}
+          />
         ))}
 
       {/* {expanded || containerChildren.map((_, i) => <SchedulePlaceholder key={i} />)} */}
