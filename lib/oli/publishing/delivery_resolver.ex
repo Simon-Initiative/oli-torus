@@ -279,4 +279,63 @@ defmodule Oli.Publishing.DeliveryResolver do
       select: spp.publication_id
     )
   end
+
+  @doc """
+  Returns the current revisions of all page resources whose purpose type matches the one it receives as parameter
+  ## Examples
+      iex> get_by_purpose(valid_section_slug, valid_purpose)
+      [%Revision{}, ...]
+
+      iex> get_by_purpose(invalid_section_slug, invalid_purpose)
+      []
+  """
+
+  def get_by_purpose(section_slug, purpose) do
+    Repo.all(
+      from(
+        revision in Revision,
+        join: sect_res in SectionResource,
+        on: sect_res.resource_id == revision.resource_id,
+        join: sec in Section,
+        on: sec.id == sect_res.section_id,
+        where:
+          revision.purpose ==
+            ^purpose and
+            revision.resource_type_id ==
+              1 and sec.slug == ^section_slug and revision.deleted == false and
+            sect_res.numbering_level > 0,
+        select: revision,
+        order_by: [asc: :resource_id]
+      )
+    )
+  end
+
+  @doc """
+  Returns the current revisions of all page resources whose have the given resource_id in their "relates_to" attribute
+  ## Examples
+      iex> targeted_via_related_to(valid_section_slug, valid_resource_id)
+      [%Revision{}, ...]
+
+      iex> targeted_via_related_to(invalid_section_slug, invalid_resource_id)
+      []
+  """
+
+  def targeted_via_related_to(section_slug, resource_id) do
+    Repo.all(
+      from(
+        revision in Revision,
+        join: sect_res in SectionResource,
+        on: sect_res.resource_id == revision.resource_id,
+        join: sec in Section,
+        on: sec.id == sect_res.section_id,
+        where:
+          ^resource_id in revision.relates_to and
+            revision.resource_type_id ==
+              1 and sec.slug == ^section_slug and revision.deleted == false and
+            sect_res.numbering_level > 0,
+        select: revision,
+        order_by: [asc: :resource_id]
+      )
+    )
+  end
 end

@@ -9,7 +9,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   alias Oli.Resources.Revision
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
-  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.{Project, ProjectResource}
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course
@@ -284,5 +284,66 @@ defmodule Oli.Publishing.AuthoringResolver do
       },
       numbering_tracker
     }
+  end
+
+  @doc """
+  Returns the current revisions of all page resources whose purpose type matches the one it receives as parameter
+  ## Examples
+      iex> get_by_purpose(valid_project_slug, valid_purpose)
+      [%Revision{}, ...]
+
+      iex> get_by_purpose(invalid_project_slug, invalid_purpose)
+      []
+  """
+
+  def get_by_purpose(project_slug, purpose) do
+    Repo.all(
+      from(
+        revision in Revision,
+        left_join: revision2 in Revision,
+        on: revision2.resource_id == revision.resource_id and revision.id < revision2.id,
+        join: proj_res in ProjectResource,
+        on: proj_res.resource_id == revision.resource_id,
+        join: project in Project,
+        on: project.id == proj_res.project_id,
+        where:
+          revision.purpose ==
+            ^purpose and
+            revision.resource_type_id ==
+              1 and project.slug == ^project_slug and revision.deleted == false and
+            is_nil(revision2),
+        order_by: [asc: :resource_id]
+      )
+    )
+  end
+
+  @doc """
+  Returns the current revisions of all page resources whose have the given resource_id in their "relates_to" attribute
+  ## Examples
+      iex> targeted_via_related_to(valid_project_slug, valid_resource_id)
+      [%Revision{}, ...]
+
+      iex> targeted_via_related_to(invalid_project_slug, invalid_resource_id)
+      []
+  """
+
+  def targeted_via_related_to(project_slug, resource_id) do
+    Repo.all(
+      from(
+        revision in Revision,
+        left_join: revision2 in Revision,
+        on: revision2.resource_id == revision.resource_id and revision.id < revision2.id,
+        join: proj_res in ProjectResource,
+        on: proj_res.resource_id == revision.resource_id,
+        join: project in Project,
+        on: project.id == proj_res.project_id,
+        where:
+          ^resource_id in revision.relates_to and
+            revision.resource_type_id ==
+              1 and project.slug == ^project_slug and revision.deleted == false and
+            is_nil(revision2),
+        order_by: [asc: :resource_id]
+      )
+    )
   end
 end
