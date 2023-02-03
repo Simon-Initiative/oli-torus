@@ -51,12 +51,55 @@ defmodule OliWeb.SchedulingControllerTest do
       Enum.each(resources, fn sr -> assert sr["end_date"] == "2024-01-02" end)
 
     end
+
+    test "can handle missing manually_graded attributes", %{
+      conn: conn,
+      map: map
+    } do
+
+      user = map.teacher
+
+      conn =
+        get(
+          conn,
+          Routes.scheduling_path(conn, :index, map.section.slug)
+        )
+
+      assert %{"result" => "success", "resources" => resources} = json_response(conn, 200)
+      assert length(resources) == 3
+
+      # Change the end date for all 3, AND remove the manually_scheduled attribute
+      updates = Enum.map(resources, fn sr -> Map.put(sr, "end_date", "2024-01-02") |> Map.delete("manually_scheduled") end)
+
+      conn = again(conn, user)
+      |> put(Routes.scheduling_path(conn, :update, map.section.slug), %{"updates" => updates})
+
+      assert response(conn, 400)
+
+    end
+
+    test "can catch unauthorized user access", %{
+      conn: conn,
+      map: map
+    } do
+
+      user = map.someone_else
+
+      conn = again(conn, user)
+      |> get(
+          Routes.scheduling_path(conn, :index, map.section.slug)
+        )
+
+      assert response(conn, 401)
+
+    end
   end
 
   defp setup_session(%{conn: conn}) do
 
     map = Seeder.base_project_with_resource2()
     |> Seeder.add_user(%{}, :teacher)
+    |> Seeder.add_user(%{}, :someone_else)
 
     {:ok, initial_pub} = Publishing.publish_project(map.project, "some changes")
     {:ok, section} =

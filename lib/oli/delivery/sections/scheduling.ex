@@ -44,33 +44,47 @@ defmodule Oli.Delivery.Sections.Scheduling do
   updated - or a {:error, error} tuple.
   """
   def update(%Section{id: section_id}, updates) do
+    if is_valid_update?(updates) do
+      case build_values_params(updates) do
+        {[], []} ->
+          {:ok, 0}
 
-    case build_values_params(updates) do
-      {[], []} ->
-        {:ok, 0}
+        {values, params} ->
+          values = Enum.join(values, ",")
 
-      {values, params} ->
-        values = Enum.join(values, ",")
+          sql = """
+            UPDATE section_resources
+            SET
+              scheduling_type = batch_values.scheduling_type,
+              start_date = batch_values.start_date,
+              end_date = batch_values.end_date,
+              manually_scheduled = batch_values.manually_scheduled,
+              updated_at = NOW()
+            FROM (
+                VALUES #{values}
+            ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled)
+            WHERE section_resources.id = batch_values.id and section_resources.section_id = $1
+          """
 
-        sql = """
-          UPDATE section_resources
-          SET
-            scheduling_type = batch_values.scheduling_type,
-            start_date = batch_values.start_date,
-            end_date = batch_values.end_date,
-            manually_scheduled = batch_values.manually_scheduled,
-            updated_at = NOW()
-          FROM (
-              VALUES #{values}
-          ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled)
-          WHERE section_resources.id = batch_values.id and section_resources.section_id = $1
-        """
-
-        case Ecto.Adapters.SQL.query(Repo, sql, [section_id | params]) do
-          {:ok, %{num_rows: num_rows}} -> {:ok, num_rows}
-          e -> e
-        end
+          case Ecto.Adapters.SQL.query(Repo, sql, [section_id | params]) do
+            {:ok, %{num_rows: num_rows}} -> {:ok, num_rows}
+            e -> e
+          end
+      end
+    else
+      {:error, :missing_update_parameters}
     end
+  end
+
+  defp is_valid_update?(updates) do
+    keys = ["id", "scheduling_type", "start_date", "end_date", "manually_scheduled"]
+    atoms = Enum.map(keys, fn k -> String.to_existing_atom(k) end)
+
+    both = Enum.zip(keys, atoms)
+
+    Enum.all?(updates, fn u ->
+      Enum.all?(both, fn {k, a} -> Map.has_key?(u, k) or Map.has_key?(u, a) end)
+    end)
   end
 
   defp parse_date(nil), do: nil

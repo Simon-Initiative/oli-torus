@@ -160,7 +160,8 @@ defmodule OliWeb.Api.SchedulingController do
     if can_access_section?(conn, section) do
       case Scheduling.update(section, updates) do
         {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
-        {:error, e} -> error(conn, 500, e)
+        {:error, :missing_update_parameters} ->  error(conn, 400, "Missing update parameters")
+        e -> error(conn, 500, e)
       end
     else
       error(conn, 401, "Unauthorized")
