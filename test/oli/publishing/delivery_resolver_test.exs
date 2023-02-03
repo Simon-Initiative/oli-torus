@@ -1,6 +1,8 @@
 defmodule Oli.Publishing.DeliveryResolverTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
 
@@ -212,6 +214,60 @@ defmodule Oli.Publishing.DeliveryResolverTest do
                "Page one",
                "Page two"
              ]
+    end
+
+    test "get_by_purpose/2 returns all revisions when receive a valid section_slug and purpose",
+         %{} do
+      {:ok,
+       project: _project,
+       section: section,
+       page_revision: page_revision,
+       other_revision: other_revision} = project_section_revisions(%{})
+
+      assert section.slug
+             |> DeliveryResolver.get_by_purpose(page_revision.purpose)
+             |> length() == 1
+
+      assert section.slug
+             |> DeliveryResolver.get_by_purpose(other_revision.purpose)
+             |> length() == 1
+    end
+
+    test "get_by_purpose/2 returns empty list when receive a invalid section_slug",
+         %{} do
+      section = insert(:section)
+
+      assert DeliveryResolver.get_by_purpose(section.slug, :foundation) == []
+      assert DeliveryResolver.get_by_purpose(section.slug, :application) == []
+    end
+
+    test "targeted_via_related_to/2 returns all revisions when receive a valid section_slug and resource_id",
+         %{} do
+      {:ok,
+       project: _project,
+       section: section,
+       page_revision: page_revision,
+       other_revision: _other_revision} = project_section_revisions(%{})
+
+      assert section.slug
+             |> DeliveryResolver.targeted_via_related_to(page_revision.resource_id)
+             |> length() == 1
+    end
+
+    test "targeted_via_related_to/2 returns empty list when don't receive a valid section_slug and resource_id",
+         %{} do
+      section = insert(:section)
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Example test revision",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      assert DeliveryResolver.targeted_via_related_to(section.slug, page_revision.resource_id) ==
+               []
     end
   end
 end
