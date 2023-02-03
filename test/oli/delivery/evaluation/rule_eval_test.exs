@@ -21,6 +21,10 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     end
   end
 
+  test "evaluating negative decimal submissions against decimal value" do
+    refute eval("input = {0.0200}", "-0.02")
+  end
+
   test "evaluating integers" do
     assert eval("attemptNumber = {1} && input = {3}", "3")
     refute eval("attemptNumber = {1} && input = {3}", "4")
