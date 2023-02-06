@@ -10,8 +10,13 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
           </h4>
 
           <div>
-            <button class="btn"><span class="hidden md:inline mr-2">Expand</span><i class="fa-solid fa-circle-chevron-down"></i></button>
+            <button class="btn group" data-bs-toggle="collapse" data-bs-target="#collapseExploration" aria-expanded="false" aria-controls="collapseExploration">
+              <span class="hidden md:inline mr-2">Expand</span><i class="fa-solid fa-circle-chevron-down group-aria-expanded:rotate-180"></i>
+            </button>
           </div>
+        </div>
+        <div class="collapse container mx-auto md:px-10 py-2" id="collapseExploration">
+          EXAMPLE EXPLORATION CONTENT
         </div>
       </div>
     """

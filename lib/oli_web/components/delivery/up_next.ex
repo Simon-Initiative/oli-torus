@@ -27,7 +27,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
 
             <.card
               badge_name="Graded Assignment"
-              badge_bg_color="bg-violet-700"
+              badge_bg_color="bg-fuchsia-800"
               title="Unit 3.1: Understanding Chem 101"
               percent_complete={0}
               complete_by_date={Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1)}
@@ -51,31 +51,24 @@ defmodule OliWeb.Components.Delivery.UpNext do
   attr(:percent_students_completed, :integer, required: true)
   attr(:request_extension_href, :string)
 
-  defp card(assigns) do
+  def card(assigns) do
     ~H"""
-    <div class="flex-1 bg-delivery-header-800 rounded p-8 py-4 mb-2 last:mb-0 md:mr-2">
+    <div class={"flex-1 rounded p-8 py-4 mb-2 last:mb-0 md:last:mb-2 md:mr-2 bg-delivery-header-800"}>
       <div class="flex my-2">
-        <span class={"rounded-full py-1 px-6 #{@badge_bg_color}"}>
+        <span class={"rounded-full py-1 px-6 #{@badge_bg_color} text-white"}>
           <%= @badge_name %>
         </span>
       </div>
       <div class="my-2">
         <span class="font-bold"><%= @title %></span>
       </div>
-      <div class="my-2 flex flex-row items-center">
-        <div class="font-bold"><%= @percent_complete %>%</div>
-        <div class="flex-1 ml-3">
-          <div class="w-[200px] rounded-full bg-gray-200 h-2">
-            <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent_complete}%"}></div>
-          </div>
-        </div>
-      </div>
+      <.progress_bar width="200px" percent={@percent_complete} />
       <div class="my-2 flex flex-row">
         <div class="flex-1 bg-delivery-header-700 rounded p-2 text-center">
           Read by <%= @complete_by_date %>
         </div>
-        <div>
-          <a href={@open_href} class="btn inline-flex text-current hover:text-current ml-2 bg-delivery-primary">Open</a>
+        <div class="text-white">
+          <a href={@open_href} class="btn inline-flex ml-2 bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>
         </div>
       </div>
       <%= if assigns[:request_extension_href] do %>
