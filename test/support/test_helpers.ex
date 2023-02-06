@@ -682,6 +682,92 @@ defmodule Oli.TestHelpers do
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
   end
 
+  def project_section_revisions(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Graded page revision
+    page_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Progress test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true}
+      )
+
+    other_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Other test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true},
+        relates_to: [page_revision.resource_id],
+        purpose: :application
+      )
+
+    # Associate nested graded page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: other_revision.resource.id})
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_revision.resource.id, other_revision.resource.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id, published: nil})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    # Publish nested page resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: other_revision.resource,
+      revision: other_revision,
+      author: author
+    })
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    {:ok, project: project, section: section, page_revision: page_revision, other_revision: other_revision}
+  end
+
   def enroll_user_to_section(user, section, role) do
     Sections.enroll(user.id, section.id, [
       ContextRoles.get_role(role)
