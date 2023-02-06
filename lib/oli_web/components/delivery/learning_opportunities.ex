@@ -103,8 +103,8 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
             <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
               Read by <%= @learning_opportunity.complete_by_date %>
             </div>
-            <div class="text-white">
-              <a href={@learning_opportunity.open_href} class="btn inline-flex ml-2 bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>
+            <div>
+              <a href={@learning_opportunity.open_href} class="btn text-white hover:text-white inline-flex ml-2 bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>
             </div>
           </div>
         </div>
