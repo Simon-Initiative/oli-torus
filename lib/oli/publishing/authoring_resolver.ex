@@ -9,7 +9,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   alias Oli.Resources.Revision
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
-  alias Oli.Authoring.Course.{Project, ProjectResource}
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course
@@ -297,21 +297,18 @@ defmodule Oli.Publishing.AuthoringResolver do
   """
 
   def get_by_purpose(project_slug, purpose) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
     Repo.all(
       from(
         revision in Revision,
-        left_join: revision2 in Revision,
-        on: revision2.resource_id == revision.resource_id and revision.id < revision2.id,
-        join: proj_res in ProjectResource,
-        on: proj_res.resource_id == revision.resource_id,
-        join: project in Project,
-        on: project.id == proj_res.project_id,
+        join: pub_res in PublishedResource,
+        on: pub_res.revision_id == revision.id,
         where:
-          revision.purpose ==
-            ^purpose and
-            revision.resource_type_id ==
-              1 and project.slug == ^project_slug and revision.deleted == false and
-            is_nil(revision2),
+          pub_res.publication_id in subquery(project_working_publication(project_slug)) and
+            revision.purpose ==
+              ^purpose and
+            revision.resource_type_id == ^page_id and revision.deleted == false,
         order_by: [asc: :resource_id]
       )
     )
@@ -328,20 +325,18 @@ defmodule Oli.Publishing.AuthoringResolver do
   """
 
   def targeted_via_related_to(project_slug, resource_id) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
     Repo.all(
       from(
         revision in Revision,
-        left_join: revision2 in Revision,
-        on: revision2.resource_id == revision.resource_id and revision.id < revision2.id,
-        join: proj_res in ProjectResource,
-        on: proj_res.resource_id == revision.resource_id,
-        join: project in Project,
-        on: project.id == proj_res.project_id,
+        join: pub_res in PublishedResource,
+        on: pub_res.revision_id == revision.id,
         where:
-          ^resource_id in revision.relates_to and
-            revision.resource_type_id ==
-              1 and project.slug == ^project_slug and revision.deleted == false and
-            is_nil(revision2),
+          pub_res.publication_id in subquery(project_working_publication(project_slug)) and
+            ^resource_id in revision.relates_to and
+            revision.resource_type_id == ^page_id and
+            revision.deleted == false,
         order_by: [asc: :resource_id]
       )
     )

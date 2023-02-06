@@ -291,20 +291,14 @@ defmodule Oli.Publishing.DeliveryResolver do
   """
 
   def get_by_purpose(section_slug, purpose) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
     Repo.all(
-      from(
-        revision in Revision,
-        join: sect_res in SectionResource,
-        on: sect_res.resource_id == revision.resource_id,
-        join: sec in Section,
-        on: sec.id == sect_res.section_id,
+      from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
         where:
-          revision.purpose ==
-            ^purpose and
-            revision.resource_type_id ==
-              1 and sec.slug == ^section_slug and revision.deleted == false and
-            sect_res.numbering_level > 0,
-        select: revision,
+          rev.purpose == ^purpose and rev.deleted == false and rev.resource_type_id == ^page_id and
+            sr.numbering_level > 0,
+        select: rev,
         order_by: [asc: :resource_id]
       )
     )
@@ -321,19 +315,15 @@ defmodule Oli.Publishing.DeliveryResolver do
   """
 
   def targeted_via_related_to(section_slug, resource_id) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
     Repo.all(
-      from(
-        revision in Revision,
-        join: sect_res in SectionResource,
-        on: sect_res.resource_id == revision.resource_id,
-        join: sec in Section,
-        on: sec.id == sect_res.section_id,
+      from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
         where:
-          ^resource_id in revision.relates_to and
-            revision.resource_type_id ==
-              1 and sec.slug == ^section_slug and revision.deleted == false and
-            sect_res.numbering_level > 0,
-        select: revision,
+          ^resource_id in rev.relates_to and rev.deleted == false and
+            rev.resource_type_id == ^page_id and
+            sr.numbering_level > 0,
+        select: rev,
         order_by: [asc: :resource_id]
       )
     )
