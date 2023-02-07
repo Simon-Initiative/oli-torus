@@ -611,7 +611,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   # Evaluate a list of part_input submissions for a matching list of part_attempt records
-  defp evaluate_submissions(_, [], _), do: {:error, "nothing to process"}
+  defp evaluate_submissions(_, [], _) do
+    {:error, []}
+  end
+
 
   defp evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts) do
     activity_attempt =
