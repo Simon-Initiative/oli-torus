@@ -150,7 +150,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   def finalize(_), do: {:error, {:already_submitted}}
 
   defp finalize_activities(resource_attempt, datashop_session_id) do
-    activity_attempts = get_latest_activity_attempts(resource_attempt.id)
+
+    activity_attempts = case resource_attempt.revision do
+      %{content: %{"advancedDelivery" => true}} -> get_latest_evaluated_activity_attempts(resource_attempt.id)
+      _ -> get_latest_activity_attempts(resource_attempt.id)
+    end
 
     Enum.map(activity_attempts, fn a ->
       # some activities will finalize themselves ahead of a graded page

@@ -598,6 +598,25 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def get_latest_evaluated_activity_attempts(resource_attempt_id) do
+
+    Repo.all(
+      from(aa in ActivityAttempt,
+        left_join: aa2 in ActivityAttempt,
+        on:
+          aa.lifecycle_state == aa2.lifecycle_state and
+          aa.resource_attempt_id == aa2.resource_attempt_id and
+          aa.resource_id == aa2.resource_id and
+            aa.id < aa2.id,
+        where: aa.lifecycle_state == :evaluated and
+          aa.resource_attempt_id == ^resource_attempt_id and
+          is_nil(aa2),
+        select: aa
+      )
+    )
+  end
+
+
   @doc """
   Retrieves the latest resource attempt for a given resource id,
   context id and user id.  If no attempts exist, returns nil.
