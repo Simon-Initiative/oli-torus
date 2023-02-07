@@ -68,7 +68,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
           Read by <%= @complete_by_date %>
         </div>
         <div class="text-white">
-          <a href={@open_href} class="btn inline-flex ml-2 bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>
+          <a href={@open_href} class="btn text-white hover:text-white inline-flex ml-2 bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>
         </div>
       </div>
       <%= if assigns[:request_extension_href] do %>
