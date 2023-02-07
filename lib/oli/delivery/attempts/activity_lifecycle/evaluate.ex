@@ -612,7 +612,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   # Evaluate a list of part_input submissions for a matching list of part_attempt records
   defp evaluate_submissions(_, [], _) do
-    {:error, []}
+    {:ok, []}
   end
 
 
