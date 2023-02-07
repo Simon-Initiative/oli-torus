@@ -166,10 +166,19 @@ export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
   }, [] as WeekGeometry[]);
 };
 
-export const dateWithoutTimeLabel = (d: DateWithoutTime) => {
+export const dateWithoutTimeLabel = (d: DateWithoutTime | null) => {
+  if (!d) return null;
   return `${d.getFullYear()}-${padLeft(d.getMonth() + 1, 2)}-${padLeft(d.getDate(), 2)}`;
 };
 
 export const DateWithoutTimeLabel: React.FC<{ date: DateWithoutTime }> = ({ date }) => {
   return <span>{dateWithoutTimeLabel(date)}</span>;
+};
+
+export const stringToDateWithoutTime = (s: string): DateWithoutTime => {
+  const parts = s.split('-').map((s) => parseInt(s, 10));
+  if (parts.length !== 3) throw new Error(`Invalid date string: ${s}`);
+  const [year, month, day] = parts;
+
+  return new DateWithoutTime(year, month - 1, day);
 };

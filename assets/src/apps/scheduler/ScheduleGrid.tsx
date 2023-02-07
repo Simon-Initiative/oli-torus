@@ -38,27 +38,29 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onModifi
   }, [dayGeometry]);
 
   return (
-    <table className="select-none" style={{ minWidth }}>
-      <thead>
-        <ScheduleHeaderRow
-          labels={true}
-          attachBarContainer={attachBarContainer}
-          dayGeometry={dayGeometry}
-        />
-      </thead>
-      <tbody>
-        {schedule
-          .filter((item) => item.resource_type_id !== ScheduleItemType.Page)
-          .map((item) => (
-            <ScheduleLine
-              onModification={onModification}
-              key={item.id}
-              indent={0}
-              item={item}
-              dayGeometry={dayGeometry}
-            />
-          ))}
-      </tbody>
-    </table>
+    <div style={{ minWidth }}>
+      <table className="select-none" style={{ minWidth }}>
+        <thead>
+          <ScheduleHeaderRow
+            labels={true}
+            attachBarContainer={attachBarContainer}
+            dayGeometry={dayGeometry}
+          />
+        </thead>
+        <tbody>
+          {schedule
+            .filter((item) => item.resource_type_id !== ScheduleItemType.Page)
+            .map((item) => (
+              <ScheduleLine
+                onModification={onModification}
+                key={item.id}
+                indent={0}
+                item={item}
+                dayGeometry={dayGeometry}
+              />
+            ))}
+        </tbody>
+      </table>
+    </div>
   );
 };

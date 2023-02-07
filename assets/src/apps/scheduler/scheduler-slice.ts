@@ -71,8 +71,8 @@ const initialState = { schedule: [] } as SchedulerState;
 
 interface MovePayload {
   itemId: number;
-  startDate: DateWithoutTime;
-  endDate: DateWithoutTime;
+  startDate: DateWithoutTime | null;
+  endDate: DateWithoutTime | null;
 }
 
 export const getScheduleRoot = (schedule: HierarchyItem[]) =>

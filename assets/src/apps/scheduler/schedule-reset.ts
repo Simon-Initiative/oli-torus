@@ -1,5 +1,5 @@
 import { DateWithoutTime } from 'epoq';
-import { getScheduleItem, HierarchyItem } from './scheduler-slice';
+import { getScheduleItem, HierarchyItem, ScheduleItemType } from './scheduler-slice';
 
 export const resetScheduleItem = (
   target: HierarchyItem,
@@ -24,12 +24,13 @@ export const resetScheduleItem = (
   for (const childId of target.children) {
     const child = getScheduleItem(childId, schedule);
     if (child && (resetManual || !child?.manually_scheduled)) {
-      child.startDate = new DateWithoutTime(Math.floor(startDay));
+      const start = new DateWithoutTime(Math.floor(startDay));
+      child.startDate = child.resource_type_id === ScheduleItemType.Container ? start : null;
       child.endDate = new DateWithoutTime(
         Math.min(Math.floor(startDay + itemLength), end.getDaysSinceEpoch()),
       );
       startDay += itemSpacing;
-      resetScheduleItem(child, child.startDate, child.endDate, schedule);
+      resetScheduleItem(child, start, child.endDate, schedule);
     }
   }
 };

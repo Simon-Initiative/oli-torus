@@ -5,6 +5,7 @@ import { getScheduleItem, SchedulerState, StringDate } from './scheduler-slice';
 import { loadSchedule, ScheduleUpdate, updateSchedule } from './scheduling-service';
 
 import uniq from 'lodash/uniq';
+import { dateWithoutTimeLabel } from './date-utils';
 interface Payload {
   start_date: StringDate;
   end_date: StringDate;
@@ -12,10 +13,6 @@ interface Payload {
   section_slug: string;
   display_curriculum_item_numbering: boolean;
 }
-
-const formatDate = (date: DateWithoutTime | null) => {
-  return date ? date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() : null;
-};
 
 export const scheduleAppFlushChanges = createAsyncThunk(
   'schedule/flushChanges',
@@ -31,8 +28,8 @@ export const scheduleAppFlushChanges = createAsyncThunk(
         const item = getScheduleItem(id, schedule);
         if (!item) return null;
         return {
-          start_date: formatDate(item.startDate),
-          end_date: formatDate(item.endDate),
+          start_date: dateWithoutTimeLabel(item.startDate),
+          end_date: dateWithoutTimeLabel(item.endDate),
           id: item.id,
           scheduling_type: item.scheduling_type,
           manually_scheduled: item.manually_scheduled,

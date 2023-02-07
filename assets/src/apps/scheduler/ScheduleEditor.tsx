@@ -64,6 +64,9 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
           Reset Schedule
         </button>
         <h1>{title}</h1>
+        <small>
+          {start_date} {end_date}
+        </small>
       </div>
 
       <div className="flex flex-row gap-2">
@@ -71,7 +74,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
           <ScheduleGrid onModification={onModification} startDate={start_date} endDate={end_date} />
         </div>
         {selectedId && (
-          <div className="w-48 bg-slate-400 h-full flex-shrink-0 flex-grow-0 slide-in-right">
+          <div className="w-64  h-full flex-shrink-0 flex-grow-0 slide-in-right">
             <ScheduleSlideout onModification={onModification} />
           </div>
         )}
