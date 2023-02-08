@@ -181,8 +181,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # It is necessary to refetch the resource attempt so that we have the latest view
     # of its state, and to separately fetch the list of most recent attempts for each
     # activity.
-
-    activity_attempts = get_latest_activity_attempts(resource_attempt.id)
+    activity_attempts = case resource_attempt.revision do
+      # For adaptive pages, since we are rolling up to the resource attempt, we must consider
+      # both submitted and evaluated attempts
+      %{content: %{"advancedDelivery" => true}} -> get_latest_non_active_activity_attempts(resource_attempt.id)
+      _ -> get_latest_activity_attempts(resource_attempt.id)
+    end
 
     if is_evaluated?(activity_attempts) do
       apply_evaluation(resource_attempt, activity_attempts)

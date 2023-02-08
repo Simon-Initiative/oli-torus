@@ -1,6 +1,5 @@
 defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
   use Oli.DataCase
-
   alias Oli.Delivery.Attempts.Core, as: Attempts
 
   describe "retrieve latest evaluated attempts" do
@@ -152,6 +151,25 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
         :ra4,
         :aa7
       )
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1},
+        :user1,
+        :graded_page,
+        :ra5
+      )
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 1, transformed_model: content, lifecycle_state: :evaluated},
+        :activity,
+        :ra5,
+        :aa8
+      )
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 2, transformed_model: content, lifecycle_state: :submitted},
+        :activity,
+        :ra5,
+        :aa9
+      )
+
     end
 
     test "properly identifies the latest evaluated attempt", %{
@@ -191,6 +209,38 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
       [a] = Attempts.get_latest_evaluated_activity_attempts(ra4.id)
       assert a.id == aa7.id
 
+
+
+    end
+
+    test "properly identifies the latest non-active attempt", %{
+      ungraded_page_user1_attempt1: resource_attempt1,
+      ungraded_page_user1_activity_attempt1: a1,
+      ra3: ra3,
+      ra5: ra5,
+      aa9: aa9
+    } do
+
+      # Tests the identification of evaluated attempt in the following ordering
+      # orderings of activity attempts.  The * indicates with attempt it should be
+      # identifying as 'latest'
+
+      # Verifies case:
+      # -Evaluated *
+      # -Active
+      [a] = Attempts.get_latest_non_active_activity_attempts(resource_attempt1.id)
+      assert a.id == a1.id
+
+      # Verifies the case:
+      # -Active
+      result = Attempts.get_latest_non_active_activity_attempts(ra3.id)
+      assert Enum.count(result) == 0
+
+      # Verifies the case:
+      # -Evaluated
+      # -Submitted *
+      [a] = Attempts.get_latest_non_active_activity_attempts(ra5.id)
+      assert a.id == aa9.id
 
     end
 
