@@ -111,7 +111,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
         l_value = parse_number(left)
         {r_value, r_precision} = parse_number_with_precision(right)
 
-        abs(abs(l_value) - abs(r_value)) < 0.00001 &&
+        abs(l_value - r_value) < 0.00001 &&
           check_precision(left, r_precision)
 
       true ->
