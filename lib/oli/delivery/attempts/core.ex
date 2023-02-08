@@ -615,7 +615,7 @@ defmodule Oli.Delivery.Attempts.Core do
       )
     )
   end
-
+  
   def get_latest_non_active_activity_attempts(resource_attempt_id) do
 
     query = from(
@@ -632,7 +632,6 @@ defmodule Oli.Delivery.Attempts.Core do
       )
     )
   end
-
 
   @doc """
   Retrieves the latest resource attempt for a given resource id,

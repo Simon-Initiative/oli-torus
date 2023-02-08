@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
   use Oli.DataCase
+
   alias Oli.Delivery.Attempts.Core, as: Attempts
 
   describe "retrieve latest evaluated attempts" do
@@ -169,7 +170,6 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
         :ra5,
         :aa9
       )
-
     end
 
     test "properly identifies the latest evaluated attempt", %{
@@ -208,8 +208,6 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
       # -Evaluated *
       [a] = Attempts.get_latest_evaluated_activity_attempts(ra4.id)
       assert a.id == aa7.id
-
-
 
     end
 
