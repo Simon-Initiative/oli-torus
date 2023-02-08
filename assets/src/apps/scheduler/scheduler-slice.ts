@@ -12,7 +12,7 @@ export enum ScheduleItemType {
 }
 
 export type StringDate = string;
-export type SchedulingType = 'read_by';
+export type SchedulingType = 'read_by' | 'inclass_activity';
 // Version that comes from torus
 export interface HierarchyItemSrc {
   children: number[];
@@ -26,6 +26,7 @@ export interface HierarchyItemSrc {
   numbering_index: number;
   numbering_level: number;
   manually_scheduled: boolean;
+  graded: boolean;
 }
 
 export interface HierarchyItem extends HierarchyItemSrc {
@@ -115,10 +116,32 @@ const neverScheduled = (schedule: HierarchyItem[]) => !schedule.find((i) => i.ma
 //   return false;
 // };
 
+interface UnlockPayload {
+  itemId: number;
+}
+
+interface SchedulingPayloadType {
+  itemId: number;
+  type: SchedulingType;
+}
+
 const schedulerSlice = createSlice({
   name: 'scheduler',
   initialState,
   reducers: {
+    changeScheduleType(state, action: PayloadAction<SchedulingPayloadType>) {
+      const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
+      if (mutableItem) {
+        mutableItem.scheduling_type = action.payload.type;
+        state.dirty.push(mutableItem.id);
+      }
+    },
+    unlockScheduleItem(state, action: PayloadAction<UnlockPayload>) {
+      const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
+      if (mutableItem) {
+        mutableItem.manually_scheduled = false;
+      }
+    },
     moveScheduleItem(state, action: PayloadAction<MovePayload>) {
       const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
 
@@ -158,15 +181,15 @@ const schedulerSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(scheduleAppStartup.pending, (state, action) => {
+    builder.addCase(scheduleAppStartup.pending, (state, _action) => {
       state.appLoading = true;
     });
 
-    builder.addCase(scheduleAppFlushChanges.pending, (state, action) => {
+    builder.addCase(scheduleAppFlushChanges.pending, (state, _action) => {
       state.saving = true;
     });
 
-    builder.addCase(scheduleAppFlushChanges.fulfilled, (state, action) => {
+    builder.addCase(scheduleAppFlushChanges.fulfilled, (state, _action) => {
       state.dirty = [];
       state.saving = false;
     });
@@ -195,5 +218,12 @@ const schedulerSlice = createSlice({
   },
 });
 
-export const { moveScheduleItem, resetSchedule, selectItem } = schedulerSlice.actions;
+export const {
+  moveScheduleItem,
+  resetSchedule,
+  selectItem,
+  unlockScheduleItem,
+  changeScheduleType,
+} = schedulerSlice.actions;
+
 export const schedulerSliceReducer = schedulerSlice.reducer;

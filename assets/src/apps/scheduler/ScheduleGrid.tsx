@@ -11,9 +11,8 @@ import { ScheduleItemType } from './scheduler-slice';
 interface GridProps {
   startDate: string;
   endDate: string;
-  onModification: () => void;
 }
-export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onModification }) => {
+export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate }) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
 
@@ -34,12 +33,12 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onModifi
     if (!dayGeometry) {
       return 300;
     }
-    return (dayGeometry.end.getDaysSinceEpoch() - dayGeometry.start.getDaysSinceEpoch()) * 10;
+    return (dayGeometry.end.getDaysSinceEpoch() - dayGeometry.start.getDaysSinceEpoch()) * 10 + 192;
   }, [dayGeometry]);
 
   return (
     <div style={{ minWidth }}>
-      <table className="select-none" style={{ minWidth }}>
+      <table className="select-none table-striped border-t-0" style={{ minWidth }}>
         <thead>
           <ScheduleHeaderRow
             labels={true}
@@ -51,13 +50,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onModifi
           {schedule
             .filter((item) => item.resource_type_id !== ScheduleItemType.Page)
             .map((item) => (
-              <ScheduleLine
-                onModification={onModification}
-                key={item.id}
-                indent={0}
-                item={item}
-                dayGeometry={dayGeometry}
-              />
+              <ScheduleLine key={item.id} indent={0} item={item} dayGeometry={dayGeometry} />
             ))}
         </tbody>
       </table>

@@ -13,25 +13,24 @@ import {
   moveScheduleItem,
   ScheduleItemType,
   selectItem,
+  unlockScheduleItem,
 } from './scheduler-slice';
 
 interface ScheduleLineProps {
   item: HierarchyItem;
   indent: number;
   dayGeometry: DayGeometry;
-  onModification: () => void;
 }
 
-export const ScheduleLine: React.FC<ScheduleLineProps> = ({
-  item,
-  indent,
-  dayGeometry,
-  onModification,
-}) => {
+export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeometry }) => {
   const [expanded, toggleExpanded] = useToggle(false);
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
   const schedule = useSelector(getSchedule);
+
+  const onUnlock = useCallback(() => {
+    dispatch(unlockScheduleItem({ itemId: item.id }));
+  }, [dispatch, item.id]);
 
   const onSelect = useCallback(() => {
     if (isSelected) {
@@ -43,47 +42,62 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
 
   const onChange = useCallback(
     (startDate: DateWithoutTime, endDate: DateWithoutTime) => {
-      // const newStart = leftToDate(left, dayGeometry);
-      // const newEnd = leftToDate(left + width - 1, dayGeometry);
-
-      // if (!newStart || !newEnd) {
-      //   return;
-      // }
-      // console.info('onChange', { left, width });
-      // console.info(`Start: ${item.start_date} => ${newStart.date}`);
-      // console.info(`End: ${item.end_date} => ${newEnd.date}`);
       dispatch(moveScheduleItem({ itemId: item.id, startDate, endDate }));
-      onModification();
     },
-    [dispatch, item.id, onModification],
+    [dispatch, item.id],
   );
-
-  // const onStartDrag = useCallback(() => {
-  //   //console.info('Start drag', geometry);
-  //   dispatch(selectItem(item.id));
-  // }, [dispatch, item.id]);
 
   const containerChildren = item.children
     .map((itemId) => getScheduleItem(itemId, schedule))
     .filter((item) => item?.resource_type_id === ScheduleItemType.Container) as HierarchyItem[];
+
   const expansionIcon = containerChildren.length === 0 ? null : expanded ? '-' : '+';
+  const hasPages = item.children.length != containerChildren.length;
+
+  const onStartDrag = useCallback(() => {
+    if (hasPages) {
+      dispatch(selectItem(item.id));
+    } else {
+      dispatch(selectItem(null));
+    }
+  }, [dispatch, hasPages, item.id]);
 
   const rowClass = isSelected ? 'bg-green-50' : '';
 
   return (
     <>
       <tr className={rowClass}>
-        <td className="w-1 border-r-0 cursor-pointer " onClick={toggleExpanded}>
+        <td className="w-1 border-r-0 cursor-pointer" onClick={toggleExpanded}>
           {expansionIcon}
         </td>
         <td className="w-48" style={{ paddingLeft: (1 + indent) * 10 }} onClick={onSelect}>
+          {item.manually_scheduled && (
+            <span
+              className="float-right"
+              onClick={onUnlock}
+              data-bs-toggle="tooltip"
+              title="You have manually adjusted the dates on this. Click to unlock."
+            >
+              <i className="fa fa-lock fa-2xs"></i>
+            </span>
+          )}
+          {hasPages && (
+            <span
+              className="float-right"
+              data-bs-toggle="tooltip"
+              title="View pages within this container"
+            >
+              <i className="fa fa-layer-group fa-2xs"></i>
+            </span>
+          )}
           {item.title} {item.numbering_index}
         </td>
+
         <td className="relative p-0">
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
             <DragBar
-              // onStartDrag={onStartDrag}
+              onStartDrag={onStartDrag}
               onChange={onChange}
               startDate={item.startDate}
               endDate={item.endDate}
@@ -102,7 +116,6 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
             item={child}
             indent={indent + 1}
             dayGeometry={dayGeometry}
-            onModification={onModification}
           />
         ))}
 

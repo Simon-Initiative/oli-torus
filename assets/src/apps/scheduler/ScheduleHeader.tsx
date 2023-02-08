@@ -13,7 +13,7 @@ export const ScheduleHeaderRow: React.FC<ScheduleHeaderRowProps> = ({
   dayGeometry,
 }) => {
   return (
-    <tr className="h-8">
+    <tr className="h-8 border-t-0">
       <th className="w-1 border-r-0"></th>
       <th className="w-48"></th>
       <th className="p-0 relative" ref={attachBarContainer}>

@@ -123,7 +123,7 @@ export const DragBar: React.FC<DragBarProps> = ({
     </div>
   );
 
-  const color = manual ? 'bg-sky-500' : 'bg-sky-300';
+  const color = manual ? 'bg-delivery-primary' : 'bg-delivery-primary-300';
 
   return (
     <>
@@ -151,13 +151,13 @@ export const DragBar: React.FC<DragBarProps> = ({
         >
           <div
             onMouseDown={startResize('left')}
-            className="w-0.5 inline-block h-full bg-sky-300 cursor-col-resize"
+            className="w-0.5 inline-block h-full bg-delivery-primary-300 cursor-col-resize"
           ></div>
           {children}
           {/* {barStyles.left}, {barStyles.width} */}
           <div
             onMouseDown={startResize('right')}
-            className="w-0.5 inline-block h-full bg-sky-300 cursor-col-resize"
+            className="w-0.5 inline-block h-full bg-delivery-primary-300 cursor-col-resize"
           ></div>
         </div>
       )}
