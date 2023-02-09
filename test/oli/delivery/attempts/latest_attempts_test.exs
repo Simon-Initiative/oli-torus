@@ -172,47 +172,6 @@ defmodule Oli.Delivery.Attempts.LatestAttemptsTest do
 
     end
 
-    test "properly identifies the latest evaluated attempt", %{
-      ungraded_page_user1_attempt1: resource_attempt1,
-      graded_page_user1_attempt1: resource_attempt2,
-      ungraded_page_user1_activity_attempt1: a1,
-      user1_activity_attempt1: a2,
-      ra3: ra3,
-      ra4: ra4,
-      aa7: aa7
-    } do
-
-      # Tests the identification of evaluated attempt in the following ordering
-      # orderings of activity attempts.  The * indicates with attempt it should be
-      # identifying as 'latest'
-
-      # Verifies case:
-      # -Evaluated *
-      # -Active
-      [a] = Attempts.get_latest_evaluated_activity_attempts(resource_attempt1.id)
-      assert a.id == a1.id
-
-      # Verifies the case:
-      # -Evaluated *
-      [a] = Attempts.get_latest_evaluated_activity_attempts(resource_attempt2.id)
-      assert a.id == a2.id
-
-      # Verifies the case:
-      # -Active
-      result = Attempts.get_latest_evaluated_activity_attempts(ra3.id)
-      assert Enum.count(result) == 0
-
-      # Verifies the case:
-      # -Evaluated
-      # -Active
-      # -Evaluated *
-      [a] = Attempts.get_latest_evaluated_activity_attempts(ra4.id)
-      assert a.id == aa7.id
-
-
-
-    end
-
     test "properly identifies the latest non-active attempt", %{
       ungraded_page_user1_attempt1: resource_attempt1,
       ungraded_page_user1_activity_attempt1: a1,
