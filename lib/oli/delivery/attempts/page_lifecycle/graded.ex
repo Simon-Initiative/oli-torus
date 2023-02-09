@@ -152,7 +152,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   defp finalize_activities(resource_attempt, datashop_session_id) do
 
     activity_attempts = case resource_attempt.revision do
-      %{content: %{"advancedDelivery" => true}} -> get_latest_evaluated_activity_attempts(resource_attempt.id)
+      %{content: %{"advancedDelivery" => true}} -> get_latest_non_active_activity_attempts(resource_attempt.id)
       _ -> get_latest_activity_attempts(resource_attempt.id)
     end
 
