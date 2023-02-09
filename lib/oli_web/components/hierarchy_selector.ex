@@ -92,8 +92,8 @@ defmodule OliWeb.Components.HierarchySelector do
           type="button"
           onclick={"expandElement('hierarchy-selector__item-#{item.id}')"}
         >
-          <OliWeb.Components.Icons.caret_up {...%{class: "w-4 h-4"}} />
-          <OliWeb.Components.Icons.caret_down {...%{class: "w-4 h-4"}} />
+          <i class="fa-solid fa-caret-down h-4 w-4" data-icon="caret-down" />
+          <i class="fa-solid fa-caret-up h-4 w-4" data-icon="caret-up" />
         </button>
         <Checkbox
           value={Enum.member?(@selected_values, {item.name, "#{item.id}"})}
