@@ -589,6 +589,9 @@ defmodule OliWeb.Router do
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
     post("/s/success", PaymentProviders.StripeController, :success)
     post("/s/failure", PaymentProviders.StripeController, :failure)
+
+    post("/c/create-payment-form", PaymentProviders.CashnetController, :init_form)
+    post("/c/callback", PaymentProviders.CashnetController, :callback)
   end
 
   # User State Service, instrinsic state

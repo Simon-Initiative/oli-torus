@@ -28,6 +28,9 @@ defmodule OliWeb.PaymentController do
         :stripe ->
           OliWeb.PaymentProviders.StripeController
 
+        :cashnet ->
+          OliWeb.PaymentProviders.CashnetController
+
         :none ->
           OliWeb.PaymentProviders.NoProviderController
 
