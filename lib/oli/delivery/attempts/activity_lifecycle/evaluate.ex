@@ -148,9 +148,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         Logger.debug("Out of: #{out_of}")
 
         client_evaluations = to_client_results(score, out_of, part_inputs)
-
         if scoringContext.isManuallyGraded do
-          # TODO: update part attempts?
+
+          case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
+            nil -> Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
+            activity_attempt -> update_activity_attempt(activity_attempt, %{lifecycle_state: :submitted, date_submitted: DateTime.utc_now()})
+          end
+
           {:ok, decodedResults}
         else
           case apply_client_evaluation(
