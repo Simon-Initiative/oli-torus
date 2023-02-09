@@ -614,7 +614,7 @@ defmodule Oli.Delivery.Attempts.Core do
       )
     )
   end
-  
+
   @doc """
   Retrieves the latest resource attempt for a given resource id,
   context id and user id.  If no attempts exist, returns nil.
