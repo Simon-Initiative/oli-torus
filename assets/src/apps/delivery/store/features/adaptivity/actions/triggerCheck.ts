@@ -328,28 +328,8 @@ export const triggerCheck = createAsyncThunk(
     attempt.dateEvaluated = Date.now();
 
     await dispatch(upsertActivityAttemptState({ attempt }));
-    let doesCheckResultContainsNavigationToDifferentScreen = false;
-    const actionsByType = processResults(checkResult);
-    const hasFeedback = actionsByType.feedback.length > 0;
-    const hasNavigation = actionsByType.navigation.length > 0;
-    let expectedResumeActivityId = currentActivity.id;
-    if (checkResult.length) {
-      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(checkResult[0]);
-      const [firstNavAction] = actionsByType.navigation;
-      const navTarget = firstNavAction.params.target;
-      if (
-        hasFeedback &&
-        hasNavigation &&
-        navTarget !== expectedResumeActivityId &&
-        doesFirstEventHasNavigation
-      ) {
-        doesCheckResultContainsNavigationToDifferentScreen = true;
-      }
-    }
 
-    //Even If the check result contains a wrong trap state and has a navigation to different screen, we should not create a new attempt for that screen because
-    // the student will be navigated to different screen so it does not make sense to create a new attempt for the current screen
-    if (!isCorrect && !doesCheckResultContainsNavigationToDifferentScreen) {
+    if (!isCorrect) {
       /* console.log('Incorrect, time for new attempt'); */
       const { payload: newAttempt } = await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
@@ -402,42 +382,49 @@ export const triggerCheck = createAsyncThunk(
     await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
 
     if (!isPreviewMode) {
-      if (doesCheckResultContainsNavigationToDifferentScreen) {
+      const actionsByType = processResults(checkResult);
+      const hasFeedback = actionsByType.feedback.length > 0;
+      const hasNavigation = actionsByType.navigation.length > 0;
+      let expectedResumeActivityId = currentActivity.id;
+      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(checkResult[0]);
+      if (hasFeedback && hasNavigation) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
-        switch (navTarget) {
-          case 'next':
-            const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));
-            expectedResumeActivityId = nextActivityId;
-            break;
-          default:
-            const { payload: expectedNextActivityId } = await dispatch(
-              findNextSequenceId(navTarget),
-            );
-            expectedResumeActivityId = expectedNextActivityId;
-        }
-        if (expectedResumeActivityId) {
-          const resumeTarget: ApplyStateOperation = {
-            target: `session.resume`,
-            operator: '=',
-            value: expectedResumeActivityId,
-          };
-          await applyState(resumeTarget, defaultGlobalEnv);
-          const latestSnapshot = getEnvState(defaultGlobalEnv);
+        if (navTarget !== expectedResumeActivityId && doesFirstEventHasNavigation) {
+          switch (navTarget) {
+            case 'next':
+              const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));
+              expectedResumeActivityId = nextActivityId;
+              break;
+            default:
+              const { payload: expectedNextActivityId } = await dispatch(
+                findNextSequenceId(navTarget),
+              );
+              expectedResumeActivityId = expectedNextActivityId;
+          }
+          if (expectedResumeActivityId) {
+            const resumeTarget: ApplyStateOperation = {
+              target: `session.resume`,
+              operator: '=',
+              value: expectedResumeActivityId,
+            };
+            await applyState(resumeTarget, defaultGlobalEnv);
+            const latestSnapshot = getEnvState(defaultGlobalEnv);
 
-          const latestExtrinsic = Object.keys(latestSnapshot).reduce(
-            (acc: Record<string, any>, key) => {
-              const isSessionVariable = key.startsWith('session.');
-              const isVarVariable = key.startsWith('variables.');
-              const isEverAppVariable = key.startsWith('app.');
-              if (isSessionVariable || isVarVariable || isEverAppVariable) {
-                acc[key] = latestSnapshot[key];
-              }
-              return acc;
-            },
-            {},
-          );
-          await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
+            const latestExtrinsic = Object.keys(latestSnapshot).reduce(
+              (acc: Record<string, any>, key) => {
+                const isSessionVariable = key.startsWith('session.');
+                const isVarVariable = key.startsWith('variables.');
+                const isEverAppVariable = key.startsWith('app.');
+                if (isSessionVariable || isVarVariable || isEverAppVariable) {
+                  acc[key] = latestSnapshot[key];
+                }
+                return acc;
+              },
+              {},
+            );
+            await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
+          }
         }
       }
       // update the server with the latest changes
