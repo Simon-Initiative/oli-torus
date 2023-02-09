@@ -1,11 +1,18 @@
 import { DateWithoutTime } from 'epoq';
+
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToggle } from '../../components/hooks/useToggle';
 import { DayGeometry } from './date-utils';
 import { DragBar } from './DragBar';
-import { getSchedule, getSelectedId } from './schedule-selectors';
+import { PageScheduleLine } from './PageScheduleLine';
+import {
+  getSchedule,
+  getSelectedId,
+  shouldDisplayCurriculumItemNumbering,
+} from './schedule-selectors';
 import { ScheduleHeader } from './ScheduleHeader';
+
 // import { SchedulePlaceholder } from './SchedulePlaceholder';
 import {
   getScheduleItem,
@@ -27,6 +34,7 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
   const schedule = useSelector(getSchedule);
+  const showNumbers = useSelector(shouldDisplayCurriculumItemNumbering);
 
   const onUnlock = useCallback(() => {
     dispatch(unlockScheduleItem({ itemId: item.id }));
@@ -51,7 +59,13 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
     .map((itemId) => getScheduleItem(itemId, schedule))
     .filter((item) => item?.resource_type_id === ScheduleItemType.Container) as HierarchyItem[];
 
-  const expansionIcon = containerChildren.length === 0 ? null : expanded ? '-' : '+';
+  const pageChildren = item.children
+    .map((itemId) => getScheduleItem(itemId, schedule))
+    .filter((item) => item?.resource_type_id === ScheduleItemType.Page) as HierarchyItem[];
+
+  //const expansionIcon = containerChildren.length === 0 ? null : expanded ? '-' : '+';
+  const expansionIcon = item.children.length === 0 ? null : expanded ? '-' : '+';
+
   const hasPages = item.children.length != containerChildren.length;
 
   const onStartDrag = useCallback(() => {
@@ -90,7 +104,7 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
               <i className="fa fa-layer-group fa-2xs"></i>
             </span>
           )}
-          {item.title} {item.numbering_index}
+          {item.title} {showNumbers ? item.numbering_index : ''}
         </td>
 
         <td className="relative p-0">
@@ -112,6 +126,16 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
       {expanded &&
         containerChildren.map((child) => (
           <ScheduleLine
+            key={child?.resource_id}
+            item={child}
+            indent={indent + 1}
+            dayGeometry={dayGeometry}
+          />
+        ))}
+
+      {expanded &&
+        pageChildren.map((child) => (
+          <PageScheduleLine
             key={child?.resource_id}
             item={child}
             indent={indent + 1}

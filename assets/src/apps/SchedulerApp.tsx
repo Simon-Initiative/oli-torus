@@ -25,6 +25,7 @@ const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
         title={title}
         section_slug={section_slug}
         display_curriculum_item_numbering={display_curriculum_item_numbering}
+        wizard_mode={false} // TODO - set this from torus
       />
     </Provider>
   ),

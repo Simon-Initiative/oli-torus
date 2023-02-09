@@ -56,20 +56,22 @@ export const resetScheduleItem = (
     const child = getScheduleItem(childId, schedule);
 
     // We want to round to full days, but we also want to distribute the leftover days evenly across the items.
-    let length = Math.floor(itemLength);
+    let length = Math.max(1, Math.floor(itemLength));
     leftover += itemLength % 1;
     if (leftover >= 1) {
       leftover -= 1;
       length += 1;
     }
 
-    const [start, end] = findStartEnd(startDay, length, weekdaysToSchedule);
+    const [calculatedStart, calculatedEnd] = findStartEnd(startDay, length, weekdaysToSchedule);
 
     if (child && (resetManual || !child?.manually_scheduled)) {
-      child.startDate = child.resource_type_id === ScheduleItemType.Container ? start : null;
-      child.endDate = end;
-      resetScheduleItem(child, start, child.endDate, schedule);
+      child.startDate =
+        child.resource_type_id === ScheduleItemType.Container ? calculatedStart : null;
+      child.endDate =
+        calculatedEnd.getDaysSinceEpoch() <= end.getDaysSinceEpoch() ? calculatedEnd : end;
+      resetScheduleItem(child, calculatedStart, child.endDate, schedule);
     }
-    startDay = end.getDaysSinceEpoch() + 1;
+    startDay = calculatedEnd.getDaysSinceEpoch() + 1;
   }
 };
