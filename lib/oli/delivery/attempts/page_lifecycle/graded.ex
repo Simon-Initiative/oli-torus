@@ -160,7 +160,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       # some activities will finalize themselves ahead of a graded page
       # submission.  so we only submit those that are still yet to be finalized, and
       # that are scoreable
-      if a.lifecycle_state == :active and a.scoreable do
+      if a.lifecycle_state != :evaluated and a.scoreable do
         Evaluate.evaluate_from_stored_input(a.attempt_guid, datashop_session_id)
       else
         []
