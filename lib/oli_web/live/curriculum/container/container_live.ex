@@ -39,6 +39,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Resources.Revision
   alias OliWeb.Common.SessionContext
   alias Oli.Resources
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -51,6 +52,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     container_slug = Map.get(params, "container_slug")
 
     project = Course.get_project_by_slug(project_slug)
+    project_hierarchy = AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
 
     cond do
       # Explicitly routing to root_container, strip off the container param
@@ -97,6 +99,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            rollup: rollup,
            container: container,
            project: project,
+           project_hierarchy: project_hierarchy,
            subscriptions: subscriptions,
            author: author,
            view: view_pref,
@@ -221,7 +224,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
-    %{container: container, project: project} =
+    %{container: container, project: project, project_hierarchy: project_hierarchy} =
       socket.assigns
 
     revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
@@ -232,6 +235,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
       revision: revision,
       changeset: Resources.change_revision(revision),
       project: project,
+      project_hierarchy: project_hierarchy,
       validate: "validate-options",
       submit: "save-options"
     }

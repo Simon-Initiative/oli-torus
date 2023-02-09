@@ -5,6 +5,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
 
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources.ExplanationStrategy
+  alias OliWeb.Components.HierarchySelector
 
   alias Surface.Components.Form
   alias Surface.Components.Form.{TextInput, Label, Field, Select, Inputs, NumberInput}
@@ -13,11 +14,13 @@ defmodule OliWeb.Curriculum.OptionsModal do
   prop revision, :struct, required: true
   prop changeset, :struct, required: true
   prop project, :struct, required: true
+  prop project_hierarchy, :struct, required: true
   prop validate, :event, required: true
   prop submit, :event, required: true
 
   data mounted, :boolean, default: false
   data attempt_options, :list, default: []
+  data selected_resources, :list, default: []
 
   def update(assigns, socket) do
     assigns =
@@ -40,6 +43,10 @@ defmodule OliWeb.Curriculum.OptionsModal do
           "50": 50,
           "100": 100,
           Unlimited: 0
+        )
+        |> Map.put(
+          :selected_resources,
+          get_selected_related_resources(assigns.revision, assigns.project_hierarchy)
         )
         |> Map.put(
           :mounted,
@@ -166,6 +173,35 @@ defmodule OliWeb.Curriculum.OptionsModal do
                   </Field>
                   <small id="retakeMode" class="form-text text-muted">The retake mode determines how subsequent attempts are presented to students.</small>
                 </div>
+
+                <div class="form-group">
+                  <Label>Purpose</Label>
+                  <Field name={:purpose}>
+                    <Select
+                      options={[
+                        {"Foundation", :foundation},
+                        {"Exploration", :application}
+                      ]}
+                      opts={
+                        aria_describedby: "purpose",
+                        placeholder: "Purpose",
+                        class: "form-control custom-select"
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div class="form-group">
+                  <Label>Related Resources</Label>
+                  <Field name={:relates_to}>
+                    <HierarchySelector
+                      disabled={is_foundation(@changeset, @revision)}
+                      id="related-resources-selector"
+                      items={@project_hierarchy.children}
+                      initial_values={@selected_resources}
+                    />
+                  </Field>
+                </div>
               {/if}
             </div>
             <div class="modal-footer">
@@ -186,11 +222,39 @@ defmodule OliWeb.Curriculum.OptionsModal do
     end
   end
 
+  defp is_foundation(changeset, revision) do
+    if !is_nil(changeset.changes |> Map.get(:purpose)) do
+      changeset.changes.purpose == :foundation
+    else
+      revision.purpose == :foundation
+    end
+  end
+
   defp is_disabled(changeset, revision) do
     if !is_nil(changeset.changes[:graded]) do
       !changeset.changes[:graded]
     else
       !revision.graded
     end
+  end
+
+  defp get_selected_related_resources(revision, project_hierarchy) do
+    related_resources = revision.relates_to
+    flatten_project_hierarchy = flatten_project_hierarchy(project_hierarchy)
+
+    Enum.reduce(flatten_project_hierarchy, [], fn {name, id}, acc ->
+      if Enum.member?(related_resources, id) do
+        [{name, "#{id}"}] ++ acc
+      else
+        acc
+      end
+    end)
+  end
+
+  defp flatten_project_hierarchy(%{id: id, name: name, children: children}) do
+    children
+    |> Enum.map(&flatten_project_hierarchy/1)
+    |> List.flatten()
+    |> Enum.concat([{name, id}])
   end
 end
