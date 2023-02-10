@@ -31,7 +31,6 @@ export const HierarchySelector = {
     const element = this.el as HTMLDivElement;
     const hiddenSelect = element.querySelector('select[hidden]') as HTMLSelectElement;
     hiddenSelect.querySelectorAll('option').forEach((option) => {
-      console.log(option);
       option.selected = true;
     });
   },

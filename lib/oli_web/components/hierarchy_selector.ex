@@ -126,13 +126,8 @@ defmodule OliWeb.Components.HierarchySelector do
   end
 
   def handle_event("expand", _params, socket) do
-    if socket.assigns.expanded do
-      socket = assign(socket, expanded: false)
-      {:noreply, socket}
-    else
-      socket = assign(socket, expanded: true)
-      {:noreply, socket}
-    end
+    socket = assign(socket, expanded: not socket.assigns.expanded)
+    {:noreply, socket}
   end
 
   def handle_event("select", %{"item" => item} = params, socket) do
@@ -162,8 +157,6 @@ defmodule OliWeb.Components.HierarchySelector do
       {:noreply, socket}
     end
   end
-
-  defp input_name(form_or_name, field)
 
   defp input_name(%{name: nil}, field), do: to_string(field)
 
