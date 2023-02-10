@@ -333,7 +333,8 @@ export const triggerCheck = createAsyncThunk(
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
     let expectedResumeActivityId = currentActivity.id;
-    if (checkResult.length) {
+    //check if the check result have any navigation else don't do anything
+    if (checkResult.length && hasNavigation) {
       const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(checkResult[0]);
       const [firstNavAction] = actionsByType.navigation;
       const navTarget = firstNavAction.params.target;
