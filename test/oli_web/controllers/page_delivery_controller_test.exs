@@ -11,12 +11,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
 
-
   describe "page_delivery_controller build_hierarchy" do
     setup [:setup_lti_session]
 
     test "properly converts a deeply nested  student access by an enrolled student", %{} do
-
       # Defines a hierachry of:
 
       # Page one
@@ -142,7 +140,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       }
 
       # Build the hierarchy and check the correctness of the deeply nested containers
-      hierarchy = OliWeb.PageDeliveryController.build_hierarchy_from_top_level(["2", "3", "5", "10429", "10430"], previous_next_index)
+      hierarchy =
+        OliWeb.PageDeliveryController.build_hierarchy_from_top_level(
+          ["2", "3", "5", "10429", "10430"],
+          previous_next_index
+        )
+
       assert Enum.count(hierarchy) == 5
 
       unit_two = Enum.at(hierarchy, 4)
@@ -159,7 +162,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       deep_page = nested_section["children"] |> Enum.at(0)
       assert deep_page["title"] == "Deep Page"
-
     end
   end
 
@@ -175,7 +177,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
@@ -226,7 +234,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Not authorized"
     end
@@ -243,7 +257,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
           requires_enrollment: true
         })
 
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Not authorized"
     end
@@ -262,7 +284,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 302) =~
                "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
@@ -283,7 +313,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
@@ -688,7 +726,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Course Overview"
       assert html_response(conn, 200) =~ "Manage Section"
@@ -764,7 +808,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       # redirected to enroll page
       assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
@@ -778,13 +828,25 @@ defmodule OliWeb.PageDeliveryControllerTest do
           "g-recaptcha-response" => "some-valid-capcha-data"
         })
 
-      assert html_response(conn, 302) =~ Routes.page_delivery_path(conn, :index, section.slug)
+      assert html_response(conn, 302) =~
+               Routes.live_path(
+                 OliWeb.Endpoint,
+                 OliWeb.Delivery.InstructorDashboard.ContentLive,
+                 section.slug
+               )
+
       user = Pow.Plug.current_user(conn)
 
       # make the same request with a user logged in
       conn =
         recycle(conn)
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Course Overview"
       assert user.sub != nil
@@ -794,7 +856,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       same_user = Pow.Plug.current_user(conn)
 
@@ -817,7 +885,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
         Plug.Test.init_test_session(conn, lti_session: nil)
         |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
 
@@ -829,13 +905,29 @@ defmodule OliWeb.PageDeliveryControllerTest do
           OliWeb.Pow.PowHelpers.get_pow_config(:user)
         )
 
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
 
     test "redirects to enroll page if no user is logged in", %{conn: conn, section: section} do
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
     end
@@ -866,7 +958,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
           OliWeb.Pow.PowHelpers.get_pow_config(:user)
         )
 
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
@@ -887,7 +987,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 302) =~
                "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
@@ -908,7 +1014,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Not authorized"
     end
@@ -932,7 +1044,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 302) =~
                "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
@@ -963,7 +1081,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
         )
 
       # Check visibility in the section overview
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       response = html_response(conn, 200)
 
@@ -1007,7 +1133,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
         )
 
       # Check visibility in the section overview
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       response = html_response(conn, 200)
 
@@ -1158,7 +1292,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       section: section
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive_preview,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 403) =~ "Not authorized"
     end
@@ -1196,9 +1338,22 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       section: section
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive_preview,
+            section.slug
+          )
+        )
 
-      assert redirected_to(conn) == Routes.page_delivery_path(conn, :index, section.slug)
+      assert redirected_to(conn) ==
+               Routes.live_path(
+                 OliWeb.Endpoint,
+                 OliWeb.Delivery.InstructorDashboard.ContentLive,
+                 section.slug
+               )
     end
 
     test "index preview redirects ok when section slug ends with 'preview'", %{
@@ -1206,9 +1361,23 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       {:ok, updated_section} = Sections.update_section(section, %{slug: "test_slug_preview"})
-      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, updated_section.slug))
 
-      assert redirected_to(conn) == Routes.page_delivery_path(conn, :index, updated_section.slug)
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive_preview,
+            updated_section.slug
+          )
+        )
+
+      assert redirected_to(conn) ==
+               Routes.live_path(
+                 OliWeb.Endpoint,
+                 OliWeb.Delivery.InstructorDashboard.ContentLive,
+                 updated_section.slug
+               )
     end
 
     test "container preview redirects ok", %{
@@ -1246,7 +1415,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       section: section
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive_preview,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
@@ -1255,7 +1432,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       section: section
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+      conn =
+        get(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive_preview,
+            section.slug
+          )
+        )
 
       refute html_response(conn, 200) =~ "Manage Section"
     end

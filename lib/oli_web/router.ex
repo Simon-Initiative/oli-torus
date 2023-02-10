@@ -742,7 +742,7 @@ defmodule OliWeb.Router do
   end
 
   ### Sections - Student Course Delivery
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
       :require_section,
@@ -752,30 +752,44 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug/overview", PageDeliveryController, :index)
-    get("/:section_slug/container/:revision_slug", PageDeliveryController, :container)
-    get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
-    get("/:section_slug/page/:revision_slug/page/:page", PageDeliveryController, :page)
-    get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
+    get("/overview", PageDeliveryController, :index)
+
+    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
+    live("/students", Delivery.InstructorDashboard.StudentsLive)
+    live("/content", Delivery.InstructorDashboard.ContentLive)
+    live("/discussions", Delivery.InstructorDashboard.DiscussionLive)
+
+    get("/container/:revision_slug", PageDeliveryController, :container)
+    get("/page/:revision_slug", PageDeliveryController, :page)
+    get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
+    get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
     get(
-      "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review",
+      "/page/:revision_slug/attempt/:attempt_guid/review",
       PageDeliveryController,
       :review_attempt
     )
   end
 
   ### Sections - Preview
-  scope "/sections/:section_slug/preview/", OliWeb do
+  scope "/sections/:section_slug/preview", OliWeb do
     pipe_through([
       :browser,
       :require_section,
       :authorize_section_preview,
-      :delivery_and_admin,
+      :delivery_layout,
       :pow_email_layout
     ])
 
-    get("/overview", PageDeliveryController, :index_preview)
+    # Redirect deprecated routes
+    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
+    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
+
+    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive, :preview)
+    live("/students", Delivery.InstructorDashboard.StudentsLive, :preview)
+    live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
+    live("/discussions", Delivery.InstructorDashboard.DiscussionLive, :preview)
+
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)

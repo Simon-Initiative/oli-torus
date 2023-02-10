@@ -9,7 +9,7 @@ defmodule OliWeb.Components.Delivery.CourseContentPanel do
 
   def course_content_panel(assigns) do
     ~H"""
-      <div class="container mx-auto px-10 mt-3 mb-5">
+      <div class="container mx-auto mt-3 mb-5">
         <div class="bg-white dark:bg-gray-800 p-8 shadow">
           <h1><%= @title %></h1>
           <p class="text-secondary"><%= @description %></p>

@@ -86,7 +86,7 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
-        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
+        <ReadOnly label="URL" value={Routes.live_url(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.ContentLive, @section.slug)}/>
         {#unless is_nil(deployment)}
           <ReadOnly
             label="Institution"
@@ -106,7 +106,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group label="Curriculum" description="Manage the content delivered to students">
         <ul class="link-list">
         <li>
-          <a target="_blank" href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>
+          <a target="_blank" href={Routes.content_path(OliWeb.Endpoint, :preview, @section.slug)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>
         </li>
         <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)} class={"btn btn-link"} target="_blank"><span>Enter Course as a Student</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)} class={"btn btn-link"}>Customize Curriculum</a></li>

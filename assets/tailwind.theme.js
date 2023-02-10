@@ -2,9 +2,6 @@
 const colors = require('tailwindcss/colors');
 
 module.exports = {
-  fontFamily: {
-    sans: ['Open Sans', 'sans-serif'],
-  },
   extend: {
     colors: {
       primary: colors.blue['500'],
@@ -89,6 +86,7 @@ module.exports = {
         },
         header: {
           DEFAULT: '#222439',
+          600: '#52526b',
           700: '#3b3b4d',
           800: '#2a2a3e',
           dark: {
@@ -109,6 +107,9 @@ module.exports = {
           900: '#1a0746',
         },
       },
+    },
+    fontFamily: {
+      sans: ['Open Sans', 'sans-serif'],
     },
     forms: {
       borderRadius: 4,

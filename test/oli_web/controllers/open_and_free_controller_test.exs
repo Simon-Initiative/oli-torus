@@ -129,7 +129,13 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       conn =
         conn
         |> recycle()
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.ContentLive,
+            section.slug
+          )
+        )
 
       assert html_response(conn, 302) =~ "/sections/#{section.slug}/enroll"
 
@@ -211,7 +217,11 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         end_date: DateTime.add(DateTime.utc_now(), 3600)
       })
 
-    insert(:section_project_publication, %{project: project, section: section, publication: publication})
+    insert(:section_project_publication, %{
+      project: project,
+      section: section,
+      publication: publication
+    })
 
     %{
       section: section,
