@@ -33,7 +33,19 @@ defmodule OliWeb.Components.HierarchySelector do
         assigns
         |> Map.put(
           :selected_values,
-          assigns.initial_values
+          Map.get(assigns, :initial_values, [])
+        )
+        |> Map.put(
+          :disabled,
+          Map.get(assigns, :disabled, false)
+        )
+        |> Map.put(
+          :form,
+          Map.get(assigns, :form, "")
+        )
+        |> Map.put(
+          :field,
+          Map.get(assigns, :field, "")
         )
         |> Map.put(
           :mounted,
@@ -67,7 +79,7 @@ defmodule OliWeb.Components.HierarchySelector do
             <option selected value={item_id} />
           {/for}
         </select>
-        <div data-active={"#{@expanded}"} class="hierarchy-selector__list" phx-update="ignore">
+        <div id={"hierarchy-selector__list-#{@id}"} data-active={"#{@expanded}"} class="hierarchy-selector__list" phx-update="ignore">
           {#for item <- @items}
             {render_resource_option(assigns, item, 0)}
           {/for}
@@ -99,6 +111,7 @@ defmodule OliWeb.Components.HierarchySelector do
           value={Enum.member?(@selected_values, {item.name, "#{item.id}"})}
           opts={["phx-target": @myself, "phx-value-item": "#{item.name}-#{item.id}"]}
           click="select"
+          id={"hierarchy-selector__checkbox-#{item.id}"}
           class="form-check-input"
         />
         <label>{item.name}</label>
