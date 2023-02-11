@@ -1,4 +1,9 @@
 defmodule Oli.Delivery.Sections.Scheduling do
+
+  @moduledoc """
+  Provides the read and write operations for managing the "soft-schedule" for a course section.
+  """
+
   import Ecto.Query, warn: false
 
   alias Oli.Publishing.PublishedResource
@@ -26,7 +31,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
       |> where([sr, s, spp, pr, rev], sr.project_id == spp.project_id and s.id == ^section_id and pr.resource_id == sr.resource_id and (rev.resource_type_id == ^container_type_id or rev.resource_type_id == ^page_type_id))
       |> select_merge([_sr, _s, _spp, _pr, rev], %{
         title: rev.title,
-        resource_type_id: rev.resource_type_id
+        resource_type_id: rev.resource_type_id,
+        graded: rev.graded
       })
 
     Repo.all(query)
