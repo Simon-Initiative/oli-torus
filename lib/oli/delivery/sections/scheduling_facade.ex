@@ -59,7 +59,6 @@ defmodule Oli.Delivery.Sections.SchedulingFacade do
   """
   def update(%Section{id: section_id} = section, updates, timezone) do
 
-
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     sr_map = Scheduling.retrieve(section)

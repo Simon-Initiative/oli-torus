@@ -50,6 +50,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   updated - or a {:error, error} tuple.
   """
   def update(%Section{id: section_id}, updates) do
+
     if is_valid_update?(updates) do
       case build_values_params(updates) do
         {[], []} ->

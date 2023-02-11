@@ -5,8 +5,8 @@ defmodule OliWeb.Api.SchedulingController do
   """
 
   alias OpenApiSpex.Schema
-
-  alias Oli.Delivery.Sections.Scheduling
+  alias OliWeb.Common.SessionContext
+  alias Oli.Delivery.Sections.SchedulingFacade
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
 
@@ -127,7 +127,7 @@ defmodule OliWeb.Api.SchedulingController do
 
     if can_access_section?(conn, section) do
       resources =
-        Scheduling.retrieve(section)
+        SchedulingFacade.retrieve(section)
         |> serialize_resource()
 
       json(conn, %{"result" => "success", "resources" => resources})
@@ -158,8 +158,10 @@ defmodule OliWeb.Api.SchedulingController do
   def update(conn, %{"updates" => updates}) do
     section = conn.assigns.section
 
+    context = SessionContext.init(conn)
+
     if can_access_section?(conn, section) do
-      case Scheduling.update(section, updates) do
+      case SchedulingFacade.update(section, updates, context.local_tz) do
         {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
         {:error, :missing_update_parameters} ->  error(conn, 400, "Missing update parameters")
         e -> error(conn, 500, e)
