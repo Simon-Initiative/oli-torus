@@ -4,5 +4,7 @@
   }
   .modal-footer {
     border-top: none;
+    display: flex;
+    gap: 4px;
   }
 }

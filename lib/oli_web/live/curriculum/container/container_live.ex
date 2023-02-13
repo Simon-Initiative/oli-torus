@@ -3,7 +3,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
   LiveView implementation of a container editor.
   """
 
-  use OliWeb, :live_view
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  # use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [value_or: 2]
@@ -38,6 +39,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Resources.Revision
   alias OliWeb.Common.SessionContext
   alias Oli.Resources
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -50,6 +52,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     container_slug = Map.get(params, "container_slug")
 
     project = Course.get_project_by_slug(project_slug)
+    project_hierarchy = AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
 
     cond do
       # Explicitly routing to root_container, strip off the container param
@@ -86,21 +89,28 @@ defmodule OliWeb.Curriculum.ContainerLive do
            children: children,
            active: :curriculum,
            breadcrumbs:
-             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver, project.customizations),
+             Breadcrumb.trail_to(
+               project_slug,
+               container.slug,
+               Oli.Publishing.AuthoringResolver,
+               project.customizations
+             ),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
            project: project,
+           project_hierarchy: project_hierarchy,
            subscriptions: subscriptions,
            author: author,
            view: view_pref,
            selected: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(
-            Oli.Publishing.AuthoringResolver,
-            project_slug,
-            project.customizations
-            ),
+           numberings:
+             Numbering.number_full_tree(
+               Oli.Publishing.AuthoringResolver,
+               project_slug,
+               project.customizations
+             ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title
          )}
@@ -214,7 +224,9 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
-    %{container: container, project: project} = socket.assigns
+    %{container: container, project: project, project_hierarchy: project_hierarchy} =
+      socket.assigns
+
     revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
 
     modal_assigns = %{
@@ -222,12 +234,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
       redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: revision,
       changeset: Resources.change_revision(revision),
-      project: project
+      project: project,
+      project_hierarchy: project_hierarchy,
+      validate: "validate-options",
+      submit: "save-options"
     }
 
     modal = fn assigns ->
-      ~H"""
-        <OptionsModal.render {@modal_assigns} />
+      ~F"""
+      <OptionsModal {...@modal_assigns} />
       """
     end
 
@@ -445,11 +460,12 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       numberings: Numbering.number_full_tree(
-        Oli.Publishing.AuthoringResolver,
-        socket.assigns.project.slug,
-        socket.assigns.project.customizations
-        )
+       numberings:
+         Numbering.number_full_tree(
+           Oli.Publishing.AuthoringResolver,
+           socket.assigns.project.slug,
+           socket.assigns.project.customizations
+         )
      )}
   end
 
@@ -557,16 +573,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
            socket.assigns.project,
            socket.assigns.numberings
          ) do
-
       {:ok, _} ->
-
         {:noreply,
          assign(socket,
-           numberings: Numbering.number_full_tree(
-            Oli.Publishing.AuthoringResolver,
-            socket.assigns.project.slug,
-            socket.assigns.project.customizations
-            )
+           numberings:
+             Numbering.number_full_tree(
+               Oli.Publishing.AuthoringResolver,
+               socket.assigns.project.slug,
+               socket.assigns.project.customizations
+             )
          )}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
@@ -729,10 +744,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
         container: revision,
         children: children,
         rollup: rollup,
-        numberings: Numbering.number_full_tree(
-          Oli.Publishing.AuthoringResolver,
-          socket.assigns.project.slug,
-          socket.assigns.project.customizations
+        numberings:
+          Numbering.number_full_tree(
+            Oli.Publishing.AuthoringResolver,
+            socket.assigns.project.slug,
+            socket.assigns.project.customizations
           )
       )
     else
