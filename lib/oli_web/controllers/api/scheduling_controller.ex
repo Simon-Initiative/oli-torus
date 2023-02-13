@@ -42,8 +42,8 @@ defmodule OliWeb.Api.SchedulingController do
           %{
             "id" => 2,
             "start_date" => nil,
-            "end_date" => "2023-03-29",
-            "scheduling_type" => "read_by"
+            "end_date" => "2023-03-29 11:20:02",
+            "scheduling_type" => "due_by"
           }
         ]
       }
