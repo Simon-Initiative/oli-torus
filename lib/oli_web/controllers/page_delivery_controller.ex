@@ -69,6 +69,40 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def exploration(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case section
+           |> Oli.Repo.preload([:base_project, :root_section_resource]) do
+        nil ->
+          render(conn, "error.html")
+
+        section ->
+          render(conn, "exploration.html",
+            title: section.title,
+            description: section.description,
+            section_slug: section_slug,
+            hierarchy: build_hierarchy(section),
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+            preview_mode: false,
+            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+          )
+      end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
   def container(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     author = conn.assigns.current_author
@@ -439,6 +473,40 @@ defmodule OliWeb.PageDeliveryController do
 
   # ----------------------------------------------------------
   # PREVIEW
+
+  def index_preview(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "index.html",
+      title: section.title,
+      description: section.description,
+      section_slug: section_slug,
+      hierarchy: build_hierarchy(section),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
+    )
+  end
+
+  def exploration_preview(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "exploration.html",
+      title: section.title,
+      description: section.description,
+      section_slug: section_slug,
+      hierarchy: build_hierarchy(section),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+    )
+  end
 
   def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     conn
