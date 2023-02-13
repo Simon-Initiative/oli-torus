@@ -26,7 +26,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   @spec navbar(any) :: Phoenix.LiveView.Rendered.t()
   def navbar(assigns) do
     ~H"""
-      <nav class="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
+      <nav class="flex flex-col w-full z-40 lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
         <div class="w-full">
           <a class="block w-[200px] lg:mb-14 mx-auto" href={
           case assigns[:logo_link] do

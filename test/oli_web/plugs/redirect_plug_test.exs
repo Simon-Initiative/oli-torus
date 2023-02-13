@@ -2,7 +2,7 @@ defmodule OliWeb.Plugs.RedirectTest do
   # use ExUnit.Case, async: true
   use ExUnit.Case
 
-  alias Oli.Plugs.Redirect
+  alias OliWeb.Plugs.Redirect
 
   defmodule Router do
     use Phoenix.Router
@@ -11,6 +11,7 @@ defmodule OliWeb.Plugs.RedirectTest do
     get "/exceptional", Redirect, []
     get "/bespin", Redirect, external: "https://duckduckgo.com/"
     get "/hoth", Redirect, external: "https://duckduckgo.com/?q=hoth&ia=images&iax=1"
+    get "/planet/:name", Redirect, to: "/redirected/planet/:name"
   end
 
   test "an exception is raised when `to` or `external` isn't defined" do
@@ -51,6 +52,12 @@ defmodule OliWeb.Plugs.RedirectTest do
     assert_redirected_to(conn, "https://duckduckgo.com/?q=endor&ia=images&iax=1")
   end
 
+  test "route redirected to internal route with path params" do
+    conn = call(Router, :get, "/planet/anaxes")
+
+    assert_redirected_to(conn, "/redirected/planet/anaxes")
+  end
+
   defp call(router, verb, path) do
     verb
     |> Plug.Test.conn(path)
@@ -66,9 +73,6 @@ defmodule OliWeb.Plugs.RedirectTest do
 
     expected_uri = URI.parse(expected_url)
 
-    IO.inspect(actual_uri, label: "actual_uri")
-    IO.inspect(expected_uri, label: "expected_uri")
-
     assert conn.status == 302
     assert actual_uri.scheme == expected_uri.scheme
     assert actual_uri.host == expected_uri.host
@@ -76,9 +80,12 @@ defmodule OliWeb.Plugs.RedirectTest do
 
     if actual_uri.query do
       assert Map.equal?(
-               URI.decode_query(actual_uri.query),
-               URI.decode_query(expected_uri.query)
+               safe_decode_query(actual_uri.query),
+               safe_decode_query(expected_uri.query)
              )
     end
   end
+
+  defp safe_decode_query(nil), do: %{}
+  defp safe_decode_query(query), do: URI.decode_query(query)
 end

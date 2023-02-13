@@ -1,13 +1,13 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard do
   use Phoenix.Component
 
-  import OliWeb.Components.Delivery.Utils
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Delivery.CourseContentPanel
+  alias OliWeb.Common.SessionContext
 
   defmodule PriorityAction do
     @enforce_keys [:type, :title, :description, :action_link]
@@ -33,8 +33,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col">
-        <.header current_user={@current_user} preview_mode={@preview_mode} logo_link={@logo_link} />
-        <.section_details_header />
+        <.header context={@context} current_user={@current_user} section_slug={@section_slug} preview_mode={@preview_mode} />
+        <.section_details_header title={@title}/>
 
         <div class="flex-1 flex flex-col">
 
@@ -57,11 +57,76 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
+  defp path_for(name, section_slug, _preview_mode = true) do
+    case name do
+      :learning_objectives ->
+        Routes.learning_objectives_path(
+          OliWeb.Endpoint,
+          :preview,
+          section_slug
+        )
+
+      :students ->
+        Routes.students_path(
+          OliWeb.Endpoint,
+          :preview,
+          section_slug
+        )
+
+      :content ->
+        Routes.content_path(
+          OliWeb.Endpoint,
+          :preview,
+          section_slug
+        )
+
+      :discussion ->
+        Routes.discussion_path(
+          OliWeb.Endpoint,
+          :preview,
+          section_slug
+        )
+    end
+  end
+
+  defp path_for(name, section_slug, _preview_mode = false) do
+    case name do
+      :learning_objectives ->
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
+          section_slug
+        )
+
+      :students ->
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.StudentsLive,
+          section_slug
+        )
+
+      :content ->
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.ContentLive,
+          section_slug
+        )
+
+      :discussion ->
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.DiscussionLive,
+          section_slug
+        )
+    end
+  end
+
   attr :active_tab, :atom,
     required: true,
     values: [:learning_objectives, :students, :content, :discussion]
 
   attr :section_slug, :string, required: true
+  attr :preview_mode, :boolean, required: true
 
   def tabs(assigns) do
     ~H"""
@@ -70,10 +135,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           role="tablist">
 
           <%= for {label, href, badge, active} <- [
-            {"Learning Objectives", Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive, @section_slug), nil, is_active_tab?(:learning_objectives, @active_tab)},
-            {"Students", Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.StudentsLive, @section_slug), 3, is_active_tab?(:students, @active_tab)},
-            {"Modules", Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.ContentLive, @section_slug), 2, is_active_tab?(:content, @active_tab)},
-            {"Discussion Activity", Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.DiscussionLive, @section_slug), 7, is_active_tab?(:discussion, @active_tab)},
+            {"Learning Objectives", path_for(:learning_objectives, @section_slug, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
+            {"Students", path_for(:students, @section_slug, @preview_mode), 3, is_active_tab?(:students, @active_tab)},
+            {"Modules", path_for(:content, @section_slug, @preview_mode), 2, is_active_tab?(:content, @active_tab)},
+            {"Discussion Activity", path_for(:discussion, @section_slug, @preview_mode), 7, is_active_tab?(:discussion, @active_tab)},
           ] do %>
             <li class="nav-item" role="presentation">
               <a href={href}
@@ -104,30 +169,32 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
+  defp logo_link(section_slug, preview_mode) do
+    if preview_mode do
+      Routes.content_path(OliWeb.Endpoint, :preview, section_slug)
+    else
+      Routes.page_delivery_path(OliWeb.Endpoint, :index, section_slug)
+    end
+  end
+
+  attr :section_slug, :string, required: true
+  attr :context, SessionContext
   attr :current_user, User
   attr :preview_mode, :boolean, default: false
-  attr :logo_link, :string
 
   def header(assigns) do
-    IO.inspect(assigns[:logo_link], label: "logo_link")
-
     ~H"""
       <div class="w-full bg-delivery-header text-white border-b border-slate-600">
         <div class="container mx-auto py-2 flex flex-row justify-between">
           <div class="flex-1 flex items-center">
-            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={case assigns[:logo_link] do
-              nil ->
-                logo_link_path(assigns)
-              logo_link ->
-                logo_link
-              end}>
+            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section_slug, @preview_mode)}>
               <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
             </a>
           </div>
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu current_user={@current_user} />
+            <UserAccountMenu.menu context={@context} current_user={@current_user} />
           <% end %>
           <div class="flex items-center border-l border-slate-300">
             <button
@@ -151,13 +218,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
+  attr :title, :string, required: true
+
   def section_details_header(assigns) do
     ~H"""
     <div class="w-full bg-delivery-header text-white py-8">
       <div class="container mx-auto flex flex-row justify-between">
         <div class="flex-1 flex items-center text-[1.5em]">
           <div class="font-bold text-slate-300">
-            Chemistry 101
+            <%= @title %>
           </div>
           <div class="border-l border-white ml-4 pl-4">
             Section 2360
@@ -232,7 +301,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def learning_objectives(assigns) do
     ~H"""
-      <.tabs active_tab={:learning_objectives} section_slug={@section_slug} />
+      <.tabs active_tab={:learning_objectives} section_slug={@section_slug} preview_mode={@preview_mode} />
 
       TODO: Learning Objectives
     """
@@ -240,7 +309,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def students(assigns) do
     ~H"""
-      <.tabs active_tab={:students} section_slug={@section_slug} />
+      <.tabs active_tab={:students} section_slug={@section_slug} preview_mode={@preview_mode} />
 
       TODO: Students
     """
@@ -248,7 +317,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def content(assigns) do
     ~H"""
-      <.tabs active_tab={:content} section_slug={@section_slug} />
+      <.tabs active_tab={:content} section_slug={@section_slug} preview_mode={@preview_mode} />
 
       <CourseContentPanel.course_content_panel {assigns} />
     """
@@ -256,7 +325,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def discussion(assigns) do
     ~H"""
-      <.tabs active_tab={:discussion} section_slug={@section_slug} />
+      <.tabs active_tab={:discussion} section_slug={@section_slug} preview_mode={@preview_mode} />
 
       TODO: Discussion
     """

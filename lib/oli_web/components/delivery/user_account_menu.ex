@@ -7,8 +7,10 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
+  alias OliWeb.Common.SessionContext
 
   attr :current_user, User
+  attr :context, SessionContext
 
   def menu(assigns) do
     ~H"""
@@ -106,7 +108,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
               <div class="dropdown-item no-hover">
                 Timezone
                 <br>
-                <%!-- <OliWeb.Common.SelectTimezone.render {assigns} /> --%>
+                <OliWeb.Common.SelectTimezone.render {assigns} />
               </div>
             </li>
             <hr class="dropdown-divider" />

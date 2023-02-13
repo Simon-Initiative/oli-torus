@@ -50,8 +50,7 @@ defmodule OliWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {OliWeb.LayoutView, "live.html"},
-        container: {:div, [class: "flex-1 flex"]}
+        layout: {OliWeb.LayoutView, "live.html"}
 
       unquote(view_helpers())
     end

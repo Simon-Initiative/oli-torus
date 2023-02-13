@@ -14,12 +14,7 @@ defmodule OliWeb.Api.OpenAndFreeController do
           |> Enum.map(fn section ->
             %{
               slug: section.slug,
-              url:
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.ContentLive,
-                  section.slug
-                )
+              url: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
             }
           end)
 

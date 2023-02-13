@@ -35,13 +35,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Delivery.InstructorDashboard.ContentLive,
-            section.slug
-          )
-        )
+        |> get(Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Overview"
     end

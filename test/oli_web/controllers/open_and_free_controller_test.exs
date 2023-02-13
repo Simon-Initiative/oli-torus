@@ -129,13 +129,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       conn =
         conn
         |> recycle()
-        |> get(
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Delivery.InstructorDashboard.ContentLive,
-            section.slug
-          )
-        )
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 302) =~ "/sections/#{section.slug}/enroll"
 

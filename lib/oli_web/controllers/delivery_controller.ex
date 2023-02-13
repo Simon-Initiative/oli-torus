@@ -88,12 +88,7 @@ defmodule OliWeb.DeliveryController do
 
   defp redirect_to_page_delivery(conn, section) do
     redirect(conn,
-      to:
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.ContentLive,
-          section.slug
-        )
+      to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
     )
   end
 
@@ -326,12 +321,7 @@ defmodule OliWeb.DeliveryController do
         with {:ok, user} <- conn.assigns.current_user |> trap_nil,
              true <- Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
-            to:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.InstructorDashboard.ContentLive,
-                section.slug
-              )
+            to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
           )
         else
           _ ->
@@ -355,12 +345,7 @@ defmodule OliWeb.DeliveryController do
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
-            to:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.InstructorDashboard.ContentLive,
-                section.slug
-              )
+            to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
           )
         else
           Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -375,14 +360,7 @@ defmodule OliWeb.DeliveryController do
 
           conn
           |> create_pow_user(:user, user)
-          |> redirect(
-            to:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Delivery.InstructorDashboard.ContentLive,
-                section.slug
-              )
-          )
+          |> redirect(to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
         end
       else
         _error ->

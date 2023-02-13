@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentLive do
   alias alias Oli.Delivery.Sections
   alias OliWeb.Sections.Mount
   alias OliWeb.Components.Delivery.InstructorDashboard
+  alias OliWeb.Common.SessionContext
 
   @impl Phoenix.LiveView
   def mount(_params, %{"section_slug" => section_slug} = session, socket) do
@@ -19,17 +20,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentLive do
 
         preview_mode = socket.assigns[:live_action] == :preview
 
-        logo_link =
+        context = SessionContext.init(session)
+
+        page_link_url =
           if preview_mode do
-            Routes.content_path(OliWeb.Endpoint, :preview, section_slug)
+            &Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, &1)
           else
-            Routes.page_delivery_path(OliWeb.Endpoint, :index, section_slug)
+            &Routes.page_delivery_path(OliWeb.Endpoint, :page, section_slug, &1)
           end
 
-        IO.inspect(logo_link, label: "logo_link")
+        container_link_url =
+          if preview_mode do
+            &Routes.page_delivery_path(OliWeb.Endpoint, :container_preview, section_slug, &1)
+          else
+            &Routes.page_delivery_path(OliWeb.Endpoint, :container, section_slug, &1)
+          end
 
         {:ok,
          assign(socket,
+           context: context,
            current_user: current_user,
            title: section.title,
            description: section.description,
@@ -38,11 +47,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentLive do
            hierarchy: Sections.build_hierarchy(section),
            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
            preview_mode: preview_mode,
-           logo_link: logo_link,
-           page_link_url:
-             &Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, &1),
-           container_link_url:
-             &Routes.page_delivery_path(OliWeb.Endpoint, :container_preview, section_slug, &1)
+           page_link_url: page_link_url,
+           container_link_url: container_link_url
          )}
     end
   end

@@ -37,7 +37,12 @@ defmodule OliWeb.PageDeliveryController do
           if Sections.is_instructor?(user, section_slug) do
             conn
             |> redirect(
-              to: Routes.live_path(OliWeb.Endpoint, Delivery.InstructorDashboard.ContentLive)
+              to:
+                Routes.live_path(
+                  OliWeb.Endpoint,
+                  OliWeb.Delivery.InstructorDashboard.ContentLive,
+                  section_slug
+                )
             )
           else
             render(conn, "index.html",
@@ -288,12 +293,7 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: preview_mode,
         isInstructor: true,
         reviewMode: context.review_mode,
-        overviewURL:
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Delivery.InstructorDashboard.ContentLive,
-            section.slug
-          ),
+        overviewURL: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug),
         finalizeGradedURL:
           Routes.page_lifecycle_path(
             conn,

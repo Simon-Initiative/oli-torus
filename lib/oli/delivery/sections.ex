@@ -1758,7 +1758,7 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-  defp build_hierarchy_from_top_level(resource_ids, previous_next_index) do
+  def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
     Enum.map(resource_ids, fn resource_id -> build_helper(resource_id, previous_next_index) end)
   end
 

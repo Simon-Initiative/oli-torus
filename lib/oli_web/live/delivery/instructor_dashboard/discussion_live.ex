@@ -1,10 +1,9 @@
 defmodule OliWeb.Delivery.InstructorDashboard.DiscussionLive do
   use OliWeb, :live_view
 
-  alias OliWeb.Router.Helpers, as: Routes
-  alias alias Oli.Delivery.Sections
   alias OliWeb.Sections.Mount
   alias OliWeb.Components.Delivery.InstructorDashboard
+  alias OliWeb.Common.SessionContext
 
   @impl Phoenix.LiveView
   def mount(_params, %{"section_slug" => section_slug} = session, socket) do
@@ -17,19 +16,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionLive do
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
 
+        context = SessionContext.init(session)
+
+        preview_mode = socket.assigns[:live_action] == :preview
+
         {:ok,
          assign(socket,
+           context: context,
            current_user: current_user,
            title: section.title,
            description: section.description,
            section_slug: section_slug,
-           hierarchy: Sections.build_hierarchy(section),
-           display_curriculum_item_numbering: section.display_curriculum_item_numbering,
-           preview_mode: true,
-           page_link_url:
-             &Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, &1),
-           container_link_url:
-             &Routes.page_delivery_path(OliWeb.Endpoint, :container_preview, section_slug, &1)
+           preview_mode: preview_mode
          )}
     end
   end
