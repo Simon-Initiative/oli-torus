@@ -142,6 +142,12 @@ interface WeekGeometry {
   dateLabel: string;
 }
 
+const generateWeekLabel = (date: DateWithoutTime | null) => {
+  if (!date) return '';
+  const plus6 = new DateWithoutTime(date.getDaysSinceEpoch() + 6);
+  return dateWithoutTimeShortLabel(date) + ' - ' + dateWithoutTimeShortLabel(plus6);
+};
+
 export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
   // If there are:
   // < 30 weeks, show them all
@@ -159,7 +165,7 @@ export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
       acc.push({
         width: g.width,
         label: `Wk ${Math.floor(index / 7) + 1}`,
-        dateLabel: dateWithoutTimeShortLabel(g.date) || '',
+        dateLabel: generateWeekLabel(g.date),
       });
     } else {
       last.width += g.width;

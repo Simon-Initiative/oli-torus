@@ -41,7 +41,7 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeome
           {labels && g.width > 60 && (
             <>
               <div className="font-bold">{g.label}</div>
-              <div className="text-sm text-left px-1">{g.dateLabel}</div>
+              <div className="text-[11px]">{g.dateLabel}</div>
             </>
           )}
         </div>
