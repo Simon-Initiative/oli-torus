@@ -95,7 +95,9 @@ defmodule Oli.Resources.Revision do
       :retake_mode,
       :parameters,
       :scoring_strategy_id,
-      :activity_type_id
+      :activity_type_id,
+      :purpose,
+      :relates_to
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)
