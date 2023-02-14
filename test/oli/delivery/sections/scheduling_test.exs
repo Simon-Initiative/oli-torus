@@ -49,11 +49,13 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       page_one = by_slug.(scheduled_resources, "page_one")
       assert page_one.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")
       assert page_one.title == "Page one"
+      refute page_one.graded
       assert page_one.scheduling_type == :read_by
 
       page_two = by_slug.(scheduled_resources, "page_two")
       assert page_two.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page")
       assert page_two.title == "Page two"
+      refute page_two.graded
       assert page_two.scheduling_type == :read_by
 
       assert {:ok, 2} = Scheduling.update(section, [
@@ -71,6 +73,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert root.start_date == ~D[2023-02-03]
       assert root.end_date == ~D[2023-02-06]
       assert root.manually_scheduled == true
+      refute root.graded
       assert root.scheduling_type == :inclass_activity
 
       page_one = by_slug.(scheduled_resources, "page_one")
@@ -79,6 +82,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert is_nil(page_one.start_date)
       assert page_one.end_date == ~D[2023-02-06]
       assert page_one.manually_scheduled == false
+      refute page_one.graded
       assert page_one.scheduling_type == :inclass_activity
 
     end

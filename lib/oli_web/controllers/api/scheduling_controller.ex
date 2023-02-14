@@ -5,8 +5,8 @@ defmodule OliWeb.Api.SchedulingController do
   """
 
   alias OpenApiSpex.Schema
-
-  alias Oli.Delivery.Sections.Scheduling
+  alias OliWeb.Common.SessionContext
+  alias Oli.Delivery.Sections.SchedulingFacade
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
 
@@ -42,8 +42,8 @@ defmodule OliWeb.Api.SchedulingController do
           %{
             "id" => 2,
             "start_date" => nil,
-            "end_date" => "2023-03-29",
-            "scheduling_type" => "read_by"
+            "end_date" => "2023-03-29 11:20:02",
+            "scheduling_type" => "due_by"
           }
         ]
       }
@@ -95,6 +95,7 @@ defmodule OliWeb.Api.SchedulingController do
             "title" => "Introduction",
             "children" => [],
             "resource_type_id" => 1,
+            "graded" => false,
             "start_date" => "2023-02-03",
             "end_date" => "2023-02-09",
             "scheduling_type" => "read_by",
@@ -126,7 +127,7 @@ defmodule OliWeb.Api.SchedulingController do
 
     if can_access_section?(conn, section) do
       resources =
-        Scheduling.retrieve(section)
+        SchedulingFacade.retrieve(section)
         |> serialize_resource()
 
       json(conn, %{"result" => "success", "resources" => resources})
@@ -157,10 +158,12 @@ defmodule OliWeb.Api.SchedulingController do
   def update(conn, %{"updates" => updates}) do
     section = conn.assigns.section
 
+    context = SessionContext.init(conn)
+
     if can_access_section?(conn, section) do
-      case Scheduling.update(section, updates) do
+      case SchedulingFacade.update(section, updates, context.local_tz) do
         {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
-        {:error, :missing_update_parameters} ->  error(conn, 400, "Missing update parameters")
+        {:error, :missing_update_parameters} -> error(conn, 400, "Missing update parameters")
         e -> error(conn, 500, e)
       end
     else
@@ -186,6 +189,7 @@ defmodule OliWeb.Api.SchedulingController do
       "title" => sr.title,
       "children" => sr.children,
       "resource_type_id" => sr.resource_type_id,
+      "graded" => sr.graded,
       "start_date" => sr.start_date,
       "end_date" => sr.end_date,
       "scheduling_type" => sr.scheduling_type,

@@ -1,4 +1,8 @@
 defmodule Oli.Delivery.Sections.Scheduling do
+  @moduledoc """
+  Provides the read and write operations for managing the "soft-schedule" for a course section.
+  """
+
   import Ecto.Query, warn: false
 
   alias Oli.Publishing.PublishedResource
@@ -13,7 +17,6 @@ defmodule Oli.Delivery.Sections.Scheduling do
   section resources (that is, all containers and pages).
   """
   def retrieve(%Section{id: section_id}) do
-
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
@@ -21,12 +24,20 @@ defmodule Oli.Delivery.Sections.Scheduling do
       SectionResource
       |> join(:left, [sr], s in Section, on: sr.section_id == s.id)
       |> join(:left, [_sr, s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
-      |> join(:left, [_sr, _s, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+      |> join(:left, [_sr, _s, spp], pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id
+      )
       |> join(:left, [_sr, _s, _spp, pr], rev in Revision, on: pr.revision_id == rev.id)
-      |> where([sr, s, spp, pr, rev], sr.project_id == spp.project_id and s.id == ^section_id and pr.resource_id == sr.resource_id and (rev.resource_type_id == ^container_type_id or rev.resource_type_id == ^page_type_id))
+      |> where(
+        [sr, s, spp, pr, rev],
+        sr.project_id == spp.project_id and s.id == ^section_id and
+          pr.resource_id == sr.resource_id and
+          (rev.resource_type_id == ^container_type_id or rev.resource_type_id == ^page_type_id)
+      )
       |> select_merge([_sr, _s, _spp, _pr, rev], %{
         title: rev.title,
-        resource_type_id: rev.resource_type_id
+        resource_type_id: rev.resource_type_id,
+        graded: rev.graded
       })
 
     Repo.all(query)
@@ -88,32 +99,35 @@ defmodule Oli.Delivery.Sections.Scheduling do
   end
 
   defp parse_date(nil), do: nil
+
   defp parse_date(date_str) do
-    [y, m, d] = String.split(date_str, "-")
-    |> Enum.map(fn s -> String.to_integer(s) end)
+    [y, m, d] =
+      String.split(date_str, "-")
+      |> Enum.map(fn s -> String.to_integer(s) end)
 
     {:ok, date} = Date.new(y, m, d)
     date
   end
 
   defp build_values_params(updates) do
-    {values, params, _} = Enum.reduce(updates, {[], [], 1}, fn sr, {values, params, i} ->
-      {
-        values ++
-          [
-            "($#{i + 1}::bigint, $#{i + 2}, $#{i + 3}::date, $#{i + 4}::date, $#{i + 5}::boolean)"
-          ],
-        params ++
-          [
-            val(sr, :id),
-            val(sr, :scheduling_type),
-            val(sr, :start_date) |> parse_date(),
-            val(sr, :end_date) |> parse_date(),
-            val(sr, :manually_scheduled)
-          ],
-        i + 5
-      }
-    end)
+    {values, params, _} =
+      Enum.reduce(updates, {[], [], 1}, fn sr, {values, params, i} ->
+        {
+          values ++
+            [
+              "($#{i + 1}::bigint, $#{i + 2}, $#{i + 3}::date, $#{i + 4}::date, $#{i + 5}::boolean)"
+            ],
+          params ++
+            [
+              val(sr, :id),
+              val(sr, :scheduling_type),
+              val(sr, :start_date) |> parse_date(),
+              val(sr, :end_date) |> parse_date(),
+              val(sr, :manually_scheduled)
+            ],
+          i + 5
+        }
+      end)
 
     {values, params}
   end
@@ -125,5 +139,4 @@ defmodule Oli.Delivery.Sections.Scheduling do
       v -> v
     end
   end
-
 end

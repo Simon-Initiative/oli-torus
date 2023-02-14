@@ -34,6 +34,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     belongs_to :delivery_policy, DeliveryPolicy
 
     field(:title, :string, virtual: true)
+    field(:graded, :boolean, virtual: true)
     field(:resource_type_id, :integer, virtual: true)
 
     timestamps(type: :utc_datetime)
