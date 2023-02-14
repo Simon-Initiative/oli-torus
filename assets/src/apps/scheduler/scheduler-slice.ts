@@ -158,7 +158,11 @@ const schedulerSlice = createSlice({
         */
         if (action.payload.endDate && 'getHours' in action.payload.endDate) {
           // A Date was passed in, so set that to endDateTime and set endDate to the same date
-          mutableItem.endDate = new DateWithoutTime(action.payload.endDate);
+          mutableItem.endDate = new DateWithoutTime();
+          mutableItem.endDate.setFullYear(action.payload.endDate.getFullYear());
+          mutableItem.endDate.setMonth(action.payload.endDate.getMonth());
+          mutableItem.endDate.setDate(action.payload.endDate.getDate());
+
           mutableItem.endDateTime = action.payload.endDate;
         } else {
           // A DateWithoutTime was passed in, so set that to endDate and set endDateTime to 23:59:59
