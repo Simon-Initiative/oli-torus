@@ -32,7 +32,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def main_layout(assigns) do
     ~H"""
-      <div class="flex-1 flex flex-col">
+      <div class="flex-1 flex flex-col h-screen">
         <.header context={@context} current_user={@current_user} section_slug={@section_slug} preview_mode={@preview_mode} />
         <.section_details_header title={@title}/>
 
