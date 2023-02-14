@@ -107,6 +107,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
+  pipeline :require_exploration_pages do
+    plug(Oli.Plugs.RequireExplorationPages)
+  end
+
   pipeline :enforce_enroll_and_paywall do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
@@ -747,6 +751,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
+      :require_exploration_pages,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
@@ -778,6 +783,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
+      :require_exploration_pages,
       :authorize_section_preview,
       :delivery_and_admin,
       :delivery_layout,
