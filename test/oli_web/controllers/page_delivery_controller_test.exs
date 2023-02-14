@@ -1414,6 +1414,18 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200)
     end
 
+    test "user must be enrolled in the section even if is a system admin", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
+    end
+
     test "redirects to enroll page if not is enrolled in the section", %{
       conn: conn,
       section: section
@@ -1445,7 +1457,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ other_revision.title
     end
 
-    test "page renders a message when there are no exploration pages for available", %{
+    test "page renders a message when there are no exploration pages available", %{
       conn: conn
     } do
       {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} = section_with_assessment(%{})
@@ -1457,7 +1469,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
         |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
 
-      assert html_response(conn, 200) =~ "<h6>There are no exploration pages for available</h6>"
+      assert html_response(conn, 200) =~ "<h6>There are no exploration pages available</h6>"
     end
   end
 

@@ -12,9 +12,3 @@
     <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
   </div>
 </Components.Delivery.NavSidebar.main_with_nav>
-
-<%= if Oli.Utils.LoadTesting.enabled?() do %>
-  <!--
-__OVERVIEW_PAGES__<%= encode_pages(@conn, @section_slug, @hierarchy) %>__OVERVIEW_PAGES__
--->
-<% end %>

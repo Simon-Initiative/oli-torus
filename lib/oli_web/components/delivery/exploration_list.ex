@@ -4,7 +4,7 @@ defmodule OliWeb.Components.Delivery.ExplorationList do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Components.Delivery.ExplorationCard
 
-  def mount(_params, %{"section_slug" => section_slug} = _session, socket) do
+  def mount(_params, %{"section_slug" => section_slug}, socket) do
     explorations = Resolver.get_by_purpose(section_slug, :application)
 
     {:ok,
@@ -22,7 +22,7 @@ defmodule OliWeb.Components.Delivery.ExplorationList do
           <% end %>
         <% else %>
           <div class="bg-white dark:bg-gray-800 border-l-4 border-delivery-primary p-4" role="alert">
-            <h6>There are no exploration pages for available</h6>
+            <h6>There are no exploration pages available</h6>
           </div>
         <% end %>
       </div>

@@ -63,7 +63,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
           <div class="flex-1 items-center lg:items-start">
             <%= if assigns[:section] do %>
-              <%= for {name, href, active} <- [{"Home", home_url(assigns), is_active(@conn.path_info, "overview")}, {"Course Content", "#", is_active(@conn.path_info, "")}, {"Discussion", "#", is_active(@conn.path_info, "")}, {"Assignments", "#", is_active(@conn.path_info, "")}, {"Exploration", exploration_url(assigns), is_active(@conn.path_info, "exploration")}] do %>
+              <%= for {name, href, active} <- [{"Home", home_url(assigns), is_active(@conn.path_info, :overview)}, {"Course Content", "#", is_active(@conn.path_info, "")}, {"Discussion", "#", is_active(@conn.path_info, "")}, {"Assignments", "#", is_active(@conn.path_info, "")}, {"Exploration", exploration_url(assigns), is_active(@conn.path_info, :exploration)}] do %>
                 <.nav_link name={name} href={href} active={active} />
               <% end %>
             <% end %>
@@ -129,10 +129,10 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
-  defp is_active(["sections", _, "overview"], "overview"), do: true
-  defp is_active(["sections", _, "exploration"], "exploration"), do: true
-  defp is_active(["sections", _, "preview", "overview"], "overview"), do: true
-  defp is_active(["sections", _, "preview", "exploration"], "exploration"), do: true
+  defp is_active(["sections", _, "overview"], :overview), do: true
+  defp is_active(["sections", _, "exploration"], :exploration), do: true
+  defp is_active(["sections", _, "preview", "overview"], :overview), do: true
+  defp is_active(["sections", _, "preview", "exploration"], :exploration), do: true
   defp is_active(_, _), do: false
 
   defp home_url(assigns) do
