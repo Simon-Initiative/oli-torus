@@ -1344,11 +1344,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "page preview - renders ok", %{
       conn: conn,
+      user: user,
       revision: revision,
       section: section
     } do
       conn =
-        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
+        conn
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
 
       # page title
       assert html_response(conn, 200) =~ "Page one (Preview)"

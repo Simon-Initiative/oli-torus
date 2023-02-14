@@ -746,6 +746,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
+      :delivery,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
@@ -777,6 +778,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :authorize_section_preview,
+      :delivery,
       :delivery_layout,
       :pow_email_layout
     ])
