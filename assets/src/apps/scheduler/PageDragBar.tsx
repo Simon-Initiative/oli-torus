@@ -12,6 +12,7 @@ interface DragBarProps {
   onStartDrag?: () => void;
   manual: boolean;
   isSingleDay?: boolean;
+  graded: boolean;
 }
 
 export const PageDragBar: React.FC<DragBarProps> = ({
@@ -19,8 +20,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
   onChange,
   onStartDrag,
   dayGeometry,
-  children,
-  manual,
+  graded,
 }) => {
   const [isDragging, , enableDrag, disableDrag] = useToggle();
 
@@ -69,7 +69,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
   const barStyles = {
     left: geometry.left,
     width: geometry.width,
-    top: 14,
+    top: 7,
   };
 
   const label = isDragging && (
@@ -84,18 +84,18 @@ export const PageDragBar: React.FC<DragBarProps> = ({
     </div>
   );
 
-  const color = manual ? 'border-gray-600 border-2' : 'border-2 border-gray-300';
-
   return (
     <>
       {label}
 
       <div
         onMouseDown={startDrag}
-        className={`rounded-full absolute ${color} h-3 flex flex-row justify-between p-0.5 cursor-move`}
+        className={`absolute h-3 flex flex-row justify-between  cursor-move`}
         style={barStyles}
       >
-        {children}
+        <span>
+          {graded ? <i className="fa fa-file-check "></i> : <i className="fa fa-file"></i>}
+        </span>
       </div>
     </>
   );

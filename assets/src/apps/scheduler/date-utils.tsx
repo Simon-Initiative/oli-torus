@@ -1,5 +1,5 @@
 import { DateWithoutTime } from 'epoq';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { padLeft } from '../../utils/common';
 
 /*
@@ -139,7 +139,9 @@ export const leftToDate = (
 interface WeekGeometry {
   width: number;
   label: string;
+  dateLabel: string;
 }
+
 export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
   // If there are:
   // < 30 weeks, show them all
@@ -157,6 +159,7 @@ export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
       acc.push({
         width: g.width,
         label: `Wk ${Math.floor(index / 7) + 1}`,
+        dateLabel: dateWithoutTimeShortLabel(g.date) || '',
       });
     } else {
       last.width += g.width;
@@ -166,13 +169,49 @@ export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
   }, [] as WeekGeometry[]);
 };
 
+export const dateTimeInTorusFormat = (d: Date | null) => {
+  // Format that <input type="datetime-local"> requires: 2022-01-02T13:01
+  if (!d) return null;
+  return `${d.getFullYear()}-${padLeft(d.getMonth() + 1, 2)}-${padLeft(
+    d.getDate(),
+    2,
+  )} ${d.getHours()}:${padLeft(d.getMinutes(), 2)}:${padLeft(d.getSeconds(), 2)}`;
+};
+
+export const dateWithTimeLabel = (d: Date | null) => {
+  // Format that <input type="datetime-local"> requires: 2022-01-02T13:01
+  if (!d) return null;
+  return `${d.getFullYear()}-${padLeft(d.getMonth() + 1, 2)}-${padLeft(d.getDate(), 2)}T${padLeft(
+    d.getHours(),
+    2,
+  )}:${padLeft(d.getMinutes(), 2)}`;
+};
+
 export const dateWithoutTimeLabel = (d: DateWithoutTime | null) => {
   if (!d) return null;
   return `${d.getFullYear()}-${padLeft(d.getMonth() + 1, 2)}-${padLeft(d.getDate(), 2)}`;
 };
 
+export const dateWithoutTimeShortLabel = (d: DateWithoutTime | null) => {
+  if (!d) return null;
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+};
+
 export const DateWithoutTimeLabel: React.FC<{ date: DateWithoutTime }> = ({ date }) => {
   return <span>{dateWithoutTimeLabel(date)}</span>;
+};
+
+export const stringToDateWithTime = (s: string): Date => {
+  const parts = s.split('T');
+  if (parts.length !== 2) throw new Error(`Invalid date string: ${s}`);
+  const [date, time] = parts;
+  const dateParts = date.split('-').map((s) => parseInt(s, 10));
+  if (dateParts.length !== 3) throw new Error(`Invalid date string: ${s}`);
+  const [year, month, day] = dateParts;
+  const timeParts = time.split(':').map((s) => parseInt(s, 10));
+  if (timeParts.length !== 2) throw new Error(`Invalid date string: ${s}`);
+  const [hour, minute] = timeParts;
+  return new Date(year, month - 1, day, hour, minute);
 };
 
 export const stringToDateWithoutTime = (s: string): DateWithoutTime => {

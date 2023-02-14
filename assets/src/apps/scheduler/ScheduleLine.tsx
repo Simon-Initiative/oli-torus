@@ -95,15 +95,6 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
               <i className="fa fa-lock fa-2xs"></i>
             </span>
           )}
-          {hasPages && (
-            <span
-              className="float-right"
-              data-bs-toggle="tooltip"
-              title="View pages within this container"
-            >
-              <i className="fa fa-layer-group fa-2xs"></i>
-            </span>
-          )}
           {item.title} {showNumbers ? item.numbering_index : ''}
         </td>
 

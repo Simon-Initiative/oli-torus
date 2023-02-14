@@ -13,7 +13,7 @@ export const ScheduleHeaderRow: React.FC<ScheduleHeaderRowProps> = ({
   dayGeometry,
 }) => {
   return (
-    <tr className="h-8 border-t-0">
+    <tr className="h-12 border-t-0">
       <th className="w-1 border-r-0"></th>
       <th className="w-48"></th>
       <th className="p-0 relative" ref={attachBarContainer}>
@@ -35,10 +35,15 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeome
       {g.map((g, i) => (
         <div
           key={i}
-          className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis "
+          className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal "
           style={{ width: g.width }}
         >
-          {labels && g.width > 60 && g.label}
+          {labels && g.width > 60 && (
+            <>
+              <div className="font-bold">{g.label}</div>
+              <div className="text-sm text-left px-1">{g.dateLabel}</div>
+            </>
+          )}
         </div>
       ))}
     </div>

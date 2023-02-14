@@ -5,7 +5,7 @@ import { getScheduleItem, SchedulerState, StringDate } from './scheduler-slice';
 import { loadSchedule, ScheduleUpdate, updateSchedule } from './scheduling-service';
 
 import uniq from 'lodash/uniq';
-import { dateWithoutTimeLabel } from './date-utils';
+import { dateTimeInTorusFormat, dateWithoutTimeLabel, dateWithTimeLabel } from './date-utils';
 interface Payload {
   start_date: StringDate;
   end_date: StringDate;
@@ -29,7 +29,10 @@ export const scheduleAppFlushChanges = createAsyncThunk(
         if (!item) return null;
         return {
           start_date: dateWithoutTimeLabel(item.startDate),
-          end_date: dateWithoutTimeLabel(item.endDate),
+          end_date:
+            item.scheduling_type === 'due_by'
+              ? dateTimeInTorusFormat(item.endDateTime) // For due-by we need the time as well as the date.
+              : dateWithoutTimeLabel(item.endDate),
           id: item.id,
           scheduling_type: item.scheduling_type,
           manually_scheduled: item.manually_scheduled,

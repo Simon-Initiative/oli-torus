@@ -46,6 +46,7 @@ export const resetScheduleItem = (
 
   if (resetManual) target.manually_scheduled = false;
   if (count === 0) return;
+
   let startDay = start.getDaysSinceEpoch();
   const dayCount = countWorkingDays(start, end, weekdaysToSchedule);
 
@@ -70,6 +71,17 @@ export const resetScheduleItem = (
         child.resource_type_id === ScheduleItemType.Container ? calculatedStart : null;
       child.endDate =
         calculatedEnd.getDaysSinceEpoch() <= end.getDaysSinceEpoch() ? calculatedEnd : end;
+
+      child.endDateTime = new Date(
+        child.endDate.getFullYear(),
+        child.endDate.getMonth(),
+        child.endDate.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
+
       resetScheduleItem(child, calculatedStart, child.endDate, schedule);
     }
     startDay = calculatedEnd.getDaysSinceEpoch() + 1;

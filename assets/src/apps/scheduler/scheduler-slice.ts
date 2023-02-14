@@ -12,7 +12,7 @@ export enum ScheduleItemType {
 }
 
 export type StringDate = string;
-export type SchedulingType = 'read_by' | 'inclass_activity';
+export type SchedulingType = 'read_by' | 'inclass_activity' | 'due_by';
 // Version that comes from torus
 export interface HierarchyItemSrc {
   children: number[];
@@ -32,6 +32,7 @@ export interface HierarchyItemSrc {
 export interface HierarchyItem extends HierarchyItemSrc {
   startDate: DateWithoutTime | null;
   endDate: DateWithoutTime | null;
+  endDateTime: Date | null; // This is only used for the due-by which includes a date and time.
 }
 
 export interface SchedulerState {
@@ -60,11 +61,35 @@ export const initSchedulerState = (): SchedulerState => ({
   sectionSlug: '',
 });
 
+const toDateTime = (str: string) => {
+  if (!str) return null;
+  const [date, time] = str.split('T');
+  const [year, month, day] = date.split('-');
+
+  const d = new Date();
+  d.setUTCFullYear(parseInt(year, 10));
+  d.setUTCMonth(parseInt(month, 10) - 1);
+  d.setUTCDate(parseInt(day, 10));
+
+  if (time) {
+    const [hour, minute, seconds] = time.split(':');
+    d.setUTCHours(parseInt(hour, 10));
+    d.setUTCMinutes(parseInt(minute, 10));
+    d.setUTCSeconds(parseInt(seconds, 10));
+  } else {
+    d.setHours(23);
+    d.setMinutes(59);
+    d.setSeconds(59);
+  }
+  return d;
+};
+
 const buildHierarchyItems = (items: HierarchyItemSrc[]): HierarchyItem[] => {
   return items.map((item) => ({
     ...item,
     startDate: item.start_date ? new DateWithoutTime(item.start_date) : null,
     endDate: item.end_date ? new DateWithoutTime(item.end_date) : null,
+    endDateTime: toDateTime(item.end_date),
   }));
 };
 
@@ -73,7 +98,7 @@ const initialState = { schedule: [] } as SchedulerState;
 interface MovePayload {
   itemId: number;
   startDate: DateWithoutTime | null;
-  endDate: DateWithoutTime | null;
+  endDate: Date | DateWithoutTime | null;
 }
 
 export const getScheduleRoot = (schedule: HierarchyItem[]) =>
@@ -81,16 +106,6 @@ export const getScheduleRoot = (schedule: HierarchyItem[]) =>
 
 export const getScheduleItem = (itemId: number, schedule: HierarchyItem[]) =>
   schedule.find((item) => item.id === itemId);
-
-const calcDuration = (start: DateWithoutTime | null, end: DateWithoutTime | null): number => {
-  if (!start) {
-    return 0; // No way of knowing the duration
-  }
-  if (!end) {
-    return 1; // A start date with no end, we could assume it's just that one day
-  }
-  return end.getDaysSinceEpoch() - start.getDaysSinceEpoch();
-};
 
 const descendentIds = (item: HierarchyItem, schedule: HierarchyItem[]) => {
   const ids = [item.id];
@@ -104,17 +119,6 @@ const descendentIds = (item: HierarchyItem, schedule: HierarchyItem[]) => {
 };
 
 const neverScheduled = (schedule: HierarchyItem[]) => !schedule.find((i) => i.manually_scheduled);
-// const isParent = (item: HierarchyItem, test: HierarchyItem): boolean => {
-//   for (const child of item.children) {
-//     if (child.id === test.id) {
-//       return true;
-//     }
-//     if (isParent(child, test)) {
-//       return true;
-//     }
-//   }
-//   return false;
-// };
 
 interface UnlockPayload {
   itemId: number;
@@ -147,7 +151,34 @@ const schedulerSlice = createSlice({
 
       if (mutableItem) {
         mutableItem.startDate = action.payload.startDate;
-        mutableItem.endDate = action.payload.endDate;
+
+        /*
+          scheduling_type === 'due_by' uses a Date and all other scheduling types use a DateWithoutTime for endDate
+          In both cases, we're going to keep our endDate and endDateTime properties in sync.
+        */
+        if (action.payload.endDate && 'getHours' in action.payload.endDate) {
+          // A Date was passed in, so set that to endDateTime and set endDate to the same date
+          mutableItem.endDate = new DateWithoutTime(action.payload.endDate);
+          mutableItem.endDateTime = action.payload.endDate;
+        } else {
+          // A DateWithoutTime was passed in, so set that to endDate and set endDateTime to 23:59:59
+          mutableItem.endDate = action.payload.endDate;
+          mutableItem.endDateTime = action.payload.endDate
+            ? new Date(action.payload.endDate.utcMidnightDateObj)
+            : null;
+          if (action.payload.endDate) {
+            // Need to be careful when converting from a timezone-less DateWithoutTime to a Date
+            // Just doing a simple new Date(d.utcMidnightDateObj) will result in a date that may be off by a day
+            mutableItem.endDateTime = new Date();
+            mutableItem.endDateTime.setFullYear(action.payload.endDate.getFullYear());
+            mutableItem.endDateTime.setMonth(action.payload.endDate.getMonth());
+            mutableItem.endDateTime.setDate(action.payload.endDate.getDate());
+            mutableItem.endDateTime.setHours(23, 59, 59, 0);
+          } else {
+            mutableItem.endDateTime = null;
+          }
+        }
+
         mutableItem.manually_scheduled = true;
         state.dirty.push(mutableItem.id);
         if (mutableItem.startDate && mutableItem.endDate) {
@@ -192,6 +223,7 @@ const schedulerSlice = createSlice({
     builder.addCase(scheduleAppFlushChanges.fulfilled, (state, _action) => {
       state.dirty = [];
       state.saving = false;
+      state.selectedId = null;
     });
 
     builder.addCase(scheduleAppStartup.fulfilled, (state, action) => {
@@ -213,6 +245,7 @@ const schedulerSlice = createSlice({
       if (state.startDate && state.endDate && neverScheduled(state.schedule)) {
         const root = getScheduleRoot(state.schedule);
         root && resetScheduleItem(root, state.startDate, state.endDate, state.schedule);
+        state.dirty = state.schedule.map((item) => item.id);
       }
     });
   },
