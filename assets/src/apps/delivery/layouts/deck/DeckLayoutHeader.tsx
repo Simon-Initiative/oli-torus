@@ -5,6 +5,7 @@ import {
   selectPageContent,
   selectPageSlug,
   selectPreviewMode,
+  selectReviewMode,
   selectScore,
   selectSectionSlug,
 } from '../../store/features/page/slice';
@@ -41,7 +42,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   const isPreviewMode = useSelector(selectPreviewMode);
   const isInstructor = useSelector(selectIsInstructor);
-
+  const isReviewMode = useSelector(selectReviewMode);
   const [backButtonUrl, setBackButtonUrl] = useState('');
   const [backButtonText, setBackButtonText] = useState('Back to Overview');
 
@@ -61,9 +62,10 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   return (
     <div className="headerContainer">
-      <div className="back-button">
-        <style>
-          {`
+      {!isReviewMode && (
+        <div className="back-button">
+          <style>
+            {`
           .back-button {
             z-index: 1;
             display: flex;
@@ -89,11 +91,12 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
             box-shadow: 0 1px 2px #00000079;
           }
           `}
-        </style>
-        <a href={backButtonUrl} title={backButtonText}>
-          <span className="fa fa-arrow-left">&nbsp;</span>
-        </a>
-      </div>
+          </style>
+          <a href={backButtonUrl} title={backButtonText}>
+            <span className="fa fa-arrow-left">&nbsp;</span>
+          </a>
+        </div>
+      )}
       <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
