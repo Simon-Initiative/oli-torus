@@ -2,6 +2,7 @@ import { setRestartLesson } from 'apps/delivery/store/features/adaptivity/slice'
 import {
   selectEnableHistory,
   selectPreviewMode,
+  selectReviewMode,
   selectShowHistory,
   setShowHistory,
 } from 'apps/delivery/store/features/page/slice';
@@ -17,7 +18,7 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
   const isPreviewMode = useSelector(selectPreviewMode);
-
+  const isReviewMode = useSelector(selectReviewMode);
   const handleToggleHistory = (show: boolean) => {
     dispatch(setShowHistory({ show }));
   };
@@ -75,17 +76,17 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
             Update Details
           </button>
         </div>
-
-        <div className={`option restartOption${enableHistory ? '' : ' displayNone'}`}>
-          <button
-            className="restartBtn btn"
-            aria-label="Open restart lesson window"
-            onClick={handleRestartLesson}
-          >
-            Restart Lesson
-          </button>
-        </div>
-
+        {!isReviewMode && (
+          <div className={`option restartOption${enableHistory ? '' : ' displayNone'}`}>
+            <button
+              className="restartBtn btn"
+              aria-label="Open restart lesson window"
+              onClick={handleRestartLesson}
+            >
+              Restart Lesson
+            </button>
+          </div>
+        )}
         <div className="option logoutOption displayNone">
           <button className="logoutBtn btn" aria-label="Open logout window">
             Log Out

@@ -140,8 +140,10 @@ const Delivery: React.FC<DeliveryProps> = ({
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
-      {restartLesson ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
-      {isLessonEnded ? (
+      {restartLesson && !reviewMode ? (
+        <RestartLessonDialog onRestart={setInitialPageState} />
+      ) : null}
+      {isLessonEnded && reviewMode ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
       {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
