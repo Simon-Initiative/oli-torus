@@ -40,6 +40,7 @@ export interface DeliveryProps {
   overviewURL: string;
   finalizeGradedURL: string;
   screenIdleTimeOutInSeconds?: number;
+  reviewMode?: boolean;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -61,6 +62,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   overviewURL = '',
   finalizeGradedURL = '',
   screenIdleTimeOutInSeconds = 1800,
+  reviewMode = false,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -94,6 +96,7 @@ const Delivery: React.FC<DeliveryProps> = ({
     }";`;
     evalScript(userScript, defaultGlobalEnv);
     evalScript(janus_std, defaultGlobalEnv);
+    console.log({ reviewMode });
 
     dispatch(
       loadInitialPageState({
@@ -118,6 +121,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         overviewURL,
         finalizeGradedURL,
         screenIdleTimeOutInSeconds,
+        reviewMode,
       }),
     );
   };
