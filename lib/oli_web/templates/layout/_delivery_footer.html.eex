@@ -1,4 +1,4 @@
-<%= render OliWeb.SharedView, "_help.html", conn: @conn %>
+<%= render OliWeb.SharedView, "_help.html" %>
 <%
   privacy_policies_url = Application.fetch_env!(:oli, :privacy_policies)[:url]
   footer =  Application.fetch_env!(:oli, :footer)
@@ -19,6 +19,6 @@
     </div>
   </div>
   <script>
-    OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(@conn, :retrieve) %>', {privacyPoliciesUrl: '<%= privacy_policies_url %>'}));
+    OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(OliWeb.Endpoint, :retrieve) %>', {privacyPoliciesUrl: '<%= privacy_policies_url %>'}));
   </script>
 </footer>

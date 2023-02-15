@@ -1,6 +1,20 @@
 defmodule OliWeb.Common.SessionContext do
   @moduledoc """
-  Session Context related information
+  Session Context is a common interface for both Conn-based static views and LiveViews.
+
+  This module help bridge the interoperability gap between static views and LiveViews by
+  providing a common abstraction that can be used in both types of views, as opposed to
+  directly accessing Plug.Conn or LiveView.Socket.
+
+  To ensure a view is compatible with either static rendered page or LiveView, use/replace
+  all instances of conn or socket with this module, and optionally add any required data fields
+  which can be initialized on the `SessionContext.init()` call when a view is instantiated.
+
+  For any view that utilizes this functionality, be sure to call `SessionContext.init(...)` in either
+  the static view's controller or LiveView's mount.
+
+  The `init(conn_or_session)` function takes either a `conn` struct for static views or the `session` map
+  in LiveViews. The result can then be passed in to a view via assigns.
   """
 
   alias Oli.Accounts

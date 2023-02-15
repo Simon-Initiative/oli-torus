@@ -91,8 +91,8 @@ defmodule OliWeb.Components.Delivery.Utils do
     end
   end
 
-  def user_role_text(assigns, user) do
-    case user_role(assigns[:section], user) do
+  def user_role_text(section, user) do
+    case user_role(section, user) do
       :open_and_free ->
         "Independent"
 
@@ -126,8 +126,8 @@ defmodule OliWeb.Components.Delivery.Utils do
     end
   end
 
-  def user_role_color(assigns, user) do
-    case user_role(assigns[:section], user) do
+  def user_role_color(section, user) do
+    case user_role(section, user) do
       :open_and_free ->
         "#2C67C4"
 
@@ -145,18 +145,20 @@ defmodule OliWeb.Components.Delivery.Utils do
     end
   end
 
-  def user_icon(%{current_user: current_user} = assigns) do
-    case current_user.picture do
-      nil ->
-        user_icon(%{})
+  attr :current_user, User
 
-      _picture ->
-        ~H"""
-        <div class="user-icon">
-          <img src={@current_user.picture} referrerpolicy="no-referrer" class="rounded-full" />
-        </div>
-        """
-    end
+  def user_icon(%{current_user: _} = assigns) do
+    ~H"""
+      <%= case @current_user.picture do %>
+        <% nil -> %>
+          <.user_icon />
+
+        <% picture -> %>
+          <div class="user-icon">
+            <img src={picture} referrerpolicy="no-referrer" class="rounded-full" />
+          </div>
+      <% end %>
+    """
   end
 
   def user_icon(assigns) do
@@ -210,20 +212,26 @@ defmodule OliWeb.Components.Delivery.Utils do
         end
 
       _ ->
-        cond do
-          user.guest ->
-            :open_and_free
+        case user do
+          %User{guest: is_guest?} = user ->
+            cond do
+              is_guest? ->
+                :open_and_free
 
-          PlatformRoles.has_roles?(user, @admin_roles, :any) ->
-            :administrator
+              PlatformRoles.has_roles?(user, @admin_roles, :any) ->
+                :administrator
 
-          PlatformRoles.has_roles?(user, @instructor_roles, :any) ->
-            :instructor
+              PlatformRoles.has_roles?(user, @instructor_roles, :any) ->
+                :instructor
 
-          PlatformRoles.has_roles?(user, @student_roles, :any) ->
-            :student
+              PlatformRoles.has_roles?(user, @student_roles, :any) ->
+                :student
 
-          true ->
+              true ->
+                :other
+            end
+
+          _ ->
             :other
         end
     end

@@ -7,10 +7,14 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
+  alias OliWeb.Common.SessionContext
+
+  attr :current_user, User
+  attr :context, SessionContext
 
   def menu(assigns) do
     ~H"""
-      <div class="dropdown relative w-full">
+      <div class="dropdown relative">
         <button
           class="
             dropdown-toggle
@@ -32,15 +36,15 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
           aria-expanded="false"
         >
           <div class="user-icon mr-4">
-            <%= user_icon(assigns) %>
+            <.user_icon current_user={@current_user} />
           </div>
 
           <div class="block">
             <div class="username">
               <%= user_name @current_user %>
             </div>
-            <div class="role" style={"color: #{user_role_color(assigns, @current_user)};"}>
-              <%= user_role_text assigns, @current_user %>
+            <div class="role" style={"color: #{user_role_color(assigns[:section], @current_user)};"}>
+              <%= user_role_text(assigns[:section], @current_user) %>
             </div>
           </div>
         </button>
@@ -154,7 +158,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
           aria-expanded="false"
         >
           <div class="user-icon">
-            <%= user_icon(%{}) %>
+            <.user_icon />
           </div>
           <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
             <div class="username">

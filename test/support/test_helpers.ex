@@ -729,7 +729,11 @@ defmodule Oli.TestHelpers do
 
     # Publication of project with root container
     publication =
-      insert(:publication, %{project: project, root_resource_id: container_resource.id, published: nil})
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id,
+        published: nil
+      })
 
     # Publish root container resource
     insert(:published_resource, %{
@@ -765,7 +769,11 @@ defmodule Oli.TestHelpers do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
 
-    {:ok, project: project, section: section, page_revision: page_revision, other_revision: other_revision}
+    {:ok,
+     project: project,
+     section: section,
+     page_revision: page_revision,
+     other_revision: other_revision}
   end
 
   def enroll_user_to_section(user, section, role) do
@@ -804,5 +812,41 @@ defmodule Oli.TestHelpers do
     path
     |> Config.Reader.read!()
     |> Application.put_all_env()
+  end
+
+  @doc """
+  Renders an html binary to a file in test-results/<module_path>/output.html
+  for easier debugging of tests that verify html content.
+
+  Examples:
+    ```
+    conn = get(Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, page_revision_slug))
+
+    inspect_html_file(html_response(conn, 200))
+
+    ...
+    ```
+  """
+  defmacro inspect_html_file(html) do
+    quote do
+      path_parts =
+        ["test-results", "html"]
+        |> Enum.concat(
+          Module.split(__MODULE__)
+          |> Enum.map(&String.downcase/1)
+        )
+
+      dir = Path.join(path_parts)
+
+      filepath =
+        path_parts
+        |> Enum.concat(["output.html"])
+        |> Path.join()
+
+      File.mkdir_p!(dir)
+      File.write!(filepath, unquote(html))
+
+      IO.write("\nhtml file rendered to #{filepath}\n")
+    end
   end
 end

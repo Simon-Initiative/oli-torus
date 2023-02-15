@@ -34,16 +34,28 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          render(conn, "index.html",
-            title: section.title,
-            description: section.description,
-            section_slug: section_slug,
-            hierarchy: build_hierarchy(section),
-            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
-            preview_mode: false,
-            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
-          )
+          if Sections.is_instructor?(user, section_slug) do
+            conn
+            |> redirect(
+              to:
+                Routes.live_path(
+                  OliWeb.Endpoint,
+                  OliWeb.Delivery.InstructorDashboard.ContentLive,
+                  section_slug
+                )
+            )
+          else
+            render(conn, "index.html",
+              title: section.title,
+              description: section.description,
+              section_slug: section_slug,
+              hierarchy: Sections.build_hierarchy(section),
+              display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+              preview_mode: false,
+              page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+              container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+            )
+          end
       end
     else
       case section do
@@ -200,8 +212,7 @@ defmodule OliWeb.PageDeliveryController do
         r1.date_submitted <= r2.date_submitted
       end)
 
-    {:ok, {previous, next, current}, _} =
-      PreviousNextIndex.retrieve(section, page.resource_id)
+    {:ok, {previous, next, current}, _} = PreviousNextIndex.retrieve(section, page.resource_id)
 
     resource_access = Core.get_resource_access(page.resource_id, section.slug, user.id)
 
@@ -282,7 +293,7 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: preview_mode,
         isInstructor: true,
         reviewMode: context.review_mode,
-        overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
+        overviewURL: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug),
         finalizeGradedURL:
           Routes.page_lifecycle_path(
             conn,
@@ -429,23 +440,6 @@ defmodule OliWeb.PageDeliveryController do
   # ----------------------------------------------------------
   # PREVIEW
 
-  def index_preview(conn, %{"section_slug" => section_slug}) do
-    section =
-      conn.assigns.section
-      |> Oli.Repo.preload([:base_project, :root_section_resource])
-
-    render(conn, "index.html",
-      title: section.title,
-      description: section.description,
-      section_slug: section_slug,
-      hierarchy: build_hierarchy(section),
-      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
-      preview_mode: true,
-      page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
-    )
-  end
-
   def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     conn
     |> assign(:preview_mode, true)
@@ -481,7 +475,7 @@ defmodule OliWeb.PageDeliveryController do
             conn
             |> put_root_layout({OliWeb.LayoutView, "page.html"})
             |> render(
-              "instructor_preview.html",
+              "instructor_page_preview.html",
               %{
                 summary: %{title: section.title},
                 section_slug: section_slug,
@@ -628,7 +622,7 @@ defmodule OliWeb.PageDeliveryController do
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
     |> render(
-      "instructor_preview.html",
+      "instructor_page_preview.html",
       %{
         summary: %{title: section.title},
         section_slug: section_slug,
@@ -882,32 +876,4 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
-
-  defp build_helper(id, previous_next_index) do
-
-    node = Map.get(previous_next_index, id)
-
-    Map.put(node, "children", Enum.map(node["children"], fn id ->
-      build_helper(id, previous_next_index)
-    end))
-  end
-
-  def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
-    Enum.map(resource_ids, fn resource_id -> build_helper(resource_id, previous_next_index) end)
-  end
-
-  defp build_hierarchy(section) do
-    {:ok, _, previous_next_index} =
-      PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
-
-    # Retrieve the top level resource ids, and convert them to strings
-    resource_ids = Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(section.root_section_resource)
-    |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
-
-    %{
-      id: "hierarchy_built_with_previous_next_index",
-      # Recursively build the map based hierarchy from the structure defined by previous_next_index
-      children: build_hierarchy_from_top_level(resource_ids, previous_next_index)
-    }
-  end
 end

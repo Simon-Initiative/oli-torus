@@ -262,7 +262,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 302) =~ Routes.page_delivery_path(conn, :index, section.slug)
+      assert html_response(conn, 302) =~
+               Routes.page_delivery_path(conn, :index, section.slug)
     end
 
     test "handles open and free user access when date is before start date", %{
