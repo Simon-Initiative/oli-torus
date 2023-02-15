@@ -19,6 +19,7 @@ defmodule Oli.Plugs.AuthorizeSectionPreview do
     cond do
       Sections.is_instructor?(user, section_slug) or Accounts.is_admin?(author) ->
         conn
+        |> put_session(:preview_mode, true)
 
       not is_nil(user) and Sections.is_enrolled?(user.id, section_slug) ->
         redirect_path =

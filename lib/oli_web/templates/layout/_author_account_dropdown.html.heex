@@ -71,7 +71,7 @@
     <div class="dropdown-item no-hover">
       Timezone
       <br />
-      <OliWeb.Common.SelectTimezone.render conn={@conn} />
+      <OliWeb.Common.SelectTimezone.render context={OliWeb.Common.SessionContext.init(@conn)} />
     </div>
     <hr class="dropdown-divider" />
 
