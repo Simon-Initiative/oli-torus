@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
-import { Button } from 'react-bootstrap';
+
 import { useDispatch, useSelector } from 'react-redux';
+import { Button } from '../../components/misc/Button';
 import { getError } from './schedule-selectors';
 import { dismissError } from './scheduler-slice';
 
@@ -16,7 +17,7 @@ export const ErrorDisplay: React.FC = () => {
 
   return (
     <div
-      className="bg-red-100 text-red-700 align-middle py-1 px-6 mb-1 text-base fixed-top flex flex-row justify-between shadow-lg"
+      className="bg-red-100 text-red-700 align-middle py-2 px-6 mb-1 text-base fixed-top flex flex-row justify-between shadow-lg"
       role="alert"
     >
       <span>
