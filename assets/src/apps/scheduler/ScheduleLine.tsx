@@ -41,12 +41,8 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
   }, [dispatch, item.id]);
 
   const onSelect = useCallback(() => {
-    if (isSelected) {
-      dispatch(selectItem(null));
-    } else {
-      dispatch(selectItem(item.id));
-    }
-  }, [dispatch, item.id, isSelected]);
+    dispatch(selectItem(item.id));
+  }, [dispatch, item.id]);
 
   const onChange = useCallback(
     (startDate: DateWithoutTime, endDate: DateWithoutTime) => {
@@ -66,17 +62,12 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
   //const expansionIcon = containerChildren.length === 0 ? null : expanded ? '-' : '+';
   const expansionIcon = item.children.length === 0 ? null : expanded ? '-' : '+';
 
-  const hasPages = item.children.length != containerChildren.length;
-
   const onStartDrag = useCallback(() => {
-    if (hasPages) {
-      dispatch(selectItem(item.id));
-    } else {
-      dispatch(selectItem(null));
-    }
-  }, [dispatch, hasPages, item.id]);
+    dispatch(selectItem(item.id));
+  }, [dispatch, item.id]);
 
   const rowClass = isSelected ? 'bg-green-50' : '';
+  const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
   return (
     <>
@@ -84,7 +75,11 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeo
         <td className="w-1 border-r-0 cursor-pointer" onClick={toggleExpanded}>
           {expansionIcon}
         </td>
-        <td className="w-48" style={{ paddingLeft: (1 + indent) * 10 }} onClick={onSelect}>
+        <td
+          className={`w-48 ${labelClasses}`}
+          style={{ paddingLeft: (1 + indent) * 10 }}
+          onClick={onSelect}
+        >
           {item.manually_scheduled && (
             <span
               className="float-right"

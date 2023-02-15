@@ -12,7 +12,7 @@ interface DragBarProps {
   onStartDrag?: () => void;
   manual: boolean;
   isSingleDay?: boolean;
-  graded: boolean;
+  hardSchedule: boolean;
 }
 
 export const PageDragBar: React.FC<DragBarProps> = ({
@@ -20,7 +20,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
   onChange,
   onStartDrag,
   dayGeometry,
-  graded,
+  hardSchedule,
 }) => {
   const [isDragging, , enableDrag, disableDrag] = useToggle();
 
@@ -93,9 +93,15 @@ export const PageDragBar: React.FC<DragBarProps> = ({
         className={`absolute h-3 flex flex-row justify-between  cursor-move`}
         style={barStyles}
       >
-        <span>
-          {graded ? <i className="fa fa-file-check "></i> : <i className="fa fa-file"></i>}
-        </span>
+        {hardSchedule ? (
+          <span key="exclamation">
+            <i className="fa fa-calendar "></i>
+          </span>
+        ) : (
+          <span key="file">
+            <i className="fa fa-file"></i>
+          </span>
+        )}
       </div>
     </>
   );

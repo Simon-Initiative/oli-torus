@@ -4,6 +4,7 @@ import { DateWithoutTime } from 'epoq';
 
 import { resetScheduleItem } from './schedule-reset';
 import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
+import { compareDates } from '../../utils/date';
 
 export enum ScheduleItemType {
   Page = 1,
@@ -130,6 +131,13 @@ interface SchedulingPayloadType {
   type: SchedulingType;
 }
 
+const datesEqual = (a: DateWithoutTime | null, b: DateWithoutTime | null) => {
+  if (a === null && b === null) return true;
+  if (a === null) return false;
+  if (b === null) return false;
+  return a.getDaysSinceEpoch() === b.getDaysSinceEpoch();
+};
+
 const schedulerSlice = createSlice({
   name: 'scheduler',
   initialState,
@@ -151,6 +159,7 @@ const schedulerSlice = createSlice({
       const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
 
       if (mutableItem) {
+        let datesChanged = !datesEqual(mutableItem.startDate, action.payload.startDate);
         mutableItem.startDate = action.payload.startDate;
 
         /*
@@ -159,6 +168,10 @@ const schedulerSlice = createSlice({
         */
         if (action.payload.endDate && 'getHours' in action.payload.endDate) {
           // A Date was passed in, so set that to endDateTime and set endDate to the same date
+
+          datesChanged =
+            datesChanged || action.payload.endDate.getTime() !== mutableItem.endDateTime?.getTime();
+
           mutableItem.endDate = new DateWithoutTime();
           mutableItem.endDate.setFullYear(action.payload.endDate.getFullYear());
           mutableItem.endDate.setMonth(action.payload.endDate.getMonth());
@@ -167,6 +180,9 @@ const schedulerSlice = createSlice({
           mutableItem.endDateTime = action.payload.endDate;
         } else {
           // A DateWithoutTime was passed in, so set that to endDate and set endDateTime to 23:59:59
+
+          datesChanged = datesChanged || !datesEqual(mutableItem.endDate, action.payload.endDate);
+
           mutableItem.endDate = action.payload.endDate;
           mutableItem.endDateTime = action.payload.endDate
             ? new Date(action.payload.endDate.utcMidnightDateObj)
@@ -184,7 +200,8 @@ const schedulerSlice = createSlice({
           }
         }
 
-        mutableItem.manually_scheduled = true;
+        mutableItem.manually_scheduled = mutableItem.manually_scheduled || datesChanged;
+
         state.dirty.push(mutableItem.id);
         if (mutableItem.startDate && mutableItem.endDate) {
           resetScheduleItem(

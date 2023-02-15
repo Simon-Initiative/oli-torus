@@ -50,11 +50,12 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
   );
 
   const rowClass = isSelected ? 'bg-green-50' : '';
+  const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
   return (
     <>
       <tr className={`${rowClass} `}>
-        <td className="w-64" colSpan={2} onClick={onSelect}>
+        <td className={`w-64 ${labelClasses}`} colSpan={2} onClick={onSelect}>
           <div style={{ paddingLeft: 20 + (1 + indent) * 10 }}>
             {item.manually_scheduled && (
               <span
@@ -81,7 +82,7 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
               dayGeometry={dayGeometry}
               isContainer={false}
               isSingleDay={true}
-              graded={item.graded}
+              hardSchedule={item.scheduling_type === 'due_by'}
             />
           )}
         </td>

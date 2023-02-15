@@ -51,6 +51,10 @@ export const DragBar: React.FC<DragBarProps> = ({
           newStart.date.getDaysSinceEpoch() <= workingEnd.getDaysSinceEpoch() &&
           setWorkingStart(newStart?.date);
       }
+      const modified =
+        workingStart.getDaysSinceEpoch() !== startDate.getDaysSinceEpoch() ||
+        workingEnd.getDaysSinceEpoch() !== endDate.getDaysSinceEpoch();
+      onChange && modified && onChange(workingStart, workingEnd);
     } else if (isDragging) {
       const newStart = leftToDate(startingGeometry.left + delta, dayGeometry);
       if (!newStart) return;
@@ -59,10 +63,11 @@ export const DragBar: React.FC<DragBarProps> = ({
       setWorkingStart(newStart.date);
       setWorkingEnd(newEnd);
     }
-    onChange &&
+    const modified =
       workingStart.getDaysSinceEpoch() !== startDate.getDaysSinceEpoch() &&
-      workingEnd.getDaysSinceEpoch() !== endDate.getDaysSinceEpoch() &&
-      onChange(workingStart, workingEnd);
+      workingEnd.getDaysSinceEpoch() !== endDate.getDaysSinceEpoch();
+
+    onChange && modified && onChange(workingStart, workingEnd);
   };
 
   const startResize = useCallback(
@@ -111,23 +116,10 @@ export const DragBar: React.FC<DragBarProps> = ({
     width: geometry.width,
   };
 
-  const label = (isDragging || isResize) && (
-    <div
-      className="fixed bg-slate-500 rounded-md text-white p-1 font-mono"
-      style={{
-        top: 100,
-        right: 10,
-      }}
-    >
-      {dateWithoutTimeLabel(workingStart)} - {dateWithoutTimeLabel(workingEnd)}
-    </div>
-  );
-
   const color = manual ? 'bg-delivery-primary' : 'bg-delivery-primary-300';
 
   return (
     <>
-      {label}
       {isContainer ? (
         <div
           onMouseDown={startDrag}
