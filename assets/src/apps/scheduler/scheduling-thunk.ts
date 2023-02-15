@@ -46,7 +46,7 @@ export const scheduleAppFlushChanges = createAsyncThunk(
         .map((i) => `${i?.title} ${i?.numbering_index}`)
         .join(', '),
     );
-    updateSchedule(state.scheduler.sectionSlug, updates);
+    await updateSchedule(state.scheduler.sectionSlug, updates);
   },
 );
 

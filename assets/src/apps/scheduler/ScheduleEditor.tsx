@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
 import { resetSchedule, StringDate } from './scheduler-slice';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
@@ -48,6 +49,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
 
   return (
     <>
+      <ErrorDisplay />
       {wizard_mode || <ScheduleSaveBar onSave={onModification} />}
       <div className="flex justify-end p-1 ">
         <button className=" text-delivery-primary uppercase underline" onClick={onReset}>

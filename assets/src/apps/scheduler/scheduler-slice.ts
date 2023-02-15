@@ -4,7 +4,6 @@ import { DateWithoutTime } from 'epoq';
 
 import { resetScheduleItem } from './schedule-reset';
 import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
-import { getSchedule } from './schedule-selectors';
 
 export enum ScheduleItemType {
   Page = 1,
@@ -46,6 +45,7 @@ export interface SchedulerState {
   displayCurriculumItemNumbering: boolean;
   dirty: number[];
   sectionSlug: string;
+  errorMessage: string | null;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -59,6 +59,7 @@ export const initSchedulerState = (): SchedulerState => ({
   displayCurriculumItemNumbering: true,
   dirty: [],
   sectionSlug: '',
+  errorMessage: null,
 });
 
 const toDateTime = (str: string) => {
@@ -214,6 +215,9 @@ const schedulerSlice = createSlice({
     selectItem(state, action: PayloadAction<number | null>) {
       state.selectedId = action.payload;
     },
+    dismissError(state) {
+      state.errorMessage = null;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(scheduleAppStartup.pending, (state, _action) => {
@@ -230,6 +234,12 @@ const schedulerSlice = createSlice({
       state.selectedId = null;
     });
 
+    builder.addCase(scheduleAppFlushChanges.rejected, (state, _action) => {
+      state.errorMessage = 'Could not save changes.';
+    });
+    builder.addCase(scheduleAppStartup.rejected, (state, action) => {
+      state.errorMessage = 'Could not load schedule.';
+    });
     builder.addCase(scheduleAppStartup.fulfilled, (state, action) => {
       const {
         start_date,
@@ -261,6 +271,7 @@ export const {
   selectItem,
   unlockScheduleItem,
   changeScheduleType,
+  dismissError,
 } = schedulerSlice.actions;
 
 export const schedulerSliceReducer = schedulerSlice.reducer;
