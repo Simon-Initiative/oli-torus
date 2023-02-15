@@ -34,7 +34,12 @@ import {
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
-import { selectPageSlug, selectPreviewMode, selectUserId } from '../store/features/page/slice';
+import {
+  selectPageSlug,
+  selectPreviewMode,
+  selectReviewMode,
+  selectUserId,
+} from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
@@ -327,6 +332,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const reviewMode = useSelector(selectReviewMode);
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
       return;
@@ -464,7 +470,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
 
       const hasNavigationToDifferentActivity = hasNavigation(lastCheckResults);
-      if ((!hasNavigationToDifferentActivity || isEverApp) && !historyModeNavigation) {
+      if (
+        (!hasNavigationToDifferentActivity || isEverApp) &&
+        !historyModeNavigation &&
+        !reviewMode
+      ) {
         notifyCheckComplete(lastCheckResults);
       }
     }
@@ -474,6 +484,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     lastCheckTriggered,
     lastCheckHandledTimestamp,
     historyModeNavigation,
+    reviewMode,
   ]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
@@ -524,7 +535,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
       currentLessonId,
-      mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
+      mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot || {},
       domain: adaptivityDomain,
@@ -533,7 +544,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (lastCheckResults.timestamp > 0) {
       notifyCheckComplete(lastCheckResults);
     }
-  }, [historyModeNavigation, lastCheckResults, currentActivityId, currentLessonId]);
+  }, [historyModeNavigation, reviewMode, lastCheckResults, currentActivityId, currentLessonId]);
 
   const [lastInitPhaseHandledTimestamp, setLastInitPhaseHandledTimestamp] = useState(Date.now());
 
@@ -548,7 +559,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     setLastInitPhaseHandledTimestamp(initPhaseComplete);
     // context change should only be needed for things loaded by parents that are still around
     /* console.log('AR notifyContextChanged', currentActivityId !== activity.id); */
-    if (!historyModeNavigation && currentActivityId !== activity.id) {
+    if (!historyModeNavigation && !reviewMode && currentActivityId !== activity.id) {
       notifyContextChanged();
     }
   }, [
@@ -557,6 +568,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     notifyContextChanged,
     historyModeNavigation,
     currentActivityId,
+    reviewMode,
   ]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
