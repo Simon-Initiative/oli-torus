@@ -91,15 +91,22 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   isEverApp = false,
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
+  const isReviewMode = useSelector(selectReviewMode);
   const currentUserId = useSelector(selectUserId);
   const currentLessonId = useSelector(selectPageSlug);
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    if (isReviewMode) {
+      return;
+    }
     const { simId, key, value } = payload;
     await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    if (isReviewMode) {
+      return undefined;
+    }
     const { simId, key } = payload;
     const data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
     if (data) {
