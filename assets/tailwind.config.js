@@ -10,7 +10,7 @@ const theme = require('./tailwind.theme.js');
 
 module.exports = {
   content: [
-    './src/**/*.{html,js,jsx,ts,tsx}',
+    './src/**/*.{html,js,jsx,ts,tsx,mdx}',
     '../lib/*_web.ex',
     '../lib/*_web/**/*.*ex',
     './node_modules/tw-elements/dist/js/**/*.js',

@@ -211,7 +211,11 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         end_date: DateTime.add(DateTime.utc_now(), 3600)
       })
 
-    insert(:section_project_publication, %{project: project, section: section, publication: publication})
+    insert(:section_project_publication, %{
+      project: project,
+      section: section,
+      publication: publication
+    })
 
     %{
       section: section,

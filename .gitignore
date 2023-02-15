@@ -89,3 +89,5 @@ stacks.out
 yarn-error.log
 /priv/superactivity/
 /assets/src/components/activities/oli_ctat2/
+/assets/storybook-static
+/assets/.storybook/temp

@@ -1,0 +1,47 @@
+import { Paging } from 'components/misc/Paging';
+
+<Meta title="Torus/Paging" />
+
+# Paging
+
+Control to allow the navigation between pages of content.
+
+<Story name="4 pages">
+  <Paging
+    totalResults={32}
+    page={{
+      offset: 0,
+      limit: 10,
+    }}
+  />
+</Story>
+
+```tsx
+<Paging
+  totalResults={20}
+  page={{
+    offset: 0,
+    limit: 10,
+  }}
+/>
+```
+
+<Story name="Many pages">
+  <Paging
+    totalResults={1000}
+    page={{
+      offset: 0,
+      limit: 10,
+    }}
+  />
+</Story>
+
+```tsx
+<Paging
+  totalResults={1000}
+  page={{
+    offset: 0,
+    limit: 10,
+  }}
+/>
+```

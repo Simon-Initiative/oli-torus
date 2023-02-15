@@ -11,7 +11,7 @@
   }
 
   a.btn {
-    @apply hover:no-underline text-current hover:text-current active:text-current;
+    @apply hover:no-underline;
   }
 
   a.external::after,

@@ -11,7 +11,7 @@
         <div
           class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
           <h5 class="modal-title text-xl font-medium leading-normal text-gray-800 inline-flex">
-            <img src="<%= Routes.static_path(@conn, "/images/icons/life-ring-regular.svg") %>" class="help-icon"></img>
+            <img src="<%= Routes.static_path(OliWeb.Endpoint, "/images/icons/life-ring-regular.svg") %>" class="help-icon"></img>
             <span>Help</span>
           </h5>
           <button type="button"
@@ -111,7 +111,7 @@
       const errorElement = document.getElementById('help-error-message');
       errorElement.classList.add('hidden');
 
-      const result = await fetch('<%= Routes.help_path(@conn, :create) %>', {
+      const result = await fetch('<%= Routes.help_path(OliWeb.Endpoint, :create) %>', {
         method: form.method,
         body: new URLSearchParams([...(new FormData(form))]),
       }).then((response) => response.json())

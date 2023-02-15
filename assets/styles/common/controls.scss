@@ -2,8 +2,6 @@
   &.no-hover {
     &:hover,
     &:focus {
-      color: unset;
-      text-decoration: unset;
       background-color: unset;
     }
   }

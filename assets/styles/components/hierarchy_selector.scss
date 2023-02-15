@@ -1,0 +1,87 @@
+/* TODO: Use tailwind classes instead of pure css (need to fix tailwind config in order to do that) */
+.hierarchy-selector {
+  position: relative;
+
+  div.hierarchy-selector__selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px;
+    min-height: 42px;
+    border: solid 1px rgb(209 213 219 / 1);
+    border-radius: 0.375rem;
+    cursor: pointer;
+
+
+    &.disabled {
+      background-color: rgb(243 244 246 / 1);
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 1px rgb(37 99 235);
+    }
+
+    .hierarchy-selector__selected-item {
+      background-color: var(--color-gray-100);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 4px;
+    }
+  }
+
+  .hierarchy-selector__list-container {
+    position: absolute;
+    width: 100%;
+
+    .hierarchy-selector__list {
+      display: none;
+      max-height: 200px;
+      overflow-y: scroll;
+      background-color: var(--color-gray-200);
+      border-radius: 4px;
+      padding: 12px;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+
+      &[data-active=true] {
+        display: block;
+      }
+
+      .hierarchy-selector__item {
+        button.hidden {
+          display: block;
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        &[data-expanded=true] {
+          .hierarchy-selector__item-children {
+            display: block;
+          }
+
+          &> div:first-child button [data-icon=caret-down] {
+            display: none;
+          }
+        }
+
+        &[data-expanded=false] {
+          .hierarchy-selector__item-children {
+            display: none;
+          }
+
+          &> div:first-child button [data-icon=caret-up] {
+            display: none;
+          }
+        }
+      }
+    }
+  }
+}

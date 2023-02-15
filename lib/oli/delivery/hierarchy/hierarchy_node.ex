@@ -22,4 +22,12 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             section_resource: nil,
             ancestors: [],
             finalized: true
+
+  def simplify(%Oli.Delivery.Hierarchy.HierarchyNode{} = node) do
+    %{
+      id: node.resource_id,
+      name: node.revision.title,
+      children: Enum.map(node.children, &simplify/1)
+    }
+  end
 end

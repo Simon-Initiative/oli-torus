@@ -26,7 +26,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   @spec navbar(any) :: Phoenix.LiveView.Rendered.t()
   def navbar(assigns) do
     ~H"""
-      <nav class="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
+      <nav class="flex flex-col w-full z-40 lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
         <div class="w-full">
           <a class="block w-[200px] lg:mb-14 mx-auto" href={
           case assigns[:logo_link] do
@@ -62,16 +62,18 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         <div class="collapse lg:!flex navbar-collapse flex-grow flex flex-col " id="navbarSupportedContent">
 
           <div class="flex-1 items-center lg:items-start">
-            <%= if assigns[:section] do %>
-              <%= for {name, href, active} <- [{"Home", home_url(assigns), true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
-                <.nav_link name={name} href={href} active={active} />
-              <% end %>
-            <% end %>
+            <%= cond do %>
+              <% assigns[:section] -> %>
+                <%= for {name, href, active} <- [{"Home", home_url(assigns), true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
+                  <.nav_link name={name} href={href} active={active} />
+                <% end %>
 
-            <%= if is_preview_mode?(assigns) do %>
-              <%= for {name, href, active} <- [{"Home", "#", true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
-                <.nav_link name={name} href={href} active={active} />
-              <% end %>
+              <% is_preview_mode?(assigns) -> %>
+                <%= for {name, href, active} <- [{"Home", "#", true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
+                  <.nav_link name={name} href={href} active={active} />
+                <% end %>
+
+              <% true -> %>
             <% end %>
           </div>
 
@@ -137,7 +139,11 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   defp home_url(assigns) do
     if assigns[:preview_mode] do
-      Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, assigns[:section_slug])
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Delivery.InstructorDashboard.ContentLive,
+        assigns[:section_slug]
+      )
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :index, assigns[:section_slug])
     end

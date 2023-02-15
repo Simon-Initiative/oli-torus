@@ -240,7 +240,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("user_#{user_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -280,7 +282,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("user_#{user_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -308,7 +312,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("user_#{user_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -356,11 +362,11 @@ defmodule Oli.Accounts do
   @doc """
   Returns true if an author is an administrator.
   """
-  def is_admin?(nil), do: false
-
   def is_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().admin == system_role_id
   end
+
+  def is_admin?(_), do: false
 
   @doc """
   Returns an author if one matches given email, or creates and returns a new author
@@ -383,7 +389,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("author_#{author_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -406,7 +414,9 @@ defmodule Oli.Accounts do
         AccountLookupCache.delete("author_#{author_id}")
 
         res
-      error -> error
+
+      error ->
+        error
     end
   end
 

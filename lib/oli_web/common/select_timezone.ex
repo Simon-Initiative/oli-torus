@@ -7,9 +7,17 @@ defmodule OliWeb.Common.SelectTimezone do
   alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def render(%{conn: conn} = assigns) do
-    browser_timezone = Plug.Conn.get_session(conn, "browser_timezone")
-    context = SessionContext.init(conn)
+  attr :context, SessionContext
+
+  def render(assigns) do
+    browser_timezone =
+      case assigns do
+        %{context: %{local_tz: local_tz}} ->
+          local_tz
+
+        _ ->
+          FormatDateTime.default_timezone()
+      end
 
     {maybe_browser_timezone, timezones} =
       Enum.split_with(Predefined.timezones(), fn
@@ -30,7 +38,6 @@ defmodule OliWeb.Common.SelectTimezone do
       end
 
     assigns = assign(assigns, :timezones, timezones)
-    |> assign(:context, context)
 
     ~H"""
       <script>
@@ -41,19 +48,19 @@ defmodule OliWeb.Common.SelectTimezone do
         }
       </script>
 
-      <%= form_for @conn, Routes.static_page_path(OliWeb.Endpoint, :update_timezone), [id: "timezone-form"], fn f -> %>
+      <%= form_for :timezone, Routes.static_page_path(OliWeb.Endpoint, :update_timezone), [id: "timezone-form"], fn f -> %>
         <%= hidden_input f, :redirect_to, id: "hidden-redirect-to" %>
         <div class="form-label-group">
-          <%= select f, :timezone, @timezones, onchange: "submitForm()", selected: selected_timezone(@context.local_tz), class: "form-control dropdown-select", required: true %>
+          <%= select f, :timezone, @timezones, onchange: "submitForm()", selected: selected_timezone(browser_timezone), class: "form-control dropdown-select", required: true %>
         </div>
       <% end %>
     """
   end
 
-  defp selected_timezone(timezone) do
+  defp selected_timezone(browser_timezone) do
     default = FormatDateTime.default_timezone()
 
-    case timezone do
+    case browser_timezone do
       ^default -> "Etc/Greenwich"
       timezone -> timezone
     end
