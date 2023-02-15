@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { usePromptModal } from '../../components/misc/PromptModal';
 import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
 import { resetSchedule, StringDate } from './scheduler-slice';
@@ -45,14 +46,17 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     );
   }, [dispatch, display_curriculum_item_numbering, end_date, section_slug, start_date, title]);
 
-  // const showSlideout = useSelector(selectedContainsPages);
+  const { Modal, showModal } = usePromptModal(
+    'Are you sure you want to reset the schedule to the default values?',
+    onReset,
+  );
 
   return (
     <>
       <ErrorDisplay />
       {wizard_mode || <ScheduleSaveBar onSave={onModification} />}
       <div className="flex justify-end p-1 ">
-        <button className=" text-delivery-primary uppercase underline" onClick={onReset}>
+        <button className=" text-delivery-primary uppercase underline" onClick={showModal}>
           Reset Timelines
         </button>
       </div>
@@ -62,6 +66,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
           <ScheduleGrid startDate={start_date} endDate={end_date} />
         </div>
       </div>
+      {Modal}
     </>
   );
 };
