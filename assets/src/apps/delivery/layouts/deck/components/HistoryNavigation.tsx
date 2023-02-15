@@ -12,6 +12,7 @@ import { navigateToActivity } from '../../../store/features/groups/actions/deck'
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
+  selectReviewMode,
   selectShowHistory,
   setShowHistory,
 } from '../../../store/features/page/slice';
@@ -29,7 +30,7 @@ const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
-
+  const reviewMode = useSelector(selectReviewMode);
   const isHistoryMode = useSelector(selectHistoryNavigationActivity);
 
   const sequences = useSelector(selectSequence);
@@ -101,7 +102,7 @@ const HistoryNavigation: React.FC = () => {
     );
     dispatch(
       setHistoryNavigationTriggered({
-        historyModeNavigation: nextHistoryActivityIndex !== 0,
+        historyModeNavigation: reviewMode || nextHistoryActivityIndex !== 0,
       }),
     );
   };
@@ -118,7 +119,7 @@ const HistoryNavigation: React.FC = () => {
 
   return (
     <Fragment>
-      {enableHistory ? (
+      {enableHistory || reviewMode ? (
         <div className="historyStepView pullLeftInCheckContainer">
           <div className="historyStepContainer">
             <button
@@ -133,7 +134,7 @@ const HistoryNavigation: React.FC = () => {
               onClick={nextHandler}
               className="nextBtn historyStepButton"
               aria-label="Next screen"
-              disabled={isLast || !isHistoryMode}
+              disabled={isLast || !isHistoryMode || !reviewMode}
             >
               <span className="icon-chevron-right" />
             </button>
@@ -143,11 +144,11 @@ const HistoryNavigation: React.FC = () => {
       <div
         className={[
           'navigationContainer',
-          enableHistory ? undefined : 'pullLeftInCheckContainer',
+          enableHistory || reviewMode ? undefined : 'pullLeftInCheckContainer',
         ].join(' ')}
       >
         <aside className={`ui-resizable ${showHistory ? undefined : 'minimized'}`}>
-          {enableHistory ? (
+          {enableHistory || reviewMode ? (
             <Fragment>
               <button
                 onClick={minimizeHandler}

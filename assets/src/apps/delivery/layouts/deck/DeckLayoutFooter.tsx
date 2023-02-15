@@ -46,6 +46,7 @@ import {
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
+  selectReviewMode,
   setScore,
   setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
@@ -146,12 +147,13 @@ const NextButton: React.FC<NextButton> = ({
 }) => {
   const isEnd = useSelector(selectLessonEnd);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const reviewMode = useSelector(selectReviewMode);
   const styles: CSSProperties = {};
   if (historyModeNavigation) {
     styles.opacity = 0.5;
     styles.cursor = 'not-allowed';
   }
-  const showDisabled = historyModeNavigation ? true : isLoading;
+  const showDisabled = historyModeNavigation || reviewMode ? true : isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 

@@ -96,7 +96,6 @@ const Delivery: React.FC<DeliveryProps> = ({
     }";`;
     evalScript(userScript, defaultGlobalEnv);
     evalScript(janus_std, defaultGlobalEnv);
-    console.log({ reviewMode });
 
     dispatch(
       loadInitialPageState({
