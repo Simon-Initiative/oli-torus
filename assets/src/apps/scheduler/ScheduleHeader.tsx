@@ -35,7 +35,7 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeome
       {g.map((g, i) => (
         <div
           key={i}
-          className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal "
+          className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal dark:border-gray-800 "
           style={{ width: g.width }}
         >
           {labels && g.width > 60 && (

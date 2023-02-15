@@ -216,7 +216,7 @@ input.form-control,
 .input-group select,
 select.custom-select,
 select.form-control {
-  @apply border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600;
+  @apply border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700;
 }
 
 input.form-control-sm,
@@ -385,11 +385,11 @@ input.form-control-sm,
 }
 
 .card {
-  @apply block p-6 rounded-lg shadow-lg bg-white;
+  @apply block p-6 rounded-lg shadow-lg bg-white text-gray-700 dark:bg-slate-800 dark:text-gray-100;
 }
 
 .card-body {
-  @apply text-gray-700 text-base;
+  @apply text-base dark:text-gray-100;
 }
 
 .modal {
@@ -468,24 +468,24 @@ input.form-control-sm,
 }
 
 table {
-  @apply min-w-full border;
+  @apply min-w-full border dark:border-gray-800 dark:text-gray-300;
 }
 table thead th {
-  @apply border-b border-r p-2 bg-gray-100 font-semibold;
+  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-delivery-body-dark dark:border-gray-800;
 }
 table tbody tr {
-  @apply border-b;
+  @apply border-b dark:border-gray-800;
 }
 table tbody td {
-  @apply border-r p-2;
+  @apply border-r p-2 dark:border-gray-800;
 }
 
 table.table-striped tbody tr:nth-child(even) {
-  @apply bg-gray-100;
+  @apply bg-gray-100 dark:bg-gray-600;
 }
 
 table.table-striped tbody tr:nth-child(odd) {
-  @apply bg-white;
+  @apply bg-white dark:bg-delivery-body-dark;
 }
 
 .d-none {

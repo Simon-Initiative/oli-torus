@@ -26,7 +26,9 @@ interface PageDetailEditorProps {
   onChangeDueEndHandler: ChangeEventHandler<HTMLInputElement>;
 }
 
-const DateRangeView: React.FC<{ selectedItem: HierarchyItem | null }> = ({ selectedItem }) => {
+const DateRangeView: React.FC<{ selectedItem: HierarchyItem | undefined | null }> = ({
+  selectedItem,
+}) => {
   if (!selectedItem) return null;
 
   return (
@@ -50,7 +52,7 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
 }) => {
   if (!selectedItem) return null;
   return (
-    <div className="flex flex-row gap-1 flex-grow-0 ">
+    <div className="flex flex-row gap-1 flex-grow-0  ">
       <div className="text-ellipsis text-sm overflow-hidden whitespace-nowrap text-right pt-3 mr-2">
         {selectedItem.title}:
       </div>
@@ -142,7 +144,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
   const pageIsSelected = selectedItem && selectedItem.resource_type_id === ScheduleItemType.Page;
   if (!unsavedChanges && !saving && !pageIsSelected) return null;
   return (
-    <div className="fixed p-4 bottom-0 left-0 z-50 bg-body w-full flex border-t-gray-300 border-t h-20">
+    <div className="fixed p-4 bottom-0 left-0 z-50 bg-body w-full flex border-t-gray-300 border-t h-20 dark:bg-slate-800">
       {pageIsSelected || <DateRangeView selectedItem={selectedItem} />}
       {pageIsSelected && (
         <PageDetailEditor

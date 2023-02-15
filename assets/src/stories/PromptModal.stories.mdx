@@ -1,4 +1,5 @@
 import { PromptModal } from 'components/misc/PromptModal';
+import { TorusBG } from './TorusBG';
 
 <Meta title="Torus/PromptModal" />
 
@@ -8,11 +9,11 @@ import { PromptModal } from 'components/misc/PromptModal';
 
 <Canvas>
   <Story name="Default Usage">
-    <div className="h-80 relative">
+    <TorusBG className="h-96">
       <PromptModal title="Are you sure?" className="absolute">
         Are you sure you really want to do this entirely <b>ill-advised</b> thing?
       </PromptModal>
-    </div>
+    </TorusBG>
   </Story>
 </Canvas>
 
@@ -32,11 +33,11 @@ You can customize the button labels
 
 <Canvas>
   <Story name="Prompt Modal">
-    <div className="h-80 relative">
+    <TorusBG className="h-96">
       <PromptModal title="Confirmation" confirmText="Yup!" cancelText="Nope!" className="absolute">
         Are you sure you really want to do this entirely <b>ill-advised</b> thing?
       </PromptModal>
-    </div>
+    </TorusBG>
   </Story>
 </Canvas>
 

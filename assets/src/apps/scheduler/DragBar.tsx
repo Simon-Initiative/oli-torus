@@ -116,23 +116,25 @@ export const DragBar: React.FC<DragBarProps> = ({
     width: geometry.width,
   };
 
-  const color = manual ? 'bg-delivery-primary' : 'bg-delivery-primary-300';
+  const color = manual
+    ? 'bg-delivery-primary'
+    : 'bg-delivery-primary-300 dark:bg-delivery-primary-600';
 
   return (
     <>
       {isContainer ? (
         <div
           onMouseDown={startDrag}
-          className=" absolute border-t-4 border-black h-3 top-3 cursor-move flex flex-row justify-between"
+          className=" absolute border-t-4 border-black h-3 top-3 cursor-move flex flex-row justify-between dark:border-gray-400"
           style={barStyles}
         >
           <div
             onMouseDown={startResize('left')}
-            className="w-1 inline-block h-full bg-black cursor-col-resize"
+            className="w-1 inline-block h-full bg-black cursor-col-resize dark:bg-gray-400"
           ></div>
           <div
             onMouseDown={startResize('right')}
-            className="w-1 inline-block h-full bg-black cursor-col-resize"
+            className="w-1 inline-block h-full bg-black cursor-col-resize dark:bg-gray-400"
           ></div>
         </div>
       ) : (
@@ -143,13 +145,13 @@ export const DragBar: React.FC<DragBarProps> = ({
         >
           <div
             onMouseDown={startResize('left')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 cursor-col-resize"
+            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
           ></div>
           {children}
-          {/* {barStyles.left}, {barStyles.width} */}
+
           <div
             onMouseDown={startResize('right')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 cursor-col-resize"
+            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
           ></div>
         </div>
       )}
