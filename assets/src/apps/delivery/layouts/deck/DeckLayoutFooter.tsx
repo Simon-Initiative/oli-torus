@@ -154,9 +154,11 @@ const NextButton: React.FC<NextButton> = ({
     styles.cursor = 'not-allowed';
   }
   const showDisabled = historyModeNavigation || reviewMode ? true : isLoading;
-  const showHideCheckButton =
+  let showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
+  showHideCheckButton =
+    showHideCheckButton === 'hideCheckBtn' && reviewMode ? '' : showHideCheckButton;
   return (
     <div
       className={`buttonContainer ${showHideCheckButton} ${
