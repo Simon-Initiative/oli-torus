@@ -31,7 +31,35 @@ export const findNthDay = (startDay: number, n: number, weekdaysToSchedule: bool
 export const findStartEnd = (startDay: number, days: number, weekdaysToSchedule: boolean[]) => {
   const start = findNthDay(startDay, 1, weekdaysToSchedule);
   const end = findNthDay(start.getDaysSinceEpoch(), days, weekdaysToSchedule);
+  if (start.getDaysSinceEpoch() > end.getDaysSinceEpoch()) {
+    console.log('ERROR: start > end', start, end);
+  }
   return [start, end];
+};
+
+/*
+  Using just findStartEnd has a problem where it will exceed the end-date if we have more children than
+  working days to schedule since each child is scheduled for at least 1 day. This function
+  will try to spread out the starting days evenly within the range of start and end.
+*/
+export const findStartEndByPercent = (
+  start: DateWithoutTime,
+  workingDayCount: number,
+  entryIndex: number,
+  totalEntries: number,
+  weekdaysToSchedule: boolean[],
+) => {
+  const length = Math.ceil(workingDayCount / totalEntries);
+  const startingDayIndex = (workingDayCount * entryIndex) / totalEntries + 1;
+
+  const calculatedStart = findNthDay(
+    start.getDaysSinceEpoch(),
+    startingDayIndex,
+    weekdaysToSchedule,
+  );
+  const calculatedEnd = findNthDay(calculatedStart.getDaysSinceEpoch(), length, weekdaysToSchedule);
+
+  return [calculatedStart, calculatedEnd];
 };
 
 export const resetScheduleItem = (
@@ -47,30 +75,41 @@ export const resetScheduleItem = (
   if (resetManual) target.manually_scheduled = false;
   if (count === 0) return;
 
-  let startDay = start.getDaysSinceEpoch();
   const dayCount = countWorkingDays(start, end, weekdaysToSchedule);
 
-  const itemLength = dayCount / count;
-  let leftover = 0;
-
-  for (const childId of target.children) {
+  for (const [index, childId] of target.children.entries()) {
     const child = getScheduleItem(childId, schedule);
 
-    // We want to round to full days, but we also want to distribute the leftover days evenly across the items.
-    let length = Math.max(1, Math.floor(itemLength));
-    leftover += itemLength % 1;
-    if (leftover >= 1) {
-      leftover -= 1;
-      length += 1;
-    }
+    // start: DateWithoutTime,
+    // workingDayCount: number,
+    // entryIndex: number,
+    // totalEntries: number,
+    // workingDays: boolean[]
 
-    const [calculatedStart, calculatedEnd] = findStartEnd(startDay, length, weekdaysToSchedule);
+    // const [calculatedStart, calculatedEnd] = findStartEnd(startDay, length, weekdaysToSchedule);
+    const [calculatedStart, calculatedEnd] = findStartEndByPercent(
+      start,
+      dayCount,
+      index,
+      target.children.length,
+      weekdaysToSchedule,
+    );
 
     if (child && (resetManual || !child?.manually_scheduled)) {
       child.startDate =
         child.resource_type_id === ScheduleItemType.Container ? calculatedStart : null;
-      child.endDate =
-        calculatedEnd.getDaysSinceEpoch() <= end.getDaysSinceEpoch() ? calculatedEnd : end;
+      child.endDate = calculatedEnd;
+
+      const delta = child.endDate.getDaysSinceEpoch() - end.getDaysSinceEpoch();
+      if (delta > 0) {
+        child.endDate.addDays(-delta);
+      }
+      if (
+        child.startDate &&
+        child.endDate.getDaysSinceEpoch() < child.startDate.getDaysSinceEpoch()
+      ) {
+        child.startDate = new DateWithoutTime(end.getDaysSinceEpoch());
+      }
 
       child.endDateTime = new Date(
         child.endDate.getFullYear(),
@@ -84,6 +123,5 @@ export const resetScheduleItem = (
 
       resetScheduleItem(child, calculatedStart, child.endDate, schedule);
     }
-    startDay = calculatedEnd.getDaysSinceEpoch() + 1;
   }
 };

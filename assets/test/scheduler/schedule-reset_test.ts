@@ -1,6 +1,7 @@
 import {
   countWorkingDays,
   findNthDay,
+  findStartEndByPercent,
   findStartEnd,
 } from '../../src/apps/scheduler/schedule-reset';
 import { DateWithoutTime } from 'epoq';
@@ -56,6 +57,45 @@ describe('schedule-reset', () => {
     it('should find the start and end of two full 5 day weeks', () => {
       expect(findStartEnd(100, 10, allDays).map((d) => d.getDaysSinceEpoch())).toEqual([100, 109]);
       expect(findStartEnd(100, 10, weekdays).map((d) => d.getDaysSinceEpoch())).toEqual([102, 113]);
+    });
+  });
+
+  describe('findStartEndByPercent', () => {
+    // Params:
+    // start: DateWithoutTime,
+    // workingDayCount: number,
+    // entryIndex: number,
+    // totalEntries: number,
+    // workingDays: boolean[]
+
+    const toEpoq = (d: DateWithoutTime) => d.getDaysSinceEpoch();
+
+    it("should find the first day's start and end", () => {
+      expect(findStartEndByPercent(new DateWithoutTime(10), 10, 0, 5, allDays).map(toEpoq)).toEqual(
+        [10, 11],
+      );
+
+      expect(findStartEndByPercent(new DateWithoutTime(10), 10, 0, 4, allDays).map(toEpoq)).toEqual(
+        [10, 12],
+      );
+
+      expect(findStartEndByPercent(new DateWithoutTime(10), 10, 0, 3, allDays).map(toEpoq)).toEqual(
+        [10, 13],
+      );
+    });
+
+    it("should find the second day's start and end", () => {
+      expect(findStartEndByPercent(new DateWithoutTime(10), 10, 1, 5, allDays).map(toEpoq)).toEqual(
+        [12, 13],
+      );
+
+      expect(findStartEndByPercent(new DateWithoutTime(10), 10, 1, 4, allDays).map(toEpoq)).toEqual(
+        [13, 15],
+      );
+
+      expect(findStartEndByPercent(new DateWithoutTime(10), 10, 1, 3, allDays).map(toEpoq)).toEqual(
+        [14, 17],
+      );
     });
   });
 });

@@ -72,37 +72,21 @@ export const PageDragBar: React.FC<DragBarProps> = ({
     top: 7,
   };
 
-  const label = isDragging && (
-    <div
-      className="fixed bg-slate-500 rounded-md text-white p-1 font-mono"
-      style={{
-        top: 100,
-        right: 10,
-      }}
-    >
-      {dateWithoutTimeLabel(workingEnd)}
-    </div>
-  );
-
   return (
-    <>
-      {label}
-
-      <div
-        onMouseDown={startDrag}
-        className={`absolute h-3 flex flex-row justify-between  cursor-move`}
-        style={barStyles}
-      >
-        {hardSchedule ? (
-          <span key="exclamation">
-            <i className="fa fa-calendar "></i>
-          </span>
-        ) : (
-          <span key="file">
-            <i className="fa fa-file"></i>
-          </span>
-        )}
-      </div>
-    </>
+    <div
+      onMouseDown={startDrag}
+      className={`absolute h-3 flex flex-row justify-between  cursor-move`}
+      style={barStyles}
+    >
+      {hardSchedule ? (
+        <span key="exclamation">
+          <i className="fa fa-calendar "></i>
+        </span>
+      ) : (
+        <span key="file">
+          <i className="fa fa-file"></i>
+        </span>
+      )}
+    </div>
   );
 };
