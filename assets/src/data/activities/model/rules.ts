@@ -275,7 +275,7 @@ type ParsedNumericRule = {
 };
 
 export const matchSingleNumberRule = (rule: string): Maybe<InputNumeric> =>
-  parseRegex(rule, /{(-?[-\+\d.Ee]+)#?(\d+)?}/)
+  parseRegex(rule, /{(-?[-+\d.Ee]+)#?(\d+)?}/)
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([value, precision]) =>
       // verify the required values for this matcher are present or return nothing
@@ -330,7 +330,7 @@ const matchBetweenRule = (rule: string): Maybe<InputRange> =>
 const matchRangeRule = (rule: string): Maybe<InputRange> =>
   parseRegex(
     rule,
-    /{([[(])\s*(-?[-\+01234567890Ee.]+)\s*,\s*(-?[-\+01234567890Ee.]+)\s*[\])]#?(\d+)?}/,
+    /{([[(])\s*(-?[-+01234567890Ee.]+)\s*,\s*(-?[-+01234567890Ee.]+)\s*[\])]#?(\d+)?}/,
   )
     .lift((matches) => ({
       bracketOrBrace: matches[1],
