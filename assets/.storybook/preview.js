@@ -8,21 +8,4 @@ export const parameters = {
       date: /Date$/,
     },
   },
-  themes: {
-    clearable: false,
-    list: [
-      {
-        name: 'Light',
-        class: ['bg-delivery-body'],
-        color: '#ffffff',
-        default: true,
-      },
-      {
-        name: 'Dark',
-        // The class dark will be added to the body tag
-        class: ['dark', 'dark:bg-delivery-body-dark'],
-        color: '#111827',
-      },
-    ],
-  },
 };
