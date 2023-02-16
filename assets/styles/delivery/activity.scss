@@ -157,7 +157,7 @@
   .hints.card {
     color: var(--color-hints-color);
     background-color: var(--color-hints-bg);
-    border: var(--color-hints-border);
+    border: 2px solid var(--color-hints-border);
   }
 
   p:last-of-type {

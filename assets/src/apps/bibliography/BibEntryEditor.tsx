@@ -267,7 +267,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
             Add Field
           </button>
           <div className="dropdown-menu" aria-labelledby="createButton">
-            <div className="overflow-auto bg-light" style={{ maxHeight: '300px' }}>
+            <div className="overflow-auto" style={{ maxHeight: '300px' }}>
               {attrs.map((e: string) => (
                 <a
                   onClick={() => {
@@ -301,7 +301,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
           {toFriendlyLabel(model.type).toUpperCase()}
         </button>
         <div className="dropdown-menu" aria-labelledby="createButton">
-          <div className="overflow-auto bg-light" style={{ maxHeight: '300px' }}>
+          <div className="overflow-auto" style={{ maxHeight: '300px' }}>
             {cslSchema.items.properties['type'].enum.map((e: string) => (
               <a
                 onClick={() => {
@@ -323,7 +323,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
   return (
     <div>
       <div>{createEntryTypeDropdown}</div>
-      <div className="overflow-auto form-horizontal p-3 bg-light" style={{ maxHeight: '400px' }}>
+      <div className="overflow-auto form-horizontal p-3" style={{ maxHeight: '400px' }}>
         {renderAttributeEditors()}
       </div>
       {createEntryDropdown()}

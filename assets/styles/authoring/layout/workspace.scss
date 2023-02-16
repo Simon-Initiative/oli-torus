@@ -171,16 +171,6 @@ $workspace-sidebar-width: 65px;
     box-shadow: inset -1px 0 3px 0 rgba(0, 0, 0, 0.09);
     z-index: var(--z-10);
 
-    .dropdown-menu {
-      a {
-        color: var(--color-gray-800);
-      }
-    }
-
-    .dropdown-menu > a:hover {
-      background-color: var(--color-gray-500);
-    }
-
     .btn-group {
       width: $workspace-sidebar-width;
       padding: 0px;
