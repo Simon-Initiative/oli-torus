@@ -216,7 +216,7 @@ export const checkIfFirstEventHasNavigation = (event: any) => {
 
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
-
+  const reviewMode = useSelector(selectReviewMode);
   const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
@@ -397,11 +397,11 @@ const DeckLayoutFooter: React.FC = () => {
         saveMutateStateValuesToServer(mutations);
       }
       // should respond to scripting errors?
-      console.log('MUTATE ACTIONS', {
+      /* console.log('MUTATE ACTIONS', {
         mutateResults,
         mutationsModified,
         score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
-      });
+      }); */
 
       const everAppUpdates = mutationsModified.filter((op: ApplyStateOperation) => {
         return op.target.indexOf('app') === 0;
@@ -693,7 +693,7 @@ const DeckLayoutFooter: React.FC = () => {
     <>
       <div
         className={`checkContainer rowRestriction columnRestriction`}
-        style={{ width: containerWidth }}
+        style={{ width: containerWidth, display: reviewMode ? 'block' : '' }}
       >
         <NextButton
           isLoading={isLoading || !initPhaseComplete}
