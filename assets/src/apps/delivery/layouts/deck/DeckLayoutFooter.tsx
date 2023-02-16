@@ -149,7 +149,7 @@ const NextButton: React.FC<NextButton> = ({
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const reviewMode = useSelector(selectReviewMode);
   const styles: CSSProperties = {};
-  if (historyModeNavigation) {
+  if (historyModeNavigation || reviewMode) {
     styles.opacity = 0.5;
     styles.cursor = 'not-allowed';
   }
