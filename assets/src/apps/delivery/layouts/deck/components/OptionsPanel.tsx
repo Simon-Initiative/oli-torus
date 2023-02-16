@@ -31,7 +31,11 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
     <div className="optionsPanel">
       <div className={`displayOptionsView${open ? '' : ' displayNone'}`}>
         <div className="title">Display options</div>
-        <div className={`option navigationOption${enableHistory ? '' : ' displayNone'}`}>
+        <div
+          className={`option navigationOption${
+            enableHistory || isReviewMode ? '' : ' displayNone'
+          }`}
+        >
           <span className="historyText">{isPreviewMode ? 'Screen List' : 'Lesson History'}</span>
           <div className="state navigationBtn">
             <button
