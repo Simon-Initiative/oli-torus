@@ -294,8 +294,8 @@ export const matchSingleTextRule = (rule: string): Maybe<InputText> =>
     .lift(translateRule)
     .lift(({ value, operator }: ParsedTextRule) => ({
       kind: InputKind.Text,
-      value: value,
-      operator: operator,
+      value,
+      operator,
     }));
 
 type ParsedNumericRule = {

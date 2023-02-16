@@ -19,7 +19,7 @@ import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { makeResponse, Response, RichText } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
-import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
+import { eqRule, equalsnocaseRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 
@@ -31,7 +31,7 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
       return equalsRule('');
     case 'text':
     default:
-      return containsRule('');
+      return equalsnocaseRule('');
   }
 };
 
