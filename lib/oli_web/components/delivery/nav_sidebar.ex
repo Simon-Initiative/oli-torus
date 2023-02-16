@@ -26,7 +26,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   @spec navbar(any) :: Phoenix.LiveView.Rendered.t()
   def navbar(assigns) do
     ~H"""
-      <nav class="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
+      <nav class="flex flex-col w-full z-40 lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
         <div class="w-full">
           <a class="block w-[200px] lg:mb-14 mx-auto" href={
           case assigns[:logo_link] do
@@ -63,13 +63,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
           <div class="flex-1 items-center lg:items-start">
             <%= if assigns[:section] do %>
-              <%= for {name, href, active} <- [{"Home", home_url(assigns), true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
-                <.nav_link name={name} href={href} active={active} />
-              <% end %>
-            <% end %>
-
-            <%= if is_preview_mode?(assigns) do %>
-              <%= for {name, href, active} <- [{"Home", "#", true}, {"Course Content", "#", false}, {"Discussion", "#", false}, {"Assignments", "#", false}, {"Exploration", "#", false}] do %>
+              <%= for {name, href, active} <- [{"Home", home_url(assigns), is_active(@conn.path_info, :overview)}, {"Course Content", "#", is_active(@conn.path_info, "")}, {"Discussion", "#", is_active(@conn.path_info, "")}, {"Assignments", "#", is_active(@conn.path_info, "")}, {"Exploration", exploration_url(assigns), is_active(@conn.path_info, :exploration)}] do %>
                 <.nav_link name={name} href={href} active={active} />
               <% end %>
             <% end %>
@@ -135,11 +129,29 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
+  defp is_active(["sections", _, "overview"], :overview), do: true
+  defp is_active(["sections", _, "exploration"], :exploration), do: true
+  defp is_active(["sections", _, "preview", "overview"], :overview), do: true
+  defp is_active(["sections", _, "preview", "exploration"], :exploration), do: true
+  defp is_active(_, _), do: false
+
   defp home_url(assigns) do
     if assigns[:preview_mode] do
-      Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, assigns[:section_slug])
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Delivery.InstructorDashboard.ContentLive,
+        assigns[:section_slug]
+      )
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :index, assigns[:section_slug])
+    end
+  end
+
+  defp exploration_url(assigns) do
+    if assigns[:preview_mode] do
+      Routes.page_delivery_path(OliWeb.Endpoint, :exploration_preview, assigns[:section_slug])
+    else
+      Routes.page_delivery_path(OliWeb.Endpoint, :exploration, assigns[:section_slug])
     end
   end
 end

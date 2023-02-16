@@ -122,12 +122,12 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Determines if a user is an instructor in a given section.
   """
-  def is_instructor?(nil, _) do
-    false
-  end
-
   def is_instructor?(%User{id: id} = user, section_slug) do
     is_enrolled?(id, section_slug) && has_instructor_role?(user, section_slug)
+  end
+
+  def is_instructor?(_, _) do
+    false
   end
 
   @doc """
@@ -161,13 +161,11 @@ defmodule Oli.Delivery.Sections do
     user.can_create_sections
   end
 
+  def is_independent_instructor?(_), do: false
+
   @doc """
   Determines if a user is an administrator in a given section.
   """
-  def is_admin?(nil, _) do
-    false
-  end
-
   def is_admin?(%User{} = user, section_slug) do
     PlatformRoles.has_roles?(
       user,
@@ -178,6 +176,10 @@ defmodule Oli.Delivery.Sections do
       :any
     ) ||
       ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator))
+  end
+
+  def is_admin?(_, _) do
+    false
   end
 
   @doc """
@@ -624,12 +626,12 @@ defmodule Oli.Delivery.Sections do
       [1, 2, 3, 4]
   """
   def map_section_resource_children_to_resource_ids(root_section_resource) do
-
-    srs = from(s in SectionResource,
-      where: s.id in ^root_section_resource.children
-    )
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
+    srs =
+      from(s in SectionResource,
+        where: s.id in ^root_section_resource.children
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
 
     Enum.map(root_section_resource.children, fn sr_id -> Map.get(srs, sr_id) end)
   end
@@ -975,7 +977,7 @@ defmodule Oli.Delivery.Sections do
         on: pub.id == spp.publication_id,
         where:
           spp.section_id == ^section_id and
-          spp.project_id != ^current_project_id,
+            spp.project_id != ^current_project_id,
         select: %{
           id: project.id,
           title: project.title,
@@ -1742,5 +1744,39 @@ defmodule Oli.Delivery.Sections do
       true ->
         {:available, section}
     end
+  end
+
+  defp build_helper(id, previous_next_index) do
+    node = Map.get(previous_next_index, id)
+
+    Map.put(
+      node,
+      "children",
+      Enum.map(node["children"], fn id ->
+        build_helper(id, previous_next_index)
+      end)
+    )
+  end
+
+  def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
+    Enum.map(resource_ids, fn resource_id -> build_helper(resource_id, previous_next_index) end)
+  end
+
+  def build_hierarchy(section) do
+    {:ok, _, previous_next_index} =
+      PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
+
+    # Retrieve the top level resource ids, and convert them to strings
+    resource_ids =
+      Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
+        section.root_section_resource
+      )
+      |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
+
+    %{
+      id: "hierarchy_built_with_previous_next_index",
+      # Recursively build the map based hierarchy from the structure defined by previous_next_index
+      children: build_hierarchy_from_top_level(resource_ids, previous_next_index)
+    }
   end
 end

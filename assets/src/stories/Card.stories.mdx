@@ -1,0 +1,54 @@
+import { Card } from 'components/misc/Card';
+import { Button } from 'components/misc/Button';
+
+<Meta title="Torus/Card" />
+
+# Card
+
+<Story name="Card">
+  <Card.Card>
+    <Card.Title>Cool Card!</Card.Title>
+    <Card.Content>
+      <p>Here is some content for the card to contain.</p>
+      <Button>Ok!</Button>
+    </Card.Content>
+  </Card.Card>
+</Story>
+
+```tsx
+import { Card } from 'components/misc/Card';
+import { Button } from 'components/misc/Button';
+
+<Card.Card>
+  <Card.Title>Cool Card!</Card.Title>
+  <Card.Content>
+    <p>Here is some content for the card to contain.</p>
+    <Button>Ok!</Button>
+  </Card.Content>
+</Card.Card>;
+```
+
+# Size cards via classname
+
+<Story name="Sized Card">
+  <Card.Card className="w-52 inline-block">
+    <Card.Title>Cool Card!</Card.Title>
+    <Card.Content>
+      <p>Here is some content for the card to contain.</p>
+      <Button>Ok!</Button>
+    </Card.Content>
+  </Card.Card>
+</Story>
+
+```tsx
+import { Card } from 'components/misc/Card';
+import { Button } from 'components/misc/Button';
+
+<Card.Card className="w-52 inline-block">
+  <Card.Title>Cool Card!</Card.Title>
+  <Card.Content>
+    <p>Here is some content for the card to contain.</p>
+    <Button>Ok!</Button>
+  </Card.Content>
+</Card.Card>;
+```
