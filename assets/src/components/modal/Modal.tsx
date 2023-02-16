@@ -1,7 +1,6 @@
 import React, { PropsWithChildren, useEffect, useRef } from 'react';
 import { classNames } from 'utils/classNames';
 import { valueOr } from 'utils/common';
-import { lockScroll, unlockScroll } from './utils';
 
 interface Modal {
   modal: any;
@@ -44,10 +43,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
     if (modal.current) {
       const currentModal = modal.current;
 
-      console.log('show modal', currentModal);
-
       (window as any).$(currentModal).modal('show');
-      // const scrollPosition = lockScroll();
 
       $(currentModal).on('hidden.bs.modal', (e) => {
         onCancel(e);
@@ -55,7 +51,6 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
 
       return () => {
         (window as any).$(currentModal).modal('hide');
-        // unlockScroll(scrollPosition);
       };
     }
   }, []);
