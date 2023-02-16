@@ -142,7 +142,7 @@ const Delivery: React.FC<DeliveryProps> = ({
       {restartLesson && !reviewMode ? (
         <RestartLessonDialog onRestart={setInitialPageState} />
       ) : null}
-      {isLessonEnded && reviewMode ? (
+      {isLessonEnded && !reviewMode ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
       {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
