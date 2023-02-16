@@ -189,7 +189,7 @@ export const makeRule = (input: Input): string => {
       case 'equals':
         return equalsRule(input.value);
       case 'equalsnocase':
-        return equalsnocaseRule(input.value));
+        return equalsnocaseRule(input.value);
     }
   }
 
