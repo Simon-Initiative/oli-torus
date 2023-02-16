@@ -16,6 +16,7 @@ import { BibEntryEditor } from './BibEntryEditor';
 import { cslSchema, toFriendlyLabel } from './common';
 import { Page, Paging } from 'components/misc/Paging';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
 
 const ajv = new Ajv({ removeAdditional: true, allowUnionTypes: true });
 const validate = ajv.compile(cslSchema);
