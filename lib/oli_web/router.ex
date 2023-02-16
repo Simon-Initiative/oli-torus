@@ -784,7 +784,15 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/overview", PageDeliveryController, :index_preview)
+    # Redirect deprecated routes
+    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
+    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
+
+    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive, :preview)
+    live("/students", Delivery.InstructorDashboard.StudentsLive, :preview)
+    live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
+    live("/discussions", Delivery.InstructorDashboard.DiscussionLive, :preview)
+
     get("/exploration", PageDeliveryController, :exploration_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
