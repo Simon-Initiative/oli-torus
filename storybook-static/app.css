@@ -4761,8 +4761,8 @@ textarea.form-control.is-invalid {
   --color-feedback-partially-correct-bg: #fef08a;
   --color-feedback-partially-correct-color: #000;
   --color-feedback-partially-correct-graphic-color: #eab308;
-  --color-hints-bg: #e5e7eb;
-  --color-hints-border: #6b7280;
+  --color-hints-bg: #f3f4f6;
+  --color-hints-border: #e5e7eb;
   --color-hints-color: #000;
   --color-delivery-body: #f3f5f8;
   --color-delivery-body-dark: #111827;
@@ -6277,11 +6277,11 @@ table thead th {
   font-weight: 600;
 }
 
-table tbody tr {
+table tr {
   border-bottom-width: 1px;
 }
 
-table tbody td {
+table td {
   border-right-width: 1px;
   padding: 0.5rem;
 }
@@ -7978,6 +7978,16 @@ table.table-striped tbody tr:nth-child(odd) {
   color: rgb(77 20 210 / var(--tw-text-opacity));
 }
 
+.disabled\:bg-gray-100:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity));
+}
+
+.disabled\:text-gray-600:disabled {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity));
+}
+
 .group[aria-expanded="true"] .group-aria-expanded\:rotate-180 {
   --tw-rotate: 180deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -8281,5 +8291,17 @@ table.table-striped tbody tr:nth-child(odd) {
 
   .lg\:pl-3 {
     padding-left: 0.75rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .xl\:py-\[4em\] {
+    padding-top: 4em;
+    padding-bottom: 4em;
+  }
+
+  .xl\:px-\[8em\] {
+    padding-left: 8em;
+    padding-right: 8em;
   }
 }
