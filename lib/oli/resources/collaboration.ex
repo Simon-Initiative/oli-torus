@@ -415,9 +415,8 @@ defmodule Oli.Resources.Collaboration do
         join: user in User,
         on: post.user_id == user.id,
         where:
-          post.section_id == ^section_id and
-            (post.status in [:approved, :archived] or
-               (post.status == :submitted and post.user_id == ^user_id)) and is_nil(rev2) and
+          post.section_id == ^section_id and post.user_id != ^user_id and
+            post.status in [:approved, :archived] and is_nil(rev2) and
             rev.deleted == false,
         select: %{
           id: post.id,
