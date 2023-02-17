@@ -1,13 +1,15 @@
 defmodule OliWeb.Components.Delivery.ExplorationShade do
   use Phoenix.Component
 
+  alias OliWeb.Components.Delivery.ExplorationCard
+
   def exploration_shade(assigns) do
     assigns = assign(assigns, exploration_pages: Map.get(assigns, :exploration_pages, nil))
     ~H"""
-      <div class="bg-delivery-header text-white border-b border-slate-300">
+      <div class="bg-delivery-header border-b border-slate-300">
         <div class="container mx-auto md:px-10 py-2 flex flex-row justify-between text-sm md:text-lg">
           <div class="flex items-center gap-2">
-            <h4 class="p-2 md:p-0 md:leading-loose">
+            <h4 class="p-2 md:p-0 md:leading-loose text-white">
               Your Exploration Activities
             </h4>
             <%= if not is_nil(@exploration_pages) and length(@exploration_pages) > 0 do %>
@@ -21,14 +23,15 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
             </button>
           </div>
         </div>
-        <div class="collapse container mx-auto md:px-10 py-2" id="collapseExploration">
+        <div class="collapse container mx-auto md:px-10 pt-2 pb-4" id="collapseExploration">
           <%= if not is_nil(@exploration_pages) and length(@exploration_pages) > 0 do %>
-            <!-- TODO: Add the expandable components implemented in MER-1674 once it gets merged -->
-            <%= for page <- @exploration_pages |> IO.inspect() do %>
-              <p><%= page.title %></p>
-            <% end %>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h">
+              <%= for exploration <- @exploration_pages do %>
+                <ExplorationCard.render dark={true} exploration={exploration} />
+              <% end %>
+            </div>
           <% else %>
-              <p class="italic">There are no explorations related to this page</p>
+              <p class="text-white italic">There are no explorations related to this page</p>
           <% end %>
         </div>
       </div>
