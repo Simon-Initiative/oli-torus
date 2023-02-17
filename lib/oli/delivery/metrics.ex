@@ -11,62 +11,36 @@ defmodule Oli.Delivery.Metrics do
 
   def progress_for(section_id, container_id, user_id) do
 
-    # For all contained pages for this container
-    # join through the SR record to get to the activity_count
-    # join through the resource access and count the
+    filter_by_container =
+      case container_id do
+        nil ->
+          dynamic([cp, _], is_nil(cp.container_id))
 
-    Repo.all(
-      from(a in ResourceAccess,
-        left_join: ra in ResourceAttempt,
-        on: a.id == ra.resource_access_id,
-        join: s in Section,
-        on: a.section_id == s.id,
-        where: a.user_id == ^user_id and s.slug == ^section_slug,
-        group_by: a.id,
-        select: a,
-        select_merge: %{
-          resource_attempts_count: count(ra.id)
-        }
-      )
-    )
-
-    # divide all by total contained page count
+        _ ->
+          dynamic([cp, _], cp.container_id == ^container_id)
+      end
 
     query =
       ContainedPage
-      |> join(:left, [cp], sr in SectionResource, on: cp.page_id == sr.id)
-      |> join(:left, [cp, sr], ra in ResourceAccess,
-        on: ra.resource_id == sr.resource_id and ra.user_id == ^user_id)
-      |> join(:left, [cp, sr, ra], attempt in ResourceAttempt,
-        on: ra.id == attempt.resource_id and ra.user_id == ^user_id)
-      |> where(^filter_by_text)
-      |> where(^filter_by_role)
-      |> where([e, _], e.section_id == ^section_id)
-      |> limit(^limit)
-      |> offset(^offset)
-      |> group_by([e, u, p], [e.id, u.id, p.id])
-      |> select([_, u], u)
-      |> select_merge([e, _, p], %{
-        total_count: fragment("count(*) OVER()"),
-        enrollment_date: e.inserted_at,
-        payment_date: p.application_date,
-        payment_id: p.id
+      |> join(:left, [cp], ra in ResourceAccess, on: cp.page_id == ra.resource_id and cp.section_id == ra.section_id and ra.user_id == ^user_id)
+      |> where([cp, ra], cp.section_id == ^section_id)
+      |> where(^filter_by_container)
+      |> select([cp, ra], %{
+        progress:
+          fragment(
+            "SUM(?) / COUNT(*)",
+            ra.progress
+          )
       })
 
-    query =
-      case field do
-        :enrollment_date -> order_by(query, [e, _, _], {^direction, e.inserted_at})
-        :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
-        :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
-        _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
-      end
-
-    Repo.all(query)
-
-
+   Repo.one(query).progress
   end
 
-
-
+  def set_progress(section_id, resource_id, user_id, progress) do
+    from(ra in ResourceAccess,
+      where: ra.section_id == ^section_id and ra.resource_,
+      update: [set: [progress: ^progress]])
+    |> Repo.update_all([])
+  end
 
 end

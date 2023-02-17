@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.ContainedPage
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
@@ -614,6 +615,7 @@ defmodule Oli.Delivery.Sections do
       )
     )
   end
+
 
   @doc """
   For a section resource record, map its children SR records to resource ids,
@@ -1235,8 +1237,53 @@ defmodule Oli.Delivery.Sections do
       # Rebuild section previous next index
       PreviousNextIndex.rebuild(section)
 
+      {:ok, _} = rebuild_contained_pages(section, section_resources)
+
       section_resources
     end)
+  end
+
+  def rebuild_contained_pages(%Section{id: section_id} = section) do
+    section_resources = from(sr in SectionResource, where: sr.section_id == ^section_id)
+    |> Repo.all()
+
+    rebuild_contained_pages(section, section_resources)
+  end
+
+  def rebuild_contained_pages(%Section{slug: slug, id: section_id} = section, section_resources) do
+
+    from(cp in ContainedPage, where: cp.section_id == ^section_id)
+    |> Repo.delete_all
+
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    container_ids = DeliveryResolver.revisions_of_type(slug, container_type_id)
+    |> Enum.map(fn rev -> rev.resource_id end)
+    |> MapSet.new()
+
+    root = Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
+    map = Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
+
+    page_map = rebuild_contained_pages_helper(root, {[nil], %{}, map, container_ids})
+
+    insertions = Enum.reduce(page_map, [], fn {page_id, ancestors}, all ->
+      Enum.map(ancestors, fn id -> %{section_id: section_id, container_id: id, page_id: page_id} end) ++ all
+    end)
+
+    {:ok, Repo.insert_all(ContainedPage, insertions)}
+
+  end
+
+  defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
+    Enum.map(sr.children, fn sr_id ->
+      sr = Map.get(all, sr_id)
+      case MapSet.member?(container_ids, sr.resource_id) do
+        true ->
+          rebuild_contained_pages_helper(sr, {[sr.resource_id | ancestors], page_map, all, container_ids})
+          |> Map.merge(page_map)
+        false -> Map.put(page_map, sr.resource_id, ancestors)
+      end
+    end)
+    |> Enum.reduce(fn m, a -> Map.merge(m, a) end)
   end
 
   @doc """

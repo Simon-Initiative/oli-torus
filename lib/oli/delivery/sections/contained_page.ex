@@ -2,24 +2,27 @@ defmodule Oli.Delivery.Sections.ContainedPage do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Resources.Resource
 
   schema "contained_pages" do
 
-    belongs_to :container, SectionResource
-    belongs_to :page, SectionResource
+    belongs_to :section, Section
+    belongs_to :container, Resource
+    belongs_to :page, Resource
 
-    timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(contained_page, attrs) do
     contained_page
     |> cast(attrs, [
+      :section_id,
       :container_id,
       :page_id
     ])
     |> validate_required([
+      :section_id,
       :container_id,
       :page_id
     ])
