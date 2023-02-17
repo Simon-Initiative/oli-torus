@@ -33,5 +33,6 @@ module.exports = {
     plugin(({ addVariant }) =>
       addVariant('phx-change-loading', ['&.phx-change-loading', '.phx-change-loading &']),
     ),
+    require('@tailwindcss/container-queries')
   ],
 };
