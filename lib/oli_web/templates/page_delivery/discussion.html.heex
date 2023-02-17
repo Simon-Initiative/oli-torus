@@ -5,7 +5,7 @@
 
     <Components.Delivery.ExplorationShade.exploration_shade />
 
-    <div class="container mx-auto px-10 mt-3 mb-5 flex flex-col">
+    <div class="container px-0 sm:px-10 mx-auto mt-3 mb-5 flex flex-col">
       <%= live_render @conn, Components.Delivery.DiscussionBoard, session: %{ "section_id" => @section_id } %>
     </div>
 
