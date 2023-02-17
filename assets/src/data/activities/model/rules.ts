@@ -264,18 +264,26 @@ type ParsedTextRule = {
   operator: TextOperator;
 };
 
+export function hasUnescapedRegExpChars(s: string) {
+  return escapeRegExpChars(unescapeRegExpChars(s)) !== s;
+}
+
 // To implement case-insensitive literal string matches, we translate rule
 // 'input like {(?i)escapedText}' => { operator: equalsnocase, value: unescapedText}
 // Former used in implementation; latter is logical representation on UI
 export const translateRule = (r: ParsedTextRule): ParsedTextRule => {
-  // !!! In theory a regex rule author might include (?i) prefix, in which case this
-  // ought to remain a regex rule. Might detect this by only mapping to equalsnocase
-  // if no unescaped regex metachars in pattern. Ignoring for now.
-  if (r.operator === 'regex' && r.value.startsWith('(?i)'))
-    return {
-      operator: 'equalsnocase',
-      value: unescapeRegExpChars(r.value.slice(4)),
-    };
+  if (r.operator === 'regex' && r.value.startsWith('(?i)')) {
+    // Author might have explicitly included (?i) prefix in a regex rule, in which case
+    // this ought not to be translated. Detect this by checking for unescaped regex
+    // metachars, and keeping as regex. If author wrote (?i) regexp for literal string,
+    // it gets translated to equalsnocase match, but that is equivalent.
+    if (!hasUnescapedRegExpChars(r.value.slice(4))) {
+      return {
+        operator: 'equalsnocase',
+        value: unescapeRegExpChars(r.value.slice(4)),
+      };
+    }
+  }
 
   return r;
 };
