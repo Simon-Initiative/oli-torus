@@ -1387,6 +1387,92 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
+  describe "exploration" do
+    setup [:project_section_revisions]
+
+    test "student can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "user must be enrolled in the section even if is a system admin", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
+    end
+
+    test "redirects to enroll page if not is enrolled in the section", %{
+      conn: conn,
+      section: section
+    } do
+      user = insert(:user)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
+    end
+
+    test "page renders a list of exploration pages", %{
+      conn: conn,
+      section: section,
+      other_revision: other_revision
+    } do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200) =~ other_revision.title
+    end
+
+    test "page renders a message when there are no exploration pages available", %{
+      conn: conn
+    } do
+      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} = section_with_assessment(%{})
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200) =~ "<h6>There are no exploration pages available</h6>"
+    end
+  end
+
   defp enroll_as_student(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_learner)
     []

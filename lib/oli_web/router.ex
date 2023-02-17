@@ -755,6 +755,7 @@ defmodule OliWeb.Router do
 
     get("/overview", PageDeliveryController, :index)
 
+    get("/exploration", PageDeliveryController, :exploration)
     live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
     live("/students", Delivery.InstructorDashboard.StudentsLive)
     live("/content", Delivery.InstructorDashboard.ContentLive)
@@ -792,6 +793,7 @@ defmodule OliWeb.Router do
     live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
     live("/discussions", Delivery.InstructorDashboard.DiscussionLive, :preview)
 
+    get("/exploration", PageDeliveryController, :exploration_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
