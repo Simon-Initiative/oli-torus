@@ -6,6 +6,7 @@ import { ScheduleGrid } from './ScheduleGrid';
 import { resetSchedule, StringDate } from './scheduler-slice';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
 import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
+import { WeekDayPicker } from './WeekdayPicker';
 
 export interface SchedulerProps {
   start_date: StringDate;
@@ -26,12 +27,22 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
 }) => {
   const dispatch = useDispatch();
 
+  const [validWeekdays, setValidWeekdays] = React.useState<boolean[]>([
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+  ]);
+
   const onModification = useCallback(() => {
     dispatch(scheduleAppFlushChanges());
   }, [dispatch]);
 
   const onReset = () => {
-    dispatch(resetSchedule());
+    dispatch(resetSchedule({ weekdays: validWeekdays }));
   };
 
   useEffect(() => {
@@ -47,7 +58,14 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   }, [dispatch, display_curriculum_item_numbering, end_date, section_slug, start_date, title]);
 
   const { Modal, showModal } = usePromptModal(
-    'Are you sure you want to reset the schedule to the default values?',
+    <div>
+      <p>
+        This will reset all timelines to the default. Select the week days you want to consider for
+        that schedule.
+      </p>
+      <WeekDayPicker weekdays={validWeekdays} onChange={setValidWeekdays} />
+    </div>,
+
     onReset,
   );
 

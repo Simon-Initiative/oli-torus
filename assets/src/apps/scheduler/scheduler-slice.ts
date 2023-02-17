@@ -4,7 +4,6 @@ import { DateWithoutTime } from 'epoq';
 
 import { resetScheduleItem } from './schedule-reset';
 import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
-import { compareDates } from '../../utils/date';
 
 export enum ScheduleItemType {
   Page = 1,
@@ -29,6 +28,7 @@ export interface HierarchyItemSrc {
   graded: boolean;
 }
 
+// Modified version we use with dates parsed
 export interface HierarchyItem extends HierarchyItemSrc {
   startDate: DateWithoutTime | null;
   endDate: DateWithoutTime | null;
@@ -47,6 +47,7 @@ export interface SchedulerState {
   dirty: number[];
   sectionSlug: string;
   errorMessage: string | null;
+  weekdays: boolean[];
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -61,6 +62,7 @@ export const initSchedulerState = (): SchedulerState => ({
   dirty: [],
   sectionSlug: '',
   errorMessage: null,
+  weekdays: [false, true, true, true, true, true, false],
 });
 
 const toDateTime = (str: string) => {
@@ -129,6 +131,10 @@ interface UnlockPayload {
 interface SchedulingPayloadType {
   itemId: number;
   type: SchedulingType;
+}
+
+interface ResetPayload {
+  weekdays: boolean[];
 }
 
 const datesEqual = (a: DateWithoutTime | null, b: DateWithoutTime | null) => {
@@ -210,6 +216,7 @@ const schedulerSlice = createSlice({
             mutableItem.endDate,
             state.schedule,
             false,
+            state.weekdays,
           );
 
           state.dirty.push(...descendentIds(mutableItem, state.schedule));
@@ -222,10 +229,19 @@ const schedulerSlice = createSlice({
         }
       }
     },
-    resetSchedule(state) {
+    resetSchedule(state, action: PayloadAction<ResetPayload>) {
       if (state.schedule && state.startDate && state.endDate) {
         const root = getScheduleRoot(state.schedule);
-        root && resetScheduleItem(root, state.startDate, state.endDate, state.schedule);
+        state.weekdays = action.payload.weekdays;
+        root &&
+          resetScheduleItem(
+            root,
+            state.startDate,
+            state.endDate,
+            state.schedule,
+            true,
+            action.payload.weekdays,
+          );
         state.dirty = state.schedule.map((item) => item.id);
       }
     },
@@ -275,7 +291,15 @@ const schedulerSlice = createSlice({
       state.sectionSlug = section_slug;
       if (state.startDate && state.endDate && neverScheduled(state.schedule)) {
         const root = getScheduleRoot(state.schedule);
-        root && resetScheduleItem(root, state.startDate, state.endDate, state.schedule);
+        root &&
+          resetScheduleItem(
+            root,
+            state.startDate,
+            state.endDate,
+            state.schedule,
+            true,
+            state.weekdays,
+          );
         state.dirty = state.schedule.map((item) => item.id);
       }
     });
