@@ -272,7 +272,7 @@ export const MultiInputComponent: React.FC = () => {
   });
 
   return (
-    <div className="activity mc-activity">
+    <div className="activity multi-input-activity">
       <div className="activity-content">
         <StemDelivery
           className="form-inline"

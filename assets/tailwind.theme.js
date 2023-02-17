@@ -62,8 +62,8 @@ module.exports = {
       'feedback-partially-correct-bg': colors.yellow['200'],
       'feedback-partially-correct-color': colors.black,
       'feedback-partially-correct-graphic-color': colors.yellow['500'],
-      'hints-bg': colors.gray['200'],
-      'hints-border': colors.gray['500'],
+      'hints-bg': colors.gray['100'],
+      'hints-border': colors.gray['200'],
       'hints-color': colors.black,
       delivery: {
         body: {

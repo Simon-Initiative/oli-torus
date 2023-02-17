@@ -286,6 +286,8 @@ span.term {
     figure {
       display: inline-block;
       background-color: var(--color-gray-100);
+      padding: 20px;
+      border-radius: 6px;
 
       figcaption {
         margin-bottom: 8px;
@@ -304,6 +306,33 @@ span.term {
     display: block;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .embed-responsive {
+    width: 90%;
+    height: 100%;
+    margin: 0 auto;
+    margin-bottom: 1.5em;
+
+    .embed-wrapper {
+      position: relative;
+
+      .embed-responsive-item {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    &.embed-responsive-16by9 {
+      max-width: 800px;
+
+      .embed-wrapper {
+        padding-top: 56%;
+      }
+    }
   }
 }
 

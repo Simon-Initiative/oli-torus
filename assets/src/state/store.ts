@@ -1,4 +1,4 @@
-import { createStore, applyMiddleware, Reducer } from 'redux';
+import { createStore, applyMiddleware, Reducer, Store, AnyAction } from 'redux';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import { createLogger } from 'redux-logger';
 
@@ -46,3 +46,5 @@ export function configureStore(initialState?: any, reducer?: Reducer) {
 
   return store;
 }
+
+export const globalStore = configureStore();

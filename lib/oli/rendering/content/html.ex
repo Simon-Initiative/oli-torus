@@ -96,7 +96,9 @@ defmodule Oli.Rendering.Content.Html do
     captioned_content(context, attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9"#{iframe_width}>
-        <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        <div class="embed-wrapper">
+          <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        </div>
       </div>
       """
     ])

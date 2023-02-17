@@ -44,7 +44,7 @@ export type Input = InputText | InputNumeric | InputRange;
 
 export type TextOperator =
   // text
-  'contains' | 'notcontains' | 'regex' | 'equals';
+  'contains' | 'notcontains' | 'regex' | 'equals' | 'equalsnocase';
 
 export type NumericOperator =
   // numeric
@@ -66,6 +66,8 @@ export function textOperator(s: string): TextOperator {
       return 'regex';
     case 'equals':
       return 'equals';
+    case 'equalsnocase':
+      return 'equalsnocase'; // pseudo-operator
     default:
       throw Error(`${s} is not a valid text operator`);
   }
@@ -116,6 +118,7 @@ export const unescapeSingleOrMultipleInputs = (
 export const equalsRule = (input: string) => `input equals {${escapeInput(input)}}`;
 export const matchRule = (input: string) => `input like {${escapeInput(input)}}`;
 export const containsRule = (input: string) => `input contains {${escapeInput(input)}}`;
+export const equalsnocaseRule = (input: string) => matchRule(`(?i)${escapeRegExpChars(input)}`);
 
 export const notContainsRule = (input: string) => invertRule(containsRule(input));
 
@@ -166,6 +169,14 @@ export const rangeRule = (left: number, right: number, inclusive: boolean, preci
 export const notRangeRule = (left: number, right: number, inclusive: boolean, precision?: number) =>
   invertRule(rangeRule(left, right, inclusive, precision));
 
+function escapeRegExpChars(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function unescapeRegExpChars(s: string) {
+  return s.replace(/(?:\\(.))/g, '$1');
+}
+
 export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Text) {
     switch (input.operator) {
@@ -177,6 +188,8 @@ export const makeRule = (input: Input): string => {
         return matchRule(input.value);
       case 'equals':
         return equalsRule(input.value);
+      case 'equalsnocase':
+        return equalsnocaseRule(input.value);
     }
   }
 
@@ -251,6 +264,30 @@ type ParsedTextRule = {
   operator: TextOperator;
 };
 
+export function hasUnescapedRegExpChars(s: string) {
+  return escapeRegExpChars(unescapeRegExpChars(s)) !== s;
+}
+
+// To implement case-insensitive literal string matches, we translate rule
+// 'input like {(?i)escapedText}' => { operator: equalsnocase, value: unescapedText}
+// Former used in implementation; latter is logical representation on UI
+export const translateRule = (r: ParsedTextRule): ParsedTextRule => {
+  if (r.operator === 'regex' && r.value.startsWith('(?i)')) {
+    // Author might have explicitly included (?i) prefix in a regex rule, in which case
+    // this ought not to be translated. Detect this by checking for unescaped regex
+    // metachars, and keeping as regex. If author wrote (?i) regexp for literal string,
+    // it gets translated to equalsnocase match, but that is equivalent.
+    if (!hasUnescapedRegExpChars(r.value.slice(4))) {
+      return {
+        operator: 'equalsnocase',
+        value: unescapeRegExpChars(r.value.slice(4)),
+      };
+    }
+  }
+
+  return r;
+};
+
 // Look for any rule that contains braces `input equals {some answer}`
 export const matchSingleTextRule = (rule: string): Maybe<InputText> =>
   parseSingleRule(rule)
@@ -262,6 +299,7 @@ export const matchSingleTextRule = (rule: string): Maybe<InputText> =>
         operator: parseTextOperatorFromRule(rule),
       }),
     )
+    .lift(translateRule)
     .lift(({ value, operator }: ParsedTextRule) => ({
       kind: InputKind.Text,
       value,
@@ -275,7 +313,7 @@ type ParsedNumericRule = {
 };
 
 export const matchSingleNumberRule = (rule: string): Maybe<InputNumeric> =>
-  parseRegex(rule, /{(-?[.\d]+)#?(\d+)?}/)
+  parseRegex(rule, /{(-?[-+\d.Ee]+)#?(\d+)?}/)
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([value, precision]) =>
       // verify the required values for this matcher are present or return nothing
@@ -328,7 +366,10 @@ const matchBetweenRule = (rule: string): Maybe<InputRange> =>
 // e.g. `input = {[123.4,123.5]}` or`input = {(123.4,123.5)#3}`
 
 const matchRangeRule = (rule: string): Maybe<InputRange> =>
-  parseRegex(rule, /{([[(])\s*(-?[-01234567890e.]+)\s*,\s*(-?[-01234567890e.]+)\s*[\])]#?(\d+)?}/)
+  parseRegex(
+    rule,
+    /{([[(])\s*(-?[-+01234567890Ee.]+)\s*,\s*(-?[-+01234567890Ee.]+)\s*[\])]#?(\d+)?}/,
+  )
     .lift((matches) => ({
       bracketOrBrace: matches[1],
       matches: matches.slice(2, 5).map(maybeAsNumber),

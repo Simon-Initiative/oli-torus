@@ -45,6 +45,7 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   defp rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
+    IO.inspect(idref)
     {true, Map.put(other, "idref", Map.get(page_map, idref).resource_id)}
   end
 

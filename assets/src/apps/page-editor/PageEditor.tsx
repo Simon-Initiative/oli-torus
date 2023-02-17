@@ -46,6 +46,7 @@ import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import Appsignal from '@appsignal/javascript';
 import { initAppSignal } from '../../utils/appsignal';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -545,6 +546,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     return (
       <React.StrictMode>
         <AppsignalContext.Provider value={this.state.appsignal}>
+          <ModalDisplay />
+
           <ErrorBoundary>
             <div className="resource-editor row">
               <div className="col-span-12">
