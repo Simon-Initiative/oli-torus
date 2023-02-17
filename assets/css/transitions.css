@@ -1,0 +1,20 @@
+.expand-down {
+  opacity: 0.01;
+  max-height: 0px;
+}
+
+.expand-down.expand-down-active {
+  max-height: unset;
+  transition: max-height 500ms ease-in;
+}
+
+.expand-width {
+  opacity: 0.01;
+  max-width: 0px;
+  overflow: hidden;
+}
+
+.expand-width.expand-width-active {
+  max-width: unset;
+  transition: max-width 500ms ease-in;
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary';
 }
 
 type ColorSchemes = 'primary-disabled' | 'primary' | 'secondary' | 'secondary-disabled';

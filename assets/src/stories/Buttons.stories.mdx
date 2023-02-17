@@ -2,6 +2,7 @@ import { Button, LargeButton } from 'components/misc/Button';
 import { CloseButton } from 'components/misc/CloseButton';
 import { EditLink } from 'components/misc/EditLink';
 import { Canvas, Meta, Story } from '@storybook/addon-docs';
+import { TorusBG } from './TorusBG';
 
 <Meta title="Torus/Buttons" />
 
@@ -17,13 +18,15 @@ import { Canvas, Meta, Story } from '@storybook/addon-docs';
 Normal sized button
 
 <Story name="Button">
-  <Button>Save Changes</Button>
-  <Button>Ok</Button>
-  <Button variant="secondary">Cancel</Button>
-  <Button disabled>Disabled</Button>
-  <Button variant="secondary" disabled>
-    Disabled
-  </Button>
+  <TorusBG>
+    <Button>Save Changes</Button>
+    <Button>Ok</Button>
+    <Button variant="secondary">Cancel</Button>
+    <Button disabled>Disabled</Button>
+    <Button variant="secondary" disabled>
+      Disabled
+    </Button>
+  </TorusBG>
 </Story>
 
 ```jsx
@@ -41,13 +44,15 @@ import { Button } from 'components/misc/Button';
 Large version of the button.
 
 <Story name="Large Buttons">
-  <LargeButton>Save Changes</LargeButton>
-  <LargeButton>Ok</LargeButton>
-  <LargeButton variant="secondary">Cancel</LargeButton>
-  <LargeButton disabled>Disabled</LargeButton>
-  <LargeButton variant="secondary" disabled>
-    Disabled
-  </LargeButton>
+  <TorusBG>
+    <LargeButton>Save Changes</LargeButton>
+    <LargeButton>Ok</LargeButton>
+    <LargeButton variant="secondary">Cancel</LargeButton>
+    <LargeButton disabled>Disabled</LargeButton>
+    <LargeButton variant="secondary" disabled>
+      Disabled
+    </LargeButton>
+  </TorusBG>
 </Story>
 
 ```jsx
@@ -65,7 +70,9 @@ import { LargeButton } from 'components/misc/Button';
 Appropriate for closing dialogs, etc
 
 <Story name="CloseButton">
-  <CloseButton />
+  <TorusBG>
+    <CloseButton />
+  </TorusBG>
 </Story>
 
 ```jsx
@@ -77,7 +84,9 @@ import { CloseButton } from 'components/misc/CloseButton';
 ## EditLink
 
 <Story name="EditLink">
-  <EditLink />
+  <TorusBG>
+    <EditLink />
+  </TorusBG>
 </Story>
 
 ```jsx

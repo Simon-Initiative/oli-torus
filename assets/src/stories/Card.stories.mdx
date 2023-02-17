@@ -1,18 +1,21 @@
 import { Card } from 'components/misc/Card';
 import { Button } from 'components/misc/Button';
+import { TorusBG } from './TorusBG.tsx';
 
 <Meta title="Torus/Card" />
 
 # Card
 
 <Story name="Card">
-  <Card.Card>
-    <Card.Title>Cool Card!</Card.Title>
-    <Card.Content>
-      <p>Here is some content for the card to contain.</p>
-      <Button>Ok!</Button>
-    </Card.Content>
-  </Card.Card>
+  <TorusBG>
+    <Card.Card>
+      <Card.Title>Cool Card!</Card.Title>
+      <Card.Content>
+        <div className="py-2">Here is some content for the card to contain.</div>
+        <Button>Ok!</Button>
+      </Card.Content>
+    </Card.Card>
+  </TorusBG>
 </Story>
 
 ```tsx
@@ -22,7 +25,7 @@ import { Button } from 'components/misc/Button';
 <Card.Card>
   <Card.Title>Cool Card!</Card.Title>
   <Card.Content>
-    <p>Here is some content for the card to contain.</p>
+    <div>Here is some content for the card to contain.</div>
     <Button>Ok!</Button>
   </Card.Content>
 </Card.Card>;
@@ -31,13 +34,15 @@ import { Button } from 'components/misc/Button';
 # Size cards via classname
 
 <Story name="Sized Card">
-  <Card.Card className="w-52 inline-block">
-    <Card.Title>Cool Card!</Card.Title>
-    <Card.Content>
-      <p>Here is some content for the card to contain.</p>
-      <Button>Ok!</Button>
-    </Card.Content>
-  </Card.Card>
+  <TorusBG>
+    <Card.Card className="w-52 inline-block">
+      <Card.Title>Cool Card!</Card.Title>
+      <Card.Content>
+        <div className="py-2">Here is some content for the card to contain.</div>
+        <Button>Ok!</Button>
+      </Card.Content>
+    </Card.Card>
+  </TorusBG>
 </Story>
 
 ```tsx
@@ -47,7 +52,7 @@ import { Button } from 'components/misc/Button';
 <Card.Card className="w-52 inline-block">
   <Card.Title>Cool Card!</Card.Title>
   <Card.Content>
-    <p>Here is some content for the card to contain.</p>
+    <div className="py-2">Here is some content for the card to contain.</div>
     <Button>Ok!</Button>
   </Card.Content>
 </Card.Card>;
