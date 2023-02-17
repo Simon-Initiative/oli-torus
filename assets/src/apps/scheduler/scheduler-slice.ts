@@ -122,7 +122,8 @@ const descendentIds = (item: HierarchyItem, schedule: HierarchyItem[]) => {
   return ids;
 };
 
-const neverScheduled = (schedule: HierarchyItem[]) => !schedule.find((i) => i.manually_scheduled);
+const neverScheduled = (schedule: HierarchyItem[]) =>
+  !schedule.find((i) => i.startDate === null || i.endDate === null || i.manually_scheduled);
 
 interface UnlockPayload {
   itemId: number;
