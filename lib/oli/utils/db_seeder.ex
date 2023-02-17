@@ -381,6 +381,11 @@ defmodule Oli.Seeder do
 
   def base_project_with_larger_hierarchy() do
     mappings = base_project_with_resource2()
+    |> add_activity(%{title: "title 1"}, :publication, :project, :author, :activity_a)
+    |> add_activity(%{title: "title 2"}, :publication, :project, :author, :activity_b)
+    |> add_activity(%{title: "title 3"}, :publication, :project, :author, :activity_c)
+    |> add_activity(%{title: "title 4"}, :publication, :project, :author, :activity_d)
+    |> add_activity(%{title: "title 5"}, :publication, :project, :author, :activity_e)
 
     %{
       container: %{resource: container_resource, revision: container_revision},

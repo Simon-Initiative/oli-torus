@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
 
   defp set_progress(section_id, resource_id, user_id, progress) do
     Core.track_access(resource_id, section_id, user_id)
@@ -42,7 +43,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       map
     end
 
-    test "progress calculates correctly", %{
+    test "container based progress calculates correctly", %{
       section: section,
       this_user: this_user,
       mod1_resource: mod1_resource,
@@ -67,5 +68,56 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
     end
 
+    test "page level progress calculation and setting", map do
+
+      [p1, _, _] = map.mod1_pages
+
+      map = map
+      |> Map.put(:our_page, %{revision: p1.revision, resource: p1.resource})
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :active},
+        :this_user,
+        :our_page,
+        :attempt1)
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 1, lifecycle_state: :evaluated, scoreable: true},
+        :activity_a,
+        :attempt1,
+        :a1)
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 1, lifecycle_state: :evaluated, scoreable: true},
+        :activity_b,
+        :attempt1,
+        :a2)
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 2, lifecycle_state: :evaluated, scoreable: true},
+        :activity_b,
+        :attempt1,
+        :a21)
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 1, lifecycle_state: :active, scoreable: true},
+        :activity_c,
+        :attempt1,
+        :a3)
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 1, lifecycle_state: :submitted, scoreable: true},
+        :activity_d,
+        :attempt1,
+        :a4)
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 1, lifecycle_state: :active, scoreable: false},
+        :activity_e,
+        :attempt1,
+        :a5)
+
+      guid = map.a5.attempt_guid
+      assert {:ok, :updated} = Metrics.calculate_page_progress(guid)
+
+      ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
+      assert_in_delta 0.75, ra.progress, 0.0001
+
+    end
+
   end
+
 end

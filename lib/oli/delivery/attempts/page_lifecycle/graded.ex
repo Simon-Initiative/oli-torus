@@ -123,6 +123,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  resource_attempt.resource_access_id
                ) do
             {:ok, resource_access} ->
+
+              {:ok, _} = Oli.Delivery.Metrics.mark_completed(resource_access)
+
               {:ok,
                %FinalizationSummary{
                  lifecycle_state: :evaluated,
