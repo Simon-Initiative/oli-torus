@@ -80,8 +80,6 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
     assert eval("attemptNumber = {1} && input = {(-4.66e-19,-4.5e-19)}", "-4.6e-19") == true
 
-
-
     # gracefully handles space in between range
     assert eval("attemptNumber = {1} && input = {[3, 5]}", "4") == true
 
@@ -152,6 +150,39 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
     assert eval("!(input contains {cat})", "the bat in the hat")
     refute eval("!(input contains {cat})", "the cat in the hat")
+  end
+
+  test "evaluating string equals" do
+    assert eval("input equals {cat}", "cat")
+    refute eval("input equals {Cat}", "cat")
+    refute eval("input equals {cat}", "Cat")
+
+    assert eval("input equals {the cat in the hat}", "the cat in the hat")
+    assert eval("input equals {the CaT in the HAT}", "the CaT in the HAT")
+    refute eval("input equals {the cat in the HAT}", "the CaT in the HAT")
+    refute eval("input equals { the cat in the hat}", "the cat in the hat")
+    refute eval("input equals {the cat in the hat}", "the cat in the hat ")
+
+    assert eval("!(input equals {cat})", "the cat in the hat")
+    refute eval("!(input equals {the cat in the hat})", "the cat in the hat")
+  end
+
+  test "evaluating string iequals (case-insensitive)" do
+    assert eval("input iequals {cat}", "cat")
+    assert eval("input iequals {Cat}", "cat")
+    assert eval("input iequals {cat}", "Cat")
+
+    assert eval("input iequals {the cat in the hat}", "the CaT in the HAT")
+    refute eval("input iequals {cat}", "the CaT in the HAT")
+    refute eval("input iequals {CaT}", "the CaT in the HAT")
+
+    refute eval("input equals {the cat in the HAT}", "the CaT in the HAT")
+    refute eval("input equals { the cat in the hat}", "the cat in the hat")
+    refute eval("input equals {the cat in the hat}", "the cat in the hat ")
+
+    assert eval("!(input equals {cat})", "the cat in the hat")
+    refute eval("!(input equals {the cat in the hat})", "the cat in the hat")
+    assert eval("!(input equals {the CAT in the hat})", "the cat in the HAT")
   end
 
   test "evaluating strings with a numeric operator results in error" do
