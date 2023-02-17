@@ -473,10 +473,10 @@ table {
 table thead th {
   @apply border-b border-r p-2 bg-gray-100 font-semibold;
 }
-table tbody tr {
+table tr {
   @apply border-b;
 }
-table tbody td {
+table td {
   @apply border-r p-2;
 }
 

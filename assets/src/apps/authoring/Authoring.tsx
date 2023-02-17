@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { isFirefox } from 'utils/browser';
 import { BottomPanel } from './BottomPanel';
 import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
@@ -12,7 +12,6 @@ import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import ScoringOverview from './components/Modal/ScoringOverview';
 import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
-import store from './store';
 import { releaseEditingLock } from './store/app/actions/locking';
 import { attemptDisableReadOnly } from './store/app/actions/readonly';
 import {
@@ -35,6 +34,7 @@ import { PageContext } from './types';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { initAppSignal } from '../../utils/appsignal';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -224,6 +224,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   return (
     <AppsignalContext.Provider value={appsignal}>
       <ErrorBoundary>
+        <ModalDisplay />
+
         {isLoading && (
           <div id="aa-loading">
             <div className="loader spinner-border text-primary" role="status">
@@ -315,10 +317,4 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   );
 };
 
-const ReduxApp: React.FC<AuthoringProps> = (props) => (
-  <Provider store={store}>
-    <Authoring {...props} />
-  </Provider>
-);
-
-export default ReduxApp;
+export default Authoring;
