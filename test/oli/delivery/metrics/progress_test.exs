@@ -48,16 +48,17 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
     } do
 
       # Verify the modules
-      assert_in_delta 0.5, Metrics.progress_for(section.id, mod1_resource.id, this_user.id), 0.0001
-      assert_in_delta 0.2, Metrics.progress_for(section.id, mod2_resource.id, this_user.id), 0.0001
-      assert_in_delta 0.25, Metrics.progress_for(section.id, mod3_resource.id, this_user.id), 0.0001
+      assert_in_delta 0.5, Metrics.progress_for(section.id, this_user.id, mod1_resource.id), 0.0001
+      assert_in_delta 0.2, Metrics.progress_for(section.id, this_user.id, mod2_resource.id), 0.0001
+      assert_in_delta 0.25, Metrics.progress_for(section.id, this_user.id, mod3_resource.id), 0.0001
 
       # Then the units
-      assert_in_delta 0.35, Metrics.progress_for(section.id, unit1_resource.id, this_user.id), 0.0001
-      assert_in_delta 0.25, Metrics.progress_for(section.id, unit2_resource.id, this_user.id), 0.0001
+      assert_in_delta 0.35, Metrics.progress_for(section.id, this_user.id, unit1_resource.id), 0.0001
+      assert_in_delta 0.25, Metrics.progress_for(section.id, this_user.id, unit2_resource.id), 0.0001
 
       # Then the entire course (there are two other pages, outside of the units)
-      assert_in_delta 0.2583, Metrics.progress_for(section.id, nil, this_user.id), 0.0001
+      assert_in_delta 0.2583, Metrics.progress_for(section.id, this_user.id), 0.0001
+      assert_in_delta 0.2583, Metrics.progress_for(section.id, this_user.id, nil), 0.0001
 
     end
 

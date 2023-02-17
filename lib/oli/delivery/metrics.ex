@@ -5,11 +5,21 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Repo
 
   alias Oli.Delivery.Sections.ContainedPage
-  alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt, ActivityAttempt}
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess}
 
-  def progress_for(section_id, container_id, user_id) do
+  @doc """
+  Calculate the progress for a specific student, in all pages of a
+  specific container.
+
+  Ommitting the container_id (or specifying nil) calculates progress
+  across the entire course section.
+
+  This query leverages the `contained_pages` relation, which is always an
+  up to date view of the structure of a course section. This allows this
+  query to take into account structural chagnes as the result of course
+  remix. The `contained_pages` relation is rebuilt after every remix.
+  """
+  def progress_for(section_id, user_id, container_id \\ nil) do
 
     filter_by_container =
       case container_id do
@@ -33,14 +43,9 @@ defmodule Oli.Delivery.Metrics do
           )
       })
 
-   Repo.one(query).progress
+    Repo.one(query).progress
   end
 
-  def set_progress(section_id, resource_id, user_id, progress) do
-    from(ra in ResourceAccess,
-      where: ra.section_id == ^section_id and ra.resource_,
-      update: [set: [progress: ^progress]])
-    |> Repo.update_all([])
-  end
+
 
 end
