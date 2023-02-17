@@ -176,13 +176,13 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     refute eval("input iequals {cat}", "the CaT in the HAT")
     refute eval("input iequals {CaT}", "the CaT in the HAT")
 
-    refute eval("input equals {the cat in the HAT}", "the CaT in the HAT")
-    refute eval("input equals { the cat in the hat}", "the cat in the hat")
-    refute eval("input equals {the cat in the hat}", "the cat in the hat ")
+    assert eval("input iequals {the cat in the HAT}", "the CaT in the HAT")
+    refute eval("input iequals { the cat in the hat}", "the cat in the hat")
+    refute eval("input iequals {the cat in the hat}", "the cat in the hat ")
 
-    assert eval("!(input equals {cat})", "the cat in the hat")
-    refute eval("!(input equals {the cat in the hat})", "the cat in the hat")
-    assert eval("!(input equals {the CAT in the hat})", "the cat in the HAT")
+    assert eval("!(input iequals {cat})", "the cat in the hat")
+    refute eval("!(input iequals {the cat in the hat})", "the cat in the hat")
+    refute eval("!(input iequals {the CAT in the hat})", "the cat in the HAT")
   end
 
   test "evaluating strings with a numeric operator results in error" do
