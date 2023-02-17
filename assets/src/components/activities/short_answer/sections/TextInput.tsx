@@ -43,7 +43,7 @@ export const TextInput: React.FC<InputProps> = ({ input, onEditInput }) => {
 
 const textOptions: { value: string; displayValue: string }[] = [
   { value: 'equals', displayValue: 'Equals exactly' },
-  { value: 'equalsnocase', displayValue: 'Equals ignoring case' },
+  { value: 'iequals', displayValue: 'Equals ignoring case' },
   { value: 'contains', displayValue: 'Contains' },
   { value: 'notcontains', displayValue: "Doesn't Contain" },
   { value: 'regex', displayValue: 'Regex' },
