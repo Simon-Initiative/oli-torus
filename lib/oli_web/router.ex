@@ -817,7 +817,6 @@ defmodule OliWeb.Router do
 
     live("/:section_slug", Sections.OverviewView)
 
-    get("/:section_slug/schedule", SectionScheduleController, :schedule)
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
     live("/:section_slug/grades/failed", Grades.FailedGradeSyncLive)
@@ -833,6 +832,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
     post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)
+    live("/:section_slug/schedule", Sections.ScheduleView)
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)

@@ -11,8 +11,9 @@ import { ScheduleItemType } from './scheduler-slice';
 interface GridProps {
   startDate: string;
   endDate: string;
+  onReset: () => void;
 }
-export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate }) => {
+export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset }) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
 
@@ -38,7 +39,13 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate }) => {
 
   return (
     <div style={{ minWidth }}>
-      <table className="select-none table-striped border-t-0" style={{ minWidth }}>
+      <div className="flex justify-end container">
+        <button className=" text-delivery-primary uppercase underline" onClick={onReset}>
+          Reset Timelines
+        </button>
+      </div>
+
+      <table className="mx-auto select-none table-striped border-t-0" style={{ minWidth }}>
         <thead>
           <ScheduleHeaderRow
             labels={true}

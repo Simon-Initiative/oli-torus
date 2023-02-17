@@ -85,18 +85,12 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     <>
       <ErrorDisplay />
       {wizard_mode || <ScheduleSaveBar onSave={onModification} />}
-      <div className="flex justify-end p-1 ">
-        <button className=" text-delivery-primary uppercase underline" onClick={showModal}>
-          Reset Timelines
-        </button>
-      </div>
-
-      <div className="flex flex-row gap-2">
-        <div className="flex w-full overflow-x-auto border-r-2">
-          <ScheduleGrid startDate={start_date} endDate={end_date} />
+      <div className="w-full flex justify-center flex-col">
+        <div className="overflow-x-auto mx-3">
+          <ScheduleGrid startDate={start_date} endDate={end_date} onReset={showModal} />
         </div>
+        {Modal}
       </div>
-      {Modal}
     </>
   );
 };
