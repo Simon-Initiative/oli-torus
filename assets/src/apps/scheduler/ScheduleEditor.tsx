@@ -45,6 +45,18 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     dispatch(resetSchedule({ weekdays: validWeekdays }));
   };
 
+  // Set up a way the page can call into us to save, useful for the wizard mode when we don't have a save bar to click.
+  useEffect(() => {
+    window.saveTorusSchedule = () => {
+      dispatch(scheduleAppFlushChanges());
+      /* When we've successfully saved, we will do either a
+           window.dispatchEvent(new Event('schedule-updated'))
+           window.dispatchEvent(new Event('schedule-update-failed'));
+         for the wizard to listen for.
+      */
+    };
+  }, [dispatch]);
+
   useEffect(() => {
     dispatch(
       scheduleAppStartup({
@@ -88,3 +100,9 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     </>
   );
 };
+
+declare global {
+  interface Window {
+    saveTorusSchedule: () => void;
+  }
+}

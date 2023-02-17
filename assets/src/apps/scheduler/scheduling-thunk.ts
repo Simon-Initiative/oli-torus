@@ -1,11 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { DateWithoutTime } from 'epoq';
+
 import { SchedulerAppState } from './scheduler-reducer';
-import { getScheduleItem, SchedulerState, StringDate } from './scheduler-slice';
+import { getScheduleItem, StringDate } from './scheduler-slice';
 import { loadSchedule, ScheduleUpdate, updateSchedule } from './scheduling-service';
 
 import uniq from 'lodash/uniq';
-import { dateTimeInTorusFormat, dateWithoutTimeLabel, dateWithTimeLabel } from './date-utils';
+import { dateTimeInTorusFormat, dateWithoutTimeLabel } from './date-utils';
 interface Payload {
   start_date: StringDate;
   end_date: StringDate;
@@ -46,7 +46,14 @@ export const scheduleAppFlushChanges = createAsyncThunk(
         .map((i) => `${i?.title} ${i?.numbering_index}`)
         .join(', '),
     );
-    await updateSchedule(state.scheduler.sectionSlug, updates);
+    try {
+      await updateSchedule(state.scheduler.sectionSlug, updates);
+      window.dispatchEvent(new Event('schedule-updated'));
+    } catch (e) {
+      console.error(e);
+      window.dispatchEvent(new Event('schedule-update-failed'));
+      throw e;
+    }
   },
 );
 
