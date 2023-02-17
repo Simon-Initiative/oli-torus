@@ -34,6 +34,11 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       set_progress(section.id, p7.published_resource.resource_id, user_id, 0.5)
       set_progress(section.id, p8.published_resource.resource_id, user_id, 0.5)
 
+      # Notice that we aren't setting progress - even to 0 - for p9 and p10.
+      # It is an important test case to NOT have a resource_access record present for
+      # a couple of these pages.  We need to make sure the progress for pages that
+      # have never been visited is considered.
+
       map
     end
 

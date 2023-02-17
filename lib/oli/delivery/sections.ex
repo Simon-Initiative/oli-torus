@@ -1243,6 +1243,14 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  @doc """
+  Rebuilds the "contained pages" relations for a course section.  A "contained page" for a
+  container is the full set of pages found immeidately within that container or in any of
+  its sub-containers.  For every container in a course section, one row will exist in this
+  "contained pages" table for each contained page.  This allows a straightforward join through
+  this relation from a container to then all of its contained pages - to power calculations like
+  aggregating progress complete across all pages within a container.
+  """
   def rebuild_contained_pages(%Section{id: section_id} = section) do
     section_resources = from(sr in SectionResource, where: sr.section_id == ^section_id)
     |> Repo.all()
@@ -1252,19 +1260,39 @@ defmodule Oli.Delivery.Sections do
 
   def rebuild_contained_pages(%Section{slug: slug, id: section_id} = section, section_resources) do
 
+    # First start be deleting all existing contained pages for this section.
     from(cp in ContainedPage, where: cp.section_id == ^section_id)
     |> Repo.delete_all
 
+    # We will need the set of resource ids for all containers in the hierarchy.
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
     container_ids = DeliveryResolver.revisions_of_type(slug, container_type_id)
     |> Enum.map(fn rev -> rev.resource_id end)
     |> MapSet.new()
 
+    # From the section resources, locate the root section resource, and also create a lookup map
+    # from section_resource id to each section resource.
     root = Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
     map = Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
 
+    # Now recursively traverse the containers within the course section hierarchy, starting with the root
+    # to build a map of page resource_ids to lists of the ancestor container resource_ids.  The resultant
+    # map will look like:
+    #
+    # %{
+    #   234 => [32, 25, nil],
+    #   135 => [33, 25, nil],
+    #   299 => [25, nil],
+    #   408 => [nil]
+    # }
+    #
+    # The `nil` entries above represent their presence in the root container, and each preceding resource id
+    # references a parent container (like Unit, module, etc).  All container references besides the root are
+    # true resource_id references, and not ids of the section resoource.
+    #
     page_map = rebuild_contained_pages_helper(root, {[nil], %{}, map, container_ids})
 
+    # Now convert the page_map to a list of maps for bulk insert
     insertions = Enum.reduce(page_map, [], fn {page_id, ancestors}, all ->
       Enum.map(ancestors, fn id -> %{section_id: section_id, container_id: id, page_id: page_id} end) ++ all
     end)
@@ -1273,6 +1301,8 @@ defmodule Oli.Delivery.Sections do
 
   end
 
+  # Recursive helper to traverse the hierarchy of the section resources and create the page to ancestor
+  # container map.
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
     Enum.map(sr.children, fn sr_id ->
       sr = Map.get(all, sr_id)
