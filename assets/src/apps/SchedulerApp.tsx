@@ -5,7 +5,7 @@ import { configureStore } from '../state/store';
 import { Provider } from 'react-redux';
 import { initState, schedulerAppReducer } from './scheduler/scheduler-reducer';
 import { StringDate } from './scheduler/scheduler-slice';
-
+import { globalStore } from 'state/store';
 export interface SchedulerAppProps {
   start_date: StringDate;
   end_date: StringDate;
@@ -42,4 +42,4 @@ const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
 
 ScheduleEditorApp.displayName = 'ScheduleEditorApp';
 
-registerApplication('ScheduleEditor', ScheduleEditorApp, false);
+registerApplication('ScheduleEditor', ScheduleEditorApp, globalStore);

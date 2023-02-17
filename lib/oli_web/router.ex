@@ -593,7 +593,7 @@ defmodule OliWeb.Router do
 
   # Endpoints for client-side scheduling UI
   scope "/api/v1/scheduling/:section_slug", OliWeb.Api do
-    pipe_through([:api, :delivery_protected, :require_section])
+    pipe_through([:api, :delivery_and_admin, :require_section])
 
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
