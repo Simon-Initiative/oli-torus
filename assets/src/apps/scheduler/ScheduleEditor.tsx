@@ -86,9 +86,8 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       <ErrorDisplay />
       {wizard_mode || <ScheduleSaveBar onSave={onModification} />}
       <div className="w-full flex justify-center flex-col">
-        <div className="overflow-x-auto mx-3">
-          <ScheduleGrid startDate={start_date} endDate={end_date} onReset={showModal} />
-        </div>
+        <ScheduleGrid startDate={start_date} endDate={end_date} onReset={showModal} />
+
         {Modal}
       </div>
     </>

@@ -38,29 +38,31 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset 
   }, [dayGeometry]);
 
   return (
-    <div style={{ minWidth }}>
-      <div className="flex justify-end container">
+    <div className="pb-20">
+      <div className="flex container justify-end">
         <button className=" text-delivery-primary uppercase underline" onClick={onReset}>
           Reset Timelines
         </button>
       </div>
 
-      <table className="mx-auto select-none table-striped border-t-0" style={{ minWidth }}>
-        <thead>
-          <ScheduleHeaderRow
-            labels={true}
-            attachBarContainer={attachBarContainer}
-            dayGeometry={dayGeometry}
-          />
-        </thead>
-        <tbody>
-          {schedule
-            .filter((item) => item.resource_type_id !== ScheduleItemType.Page)
-            .map((item) => (
-              <ScheduleLine key={item.id} indent={0} item={item} dayGeometry={dayGeometry} />
-            ))}
-        </tbody>
-      </table>
+      <div className="w-full overflow-x-auto">
+        <table className="mx-auto select-none table-striped border-t-0" style={{ minWidth }}>
+          <thead>
+            <ScheduleHeaderRow
+              labels={true}
+              attachBarContainer={attachBarContainer}
+              dayGeometry={dayGeometry}
+            />
+          </thead>
+          <tbody>
+            {schedule
+              .filter((item) => item.resource_type_id !== ScheduleItemType.Page)
+              .map((item) => (
+                <ScheduleLine key={item.id} indent={0} item={item} dayGeometry={dayGeometry} />
+              ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
