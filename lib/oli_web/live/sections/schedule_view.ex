@@ -43,7 +43,9 @@ defmodule OliWeb.Sections.ScheduleView do
              end_date: section.end_date,
              title: section.title,
              section_slug: section_slug,
-             display_curriculum_item_numbering: section.display_curriculum_item_numbering
+             display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+             edit_section_details_url:
+               Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, section.slug)
            }
          )}
     end
@@ -54,7 +56,7 @@ defmodule OliWeb.Sections.ScheduleView do
 
     <script type="text/javascript" src={ @js_path }></script>
 
-    <div id="app" phx-update="ignore">
+    <div id="schedule-app" phx-update="ignore">
       <%= ReactPhoenix.ClientSide.react_component("Components.ScheduleEditor", @appConfig) %>
     </div>
     """

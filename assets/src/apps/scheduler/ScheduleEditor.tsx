@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { Alert } from '../../components/misc/Alert';
 import { usePromptModal } from '../../components/misc/PromptModal';
 import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
@@ -15,6 +16,7 @@ export interface SchedulerProps {
   section_slug: string;
   display_curriculum_item_numbering: boolean;
   wizard_mode: boolean;
+  edit_section_details_url: string;
 }
 
 export const ScheduleEditor: React.FC<SchedulerProps> = ({
@@ -24,6 +26,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   section_slug,
   display_curriculum_item_numbering,
   wizard_mode,
+  edit_section_details_url,
 }) => {
   const dispatch = useDispatch();
 
@@ -80,6 +83,19 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
 
     onReset,
   );
+
+  if (!start_date || !end_date) {
+    return (
+      <div className="container">
+        <Alert variant="warning">
+          <p>Your section must have a start and end date set before you can schedule it. </p>
+          <p>
+            Set these on the <a href={edit_section_details_url}> Edit Section Details</a> page.
+          </p>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <>
