@@ -2,7 +2,7 @@ defmodule OliWeb.Sections.ScheduleView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, SessionContext}
 
   data breadcrumbs, :any
   data title, :string, default: "Schedule Section"
