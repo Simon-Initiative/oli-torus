@@ -266,7 +266,7 @@ export const translateRule = (r: ParsedTextRule): ParsedTextRule => {
   if (r.operator === 'regex' && r.value.startsWith('(?i)')) {
     // Author might have explicitly included (?i) prefix in a regex rule, in which case
     // this ought not to be translated. Detect this by checking for unescaped regex
-    // metachars, and keeping as regex. If author wrote (?i)^pat$ regexp for literal string,
+    // metachars, and keeping as regex. If author wrote (?i)pat regexp for literal string,
     // it gets translated to iequals match, but that is equivalent.
     if (!hasUnescapedRegExpChars(r.value.slice(4))) {
       return {
