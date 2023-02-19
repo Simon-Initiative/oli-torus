@@ -263,7 +263,6 @@ type ParsedTextRule = {
 // To implement case-insensitive literal string matches, we translate rule
 // 'input like {(?i)escapedText}' => { operator: iequals, value: unescapedText}
 export const translateRule = (r: ParsedTextRule): ParsedTextRule => {
-  console.log('translating ' + r.operator + ' ' + r.value);
   if (r.operator === 'regex' && r.value.startsWith('(?i)')) {
     // Author might have explicitly included (?i) prefix in a regex rule, in which case
     // this ought not to be translated. Detect this by checking for unescaped regex
