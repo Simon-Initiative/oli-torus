@@ -323,7 +323,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         _ -> Repo.rollback("unknown error")
       end
 
-      Oli.Delivery.Metrics.calculate_page_progress(activity_attempt_guid)
+      Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
       result
     end)
     |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
@@ -514,7 +514,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             false,
             datashop_session_id
           )
-          Oli.Delivery.Metrics.calculate_page_progress(activity_attempt_guid)
+          Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
 
           result
         end)

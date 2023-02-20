@@ -68,6 +68,66 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
     end
 
+    test "container based progress across collection of containers works correctly", %{
+      section: section,
+      this_user: this_user,
+      mod1_resource: mod1_resource,
+      mod2_resource: mod2_resource,
+      mod3_resource: mod3_resource,
+      unit1_resource: unit1_resource,
+      unit2_resource: unit2_resource
+    } = map do
+
+      [r1, r2, r3] = Metrics.progress_across(section.id, [mod1_resource.id, mod2_resource.id, mod3_resource.id], this_user.id)
+      |> Enum.map(fn r -> r.progress end)
+      |> Enum.sort()
+
+      assert_in_delta 0.2, r1, 0.0001
+      assert_in_delta 0.25, r2, 0.0001
+      assert_in_delta 0.5, r3, 0.0001
+
+      [r1, r2, r3] = Metrics.progress_across(section.id, [mod1_resource.id, mod2_resource.id, mod3_resource.id], [], 1)
+      |> Enum.map(fn r -> r.progress end)
+      |> Enum.sort()
+
+      assert_in_delta 0.2, r1, 0.0001
+      assert_in_delta 0.25, r2, 0.0001
+      assert_in_delta 0.5, r3, 0.0001
+
+
+      [r1, r2] = Metrics.progress_across(section.id, [unit1_resource.id, unit2_resource.id], this_user.id)
+      |> Enum.map(fn r -> r.progress end)
+      |> Enum.sort()
+
+      assert_in_delta 0.25, r1, 0.0001
+      assert_in_delta 0.35, r2, 0.0001
+
+      [r1, r2] = Metrics.progress_across(section.id, [unit1_resource.id, unit2_resource.id], [], 1)
+      |> Enum.map(fn r -> r.progress end)
+      |> Enum.sort()
+
+      assert_in_delta 0.25, r1, 0.0001
+      assert_in_delta 0.35, r2, 0.0001
+
+      # Now create, enroll a new student and set some progress
+      map = Seeder.add_user(map, %{}, :that_user)
+      Seeder.add_users_to_section(map, :section, [:that_user])
+      user_id = map.that_user.id
+
+      [p1, p2, _] = map.mod1_pages
+      set_progress(section.id, p1.published_resource.resource_id, user_id, 1)
+      set_progress(section.id, p2.published_resource.resource_id, user_id, 1)
+
+      [r1, r2, r3] = Metrics.progress_across(section.id, [mod1_resource.id, mod2_resource.id, mod3_resource.id], [], 2)
+      |> Enum.map(fn r -> r.progress end)
+      |> Enum.sort()
+
+      assert_in_delta 0.1, r1, 0.0001
+      assert_in_delta 0.125, r2, 0.0001
+      assert_in_delta 0.5833, r3, 0.0001
+
+    end
+
     test "page level progress calculation and setting", map do
 
       [p1, _, _] = map.mod1_pages
@@ -111,10 +171,11 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
         :a5)
 
       guid = map.a5.attempt_guid
-      assert {:ok, :updated} = Metrics.calculate_page_progress(guid)
+      assert {:ok, :updated} = Metrics.update_page_progress(guid)
 
       ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
       assert_in_delta 0.75, ra.progress, 0.0001
+
 
     end
 

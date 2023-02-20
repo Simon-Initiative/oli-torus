@@ -1297,7 +1297,14 @@ defmodule Oli.Delivery.Sections do
       Enum.map(ancestors, fn id -> %{section_id: section_id, container_id: id, page_id: page_id} end) ++ all
     end)
 
-    {:ok, Repo.insert_all(ContainedPage, insertions)}
+    insertion_count = Repo.insert_all(ContainedPage, insertions)
+
+    # Finally, update the contained_page_count of the container section resource
+    # records.  We calculate this and cache it on the section resource to simplify
+    # the queries that calculate progress
+    {:ok, _} = set_contained_page_counts(section_id)
+
+    {:ok, insertion_count}
 
   end
 
@@ -1314,6 +1321,25 @@ defmodule Oli.Delivery.Sections do
       end
     end)
     |> Enum.reduce(fn m, a -> Map.merge(m, a) end)
+  end
+
+  defp set_contained_page_counts(section_id) do
+    sql =
+      """
+      UPDATE section_resources
+      SET
+        contained_page_count = subquery.count,
+        updated_at = NOW()
+      FROM (
+          SELECT COUNT(*) as count, container_id
+          FROM contained_pages
+          WHERE section_id = $1
+          GROUP BY container_id
+      ) AS subquery
+      WHERE section_resources.resource_id = subquery.container_id and section_resources.section_id = $2
+      """
+
+    Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id])
   end
 
   @doc """

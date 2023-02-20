@@ -14,5 +14,9 @@ defmodule Oli.Repo.Migrations.ContainedPages do
     alter table(:resource_accesses) do
       add :progress, :float, default: 0.0
     end
+
+    alter table(:section_resources) do
+      add :contained_page_count, :integer, default: 0
+    end
   end
 end

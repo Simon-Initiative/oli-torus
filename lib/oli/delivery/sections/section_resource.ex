@@ -16,6 +16,9 @@ defmodule Oli.Delivery.Sections.SectionResource do
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []
 
+    # if a container, records the total number of contained pages
+    field :contained_page_count, :integer, default: 0
+
     # the resource slug, resource and project mapping
     field :slug, :string
     field :resource_id, :integer
@@ -37,6 +40,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :numbering_index,
       :numbering_level,
       :children,
+      :contained_page_count,
       :slug,
       :resource_id,
       :project_id,
@@ -60,6 +64,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :numbering_index,
       :numbering_level,
       :children,
+      :contained_page_count,
       :slug,
       :resource_id,
       :project_id,

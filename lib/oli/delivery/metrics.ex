@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Repo
 
   alias Oli.Delivery.Sections.ContainedPage
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
 
@@ -47,6 +48,66 @@ defmodule Oli.Delivery.Metrics do
     Repo.one(query).progress
   end
 
+  @doc """
+  Calculate the progress for a specific student, in all pages of a
+  collection of containers.
+  """
+  def progress_across(section_id, container_ids, user_id) do
+    query =
+      ContainedPage
+      |> join(:left, [cp], ra in ResourceAccess, on: cp.page_id == ra.resource_id and cp.section_id == ra.section_id and ra.user_id == ^user_id)
+      |> where([cp, ra], cp.section_id == ^section_id and cp.container_id in ^container_ids)
+      |> group_by([cp, ra], cp.container_id)
+      |> select([cp, ra], %{
+        container_id: cp.container_id,
+        progress:
+          fragment(
+            "SUM(?) / COUNT(*)",
+            ra.progress
+          )
+      })
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Calculate the progress for all students, in all pages of a
+  collection of containers.
+
+  The last two parameters gives flexibility into excluding specific users
+  from the calculation. This exists primarily to exclude instructors.
+  `user_ids_to_ignore` can be an empty list, but `user_count` should always be the total
+  number of enrolled students (excluding the count of those in the exlusion parameter).
+  """
+  def progress_across(section_id, container_ids, user_ids_to_ignore, user_count) do
+
+    # If zero was passed in, we can allow the query to execute correctly and avoid a divide by zero by
+    # simply changing it to 1
+    user_count = max(user_count, 1)
+
+    query =
+      ContainedPage
+      |> join(:left, [cp], ra in ResourceAccess, on: cp.page_id == ra.resource_id and cp.section_id == ra.section_id)
+      |> join(:left, [cp, _], sr in SectionResource, on: cp.container_id == sr.resource_id and cp.section_id == sr.section_id)
+      |> where([cp, ra, _], cp.section_id == ^section_id and cp.container_id in ^container_ids and ra.user_id not in ^user_ids_to_ignore)
+      |> group_by([cp, ra, sr], [cp.container_id, sr.contained_page_count])
+      |> select([cp, ra, sr], %{
+        container_id: cp.container_id,
+        progress:
+          fragment(
+            "SUM(?) / (? * ?)",
+            ra.progress,
+            sr.contained_page_count,
+            ^user_count
+          )
+      })
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Updates page progress to be 100% complete.
+  """
   def mark_completed(%ResourceAccess{} = ra) do
     Core.update_resource_access(ra, %{progress: 1.0})
   end
@@ -63,23 +124,23 @@ defmodule Oli.Delivery.Metrics do
   {:error, :unexpected_update_count} -> 0 or more than 1 record would have been updated, rolled back
   {:error, e} -> An other error occurred, rolled back
   """
-  def calculate_page_progress(activity_attempt_guid) when is_binary(activity_attempt_guid) do
+  def update_page_progress(activity_attempt_guid) when is_binary(activity_attempt_guid) do
     if Core.is_first_activity_attempt?(activity_attempt_guid) do
-      do_calculate(activity_attempt_guid)
+      do_update(activity_attempt_guid)
     else
       {:ok, :noop}
     end
   end
 
-  def calculate_page_progress(%ActivityAttempt{attempt_number: 1, attempt_guid: attempt_guid}) do
-    do_calculate(attempt_guid)
+  def update_page_progress(%ActivityAttempt{attempt_number: 1, attempt_guid: attempt_guid}) do
+    do_update(attempt_guid)
   end
 
-  def calculate_page_progress(_) do
+  def update_page_progress(_) do
     {:ok, :noop}
   end
 
-  defp do_calculate(activity_attempt_guid) do
+  defp do_update(activity_attempt_guid) do
 
     Oli.Repo.transaction(fn ->
       sql = """
