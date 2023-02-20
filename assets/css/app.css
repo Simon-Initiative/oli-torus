@@ -2,6 +2,7 @@
 @import 'tailwindcss/components';
 @import 'bootstrap-shims';
 @import 'tailwindcss/utilities';
+@import 'transitions';
 
 @layer base {
   a,

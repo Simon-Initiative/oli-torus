@@ -188,10 +188,10 @@
   }
 
   &.myresponse {
-    border: 1px solid rgba(#3498db, 0.75);
+    border: 1px solid rgba(#16a085, 0.75);
 
     & > .content-purpose-label {
-      background-color: rgba(#3498db, 0.75);
+      background-color: rgba(#16a085, 0.75);
       color: var(--color-white);
 
       /** icon */
@@ -316,7 +316,7 @@
   }
 
   &.myresponse {
-    @include page_link_style(rgba(#3498db, 0.75));
+    @include page_link_style(rgba(#16a085, 0.75));
   }
 
   &.simulation {

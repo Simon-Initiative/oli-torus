@@ -1,0 +1,3 @@
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/scheduler.js") %>"></script>
+
+<%= react_component("Components.ScheduleEditor", @context) %>

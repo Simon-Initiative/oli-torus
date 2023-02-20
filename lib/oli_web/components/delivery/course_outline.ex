@@ -15,7 +15,7 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
         <%= cond do %>
           <% container?(node) -> %>
             <.link_container {link_props(assigns, node)} />
-          <% from_node(node, :graded) -> %>
+          <% graded?(node) -> %>
             <.link_assessment {link_props(assigns, node)} />
           <% true -> %>
             <.link_page {link_props(assigns, node)} />
@@ -114,6 +114,10 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
 
   defp from_node(%HierarchyNode{revision: revision}, field), do: Map.get(revision, field)
   defp from_node(map, field), do: Map.get(map, Atom.to_string(field))
+
+  defp graded?(node) do
+    from_node(node, :graded) == "true"
+  end
 
   defp node_index(%HierarchyNode{numbering: %Numbering{index: index}}), do: index
   defp node_index(%{"index" => index}), do: index
