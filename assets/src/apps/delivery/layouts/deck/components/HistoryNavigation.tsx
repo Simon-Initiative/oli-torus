@@ -65,7 +65,7 @@ const HistoryNavigation: React.FC = () => {
   };
 
   // Get the activity names and ids to be displayed in the history panel
-  const historyItems: HistoryEntry[] = globalSnapshot
+  let historyItems: HistoryEntry[] = globalSnapshot
     ?.map((activityId) => {
       const foundSequence = sequences.filter(
         (sequence) => sequence.custom?.sequenceId === activityId,
@@ -77,24 +77,31 @@ const HistoryNavigation: React.FC = () => {
       };
     })
     .sort(sortByTimestamp);
+  if (reviewMode) historyItems = historyItems.reverse();
 
   const currentHistoryActivityIndex = historyItems.findIndex(
     (item: any) => item.id === currentActivityId,
   );
-  const isFirst = currentHistoryActivityIndex === historyItems.length - 1;
-  const isLast = currentHistoryActivityIndex === 0;
+  const isFirst = reviewMode
+    ? currentHistoryActivityIndex === 0
+    : currentHistoryActivityIndex === historyItems.length - 1;
+  const isLast = reviewMode
+    ? currentHistoryActivityIndex === historyItems.length - 1
+    : currentHistoryActivityIndex === 0;
 
-  /* console.log('HISTORY ITEMS', {
+  /*  console.log('HISTORY ITEMS', {
     historyItems,
     globalSnapshot,
     currentActivityId,
     isFirst,
     isLast,
     isHistoryMode,
+    currentHistoryActivityIndex,
   }); */
 
   const nextHandler = () => {
-    const prevActivity = historyItems[currentHistoryActivityIndex - 1];
+    const prevActivity =
+      historyItems[reviewMode ? currentHistoryActivityIndex + 1 : currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
 
     const nextHistoryActivityIndex = historyItems.findIndex(
@@ -108,7 +115,8 @@ const HistoryNavigation: React.FC = () => {
   };
 
   const prevHandler = () => {
-    const prevActivity = historyItems[currentHistoryActivityIndex + 1];
+    const prevActivity =
+      historyItems[reviewMode ? currentHistoryActivityIndex - 1 : currentHistoryActivityIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
     dispatch(
       setHistoryNavigationTriggered({
@@ -134,7 +142,7 @@ const HistoryNavigation: React.FC = () => {
               onClick={nextHandler}
               className="nextBtn historyStepButton"
               aria-label="Next screen"
-              disabled={isLast || !isHistoryMode || !reviewMode}
+              disabled={isLast || (!isHistoryMode && !reviewMode)}
             >
               <span className="icon-chevron-right" />
             </button>

@@ -73,7 +73,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
                 className={getItemClasses(item)}
                 onClick={() => itemClickHandler(item)}
               >
-                {items.length - index}. {item.name}
+                {isReviewMode ? index + 1 : items.length - index}. {item.name}
               </div>
             ))}
           </nav>

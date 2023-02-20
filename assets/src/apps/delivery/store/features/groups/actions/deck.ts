@@ -41,6 +41,7 @@ import {
   selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
+  selectReviewMode,
   selectSectionSlug,
   setScore,
   setScreenIdleExpirationTime,
@@ -59,6 +60,7 @@ export const initializeActivity = createAsyncThunk(
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
+    const isReviewMode = selectReviewMode(rootState);
     const currentSequenceId = sequence.find((entry) => entry.activity_id === activityId)?.custom
       .sequenceId;
     if (!currentSequenceId) {
@@ -179,8 +181,9 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: 0,
     };
-    sessionOps.push(targetVisitTimeStampOp);
-
+    if (!isReviewMode) {
+      sessionOps.push(targetVisitTimeStampOp);
+    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];

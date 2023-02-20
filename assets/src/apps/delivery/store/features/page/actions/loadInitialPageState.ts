@@ -21,7 +21,7 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { loadPageState, PageState, selectResourceAttemptGuid } from '../slice';
+import { loadPageState, PageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -45,6 +45,7 @@ export const loadInitialPageState = createAsyncThunk(
       // write initial session state (TODO: factor out elsewhere)
       const resourceAttemptGuid = selectResourceAttemptGuid(getState() as RootState);
       dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
+      const isReviewMode = selectReviewMode;
       const sequence = selectSequence(getState() as RootState);
       const sessionState = sequence.reduce((acc, entry) => {
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
@@ -126,7 +127,7 @@ export const loadInitialPageState = createAsyncThunk(
       }: any = await dispatch(loadActivities(activityAttemptMapping));
 
       const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
-      if (shouldResume) {
+      if (shouldResume && !isReviewMode) {
         // state should be all up to date by now
         const snapshot = getEnvState(defaultGlobalEnv);
         const visitHistory = Object.keys(snapshot)
