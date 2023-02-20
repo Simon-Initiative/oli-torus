@@ -47,6 +47,7 @@ import {
   selectPageContent,
   selectPreviewMode,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
@@ -326,6 +327,7 @@ const DeckLayoutFooter: React.FC = () => {
   };
 
   useEffect(() => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
     }
