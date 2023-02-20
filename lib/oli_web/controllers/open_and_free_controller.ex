@@ -343,7 +343,7 @@ defmodule OliWeb.OpenAndFreeController do
   defp create_from_product(conn, blueprint, section_params) do
     Repo.transaction(fn ->
       with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
-           {:ok, _} <- Section.rebuild_contained_pages(section),
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _maybe_enrollment} <- enroll(conn, section) do
         section
       else
@@ -356,7 +356,7 @@ defmodule OliWeb.OpenAndFreeController do
     Repo.transaction(fn ->
       with {:ok, section} <- Sections.create_section(section_params),
            {:ok, section} <- Sections.create_section_resources(section, publication),
-           {:ok, _} <- Section.rebuild_contained_pages(section),
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _enrollment} <- enroll(conn, section) do
         section
       else

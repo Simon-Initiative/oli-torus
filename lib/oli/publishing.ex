@@ -3,7 +3,6 @@ defmodule Oli.Publishing do
 
   require Logger
 
-  alias Oli.Publishing.DeliveryResolver
   alias Oli.Publishing.Publications.DiffAgent
   alias Oli.Repo
 
