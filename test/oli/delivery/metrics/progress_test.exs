@@ -126,6 +126,16 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       assert_in_delta 0.125, r2, 0.0001
       assert_in_delta 0.5833, r3, 0.0001
 
+      # Finally, exclude that student and verify the previous result
+      [r1, r2, r3] = Metrics.progress_across(section.id, [mod1_resource.id, mod2_resource.id, mod3_resource.id], [user_id], 1)
+      |> Enum.map(fn r -> r.progress end)
+      |> Enum.sort()
+
+      assert_in_delta 0.2, r1, 0.0001
+      assert_in_delta 0.25, r2, 0.0001
+      assert_in_delta 0.5, r3, 0.0001
+
+
     end
 
     test "page level progress calculation and setting", map do
