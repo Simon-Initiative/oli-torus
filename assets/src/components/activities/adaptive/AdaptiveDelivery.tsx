@@ -10,6 +10,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import * as ActivityTypes from '../types';
+import { StudentResponse } from '../types';
 import PartsLayoutRenderer from './components/delivery/PartsLayoutRenderer';
 import { AdaptiveModelSchema } from './schema';
 
@@ -17,6 +18,7 @@ import { AdaptiveModelSchema } from './schema';
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 
 const sharedInitMap = new Map();
+const partInitResponseMap = new Map();
 const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
 
@@ -155,6 +157,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       sharedInitMap.delete(activityId);
       sharedPromiseMap.delete(activityId);
       sharedAttemptStateMap.delete(activityId);
+      partInitResponseMap.clear();
       setInit(false);
     };
   }, []);
@@ -171,7 +174,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }); */
       if (partsLayout.every((part) => partsInitStatus[part.id] === true)) {
         if (props.onReady && !isReviewMode) {
-          const readyResults: any = await props.onReady(currentAttemptState.attemptGuid);
+          const response: any = Array.from(partInitResponseMap);
+          const readyResults: any = await props.onReady(currentAttemptState.attemptGuid, response);
           const { env, domain } = readyResults;
           if (env) {
             setScriptEnv(env);
@@ -246,7 +250,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     /* console.log('onPartInit', payload); */
     // a part should send initial state values
     if (payload.responses.length) {
-      const saveResults = await handlePartSave(payload);
+      const currentAttemptState = sharedAttemptStateMap.get(activityId);
+      const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
+      const response: ActivityTypes.StudentResponse = {
+        input: payload.responses.map((pr) => ({ ...pr, path: `${payload.id}.${pr.key}` })),
+      };
+      partInitResponseMap.set(partAttempt?.attemptGuid, response);
       /* console.log('onPartInit saveResults', payload.id, saveResults); */
     }
 
