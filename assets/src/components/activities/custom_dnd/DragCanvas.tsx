@@ -6,8 +6,8 @@ export type ResetListener = () => void;
 
 export type DragCanvasProps = {
   model: CustomDnDSchema;
-  onSubmitPart: (partId: string, value: string) => void;
-  onFocusChange: (partId: string) => void;
+  onSubmitPart: (targetId: string, draggableId: string) => void;
+  onFocusChange: (targetId: string, draggableId: string | null) => void;
   initialState: Record<string, string>;
   editMode: boolean;
   activityAttemptGuid: string;
@@ -41,13 +41,14 @@ export const DragCanvas: React.FC<DragCanvasProps> = (props: DragCanvasProps) =>
   );
 };
 
-function resetAnyChildren(container: any, element: any) {
-  while (element.childNodes.length > 0) {
-    container.appendChild(element.childNodes[0]);
-  }
+function resetChildDraggables(shadowRoot: any, target: any) {
+  const inputRoot = shadowRoot.querySelector('.input_source');
+  target
+    .querySelectorAll('.initiator')
+    .forEach((draggable: HTMLElement) => inputRoot.appendChild(draggable));
 }
 
-function getTarget(shadowRoot: any, inputVal: string) {
+function getTarget(shadowRoot: any, inputVal: string): Element | null {
   let item = null;
   shadowRoot.querySelectorAll('.target').forEach((element: any) => {
     if (element.getAttribute('input_ref') === inputVal) {
@@ -58,7 +59,7 @@ function getTarget(shadowRoot: any, inputVal: string) {
   return item;
 }
 
-function getDroppable(shadowRoot: any, inputVal: string) {
+function getDroppable(shadowRoot: any, inputVal: string): Element | null {
   let item = null;
   shadowRoot.querySelectorAll('.initiator').forEach((element: any) => {
     if (element.getAttribute('input_val') === inputVal) {
@@ -69,15 +70,17 @@ function getDroppable(shadowRoot: any, inputVal: string) {
   return item;
 }
 
-function changeFocus(shadowRoot: any, partId: string, props: DragCanvasProps) {
+function changeFocus(shadowRoot: any, targetId: string, props: DragCanvasProps) {
   shadowRoot.querySelectorAll('.target').forEach((element: any) => {
     element.style['border-width'] = '1px';
   });
-  const target = getTarget(shadowRoot, partId);
+  const target = getTarget(shadowRoot, targetId);
   if (target !== null) {
     (target as any).style['border-width'] = '3px';
   }
-  props.onFocusChange(partId);
+  // notification should also include contained draggable, null if none
+  const draggableId = target?.querySelector('.initiator')?.getAttribute('input_val');
+  props.onFocusChange(targetId, draggableId || null);
 }
 
 function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
@@ -89,7 +92,7 @@ function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
       (ev as any).dataTransfer.dropEffect = 'move';
 
       const inputVal = (ev as any).dataTransfer.getData('text/plain');
-      resetAnyChildren(shadowRoot.querySelector('.input_source'), ev.currentTarget);
+      resetChildDraggables(shadowRoot, ev.currentTarget);
 
       const droppable = getDroppable(shadowRoot, inputVal);
       (ev.currentTarget as any).appendChild(droppable);
@@ -98,9 +101,9 @@ function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
       newlyDropped.style.top = '0px';
       newlyDropped.style.position = 'relative';
 
-      const partId = (ev.currentTarget as any).getAttribute('input_ref');
-      changeFocus(shadowRoot, partId, props);
-      props.onSubmitPart(partId, inputVal);
+      const targetId = (ev.currentTarget as any).getAttribute('input_ref');
+      changeFocus(shadowRoot, targetId, props);
+      props.onSubmitPart(targetId, inputVal);
     }
   };
 }
@@ -186,27 +189,25 @@ function renderRawContent(id: string, props: DragCanvasProps) {
   };
 
   // Set the initial state, thus restoring the state of a partially (or entirely) completed attempt
-  let firstRestoredPart: string | null = null;
+  let firstRestoredTarget: string | null = null;
   shadowRoot.querySelectorAll('.target').forEach((element: any) => {
-    const partId = element.getAttribute('input_ref');
-    if (props.initialState[partId] !== undefined) {
-      const state = props.initialState[partId];
-      const adjustedState = state.startsWith(partId + '_')
-        ? state.substring(partId.length + 1)
-        : state;
-      const droppable = getDroppable(shadowRoot, adjustedState);
+    const targetId = element.getAttribute('input_ref');
+    if (props.initialState[targetId] !== undefined) {
+      const droppableId = props.initialState[targetId];
+      const droppable = getDroppable(shadowRoot, droppableId);
+      console.log('restoring droppable ' + droppableId + ' to target ' + targetId);
 
       element.appendChild(droppable);
-      if (firstRestoredPart === null) {
-        firstRestoredPart = partId;
+      if (firstRestoredTarget === null) {
+        firstRestoredTarget = targetId;
       }
     }
   });
 
   // If we restored state to at least one part, set the focus to the first part that
   // we restored state to.  This allows that parts feedback to be initially displayed as well
-  if (firstRestoredPart !== null) {
-    changeFocus(shadowRoot, firstRestoredPart, props);
+  if (firstRestoredTarget !== null) {
+    changeFocus(shadowRoot, firstRestoredTarget, props);
   }
 
   shadowRoot.querySelectorAll('.initiator').forEach((element: any) => {
@@ -230,7 +231,7 @@ function renderRawContent(id: string, props: DragCanvasProps) {
 
   props.onRegisterResetCallback(() => {
     shadowRoot.querySelectorAll('.target').forEach((element: any) => {
-      resetAnyChildren(shadowRoot, element);
+      resetChildDraggables(shadowRoot, element);
     });
   });
 
