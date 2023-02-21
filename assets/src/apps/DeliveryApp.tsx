@@ -1,5 +1,5 @@
 import Delivery from './delivery/Delivery';
 import { registerApplication } from './app';
-import adaptiveStore from './authoring/store';
+import deliveryStore from '../apps/delivery/store';
 
-registerApplication('Delivery', Delivery, adaptiveStore);
+registerApplication('Delivery', Delivery, deliveryStore);
