@@ -31,6 +31,7 @@ const populateEntries = () => {
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
     keepalive: ['./src/phoenix/keep-alive.ts'],
+    delivery_adaptive_themes_default_light: ['./styles/adaptive/light.scss'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
