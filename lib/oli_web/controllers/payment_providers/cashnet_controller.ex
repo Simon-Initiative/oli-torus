@@ -5,7 +5,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   import OliWeb.Api.Helpers
 
   alias Oli.Delivery.Sections
-  # alias Oli.Delivery.Paywall.Providers.Stripe
+  alias Oli.Delivery.Paywall.Providers.Cashnet
   alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
@@ -49,14 +49,14 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   @doc """
   JSON endpoint that allows client-side reporting of payment processing success.
   """
-  def callback(conn, payload) do
+  def success(conn, payload) do
     # get payment, stamp it as having been finalized
     Logger.debug("CashnetController:success started", payload)
 
     Logger.error("CashnetController could not finalize payment")
 
     json(conn, %{
-      result: "failure",
+      result: "success",
       reason: "testing"
     })
 
@@ -90,14 +90,29 @@ defmodule OliWeb.PaymentProviders.CashnetController do
     # end
   end
 
+   @doc """
+  JSON endpoint that allows client-side reporting of payment processing success.
+  """
+  def failure(conn, payload) do
+    # get payment, stamp it as having been finalized
+    Logger.debug("CashnetController:success started", payload)
+
+    Logger.error("CashnetController could not finalize payment")
+
+    json(conn, %{
+      result: "failure",
+      reason: "testing"
+    })
+
+  end
+
   @doc """
-  Handles client-side request to create a payment intent. Returns the intent `clientSecret`
-  to the client as a response.
+  Handles client-side request to create a cashnet payment form.
   """
   def init_form(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
 
-    Logger.debug("CashnetController:init_intent begin", %{
+    Logger.debug("CashnetController:init_form begin", %{
       section_slug: section_slug,
       user_id: user.id
     })
@@ -108,23 +123,22 @@ defmodule OliWeb.PaymentProviders.CashnetController do
       # to pass the cost along to the server.
       case Sections.get_section_by_slug(section_slug) |> trap_nil() do
         {:ok, section} ->
-          json(conn, %{cashnetForm: "form data", section: section.id})
-          # Now ask Stripe to create a payment intent, which also results in a %Payment record
+          # Now ask Cashnet to create a payment form, which also results in a %Payment record
           # created in the system but in a "pending" state
-          # case Stripe.create_intent(section, user) do
-          #   {:ok, %{"client_secret" => client_secret, "id" => id}} ->
-          #     Logger.debug("StripeController:init_intent ended", %{
-          #       intent_id: id,
-          #       section_slug: section_slug,
-          #       user_id: user.id
-          #     })
+          case Cashnet.create_form(section, user, conn.host) do
+            {:ok, %{cashnet_form: cashnet_form}} ->
+              # Logger.debug("CashnetController:init_form ended", %{
+              #   intent_id: id,
+              #   section_slug: section_slug,
+              #   user_id: user.id
+              # })
 
-          #     json(conn, %{clientSecret: client_secret})
+              json(conn, %{cashnetForm: cashnet_form})
 
-          #   e ->
-          #     {_, msg} = Oli.Utils.log_error("StripeController:init_intent failed.", e)
-          #     error(conn, 500, msg)
-          # end
+            e ->
+              {_, msg} = Oli.Utils.log_error("CashnetController:init_form failed.", e)
+              error(conn, 500, msg)
+          end
 
         _ ->
           Logger.error("CashnetController could not init intent")

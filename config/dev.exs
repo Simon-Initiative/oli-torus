@@ -40,6 +40,11 @@ config :oli, :stripe_provider,
   public_secret: "pk_test_TYooMQauvdEDq54NiTphI7jx",
   private_secret: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
 
+config :oli, :cashnet_provider,
+  cashnet_store: System.get_env("CASHNET_STORE"),
+  cashnet_checkout_url: System.get_env("CASHNET_CHECKOUT_URL"),
+  cmu_gl_number: System.get_env("CMU_GL_NUMBER")
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -55,12 +60,12 @@ config :oli, OliWeb.Endpoint,
     host: System.get_env("HOST", "localhost"),
     port: String.to_integer(System.get_env("PORT", "443"))
   ],
-  https: [
-    port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
-    otp_app: :oli,
-    keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
-    certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
-  ],
+  # https: [
+  #   port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
+  #   otp_app: :oli,
+  #   keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
+  #   certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
+  # ],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
