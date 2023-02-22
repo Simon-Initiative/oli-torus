@@ -672,6 +672,19 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def is_first_activity_attempt?(activity_attempt_guid) do
+    attempt_number = Repo.one(
+      from(a in ActivityAttempt,
+        where: a.attempt_guid == ^activity_attempt_guid,
+        select: a.attempt_number
+      )
+    )
+    case attempt_number do
+      1 -> true
+      _ -> false
+    end
+  end
+
   @doc """
   Gets a collection of activity attempt records that pertain to a collection of activity
   attempt guids. There is no guarantee that the ordering of the results of the activity attempts
