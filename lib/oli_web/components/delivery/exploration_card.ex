@@ -1,9 +1,10 @@
 defmodule OliWeb.Components.Delivery.ExplorationCard do
   use Phoenix.Component
 
-  def render(assigns) do
-    assigns = assign(assigns, dark: Map.get(assigns, :dark, false))
+  attr :dark, :boolean, default: false
+  attr :exploration, :map
 
+  def render(assigns) do
     ~H"""
       <div class={"@container/card flex-1 bg-white dark:bg-gray-800 dark:text-white shadow #{if @dark, do: "bg-delivery-header-800 text-white"}"}>
         <div class="p-6 flex flex-col">

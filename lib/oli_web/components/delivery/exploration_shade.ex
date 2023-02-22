@@ -3,8 +3,9 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
 
   alias OliWeb.Components.Delivery.ExplorationCard
 
+  attr :exploration_pages, :map, default: nil
+
   def exploration_shade(assigns) do
-    assigns = assign(assigns, exploration_pages: Map.get(assigns, :exploration_pages, nil))
     ~H"""
       <div class="bg-delivery-header border-b border-slate-300">
         <div class="container mx-auto md:px-10 py-2 flex flex-row justify-between text-sm md:text-lg">
@@ -12,7 +13,7 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
             <h4 class="p-2 md:p-0 md:leading-loose text-white">
               Your Exploration Activities
             </h4>
-            <%= if not is_nil(@exploration_pages) and length(@exploration_pages) > 0 do %>
+            <%= if @exploration_pages && length(@exploration_pages) > 0 do %>
               <span class="badge badge-info rounded-full"><%= length(@exploration_pages) %></span>
             <% end %>
           </div>
@@ -24,7 +25,7 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
           </div>
         </div>
         <div class="collapse container mx-auto md:px-10 pt-2 pb-4" id="collapseExploration">
-          <%= if not is_nil(@exploration_pages) and length(@exploration_pages) > 0 do %>
+          <%= if @exploration_pages && length(@exploration_pages) > 0 do %>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h">
               <%= for exploration <- @exploration_pages do %>
                 <ExplorationCard.render dark={true} exploration={exploration} />
