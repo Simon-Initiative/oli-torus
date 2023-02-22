@@ -40,8 +40,12 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
       return;
     }
     setIsOpen(false);
-    window.location.href = overviewURL;
-  }, [isFinalized, overviewURL]);
+    if (isPreviewMode) {
+      window.location.reload();
+    } else {
+      window.location.href = overviewURL;
+    }
+  }, [isFinalized, isPreviewMode, overviewURL]);
 
   const handleFinalization = useCallback(async () => {
     setFinalizationCalled(true);
