@@ -58,8 +58,11 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         // try again the other way
         redirectTo = finalizeGradedURL;
       }
+    } else if (!isPreviewMode && !graded) {
+      const newAttemptUrl = `/sections/${sectionSlug}/page/${revisionSlug}/attempt`;
+      redirectTo = newAttemptUrl;
     }
-    if (!graded || isPreviewMode) {
+    if (isPreviewMode) {
       window.location.reload();
     } else {
       window.location.href = redirectTo;
