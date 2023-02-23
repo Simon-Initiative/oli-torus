@@ -197,6 +197,38 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h1 class=\"title\">"
     end
 
+    test "shows the related exploration pages for a given page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_revision: page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "exploration page 1"
+      assert html_response(conn, 200) =~ "exploration page 2"
+    end
+
+    test "shows a 'no exploration pages' message when the page doesn't have any related exploration pages",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           ungraded_page_revision: ungraded_page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, ungraded_page_revision.slug))
+
+      assert html_response(conn, 200) =~ "There are no explorations related to this page"
+    end
+
     test "handles student adaptive page access by an enrolled student", %{
       conn: conn,
       map: %{adaptive_page_revision: revision},
@@ -1460,7 +1492,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "page renders a message when there are no exploration pages available", %{
       conn: conn
     } do
-      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} = section_with_assessment(%{})
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
       user = insert(:user)
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
@@ -1564,6 +1599,41 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     map = Seeder.add_page(map, graded_attrs, :page)
     map = Seeder.add_page(map, ungraded_attrs, :ungraded_page)
+
+    exploration_page_1 = %{
+      graded: false,
+      title: "exploration page 1",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :activity).resource.id
+          }
+        ]
+      },
+      purpose: :application,
+      relates_to: [map.page.resource.id]
+    }
+
+    exploration_page_2 = %{
+      graded: false,
+      title: "exploration page 2",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :activity).resource.id
+          }
+        ]
+      },
+      purpose: :application,
+      relates_to: [map.page.resource.id]
+    }
+
+    map = Seeder.add_page(map, exploration_page_1, :exploration_page_1)
+    map = Seeder.add_page(map, exploration_page_2, :exploration_page_2)
 
     {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes")
 
