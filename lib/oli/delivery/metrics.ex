@@ -113,6 +113,13 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Updates page progress to be 100% complete.
+  """
+  def reset(%ResourceAccess{} = ra) do
+    Core.update_resource_access(ra, %{progress: 0.0})
+  end
+
+  @doc """
   For an activity attempt specified by an attempt guid, calculate and set in the corresponding resource access
   record, the percentage complete for the related page. This calculation only needs to be performed after the
   evaluation of the first attempt for given activity.  This method should update exactly one record, the resource
