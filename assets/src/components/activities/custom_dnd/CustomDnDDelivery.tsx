@@ -14,6 +14,8 @@ import {
   listenForReviewAttemptChange,
   submitPart,
   resetAndSubmitPart,
+  resetAndSavePart,
+  resetPart,
 } from 'data/activities/DeliveryState';
 
 import { safelySelectFiles } from 'data/activities/utils';
@@ -108,11 +110,22 @@ export const CustomDnDComponent: React.FC = () => {
     setFocusedPart(partIdBearers === 'targets' ? targetId : draggableId);
   };
 
+  const onDetach = (targetId: string, draggableId: string) => {
+    // update on detaching draggable from target
+    const partId = partIdBearers === 'targets' ? targetId : draggableId;
+
+    const part = findPart(partId);
+    if (part === null) console.log('part not found! id=' + partId);
+    else {
+      dispatch(resetPart(uiState.attemptState.attemptGuid, part.attemptGuid, onResetPart));
+    }
+  };
+
   const onSubmit = (targetId: string, draggableId: string) => {
     const [partId, choiceId] =
       partIdBearers === 'targets' ? [targetId, draggableId] : [draggableId, targetId];
     const response = partId + '_' + choiceId;
-    // console.log('onSubmit: partId=' + partId + ' response= ' + response);
+    // console.log('DND onSubmit: partId=' + partId + ' response= ' + response);
 
     const state = getState();
     const part = state.attemptState.parts.find((p: any) => p.partId === partId);
@@ -121,7 +134,7 @@ export const CustomDnDComponent: React.FC = () => {
         dispatch(
           resetAndSubmitPart(
             uiState.attemptState.attemptGuid,
-            findPart(partId).attemptGuid,
+            part.attemptGuid,
             toStudentResponse(response),
             onResetPart,
             onSubmitPart,
@@ -131,7 +144,7 @@ export const CustomDnDComponent: React.FC = () => {
         dispatch(
           submitPart(
             uiState.attemptState.attemptGuid,
-            findPart(partId).attemptGuid,
+            part.attemptGuid,
             toStudentResponse(response),
             onSubmitPart,
           ),
@@ -156,6 +169,7 @@ export const CustomDnDComponent: React.FC = () => {
           }}
           onSubmitPart={onSubmit}
           onFocusChange={onFocusChange}
+          onDetach={onDetach}
         />
         <GradedPointsConnected />
 
