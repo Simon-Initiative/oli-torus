@@ -433,6 +433,17 @@ export const resetAndSubmitPart =
     dispatch(slice.actions.partSubmissionReceived(response));
   };
 
+export const resetPart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
+    dispatch(slice.actions.partResetRecieved(partActivityResponse));
+  };
+
 export const resetAndSubmitActivity =
   (
     attemptGuid: string,

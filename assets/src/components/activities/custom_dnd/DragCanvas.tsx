@@ -8,6 +8,7 @@ export type DragCanvasProps = {
   model: CustomDnDSchema;
   onSubmitPart: (targetId: string, draggableId: string) => void;
   onFocusChange: (targetId: string, draggableId: string | null) => void;
+  onDetach: (targetId: string, draggableId: string) => void;
   initialState: Record<string, string>;
   editMode: boolean;
   activityAttemptGuid: string;
@@ -41,14 +42,17 @@ export const DragCanvas: React.FC<DragCanvasProps> = (props: DragCanvasProps) =>
   );
 };
 
-function resetChildDraggables(shadowRoot: any, target: any) {
+function resetChildDraggables(shadowRoot: any, target: any, props: DragCanvasProps | null) {
   const inputRoot = shadowRoot.querySelector('.input_source');
-  target
-    .querySelectorAll('.initiator')
-    .forEach((draggable: HTMLElement) => inputRoot.appendChild(draggable));
+  target.querySelectorAll('.initiator').forEach((draggable: any) => {
+    inputRoot.appendChild(draggable);
+    // notify parent. allow null props to suppress notification, as during reset callback
+    if (props)
+      props.onDetach(target.getAttribute('input_ref'), draggable.getAttribute('input_val'));
+  });
 }
 
-function getTarget(shadowRoot: any, inputVal: string): Element | null {
+function getTarget(shadowRoot: any, inputVal: string): HTMLElement | null {
   let item = null;
   shadowRoot.querySelectorAll('.target').forEach((element: any) => {
     if (element.getAttribute('input_ref') === inputVal) {
@@ -59,7 +63,7 @@ function getTarget(shadowRoot: any, inputVal: string): Element | null {
   return item;
 }
 
-function getDroppable(shadowRoot: any, inputVal: string): Element | null {
+function getDraggable(shadowRoot: any, inputVal: string): HTMLElement | null {
   let item = null;
   shadowRoot.querySelectorAll('.initiator').forEach((element: any) => {
     if (element.getAttribute('input_val') === inputVal) {
@@ -68,6 +72,11 @@ function getDroppable(shadowRoot: any, inputVal: string): Element | null {
   });
 
   return item;
+}
+
+function getParentTargetId(draggable: HTMLElement | null): string | null {
+  const parentId = draggable?.parentElement?.getAttribute('input_ref');
+  return parentId || null;
 }
 
 function changeFocus(shadowRoot: any, targetId: string, props: DragCanvasProps) {
@@ -90,12 +99,17 @@ function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
       ev.stopPropagation();
 
       (ev as any).dataTransfer.dropEffect = 'move';
-
       const inputVal = (ev as any).dataTransfer.getData('text/plain');
-      resetChildDraggables(shadowRoot, ev.currentTarget);
 
-      const droppable = getDroppable(shadowRoot, inputVal);
-      (ev.currentTarget as any).appendChild(droppable);
+      // bump any existing draggable out of target
+      resetChildDraggables(shadowRoot, ev.currentTarget, props);
+
+      const draggable = getDraggable(shadowRoot, inputVal);
+      //  notify if draggable to be dropped is detaching from another target
+      const prevTargetId = getParentTargetId(draggable);
+      if (prevTargetId) props.onDetach(prevTargetId, inputVal);
+
+      (ev.currentTarget as any).appendChild(draggable);
       const newlyDropped = (ev.currentTarget as any).children[0];
       newlyDropped.style.left = '0px';
       newlyDropped.style.top = '0px';
@@ -173,7 +187,9 @@ function renderRawContent(id: string, props: DragCanvasProps) {
       const inputVal = (ev as any).dataTransfer.getData('text/plain');
       shadowRoot.querySelectorAll('.initiator').forEach((element: HTMLElement) => {
         if (element.getAttribute('input_val') === inputVal) {
-          if (element.parentElement?.classList.contains('target')) {
+          const parentTargetId = getParentTargetId(element);
+          if (parentTargetId) {
+            props.onDetach(parentTargetId, inputVal);
             initiatorsWrapper.appendChild(element);
           }
         }
@@ -193,19 +209,18 @@ function renderRawContent(id: string, props: DragCanvasProps) {
   shadowRoot.querySelectorAll('.target').forEach((element: any) => {
     const targetId = element.getAttribute('input_ref');
     if (props.initialState[targetId] !== undefined) {
-      const droppableId = props.initialState[targetId];
-      const droppable = getDroppable(shadowRoot, droppableId);
-      console.log('restoring droppable ' + droppableId + ' to target ' + targetId);
+      const draggableId = props.initialState[targetId];
+      const draggable = getDraggable(shadowRoot, draggableId);
 
-      element.appendChild(droppable);
+      element.appendChild(draggable);
       if (firstRestoredTarget === null) {
         firstRestoredTarget = targetId;
       }
     }
   });
 
-  // If we restored state to at least one part, set the focus to the first part that
-  // we restored state to.  This allows that parts feedback to be initially displayed as well
+  // If we restored state to at least one target, set the focus to the first target that we
+  // restored state to.  This allows associated part's feedback to be initially displayed as well
   if (firstRestoredTarget !== null) {
     changeFocus(shadowRoot, firstRestoredTarget, props);
   }
@@ -231,7 +246,7 @@ function renderRawContent(id: string, props: DragCanvasProps) {
 
   props.onRegisterResetCallback(() => {
     shadowRoot.querySelectorAll('.target').forEach((element: any) => {
-      resetChildDraggables(shadowRoot, element);
+      resetChildDraggables(shadowRoot, element, null);
     });
   });
 
