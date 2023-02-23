@@ -4,33 +4,31 @@
 @import 'tailwindcss/utilities';
 @import 'transitions';
 
-@layer base {
-  a,
-  a.btn.btn-link {
-    @apply text-blue-500 hover:text-blue-600 hover:underline;
-  }
+a,
+a.btn.btn-link {
+  @apply text-blue-500 hover:text-blue-600 hover:underline;
+}
 
-  a.btn {
-    @apply hover:no-underline;
-  }
+a.btn {
+  @apply hover:no-underline;
+}
 
-  a.external::after,
-  a.external-link::after {
-    @apply mx-1 text-sm;
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 600;
-    content: '\f08e';
-  }
+a.external::after,
+a.external-link::after {
+  @apply mx-1 text-sm;
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 600;
+  content: '\f08e';
+}
 
-  p {
-    @apply mb-3;
-  }
+p {
+  @apply mb-3;
+}
 
-  .slate-editor p:last-child {
-    @apply mb-0;
-  }
+.slate-editor p:last-child {
+  @apply mb-0;
+}
 
-  .structured-content code {
-    color: #e83e8c;
-  }
+.structured-content code {
+  color: #e83e8c;
 }
