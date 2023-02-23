@@ -17,6 +17,34 @@ import 'react-phoenix';
 import { finalize } from './finalize';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 
+import {
+  Button,
+  Dropdown,
+  Collapse,
+  Offcanvas,
+  Alert,
+  Carousel,
+  Modal,
+  Popover,
+  ScrollSpy,
+  Tab,
+  Tooltip,
+  Toast,
+} from 'bootstrap';
+
+(window as any).Alert = Alert;
+(window as any).Button = Button;
+(window as any).Dropdown = Dropdown;
+(window as any).Carousel = Carousel;
+(window as any).Collapse = Collapse;
+(window as any).Offcanvas = Offcanvas;
+(window as any).Modal = Modal;
+(window as any).Popover = Popover;
+(window as any).ScrollSpy = ScrollSpy;
+(window as any).Tab = Tab;
+(window as any).Toast = Toast;
+(window as any).Tooltip = Tooltip;
+
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
   .getAttribute('content');

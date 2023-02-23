@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { isFirefox } from 'utils/browser';
@@ -51,7 +51,7 @@ export interface AuthoringProps {
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
 
-  const authoringContainer = document.getElementById('advanced-authoring');
+  const authoringContainer = useRef<HTMLDivElement>(null);
   const [isAppVisible, setIsAppVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -118,6 +118,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     left?: boolean;
     bottom?: boolean;
   }) => {
+    console.log('handlePanelStateChange', { top, right, left, bottom });
     dispatch(setPanelState({ top, right, left, bottom }));
   };
 
@@ -141,9 +142,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       // forced light mode to save on initial dev time
       document.documentElement.classList.remove('dark');
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
-      authoringContainer?.classList.remove('d-none');
+      authoringContainer.current?.classList.remove('d-none');
       setTimeout(() => {
-        authoringContainer?.classList.add('startup');
+        authoringContainer.current?.classList.add('startup');
       }, 50);
     }
     if (!isAppVisible) {
@@ -158,9 +159,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           break;
       }
       document.body.classList.remove('overflow-hidden');
-      authoringContainer?.classList.remove('startup');
+      authoringContainer.current?.classList.remove('startup');
       setTimeout(() => {
-        authoringContainer?.classList.add('d-none');
+        authoringContainer.current?.classList.add('d-none');
       }, 350);
     }
     return () => {
@@ -225,7 +226,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     <AppsignalContext.Provider value={appsignal}>
       <ErrorBoundary>
         <ModalDisplay />
-
         {isLoading && (
           <div id="aa-loading">
             <div className="loader spinner-border text-primary" role="status">
@@ -234,8 +234,16 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           </div>
         )}
         {shouldShowEditor && (
-          <div id="advanced-authoring" className={`advanced-authoring d-none`}>
-            <HeaderNav panelState={panelState} isVisible={panelState.top} />
+          <div
+            id="advanced-authoring"
+            ref={authoringContainer}
+            className={`advanced-authoring d-none`}
+          >
+            <HeaderNav
+              panelState={panelState}
+              isVisible={panelState.top}
+              authoringContainer={authoringContainer}
+            />
             <SidePanel
               position="left"
               panelState={panelState}
@@ -248,7 +256,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
               panelState={panelState}
               onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
             >
-              {currentRule === 'initState' && <InitStateEditor />}
+              {currentRule === 'initState' && (
+                <InitStateEditor authoringContainer={authoringContainer} />
+              )}
               {currentRule !== 'initState' && <AdaptivityEditor />}
             </BottomPanel>
             <SidePanel

@@ -1,4 +1,11 @@
 /** Bootstrap Shims **/
+@import './bs/accordion';
+@import './bs/modal';
+@import './bs/nav-tabs';
+@import './bs/dropdown';
+@import './bs/offcanvas';
+@import './bs/spinner';
+
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;
 }
@@ -464,7 +471,7 @@ input.form-control-sm,
 }
 
 .sr-only {
-  @apply visually-hidden;
+  @apply hidden;
 }
 
 table {
@@ -490,4 +497,41 @@ table.table-striped tbody tr:nth-child(odd) {
 
 .d-none {
   @apply hidden;
+}
+
+.fade {
+  transition: opacity 0.15s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade {
+    transition: none;
+  }
+}
+.fade:not(.show) {
+  opacity: 0;
+}
+
+.collapse:not(.show) {
+  display: none;
+}
+
+.collapsing {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.35s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .collapsing {
+    transition: none;
+  }
+}
+.collapsing.collapse-horizontal {
+  width: 0;
+  height: auto;
+  transition: width 0.35s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .collapsing.collapse-horizontal {
+    transition: none;
+  }
 }
