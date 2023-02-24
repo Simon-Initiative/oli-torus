@@ -85,8 +85,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       return;
     }
     const customEventHandler = async (e: any) => {
-      const target = e.target as HTMLElement;
-      if (target?.id === elementProps.id) {
+      if ((e as CustomEvent).detail?.payload.payload.activityId === activityModel.id) {
         const { payload, continuation } = e.detail;
         let result = null;
         if (payload.eventName === 'selectPart' && onSelectPart) {

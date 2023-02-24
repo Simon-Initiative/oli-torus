@@ -114,6 +114,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   details(continuation: (result: any, error: any) => void, payload?: any) {
     return {
       bubbles: true,
+      composed: true,
       detail: {
         payload,
         continuation,

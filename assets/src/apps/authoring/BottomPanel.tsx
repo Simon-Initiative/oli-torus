@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { debounce } from 'lodash';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { IActivity, selectCurrentActivity } from '../delivery/store/features/activities/slice';
 import { selectCurrentRule, setCurrentRule } from './store/app/slice';
@@ -28,6 +28,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const [isDisabled, setIsDisabled] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const isLayer = getIsLayer();
+
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (currentRule === undefined) return;
@@ -145,13 +147,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     <>
       <section
         id="aa-bottom-panel"
+        ref={ref}
         className={`aa-panel bottom-panel${panelState['bottom'] ? ' open' : ''}`}
         style={{
           left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
           right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
-          bottom: panelState['bottom']
-            ? 0
-            : `calc(-${document.getElementById('aa-bottom-panel')?.clientHeight}px + 39px)`,
+          bottom:
+            panelState['bottom'] || !ref.current
+              ? 0
+              : `calc(-${ref.current?.clientHeight}px + 39px)`,
         }}
       >
         <div className="aa-panel-inner">
@@ -228,42 +232,27 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                     </Tooltip>
                   }
                 >
-                  <div className="dropdown">
-                    <button
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      id="bottom-panel-add-context-trigger"
+                      variant="link"
                       className={`dropdown-toggle btn btn-link p-0 ${
                         currentRule?.default ? 'ml-3' : 'ml-1'
                       }`}
-                      type="button"
-                      id={`bottom-panel-add-context-trigger`}
-                      data-toggle="dropdown"
-                      aria-haspopup="true"
-                      aria-expanded="false"
                     >
                       <i className="fa fa-plus" />
-                    </button>
-                    <div
-                      id={`bottom-panel-add-context-menu`}
-                      className="dropdown-menu"
-                      aria-labelledby={`bottom-panel-add-context-trigger`}
-                    >
-                      <button
-                        className="dropdown-item"
-                        onClick={() => {
-                          handleAddCorrectRule();
-                        }}
-                      >
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => handleAddCorrectRule()}>
                         <i className="fa fa-check mr-2" /> New Correct Rule
-                      </button>
-                      <button
-                        className="dropdown-item"
-                        onClick={() => {
-                          handleAddIncorrectRule();
-                        }}
-                      >
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleAddIncorrectRule()}>
+                        {' '}
                         <i className="fa fa-times mr-2" /> New Incorrect Rule
-                      </button>
-                    </div>
-                  </div>
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
                 </OverlayTrigger>
               )}
               <button className="btn btn-link p-0 ml-1" onClick={() => onToggle()}>

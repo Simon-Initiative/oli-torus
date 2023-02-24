@@ -17,6 +17,7 @@ import { DiagnosticsTrigger } from '../components/Modal/DiagnosticsWindow';
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;
+  authoringContainer: React.RefObject<HTMLElement>;
 }
 
 const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
@@ -63,8 +64,8 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
             <UndoRedoToolbar />
           </div>
           <div className="btn-group px-3 border-right align-items-center" role="group">
-            <AddComponentToolbar />
-            <ComponentSearchContextMenu />
+            <AddComponentToolbar authoringContainer={props.authoringContainer} />
+            <ComponentSearchContextMenu authoringContainer={props.authoringContainer} />
           </div>
           <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
             <OverlayTrigger

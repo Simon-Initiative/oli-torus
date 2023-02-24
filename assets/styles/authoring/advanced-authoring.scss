@@ -335,7 +335,7 @@ $font-family-sans-serif: var(--font-sans);
     height: $panel-section-title-bar-height;
     justify-content: space-between;
     align-items: center;
-    padding: 0 16px 0 4px;
+    padding: 0 4px;
     // position: sticky;
     // top: 0;
     // z-index: 3;
@@ -756,4 +756,8 @@ $font-family-sans-serif: var(--font-sans);
 .canvas-dots {
   background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
     repeat;
+}
+
+.tooltip {
+  z-index: 10000;
 }
