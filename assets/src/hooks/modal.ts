@@ -8,7 +8,7 @@ export const ModalLaunch = {
     // ($('#' + id) as any).modal({});
     // ($(this.el) as any).modal({});
 
-    this.modal = new (window as any).Modal(this.el, {});
+    this.modal = new (window as any).bootstrap.Modal(this.el, {});
     this.modal.show();
 
     const scrollPosition = lockScroll();
