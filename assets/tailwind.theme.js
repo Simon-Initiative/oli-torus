@@ -111,6 +111,9 @@ module.exports = {
     fontFamily: {
       sans: ['Open Sans', 'sans-serif'],
     },
+    fontSize: {
+      xs: '0.8rem',
+    },
     forms: {
       borderRadius: 4,
     },
