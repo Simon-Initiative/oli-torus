@@ -1,8 +1,20 @@
 defmodule OliWeb.CollaborationLive.Posts.Show do
   use Surface.Component
 
+  alias Oli.Resources.Collaboration
+  alias Oli.Resources.Collaboration.Post, as: PostSchema
+
   alias OliWeb.Common.FormatDateTime
   alias Oli.Resources.Collaboration.Post
+
+  alias Surface.Components.Form
+
+  alias Surface.Components.Form.{
+    Field,
+    TextArea,
+    HiddenInput,
+    Inputs
+  }
 
   prop post, :struct, required: true
   prop is_reply, :boolean, default: false
@@ -13,163 +25,209 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
   prop is_instructor, :boolean, required: true
   prop is_threaded, :boolean, required: true
   prop parent_is_archived, :boolean, required: true
+  prop is_editing, :boolean, default: false
+  prop is_selected, :boolean, default: false
+
+  data changeset, :struct
 
   def render(assigns) do
-    ~F"""
-      <div class="card post-border my-3">
+    assigns =
+      case assigns.is_editing do
+        true ->
+          assign(assigns, changeset: Collaboration.change_post(assigns.post))
 
-        <div class="card-header d-flex justify-content-between align-items-center p-0">
-          <div class="d-flex align-items-center">
-            <div class="mb-0 post-index">#{@index}</div>
-            <h6 class="p-2 mb-0 font-weight-light">{@post.user.name}</h6>
+        _ ->
+          assign(assigns,
+            changeset:
+              Collaboration.change_post(%PostSchema{
+                user_id: assigns.user_id,
+                section_id: assigns.post.section_id,
+                resource_id: assigns.post.resource_id,
+                parent_post_id: assigns.post.id,
+                thread_root_id: assigns.post.parent_post_id || assigns.post.id
+              })
+          )
+      end
+
+    ~F"""
+    <div class="flex-col">
+      <div class="flex gap-2 mb-3">
+        <span class="torus-span">#{@index}</span>
+
+        <div class="border-r border-gray-200 h-10" />
+
+        <div class="flex flex-1 justify-between">
+          <div class="flex-col">
+            <h6 class="torus-h6 text-sm">{@post.user.name}</h6>
+            <small class="torus-small">{render_date(@post.inserted_at)}</small>
           </div>
 
-          <small class="text-light font-italic mr-3">{render_date(@post.inserted_at)}</small>
-        </div>
+          <div class="flex gap-2 items-center">
+            {#if @post.user_id == @user_id}
+              <button
+                class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
+                type="button"
+                disabled={@is_editing}
+                data-toggle="tooltip"
+                title="Edit"
+                :on-click="set_editing_post"
+                phx-value-post_id={@post.id}
+              >
+                <i class="fas fa-edit" />
+              </button>
 
-        <div class="card-body pb-2">
-          {#if @post.status == :submitted}
-            <div class="d-flex justify-content-end align-items-center">
-              <span class="badge badge-info mr-2">Pending approval</span>
+              {#unless @is_instructor}
+                <span
+                  class="d-inline-block"
+                  data-toggle="tooltip"
+                  title={if has_replies?(@post, @parent_replies, @post.id),
+                    do: "Cannot be deleted because it has replies",
+                    else: "Delete"}
+                >
+                  <button
+                    class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
+                    type="button"
+                    :on-click="display_delete_modal"
+                    phx-value-id={@post.id}
+                    phx-value-index={@index}
+                    disabled={has_replies?(@post, @parent_replies, @post.id)}
+                  >
+                    <i class="fas fa-trash" />
+                  </button>
+                </span>
+              {/unless}
+            {/if}
 
+            {#if @post.status == :submitted}
               {#if @is_instructor}
                 <button
-                  class="btn btn-sm btn-success rounded-button mr-1"
-                  data-toggle="tooltip"
-                  title="Accept"
-                  :on-click="display_accept_modal"
-                  phx-value-id={@post.id}
-                  phx-value-index={@index}>
-                    <i class="fa fa-check"></i>
-                </button>
-
-                <button
-                  class="btn btn-sm btn-danger rounded-button ml-1"
-                  data-toggle="tooltip"
-                  title="Reject"
-                  :on-click="display_reject_modal"
-                  phx-value-id={@post.id}
-                  phx-value-index={@index}>
-                    <i class="fa fa-times"></i>
-                </button>
-              {/if}
-            </div>
-          {/if}
-
-          <p class="my-1">{@post.content.message}</p>
-          <hr class="bg-light"/>
-
-          {#if @post.user_id == @user_id}
-            <button
-              class="btn btn-link"
-              type="button"
-              data-toggle="tooltip"
-              title="Edit"
-              :on-click="display_edit_modal"
-              phx-value-id={@post.id}>
-                <i class="fas fa-edit"></i>
-            </button>
-
-            {#unless @is_instructor}
-              <span
-                class="d-inline-block"
-                data-toggle="tooltip"
-                title={if has_replies?(@post, @parent_replies, @post.id),
-                  do: "Cannot be deleted because it has replies",
-                  else: "Delete"}>
-                <button
-                  class="btn btn-link"
+                  class={"btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200" <>
+                    if not @parent_is_archived, do: " not-readonly", else: ""}
                   type="button"
+                  data-toggle="tooltip"
+                  title={if is_archived?(@post.status), do: "Unarchive", else: "Archive"}
+                  :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"}
+                  phx-value-id={@post.id}
+                  phx-value-index={@index}
+                >
+                  <i class={"fa fa-" <> if is_archived?(@post.status), do: "lock", else: "unlock"} />
+                </button>
+
+                <button
+                  class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
+                  type="button"
+                  data-toggle="tooltip"
+                  title="Delete"
                   :on-click="display_delete_modal"
                   phx-value-id={@post.id}
                   phx-value-index={@index}
-                  disabled={has_replies?(@post, @parent_replies, @post.id)}>
-                    <i class="fas fa-trash"></i>
+                >
+                  <i class="fas fa-trash" />
                 </button>
-              </span>
-            {/unless}
-          {/if}
+              {/if}
+            {/if}
+          </div>
+        </div>
+      </div>
+
+      {#if @post.status == :submitted}
+        <div class="flex items-center justify-between mb-3">
+          <span class="badge badge-info mr-2 text-xs">Pending approval</span>
 
           {#if @is_instructor}
-            <button
-              class={"btn btn-link" <> if not @parent_is_archived, do: " not-readonly", else: ""}
-              type="button"
-              data-toggle="tooltip"
-              title={if is_archived?(@post.status), do: "Unarchive", else: "Archive"}
-              :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"}
-              phx-value-id={@post.id}
-              phx-value-index={@index}>
-                <i class={"fa fa-" <> if is_archived?(@post.status), do: "lock", else: "unlock"}></i>
-            </button>
+            <div class="flex gap-2">
+              <button
+                class="btn btn-sm btn-success rounded-button"
+                data-toggle="tooltip"
+                title="Accept"
+                :on-click="display_accept_modal"
+                phx-value-id={@post.id}
+                phx-value-index={@index}
+              >
+                <i class="fa fa-check" />
+              </button>
 
-            <button
-              class="btn btn-link"
-              type="button"
-              data-toggle="tooltip"
-              title="Delete"
-              :on-click="display_delete_modal"
-              phx-value-id={@post.id}
-              phx-value-index={@index}>
-              <i class="fas fa-trash"></i>
-            </button>
-          {/if}
-
-          {#if @is_threaded}
-            <div class="float-right">
-              {#if @is_reply}
-                {#if @post.parent_post_id != @parent_post_id}
-                  <small class="text-light font-italic">
-                    {reply_parent_post_text(assigns, @parent_replies, @index, @post.parent_post_id)}
-                  </small>
-                {/if}
-
-                <button
-                  class="btn btn-link"
-                  type="button"
-                  data-toggle="tooltip"
-                  title="Reply"
-                  :on-click="display_reply_to_reply_modal"
-                  phx-value-parent_id={@post.id}
-                  phx-value-root_id={@parent_post_id}
-                  phx-value-index={"##{@index}"}>
-                    <i class="fas fa-reply"></i>
-                </button>
-              {#else}
-                <button
-                  class="btn btn-link"
-                  type="button"
-                  data-toggle="tooltip"
-                  title="Reply"
-                  :on-click="display_reply_to_post_modal"
-                  phx-value-parent_id={@post.id}
-                  phx-value-index={"##{@index}"}>
-                    <i class="fas fa-reply"></i>
-                </button>
-
-                {#if has_replies?(@post, @parent_replies, @post.id)}
-                  <button
-                    class="btn btn-link text-decoration-none not-readonly"
-                    :on-click="set_selected"
-                    phx-value-id={@post.id}
-                    data-toggle="collapse"
-                    data-target={"#collapse_#{@post.id}"}
-                    aria-expanded="true"
-                    aria-controls={"collapse_#{@post.id}"}>
-                      <div class="d-flex align-items-center">
-                        <div class="d-flex flex-column mr-2">
-                          <small>{@post.replies_count}</small>
-                          <small>replies</small>
-                        </div>
-
-                        <i class="fa fa-angle-down mr-1"></i>
-                      </div>
-                  </button>
-                {/if}
-              {/if}
+              <button
+                class="btn btn-sm btn-danger rounded-button"
+                data-toggle="tooltip"
+                title="Reject"
+                :on-click="display_reject_modal"
+                phx-value-id={@post.id}
+                phx-value-index={@index}
+              >
+                <i class="fa fa-times" />
+              </button>
             </div>
           {/if}
         </div>
-      </div>
+      {/if}
+
+      {#if @is_threaded and @is_reply and @post.parent_post_id != @parent_post_id}
+        <small class="mt-2 torus-small">
+          {reply_parent_post_text(assigns, @parent_replies, @index, @post.parent_post_id)}
+        </small>
+      {/if}
+
+      {#if !@is_editing}
+        <p class="mb-0 text-sm">{@post.content.message}</p>
+      {/if}
+
+      <Form
+        for={@changeset}
+        submit={if @is_editing, do: "edit_post", else: "create_post"}
+        opts={autocomplete: "off"}
+        class="flex mt-2 flex-col items-end gap-2"
+      >
+        <HiddenInput field={:user_id} />
+        <HiddenInput field={:section_id} />
+        <HiddenInput field={:resource_id} />
+
+        <HiddenInput field={:parent_post_id} />
+        <HiddenInput field={:thread_root_id} />
+
+        <Inputs for={:content}>
+          <Field class="w-full" name={:message}>
+            <TextArea
+              opts={
+                placeholder: "Reply",
+                "data-grow": "true",
+                "data-initial-height": 44,
+                onkeyup: "resizeTextArea(this)"
+              }
+              class="torus-input border-r-0 collab-space__reply"
+            />
+            <div class="flex w-full justify-between h-10">
+              {#if !@is_editing and @is_threaded and not @is_reply and has_replies?(@post, @parent_replies, @post.id)}
+                <button
+                  :on-click="set_selected"
+                  type="button"
+                  class="flex items-center text-gray-400 mt-2"
+                  phx-value-id={@post.id}
+                  data-toggle="collapse"
+                  data-target={"#collapse_#{@post.id}"}
+                  aria-expanded="true"
+                  aria-controls={"collapse_#{@post.id}"}
+                >
+                  <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
+                  <small>{if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}</small>
+                </button>
+              {/if}
+              <div class="flex gap-2 ml-auto">
+                {#if @is_editing}
+                  <button
+                    type="button"
+                    :on-click="set_editing_post"
+                    phx-value-post_id={@post.id}
+                    class="torus-button secondary ml-auto"
+                  >Cancel</button>
+                {/if}
+                <button type="submit" class={"torus-button primary ml-auto #{if !@is_editing, do: "collab-space__send-button"}"}>{if @is_editing, do: "Save", else: "Send"}</button>
+              </div>
+            </div>
+          </Field>
+        </Inputs>
+      </Form>
+    </div>
     """
   end
 
@@ -181,12 +239,13 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
     {_parent_post, index} = Enum.find(replies, fn {elem, _index} -> elem.id == parent_post_id end)
 
     ~F"""
-      Replied #{thread_index}.{index}
+    Replying to #{thread_index}.{index}:
     """
   end
 
-  defp has_replies?(%Post{replies_count: replies_count}, _, _) when is_number(replies_count) and replies_count > 0,
-    do: true
+  defp has_replies?(%Post{replies_count: replies_count}, _, _)
+       when is_number(replies_count) and replies_count > 0,
+       do: true
 
   defp has_replies?(%Post{replies_count: 0}, [], _), do: false
 
