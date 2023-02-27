@@ -5,6 +5,7 @@
 @import './bs/dropdown';
 @import './bs/offcanvas';
 @import './bs/spinner';
+@import './bs/switch';
 @import './bs/popover';
 
 .btn {
