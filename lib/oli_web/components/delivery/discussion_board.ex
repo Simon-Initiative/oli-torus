@@ -26,12 +26,8 @@ defmodule OliWeb.Components.Delivery.DiscussionBoard do
 
   def render(assigns) do
     ~H"""
-      <div class="flex flex-col justify-start mt-4 gap-3 px-10 sm:flex-row sm:justify-between sm:items-center sm:mt-16 sm:px-0">
+      <div class="flex flex-col justify-start mt-4 px-7 sm:px-0">
         <h6 class="text-xl font-normal leading-8 tracking-wide">Discussion Board</h6>
-        <div class="inline-flex justify-between gap-3">
-          <button class="btn text-sm font-normal leading-5 py-2 px-6 text-white hover:text-white inline-flex bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">+ Create Study Group</button>
-          <button class="btn text-sm font-normal leading-5 py-2 px-6 text-white hover:text-white inline-flex bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">+ New Discussion</button>
-        </div>
       </div>
 
       <DiscussionPost.render last_posts={@last_posts_user} title="Your Latest Discussion Activity"/>
