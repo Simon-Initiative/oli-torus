@@ -357,22 +357,21 @@ defmodule Oli.Resources.Collaboration do
       from(
         post in Post,
         join: sr in SectionResource,
-        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        on:
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
+            sr.numbering_level > 0,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
         join: pr in PublishedResource,
         on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
         join: rev in Revision,
         on: rev.id == pr.revision_id,
-        left_join: rev2 in Revision,
-        on: rev.resource_id == rev2.resource_id and rev.id < rev2.id,
         join: user in User,
         on: post.user_id == user.id,
         where:
           post.section_id == ^section_id and post.user_id == ^user_id and
             (post.status in [:approved, :archived] or
-               (post.status == :submitted and post.user_id == ^user_id)) and is_nil(rev2) and
-            rev.deleted == false,
+               (post.status == :submitted and post.user_id == ^user_id)),
         select: %{
           id: post.id,
           content: post.content,
@@ -380,7 +379,7 @@ defmodule Oli.Resources.Collaboration do
           title: rev.title,
           updated_at: post.updated_at
         },
-        order_by: [desc: :inserted_at],
+        order_by: [desc: :updated_at],
         limit: ^limit
       )
     )
@@ -403,21 +402,20 @@ defmodule Oli.Resources.Collaboration do
       from(
         post in Post,
         join: sr in SectionResource,
-        on: sr.resource_id == post.resource_id and sr.section_id == post.section_id,
+        on:
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
+            sr.numbering_level > 0,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
         join: pr in PublishedResource,
         on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
         join: rev in Revision,
         on: rev.id == pr.revision_id,
-        left_join: rev2 in Revision,
-        on: rev.resource_id == rev2.resource_id and rev.id < rev2.id,
         join: user in User,
         on: post.user_id == user.id,
         where:
           post.section_id == ^section_id and post.user_id != ^user_id and
-            post.status in [:approved, :archived] and is_nil(rev2) and
-            rev.deleted == false,
+            post.status in [:approved, :archived],
         select: %{
           id: post.id,
           content: post.content,
@@ -425,7 +423,7 @@ defmodule Oli.Resources.Collaboration do
           title: rev.title,
           updated_at: post.updated_at
         },
-        order_by: [desc: :inserted_at],
+        order_by: [desc: :updated_at],
         limit: ^limit
       )
     )
