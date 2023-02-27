@@ -8,7 +8,9 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
   def header(assigns) do
     ~H"""
       <h1 class="title flex flex-row justify-between">
-        <%= @title %>
+        <%= @title %><%= if @review_mode == true do %>
+          (Review)
+        <% end %>
         <div class="page-number text-gray-500">
           <%= @page_number %>
         </div>

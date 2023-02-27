@@ -23,7 +23,6 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
-  @spec navbar(any) :: Phoenix.LiveView.Rendered.t()
   def navbar(assigns) do
     ~H"""
       <nav class="flex flex-col w-full z-40 lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">

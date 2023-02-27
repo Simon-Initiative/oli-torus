@@ -513,6 +513,10 @@ table.table-striped tbody tr:nth-child(odd) {
   opacity: 0;
 }
 
+.collapse.show {
+  visibility: visible;
+}
+
 .collapse:not(.show) {
   display: none;
 }
