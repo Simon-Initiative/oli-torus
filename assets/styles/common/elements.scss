@@ -1,4 +1,4 @@
-.popup__anchorText,
+.popup-anchor,
 span.term {
   font-weight: bold;
   color: #63a372;
@@ -8,6 +8,14 @@ span.term {
 .structured-content,
 .activity-editor .rich-text-editor,
 .content {
+  p {
+    line-height: 2em;
+  }
+
+  .img-fluid {
+    margin: 1.5em auto;
+  }
+
   blockquote {
     margin-top: 12px;
     font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
@@ -332,6 +340,26 @@ span.term {
       .embed-wrapper {
         padding-top: 56%;
       }
+    }
+  }
+
+  .popup-anchor {
+    color: var(--color-green-600);
+    font-style: italic;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .popup-click {
+    text-decoration: underline;
+  }
+
+  .popup-content {
+    &.show {
+      max-width: 100% !important;
+    }
+    p:last-of-type {
+      margin: 0;
     }
   }
 }

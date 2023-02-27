@@ -5,6 +5,7 @@
 @import './bs/dropdown';
 @import './bs/offcanvas';
 @import './bs/spinner';
+@import './bs/popover';
 
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;

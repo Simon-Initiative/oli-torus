@@ -5,10 +5,11 @@
     active_page: nil
   }) %>
 <% else %>
-  <h1 class="title">
-    <%= @context.title %>
-  </h1>
-  <%= render OliWeb.PageDeliveryView, "_objectives.html", objectives: @objectives %>
+
+  <Components.Delivery.PageDelivery.header title={@context.title} page_number={0} review_mode={false} />
+
+  <Components.Delivery.PageDelivery.details />
+
   <div id="eventIntercept" class="content">
     <%= raw(@content_html) %>
   </div>

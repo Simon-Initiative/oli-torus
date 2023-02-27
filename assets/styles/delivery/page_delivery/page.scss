@@ -1,45 +1,39 @@
-h1.title {
-  font-weight: 600;
-  padding-bottom: 0.5em;
-  border-bottom: 1px solid var(--color-gray-400);
-  margin-bottom: 1em;
-}
+#page-content {
+  h1.title {
+    font-size: 2.5em;
+    font-weight: 600;
 
-#wrapper {
-  display: flex;
-  width: 100%;
-  position: relative;
-}
-
-#sidebar {
-  width: 250px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  transition: all 0.3s;
-
-  .page-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-right: 10px;
-  }
-
-  &.outline {
-    .list-group-item.list-group-item-action.active .text-secondary {
-      color: var(--color-gray-200);
+    .page-number {
+      font-weight: normal;
     }
   }
-}
 
-#sidebar .header {
-  height: 50px;
-}
-
-#page-content {
-  width: 100%;
-  flex: 1;
-  margin-top: 20px;
+  h1,
+  .h1 {
+    font-size: 1.5em;
+    font-weight: 600;
+  }
+  h2,
+  .h2 {
+    font-size: 1.5em;
+  }
+  h3,
+  .h3 {
+    font-size: 1.375em;
+  }
+  h4,
+  .h4 {
+    font-size: 1.25em;
+  }
+  h5,
+  .h5 {
+    font-size: 1.125em;
+  }
+  h6,
+  .h6 {
+    font-size: 1em;
+    font-weight: 600;
+  }
 }
 
 .activity-numbering {

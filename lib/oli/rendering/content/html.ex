@@ -702,23 +702,18 @@ defmodule Oli.Rendering.Content.Html do
       <span
         tabindex="0"
         role="button"
-        class="term popup__anchorText#{if !String.contains?(trigger, "hover") do
-        " popup__click"
+        class="term popup-anchor#{if !String.contains?(trigger, "hover") do
+        " popup-click"
       else
         ""
       end}"
-        data-trigger="#{trigger}"
-        data-toggle="popover"
-        data-placement="top"
-        data-html="true"
         data-audio="#{audio_id}"
-        data-template='
-          <div class="popover popup__content" role="tooltip">
-            <div class="arrow"></div>
-            <h3 class="popover-header"></h3>
-            <div class="popover-body"></div>
-          </div>'
-        data-content="#{escape_xml!(popup_content)}">
+        data-bs-trigger="#{trigger}"
+        data-bs-toggle="popover"
+        data-bs-placement="top"
+        data-bs-container=".content"
+        data-bs-html="true"
+        data-bs-content="#{escape_xml!(popup_content)}">
         #{next.()}
         #{audio_element}
       </span>\n
