@@ -59,7 +59,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           </button>
         </div>
 
-        <div class="collapse lg:!flex navbar-collapse flex-grow flex flex-col " id="navbarSupportedContent">
+        <div class="collapse lg:visible lg:!flex navbar-collapse flex-grow flex flex-col " id="navbarSupportedContent">
 
           <div class="flex-1 items-center lg:items-start">
             <%= if assigns[:section] do %>
