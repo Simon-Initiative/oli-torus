@@ -3,7 +3,7 @@
 
   & > .content-purpose-label {
     text-transform: uppercase;
-    background: #222439;
+    background: var(--color-delivery-purpose-label-bg);
     padding: 4px 0;
     color: var(--color-white);
     margin-bottom: 1rem;
@@ -277,6 +277,20 @@
       font-weight: 900;
       margin-right: 8px;
       content: '\f51c';
+    }
+  }
+}
+
+html.dark {
+  .content-purpose {
+    & > .content-purpose-label {
+      background: var(--color-delivery-purpose-label-bg-dark);
+    }
+
+    &.example {
+      & > .content-purpose-label {
+        background: transparent;
+      }
     }
   }
 }
