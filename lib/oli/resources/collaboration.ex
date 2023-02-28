@@ -10,6 +10,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Resources.{ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
   alias Oli.Repo
+  alias Oli.Accounts.User
 
   import Ecto.Query, warn: false
   import Oli.Utils
@@ -335,6 +336,95 @@ defmodule Oli.Resources.Collaboration do
         select_merge: %{
           replies_count: fragment("select count(*) from posts where thread_root_id = ?", post.id)
         }
+      )
+    )
+  end
+
+  @doc """
+  Returns the list of posts created by an user in a section.
+
+  ## Examples
+
+      iex> list_last_posts_for_user(1, 1, 5)
+      [%Post{status: :archived}, ...]
+
+      iex> list_last_posts_for_user(2, 2, 10)
+      []
+  """
+
+  def list_lasts_posts_for_user(user_id, section_id, limit) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on:
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
+            sr.numbering_level > 0,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        where:
+          post.section_id == ^section_id and post.user_id == ^user_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        select: %{
+          id: post.id,
+          content: post.content,
+          user_name: user.name,
+          title: rev.title,
+          updated_at: post.updated_at
+        },
+        order_by: [desc: :updated_at],
+        limit: ^limit
+      )
+    )
+  end
+
+  @doc """
+  Returns the list of posts created in all resources of section.
+
+  ## Examples
+
+      iex> list_last_posts_for_section(1, 1, 5)
+      [%Post{status: :archived}, ...]
+
+      iex> list_last_posts_for_section(2, 2, 10)
+      []
+  """
+
+  def list_lasts_posts_for_section(user_id, section_id, limit) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on:
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
+            sr.numbering_level > 0,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        where:
+          post.section_id == ^section_id and post.user_id != ^user_id and
+            post.status in [:approved, :archived],
+        select: %{
+          id: post.id,
+          content: post.content,
+          user_name: user.name,
+          title: rev.title,
+          updated_at: post.updated_at
+        },
+        order_by: [desc: :updated_at],
+        limit: ^limit
       )
     )
   end
