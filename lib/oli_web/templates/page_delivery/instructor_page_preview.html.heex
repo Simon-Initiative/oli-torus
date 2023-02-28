@@ -10,7 +10,8 @@
     active_page: nil
   }) %>
 <% else %>
-  <%= render "_objectives.html", objectives: @objectives %>
+  <Components.Delivery.PageDelivery.learning_objectives objectives={@objectives} />
+
   <div class="content">
     <%= raw(@html) %>
   </div>

@@ -94,56 +94,7 @@ liveSocket.connect();
 window.liveSocket = liveSocket;
 
 $(() => {
-  // ($('[data-toggle="popover"]') as any).popover();
-  // ($('[data-toggle="tooltip"]') as any).tooltip();
-  // ($('.ui.dropdown') as any).dropdown();
-  // ($('.ui.dropdown.item') as any).dropdown();
-
   $('[data-action="command-button"]').on('click', commandButtonClicked);
-
-  $('[data-toggle="popover"]').on('show.bs.popover', function () {
-    const audioAttribute = this.attributes.getNamedItem('data-audio');
-    if (audioAttribute && audioAttribute.value !== '') {
-      const audio = ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0];
-      window.toggleAudio(audio);
-    }
-  });
-
-  $('[data-toggle="popover"]').on('hide.bs.popover', function () {
-    const audioAttribute = this.attributes.getNamedItem('data-audio');
-    if (audioAttribute && audioAttribute.value !== '') {
-      ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0].pause();
-    }
-  });
-
-  $('[data-toggle="popover"]').on('focus', (e) => {
-    ($('[data-toggle="popover"]:not(.popup__click)') as any).popover('hide');
-    ($(e.target) as any).popover('show');
-  });
-
-  $('[data-toggle="popover"]').on('blur', (e) => {
-    if (!$(e.target).hasClass('popup__click')) {
-      ($(e.target) as any).popover('hide');
-    }
-  });
-
-  $('body').on('mousedown', (e) => {
-    const isPopover = (e: JQuery.UIEventBase<HTMLElement>) =>
-      $(e.target).data('toggle') === 'popover';
-    const isClickable = (e: JQuery.UIEventBase<HTMLElement>) =>
-      $(e.target).hasClass('popup__click');
-    const isPopupContent = (e: JQuery.UIEventBase<HTMLElement>) =>
-      $(e.target).parents('.popup__content').length > 0;
-    const isFocused = (e: JQuery.UIEventBase<HTMLElement>) =>
-      document.activeElement && $(document.activeElement).is($(e.target));
-
-    if (!isPopover(e) && !isClickable(e) && !isPopupContent(e)) {
-      return ($('[data-toggle="popover"]') as any).popover('hide');
-    }
-    if (isPopover(e) && isClickable(e) && isFocused(e)) {
-      return ($(e.target) as any).popover('toggle');
-    }
-  });
 
   (window as any).hljs.highlightAll();
 });

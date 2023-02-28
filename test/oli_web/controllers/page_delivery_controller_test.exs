@@ -7,6 +7,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
+  alias Oli.Resources.Collaboration
   alias Lti_1p3.Tool.ContextRoles
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
@@ -194,7 +195,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
-      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
+      assert html_response(conn, 200) =~ "Page one"
     end
 
     test "shows the related exploration pages for a given page", %{
@@ -1547,6 +1548,96 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
 
       assert html_response(conn, 200) =~ "<h6>There are no exploration pages available</h6>"
+    end
+  end
+
+  describe "discussion" do
+    setup [:create_section_with_posts]
+
+    test "student can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "page renders a list of posts of current user", %{
+      conn: conn,
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200) =~ "Your Latest Discussion Activity"
+      posts = Collaboration.list_lasts_posts_for_user(user.id, section.id, 5)
+
+      for post <- posts do
+        assert html_response(conn, 200) =~ post.title
+        assert html_response(conn, 200) =~ post.content.message
+        assert html_response(conn, 200) =~ post.user_name
+      end
+    end
+
+    test "page renders a list of posts of all users", %{
+      conn: conn,
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200) =~ "All Discussion Activity"
+      posts = Collaboration.list_lasts_posts_for_section(user.id, section.id, 5)
+
+      for post <- posts do
+        assert html_response(conn, 200) =~ post.title
+        assert html_response(conn, 200) =~ post.content.message
+        assert html_response(conn, 200) =~ post.user_name
+      end
+    end
+
+    test "page renders a message when there are no posts to show", %{
+      conn: conn
+    } do
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200) =~ "<h6>There are no posts to show</h6>"
     end
   end
 

@@ -23,7 +23,6 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
-  @spec navbar(any) :: Phoenix.LiveView.Rendered.t()
   def navbar(assigns) do
     ~H"""
       <nav class="flex flex-col w-full z-40 lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
@@ -59,11 +58,11 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           </button>
         </div>
 
-        <div class="collapse lg:!flex navbar-collapse flex-grow flex flex-col " id="navbarSupportedContent">
+        <div class="collapse lg:visible lg:!flex navbar-collapse flex-grow flex flex-col " id="navbarSupportedContent">
 
           <div class="flex-1 items-center lg:items-start">
             <%= if assigns[:section] do %>
-              <%= for {name, href, active} <- [{"Home", home_url(assigns), is_active(@conn.path_info, :overview)}, {"Course Content", "#", is_active(@conn.path_info, "")}, {"Discussion", "#", is_active(@conn.path_info, "")}, {"Assignments", "#", is_active(@conn.path_info, "")}, {"Exploration", exploration_url(assigns), is_active(@conn.path_info, :exploration)}] do %>
+              <%= for {name, href, active} <- [{"Home", home_url(assigns), is_active(@conn.path_info, :overview)}, {"Course Content", "#", is_active(@conn.path_info, "")}, {"Discussion", discussion_url(assigns), is_active(@conn.path_info, :discussion)}, {"Assignments", "#", is_active(@conn.path_info, "")}, {"Exploration", exploration_url(assigns), is_active(@conn.path_info, :exploration)}] do %>
                 <.nav_link name={name} href={href} active={active} />
               <% end %>
             <% end %>
@@ -131,8 +130,10 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   defp is_active(["sections", _, "overview"], :overview), do: true
   defp is_active(["sections", _, "exploration"], :exploration), do: true
+  defp is_active(["sections", _, "discussion"], :discussion), do: true
   defp is_active(["sections", _, "preview", "overview"], :overview), do: true
   defp is_active(["sections", _, "preview", "exploration"], :exploration), do: true
+  defp is_active(["sections", _, "preview", "discussion"], :discussion), do: true
   defp is_active(_, _), do: false
 
   defp home_url(assigns) do
@@ -152,6 +153,14 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       Routes.page_delivery_path(OliWeb.Endpoint, :exploration_preview, assigns[:section_slug])
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :exploration, assigns[:section_slug])
+    end
+  end
+
+  defp discussion_url(assigns) do
+    if assigns[:preview_mode] do
+      Routes.page_delivery_path(OliWeb.Endpoint, :discussion_preview, assigns[:section_slug])
+    else
+      Routes.page_delivery_path(OliWeb.Endpoint, :discussion, assigns[:section_slug])
     end
   end
 end

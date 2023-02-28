@@ -1,15 +1,7 @@
-<div class="d-flex">
-  <div class="flex-grow-1">
-    <h1 class="title"><%= @title %><%= if @review_mode == true do %>
-    (Review)
-    <% end %></h1>
-  </div>
-  <%= if @page_number != nil do %>
-    <div>
-      <div class="page-numbering"><%= @page_number %></div>
-    </div>
-  <% end %>
-</div>
+
+<Components.Delivery.PageDelivery.header title={@title} page_number={@page_number} review_mode={@review_mode} />
+
+<Components.Delivery.PageDelivery.details />
 
 
 <script>
@@ -17,8 +9,10 @@ window.userToken = "<%= assigns[:user_token] %>";
 </script>
 
 <%= unless @graded && not @review_mode do %>
-  <%= render "_objectives.html", objectives: @objectives %>
+  <Components.Delivery.PageDelivery.learning_objectives objectives={@objectives} />
 <% end %>
+
+<hr class="text-gray-400 my-4" />
 
 <%= if @review_mode == true do %>
   <%= if @resource_attempt.lifecycle_state == :evaluated do  %>
@@ -66,7 +60,7 @@ window.userToken = "<%= assigns[:user_token] %>";
 
 <%= if @graded && @activity_count > 0 && @review_mode == false do %>
   <div class="d-flex align-items-center justify-content-center">
-    <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick="window.OLI.finalize('<%= @section_slug %>', '<%= @slug %>', '<%= @attempt_guid %>', 'submit_answers')">
+    <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', 'submit_answers')"}>
       Submit Answers
     </button>
   </div>

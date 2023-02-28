@@ -5,6 +5,8 @@
 @import './bs/dropdown';
 @import './bs/offcanvas';
 @import './bs/spinner';
+@import './bs/switch';
+@import './bs/popover';
 
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;
@@ -509,6 +511,10 @@ table.table-striped tbody tr:nth-child(odd) {
 }
 .fade:not(.show) {
   opacity: 0;
+}
+
+.collapse.show {
+  visibility: visible;
 }
 
 .collapse:not(.show) {

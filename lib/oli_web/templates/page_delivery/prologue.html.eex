@@ -1,4 +1,4 @@
-<% prologue_class = "jumbotron prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
+<% prologue_class = "prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
 <div class="<%= prologue_class %>">
   <h3 class="display-4"><%= @title %></h3>
   <p class="lead" style="color: #c0392b;">This is a <strong>scored</strong> page</p>

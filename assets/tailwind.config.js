@@ -8,7 +8,12 @@ const tailwindCSSVariablesPlugin = require('tailwind-css-variables');
 const theme = require('./tailwind.theme.js');
 
 module.exports = {
-  content: ['./src/**/*.{html,js,jsx,ts,tsx,mdx}', '../lib/*_web.ex', '../lib/*_web/**/*.*ex'],
+  content: [
+    './src/**/*.{html,js,jsx,ts,tsx,mdx}',
+    '../lib/oli/rendering/**/*.ex',
+    '../lib/*_web.ex',
+    '../lib/*_web/**/*.*ex',
+  ],
   darkMode: 'class',
   theme,
   plugins: [
@@ -26,6 +31,6 @@ module.exports = {
     plugin(({ addVariant }) =>
       addVariant('phx-change-loading', ['&.phx-change-loading', '.phx-change-loading &']),
     ),
-    require('@tailwindcss/container-queries')
+    require('@tailwindcss/container-queries'),
   ],
 };
