@@ -15,7 +15,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :bib_revisions,
     :historical_attempts,
     :collab_space_config,
-    :is_instructor
+    :is_instructor,
+    :is_student
   ]
   defstruct [
     :user,
@@ -29,7 +30,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :bib_revisions,
     :historical_attempts,
     :collab_space_config,
-    :is_instructor
+    :is_instructor,
+    :is_student
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -104,7 +106,8 @@ defmodule Oli.Delivery.Page.PageContext do
       bib_revisions: bib_revisions,
       historical_attempts: retrieve_historical_attempts(hd(resource_attempts)),
       collab_space_config: collab_space_config,
-      is_instructor: Sections.is_instructor?(user, section_slug)
+      is_instructor: Sections.is_instructor?(user, section_slug),
+      is_student: Sections.is_student?(user, section_slug)
     }
   end
 
@@ -201,7 +204,8 @@ defmodule Oli.Delivery.Page.PageContext do
       bib_revisions: bib_revisions,
       historical_attempts: nil,
       collab_space_config: collab_space_config,
-      is_instructor: Sections.is_instructor?(user, section_slug)
+      is_instructor: Sections.is_instructor?(user, section_slug),
+      is_student: Sections.is_student?(user, section_slug)
     }
   end
 

@@ -8,6 +8,7 @@ defmodule OliWeb.CollaborationLive.Posts.List do
   prop user_id, :string, required: true
   prop selected, :string, default: ""
   prop is_instructor, :boolean, required: true
+  prop is_student, :boolean, required: true
   prop editing_post, :string, default: ""
 
   def render(assigns) do
@@ -24,6 +25,7 @@ defmodule OliWeb.CollaborationLive.Posts.List do
               index={index}
               user_id={@user_id}
               is_instructor={@is_instructor}
+              is_student={@is_student}
               is_threaded={@collab_space_config.threaded}
               parent_is_archived={@collab_space_config.status == :archived}
               is_editing={@editing_post && @editing_post.id == post.id}
@@ -47,6 +49,7 @@ defmodule OliWeb.CollaborationLive.Posts.List do
                       parent_post_id={post.id}
                       user_id={@user_id}
                       is_instructor={@is_instructor}
+                      is_student={@is_student}
                       is_threaded={@collab_space_config.threaded}
                       parent_is_archived={@collab_space_config.status == :archived or post.status == :archived}
                       is_editing={@editing_post && @editing_post.id == reply.id}

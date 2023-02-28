@@ -121,6 +121,28 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a user is a student in a given section.
+  """
+  def is_student?(nil, _) do
+    false
+  end
+
+  def is_student?(%User{id: id} = user, section_slug) do
+    is_enrolled?(id, section_slug) && has_student_role?(user, section_slug)
+  end
+
+  @doc """
+  Determines if user has student role.
+  """
+  def has_student_role?(%User{} = user, section_slug) do
+    ContextRoles.has_role?(
+      user,
+      section_slug,
+      ContextRoles.get_role(:context_learner)
+    )
+  end
+
+  @doc """
   Determines if a user is an instructor in a given section.
   """
   def is_instructor?(%User{id: id} = user, section_slug) do

@@ -502,7 +502,8 @@ defmodule OliWeb.PageDeliveryController do
           bibReferences: context.bib_revisions
         },
         collab_space_config: context.collab_space_config,
-        is_instructor: context.is_instructor
+        is_instructor: context.is_instructor,
+        is_student: context.is_student
       }
     )
   end

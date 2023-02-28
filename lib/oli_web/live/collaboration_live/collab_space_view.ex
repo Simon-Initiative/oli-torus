@@ -22,7 +22,9 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     Field,
     TextArea,
     Inputs,
-    HiddenInput
+    HiddenInput,
+    Checkbox,
+    Label
   }
 
   data selected, :string, default: ""
@@ -41,7 +43,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   data page_resource, :struct
   data search_params, :struct
   data sort, :struct
-  data is_instructor, :boolean
+  data is_instructor, :boolean, default: false
+  data is_student, :boolean, default: false
 
   # ----------------
   def channels_topic(section_slug, resource_id),
@@ -63,7 +66,9 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         %{
           "collab_space_config" => collab_space_config,
           "section_slug" => section_slug,
-          "page_slug" => page_slug
+          "page_slug" => page_slug,
+          "is_instructor" => is_instructor,
+          "is_student" => is_student
         } = session,
         socket
       ) do
@@ -81,7 +86,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     section = Sections.get_section_by_slug(section_slug)
     page_resource = Resources.get_resource_from_slug(page_slug)
-    is_instructor = Map.get(session, "is_instructor", false)
 
     topic = channels_topic(section_slug, page_resource.id)
 
@@ -124,7 +128,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
        collab_space_config: collab_space_config,
        new_post_changeset: new_post_changeset,
        sort: sort,
-       is_instructor: is_instructor
+       is_instructor: is_instructor,
+       is_student: is_student
      )}
   end
 
@@ -170,15 +175,21 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                 }
                 class="torus-input border-r-0 collab-space__textarea"
               />
-              <div class="flex justify-end">
-                <button
+            </Field>
+          </Inputs>
+          <div class="flex flex-col items-end">
+            <button
                   disabled={is_archived?(@collab_space_config.status)}
                   type="submit"
                   class="torus-button primary"
-                >Create Post</button>
-              </div>
-            </Field>
-          </Inputs>
+            >Create Post</button>
+            {#if @is_student}
+              <Field>
+                <Checkbox field={:anonymous} />
+                <Label class="text-xs" text="Anonymous"/>
+              </Field>
+            {/if}
+          </div>
         </Form>
       </div>
 
@@ -199,6 +210,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
           selected={@selected}
           user_id={@user.id}
           is_instructor={@is_instructor}
+          is_student={@is_student}
           editing_post={if @is_edition_mode, do: @editing_post, else: nil}
         />
       </div>

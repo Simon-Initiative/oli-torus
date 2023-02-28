@@ -41,20 +41,20 @@
             </div>
           </div>
 
-          <%= if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config) do %>
-            <div class="lg:w-1/3 w-full">
-              <%=
-                live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
-                  session: %{
-                    "collab_space_config" => @collab_space_config,
-                    "section_slug" => @section_slug,
-                    "page_slug" => @resource_slug,
-                    "is_instructor" => @is_instructor,
-                  })
-              %>
-            </div>
-          <% end %>
-        </div>
+        <%= if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config) do %>
+          <div class="lg:w-1/3 w-full">
+            <%=
+              live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
+                session: %{
+                  "collab_space_config" => @collab_space_config,
+                  "section_slug" => @section_slug,
+                  "page_slug" => @resource_slug,
+                  "is_instructor" => @is_instructor,
+                  "is_student" => @is_student
+                })
+            %>
+          </div>
+        <% end %>
       </div>
 
 
