@@ -168,7 +168,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                   "data-initial-height": 44,
                   onkeyup: "resizeTextArea(this)"
                 }
-                class="torus-input border-r-0 collab-space__reply"
+                class="torus-input border-r-0 collab-space__textarea"
               />
               <div class="flex justify-end">
                 <button

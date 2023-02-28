@@ -192,7 +192,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                   "data-initial-height": 44,
                   onkeyup: "resizeTextArea(this)"
                 }
-                class="torus-input border-r-0 collab-space__reply"
+                class="torus-input border-r-0 collab-space__textarea"
               />
             </Field>
           </Inputs>
@@ -223,7 +223,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                   "data-initial-height": 44,
                   onkeyup: "resizeTextArea(this)"
                 }
-                class="torus-input border-r-0 collab-space__reply"
+                class="torus-input border-r-0 collab-space__textarea reply"
               />
             </Field>
           </Inputs>
