@@ -28,12 +28,12 @@ textarea.collab-space__reply {
   scrollbar-width: none;
 }
 
-form textarea.collab-space__reply+div button.collab-space__send-button {
+form:has(textarea.collab-space__reply) + div button.collab-space__send-button {
   display: none;
   pointer-events: none;
 }
 
-form textarea.collab-space__reply:not(:placeholder-shown)+div button.collab-space__send-button {
+form:has(textarea.collab-space__reply:not(:placeholder-shown)) + div button.collab-space__send-button {
   display: block;
   pointer-events: all;
 }
