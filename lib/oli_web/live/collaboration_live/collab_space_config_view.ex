@@ -131,6 +131,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
                   <Label class="form-check-label" />
                 </Field>
 
+                <Field name={:anonymous_posting} class="form-check mt-1">
+                  <Checkbox class="form-check-input"/>
+                  <Label class="form-check-label" text="Allow anonymous posts"/>
+                </Field>
+
                 <br>
                 Participation requirements
                 <div class="ml-4">

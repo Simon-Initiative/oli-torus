@@ -27,6 +27,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
   prop is_instructor, :boolean, required: true
   prop is_student, :boolean, required: true
   prop is_threaded, :boolean, required: true
+  prop is_anonymous, :boolean, required: true
   prop parent_is_archived, :boolean, required: true
   prop is_editing, :boolean, default: false
   prop is_selected, :boolean, default: false

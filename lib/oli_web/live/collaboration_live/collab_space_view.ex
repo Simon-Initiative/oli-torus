@@ -183,7 +183,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                   type="submit"
                   class="torus-button primary"
             >Create Post</button>
-            {#if @is_student}
+            {#if @is_student and @collab_space_config.anonymous_posting}
               <Field>
                 <Checkbox field={:anonymous} />
                 <Label class="text-xs" text="Anonymous"/>

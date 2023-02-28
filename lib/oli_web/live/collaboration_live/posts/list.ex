@@ -27,6 +27,7 @@ defmodule OliWeb.CollaborationLive.Posts.List do
               is_instructor={@is_instructor}
               is_student={@is_student}
               is_threaded={@collab_space_config.threaded}
+              is_anonymous={@collab_space_config.anonymous_posting}
               parent_is_archived={@collab_space_config.status == :archived}
               is_editing={@editing_post && @editing_post.id == post.id}
               is_selected={@selected == Integer.to_string(post.id)}
@@ -51,6 +52,7 @@ defmodule OliWeb.CollaborationLive.Posts.List do
                       is_instructor={@is_instructor}
                       is_student={@is_student}
                       is_threaded={@collab_space_config.threaded}
+                      is_anonymous={@collab_space_config.anonymous_posting}
                       parent_is_archived={@collab_space_config.status == :archived or post.status == :archived}
                       is_editing={@editing_post && @editing_post.id == reply.id}
                       is_selected={@selected == Integer.to_string(reply.id)}
