@@ -186,8 +186,8 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
           <Inputs for={:content}>
             <Field class="w-full" name={:message}>
               <TextArea
+                id={"post_text_area_#{@post.id}"}
                 opts={
-                  placeholder: if(@is_editing, do: "", else: "Reply"),
                   "data-grow": "true",
                   "data-initial-height": 44,
                   onkeyup: "resizeTextArea(this)"
