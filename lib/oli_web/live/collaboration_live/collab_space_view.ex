@@ -10,7 +10,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
   alias Oli.Repo
   alias OliWeb.CollaborationLive.ActiveUsers
-  alias OliWeb.CollaborationLive.Posts.{Modal, Sort}
+  alias OliWeb.CollaborationLive.Posts.Sort
   alias OliWeb.CollaborationLive.Posts.List, as: PostList
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
@@ -182,7 +182,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         </Form>
       </div>
 
-      {#if length(@posts) > 0}
+      {#if length(@posts) > 1}
         <div class="flex justify-end gap-2 py-2 px-5">
           <Sort sort={@sort} />
         </div>
