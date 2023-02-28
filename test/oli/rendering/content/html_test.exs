@@ -40,9 +40,10 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
 
       assert rendered_html_string =~
-               "<ol><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
+               "<ol class=\"list-decimal list-inside pl-2\"><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
 
-      assert rendered_html_string =~ "<ul><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
+      assert rendered_html_string =~
+               "<ul class=\"list-disc list-inside pl-2\"><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
 
       assert rendered_html_string =~
                ~r/<div class=".*">\s*<iframe.* src="https:\/\/www.youtube.com\/embed\/fhdCslFcKFU"><\/iframe>\s*<\/div>/

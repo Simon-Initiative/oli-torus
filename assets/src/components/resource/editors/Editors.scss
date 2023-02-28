@@ -11,6 +11,11 @@
     .content-block {
       .slate-editor {
         border: none;
+
+        .popup-anchor {
+          cursor: inherit;
+          padding-right: 2px;
+        }
       }
 
       // handle the special case when purpose type is none, apply the

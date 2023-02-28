@@ -30,7 +30,7 @@ defmodule Oli.Delivery.PreviousNextIndex do
 
   """
   def retrieve(%Section{previous_next_index: nil} = section, resource_id) do
-    case rebuild_if_not_nil(section) do
+    case rebuild_if_nil(section) do
       {:ok, section} -> retrieve(section, resource_id)
       {:error, e} -> Repo.rollback(e)
     end
@@ -62,7 +62,7 @@ defmodule Oli.Delivery.PreviousNextIndex do
   # previous_next_index that is nil, causing the "just in time" rebuild mechanism to execute
   # over and over, when it does not need to.  So instead, when the index is nil we refetch the
   # section to see if simply a stale section was given.  If the index is still nil, we then rebuild.
-  defp rebuild_if_not_nil(section) do
+  defp rebuild_if_nil(section) do
     case Sections.get_section_by(slug: section.slug) do
       %{previous_next_index: nil} -> rebuild(section)
       section -> {:ok, section}

@@ -61,7 +61,7 @@
     </div>
 
     <div class="form-check form-switch" style="width: 88px;">
-      <%= checkbox f, :registration_open, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open) %>
+      <%= checkbox f, :registration_open, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open) %>
       <%= label f, :registration_open, class: "form-check-label inline-block text-gray-800" do %>
         <%= if @changeset.data.registration_open do "Yes" else "No" end %>
       <% end %>
@@ -81,7 +81,7 @@
     </div>
 
     <div class="form-check form-switch" style="width: 88px;">
-      <%= checkbox f, :requires_enrollment, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
+      <%= checkbox f, :requires_enrollment, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
       <%= label f, :requires_enrollment, class: "form-check-label inline-block text-gray-800" do %>
         <%= if @changeset.data.requires_enrollment do "Yes" else "No" end %>
       <% end %>
@@ -101,7 +101,7 @@
     </div>
 
     <div class="form-check form-switch" style="width: 88px;">
-      <%= checkbox f, :skip_email_verification, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :skip_email_verification, "is-invalid"), autofocus: focusHelper(f, :skip_email_verification) %>
+      <%= checkbox f, :skip_email_verification, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :skip_email_verification, "is-invalid"), autofocus: focusHelper(f, :skip_email_verification) %>
       <%= label f, :skip_email_verification, class: "form-check-label inline-block text-gray-800" do %>
         <%= if @changeset.data.skip_email_verification do "Yes" else "No" end %>
       <% end %>

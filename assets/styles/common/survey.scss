@@ -1,12 +1,11 @@
 .survey {
-  border-radius: 4px;
   margin-bottom: 1rem;
-  border: 1px solid rgba(#22a6b3, 0.75);
+  border: 1px solid #222439;
 
   .survey-label {
     text-transform: uppercase;
-    padding: 4px;
-    background-color: rgba(#22a6b3, 0.75);
+    background: #222439;
+    padding: 4px 0;
     color: var(--color-white);
 
     /** icon */
