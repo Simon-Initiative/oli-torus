@@ -263,7 +263,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         _ -> {true, Collaboration.get_post_by(%{id: post_id})}
       end
 
-    {:noreply, assign(socket, editing_post: post, is_edition_mode: is_edition_mode)}
+    socket = assign(socket, editing_post: post, is_edition_mode: is_edition_mode)
+    {:noreply, push_event(socket, "set_focus", %{id: "post_text_area_#{post_id}"})}
   end
 
   def handle_event("edit_post", %{"post" => attrs}, socket),
