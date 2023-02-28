@@ -13,7 +13,9 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
     Field,
     TextArea,
     HiddenInput,
-    Inputs
+    Inputs,
+    Checkbox,
+    Label
   }
 
   prop post, :struct, required: true
@@ -23,6 +25,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
   prop index, :integer, required: true
   prop user_id, :string, required: true
   prop is_instructor, :boolean, required: true
+  prop is_student, :boolean, required: true
   prop is_threaded, :boolean, required: true
   prop parent_is_archived, :boolean, required: true
   prop is_editing, :boolean, default: false
@@ -58,7 +61,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
 
         <div class="flex flex-1 justify-between">
           <div class="flex-col">
-            <h6 class="torus-h6 text-sm">{@post.user.name}</h6>
+            <h6 class="torus-h6 text-sm">{render_name(@post, @user_id)}</h6>
             <small class="torus-small">{render_date(@post.inserted_at)}</small>
           </div>
 
@@ -227,6 +230,12 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               />
             </Field>
           </Inputs>
+          {#if @is_student}
+            <Field class={if !@is_editing, do: "collab-space__checkbox"}>
+              <Checkbox field={:anonymous} />
+              <Label class="text-xs" text="Anonymous"/>
+            </Field>
+          {/if}
         </Form>
       {/if}
 
@@ -298,4 +307,15 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
 
   defp is_archived?(:archived), do: true
   defp is_archived?(_), do: false
+
+  defp render_name(%PostSchema{anonymous: true, user_id: post_user_id} = post, user_id)
+       when post_user_id == user_id,
+       do: "#{post.user.name} (Me as Anonymous user)"
+
+  defp render_name(%PostSchema{anonymous: false, user_id: post_user_id} = post, user_id)
+       when post_user_id == user_id,
+       do: "#{post.user.name} (Me)"
+
+  defp render_name(%PostSchema{anonymous: true}, _user_id), do: "Anonymous user"
+  defp render_name(post, _user_id), do: post.user.name
 end
