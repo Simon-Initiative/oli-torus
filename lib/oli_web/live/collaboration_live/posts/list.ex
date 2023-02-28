@@ -14,7 +14,10 @@ defmodule OliWeb.CollaborationLive.Posts.List do
     ~F"""
     <div id="postsList" phx-hook="TextareaListener">
       {#for {post, index} <- @posts}
-        <div class="flex flex-col">
+        <div
+          id={"post_#{post.id}"}
+          class={"flex flex-col #{if post.status == :archived or @collab_space_config.status == :archived, do: " readonly", else: ""}"}
+        >
           <div class="p-5">
             <Show
               post={post}
@@ -28,14 +31,13 @@ defmodule OliWeb.CollaborationLive.Posts.List do
             />
           </div>
           {#if @collab_space_config.threaded and Integer.to_string(post.id) == @selected}
-            <div class="bg-gray-100">
+            <div class="bg-gray-100" id={"post_#{post.id}_replies"}>
               <div class="flex flex-col gap-4 ml-6">
                 {#for {reply, reply_index} <- post.replies}
                   <div
-                    id={"collapse_#{post.id}"}
-                    class={"collapse p-5 bg-white show #{if reply_index == 1, do: "mt-4"} #{if reply_index == length(post.replies), do: "mb-4"}"}
+                    id={"post_reply_#{reply.id}"}
+                    class={"p-5 bg-white show #{if reply_index == 1, do: "mt-4"} #{if reply_index == length(post.replies), do: "mb-4"} #{if reply.status == :archived, do: " readonly"}"}
                     aria-labelledby={"heading_#{post.id}"}
-                    data-parent="#post-accordion"
                   >
                     <Show
                       post={reply}
