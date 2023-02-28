@@ -146,6 +146,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
       <div class="p-2 pt-0 mb-5">
         <Form
+          id="new_post_form"
           for={@new_post_changeset}
           submit="create_post"
           opts={autocomplete: "off"}
@@ -170,7 +171,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                 class="torus-input border-r-0 collab-space__reply"
               />
               <div class="flex justify-end">
-                <button type="submit" class="torus-button primary">Create Post</button>
+                <button
+                  disabled={is_archived?(@collab_space_config.status)}
+                  type="submit"
+                  class="torus-button primary"
+                >Create Post</button>
               </div>
             </Field>
           </Inputs>
