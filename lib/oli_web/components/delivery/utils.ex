@@ -188,7 +188,7 @@ defmodule OliWeb.Components.Delivery.Utils do
     ContextRoles.get_role(:context_learner)
   ]
 
-  defp user_role(section, user) do
+  def user_role(section, user) do
     case section do
       %Section{open_and_free: open_and_free, slug: section_slug} ->
         cond do
