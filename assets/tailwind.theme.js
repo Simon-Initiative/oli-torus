@@ -62,9 +62,6 @@ module.exports = {
       'feedback-partially-correct-bg': colors.yellow['200'],
       'feedback-partially-correct-color': colors.black,
       'feedback-partially-correct-graphic-color': colors.yellow['500'],
-      'hints-bg': colors.gray['100'],
-      'hints-border': colors.gray['200'],
-      'hints-color': colors.black,
       delivery: {
         body: {
           DEFAULT: '#f3f5f8',
@@ -105,6 +102,30 @@ module.exports = {
           700: '#3c0fa3',
           800: '#2b0b75',
           900: '#1a0746',
+        },
+        hints: {
+          bg: {
+            DEFAULT: colors.gray['100'],
+            dark: {
+              DEFAULT: colors.gray['700'],
+            },
+          },
+          border: {
+            DEFAULT: colors.gray['200'],
+            dark: {
+              DEFAULT: colors.gray['600'],
+            },
+          },
+        },
+        purpose: {
+          label: {
+            bg: {
+              DEFAULT: '#222439',
+              dark: {
+                DEFAULT: '#2f3d52',
+              },
+            },
+          },
         },
       },
     },

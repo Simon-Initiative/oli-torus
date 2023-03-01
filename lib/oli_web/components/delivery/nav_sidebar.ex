@@ -160,8 +160,10 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   defp is_active(["sections", _, "overview"], :overview), do: true
   defp is_active(["sections", _, "exploration"], :exploration), do: true
+  defp is_active(["sections", _, "discussion"], :discussion), do: true
   defp is_active(["sections", _, "preview", "overview"], :overview), do: true
   defp is_active(["sections", _, "preview", "exploration"], :exploration), do: true
+  defp is_active(["sections", _, "preview", "discussion"], :discussion), do: true
   defp is_active(_, _), do: false
 
   defp home_url(assigns) do
@@ -181,6 +183,14 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       Routes.page_delivery_path(OliWeb.Endpoint, :exploration_preview, assigns[:section_slug])
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :exploration, assigns[:section_slug])
+    end
+  end
+
+  defp discussion_url(assigns) do
+    if assigns[:preview_mode] do
+      Routes.page_delivery_path(OliWeb.Endpoint, :discussion_preview, assigns[:section_slug])
+    else
+      Routes.page_delivery_path(OliWeb.Endpoint, :discussion, assigns[:section_slug])
     end
   end
 end

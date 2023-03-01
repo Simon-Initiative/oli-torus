@@ -87,7 +87,7 @@ const Component: React.FC<ComponentProps> = (props) => {
       </div>
     )
   ) : (
-    <div className="mr-2">{graphicForResultClass(props.resultClass)}</div>
+    <div className="mr-2 mt-1">{graphicForResultClass(props.resultClass)}</div>
   );
 
   return (

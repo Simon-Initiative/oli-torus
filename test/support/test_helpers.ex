@@ -776,6 +776,111 @@ defmodule Oli.TestHelpers do
      other_revision: other_revision}
   end
 
+  def create_section_with_posts(_conn) do
+    user = insert(:user)
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    page_resource = insert(:resource)
+
+    page_revision =
+      insert(:revision,
+        resource: page_resource,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        content: %{"model" => []},
+        title: "Other revision A"
+      )
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
+
+    collab_space_config = build(:collab_space_config, status: :enabled)
+    page_resource_cs = insert(:resource)
+
+    page_revision_cs =
+      insert(:revision,
+        resource: page_resource_cs,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        content: %{"model" => []},
+        slug: "page_revision_cs",
+        collab_space_config: collab_space_config,
+        title: "Other revision B"
+      )
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_cs.id})
+
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_resource.id, page_resource_cs.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id,
+        published: nil
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource_cs,
+      revision: page_revision_cs,
+      author: author
+    })
+
+    section = insert(:section, base_project: project, type: :enrollable)
+    {:ok, _sr} = Sections.create_section_resources(section, publication)
+
+    insert(:post, section: section, resource: page_resource_cs, user: user)
+
+    insert(:post,
+      content: %{message: "Other post"},
+      section: section,
+      resource: page_resource_cs,
+      user: user
+    )
+
+    other_user_1 = insert(:user)
+    other_user_2 = insert(:user)
+
+    insert(:post, section: section, resource: page_resource_cs, user: other_user_1)
+    insert(:post, section: section, resource: page_resource_cs, user: other_user_2)
+
+    [
+      project: project,
+      publication: publication,
+      page_revision: page_revision,
+      page_revision_cs: page_revision_cs,
+      section: section,
+      author: author,
+      user: user,
+      page_resource_cs: page_resource_cs
+    ]
+  end
+
   def enroll_user_to_section(user, section, role) do
     Sections.enroll(user.id, section.id, [
       ContextRoles.get_role(role)

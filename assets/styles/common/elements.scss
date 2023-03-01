@@ -1,4 +1,7 @@
-.popup__anchorText,
+$heading-margin-bottom: 0.5em;
+$element-margin-bottom: 1.5em;
+
+.popup-anchor,
 span.term {
   font-weight: bold;
   color: #63a372;
@@ -8,6 +11,58 @@ span.term {
 .structured-content,
 .activity-editor .rich-text-editor,
 .content {
+  h1.title {
+    font-size: 2.5em;
+    font-weight: 600;
+
+    .page-number {
+      font-weight: normal;
+    }
+  }
+
+  h1,
+  .h1 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: $heading-margin-bottom;
+  }
+  h2,
+  .h2 {
+    font-size: 1.5em;
+    margin-bottom: $heading-margin-bottom;
+  }
+  h3,
+  .h3 {
+    font-size: 1.375em;
+    margin-bottom: $heading-margin-bottom;
+  }
+  h4,
+  .h4 {
+    font-size: 1.25em;
+    margin-bottom: $heading-margin-bottom;
+  }
+  h5,
+  .h5 {
+    font-size: 1.125em;
+    margin-bottom: $heading-margin-bottom;
+  }
+  h6,
+  .h6 {
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: $heading-margin-bottom;
+  }
+
+  p {
+    line-height: 2em;
+    margin-bottom: $element-margin-bottom;
+  }
+
+  .img-fluid {
+    margin: 1.5em auto;
+    margin-bottom: $element-margin-bottom;
+  }
+
   blockquote {
     margin-top: 12px;
     font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
@@ -16,6 +71,7 @@ span.term {
     padding-left: 20px;
     padding-bottom: 2px;
     word-break: break-word;
+    margin-bottom: $element-margin-bottom;
 
     p:last-of-type {
       margin-bottom: 0;
@@ -30,15 +86,22 @@ span.term {
     letter-spacing: -0.003em;
     border-radius: 6px;
     padding: 1em;
+    margin-bottom: $element-margin-bottom;
 
     code.hljs {
       background: inherit;
     }
   }
 
+  ul,
+  ol {
+    margin-bottom: $element-margin-bottom;
+    padding-left: 1.5em;
+  }
+
   ul li,
   ol li {
-    margin-bottom: 14px;
+    margin-bottom: 0.25rem;
   }
 
   .dl-title {
@@ -70,6 +133,7 @@ span.term {
     -moz-box-sizing: content-box;
     box-sizing: content-box;
     margin: auto;
+    margin-bottom: $element-margin-bottom;
     border-collapse: collapse;
     table-layout: auto;
     word-wrap: break-word;
@@ -96,7 +160,7 @@ span.term {
   }
 
   img.d-block {
-    margin-bottom: 1.5em;
+    margin-bottom: $element-margin-bottom;
   }
 
   figure > img.d-block {
@@ -119,6 +183,8 @@ span.term {
   }
 
   .definition {
+    margin-bottom: $element-margin-bottom;
+
     .term {
       color: var(--color-green-400);
       font-size: 1.3em;
@@ -332,6 +398,26 @@ span.term {
       .embed-wrapper {
         padding-top: 56%;
       }
+    }
+  }
+
+  .popup-anchor {
+    color: var(--color-green-600);
+    font-style: italic;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .popup-click {
+    text-decoration: underline;
+  }
+
+  .popup-content {
+    &.show {
+      max-width: 100% !important;
+    }
+    p:last-of-type {
+      margin: 0;
     }
   }
 }
