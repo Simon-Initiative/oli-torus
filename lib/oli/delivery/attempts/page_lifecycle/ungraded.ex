@@ -85,11 +85,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   end
 
   defp do_update_progress(resource_access, 0) do
-    Oli.Delivery.Metrics.mark_completed(resource_access)
+    Oli.Delivery.Metrics.mark_progress_completed(resource_access)
   end
 
   defp do_update_progress(resource_access, _) do
-    Oli.Delivery.Metrics.reset(resource_access)
+    Oli.Delivery.Metrics.reset_progress(resource_access)
   end
 
 end
