@@ -12,6 +12,7 @@ import {
 import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
 import OptionsPanel from './components/OptionsPanel';
+import ReviewModeNavigation from './components/ReviewModeNavigation';
 
 interface DeckLayoutHeaderProps {
   pageName?: string;
@@ -97,6 +98,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           </a>
         </div>
       )}
+      {isReviewMode && <ReviewModeNavigation></ReviewModeNavigation>}
       <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
@@ -110,16 +112,18 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
               <div className="name">{userName}</div>
               <div className={`score ${!showScore ? 'displayNone' : ''}`}>{scoreText}</div>
-              <button
-                className="optionsToggle"
-                title="Toggle menu visibility"
-                aria-label="Toggle menu visibility"
-                onClick={() => {
-                  setShowOptions(!showOptions);
-                }}
-              >
-                <div className="icon-reorder"></div>
-              </button>
+              {!isReviewMode && (
+                <button
+                  className="optionsToggle"
+                  title="Toggle menu visibility"
+                  aria-label="Toggle menu visibility"
+                  onClick={() => {
+                    setShowOptions(!showOptions);
+                  }}
+                >
+                  <div className="icon-reorder"></div>
+                </button>
+              )}
             </div>
             <OptionsPanel open={showOptions} />
           </div>

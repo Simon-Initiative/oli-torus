@@ -693,37 +693,39 @@ const DeckLayoutFooter: React.FC = () => {
 
   return (
     <>
-      <div
-        className={`checkContainer rowRestriction columnRestriction`}
-        style={{ width: containerWidth, display: reviewMode ? 'block' : '' }}
-      >
-        <NextButton
-          isLoading={isLoading || !initPhaseComplete}
-          text={nextButtonText}
-          handler={checkHandler}
-          isGoodFeedbackPresent={isGoodFeedback}
-          currentFeedbacksCount={currentFeedbacks.length}
-          isFeedbackIconDisplayed={displayFeedbackIcon}
-          showCheckBtn={currentActivity?.custom?.showCheckBtn}
-        />
-        {displaySolutionButton && (
-          <button className="showSolnBtn showSolution">
-            <div className="ellipsis">{solutionButtonText}</div>
-          </button>
-        )}
-        {!isLegacyTheme && (
-          <FeedbackContainer
-            minimized={!displayFeedback}
-            showIcon={displayFeedbackIcon}
-            showHeader={displayFeedbackHeader}
-            onMinimize={() => setDisplayFeedback(false)}
-            onMaximize={() => setDisplayFeedback(true)}
-            feedbacks={currentFeedbacks}
+      {!reviewMode && (
+        <div
+          className={`checkContainer rowRestriction columnRestriction`}
+          style={{ width: containerWidth, display: reviewMode ? 'block' : '' }}
+        >
+          <NextButton
+            isLoading={isLoading || !initPhaseComplete}
+            text={nextButtonText}
+            handler={checkHandler}
+            isGoodFeedbackPresent={isGoodFeedback}
+            currentFeedbacksCount={currentFeedbacks.length}
+            isFeedbackIconDisplayed={displayFeedbackIcon}
+            showCheckBtn={currentActivity?.custom?.showCheckBtn}
           />
-        )}
-        <HistoryNavigation />
-      </div>
-      {isLegacyTheme && (
+          {displaySolutionButton && (
+            <button className="showSolnBtn showSolution">
+              <div className="ellipsis">{solutionButtonText}</div>
+            </button>
+          )}
+          {!isLegacyTheme && (
+            <FeedbackContainer
+              minimized={!displayFeedback}
+              showIcon={displayFeedbackIcon}
+              showHeader={displayFeedbackHeader}
+              onMinimize={() => setDisplayFeedback(false)}
+              onMaximize={() => setDisplayFeedback(true)}
+              feedbacks={currentFeedbacks}
+            />
+          )}
+          <HistoryNavigation />
+        </div>
+      )}
+      {!reviewMode && isLegacyTheme && (
         <>
           <FeedbackContainer
             minimized={!displayFeedback}

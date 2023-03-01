@@ -6,19 +6,17 @@ import { selectCurrentActivityId } from '../../../store/features/activities/slic
 import {
   selectHistoryNavigationActivity,
   setHistoryNavigationTriggered,
-  setRestartLesson,
 } from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
 import {
-  selectEnableHistory,
   selectReviewMode,
   selectShowHistory,
   setShowHistory,
 } from '../../../store/features/page/slice';
-import HistoryPanel from './HistoryPanel';
+import ReviewModeHistoryPanel from './ReviewModeHistoryPanel';
 
-export interface HistoryEntry {
+export interface ReviewEntry {
   id: string;
   name: string;
   timestamp?: number;
@@ -26,23 +24,13 @@ export interface HistoryEntry {
   selected?: boolean;
 }
 
-const HistoryNavigation: React.FC = () => {
+const ReviewModeNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
-  const enableHistory = useSelector(selectEnableHistory);
-  const showHistory = useSelector(selectShowHistory);
   const reviewMode = useSelector(selectReviewMode);
   const isHistoryMode = useSelector(selectHistoryNavigationActivity);
-
+  const showHistory = useSelector(selectShowHistory);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
-
-  const restartHandler = () => {
-    dispatch(setRestartLesson({ restartLesson: true }));
-  };
-
-  const minimizeHandler = () => {
-    dispatch(setShowHistory({ show: !showHistory }));
-  };
 
   const snapshot = getEnvState(defaultGlobalEnv);
 
@@ -52,7 +40,7 @@ const HistoryNavigation: React.FC = () => {
     ?.reverse()
     .map((entry) => entry.split('.')[2]);
 
-  const sortByTimestamp = (a: HistoryEntry, b: HistoryEntry) => {
+  const sortByTimestamp = (a: ReviewEntry, b: ReviewEntry) => {
     if (a.timestamp !== undefined && b.timestamp !== undefined) {
       if (a.timestamp == 0) {
         return b.timestamp - Date.now();
@@ -65,7 +53,7 @@ const HistoryNavigation: React.FC = () => {
   };
 
   // Get the activity names and ids to be displayed in the history panel
-  let historyItems: HistoryEntry[] = globalSnapshot
+  let historyItems: ReviewEntry[] = globalSnapshot
     ?.map((activityId) => {
       const foundSequence = sequences.filter(
         (sequence) => sequence.custom?.sequenceId === activityId,
@@ -89,16 +77,6 @@ const HistoryNavigation: React.FC = () => {
     ? currentHistoryActivityIndex === historyItems.length - 1
     : currentHistoryActivityIndex === 0;
 
-  /*  console.log('HISTORY ITEMS', {
-    historyItems,
-    globalSnapshot,
-    currentActivityId,
-    isFirst,
-    isLast,
-    isHistoryMode,
-    currentHistoryActivityIndex,
-  }); */
-
   const nextHandler = () => {
     const prevActivity =
       historyItems[reviewMode ? currentHistoryActivityIndex + 1 : currentHistoryActivityIndex - 1];
@@ -113,7 +91,9 @@ const HistoryNavigation: React.FC = () => {
       }),
     );
   };
-
+  const minimizeHandler = () => {
+    dispatch(setShowHistory({ show: !showHistory }));
+  };
   const prevHandler = () => {
     const prevActivity =
       historyItems[reviewMode ? currentHistoryActivityIndex - 1 : currentHistoryActivityIndex + 1];
@@ -125,66 +105,91 @@ const HistoryNavigation: React.FC = () => {
     );
   };
 
+  const handleToggleHistory = (show: boolean) => {
+    dispatch(setShowHistory({ show }));
+  };
   return (
     <Fragment>
-      {enableHistory && !reviewMode ? (
-        <div className="historyStepView pullLeftInCheckContainer">
-          <div className="historyStepContainer">
-            <button
-              onClick={prevHandler}
-              className="backBtn historyStepButton"
-              aria-label="Previous screen"
-              disabled={isFirst}
-            >
-              <span className="icon-chevron-left" />
-            </button>
-            <button
-              onClick={nextHandler}
-              className="nextBtn historyStepButton"
-              aria-label="Next screen"
-              disabled={isLast || (!isHistoryMode && !reviewMode)}
-            >
-              <span className="icon-chevron-right" />
-            </button>
-          </div>
-        </div>
-      ) : null}
-      <div
-        className={[
-          'navigationContainer',
-          enableHistory || reviewMode ? undefined : 'pullLeftInCheckContainer',
-        ].join(' ')}
-      >
-        <aside className={`ui-resizable ${showHistory ? undefined : 'minimized'}`}>
-          {enableHistory && !reviewMode ? (
-            <Fragment>
-              <button
-                onClick={minimizeHandler}
-                className="navigationToggle"
-                aria-label="Show lesson history"
-                aria-haspopup="true"
-                aria-controls="theme-history-panel"
-                aria-pressed="false"
-              />
+      {
+        <div className="review-button">
+          <style>
+            {`
+            .review-button {
+              z-index: 1;
+              display: flex;
+              align-items: center;
+              position: fixed;
+              top: 0;
+              left: calc(50% - .65rem);
+            }
+            .review-button button {
+              text-decoration: none;
+              padding: 0 0 0 4px;
+              font-size: 1.3rem;
+              line-height: 1.5;
+              border-radius: 0 0 4px 4px;
+              border: 1px solid #6c757d;
+              border-top: none;
+              transition: color .15s ease-in-out, background-color .15s ease-in-out, box-shadow .15s ease-in-out;
+              margin-right:15px;
+            }
+            .review-button button:hover {
+              color: #fff;
+              background-color: #6c757d;
+              box-shadow: 0 1px 2px #00000079;
+            }
+            `}
+          </style>
+          <button
+            onClick={() => handleToggleHistory(!showHistory)}
+            title="Show lesson history"
+            aria-label="Screen List"
+          >
+            <span title="Show lesson history" className="fa fa-list">
+              &nbsp;
+            </span>
+          </button>
+          {
+            <div className={['navigationContainer', 'pullLeftInCheckContainer'].join(' ')}>
+              <aside className={`ui-resizable ${showHistory ? undefined : 'minimized'}`}>
+                {
+                  <Fragment>
+                    <button
+                      onClick={minimizeHandler}
+                      className="navigationToggle"
+                      aria-label="Show lesson history"
+                      aria-haspopup="true"
+                      aria-controls="theme-history-panel"
+                      aria-pressed="false"
+                    />
 
-              <HistoryPanel
-                items={historyItems}
-                onMinimize={minimizeHandler}
-                onRestart={restartHandler}
-              />
-            </Fragment>
-          ) : (
-            <button onClick={restartHandler} className="theme-no-history-restart">
-              <span>
-                <div className="theme-no-history-restart__icon" />
-                <span className="theme-no-history-restart__label">Restart Lesson</span>
-              </span>
-            </button>
-          )}
-        </aside>
-      </div>
+                    <ReviewModeHistoryPanel
+                      items={historyItems}
+                      onMinimize={minimizeHandler}
+                    ></ReviewModeHistoryPanel>
+                  </Fragment>
+                }
+              </aside>
+            </div>
+          }
+          <button onClick={prevHandler} aria-label="Previous screen" disabled={isFirst}>
+            <span title="Previous screen" className="fa fa-arrow-left">
+              &nbsp;
+            </span>
+          </button>
+          <button
+            onClick={nextHandler}
+            aria-label="Next screen"
+            disabled={isLast || (!isHistoryMode && !reviewMode)}
+          >
+            <span title="Next screen" className="fa fa-arrow-right">
+              &nbsp;
+            </span>
+          </button>
+        </div>
+      }
     </Fragment>
   );
 };
 
-export default HistoryNavigation;
+export default ReviewModeNavigation;

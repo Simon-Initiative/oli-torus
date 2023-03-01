@@ -59,7 +59,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
 
   return (
     <>
-      {isLegacyTheme ? (
+      {isLegacyTheme && !isReviewMode ? (
         <>
           <div className="navbar-resize-dots"></div>
           <div className="title screenListTitle">

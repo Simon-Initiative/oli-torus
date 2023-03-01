@@ -33,7 +33,7 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
         <div className="title">Display options</div>
         <div
           className={`option navigationOption${
-            enableHistory || isReviewMode ? '' : ' displayNone'
+            enableHistory && !isReviewMode ? '' : ' displayNone'
           }`}
         >
           <span className="historyText">{isPreviewMode ? 'Screen List' : 'Lesson History'}</span>
@@ -54,24 +54,6 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
             </button>
           </div>
         </div>
-
-        {/* <div className={`option notepadOption${config.notepad?.enabled ? '' : ' displayNone'}`}>
-          Notepad
-          <div className="state notepadBtn">
-            <button
-              className={`on btn${config.notepad?.set ? '' : ' displayNone'}`}
-              aria-label="Close notepad"
-            >
-              <div className="left">ON</div>
-            </button>
-            <button
-              className={`off btn${!config.notepad?.set ? '' : ' displayNone'}`}
-              aria-label="Open notepad"
-            >
-              <div className="right">OFF</div>
-            </button>
-          </div>
-        </div> */}
 
         <div className="rule"></div>
 

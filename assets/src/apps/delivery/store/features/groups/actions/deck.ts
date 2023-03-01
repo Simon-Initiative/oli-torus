@@ -181,7 +181,7 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: 0,
     };
-    if (!isReviewMode) {
+    if (!isReviewMode && !isHistoryMode) {
       sessionOps.push(targetVisitTimeStampOp);
     }
     // init state is always "local" but the parts may come from parent layers
