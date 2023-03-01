@@ -1,4 +1,8 @@
-import { selectReviewMode } from 'apps/delivery/store/features/page/slice';
+import {
+  selectReviewMode,
+  selectShowHistory,
+  setShowHistory,
+} from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
@@ -14,6 +18,7 @@ interface ReviewModeHistoryPanelProps {
 const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }) => {
   const dispatch = useDispatch();
   const currentActivityId = useSelector(selectCurrentActivityId);
+  const showHistory = useSelector(selectShowHistory);
   // TODO: we need to track this as a separate ID
   const currentHistoryActiveActivityId = currentActivityId;
 
@@ -47,7 +52,9 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
     return classes.join(' ');
   };
   const isReviewMode = useSelector(selectReviewMode);
-
+  const handleToggleHistory = (show: boolean) => {
+    dispatch(setShowHistory({ show }));
+  };
   return (
     <>
       {
@@ -91,6 +98,7 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
               padding: 8px 20px !important;
               border: none !important;
               transition: all 250ms ease;
+              cursor: pointer;
             }
             aside .review {
               right: 5px;
@@ -104,7 +112,15 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
             `}
           </style>
           <div className="navbar-resize-dots"></div>
-          <div className="title screenListTitle">Lesson History</div>
+          <div className="title screenListTitle">
+            Lesson History
+            <a
+              onClick={() => handleToggleHistory(false)}
+              style={{ float: 'right', color: 'white', cursor: 'pointer' }}
+            >
+              <span className="fa fa-times">&nbsp;</span>
+            </a>
+          </div>
           <nav className="review">
             {items.map((item, index) => (
               <div
