@@ -1,11 +1,14 @@
 defmodule OliWeb.CollaborationLive.Posts.Show do
   use Surface.Component
 
+  alias Phoenix.LiveView.JS
+
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.Post, as: PostSchema
 
   alias OliWeb.Common.FormatDateTime
   alias Oli.Resources.Collaboration.Post
+  alias OliWeb.Delivery.Buttons
 
   alias Surface.Components.Form
 
@@ -14,8 +17,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
     TextArea,
     HiddenInput,
     Inputs,
-    Checkbox,
-    Label
+    Checkbox
   }
 
   prop post, :struct, required: true
@@ -170,9 +172,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
         </small>
       {/if}
 
-      {#if !@is_editing}
-        <p class="mb-0 text-sm post-content">{@post.content.message}</p>
-      {#elseif @is_editing}
+      {#if @is_editing}
         <Form
           id={"edit_post_form_#{@post.id}"}
           for={@changeset}
@@ -200,10 +200,69 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               />
             </Field>
           </Inputs>
+          <div class={"flex w-full justify-between #{if @is_threaded, do: "h-10"}"}>
+            {#if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}
+              <button
+                :on-click="set_selected"
+                type="button"
+                class="flex items-center text-gray-400 mt-2"
+                phx-value-id={@post.id}
+              >
+                <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
+                <small>{if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}</small>
+              </button>
+            {/if}
+            <div class="flex gap-2 ml-auto">
+              <button
+                type="button"
+                :on-click="set_editing_post"
+                phx-value-post_id={@post.id}
+                class="torus-button secondary"
+              >Cancel</button>
+              {#if @is_student and @is_anonymous}
+                <Checkbox id={"edit_#{@post.id}_checkbox"} field={:anonymous} class="hidden" />
+                <Buttons.button_with_options
+                  id={"edit_#{@post.id}_save"}
+                  type="submit"
+                  options={[
+                    %{
+                      text: "Save as me",
+                      on_click:
+                        if(@post.anonymous,
+                          do:
+                            JS.dispatch("click",
+                              to: "#edit_#{@post.id}_checkbox"
+                            )
+                            |> JS.dispatch("click", to: "#edit_#{@post.id}_save_button"),
+                          else: JS.dispatch("click", to: "#edit_#{@post.id}_save_button")
+                        )
+                    },
+                    %{
+                      text: "Save anonymously",
+                      on_click:
+                        if(!@post.anonymous,
+                          do:
+                            JS.dispatch("click",
+                              to: "#edit_#{@post.id}_checkbox"
+                            )
+                            |> JS.dispatch("click", to: "#edit_#{@post.id}_save_button"),
+                          else: JS.dispatch("click", to: "#edit_#{@post.id}_save_button")
+                        )
+                    }
+                  ]}
+                >
+                  Save
+                </Buttons.button_with_options>
+              {#else}
+                <button type="submit" class="torus-button primary">Save</button>
+              {/if}
+            </div>
+          </div>
         </Form>
       {/if}
 
       {#if @is_threaded && !@is_editing}
+        <p class="mb-0 text-sm post-content">{@post.content.message}</p>
         <Form
           id={"reply_form_#{@post.id}"}
           for={@changeset}
@@ -231,49 +290,43 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               />
             </Field>
           </Inputs>
-          {#if @is_student}
-            <Field class={if !@is_editing, do: "collab-space__checkbox"}>
-              <Checkbox field={:anonymous} />
-              <Label class="text-xs" text="Anonymous"/>
-            </Field>
-          {/if}
+          <div class={"flex w-full justify-between #{if @is_threaded, do: "h-10"}"}>
+            {#if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}
+              <button
+                :on-click="set_selected"
+                type="button"
+                class="flex items-center text-gray-400 mt-2"
+                phx-value-id={@post.id}
+              >
+                <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
+                <small>{if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}</small>
+              </button>
+            {/if}
+            <div class="collab-space__send-button-with-checkbox ml-auto">
+              {#if @is_student and @is_anonymous}
+                <Checkbox id={"reply_#{@post.id}_checkbox"} field={:anonymous} class="hidden" />
+                <Buttons.button_with_options
+                  id={"reply_#{@post.id}_send"}
+                  type="submit"
+                  options={[
+                    %{text: "Reply as me", on_click: JS.dispatch("click", to: "reply_#{@post.id}_send_button")},
+                    %{
+                      text: "Reply anonymously",
+                      on_click:
+                        JS.dispatch("click", to: "#reply_#{@post.id}_checkbox")
+                        |> JS.dispatch("click", to: "#reply_#{@post.id}_send_button")
+                    }
+                  ]}
+                >
+                  Reply
+                </Buttons.button_with_options>
+              {#else}
+                <button type="submit" class="torus-button primary">Reply</button>
+              {/if}
+            </div>
+          </div>
         </Form>
       {/if}
-
-      <div class={"flex w-full justify-between #{if @is_threaded, do: "h-10"}"}>
-        {#if @is_threaded and !@is_reply and has_replies?(@post, @parent_replies, @post.id)}
-          <button
-            :on-click="set_selected"
-            type="button"
-            class="flex items-center text-gray-400 mt-2"
-            phx-value-id={@post.id}
-            data-toggle="collapse"
-            data-target={"#collapse_#{@post.id}"}
-            aria-expanded="true"
-            aria-controls={"collapse_#{@post.id}"}
-          >
-            <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
-            <small>{if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}</small>
-          </button>
-        {/if}
-        <div class="flex gap-2 ml-auto">
-          {#if @is_editing}
-            <button
-              type="button"
-              :on-click="set_editing_post"
-              phx-value-post_id={@post.id}
-              class="torus-button secondary ml-auto"
-            >Cancel</button>
-            <button form={"edit_post_form_#{@post.id}"} type="submit" class="torus-button primary ml-auto">Save</button>
-          {#elseif @is_threaded}
-            <button
-              form={"reply_form_#{@post.id}"}
-              type="submit"
-              class="torus-button primary ml-auto collab-space__send-button"
-            >Send</button>
-          {/if}
-        </div>
-      </div>
     </div>
     """
   end
