@@ -1,6 +1,8 @@
 defmodule OliWeb.CollaborationLive.CollabSpaceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
+  alias Phoenix.LiveView.JS
+
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Resources
@@ -15,6 +17,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
   alias Phoenix.PubSub
+  alias OliWeb.Delivery.Buttons
 
   alias Surface.Components.Form
 
@@ -23,8 +26,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     TextArea,
     Inputs,
     HiddenInput,
-    Checkbox,
-    Label
+    Checkbox
   }
 
   data selected, :string, default: ""
@@ -66,9 +68,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         %{
           "collab_space_config" => collab_space_config,
           "section_slug" => section_slug,
-          "page_slug" => page_slug,
-          "is_instructor" => is_instructor,
-          "is_student" => is_student
+          "page_slug" => page_slug
         } = session,
         socket
       ) do
@@ -86,6 +86,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
 
     section = Sections.get_section_by_slug(section_slug)
     page_resource = Resources.get_resource_from_slug(page_slug)
+    is_instructor = Map.get(session, "is_instructor", false)
+    is_student = Map.get(session, "is_student", false)
 
     topic = channels_topic(section_slug, page_resource.id)
 
@@ -177,17 +179,31 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
               />
             </Field>
           </Inputs>
-          <div class="flex flex-col items-end">
-            <button
-                  disabled={is_archived?(@collab_space_config.status)}
-                  type="submit"
-                  class="torus-button primary"
-            >Create Post</button>
+          <div class="flex justify-end">
             {#if @is_student and @collab_space_config.anonymous_posting}
-              <Field>
-                <Checkbox field={:anonymous} />
-                <Label class="text-xs" text="Anonymous"/>
-              </Field>
+              <Checkbox id="new_post_anonymous_checkbox" field={:anonymous} class="hidden" />
+              <Buttons.button_with_options
+                id="create_post_button"
+                type="submit"
+                disabled={is_archived?(@collab_space_config.status)}
+                options={[
+                  %{
+                    text: "Post anonymously",
+                    on_click:
+                      JS.dispatch("click", to: "#new_post_anonymous_checkbox")
+                      |> JS.dispatch("click", to: "#create_post_button_button")
+                  }
+                ]}
+              >
+                Create Post
+              </Buttons.button_with_options>
+            {#else}
+              <button
+                disabled={is_archived?(@collab_space_config.status)}
+                type="submit"
+                class="torus-button primary"
+              >Create Post
+              </button>
             {/if}
           </div>
         </Form>
