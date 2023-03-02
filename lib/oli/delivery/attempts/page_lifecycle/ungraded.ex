@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     Lifecycle,
     Hierarchy
   }
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
 
   alias Oli.Delivery.Attempts.PageLifecycle.Common
 
@@ -64,6 +65,31 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   @impl Lifecycle
   def start(%VisitContext{} = context) do
     {:ok, resource_attempt} = Hierarchy.create(context)
+
     AttemptState.fetch_attempt_state(resource_attempt, context.page_revision)
+    |> update_progress(resource_attempt)
   end
+
+  defp update_progress({:ok, activity_map}, %ResourceAttempt{resource_access_id: resource_access_id}) do
+
+    number_of_activities = Map.keys(activity_map) |> Enum.count()
+
+    Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id)
+    |> do_update_progress(number_of_activities)
+
+    {:ok, activity_map}
+  end
+
+  defp update_progress(other, _) do
+    other
+  end
+
+  defp do_update_progress(resource_access, 0) do
+    Oli.Delivery.Metrics.mark_progress_completed(resource_access)
+  end
+
+  defp do_update_progress(resource_access, _) do
+    Oli.Delivery.Metrics.reset_progress(resource_access)
+  end
+
 end
