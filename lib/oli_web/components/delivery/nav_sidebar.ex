@@ -7,8 +7,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Branding.Brand
-  alias Oli.Delivery.Sections
-  alias Oli.Accounts
+  alias OliWeb.Components.Delivery.UserAccountMenu
 
   slot :inner_block, required: true
 
@@ -71,66 +70,22 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           ]
         end
       )
-      |> assign(
-        :user,
-        case assigns do
-          %{current_user: current_user} when not is_nil(current_user) ->
-            %{
-              picture: current_user.picture,
-              name: user_name(current_user),
-              role: user_role(assigns[:section], current_user),
-              roleLabel: user_role_text(assigns[:section], current_user),
-              roleColor: user_role_color(assigns[:section], current_user),
-              isGuest: user_is_guest?(assigns),
-              isIndependentInstructor: Sections.is_independent_instructor?(current_user),
-              isIndependentLearner: user_is_independent_learner?(current_user),
-              linkedAuthorAccount:
-                if account_linked?(current_user) do
-                  %{
-                    email: current_user.author.email
-                  }
-                else
-                  nil
-                end,
-              selectedTimezone: Accounts.get_user_preference(current_user, :timezone)
-            }
-
-          _ ->
-            nil
-        end
-      )
-      |> assign(:preview, is_preview_mode?(assigns))
-      |> assign(
-        :routes,
-        %{
-          signin:
-            Routes.delivery_path(OliWeb.Endpoint, :signin, section: maybe_section_slug(assigns)),
-          signout: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
-          projects: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive),
-          linkAccount: Routes.delivery_path(OliWeb.Endpoint, :link_account),
-          editAccount: Routes.pow_registration_path(OliWeb.Endpoint, :edit),
-          updateTimezone: Routes.static_page_path(OliWeb.Endpoint, :update_timezone),
-          openAndFreeIndex: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
-        }
-      )
-      |> assign(
-        :section_slug,
-        maybe_section_slug(assigns)
-      )
-      |> OliWeb.Common.SelectTimezone.timezone_assigns()
+      |> UserAccountMenu.user_account_menu_assigns()
 
     ~H"""
-      <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
-        logo: @logo,
-        links: @links,
-        user: @user,
-        preview: @preview,
-        routes: @routes,
-        sectionSlug: @section_slug,
-        browserTimezone: @browser_timezone,
-        defaultTimezone: @default_timezone,
-        timezones: Enum.map(@timezones, &Tuple.to_list/1),
-      }) %>
+      <div id="navbar" phx-update="ignore">
+        <%= ReactPhoenix.ClientSide.react_component("Components.Navbar", %{
+          logo: @logo,
+          links: @links,
+          user: @user,
+          preview: @preview,
+          routes: @routes,
+          sectionSlug: @section_slug,
+          browserTimezone: @browser_timezone,
+          defaultTimezone: @default_timezone,
+          timezones: Enum.map(@timezones, &Tuple.to_list/1),
+        }) %>
+      </div>
     """
   end
 

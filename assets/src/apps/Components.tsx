@@ -9,6 +9,7 @@ import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Navbar } from 'components/common/Navbar';
+import { UserAccountMenu } from 'components/common/UserAccountMenu';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
@@ -19,3 +20,4 @@ registerApplication('References', References, globalStore);
 registerApplication('VideoPlayer', VideoPlayer);
 registerApplication('AlternativesPreferenceSelector', AlternativesPreferenceSelector, globalStore);
 registerApplication('Navbar', Navbar, globalStore);
+registerApplication('UserAccountMenu', UserAccountMenu, globalStore);

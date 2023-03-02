@@ -33,7 +33,11 @@ export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
         type="hidden"
         value={relativePath}
       />
-      <select onChange={onSelect} name="timezone[timezone]" className="max-w-[300px]">
+      <select
+        onChange={onSelect}
+        name="timezone[timezone]"
+        className="max-w-[300px] border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700"
+      >
         {selectedTimezone !== browserTimezone && (
           <option key="browser" value={browserTimezone}>
             Browser Timezone - {browserTimezone}

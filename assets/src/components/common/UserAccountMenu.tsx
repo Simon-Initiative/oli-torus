@@ -9,6 +9,7 @@ enum Roles {
   Administrator = 'administrator',
   Instructor = 'instructor',
   Student = 'student',
+  SystemAdmin = 'system_admin',
 }
 
 export interface Routes {
@@ -61,9 +62,8 @@ export const UserAccountMenu = ({
     .getAttribute('content');
 
   if (preview) return <PreviewUser />;
-  if (!user) return <></>;
 
-  return (
+  return user ? (
     <Popover
       isOpen={isPopoverOpen}
       onClickOutside={() => setIsPopoverOpen(false)}
@@ -82,51 +82,74 @@ export const UserAccountMenu = ({
                 <CreateAccountPopup sectionSlug={sectionSlug} />
               </React.Fragment>
             )}
-            {(user.role == Roles.Student || user.isIndependentInstructor) && (
-              <DropdownItem>
-                {user.linkedAuthorAccount ? (
-                  <>
-                    <h6>Linked: {user.linkedAuthorAccount?.email}</h6>
-                    <a href={routes.projects} rel="noreferrer" target="_blank">
+            {(user.role != Roles.Student || user.isIndependentInstructor) &&
+              (user.linkedAuthorAccount ? (
+                <>
+                  <DropdownItem>
+                    <h6>
+                      <b>Linked:</b> {user.linkedAuthorAccount}
+                    </h6>
+                    <a
+                      href={routes.projects}
+                      className="py-1 block w-full"
+                      rel="noreferrer"
+                      target="_blank"
+                    >
                       Go to Course Author{' '}
                       <i className="fas fa-external-link-alt float-right mt-[2px]"></i>
                     </a>
-                    <a href={routes.linkAccount} rel="noreferrer" target="_blank">
+                  </DropdownItem>
+                  <DropdownItem>
+                    <a
+                      href={routes.linkAccount}
+                      className="py-1 block w-full"
+                      rel="noreferrer"
+                      target="_blank"
+                    >
                       Link a different account
                     </a>
-                  </>
-                ) : (
-                  <a href={routes.linkAccount} rel="noreferrer" target="_blank">
+                  </DropdownItem>
+                </>
+              ) : (
+                <DropdownItem>
+                  <a
+                    href={routes.linkAccount}
+                    className="py-1 block w-full"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
                     Link Existing Account
                   </a>
-                )}
-              </DropdownItem>
-            )}
+                </DropdownItem>
+              ))}
             {user.isIndependentLearner && (
               <>
                 <DropdownItem>
-                  <a href={routes.editAccount} className="btn">
+                  <a href={routes.editAccount} className="py-1 block w-full">
                     Edit Account
                   </a>
-                </DropdownItem>
-                <DropdownItem>
-                  <div className=" no-hover">
-                    Dark Mode
-                    <DarkModeSelector showLabels={false} />
-                  </div>
                 </DropdownItem>
               </>
             )}
 
             <DropdownItem>
-              Timezone
-              <br />
-              <SelectTimezone
-                selectedTimezone={user.selectedTimezone || defaultTimezone}
-                timezones={timezones}
-                browserTimezone={browserTimezone}
-                submitAction={routes.updateTimezone}
-              />
+              <div className="py-1">
+                Dark Mode
+                <DarkModeSelector showLabels={false} />
+              </div>
+            </DropdownItem>
+
+            <DropdownItem>
+              <div className="py-1">
+                Timezone
+                <br />
+                <SelectTimezone
+                  selectedTimezone={user.selectedTimezone || defaultTimezone}
+                  timezones={timezones}
+                  browserTimezone={browserTimezone}
+                  submitAction={routes.updateTimezone}
+                />
+              </div>
             </DropdownItem>
 
             <hr className="dropdown-divider" />
@@ -134,7 +157,7 @@ export const UserAccountMenu = ({
             {(user.isIndependentLearner || user.isIndependentInstructor) && (
               <>
                 <DropdownItem>
-                  <a href={routes.openAndFreeIndex} className="btn">
+                  <a href={routes.openAndFreeIndex} className="py-1 block w-full">
                     My Courses
                   </a>
                 </DropdownItem>
@@ -146,7 +169,7 @@ export const UserAccountMenu = ({
             <DropdownItem>
               <a
                 href={routes.signout}
-                className="btn"
+                className="py-1 block w-full"
                 data-csrf={csrfToken}
                 data-method="delete"
                 data-to={routes.signout}
@@ -187,13 +210,15 @@ export const UserAccountMenu = ({
         </div>
       </button>
     </Popover>
+  ) : (
+    <></>
   );
 };
 
 interface DropdownProps {}
 
 const Dropdown: React.FC<PropsWithChildren<DropdownProps>> = ({ children }) => (
-  <ul className="p-2 list-none text-left rounded-lg shadow-lg mt-1 m-0 bg-clip-padding border-none bg-white dark:bg-gray-900 min-w-[300px]">
+  <ul className="p-2 list-none text-left rounded-lg shadow-lg mt-1 m-0 bg-clip-padding border-none bg-body dark:bg-body-dark min-w-[300px]">
     {children}
   </ul>
 );
@@ -201,7 +226,7 @@ const Dropdown: React.FC<PropsWithChildren<DropdownProps>> = ({ children }) => (
 interface DropdownItemProps {}
 
 const DropdownItem: React.FC<PropsWithChildren<DropdownItemProps>> = ({ children }) => (
-  <li className="py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-gray-700">
+  <li className="py-1 px-4 font-normal block w-full whitespace-nowrap bg-transparent">
     {children}
   </li>
 );

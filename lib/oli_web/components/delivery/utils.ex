@@ -1,10 +1,12 @@
 defmodule OliWeb.Components.Delivery.Utils do
   use Phoenix.Component
 
+  alias Oli.Interop.CustomActivities.User
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Accounts.User
+  alias Oli.Accounts
+  alias Oli.Accounts.{User, Author, SystemRole}
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
 
@@ -21,7 +23,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   """
   def user_is_guest?(assigns) do
     case assigns[:current_user] do
-      %{guest: true} ->
+      %User{guest: true} ->
         true
 
       _ ->
@@ -34,7 +36,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   """
   def user_is_independent_learner?(current_user) do
     case current_user do
-      %{independent_learner: true} ->
+      %User{independent_learner: true} ->
         true
 
       _ ->
@@ -44,10 +46,13 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_name(user) do
     case user do
-      %{guest: true} ->
+      %User{guest: true} ->
         "Guest"
 
-      %{name: name} ->
+      %User{name: name} ->
+        name
+
+      %Author{name: name} ->
         name
 
       _ ->
@@ -97,13 +102,16 @@ defmodule OliWeb.Components.Delivery.Utils do
         "Independent"
 
       :administrator ->
-        "Administrator"
+        "LMS Administrator"
 
       :instructor ->
         "Instructor"
 
       :student ->
         "Student"
+
+      :system_admin ->
+        "System Admin"
 
       _ ->
         ""
@@ -139,6 +147,9 @@ defmodule OliWeb.Components.Delivery.Utils do
 
       :student ->
         "#3498db"
+
+      :system_admin ->
+        "#f39c12"
 
       _ ->
         ""
@@ -188,6 +199,8 @@ defmodule OliWeb.Components.Delivery.Utils do
     ContextRoles.get_role(:context_learner)
   ]
 
+  @system_admin_role_id SystemRole.role_id().admin
+
   def user_role(section, user) do
     case section do
       %Section{open_and_free: open_and_free, slug: section_slug} ->
@@ -208,7 +221,13 @@ defmodule OliWeb.Components.Delivery.Utils do
             :student
 
           true ->
-            :other
+            case user do
+              %Author{system_role_id: @system_admin_role_id} ->
+                :system_admin
+
+              _ ->
+                :other
+            end
         end
 
       _ ->
@@ -231,6 +250,9 @@ defmodule OliWeb.Components.Delivery.Utils do
                 :other
             end
 
+          %Author{system_role_id: @system_admin_role_id} ->
+            :system_admin
+
           _ ->
             :other
         end
@@ -238,8 +260,20 @@ defmodule OliWeb.Components.Delivery.Utils do
   end
 
   def account_linked?(user) do
-    user.author_id != nil
+    case user do
+      %User{author_id: author_id} ->
+        author_id != nil
+
+      _ ->
+        false
+    end
   end
+
+  def timezone_preference(%User{} = user), do: Accounts.get_user_preference(user, :timezone)
+  def timezone_preference(%Author{} = user), do: Accounts.get_author_preference(user, :timezone)
+
+  def linked_author_account(%User{author: %Author{email: email}}), do: email
+  def linked_author_account(_), do: nil
 
   def maybe_section_slug(assigns) do
     case assigns[:section] do
