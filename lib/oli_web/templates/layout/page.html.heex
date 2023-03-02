@@ -10,8 +10,8 @@
 
       <Components.Delivery.ExplorationShade.exploration_shade exploration_pages={Map.get(@conn.assigns, :exploration_pages, nil)} />
 
-      <div class="w-full flex flex-col lg:flex-row gap-4 p-10">
-        <div class={if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config), do: "lg:w-2/3 w-full", else: "w-full"}>
+      <div class="w-full flex flex-col xl:flex-row gap-4 p-10">
+        <div class={if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config), do: "xl:w-2/3 w-full", else: "w-full"}>
           <div class="bg-white dark:bg-gray-800 dark:text-delivery-body-color-dark p-8 shadow">
             <div id="wrapper d-block mb-4">
 
@@ -41,7 +41,7 @@
         </div>
 
         <%= if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config) do %>
-          <div class="lg:w-1/3 w-full">
+          <div class="xl:w-1/3 w-full">
             <%=
               live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
                 session: %{
