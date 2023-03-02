@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { classNames } from 'utils/classNames';
 import { UserAccountMenu, User, Routes } from './UserAccountMenu';
 
@@ -36,6 +36,8 @@ export const Navbar = ({
   defaultTimezone,
   timezones,
 }: NavbarProps) => {
+  const [showNavbar, setShowNavbar] = useState(false);
+
   return (
     <nav className="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
       <div className="w-full">
@@ -60,6 +62,7 @@ export const Navbar = ({
           aria-controls="navbarSupportedContent"
           aria-expanded="false"
           aria-label="Toggle navigation"
+          onClick={() => setShowNavbar(!showNavbar)}
         >
           <svg
             aria-hidden="true"
@@ -79,7 +82,7 @@ export const Navbar = ({
         </button>
       </div>
 
-      <div className="lg:!flex flex-grow flex flex-col">
+      <div className={`lg:!flex flex-grow flex flex-col ${showNavbar ? '' : 'hidden'}`}>
         <div className="flex-1 items-center lg:items-start">
           {links.map(({ href, active, name }) => (
             <NavLink key={href} href={href} active={active} name={name} />
