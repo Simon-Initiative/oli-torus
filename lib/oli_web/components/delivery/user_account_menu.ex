@@ -5,8 +5,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
-  alias Oli.Accounts
-  alias Oli.Accounts.{User, Author}
+  alias Oli.Accounts.User
   alias OliWeb.Common.SessionContext
 
   attr :current_user, User
@@ -35,7 +34,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
     |> assign(
       :user,
       case assigns do
-        %{current_user: user_or_admin} ->
+        %{current_user: user_or_admin} when not is_nil(user_or_admin) ->
           %{
             picture: user_or_admin.picture,
             name: user_name(user_or_admin),

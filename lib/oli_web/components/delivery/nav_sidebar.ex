@@ -44,7 +44,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
               active: is_active(path_info, :overview)
             },
             %{name: "Course Content", href: "#", active: is_active(path_info, "")},
-            %{name: "Discussion", href: "#", active: is_active(path_info, "")},
+            %{name: "Discussion", href: "#", active: is_active(path_info, :discussion)},
             %{name: "Assignments", href: "#", active: is_active(path_info, "")},
             %{
               name: "Exploration",
@@ -60,7 +60,11 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
               active: is_active(path_info, :overview)
             },
             %{name: "Course Content", href: "#", active: is_active(path_info, "")},
-            %{name: "Discussion", href: "#", active: is_active(path_info, "")},
+            %{
+              name: "Discussion",
+              href: discussion_url(assigns),
+              active: is_active(path_info, :discussion)
+            },
             %{name: "Assignments", href: "#", active: is_active(path_info, "")},
             %{
               name: "Exploration",
