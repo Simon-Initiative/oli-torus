@@ -63,8 +63,18 @@ const liveSocket = new LiveSocket('/live', Socket, {
 });
 
 // Show progress bar on live navigation and form submits
-window.addEventListener('phx:page-loading-start', (_info) => NProgress.start());
-window.addEventListener('phx:page-loading-stop', (_info) => NProgress.done());
+// this only shows the topbar if it's taking longer than 200 msec to receive the phx:page-loading-stop event
+let topBarScheduled: NodeJS.Timeout | undefined;
+window.addEventListener('phx:page-loading-start', () => {
+  if (!topBarScheduled) {
+    topBarScheduled = setTimeout(() => NProgress.start(), 200);
+  }
+});
+window.addEventListener('phx:page-loading-stop', () => {
+  topBarScheduled && clearTimeout(topBarScheduled);
+  topBarScheduled = undefined;
+  NProgress.done();
+});
 
 // Expose React/Redux APIs to server-side rendered templates
 function mount(Component: any, element: HTMLElement, context: any = {}) {
