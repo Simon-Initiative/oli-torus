@@ -28,12 +28,12 @@ textarea.collab-space__textarea {
   scrollbar-width: none;
 }
 
-form:has(textarea.collab-space__reply) div.collab-space__send-button-with-checkbox {
+form:has(textarea.collab-space__textarea.reply) div.collab-space__send-button-with-checkbox {
   display: none;
   pointer-events: none;
 }
 
-form:has(textarea.collab-space__reply:not(:placeholder-shown))
+form:has(textarea.collab-space__textarea.reply:not(:placeholder-shown))
   div.collab-space__send-button-with-checkbox {
   display: block;
   pointer-events: all;
