@@ -1,8 +1,4 @@
-import {
-  selectIsLegacyTheme,
-  selectPreviewMode,
-  selectReviewMode,
-} from 'apps/delivery/store/features/page/slice';
+import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import TimeAgo from '../../../../../components/common/TimeAgo';
@@ -55,11 +51,9 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
 
   const isLegacyTheme = useSelector(selectIsLegacyTheme);
   const isPreviewMode = useSelector(selectPreviewMode);
-  const isReviewMode = useSelector(selectReviewMode);
-
   return (
     <>
-      {isLegacyTheme && !isReviewMode ? (
+      {isLegacyTheme ? (
         <>
           <div className="navbar-resize-dots"></div>
           <div className="title screenListTitle">
@@ -73,7 +67,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
                 className={getItemClasses(item)}
                 onClick={() => itemClickHandler(item)}
               >
-                {isReviewMode ? index + 1 : items.length - index}. {item.name}
+                {items.length - index}. {item.name}
               </div>
             ))}
           </nav>
@@ -113,14 +107,14 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
             ))}
           </nav>
           <div className="theme-history__footer">
-            {!isReviewMode && (
-              <button onClick={onRestart} className="theme-history__restart">
-                <span>
-                  <div className="theme-history__restart-icon" />
-                  <span className="theme-history__restart-label">Restart Lesson</span>
-                </span>
-              </button>
-            )}
+            (
+            <button onClick={onRestart} className="theme-history__restart">
+              <span>
+                <div className="theme-history__restart-icon" />
+                <span className="theme-history__restart-label">Restart Lesson</span>
+              </span>
+            </button>
+            )
           </div>
         </div>
       )}
