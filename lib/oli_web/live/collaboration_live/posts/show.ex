@@ -263,8 +263,11 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
         </Form>
       {/if}
 
-      {#if @is_threaded && !@is_editing}
+      {#if !@is_editing}
         <p class="mb-0 text-sm post-content">{@post.content.message}</p>
+      {/if}
+
+      {#if @is_threaded && !@is_editing}
         <Form
           id={"reply_form_#{@post.id}"}
           for={@changeset}
