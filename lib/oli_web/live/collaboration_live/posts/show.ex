@@ -8,7 +8,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
 
   alias OliWeb.Common.FormatDateTime
   alias Oli.Resources.Collaboration.Post
-  alias OliWeb.Delivery.Buttons
+  alias OliWeb.Components.Delivery.Buttons
 
   alias Surface.Components.Form
 
@@ -254,7 +254,9 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                   Save
                 </Buttons.button_with_options>
               {#else}
-                <button type="submit" class="torus-button primary">Save</button>
+                <Buttons.button type="submit">
+                  Save
+                </Buttons.button>
               {/if}
             </div>
           </div>
@@ -321,7 +323,9 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                   Reply
                 </Buttons.button_with_options>
               {#else}
-                <button type="submit" class="torus-button primary">Reply</button>
+                <Buttons.button type="submit">
+                  Reply
+                </Buttons.button>
               {/if}
             </div>
           </div>

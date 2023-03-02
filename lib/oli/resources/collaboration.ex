@@ -218,10 +218,10 @@ defmodule Oli.Resources.Collaboration do
               resource_id: resource_id
             }) do
          nil ->
-           revision_collab_space_config |> IO.inspect(label: "revision collab space")
+           revision_collab_space_config
 
          %DeliverySetting{collab_space_config: ds_collab_space_config} ->
-           ds_collab_space_config |> IO.inspect(label: "ds collab space")
+           ds_collab_space_config
        end}
     else
       _ -> {:error, :not_found}

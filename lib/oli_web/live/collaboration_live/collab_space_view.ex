@@ -17,7 +17,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias OliWeb.Common.Confirm
   alias OliWeb.Presence
   alias Phoenix.PubSub
-  alias OliWeb.Delivery.Buttons
+  alias OliWeb.Components.Delivery.Buttons
 
   alias Surface.Components.Form
 
@@ -198,12 +198,9 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
                 Create Post
               </Buttons.button_with_options>
             {#else}
-              <button
-                disabled={is_archived?(@collab_space_config.status)}
-                type="submit"
-                class="torus-button primary"
-              >Create Post
-              </button>
+              <Buttons.button disabled={is_archived?(@collab_space_config.status)} type="submit">
+                Create Post
+              </Buttons.button>
             {/if}
           </div>
         </Form>
