@@ -1,5 +1,5 @@
 defmodule OliWeb.FailedGradeSyncLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import ExUnit.CaptureLog
@@ -8,17 +8,17 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
 
   defp live_view_overview_view_route(section_slug) do
     Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Sections.OverviewView,
-        section_slug
+      OliWeb.Endpoint,
+      OliWeb.Sections.OverviewView,
+      section_slug
     )
   end
 
   defp live_view_observe_grade_updates_view_route(section_slug) do
     Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Grades.ObserveGradeUpdatesView,
-        section_slug
+      OliWeb.Endpoint,
+      OliWeb.Grades.ObserveGradeUpdatesView,
+      section_slug
     )
   end
 
@@ -66,7 +66,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       instructor: instructor,
       section: section,
       resource_access_1: resource_access_1,
-      resource_access_2: resource_access_2,
+      resource_access_2: resource_access_2
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
 
@@ -93,7 +93,9 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       |> render_click(%{"resource-id" => resource_id, "user-id" => user_id})
 
       flash = assert_redirected(view, live_view_overview_view_route(section.slug))
-      assert flash["info"] == "Retrying grade sync. Please check the status again in a few minutes."
+
+      assert flash["info"] ==
+               "Retrying grade sync. Please check the status again in a few minutes."
     end
   end
 
@@ -121,18 +123,18 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~
-        "AAAA Name"
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "AAAA Name"
 
       view
       |> element("th[phx-click=\"sort\"]:first-of-type")
       |> render_click(%{sort_by: "user_name"})
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~
-        "BBBB Name"
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "BBBB Name"
     end
 
     test "applies searching", %{
@@ -181,18 +183,18 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~
-        "AAAA Name"
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "AAAA Name"
 
       view
       |> element("a[phx-click=\"page_change\"]", "2")
       |> render_click()
 
       refute view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~
-        "AAAA Name"
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "AAAA Name"
     end
 
     test "renders error message correctly", %{
@@ -201,17 +203,19 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       resource_access_1: %{user_id: user_id}
     } do
       assert capture_log(fn ->
-        {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
+               {:ok, view, _html} =
+                 live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
-        view
-        |> element("button[phx-click=\"retry\"][phx-value-user-id=\"#{user_id}\"")
-        |> render_click(%{"resource-id" => -1, "user-id" => user_id})
+               view
+               |> element("button[phx-click=\"retry\"][phx-value-user-id=\"#{user_id}\"")
+               |> render_click(%{"resource-id" => -1, "user-id" => user_id})
 
-        assert view
-        |> element("div.alert.alert-danger")
-        |> render() =~
-          "Couldn&#39;t retry grade sync."
-      end) =~ "Couldn't retry grade sync for resource_id: -1, user_id: #{user_id}. Reason: {:error, {\"The resource access was not found.\"}}"
+               assert view
+                      |> element("div.alert.alert-danger")
+                      |> render() =~
+                        "Couldn&#39;t retry grade sync."
+             end) =~
+               "Couldn't retry grade sync for resource_id: -1, user_id: #{user_id}. Reason: {:error, {\"The resource access was not found.\"}}"
     end
 
     test "retries individual failed grade sync correctly", %{
@@ -228,13 +232,14 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       flash = assert_redirected(view, live_view_observe_grade_updates_view_route(section.slug))
       assert flash["info"] == "Retrying grade sync. See processing in real time below."
 
-      [%Oban.Job{args: args, queue: "grades"}] = Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs()
+      [%Oban.Job{args: args, queue: "grades"}] =
+        Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs()
 
       assert %{
-        "resource_access_id" => id,
-        "section_id" => section.id,
-        "type" => "manual"
-      } == args
+               "resource_access_id" => id,
+               "section_id" => section.id,
+               "type" => "manual"
+             } == args
     end
 
     test "retries bulk failed grade sync correctly", %{
@@ -251,46 +256,48 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       assert flash["info"] == "Retrying grade sync. See processing in real time below."
 
       assert [
-        %Oban.Job{args: %{"type" => "manual_batch"}, queue: "grades"},
-        %Oban.Job{args: %{"type" => "manual_batch"}, queue: "grades"}
-      ] = Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs()
+               %Oban.Job{args: %{"type" => "manual_batch"}, queue: "grades"},
+               %Oban.Job{args: %{"type" => "manual_batch"}, queue: "grades"}
+             ] = Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs()
     end
   end
 
   defp create_failed_resource_accesses(%{
-    conn: conn,
-    section: section,
-    page_revision: page_revision
-  }) do
+         conn: conn,
+         section: section,
+         page_revision: page_revision
+       }) do
     first_user = insert(:user, name: "AAAA Name")
     second_user = insert(:user, name: "BBBB Name")
 
     last_successful_grade_update = insert(:lms_grade_update)
     last_grade_update = insert(:lms_grade_update)
 
-    resource_access_1 = insert(:resource_access,
-      user: first_user,
-      section: section,
-      resource: page_revision.resource,
-      last_successful_grade_update_id: last_successful_grade_update.id,
-      last_grade_update_id: last_grade_update.id
-    )
+    resource_access_1 =
+      insert(:resource_access,
+        user: first_user,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: last_successful_grade_update.id,
+        last_grade_update_id: last_grade_update.id
+      )
 
-    resource_access_2 = insert(:resource_access,
-      user: second_user,
-      section: section,
-      resource: page_revision.resource,
-      last_successful_grade_update_id: last_successful_grade_update.id,
-      last_grade_update_id: last_grade_update.id
-    )
+    resource_access_2 =
+      insert(:resource_access,
+        user: second_user,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: last_successful_grade_update.id,
+        last_grade_update_id: last_grade_update.id
+      )
 
     {:ok,
-      conn: conn,
-      section: section,
-      page_revision: page_revision,
-      last_successful_grade_update: last_successful_grade_update,
-      last_grade_update: last_grade_update,
-      resource_access_1: resource_access_1,
-      resource_access_2: resource_access_2}
+     conn: conn,
+     section: section,
+     page_revision: page_revision,
+     last_successful_grade_update: last_successful_grade_update,
+     last_grade_update: last_grade_update,
+     resource_access_1: resource_access_1,
+     resource_access_2: resource_access_2}
   end
 end

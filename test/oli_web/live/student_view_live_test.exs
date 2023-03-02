@@ -1,5 +1,5 @@
 defmodule OliWeb.StudentViewLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -34,7 +34,7 @@ defmodule OliWeb.StudentViewLiveTest do
 
     test "redirects to enroll page when accessing the student view", %{
       conn: conn,
-      section: section,
+      section: section
     } do
       user = insert(:user)
       conn = get(conn, live_view_student_view_route(section.slug, user.id))
@@ -59,7 +59,7 @@ defmodule OliWeb.StudentViewLiveTest do
       9.10 => 9.10,
       5 => 5.0,
       0.0 => 0.0,
-      0 => 0.0,
+      0 => 0.0
     }
 
     for {score, expected_score} <- scores_expected_format do
@@ -90,12 +90,13 @@ defmodule OliWeb.StudentViewLiveTest do
         assert html =~ "Progress Details for #{user.family_name}, #{user.given_name}"
 
         assert view
-          |> element("tr[id=\"0\" phx-value-id=\"0\"]")
-          |> render =~ "#{@expected_score} / #{@out_of}"
+               |> element("tr[id=\"0\" phx-value-id=\"0\"]")
+               |> render =~ "#{@expected_score} / #{@out_of}"
 
         assert view
-        |> element("tr[id=\"0\" phx-value-id=\"0\"]")
-        |> render =~ "<a href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\">#{page_revision.title}</a>"
+               |> element("tr[id=\"0\" phx-value-id=\"0\"]")
+               |> render =~
+                 "<a href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\">#{page_revision.title}</a>"
       end
     end
   end

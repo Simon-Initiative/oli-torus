@@ -1,5 +1,5 @@
 defmodule OliWeb.InstitutionsLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -9,7 +9,12 @@ defmodule OliWeb.InstitutionsLiveTest do
   alias Oli.Institutions.Institution
 
   defp live_view_route(institution_id),
-    do: Routes.institution_path(OliWeb.Endpoint, OliWeb.Admin.Institutions.ResearchConsentView, institution_id)
+    do:
+      Routes.institution_path(
+        OliWeb.Endpoint,
+        OliWeb.Admin.Institutions.ResearchConsentView,
+        institution_id
+      )
 
   defp create_institution(_conn) do
     institution = insert(:institution)
@@ -20,7 +25,10 @@ defmodule OliWeb.InstitutionsLiveTest do
   describe "user cannot access when is not logged in" do
     setup [:create_institution]
 
-    test "redirects to new session when accessing the research content view", %{conn: conn, institution: institution} do
+    test "redirects to new session when accessing the research content view", %{
+      conn: conn,
+      institution: institution
+    } do
       redirect_path =
         "/authoring/session/new?request_path=%2Fadmin%2Finstitutions%2F#{institution.id}%2Fresearch_consent"
 
@@ -31,7 +39,10 @@ defmodule OliWeb.InstitutionsLiveTest do
   describe "user cannot access when is logged in as an author but is not a system admin" do
     setup [:author_conn, :create_institution]
 
-    test "returns forbidden when accessing the research consent view", %{conn: conn, institution: institution} do
+    test "returns forbidden when accessing the research consent view", %{
+      conn: conn,
+      institution: institution
+    } do
       conn = get(conn, live_view_route(institution.id))
 
       assert response(conn, 403)
@@ -73,23 +84,30 @@ defmodule OliWeb.InstitutionsLiveTest do
       |> render_submit(%{"institution" => %{"research_consent" => "invalid"}})
 
       assert view
-            |> element("div.alert.alert-danger")
-            |> render() =~
-              "Institution couldn&#39;t be created/updated. Please check the errors below."
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Institution couldn&#39;t be created/updated. Please check the errors below."
+
       assert has_element?(view, "span", "is invalid")
     end
 
-    test "saves institution with no form when data is valid", %{conn: conn, institution: institution} do
+    test "saves institution with no form when data is valid", %{
+      conn: conn,
+      institution: institution
+    } do
       {:ok, view, _html} = live(conn, live_view_route(institution.id))
 
       view
       |> element("form[phx-submit=\"save\"")
       |> render_submit(%{"institution" => %{"research_consent" => "no_form"}})
 
-      flash = assert_redirected(view, Routes.institution_path(OliWeb.Endpoint, :show, institution.id))
+      flash =
+        assert_redirected(view, Routes.institution_path(OliWeb.Endpoint, :show, institution.id))
+
       assert flash["info"] == "Institution successfully updated."
 
-      %Institution{research_consent: research_consent} = Institutions.get_institution_by!(%{id: institution.id})
+      %Institution{research_consent: research_consent} =
+        Institutions.get_institution_by!(%{id: institution.id})
 
       assert research_consent == :no_form
     end
@@ -102,10 +120,13 @@ defmodule OliWeb.InstitutionsLiveTest do
       |> element("form[phx-submit=\"save\"")
       |> render_submit(%{"institution" => %{"research_consent" => "oli_form"}})
 
-      flash = assert_redirected(view, Routes.institution_path(OliWeb.Endpoint, :show, institution.id))
+      flash =
+        assert_redirected(view, Routes.institution_path(OliWeb.Endpoint, :show, institution.id))
+
       assert flash["info"] == "Institution successfully updated."
 
-      %Institution{research_consent: research_consent} = Institutions.get_institution_by!(%{id: institution.id})
+      %Institution{research_consent: research_consent} =
+        Institutions.get_institution_by!(%{id: institution.id})
 
       assert research_consent == :oli_form
     end

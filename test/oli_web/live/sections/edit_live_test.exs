@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EditLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
