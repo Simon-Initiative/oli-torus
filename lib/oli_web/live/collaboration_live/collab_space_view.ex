@@ -186,7 +186,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         <div class="flex justify-end gap-2 py-2 px-5">
           <Sort sort={@sort} />
         </div>
-      {#else}
+      {#elseif length(@posts) == 0}
         <div class="border border-gray-100 rounded-sm p-5 flex items-center justify-center m-2">
           <span class="torus-span">No posts yet</span>
         </div>
