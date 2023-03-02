@@ -1,8 +1,4 @@
-import {
-  selectReviewMode,
-  selectShowHistory,
-  setShowHistory,
-} from 'apps/delivery/store/features/page/slice';
+import { setShowHistory } from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
@@ -18,7 +14,6 @@ interface ReviewModeHistoryPanelProps {
 const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }) => {
   const dispatch = useDispatch();
   const currentActivityId = useSelector(selectCurrentActivityId);
-  const showHistory = useSelector(selectShowHistory);
   // TODO: we need to track this as a separate ID
   const currentHistoryActiveActivityId = currentActivityId;
 
@@ -51,7 +46,6 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
     }
     return classes.join(' ');
   };
-  const isReviewMode = useSelector(selectReviewMode);
   const handleToggleHistory = (show: boolean) => {
     dispatch(setShowHistory({ show }));
   };
@@ -129,7 +123,7 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
                 className={getItemClasses(item)}
                 onClick={() => itemClickHandler(item)}
               >
-                {isReviewMode ? index + 1 : items.length - index}. {item.name}
+                {index + 1}. {item.name}
               </div>
             ))}
           </nav>

@@ -3,17 +3,10 @@ import React, { Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
-import {
-  selectHistoryNavigationActivity,
-  setHistoryNavigationTriggered,
-} from '../../../store/features/adaptivity/slice';
+import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
-import {
-  selectReviewMode,
-  selectShowHistory,
-  setShowHistory,
-} from '../../../store/features/page/slice';
+import { selectShowHistory, setShowHistory } from '../../../store/features/page/slice';
 import ReviewModeHistoryPanel from './ReviewModeHistoryPanel';
 
 export interface ReviewEntry {
@@ -26,8 +19,6 @@ export interface ReviewEntry {
 
 const ReviewModeNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
-  const reviewMode = useSelector(selectReviewMode);
-  const isHistoryMode = useSelector(selectHistoryNavigationActivity);
   const showHistory = useSelector(selectShowHistory);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
@@ -65,29 +56,21 @@ const ReviewModeNavigation: React.FC = () => {
       };
     })
     .sort(sortByTimestamp);
-  if (reviewMode) historyItems = historyItems.reverse();
+  historyItems = historyItems.reverse();
 
   const currentHistoryActivityIndex = historyItems.findIndex(
     (item: any) => item.id === currentActivityId,
   );
-  const isFirst = reviewMode
-    ? currentHistoryActivityIndex === 0
-    : currentHistoryActivityIndex === historyItems.length - 1;
-  const isLast = reviewMode
-    ? currentHistoryActivityIndex === historyItems.length - 1
-    : currentHistoryActivityIndex === 0;
+  const isFirst = currentHistoryActivityIndex === 0;
+  const isLast = currentHistoryActivityIndex === historyItems.length - 1;
 
   const nextHandler = () => {
-    const prevActivity =
-      historyItems[reviewMode ? currentHistoryActivityIndex + 1 : currentHistoryActivityIndex - 1];
+    const prevActivity = historyItems[currentHistoryActivityIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
 
-    const nextHistoryActivityIndex = historyItems.findIndex(
-      (item: any) => item.id === prevActivity.id,
-    );
     dispatch(
       setHistoryNavigationTriggered({
-        historyModeNavigation: reviewMode || nextHistoryActivityIndex !== 0,
+        historyModeNavigation: true,
       }),
     );
   };
@@ -95,8 +78,7 @@ const ReviewModeNavigation: React.FC = () => {
     dispatch(setShowHistory({ show: !showHistory }));
   };
   const prevHandler = () => {
-    const prevActivity =
-      historyItems[reviewMode ? currentHistoryActivityIndex - 1 : currentHistoryActivityIndex + 1];
+    const prevActivity = historyItems[currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
     dispatch(
       setHistoryNavigationTriggered({
@@ -105,7 +87,7 @@ const ReviewModeNavigation: React.FC = () => {
     );
   };
 
-  const handleToggleHistory = (show: boolean) => {
+  const handleToggleReviewModeScreenList = (show: boolean) => {
     dispatch(setShowHistory({ show }));
   };
   return (
@@ -141,7 +123,7 @@ const ReviewModeNavigation: React.FC = () => {
             `}
           </style>
           <button
-            onClick={() => handleToggleHistory(!showHistory)}
+            onClick={() => handleToggleReviewModeScreenList(!showHistory)}
             title="Show lesson history"
             aria-label="Screen List"
           >
@@ -177,11 +159,7 @@ const ReviewModeNavigation: React.FC = () => {
               &nbsp;
             </span>
           </button>
-          <button
-            onClick={nextHandler}
-            aria-label="Next screen"
-            disabled={isLast || (!isHistoryMode && !reviewMode)}
-          >
+          <button onClick={nextHandler} aria-label="Next screen" disabled={isLast}>
             <span title="Next screen" className="fa fa-arrow-right">
               &nbsp;
             </span>
