@@ -1,5 +1,5 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
-import { RootState } from '../rootReducer';
+import { AuthoringRootState } from '../rootReducer';
 import PartsSlice from './name';
 
 export interface PartState {
@@ -22,7 +22,7 @@ const slice: Slice<PartState> = createSlice({
 
 export const { setCurrentSelection } = slice.actions;
 
-export const selectState = (state: RootState): PartState => state[PartsSlice] as PartState;
+export const selectState = (state: AuthoringRootState): PartState => state[PartsSlice] as PartState;
 export const selectCurrentSelection = createSelector(selectState, (s) => s.currentSelection);
 
 export default slice.reducer;

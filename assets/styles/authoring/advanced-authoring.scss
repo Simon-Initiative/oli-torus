@@ -37,14 +37,14 @@ $font-family-sans-serif: var(--font-sans);
 }
 .advanced-authoring {
   position: relative;
-  opacity: 0;
+  // opacity: 0;
   transition-timing-function: ease-in-out;
   transition-duration: 0.3s;
   transition-property: opacity;
 
-  &.startup {
-    opacity: 1;
-  }
+  // &.startup {
+  //   opacity: 1;
+  // }
   .aa-panel,
   .aa-header-nav {
     position: fixed;
@@ -760,4 +760,8 @@ $font-family-sans-serif: var(--font-sans);
 
 .tooltip {
   z-index: 10000;
+}
+
+#advanced-authoring .collapse {
+  visibility: visible;
 }

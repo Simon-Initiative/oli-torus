@@ -1,6 +1,6 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { ResourceId } from 'data/types';
-import { RootState } from '../rootReducer';
+import { AuthoringRootState } from '../rootReducer';
 import PageSlice from './name';
 
 export interface PageState {
@@ -102,7 +102,7 @@ const slice: Slice<PageState> = createSlice({
 export const { loadPage, setIsGraded, setTitle, setObjectives, setRevisionSlug, updatePage } =
   slice.actions;
 
-export const selectState = (state: RootState): PageState => state[PageSlice] as PageState;
+export const selectState = (state: AuthoringRootState): PageState => state[PageSlice] as PageState;
 export const selectIsGraded = createSelector(selectState, (state: PageState) => state.graded);
 export const selectTitle = createSelector(selectState, (state: PageState) => state.title);
 export const selectObjectives = createSelector(selectState, (state: PageState) => state.objectives);

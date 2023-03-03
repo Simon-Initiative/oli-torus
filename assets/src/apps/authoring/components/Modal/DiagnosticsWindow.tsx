@@ -12,14 +12,13 @@ import DiagnosticMessage from './diagnostics/DiagnosticMessage';
 import { DiagnosticTypes, DiagnosticRuleTypes } from './diagnostics/DiagnosticTypes';
 
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
-import React, { Fragment, useCallback, useState, useEffect } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import { ListGroup, Modal, Tooltip, OverlayTrigger, Badge } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { createUpdater } from './diagnostics/actions';
 import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
-import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
+import { IAdaptiveRule, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { setCurrentRule } from '../../store/app/slice';
-import { AdaptiveRule } from '../AdaptiveRulesList/AdaptiveRulesList';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
@@ -77,7 +76,7 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
 
     const activity = result.meta.arg.activity;
     if (activity) {
-      const rule = activity.authoring.rules.find((rule: AdaptiveRule) => rule.id === ruleId);
+      const rule = activity.authoring.rules.find((rule: IAdaptiveRule) => rule.id === ruleId);
 
       // TODO: something if it fails
       dispatch(setCurrentRule({ currentRule: rule }));

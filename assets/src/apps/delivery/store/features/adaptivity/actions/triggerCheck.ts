@@ -3,7 +3,7 @@ import {
   checkIfFirstEventHasNavigation,
   processResults,
 } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
-import { RootState } from 'apps/delivery/store/rootReducer';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
 import { clone } from 'utils/common';
@@ -40,7 +40,7 @@ import { setLastCheckResults, setLastCheckTriggered } from '../slice';
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
-    const rootState = getState() as RootState;
+    const rootState = getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
@@ -101,7 +101,7 @@ export const triggerCheck = createAsyncThunk(
     // update redux first because we need to get the latest full extrnisic state to write to the server
     await dispatch(updateExtrinsicState({ state: extrinsicSnapshot }));
 
-    const extrnisicState = selectExtrinsicState(getState() as RootState);
+    const extrnisicState = selectExtrinsicState(getState() as DeliveryRootState);
     if (!isPreviewMode) {
       // update the server with the latest changes to extrinsic state
 
@@ -121,7 +121,7 @@ export const triggerCheck = createAsyncThunk(
     // prepare state to send to the rules engine
     {
       // these were previously declared, but after above async calls they might have been updated, lets get them again
-      const rootState = getState() as RootState;
+      const rootState = getState() as DeliveryRootState;
       const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
       const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
 
@@ -442,7 +442,7 @@ export const triggerCheck = createAsyncThunk(
         }
       }
       // update the server with the latest changes
-      const extrnisicState = selectExtrinsicState(getState() as RootState);
+      const extrnisicState = selectExtrinsicState(getState() as DeliveryRootState);
       /* console.log('trigger check last min extrinsic state', {
         sectionSlug,
         resourceAttemptGuid,

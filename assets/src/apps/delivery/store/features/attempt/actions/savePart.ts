@@ -5,7 +5,7 @@ import {
   getAssignStatements,
   getValue,
 } from '../../../../../../adaptivity/scripting';
-import { RootState } from '../../../rootReducer';
+import { DeliveryRootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { selectActivityAttemptState, selectById, upsertActivityAttemptState } from '../slice';
 import AttemptSlice from '../name';
@@ -21,7 +21,7 @@ export const savePartState = createAsyncThunk(
   `${AttemptSlice}/savePartState`,
   async (payload: SavePartPayload, { dispatch, getState }) => {
     const { attemptGuid, partAttemptGuid, response } = payload;
-    const rootState = getState() as RootState;
+    const rootState = getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const attemptNumber = getValue('session.attemptNumber', defaultGlobalEnv);
@@ -88,7 +88,7 @@ export const savePartStateToTree = createAsyncThunk(
   `${AttemptSlice}/savePartStateToTree`,
   async (payload: any, { dispatch, getState }) => {
     const { attemptGuid, partAttemptGuid, response, activityTree } = payload;
-    const rootState = getState() as RootState;
+    const rootState = getState() as DeliveryRootState;
 
     const attemptRecord = selectById(rootState, attemptGuid);
     const partId = attemptRecord?.parts.find((p) => p.attemptGuid === partAttemptGuid)?.partId;

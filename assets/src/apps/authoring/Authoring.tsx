@@ -2,21 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { isFirefox } from 'utils/browser';
-import { BottomPanel } from './BottomPanel';
-import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
-import { InitStateEditor } from './components/AdaptivityEditor/InitStateEditor';
-import EditingCanvas from './components/EditingCanvas/EditingCanvas';
-import HeaderNav from './components/HeaderNav';
-import LeftMenu from './components/LeftMenu/LeftMenu';
 import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import ScoringOverview from './components/Modal/ScoringOverview';
-import RightMenu from './components/RightMenu/RightMenu';
-import { SidePanel } from './components/SidePanel';
 import { releaseEditingLock } from './store/app/actions/locking';
 import { attemptDisableReadOnly } from './store/app/actions/readonly';
 import {
+  AppConfig,
+  selectAppMode,
   selectBottomPanel,
   selectCurrentRule,
+  selectEditMode,
   selectHasEditingLock,
   selectLeftPanel,
   selectProjectSlug,
@@ -35,6 +30,10 @@ import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { initAppSignal } from '../../utils/appsignal';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
+import { ReadOnlyWarning } from './ReadOnlyWarning';
+import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
+import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -51,7 +50,6 @@ export interface AuthoringProps {
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
 
-  const authoringContainer = useRef<HTMLDivElement>(null);
   const [isAppVisible, setIsAppVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,10 +58,12 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const [isReadOnlyWarningDismissed, setIsReadOnlyWarningDismissed] = useState(false);
   const [isAttemptDisableReadOnlyFailed, setIsAttemptDisableReadOnlyFailed] = useState(false);
 
+  const editingMode = useSelector(selectEditMode);
+
   const shouldShowLockError = !hasEditingLock && !isReadOnly;
   const shouldShowReadOnlyWarning = !isLoading && isReadOnly && !isReadOnlyWarningDismissed;
-  const shouldShowEditor =
-    !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
+
+  const readyToEdit = !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
 
   const alertSeverity = isAttemptDisableReadOnlyFailed || shouldShowLockError ? 'warning' : 'info';
 
@@ -96,6 +96,12 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const rightPanelState = useSelector(selectRightPanel);
   const topPanelState = useSelector(selectTopPanel);
   const bottomPanelState = useSelector(selectBottomPanel);
+  const applicationMode = useSelector(selectAppMode);
+
+  const isFlowchartMode = applicationMode === 'flowchart';
+  const isExpertMode = applicationMode === 'expert';
+  const shouldShowPageEditor = readyToEdit && (editingMode === 'page' || isExpertMode);
+  const shouldShowFlowchartEditor = readyToEdit && editingMode === 'flowchart';
 
   const panelState = {
     left: leftPanelState,
@@ -142,11 +148,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       // forced light mode to save on initial dev time
       document.documentElement.classList.remove('dark');
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
-      authoringContainer.current?.classList.remove('d-none');
-      setTimeout(() => {
-        authoringContainer.current?.classList.add('startup');
-      }, 50);
     }
+
     if (!isAppVisible) {
       // reset forced light mode
       switch (getModeFromLocalStorage()) {
@@ -159,17 +162,14 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           break;
       }
       document.body.classList.remove('overflow-hidden');
-      authoringContainer.current?.classList.remove('startup');
-      setTimeout(() => {
-        authoringContainer.current?.classList.add('d-none');
-      }, 350);
     }
     return () => {
       document.body.classList.remove('overflow-hidden');
     };
   }, [isAppVisible]);
+
   useEffect(() => {
-    const appConfig = {
+    const appConfig: AppConfig = {
       paths: props.paths,
       isAdmin: props.isAdmin,
       projectSlug: props.projectSlug,
@@ -177,9 +177,11 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       partComponentTypes: props.partComponentTypes,
       activityTypes: props.activityTypes,
       allObjectives: props.content.allObjectives || [],
+      applicationMode:
+        props.content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
     };
     dispatch(setInitialConfig(appConfig));
-  }, [props]);
+  }, [dispatch, props]);
 
   useEffect(() => {
     window.addEventListener('beforeunload', async () =>
@@ -220,7 +222,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         clearTimeout(loadingTimeout);
       }
     };
-  }, [props, hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
+  }, [props, hasEditingLock, isReadOnly, isReadOnlyWarningDismissed, dispatch]);
 
   return (
     <AppsignalContext.Provider value={appsignal}>
@@ -233,94 +235,35 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             </div>
           </div>
         )}
-        {shouldShowEditor && (
-          <div
-            id="advanced-authoring"
-            ref={authoringContainer}
-            className={`advanced-authoring d-none`}
-          >
-            <HeaderNav
-              panelState={panelState}
-              isVisible={panelState.top}
-              authoringContainer={authoringContainer}
-            />
-            <SidePanel
-              position="left"
-              panelState={panelState}
-              onToggle={() => handlePanelStateChange({ left: !panelState.left })}
-            >
-              <LeftMenu />
-            </SidePanel>
-            <EditingCanvas />
-            <BottomPanel
-              panelState={panelState}
-              onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
-            >
-              {currentRule === 'initState' && (
-                <InitStateEditor authoringContainer={authoringContainer} />
-              )}
-              {currentRule !== 'initState' && <AdaptivityEditor />}
-            </BottomPanel>
-            <SidePanel
-              position="right"
-              panelState={panelState}
-              onToggle={() => handlePanelStateChange({ right: !panelState.right })}
-            >
-              <RightMenu />
-            </SidePanel>
-          </div>
+
+        {shouldShowPageEditor && isExpertMode && (
+          <AuthoringExpertPageEditor
+            currentRule={currentRule}
+            handlePanelStateChange={handlePanelStateChange}
+            panelState={panelState}
+          />
         )}
 
+        {shouldShowPageEditor && isFlowchartMode && (
+          <AuthoringFlowchartPageEditor
+            handlePanelStateChange={handlePanelStateChange}
+            panelState={panelState}
+          />
+        )}
+
+        {shouldShowFlowchartEditor && <FlowchartEditor />}
+
         {shouldShowReadOnlyWarning && (
-          <Alert variant={alertSeverity}>
-            <Alert.Heading>Opening in Read-Only Mode</Alert.Heading>
-            {!isAttemptDisableReadOnlyFailed && (
-              <p>
-                You are about to open this page in read-only mode. You are able to view the contents
-                of this page, but any changes you make will not be saved. You may instead attempt to
-                open in editing mode, or open a preview of the page.
-              </p>
-            )}
-            {isAttemptDisableReadOnlyFailed && (
-              <p>
-                Unfortunately, we were unable to disable read-only mode. Another author currently
-                has the page locked for editing. Please try again later. In the meantime, you may
-                continue in Read Only mode or open a preview of the page.
-              </p>
-            )}
-            <hr />
-            <div style={{ textAlign: 'center' }}>
-              <Button
-                variant={`outline-${alertSeverity}`}
-                className="text-dark"
-                onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
-              >
-                Continue In Read-Only Mode
-              </Button>{' '}
-              {!isAttemptDisableReadOnlyFailed && (
-                <>
-                  <Button
-                    variant={`outline-${alertSeverity}`}
-                    className="text-dark"
-                    onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
-                  >
-                    Open In Edit Mode
-                  </Button>{' '}
-                </>
-              )}
-              <Button
-                variant={`outline-${alertSeverity}`}
-                className="text-dark"
-                onClick={() => window.open(url, windowName)}
-              >
-                Open Preview <i className="fas fa-external-link-alt ml-1"></i>
-              </Button>
-            </div>
-          </Alert>
+          <ReadOnlyWarning
+            isAttemptDisableReadOnlyFailed={isAttemptDisableReadOnlyFailed}
+            alertSeverity={alertSeverity}
+            dismissReadOnlyWarning={dismissReadOnlyWarning}
+            url={url}
+            windowName={windowName}
+          />
         )}
 
         {showDiagnosticsWindow && <DiagnosticsWindow />}
-
         {showScoringOverview && <ScoringOverview />}
       </ErrorBoundary>
     </AppsignalContext.Provider>

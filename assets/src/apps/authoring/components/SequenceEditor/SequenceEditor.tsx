@@ -6,6 +6,7 @@ import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
+  selectAppMode,
   selectIsAdmin,
   selectProjectSlug,
   setCurrentRule,
@@ -38,7 +39,7 @@ import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const SequenceEditor: React.FC<any> = () => {
+const SequenceEditor: React.FC = () => {
   const dispatch = useDispatch();
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
@@ -49,6 +50,7 @@ const SequenceEditor: React.FC<any> = () => {
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
+
   const isAdmin = useSelector(selectIsAdmin);
   const projectSlug = useSelector(selectProjectSlug);
 

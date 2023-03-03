@@ -71,11 +71,11 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
   };
 
   return (
-    <div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap">
+    <div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap flex-row">
       <label className="sr-only" htmlFor={`action-feedback-${uuid}`}>
         show feedback
       </label>
-      <div className="input-group input-group-sm flex-grow-1">
+      <div className="input-group input-group-sm flex-grow-1 flex-row flex-nowrap">
         <div className="input-group-prepend">
           <div
             className="input-group-text"
