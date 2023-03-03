@@ -14,12 +14,9 @@ interface ConfirmDeleteProps {
 
 const ConfirmDelete: React.FC<ConfirmDeleteProps> = (props) => {
   const { show, elementType, elementName, cancelHandler, deleteHandler } = props;
-  const [display, setDisplay] = useState<boolean>(false);
-  useEffect(() => {
-    setDisplay(show);
-  }, [show]);
+
   return (
-    <AdvancedAuthoringModal show={display} onHide={cancelHandler}>
+    <AdvancedAuthoringModal show={show} onHide={cancelHandler}>
       <Modal.Header closeButton={true}>
         <h3 className="modal-title">{`Delete ${elementType}`}</h3>
       </Modal.Header>

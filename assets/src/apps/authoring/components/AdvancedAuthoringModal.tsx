@@ -17,7 +17,10 @@ export const ModalContainer: React.FC = ({ children }) => {
 
 export const AdvancedAuthoringModal: React.FC<ModalProps> = (props) => {
   const container = useContext(ModalContext);
-  if (!container) return null;
+  if (!container) {
+    props.show && console.warn('Only use AdvancedAuthoringModal inside a ModalContainer');
+    return null;
+  }
   return (
     <Modal {...props} container={container}>
       {props.children}
