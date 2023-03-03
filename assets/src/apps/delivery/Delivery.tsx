@@ -72,7 +72,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   }
   console.log({ screenIdleTimeOutInSeconds });
 
-  const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 60000;
+  const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 300000;
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode) {

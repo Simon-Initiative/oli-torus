@@ -288,7 +288,7 @@ defmodule OliWeb.PageDeliveryController do
             :transition
           ),
         screenIdleTimeOutInSeconds:
-          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "240"))
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
