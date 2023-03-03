@@ -123,6 +123,7 @@ config :oli, :stripe_provider,
 
 config :oli, :upgrade_experiment_provider,
   url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
+  user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
   api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
 
 # Configure reCAPTCHA

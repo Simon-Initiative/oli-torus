@@ -385,6 +385,9 @@ defmodule OliWeb.Router do
     # Objectives
     live("/:project_id/objectives", ObjectivesLive.Objectives)
 
+    # Experiment management
+    live("/:project_id/experiments", Experiments.ExperimentsView)
+
     # Curriculum
     live(
       "/:project_id/curriculum/:container_slug/edit/:revision_slug",

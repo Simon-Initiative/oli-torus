@@ -110,6 +110,45 @@ defmodule Oli.Delivery.Experiments do
     end
   end
 
+  def create_metric(project_slug, decision_points) do
+
+    allowed_keys = Enum.map(decision_points, fn dp -> dp.title end)
+
+    body = encode_body(%{
+        "metricUnit" => [
+          %{
+            "groupClass" => project_slug,
+            "allowedKeys" => allowed_keys,
+            "attributes" => [
+                %{ "metric" => "correctness", "datatype" => "continuous"}
+            ]
+          }
+        ]
+      })
+
+    case http().post(url("/api/metric/save"), body, headers()) do
+      {:ok, %{status_code: 200, body: body}} -> Poison.decode(body)
+      e -> e
+    end
+  end
+
+  def delete_metric(project_slug) do
+    case http().delete(url("/api/metric/#{project_slug}"), headers()) do
+      {:ok, %{status_code: 200, body: body}} ->  Poison.decode(body)
+      e -> e
+    end
+  end
+
+  def synchronize_metrics(project_slug, decision_points) do
+    with {:ok, _} <- delete_metric(project_slug),
+      {:ok, results} <- create_metric(project_slug, decision_points)
+    do
+      {:ok, results}
+    else
+      e -> e
+    end
+  end
+
   def mark_for(results, decision_point) do
     dp = Enum.find(results, fn d -> d["expPoint"] == decision_point end)
 
