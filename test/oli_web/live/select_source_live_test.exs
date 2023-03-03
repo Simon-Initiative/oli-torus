@@ -1,5 +1,5 @@
 defmodule OliWeb.SelectSourceTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   alias Oli.Delivery.Sections

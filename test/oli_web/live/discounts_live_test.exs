@@ -1,5 +1,5 @@
 defmodule OliWeb.DiscountsLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -9,7 +9,12 @@ defmodule OliWeb.DiscountsLiveTest do
   alias Oli.Delivery.Paywall.Discount
 
   defp live_view_products_index_route(product_slug),
-    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, product_slug)
+    do:
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Products.Payments.Discounts.ProductsIndexView,
+        product_slug
+      )
 
   defp live_view_product_show_route(product_slug, discount_id),
     do: Routes.discount_path(OliWeb.Endpoint, :product, product_slug, discount_id)
@@ -118,18 +123,22 @@ defmodule OliWeb.DiscountsLiveTest do
     end
 
     test "loads correctly when there are discounts", %{conn: conn, product: product} do
-      first_discount = insert(:discount, section: product, type: :fixed_amount, amount: Money.new(:USD, 25))
+      first_discount =
+        insert(:discount, section: product, type: :fixed_amount, amount: Money.new(:USD, 25))
+
       second_discount = insert(:discount, section: product, percentage: 20)
 
       {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
 
       assert has_element?(view, "#discounts-table")
+
       assert view
-        |> element("tbody tr.##{first_discount.id}")
-        |> render() =~ "Fixed price"
+             |> element("tbody tr.##{first_discount.id}")
+             |> render() =~ "Fixed price"
+
       assert view
-        |> element("tbody tr.##{second_discount.id}")
-        |> render() =~ "Percentage"
+             |> element("tbody tr.##{second_discount.id}")
+             |> render() =~ "Percentage"
     end
 
     test "applies sorting", %{conn: conn, product: product} do
@@ -152,8 +161,15 @@ defmodule OliWeb.DiscountsLiveTest do
     end
 
     test "applies paging", %{conn: conn, product: product} do
-      first_discount = insert(:discount, section: product, inserted_at: DateTime.utc_now() |> DateTime.add(-3600, :second))
-      [_head | tail] = insert_list(21, :discount, section: product) |> Enum.sort_by(& &1.inserted_at)
+      first_discount =
+        insert(:discount,
+          section: product,
+          inserted_at: DateTime.utc_now() |> DateTime.add(-3600, :second)
+        )
+
+      [_head | tail] =
+        insert_list(21, :discount, section: product) |> Enum.sort_by(& &1.inserted_at)
+
       last_discount = List.last(tail)
 
       {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
@@ -181,8 +197,9 @@ defmodule OliWeb.DiscountsLiveTest do
       {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
 
       assert view
-        |> element("tbody tr:first-child.##{discount.id}")
-        |> render() =~ OliWeb.Common.Utils.render_date(discount, :inserted_at, session_context)
+             |> element("tbody tr:first-child.##{discount.id}")
+             |> render() =~
+               OliWeb.Common.Utils.render_date(discount, :inserted_at, session_context)
     end
   end
 
@@ -193,7 +210,8 @@ defmodule OliWeb.DiscountsLiveTest do
       product = insert(:section, type: :enrollable)
       discount = insert(:discount)
 
-      {:error, {:redirect, %{to: "/not_found"}}} = live(conn, live_view_product_show_route(product.slug, discount.id))
+      {:error, {:redirect, %{to: "/not_found"}}} =
+        live(conn, live_view_product_show_route(product.slug, discount.id))
     end
 
     test "loads correctly", %{conn: conn, product: product} do
@@ -226,11 +244,14 @@ defmodule OliWeb.DiscountsLiveTest do
              |> element("div.alert.alert-danger")
              |> render() =~
                "Discount couldn&#39;t be created/updated. Please check the errors below."
+
       assert has_element?(view, "span", "can't be blank")
-      refute %Discount{type: :fixed_amount} == Paywall.get_discount_by!(%{
-        section_id: product.id,
-        institution_id: discount.institution.id
-      })
+
+      refute %Discount{type: :fixed_amount} ==
+               Paywall.get_discount_by!(%{
+                 section_id: product.id,
+                 institution_id: discount.institution.id
+               })
     end
 
     test "saves discount when data is valid", %{conn: conn, product: product} do
@@ -248,10 +269,11 @@ defmodule OliWeb.DiscountsLiveTest do
       flash = assert_redirected(view, live_view_products_index_route(product.slug))
       assert flash["info"] == "Discount successfully created/updated."
 
-      %Discount{type: type, percentage: percentage} = Paywall.get_discount_by!(%{
-        section_id: product.id,
-        institution_id: discount.institution.id
-      })
+      %Discount{type: type, percentage: percentage} =
+        Paywall.get_discount_by!(%{
+          section_id: product.id,
+          institution_id: discount.institution.id
+        })
 
       assert type == params.type
       assert percentage == params.percentage
@@ -264,7 +286,8 @@ defmodule OliWeb.DiscountsLiveTest do
     test "redirects to not found when not exists", %{conn: conn} do
       product = insert(:section, type: :enrollable)
 
-      {:error, {:redirect, %{to: "/not_found"}}} = live(conn, live_view_product_new_show_route(product.slug))
+      {:error, {:redirect, %{to: "/not_found"}}} =
+        live(conn, live_view_product_new_show_route(product.slug))
     end
 
     test "loads correctly", %{conn: conn, product: product} do
@@ -293,6 +316,7 @@ defmodule OliWeb.DiscountsLiveTest do
              |> element("div.alert.alert-danger")
              |> render() =~
                "Discount couldn&#39;t be created/updated. Please check the errors below."
+
       assert [] = Paywall.get_product_discounts(product.id)
     end
 
@@ -320,7 +344,8 @@ defmodule OliWeb.DiscountsLiveTest do
     setup [:admin_conn]
 
     test "redirects to not found when not exists", %{conn: conn} do
-      {:error, {:redirect, %{to: "/not_found"}}} = live(conn, live_view_institution_show_route(000123))
+      {:error, {:redirect, %{to: "/not_found"}}} =
+        live(conn, live_view_institution_show_route(000_123))
     end
 
     test "loads correctly with no discount", %{conn: conn} do
@@ -339,13 +364,15 @@ defmodule OliWeb.DiscountsLiveTest do
 
     test "loads correctly with discount", %{conn: conn} do
       institution = insert(:institution)
-      discount = insert(:discount,
-        type: :fixed_amount,
-        amount: Money.new(:USD, 25),
-        percentage: nil,
-        section: nil,
-        institution: institution
-      )
+
+      discount =
+        insert(:discount,
+          type: :fixed_amount,
+          amount: Money.new(:USD, 25),
+          percentage: nil,
+          section: nil,
+          institution: institution
+        )
 
       {:ok, view, _html} = live(conn, live_view_institution_show_route(institution.id))
 
@@ -371,9 +398,10 @@ defmodule OliWeb.DiscountsLiveTest do
       |> render_submit(%{discount: %{type: "fixed_amount"}})
 
       assert view
-            |> element("div.alert.alert-danger")
-            |> render() =~
-              "Discount couldn&#39;t be created/updated. Please check the errors below."
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Discount couldn&#39;t be created/updated. Please check the errors below."
+
       assert has_element?(view, "span", "can't be blank")
       refute Paywall.get_institution_wide_discount!(institution.id)
     end
@@ -390,7 +418,9 @@ defmodule OliWeb.DiscountsLiveTest do
         discount: params
       })
 
-      flash = assert_redirected(view, Routes.institution_path(OliWeb.Endpoint, :show, institution.id))
+      flash =
+        assert_redirected(view, Routes.institution_path(OliWeb.Endpoint, :show, institution.id))
+
       assert flash["info"] == "Discount successfully created/updated."
 
       %Discount{type: type, percentage: percentage} =
@@ -411,9 +441,9 @@ defmodule OliWeb.DiscountsLiveTest do
       |> render_click()
 
       assert view
-            |> element("div.alert.alert-info")
-            |> render() =~
-              "Discount successfully cleared."
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Discount successfully cleared."
 
       refute Paywall.get_institution_wide_discount!(institution.id)
     end
