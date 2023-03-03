@@ -328,7 +328,9 @@ defmodule Oli.SectionsTest do
       assert Sections.has_student_data?(section.slug)
     end
 
-    test "get_remixed_projects/2 returns a list of remixed projects for a section", %{section: section} do
+    test "get_remixed_projects/2 returns a list of remixed projects for a section", %{
+      section: section
+    } do
       remixed_projects = Sections.get_remixed_projects(section.id, section.base_project_id)
       assert 0 = length(remixed_projects)
 
@@ -1122,6 +1124,65 @@ defmodule Oli.SectionsTest do
         |> Repo.all()
 
       assert section_resources |> Enum.count() == 8
+    end
+  end
+
+  describe "is_student?/2" do
+    @valid_attrs %{
+      end_date: ~U[2010-04-17 00:00:00.000000Z],
+      open_and_free: true,
+      registration_open: true,
+      start_date: ~U[2010-04-17 00:00:00.000000Z],
+      title: "some title",
+      context_id: "context_id"
+    }
+
+    setup do
+      map = Seeder.base_project_with_resource2()
+
+      institution = Map.get(map, :institution)
+      project = Map.get(map, :project)
+
+      valid_attrs =
+        Map.put(@valid_attrs, :institution_id, institution.id)
+        |> Map.put(:base_project_id, project.id)
+
+      user = user_fixture()
+
+      {:ok, section} = valid_attrs |> Sections.create_section()
+
+      {:ok, Map.merge(map, %{section: section, user: user})}
+    end
+
+    test "returns false for enrolled users that are not students", %{
+      section: section,
+      user: user
+    } do
+      other_roles = [
+        :context_administrator,
+        :context_content_developer,
+        :context_instructor,
+        :context_learner,
+        :context_mentor,
+        :context_manager,
+        :context_member,
+        :context_officer
+      ]
+
+      not_student_random_role = Enum.random(other_roles)
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(not_student_random_role)])
+
+      refute Sections.is_student?(user, section.slug)
+    end
+
+    test "returns true for enrolled students", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      assert Sections.is_student?(user, section.slug)
     end
   end
 
