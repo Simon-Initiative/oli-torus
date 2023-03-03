@@ -26,14 +26,13 @@ import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/de
 import { savePage } from '../../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { createAlwaysGoToPath, createEndOfActivityPath } from '../paths/path-factories';
+import { AuthoringFlowchartScreenData } from '../paths/path-types';
 import {
-  AuthoringFlowchartScreenData,
-  createAlwaysGoToPath,
-  createEndOfActivityPath,
   hasDestinationPath,
   setGoToAlwaysPath,
   setUnknownPathDestination,
-} from '../flowchart-path-utils';
+} from '../paths/path-utils';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;

@@ -12,10 +12,8 @@ import { createSimpleText } from '../templates/simpleText';
 import { createCorrectRule, createIncorrectRule } from './rules';
 import { createActivityTemplate } from '../templates/activity';
 import merge from 'lodash/merge';
-import {
-  AuthoringFlowchartScreenData,
-  createEndOfActivityPath,
-} from '../../../components/Flowchart/flowchart-path-utils';
+import { AuthoringFlowchartScreenData } from '../../../components/Flowchart/paths/path-types';
+import { createEndOfActivityPath } from '../../../components/Flowchart/paths/path-factories';
 
 interface CreateNewPayload {
   activityTypeSlug?: string;

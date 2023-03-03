@@ -4,6 +4,8 @@ import {
   IActivity,
   selectCurrentActivity,
 } from '../../../delivery/store/features/activities/slice';
+import { getAvailablePaths } from './paths/path-options';
+import { AllPaths } from './paths/path-types';
 
 interface FlowchartSidebarProps {}
 
@@ -23,7 +25,15 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
       <h3>{screen.title}</h3>
       <b>rules:</b>
       <ol>
-        {screen.authoring?.flowchart?.paths.map((path) => (
+        {screen.authoring?.flowchart?.paths.map((path: AllPaths) => (
+          <li key={path.id}>
+            <pre>{JSON.stringify(path, null, 2)}</pre>
+          </li>
+        ))}
+      </ol>
+      <b>possible rules:</b>
+      <ol>
+        {getAvailablePaths(screen).map((path: AllPaths) => (
           <li key={path.id}>
             <pre>{JSON.stringify(path, null, 2)}</pre>
           </li>

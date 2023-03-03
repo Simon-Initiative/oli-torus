@@ -9,12 +9,54 @@ import {
   Slice,
 } from '@reduxjs/toolkit';
 import { ObjectiveMap } from 'data/content/activity';
-import { AuthoringFlowchartScreenData } from '../../../../authoring/components/Flowchart/flowchart-path-utils';
+import { AuthoringFlowchartScreenData } from '../../../../authoring/components/Flowchart/paths/path-types';
 
 import ActivitiesSlice from './name';
+
+interface IBasePartLayout {
+  id: string;
+  type: string;
+  custom: Record<string, any>;
+}
+
+export interface IMCQPartLayout extends IBasePartLayout {
+  type: 'janus-mcq';
+  custom: {
+    x: number;
+    y: number;
+    z: number;
+    width: number;
+    height: number;
+    fontSize: number;
+    maxScore: number;
+    verticalGap: number;
+    maxManualGrade: number;
+    mcqItems: any[]; // TODO
+    customCssClass: '';
+    layoutType: 'verticalLayout' | 'horizontalLayout';
+    enabled: boolean;
+    randomize: boolean;
+    showLabel: boolean;
+    showNumbering: boolean;
+    overrideHeight: boolean;
+    multipleSelection: boolean;
+    showOnAnswersReport: boolean;
+    requireManualGrading: boolean;
+    requiresManualGrading: boolean;
+  };
+}
+
+type KnownPartLayouts = IMCQPartLayout;
+
+interface OtherPartLayout extends IBasePartLayout {
+  [key: string]: any;
+}
+
+export type IPartLayout = KnownPartLayouts | OtherPartLayout;
+
 export interface ActivityContent {
   custom?: any;
-  partsLayout: any[];
+  partsLayout: IPartLayout[];
   [key: string]: any;
 }
 

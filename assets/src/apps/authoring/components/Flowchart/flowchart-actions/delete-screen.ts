@@ -14,15 +14,14 @@ import { selectCurrentGroup, upsertGroup } from '../../../../delivery/store/feat
 import { bulkSaveActivity } from '../../../store/activities/actions/saveActivity';
 import { savePage } from '../../../store/page/actions/savePage';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { selectPathsToScreen } from '../flowchart-selectors';
 import {
-  AllPaths,
   createAlwaysGoToPath,
   createEndOfActivityPath,
   createUnknownPathWithDestination,
-  getDownstreamScreenIds,
-  setGoToAlwaysPath,
-} from '../flowchart-path-utils';
-import { selectDefaultDestination, selectPathsToScreen } from '../flowchart-selectors';
+} from '../paths/path-factories';
+import { AllPaths } from '../paths/path-types';
+import { getDownstreamScreenIds } from '../paths/path-utils';
 
 interface DeleteFlowchartScreenPayload {
   screenId: number;
