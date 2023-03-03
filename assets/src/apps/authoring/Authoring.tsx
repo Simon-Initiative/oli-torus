@@ -35,6 +35,7 @@ import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { initAppSignal } from '../../utils/appsignal';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { ModalContainer } from './components/AdvancedAuthoringModal';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -225,103 +226,106 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   return (
     <AppsignalContext.Provider value={appsignal}>
       <ErrorBoundary>
-        <ModalDisplay />
-        {isLoading && (
-          <div id="aa-loading">
-            <div className="loader spinner-border text-primary" role="status">
-              <span className="sr-only">Loading...</span>
+        <ModalContainer>
+          {/* ModalContainer handles re-parenting anywhere we use react-bootstrap Modals, ModalDisplay handles the torus style redux modals. TODO: unite these*/}
+          <ModalDisplay />
+          {isLoading && (
+            <div id="aa-loading">
+              <div className="loader spinner-border text-primary" role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
             </div>
-          </div>
-        )}
-        {shouldShowEditor && (
-          <div
-            id="advanced-authoring"
-            ref={authoringContainer}
-            className={`advanced-authoring d-none`}
-          >
-            <HeaderNav
-              panelState={panelState}
-              isVisible={panelState.top}
-              authoringContainer={authoringContainer}
-            />
-            <SidePanel
-              position="left"
-              panelState={panelState}
-              onToggle={() => handlePanelStateChange({ left: !panelState.left })}
+          )}
+          {shouldShowEditor && (
+            <div
+              id="advanced-authoring"
+              ref={authoringContainer}
+              className={`advanced-authoring d-none`}
             >
-              <LeftMenu />
-            </SidePanel>
-            <EditingCanvas />
-            <BottomPanel
-              panelState={panelState}
-              onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
-            >
-              {currentRule === 'initState' && (
-                <InitStateEditor authoringContainer={authoringContainer} />
-              )}
-              {currentRule !== 'initState' && <AdaptivityEditor />}
-            </BottomPanel>
-            <SidePanel
-              position="right"
-              panelState={panelState}
-              onToggle={() => handlePanelStateChange({ right: !panelState.right })}
-            >
-              <RightMenu />
-            </SidePanel>
-          </div>
-        )}
-
-        {shouldShowReadOnlyWarning && (
-          <Alert variant={alertSeverity}>
-            <Alert.Heading>Opening in Read-Only Mode</Alert.Heading>
-            {!isAttemptDisableReadOnlyFailed && (
-              <p>
-                You are about to open this page in read-only mode. You are able to view the contents
-                of this page, but any changes you make will not be saved. You may instead attempt to
-                open in editing mode, or open a preview of the page.
-              </p>
-            )}
-            {isAttemptDisableReadOnlyFailed && (
-              <p>
-                Unfortunately, we were unable to disable read-only mode. Another author currently
-                has the page locked for editing. Please try again later. In the meantime, you may
-                continue in Read Only mode or open a preview of the page.
-              </p>
-            )}
-            <hr />
-            <div style={{ textAlign: 'center' }}>
-              <Button
-                variant={`outline-${alertSeverity}`}
-                className="text-dark"
-                onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
+              <HeaderNav
+                panelState={panelState}
+                isVisible={panelState.top}
+                authoringContainer={authoringContainer}
+              />
+              <SidePanel
+                position="left"
+                panelState={panelState}
+                onToggle={() => handlePanelStateChange({ left: !panelState.left })}
               >
-                Continue In Read-Only Mode
-              </Button>{' '}
+                <LeftMenu />
+              </SidePanel>
+              <EditingCanvas />
+              <BottomPanel
+                panelState={panelState}
+                onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
+              >
+                {currentRule === 'initState' && (
+                  <InitStateEditor authoringContainer={authoringContainer} />
+                )}
+                {currentRule !== 'initState' && <AdaptivityEditor />}
+              </BottomPanel>
+              <SidePanel
+                position="right"
+                panelState={panelState}
+                onToggle={() => handlePanelStateChange({ right: !panelState.right })}
+              >
+                <RightMenu />
+              </SidePanel>
+            </div>
+          )}
+
+          {shouldShowReadOnlyWarning && (
+            <Alert variant={alertSeverity}>
+              <Alert.Heading>Opening in Read-Only Mode</Alert.Heading>
               {!isAttemptDisableReadOnlyFailed && (
-                <>
-                  <Button
-                    variant={`outline-${alertSeverity}`}
-                    className="text-dark"
-                    onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
-                  >
-                    Open In Edit Mode
-                  </Button>{' '}
-                </>
+                <p>
+                  You are about to open this page in read-only mode. You are able to view the
+                  contents of this page, but any changes you make will not be saved. You may instead
+                  attempt to open in editing mode, or open a preview of the page.
+                </p>
               )}
-              <Button
-                variant={`outline-${alertSeverity}`}
-                className="text-dark"
-                onClick={() => window.open(url, windowName)}
-              >
-                Open Preview <i className="fas fa-external-link-alt ml-1"></i>
-              </Button>
-            </div>
-          </Alert>
-        )}
+              {isAttemptDisableReadOnlyFailed && (
+                <p>
+                  Unfortunately, we were unable to disable read-only mode. Another author currently
+                  has the page locked for editing. Please try again later. In the meantime, you may
+                  continue in Read Only mode or open a preview of the page.
+                </p>
+              )}
+              <hr />
+              <div style={{ textAlign: 'center' }}>
+                <Button
+                  variant={`outline-${alertSeverity}`}
+                  className="text-dark"
+                  onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
+                >
+                  Continue In Read-Only Mode
+                </Button>{' '}
+                {!isAttemptDisableReadOnlyFailed && (
+                  <>
+                    <Button
+                      variant={`outline-${alertSeverity}`}
+                      className="text-dark"
+                      onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
+                    >
+                      Open In Edit Mode
+                    </Button>{' '}
+                  </>
+                )}
+                <Button
+                  variant={`outline-${alertSeverity}`}
+                  className="text-dark"
+                  onClick={() => window.open(url, windowName)}
+                >
+                  Open Preview <i className="fas fa-external-link-alt ml-1"></i>
+                </Button>
+              </div>
+            </Alert>
+          )}
 
-        {showDiagnosticsWindow && <DiagnosticsWindow />}
+          {showDiagnosticsWindow && <DiagnosticsWindow />}
 
-        {showScoringOverview && <ScoringOverview />}
+          {showScoringOverview && <ScoringOverview />}
+        </ModalContainer>
       </ErrorBoundary>
     </AppsignalContext.Provider>
   );
