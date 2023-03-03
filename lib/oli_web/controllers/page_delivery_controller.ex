@@ -429,8 +429,20 @@ defmodule OliWeb.PageDeliveryController do
         Map.put(acc, survey_id, survey_state)
       end)
 
+    base_project_slug = case section.has_experiments do
+      true ->
+        Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
+        _ -> nil
+    end
+
+    enrollment = case section.has_experiments do
+      true -> Oli.Delivery.Sections.get_enrollment(section_slug, user)
+      _ -> nil
+    end
+
     render_context = %Context{
       # Allow admin authors to review student work
+      enrollment: enrollment,
       user:
         if is_nil(user) do
           conn.assigns.current_author
@@ -438,6 +450,7 @@ defmodule OliWeb.PageDeliveryController do
           user
         end,
       section_slug: section_slug,
+      project_slug: base_project_slug,
       resource_attempt: hd(context.resource_attempts),
       mode:
         if context.review_mode do

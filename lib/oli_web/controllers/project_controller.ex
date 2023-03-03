@@ -28,6 +28,7 @@ defmodule OliWeb.ProjectController do
       active: :overview,
       collaborators: Accounts.project_authors(project),
       activities_enabled: Activities.advanced_activities(project, is_admin?),
+      can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?(),
       changeset:
         Utils.value_or(
           Map.get(project_params, :changeset),

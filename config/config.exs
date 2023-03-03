@@ -116,6 +116,10 @@ config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
 config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenLibrary
 
+config :oli, :upgrade_experiment_provider,
+  url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
+  api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
+
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
   live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "LIVE_VIEW_SALT")],

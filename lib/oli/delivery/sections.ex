@@ -1363,6 +1363,7 @@ defmodule Oli.Delivery.Sections do
 
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
+    project = Oli.Repo.get(Oli.Authoring.Course.Project, project_id)
     current_publication = get_current_publication(section_id, project_id)
     current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
@@ -1400,6 +1401,12 @@ defmodule Oli.Delivery.Sections do
               perform_update(:minor, section, project_id, new_publication, current_hierarchy)
           end
       end
+
+    # For a section based on this project, update the has_experiments in the section to match that
+    # setting in the project.
+    if section.base_project_id == project_id and project.has_experiments != section.has_experiments do
+      Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
+    end
 
     Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
 
