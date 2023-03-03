@@ -123,10 +123,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     document.addEventListener('customEvent', customEventHandler);
 
     const handleActivityEdit = async (e: any) => {
-      const target = e.target as HTMLElement;
-      if (target?.id === elementProps.id) {
+      if (e.detail?.model?.id === activityModel.id) {
         const { model } = e.detail;
-        /* console.log('AAR handleActivityEdit', { model }); */
+        // console.log('AAR handleActivityEdit', { model });
         dispatch(saveActivity({ activity: model, undoable: true, immediate: true }));
         // why were we clearing the selection on edit?...
         // dispatch(setCurrentSelection({ selection: '' }));
@@ -141,7 +140,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       document.removeEventListener('customEvent', customEventHandler);
       document.removeEventListener('modelUpdated', handleActivityEdit);
     };
-  }, [elementProps.id]);
+  }, [elementProps.id, activityModel]);
 
   if (!activityModel.authoring || !activityModel.activityType) {
     console.warn('Bad Activity Data', activityModel);

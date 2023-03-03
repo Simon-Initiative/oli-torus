@@ -69,7 +69,9 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     }
 
     const onEdit = (model: T) => {
-      this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));
+      this.dispatchEvent(
+        new CustomEvent('modelUpdated', { composed: true, bubbles: true, detail: { model } }),
+      );
     };
     const onPostUndoable = (undoable: Undoable) => {
       this.dispatchEvent(new CustomEvent('postUndoable', { bubbles: true, detail: { undoable } }));

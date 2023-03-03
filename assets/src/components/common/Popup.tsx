@@ -30,7 +30,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
 
   const overlayContent = (
     <Popover id={popup.id}>
-      <Popover.Content className="popup__content">
+      <Popover.Content className="popup-content">
         {isEmptyContent(popup.content) ? <i className="fa-solid fa-volume-high"></i> : popupContent}
       </Popover.Content>
     </Popover>
@@ -42,7 +42,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
         tabIndex={0}
         onClick={preventDefault}
         role="button"
-        className={`popup__anchorText${trigger.includes('hover') ? '' : ' popup__click'}`}
+        className={`popup-anchor${trigger.includes('hover') ? '' : ' popup-click'}`}
       >
         {children}
         {audioPlayer}
