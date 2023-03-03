@@ -436,7 +436,7 @@ defmodule OliWeb.PageDeliveryController do
     end
 
     enrollment = case section.has_experiments do
-      true -> Oli.Delivery.Sections.get_enrollment(section_slug, user)
+      true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
       _ -> nil
     end
 

@@ -33,8 +33,8 @@ defmodule Oli.Rendering.Alternatives do
         writer
       ) do
 
-    by_id = groups_fn.(section_slug)
-    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+    {:ok, groups} = groups_fn.(section_slug)
+    by_id = Enum.reduce(groups, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
     alternatives_selector_fn.(
       %AlternativesStrategyContext{enrollment_id: enrollment.id, user: user, section_slug: section_slug, mode: mode, project_slug: project_slug, alternative_groups_by_id: by_id},

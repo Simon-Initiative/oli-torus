@@ -21,16 +21,23 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       ) do
 
     pref_key = ExtrinsicState.Key.alternatives_preference(alternatives_id)
-    decision_point = Map.get(by_id, alternatives_id).title
+    decision_point = Map.get(by_id, alternatives_id)
 
     select_matching_condition = fn condition ->
-      Enum.map(children, fn alt ->
-        if alt["value"] == condition do
-          %Selection{alternative: alt}
-        else
-          %Selection{alternative: alt, hidden: true}
-        end
-      end)
+
+      case Enum.find(decision_point.options, fn o -> o["name"] == condition end) do
+        nil -> []
+
+        %{"id" => option_id} ->
+          Enum.map(children, fn alt ->
+            if alt["value"] == option_id do
+              IO.inspect "got one"
+              %Selection{alternative: alt}
+            else
+              %Selection{alternative: alt, hidden: true}
+            end
+          end)
+      end
     end
 
     case ExtrinsicState.read_section(
@@ -39,11 +46,12 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
            MapSet.new([pref_key])
          ) do
       {:ok, %{^pref_key => pref}} ->
+
         # return all children with display: :none except for the alternative that matches the selected preference
         select_matching_condition.(pref)
 
       _ ->
-        case Oli.Delivery.Experiments.enroll(enrollment_id, project_slug, decision_point) do
+        case Oli.Delivery.Experiments.enroll(enrollment_id, project_slug, decision_point.title) do
           {:ok, condition} ->
             ExtrinsicState.upsert_section(user.id, section_slug, Map.put(%{}, pref_key, condition))
             select_matching_condition.(condition)

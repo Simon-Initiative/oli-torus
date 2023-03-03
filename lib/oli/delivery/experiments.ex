@@ -1,8 +1,9 @@
 defmodule Oli.Delivery.Experiments do
 
+  import Oli.HTTP
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
-  import Oli.HTTP
+
 
   @doc """
   For the system itself, a project and a section, determien whether experiments via
@@ -26,27 +27,28 @@ defmodule Oli.Delivery.Experiments do
   def enroll(enrollment_id, project_slug, decision_point) do
     with {:ok, _} <- init(enrollment_id, project_slug),
       {:ok, assign_results} <- assign(enrollment_id),
-      {:ok, %{"condition" => condition}} <- mark(enrollment_id, mark_for(assign_results, decision_point)) do
+      {:ok, %{"condition" => condition}} <- mark(enrollment_id, mark_for(assign_results, decision_point))
+    do
       {:ok, condition}
     else
-        e -> e
+      e -> e
     end
   end
 
   def init(enrollment_id, project_slug) do
 
-    body = encode_body(%{
+    body = %{
       "id" => enrollment_id,
       "group" => %{
         "add-group1" => [project_slug]
       },
-      "workingGroup" =>  %{
+      "workingGroup" => %{
         "add-group1" => project_slug
       }
-    })
+    }
 
-    case http().post(url("/api/init"), body, headers()) do
-      {:ok, %{status_code: 200, body: body}} ->  Poison.decode(body)
+    case http().post(url("/api/init"), encode_body(body), headers()) do
+      {:ok, %{status_code: 200, body: result}} -> Poison.decode(result)
       e -> e
     end
   end
@@ -74,8 +76,10 @@ defmodule Oli.Delivery.Experiments do
     })
 
     case http().post(url("/api/v1/mark"), body, headers()) do
-      {:ok, %{status_code: 200, body: body}} ->  Poison.decode(body)
-      e -> e
+      {:ok, %{status_code: 200, body: body}} ->
+        Poison.decode(body)
+      e ->
+        e
     end
   end
 
@@ -112,9 +116,13 @@ defmodule Oli.Delivery.Experiments do
     %{decision_point: decision_point, target: dp["expId"], condition: dp["assignedCondition"]["conditionCode"]}
   end
 
-  defp url(suffix), do: Application.fetch_env(:oli, :upgrade_experiment_provider)[:url] <> suffix
-  defp api_token(), do: Application.fetch_env(:oli, :upgrade_experiment_provider)[:api_token]
-  defp encode_body(attrs), do: URI.encode_query()
+  defp url(suffix) do
+    base = Application.fetch_env!(:oli, :upgrade_experiment_provider)[:url]
+    "#{base}#{suffix}"
+  end
+
+  defp api_token(), do: Application.fetch_env!(:oli, :upgrade_experiment_provider)[:api_token]
+  defp encode_body(attrs), do: Poison.encode!(attrs)
 
   defp headers() do
     case api_token() do
