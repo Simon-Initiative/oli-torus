@@ -60,6 +60,13 @@ export interface IAdaptiveRule {
   priority: number;
 }
 
+interface AuthoringParts {
+  id: string; // ex: "janus_multi_line_text-1635445943",
+  type: string; // ex: "janus-multi-line-text",
+  owner: string; // ex: "adaptive_activity_5tcap_4078503139",
+  inherited: boolean;
+}
+
 export interface IActivity {
   id: EntityId;
   resourceId?: number;
@@ -67,6 +74,7 @@ export interface IActivity {
   authoring?: {
     rules?: IAdaptiveRule[];
     flowchart?: AuthoringFlowchartScreenData;
+    parts?: AuthoringParts[];
     [key: string]: any;
   };
   content?: ActivityContent;

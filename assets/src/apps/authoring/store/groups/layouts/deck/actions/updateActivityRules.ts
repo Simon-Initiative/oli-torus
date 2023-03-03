@@ -158,7 +158,7 @@ export const updateActivityRules = createAsyncThunk(
           // find the key in the authoring.parts
           if (key.indexOf('stage.') === 0) {
             const [, componentId] = key.split('.');
-            const partDef = childActivity.authoring?.parts.find(
+            const partDef = (childActivity.authoring?.parts || []).find(
               (part: any) => part.id === componentId,
             );
             if (partDef && partDef.inherited) {
