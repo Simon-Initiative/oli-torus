@@ -30,6 +30,9 @@ defmodule OliWeb.Resources.AlternativesEditor do
         @alternatives_type_id
       )
 
+    can_add_decision_point = Enum.filter(alternatives, fn a -> a.content["strategy"] == "upgrade_decision_point" end)
+    |> Enum.count() == 0
+
     subscriptions = subscribe(alternatives, project.slug)
 
     {:ok,
@@ -37,6 +40,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
        context: context,
        project: project,
        author: context.author,
+       can_add_decision_point: can_add_decision_point,
        title: "Alternatives | " <> project.title,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives"})],
        alternatives: Enum.reverse(alternatives),
@@ -61,7 +65,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
         <div class="d-flex flex-row">
           <div class="flex-grow-1"></div>
           <%= if @project.has_experiments do %>
-          <button class="btn btn-primary mr-3" phx-click="show_create_experiment"><i class="fa fa-plus"></i> New Decision Point</button>
+          <button disabled={!@can_add_decision_point} class="btn btn-primary mr-3" phx-click="show_create_experiment"><i class="fa fa-plus"></i> New Decision Point</button>
           <% end %>
           <button class="btn btn-primary" phx-click="show_create_modal"><i class="fa fa-plus"></i> New Alternative</button>
         </div>
@@ -236,7 +240,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
         %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
       )
 
-    {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
+    {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives], can_add_decision_point: false)}
   end
 
   def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
@@ -370,11 +374,18 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     {:ok, deleted} = ResourceEditor.delete(project.slug, resource_id, author)
 
+    alternatives = Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
+
+    can_add_decision_point = Enum.filter(alternatives, fn a -> a.content["strategy"] == "upgrade_decision_point" end)
+    |> Enum.count() == 0
+
+
     {:noreply,
      socket
      |> hide_modal()
      |> assign(
-       alternatives: Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
+       alternatives: alternatives,
+       can_add_decision_point: can_add_decision_point
      )}
   end
 

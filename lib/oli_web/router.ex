@@ -387,6 +387,8 @@ defmodule OliWeb.Router do
 
     # Experiment management
     live("/:project_id/experiments", Experiments.ExperimentsView)
+    get("/:project_id/experiments/segment.json", ExperimentController, :segment_download)
+    get("/:project_id/experiments/experiment.json", ExperimentController, :experiment_download)
 
     # Curriculum
     live(
