@@ -31,7 +31,6 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         %{"id" => option_id} ->
           Enum.map(children, fn alt ->
             if alt["value"] == option_id do
-              IO.inspect "got one"
               %Selection{alternative: alt}
             else
               %Selection{alternative: alt, hidden: true}
@@ -46,17 +45,26 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
            MapSet.new([pref_key])
          ) do
       {:ok, %{^pref_key => pref}} ->
-
-        # return all children with display: :none except for the alternative that matches the selected preference
         select_matching_condition.(pref)
 
       _ ->
         case Oli.Delivery.Experiments.enroll(enrollment_id, project_slug, decision_point.title) do
+
+          # When an experiment hasn't started (or has ended), we will default to showing the
+          # first option.
+          {:ok, nil} ->
+
+            [first | _rest] = decision_point.options
+
+            ExtrinsicState.upsert_section(user.id, section_slug, Map.put(%{}, pref_key, first["name"]))
+            display_first(children)
+
           {:ok, condition} ->
             ExtrinsicState.upsert_section(user.id, section_slug, Map.put(%{}, pref_key, condition))
             select_matching_condition.(condition)
 
-          _ -> display_first(children)
+          _ ->
+            display_first(children)
         end
 
     end

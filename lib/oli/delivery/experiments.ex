@@ -26,10 +26,20 @@ defmodule Oli.Delivery.Experiments do
   """
   def enroll(enrollment_id, project_slug, decision_point) do
     with {:ok, _} <- init(enrollment_id, project_slug),
-      {:ok, assign_results} <- assign(enrollment_id),
-      {:ok, %{"condition" => condition}} <- mark(enrollment_id, mark_for(assign_results, decision_point))
+      {:ok, assign_results} <- assign(enrollment_id)
     do
-      {:ok, condition}
+      case assign_results do
+        [] ->
+          {:ok, nil}
+        results ->
+          case mark(enrollment_id, mark_for(results, decision_point)) do
+            {:ok, %{"condition" => condition}} ->
+              {:ok, condition}
+            _ ->
+              {:ok, nil}
+          end
+      end
+
     else
       e -> e
     end
@@ -92,8 +102,8 @@ defmodule Oli.Delivery.Experiments do
           "metrics" => %{
             "groupedMetrics" => [
               %{
-                "groupClass" => "masteryWorkspace",
-                "groupKey" => "relevant_activities",
+                "groupClass" => "mastery",
+                "groupKey" => "activities",
                 "attributes" => %{
                   "correctness" => correctness
                 }
@@ -105,47 +115,8 @@ defmodule Oli.Delivery.Experiments do
     })
 
     case http().post(url("/api/v1/log"), body, headers()) do
-      {:ok, %{status_code: 200, body: body}} ->  Poison.decode(body)
-      e -> e
-    end
-  end
-
-  def create_metric(project_slug, decision_points) do
-
-    allowed_keys = Enum.map(decision_points, fn dp -> dp.title end)
-
-    body = encode_body(%{
-        "metricUnit" => [
-          %{
-            "groupClass" => project_slug,
-            "allowedKeys" => allowed_keys,
-            "attributes" => [
-                %{ "metric" => "correctness", "datatype" => "continuous"}
-            ]
-          }
-        ]
-      })
-
-    case http().post(url("/api/metric/save"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} -> Poison.decode(body)
-      e -> e
-    end
-  end
-
-  def delete_metric(project_slug) do
-    case http().delete(url("/api/metric/#{project_slug}"), headers()) do
-      {:ok, %{status_code: 200, body: body}} ->  Poison.decode(body)
-      e -> e
-    end
-  end
-
-  def synchronize_metrics(project_slug, decision_points) do
-    with {:ok, _} <- delete_metric(project_slug),
-      {:ok, results} <- create_metric(project_slug, decision_points)
-    do
-      {:ok, results}
-    else
-      e -> e
+      e -> e |> IO.inspect
     end
   end
 

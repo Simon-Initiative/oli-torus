@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Experiments.LogWorker do
     ResourceAttempt,
     ActivityAttempt
   }
+  alias Oli.Delivery.Sections.Enrollment
 
   @moduledoc """
   Oban job that posts Upgrade log messages for evaluated activity attempts in courses that contain
@@ -36,7 +37,7 @@ defmodule Oli.Delivery.Experiments.LogWorker do
             join: a in ResourceAccess,
             on: ra.resource_access_id == a.id,
             join: e in Enrollment,
-            on: ra.section_id == e.section_id and ra.user_id == e.user_id,
+            on: a.section_id == e.section_id and a.user_id == e.user_id,
             where: aa.attempt_guid == ^attempt_guid,
             select: {aa.score, aa.out_of, e.id}
           )
@@ -68,7 +69,8 @@ defmodule Oli.Delivery.Experiments.LogWorker do
         |> Oli.Delivery.Experiments.LogWorker.new()
         |> Oban.insert()
 
-      _ -> true
+      _ ->
+        true
 
     end
 
