@@ -1,6 +1,26 @@
-import React, { useState } from 'react';
+import React, { PropsWithChildren, useState } from 'react';
 import { classNames } from 'utils/classNames';
 import { UserAccountMenu, User, Routes } from './UserAccountMenu';
+
+/**
+ * Loads a react component by react-phoenix identifier with given props
+ * E.g. `renderComponent('Components.Example', { foo: 'bar' })`
+ *
+ * @param componentName react-phoenix component identifier
+ * @param props component props
+ * @returns react element
+ */
+const renderComponent = (componentName: string, props: any) => {
+  const reactClass = Array.prototype.reduce.call(
+    componentName.split('.'),
+    (acc: any, el: any) => {
+      return acc[el];
+    },
+    window,
+  );
+
+  return React.createElement(reactClass, props);
+};
 
 interface Logo {
   href: string;
@@ -9,8 +29,12 @@ interface Logo {
 
 interface Link {
   name: string;
-  href: string;
   active: boolean;
+  href: string;
+  popout?: {
+    component: string;
+    props: any;
+  };
 }
 
 interface NavbarProps {
@@ -39,7 +63,7 @@ export const Navbar = ({
   const [showNavbar, setShowNavbar] = useState(false);
 
   return (
-    <nav className="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex">
+    <nav className="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex select-none z-20">
       <div className="w-full">
         <a className="block w-[200px] lg:mb-14 mx-auto" href={logo.href}>
           <img src={logo.src.light} className="inline-block dark:hidden" alt="logo" />
@@ -84,9 +108,13 @@ export const Navbar = ({
 
       <div className={`lg:!flex flex-grow flex flex-col ${showNavbar ? '' : 'hidden'}`}>
         <div className="flex-1 items-center lg:items-start">
-          {links.map(({ href, active, name }) => (
-            <NavLink key={href} href={href} active={active} name={name} />
-          ))}
+          {links.map(({ name, active, popout, href }) =>
+            popout ? (
+              <NavExpand key={name} name={name} active={active} popout={popout} />
+            ) : (
+              <NavLink key={name} name={name} active={active} href={href} />
+            ),
+          )}
         </div>
         <UserAccountMenu
           preview={preview}
@@ -122,9 +150,9 @@ export const Navbar = ({
 };
 
 interface NavLinkProps {
-  href: string;
-  active: boolean;
   name: string;
+  active: boolean;
+  href: string;
 }
 
 const NavLink = ({ href, active, name }: NavLinkProps) => (
@@ -137,4 +165,48 @@ const NavLink = ({ href, active, name }: NavLinkProps) => (
   >
     {name}
   </a>
+);
+
+interface NavExpandProps {
+  name: string;
+  active: boolean;
+  popout: {
+    component: string;
+    props: any;
+  };
+}
+
+const NavExpand = ({ name, popout, active }: PropsWithChildren<NavExpandProps>) => {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div>
+      <div
+        className={classNames(
+          'block no-underline px-6 py-2 cursor-pointer hover:no-underline border-b border-transparent text-current hover:text-delivery-primary-400',
+          active && 'font-bold border-b border-delivery-primary !text-delivery-primary',
+        )}
+        onClick={() => setShow(!show)}
+      >
+        <div>{name}</div>
+      </div>
+      <PopoutContainer show={show}>
+        {renderComponent(popout.component, popout.props)}
+      </PopoutContainer>
+    </div>
+  );
+};
+
+interface PopoutContainerProps {
+  show: boolean;
+}
+
+const PopoutContainer = ({ show, children }: PropsWithChildren<PopoutContainerProps>) => (
+  <div
+    className={`${
+      show ? '' : 'hidden'
+    } overflow-y-auto lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:w-[600px] lg:pl-[200px] lg:bg-white dark:lg:bg-gray-900 lg:z-[-1] h-[400px] lg:h-screen lg:shadow`}
+  >
+    {children}
+  </div>
 );

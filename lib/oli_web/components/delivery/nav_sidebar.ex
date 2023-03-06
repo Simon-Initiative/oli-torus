@@ -8,15 +8,16 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccountMenu
+  alias Oli.Delivery.Sections
 
   slot :inner_block, required: true
 
   def main_with_nav(assigns) do
     ~H"""
-      <main role="main" class="h-screen flex flex-col relative lg:flex-row">
+      <main role="main" class="h-screen flex flex-col relative lg:flex-row z-0">
         <.navbar {assigns} path_info={@conn.path_info} />
 
-        <div class="flex-1 flex flex-col lg:pl-[200px]">
+        <div class="flex-1 flex flex-col lg:pl-[200px] z-10">
 
           <%= render_slot(@inner_block) %>
 
@@ -53,13 +54,24 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
             }
           ]
         else
+          hierarchy =
+            assigns[:section]
+            |> Oli.Repo.preload([:root_section_resource])
+            |> Sections.build_hierarchy()
+
           [
             %{
               name: "Home",
               href: home_url(assigns),
               active: is_active(path_info, :overview)
             },
-            %{name: "Course Content", href: "#", active: is_active(path_info, "")},
+            %{
+              name: "Course Content",
+              popout: %{
+                component: "Components.CourseContentOutline",
+                props: %{hierarchy: hierarchy, sectionSlug: assigns[:section].slug}
+              }
+            },
             %{
               name: "Discussion",
               href: discussion_url(assigns),
