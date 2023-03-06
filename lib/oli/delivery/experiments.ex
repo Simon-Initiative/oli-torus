@@ -32,6 +32,8 @@ defmodule Oli.Delivery.Experiments do
         [] ->
           {:ok, nil}
         results ->
+          IO.inspect results
+
           case mark(enrollment_id, mark_for(results, decision_point)) do
             {:ok, %{"condition" => condition}} ->
               {:ok, condition}
@@ -85,11 +87,14 @@ defmodule Oli.Delivery.Experiments do
       "status" => "condition applied"
     })
 
+    IO.inspect body
+
     case http().post(url("/api/v1/mark"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} ->
-        Poison.decode(body)
+        Poison.decode(body) |> IO.inspect
       e ->
-        e
+        IO.inspect "ERRROR"
+        e |> IO.inspect
     end
   end
 

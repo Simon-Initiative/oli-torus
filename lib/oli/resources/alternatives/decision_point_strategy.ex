@@ -53,13 +53,14 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
           # When an experiment hasn't started (or has ended), we will default to showing the
           # first option.
           {:ok, nil} ->
-
+            IO.inspect "OH NO"
             [first | _rest] = decision_point.options
 
             ExtrinsicState.upsert_section(user.id, section_slug, Map.put(%{}, pref_key, first["name"]))
             display_first(children)
 
           {:ok, condition} ->
+            IO.inspect "OH YES"
             ExtrinsicState.upsert_section(user.id, section_slug, Map.put(%{}, pref_key, condition))
             select_matching_condition.(condition)
 
