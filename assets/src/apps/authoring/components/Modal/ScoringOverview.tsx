@@ -9,6 +9,7 @@ import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { Objective } from '../../../../data/content/objective';
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 interface ScoredActivity {
   sequenceId: number;
@@ -171,7 +172,7 @@ const ScoringOverview: React.FC<{
 
   return (
     <Fragment>
-      <Modal show={true} size="xl" onHide={handleClose}>
+      <AdvancedAuthoringModal show={true} size="xl" onHide={handleClose}>
         <Modal.Header closeButton={true}>
           <h3 className="modal-title">Scoring Overview</h3>
         </Modal.Header>
@@ -219,7 +220,7 @@ const ScoringOverview: React.FC<{
             />
           </InputGroup>
         </Modal.Body>
-      </Modal>
+      </AdvancedAuthoringModal>
     </Fragment>
   );
 };
