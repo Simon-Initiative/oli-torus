@@ -6,6 +6,7 @@ import {
 } from '../../../delivery/store/features/activities/slice';
 
 import { changeAppMode, changeEditMode } from '../../store/app/slice';
+import { SidePanel } from '../SidePanel';
 import { addFlowchartScreen } from './flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
 
@@ -17,6 +18,7 @@ import {
   FlowchartEventContext,
   FlowchartEventContextProps,
 } from './FlowchartEventContext';
+import { FlowchartModeOptions } from './FlowchartModeOptions';
 import { FlowchartSidebar } from './FlowchartSidebar';
 import { FlowchartTopToolbar } from './FlowchartTopToolbar';
 
@@ -60,17 +62,17 @@ export const FlowchartEditor = () => {
     [dispatch],
   );
 
+  const onScreenEdit = useCallback(() => {
+    dispatch(changeEditMode({ mode: 'page' }));
+  }, [dispatch]);
+
   const onEditScreen = useCallback(
     (screenResourceId: number) => {
       dispatch(setCurrentActivityId({ activityId: screenResourceId }));
-      dispatch(changeEditMode({ mode: 'page' }));
+      onScreenEdit();
     },
-    [dispatch],
+    [dispatch, onScreenEdit],
   );
-
-  const onAdvanced = () => {
-    dispatch(changeAppMode({ mode: 'expert' }));
-  };
 
   const events: FlowchartEventContextProps = useMemo(
     () => ({
@@ -85,9 +87,13 @@ export const FlowchartEditor = () => {
   return (
     <FlowchartEventContext.Provider value={events}>
       <div className="flowchart-editor">
-        <FlowchartSidebar />
+        <div className="panel-inner">
+          <FlowchartModeOptions onScreenEditMode={onScreenEdit} />
+          <FlowchartSidebar />
+        </div>
+
         <div className="flowchart-right">
-          <FlowchartTopToolbar onSwitchToAdvancedMode={onAdvanced} />
+          <FlowchartTopToolbar />
           <FlowchartComponent nodes={nodes} edges={edges} />
         </div>
       </div>
