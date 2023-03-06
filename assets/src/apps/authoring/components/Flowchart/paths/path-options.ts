@@ -1,4 +1,8 @@
-import { IActivity, IMCQPartLayout } from '../../../../delivery/store/features/activities/slice';
+import {
+  IActivity,
+  IMCQPartLayout,
+  IPartLayout,
+} from '../../../../delivery/store/features/activities/slice';
 import {
   createAlwaysGoToPath,
   createMultipleChoiceCorrectPath,
@@ -42,16 +46,30 @@ type QuestionType =
   | 'none';
 
 const questionMapping: Record<string, QuestionType> = {
+  //'janus-mcq' can map to 2 different question types, so we handle it separately
   'janus-multi-line-text': 'multi-line-text',
   'janus-input-text': 'input-text',
   'janus-input-number': 'input-number',
 };
 
+const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
+
+export const questionTypeLabels: Record<QuestionType, string> = {
+  'multiple-choice': 'Multiple Choice',
+  'check-all-that-apply': 'Check All That Apply',
+  'multi-line-text': 'Multi-line Text',
+  'input-text': 'Text Input',
+  'input-number': 'Number Input',
+  none: 'No question',
+};
+
 export const getScreenQuestionType = (screen: IActivity): QuestionType => {
-  const mcq = screen.content?.partsLayout.find(isMCQ);
-  if (mcq) {
+  const question = getScreenPrimaryQuestion(screen);
+  if (!question) return 'none';
+
+  if (isMCQ(question)) {
     // janus-mcq could refer to either a multiple choice, or a check all that apply style question depending on multipleSelection
-    return mcq.custom.multipleSelection ? 'check-all-that-apply' : 'multiple-choice';
+    return question.custom.multipleSelection ? 'check-all-that-apply' : 'multiple-choice';
   }
 
   const part = screen.content?.partsLayout.find((part) => questionMapping[part.type]);
@@ -60,4 +78,10 @@ export const getScreenQuestionType = (screen: IActivity): QuestionType => {
   }
 
   return 'none';
+};
+
+export const getScreenPrimaryQuestion = (screen: IActivity): IPartLayout | undefined => {
+  return screen.content?.partsLayout.find(
+    (part) => availableQuestionTypes.indexOf(part.type) !== -1,
+  );
 };

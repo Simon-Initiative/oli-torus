@@ -4,7 +4,12 @@ import {
   IActivity,
   selectCurrentActivity,
 } from '../../../delivery/store/features/activities/slice';
-import { getAvailablePaths } from './paths/path-options';
+import {
+  getAvailablePaths,
+  getScreenPrimaryQuestion,
+  getScreenQuestionType,
+  questionTypeLabels,
+} from './paths/path-options';
 import { AllPaths } from './paths/path-types';
 
 interface FlowchartSidebarProps {}
@@ -20,9 +25,20 @@ export const FlowchartSidebar: React.FC<FlowchartSidebarProps> = () => {
 };
 
 const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
+  const primaryQuestion = getScreenPrimaryQuestion(screen);
+  const questionId = primaryQuestion?.id || 'no question';
+  const questionType = questionTypeLabels[getScreenQuestionType(screen)];
+
   return (
     <div>
-      <h3>{screen.title}</h3>
+      <h2>{screen.title}</h2>
+      {questionType && (
+        <div>
+          <h3>{questionType}</h3>
+          <small>{questionId}</small>
+        </div>
+      )}
+
       <b>rules:</b>
       <ol>
         {screen.authoring?.flowchart?.paths.map((path: AllPaths) => (
