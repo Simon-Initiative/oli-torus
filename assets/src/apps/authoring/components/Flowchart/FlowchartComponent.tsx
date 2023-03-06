@@ -37,6 +37,9 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
       edgeTypes={EdgeTypes}
       nodes={layout.nodes}
       edges={edges}
+      panOnDrag={false}
+      nodesDraggable={false}
+      nodesConnectable={false}
       connectionLineComponent={FloatingConnectionLine}
       proOptions={{ hideAttribution: true }}
     >
