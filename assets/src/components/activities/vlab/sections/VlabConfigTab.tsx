@@ -6,6 +6,7 @@ import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import React from 'react';
 import { ReactEditor } from 'slate-react';
 import { WrappedMonaco } from 'components/activities/common/variables/WrappedMonaco';
+import { Editor } from 'slate';
 
 interface Props {
   editor: ReactEditor & Editor;

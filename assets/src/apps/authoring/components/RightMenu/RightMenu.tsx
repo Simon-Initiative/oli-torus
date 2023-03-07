@@ -78,7 +78,7 @@ const RightMenu: React.FC<any> = () => {
   const [currentComponent, setCurrentComponent] = useState(null);
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
-  const currentSequence = findInSequence(sequence, currentSequenceId);
+  const currentSequence = findInSequence(sequence, currentSequenceId || '');
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 

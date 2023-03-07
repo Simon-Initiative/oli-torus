@@ -1,5 +1,5 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
-import { RootState } from '../../rootReducer';
+import { DeliveryRootState } from '../../rootReducer';
 import AdaptivitySlice from './name';
 
 export interface CheckResults {
@@ -117,7 +117,7 @@ export const {
 } = slice.actions;
 
 // selectors
-export const selectState = (state: RootState): AdaptivityState =>
+export const selectState = (state: DeliveryRootState): AdaptivityState =>
   state[AdaptivitySlice] as AdaptivityState;
 export const selectIsGoodFeedback = createSelector(
   selectState,
