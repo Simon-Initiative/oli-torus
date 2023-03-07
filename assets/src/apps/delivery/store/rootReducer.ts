@@ -18,6 +18,6 @@ const rootReducer = combineReducers({
   [AttemptSlice]: AttemptReducer,
 });
 
-export type RootState = ReturnType<typeof rootReducer>;
+export type DeliveryRootState = ReturnType<typeof rootReducer>;
 
 export default rootReducer;

@@ -28,6 +28,6 @@ const rootReducer = combineReducers({
   modal,
 });
 
-export type RootState = ReturnType<typeof rootReducer>;
+export type AuthoringRootState = ReturnType<typeof rootReducer>;
 
 export default rootReducer;

@@ -15,7 +15,8 @@ const variants = {
 };
 
 export const Alert: React.FC<AlertProps> = ({ children, className, variant }) => (
-  <div className={` rounded-lg py-5 px-6  text-base  mb-3 ${variants[variant]} ${className}`}>
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  <div className={` rounded-lg py-5 px-6  text-base  mb-3 ${variants[variant!]} ${className}`}>
     {children}
   </div>
 );

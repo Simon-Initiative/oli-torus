@@ -8,6 +8,9 @@ import { References } from './bibliography/References';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { Navbar } from 'components/common/Navbar';
+import { CourseContentOutline } from 'components/delivery/CourseContentOutline';
+import { UserAccountMenu } from 'components/common/UserAccountMenu';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
@@ -17,3 +20,6 @@ registerApplication('SurveyControls', SurveyControls, globalStore);
 registerApplication('References', References, globalStore);
 registerApplication('VideoPlayer', VideoPlayer);
 registerApplication('AlternativesPreferenceSelector', AlternativesPreferenceSelector, globalStore);
+registerApplication('Navbar', Navbar, globalStore);
+registerApplication('CourseContentOutline', CourseContentOutline, globalStore);
+registerApplication('UserAccountMenu', UserAccountMenu, globalStore);
