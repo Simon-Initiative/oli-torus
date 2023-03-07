@@ -14,7 +14,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :latest_attempts,
     :bib_revisions,
     :historical_attempts,
-    :collab_space_config
+    :collab_space_config,
+    :is_instructor
   ]
   defstruct [
     :user,
@@ -27,7 +28,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :latest_attempts,
     :bib_revisions,
     :historical_attempts,
-    :collab_space_config
+    :collab_space_config,
+    :is_instructor
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -37,6 +39,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Resources.Collaboration
   alias Oli.Utils.BibUtils
@@ -52,7 +55,7 @@ defmodule Oli.Delivery.Page.PageContext do
   """
   @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) ::
           %PageContext{}
-  def create_for_review(section_slug, attempt_guid, _) do
+  def create_for_review(section_slug, attempt_guid, user) do
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.review(attempt_guid) do
         {:ok,
@@ -100,7 +103,8 @@ defmodule Oli.Delivery.Page.PageContext do
       latest_attempts: latest_attempts,
       bib_revisions: bib_revisions,
       historical_attempts: retrieve_historical_attempts(hd(resource_attempts)),
-      collab_space_config: collab_space_config
+      collab_space_config: collab_space_config,
+      is_instructor: Sections.is_instructor?(user, section_slug)
     }
   end
 
@@ -196,7 +200,8 @@ defmodule Oli.Delivery.Page.PageContext do
       latest_attempts: latest_attempts,
       bib_revisions: bib_revisions,
       historical_attempts: nil,
-      collab_space_config: collab_space_config
+      collab_space_config: collab_space_config,
+      is_instructor: Sections.is_instructor?(user, section_slug)
     }
   end
 
