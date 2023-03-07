@@ -108,8 +108,15 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Updates page progress to be 100% complete.
   """
-  def mark_completed(%ResourceAccess{} = ra) do
+  def mark_progress_completed(%ResourceAccess{} = ra) do
     Core.update_resource_access(ra, %{progress: 1.0})
+  end
+
+  @doc """
+  Resets page progress to be 0% complete.
+  """
+  def reset_progress(%ResourceAccess{} = ra) do
+    Core.update_resource_access(ra, %{progress: 0.0})
   end
 
   @doc """

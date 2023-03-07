@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { ObjectivesSelection } from '../../../../../components/resource/objectives/ObjectivesSelection';
 import { ObjectivesMap, selectProjectSlug } from '../../../store/app/slice';
+import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 
 interface LearningModalObjectiveProps {
   readonly: boolean;
@@ -21,7 +22,7 @@ export const LearningObjectivesModal: React.FC<LearningModalObjectiveProps> = ({
   const projectSlug = useSelector(selectProjectSlug);
 
   return (
-    <Modal onHide={handleClose} show={true} size="xl">
+    <AdvancedAuthoringModal onHide={handleClose} show={true} size="xl">
       <Modal.Header closeButton>
         <Modal.Title>Objectives editor</Modal.Title>
       </Modal.Header>
@@ -39,6 +40,6 @@ export const LearningObjectivesModal: React.FC<LearningModalObjectiveProps> = ({
           Finished
         </Button>
       </Modal.Footer>
-    </Modal>
+    </AdvancedAuthoringModal>
   );
 };

@@ -1,5 +1,5 @@
 defmodule OliWeb.PublishLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Oli.Factory
@@ -351,8 +351,8 @@ defmodule OliWeb.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
-        |> element("button[phx-click=\"display_lti_connect_modal\"]")
-        |> render_click()
+      |> element("button[phx-click=\"display_lti_connect_modal\"]")
+      |> render_click()
 
       assert has_element?(view, "h4", "Deliver this course through your institution's LMS")
     end
