@@ -361,7 +361,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     ~H"""
       <.tabs active_tab={:discussions} section_slug={@section_slug} preview_mode={@preview_mode} />
 
-      <p class="mx-auto">Not available yet</p>
+      <%= live_render(@socket, OliWeb.Components.Delivery.Discussion, [session: %{"section_slug" => @section_slug}, id: "test_id"]) %>
     """
   end
 
