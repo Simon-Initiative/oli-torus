@@ -3,6 +3,7 @@ import ScreenAuthor from 'components/activities/adaptive/components/authoring/Sc
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ActionFeedbackEditorProps {
@@ -114,7 +115,11 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           </button>
         </span>
       </OverlayTrigger>
-      <Modal dialogClassName="modal-90w" show={showEditor} onHide={handleCancelEdit}>
+      <AdvancedAuthoringModal
+        dialogClassName="modal-90w"
+        show={showEditor}
+        onHide={handleCancelEdit}
+      >
         <Modal.Header closeButton={true}>
           <h3 className="modal-title">Feedback</h3>
         </Modal.Header>
@@ -129,7 +134,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
             Save
           </button>
         </Modal.Footer>
-      </Modal>
+      </AdvancedAuthoringModal>
       {showConfirmDelete && (
         <ConfirmDelete
           show={showConfirmDelete}

@@ -20,6 +20,7 @@ import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
 import { IAdaptiveRule, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { setCurrentRule } from '../../store/app/slice';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,
@@ -219,7 +220,7 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
 
   return (
     <Fragment>
-      <Modal
+      <AdvancedAuthoringModal
         show={true}
         size="xl"
         onHide={handleClose}
@@ -251,7 +252,7 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
           <hr />
           <div>{results}</div>
         </Modal.Body>
-      </Modal>
+      </AdvancedAuthoringModal>
     </Fragment>
   );
 };

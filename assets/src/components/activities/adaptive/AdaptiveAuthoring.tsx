@@ -8,6 +8,7 @@ import EventEmitter from 'events';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { clone } from 'utils/common';
+import { ModalContainer } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import LayoutEditor from './components/authoring/LayoutEditor';
@@ -139,21 +140,23 @@ const Adaptive = (
 
   return (
     <NotificationContext.Provider value={pusher}>
-      <LayoutEditor
-        id={props.model.id || ''}
-        hostRef={props.hostRef}
-        width={props.model.content?.custom?.width || 1000}
-        height={props.model.content?.custom?.height || 500}
-        backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
-        selected={selectedPartId}
-        parts={parts}
-        onChange={handleLayoutChange}
-        onCopyPart={handleCopyComponent}
-        onConfigurePart={handleConfigurePart}
-        onCancelConfigurePart={handleCancelConfigurePart}
-        configurePortalId={configurePortalId}
-        onSelect={handlePartSelect}
-      />
+      <ModalContainer>
+        <LayoutEditor
+          id={props.model.id || ''}
+          hostRef={props.hostRef}
+          width={props.model.content?.custom?.width || 1000}
+          height={props.model.content?.custom?.height || 500}
+          backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
+          selected={selectedPartId}
+          parts={parts}
+          onChange={handleLayoutChange}
+          onCopyPart={handleCopyComponent}
+          onConfigurePart={handleConfigurePart}
+          onCancelConfigurePart={handleCancelConfigurePart}
+          configurePortalId={configurePortalId}
+          onSelect={handlePartSelect}
+        />
+      </ModalContainer>
     </NotificationContext.Provider>
   );
 };

@@ -34,6 +34,7 @@ import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
 import { ReadOnlyWarning } from './ReadOnlyWarning';
 import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
 import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
+import { ModalContainer } from './components/AdvancedAuthoringModal';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -227,44 +228,48 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   return (
     <AppsignalContext.Provider value={appsignal}>
       <ErrorBoundary>
-        <ModalDisplay />
-        {isLoading && (
-          <div id="aa-loading">
-            <div className="loader spinner-border text-primary" role="status">
-              <span className="sr-only">Loading...</span>
+        <ModalContainer>
+          {/* ModalContainer handles re-parenting anywhere we use react-bootstrap Modals, ModalDisplay handles the torus style redux modals. TODO: unite these*/}
+          <ModalDisplay />
+          {isLoading && (
+            <div id="aa-loading">
+              <div className="loader spinner-border text-primary" role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {shouldShowPageEditor && isExpertMode && (
-          <AuthoringExpertPageEditor
-            currentRule={currentRule}
-            handlePanelStateChange={handlePanelStateChange}
-            panelState={panelState}
-          />
-        )}
+          {shouldShowPageEditor && isExpertMode && (
+            <AuthoringExpertPageEditor
+              currentRule={currentRule}
+              handlePanelStateChange={handlePanelStateChange}
+              panelState={panelState}
+            />
+          )}
 
-        {shouldShowPageEditor && isFlowchartMode && (
-          <AuthoringFlowchartPageEditor
-            handlePanelStateChange={handlePanelStateChange}
-            panelState={panelState}
-          />
-        )}
+          {shouldShowPageEditor && isFlowchartMode && (
+            <AuthoringFlowchartPageEditor
+              handlePanelStateChange={handlePanelStateChange}
+              panelState={panelState}
+            />
+          )}
 
-        {shouldShowFlowchartEditor && <FlowchartEditor />}
+          {shouldShowFlowchartEditor && <FlowchartEditor />}
 
-        {shouldShowReadOnlyWarning && (
-          <ReadOnlyWarning
-            isAttemptDisableReadOnlyFailed={isAttemptDisableReadOnlyFailed}
-            alertSeverity={alertSeverity}
-            dismissReadOnlyWarning={dismissReadOnlyWarning}
-            url={url}
-            windowName={windowName}
-          />
-        )}
+          {shouldShowReadOnlyWarning && (
+            <ReadOnlyWarning
+              isAttemptDisableReadOnlyFailed={isAttemptDisableReadOnlyFailed}
+              alertSeverity={alertSeverity}
+              dismissReadOnlyWarning={dismissReadOnlyWarning}
+              url={url}
+              windowName={windowName}
+            />
+          )}
 
-        {showDiagnosticsWindow && <DiagnosticsWindow />}
-        {showScoringOverview && <ScoringOverview />}
+          {showDiagnosticsWindow && <DiagnosticsWindow />}
+
+          {showScoringOverview && <ScoringOverview />}
+        </ModalContainer>
       </ErrorBoundary>
     </AppsignalContext.Provider>
   );

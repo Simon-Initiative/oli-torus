@@ -29,11 +29,13 @@ import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import set from 'lodash/set';
+import { useToggle } from '../../../../components/hooks/useToggle';
 
 const IRulesList: React.FC = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
+  const [open, toggleOpen] = useToggle(true);
   const rules = currentActivity?.authoring?.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
@@ -345,10 +347,10 @@ const IRulesList: React.FC = () => {
   };
 
   return (
-    <Accordion className="aa-adaptivity-rules" defaultActiveKey="0">
+    <Accordion className="aa-adaptivity-rules" defaultActiveKey="0" activeKey={open ? '0' : '-1'}>
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
-          <ContextAwareToggle eventKey="0" />
+          <ContextAwareToggle eventKey="0" onClick={toggleOpen} />
           <span className="title">Adaptivity</span>
         </div>
         {currentRule && !isLayer && !isBank && (
