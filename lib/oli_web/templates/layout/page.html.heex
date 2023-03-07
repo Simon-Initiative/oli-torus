@@ -8,7 +8,9 @@
         <script type="text/javascript" src={Routes.static_path(@conn, "/js/" <> script)}></script>
       <% end %>
 
-      <Components.Delivery.ExplorationShade.exploration_shade exploration_pages={Map.get(@conn.assigns, :exploration_pages, nil)} />
+      <%= if assigns.section.contains_explorations do%>
+        <Components.Delivery.ExplorationShade.exploration_shade exploration_pages={Map.get(@conn.assigns, :exploration_pages, nil)} />
+      <% end %>
 
       <div class="md:container md:mx-auto md:px-10 md:mt-3 md:mb-5">
         <div class="flex flex-col lg:flex-row gap-4">
