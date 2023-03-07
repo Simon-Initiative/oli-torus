@@ -1549,6 +1549,40 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "<h6>There are no exploration pages available</h6>"
     end
+
+    test "do not show the 'exploration' access in the left navbar when the section has no explorations to show",
+         %{conn: conn} do
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      refute html_response(conn, 200) =~ "<a>Exploration</a>"
+    end
+
+    test "do not show the 'exploration' access in the Windowshade when the section does not have explorations to show",
+         %{conn: conn} do
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      refute html_response(conn, 200) =~ "<h4>Your Exploration Activities</h4>"
+    end
   end
 
   describe "discussion" do
@@ -1794,7 +1828,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes")
 
-    map = Map.put(map, :publication, publication)
+    map = Map.merge(map, %{publication: publication, contains_explorations: true})
 
     map =
       map
