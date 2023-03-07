@@ -430,6 +430,92 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Returns the list of all posts across a section given a certain criteria.
+
+  ## Examples
+
+      iex> list_posts_in_section_for_instructor("example_section", :need_approval, 0, 5)
+      [%Post{status: :archived}, ...]
+
+      iex> list_posts_in_section_for_instructor("example_section", :need_reponse, 0, 5)
+      []
+  """
+
+  def list_posts_in_section_for_instructor(section_slug, filter, opts \\ [offset: 0, limit: 10])
+
+  def list_posts_in_section_for_instructor(section_slug, :need_approval, opts) do
+    do_list_posts_in_section_for_instructor(
+      section_slug,
+      Keyword.get(opts, :offset, 0),
+      Keyword.get(opts, :limit)
+    )
+    |> where([p], p.status == :submitted)
+    |> Repo.all()
+    |> return_posts_with_count()
+  end
+
+  def list_posts_in_section_for_instructor(section_slug, :need_response, opts) do
+    do_list_posts_in_section_for_instructor(
+      section_slug,
+      Keyword.get(opts, :offset, 0),
+      Keyword.get(opts, :limit)
+    )
+    |> join(:left, [p, s, sr, spp, pr, rev, u], p2 in Post,
+      on: p2.parent_post_id == p.id or p2.thread_root_id == p.id
+    )
+    |> where([p, s, sr, spp, pr, rev, u, p2], is_nil(p2))
+    |> Repo.all()
+    |> return_posts_with_count()
+  end
+
+  def list_posts_in_section_for_instructor(section_slug, :all, opts) do
+    do_list_posts_in_section_for_instructor(
+      section_slug,
+      Keyword.get(opts, :offset, 0),
+      Keyword.get(opts, :limit)
+    )
+    |> Repo.all()
+    |> return_posts_with_count()
+  end
+
+  defp return_posts_with_count([]), do: {0, []}
+
+  defp return_posts_with_count(posts) do
+    {List.first(posts).count, Enum.map(posts, &Map.delete(&1, :count))}
+  end
+
+  defp do_list_posts_in_section_for_instructor(section_slug, offset, limit) do
+    Post
+    |> join(:inner, [p], s in Section, on: s.slug == ^section_slug)
+    |> join(:inner, [p], sr in SectionResource,
+      on:
+        sr.resource_id == p.resource_id and sr.section_id == p.section_id and
+          sr.numbering_level > 0
+    )
+    |> join(:inner, [p, s, sr], spp in SectionsProjectsPublications,
+      on: spp.section_id == p.section_id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [p, s, sr, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == p.resource_id
+    )
+    |> join(:inner, [p, s, sr, spp, pr], r in Revision, on: r.id == pr.revision_id)
+    |> join(:inner, [p], u in User, on: p.user_id == u.id)
+    |> where([p, s, sr], sr.section_id == s.id)
+    |> where([p], p.status != :deleted)
+    |> select([p, s, sr, spp, pr, r, u], %{
+      id: p.id,
+      content: p.content,
+      user_name: u.name,
+      title: r.title,
+      inserted_at: p.inserted_at,
+      status: p.status,
+      count: over(count(p.id))
+    })
+    |> limit(^limit)
+    |> offset(^offset)
+  end
+
+  @doc """
   Creates a post.
 
   ## Examples
