@@ -45,13 +45,26 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   defp rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
-    IO.inspect(idref)
     {true, Map.put(other, "idref", Map.get(page_map, idref).resource_id)}
   end
 
   defp rewire(%{"model" => model} = item, link_builder, page_map) do
     case rewire(model, link_builder, page_map) do
       {true, model} -> {true, Map.put(item, "model", model)}
+      {false, _} -> {false, item}
+    end
+  end
+
+  defp rewire(%{"stem" => stem} = item, link_builder, page_map) do
+    case rewire(stem, link_builder, page_map) do
+      {true, stem} -> {true, Map.put(item, "stem", stem)}
+      {false, _} -> {false, item}
+    end
+  end
+
+  defp rewire(%{"content" => content} = item, link_builder, page_map) do
+    case rewire(content, link_builder, page_map) do
+      {true, content} -> {true, Map.put(item, "content", content)}
       {false, _} -> {false, item}
     end
   end
