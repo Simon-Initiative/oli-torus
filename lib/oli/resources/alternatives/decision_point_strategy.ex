@@ -39,28 +39,34 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       end
     end
 
+    # First read section level extrinsic state, where the results of condition code
+    # assignment may have already been cached.
     case ExtrinsicState.read_section(
            user.id,
            section_slug,
            MapSet.new([pref_key])
          ) do
       {:ok, %{^pref_key => pref}} ->
+        # We got a cached condition code, select the material pertaining to that condition
         select_matching_condition.(pref)
 
       _ ->
+        # No cached condition code, so we need to
         case Oli.Delivery.Experiments.enroll(enrollment_id, project_slug, decision_point.title) do
 
-          # When an experiment hasn't started (or has ended), we will default to showing the
+          # When an experiment has already ended, we will default to showing the
           # first option.
           {:ok, nil} ->
-            IO.inspect "OH NO"
+
             [first | _rest] = decision_point.options
 
+            # Cache this result to avoid further queries to Upgrade
             ExtrinsicState.upsert_section(user.id, section_slug, Map.put(%{}, pref_key, first["name"]))
             display_first(children)
 
           {:ok, condition} ->
-            IO.inspect "OH YES"
+
+            # We got a code, cache it, and select the material pertaining to it
             ExtrinsicState.upsert_section(user.id, section_slug, Map.put(%{}, pref_key, condition))
             select_matching_condition.(condition)
 
