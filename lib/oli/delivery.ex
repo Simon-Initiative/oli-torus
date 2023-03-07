@@ -7,6 +7,7 @@ defmodule Oli.Delivery do
   alias Oli.Lti.LtiParams
   alias Oli.Publishing
   alias Oli.Repo
+  alias Oli.Publishing.DeliveryResolver
 
   import Ecto.Query, warn: false
   import Oli.Utils
@@ -234,6 +235,53 @@ defmodule Oli.Delivery do
     }) do
       nil -> create_delivery_setting(attrs)
       ds -> update_delivery_setting(ds, attrs)
+    end
+  end
+
+  defp contains_explorations(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.one(
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where:
+          rev.purpose == :application and rev.deleted == false and
+            rev.resource_type_id == ^page_id and
+            sr.numbering_level > 0,
+        select: rev.id,
+        limit: 1
+      )
+    )
+    |> case do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  defp update_contains_explorations(section_slug, value) do
+    result =
+      from(
+        s in Section,
+        update: [set: [contains_explorations: ^value]],
+        where: s.slug == ^section_slug
+      )
+      |> Repo.update_all([])
+
+    {:ok, result}
+  end
+
+  def maybe_update_section_contains_explorations(%Section{
+        slug: section_slug,
+        contains_explorations: contains_explorations
+      }) do
+    case {contains_explorations(section_slug), contains_explorations} do
+      {true, false} ->
+        update_contains_explorations(section_slug, true)
+
+      {false, true} ->
+        update_contains_explorations(section_slug, false)
+
+      _ ->
+        {:ok, "No need to update records"}
     end
   end
 end

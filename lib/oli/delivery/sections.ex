@@ -37,6 +37,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Utils.Slug
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
+  alias Oli.Delivery
+  alias Ecto.Multi
 
   require Logger
 
@@ -1123,7 +1125,8 @@ defmodule Oli.Delivery.Sections do
         project_publications
       ) do
     if Hierarchy.finalized?(hierarchy) do
-      Repo.transaction(fn ->
+      Multi.new()
+      |> Multi.run(:rebuild_section_resources, fn _repo, _ ->
         # ensure there are no duplicate resources so as to not violate the
         # section_resource [section_id, resource_id] database constraint
         hierarchy =
@@ -1135,6 +1138,14 @@ defmodule Oli.Delivery.Sections do
 
         rebuild_section_resources(section, section_resources, project_publications)
       end)
+      |> Multi.run(
+        :maybe_update_exploration_pages,
+        fn _repo, _ ->
+          # updates contains_explorations field in sections
+          Delivery.maybe_update_section_contains_explorations(section)
+        end
+      )
+      |> Repo.transaction()
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
@@ -1580,6 +1591,7 @@ defmodule Oli.Delivery.Sections do
       # resources and cleaning up any deleted ones
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
+      Delivery.maybe_update_section_contains_explorations(section)
 
       {:ok}
     end)
