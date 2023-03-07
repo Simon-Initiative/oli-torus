@@ -51,11 +51,10 @@ defmodule Oli.Delivery.Experiments.LogWorker do
           end
         end
 
-
         Oli.Delivery.Experiments.log(enrollment_id, correctness)
 
-        _ ->
-          {:nothing_to_do}
+      _ ->
+        {:nothing_to_do}
 
     end
 

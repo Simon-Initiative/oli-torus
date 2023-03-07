@@ -1,9 +1,13 @@
 defmodule Oli.Delivery.Experiments do
 
+  @moduledoc """
+  Interface to Upgrade-powered experiments.
+  """
+
+  require Logger
   import Oli.HTTP
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
-
 
   @doc """
   For the system itself, a project and a section, determien whether experiments via
@@ -23,30 +27,51 @@ defmodule Oli.Delivery.Experiments do
   @doc """
   Serial execution of init, assign and mark. Returns {:ok, condition} for the assigned
   condition code.
+
+  It is important that this integration is based on sending a Torus enrollment_id, rather than a
+  user_id, as the Upgrade user identifier.  This allows Upgrade to properly isolate
+  a user that might be enrolled in multiple course sections into the specific experiment
+  in Upgrade.
   """
   def enroll(enrollment_id, project_slug, decision_point) do
     with {:ok, _} <- init(enrollment_id, project_slug),
       {:ok, assign_results} <- assign(enrollment_id)
     do
       case assign_results do
+
+        # Upgrade returns an empty array payload in cases when no active
+        # experiment applies for this student
         [] ->
           {:ok, nil}
-        results ->
-          IO.inspect results
 
+        results ->
           case mark(enrollment_id, mark_for(results, decision_point)) do
             {:ok, %{"condition" => condition}} ->
+              Logger.info("Marked experiment for [#{enrollment_id}] into [#{condition}]")
               {:ok, condition}
-            _ ->
+            e ->
+              Logger.warning("Could not mark experiment #{Kernel.to_string(e)}")
               {:ok, nil}
           end
       end
 
     else
-      e -> e
+      {:error, e} ->
+        Oli.Utils.Appsignal.capture_error(e)
+        Logger.error("Could not enroll into Upgrade #{Kernel.to_string(e)}")
+        {:error, e}
+      e ->
+        Oli.Utils.Appsignal.capture_error(e)
+        Logger.error("Could not enroll into Upgrade #{Kernel.to_string(e)}")
+        {:error, e}
     end
   end
 
+  @doc """
+  Initializes a user and associates them with a group.  Torus paired Upgrade
+  experiments will always have an inclusion segment that only allows users
+  from a group whose name matches the project slug.
+  """
   def init(enrollment_id, project_slug) do
 
     body = %{
@@ -65,6 +90,9 @@ defmodule Oli.Delivery.Experiments do
     end
   end
 
+  @doc """
+  Requests assignment of a condition code for qualifying experiments.
+  """
   def assign(enrollment_id) do
     body = encode_body(%{
       "userId" => enrollment_id,
@@ -72,11 +100,14 @@ defmodule Oli.Delivery.Experiments do
     })
 
     case http().post(url("/api/assign"), body, headers()) do
-      {:ok, %{status_code: 200, body: body}} ->  Poison.decode(body)
+      {:ok, %{status_code: 200, body: body}} -> Poison.decode(body)
       e -> e
     end
   end
 
+  @doc """
+  Marks that a user has seen an experiment decision point and condition.
+  """
   def mark(enrollment_id, %{decision_point: decision_point, target: target, condition: condition}) do
 
     body = encode_body(%{
@@ -87,17 +118,17 @@ defmodule Oli.Delivery.Experiments do
       "status" => "condition applied"
     })
 
-    IO.inspect body
-
     case http().post(url("/api/v1/mark"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} ->
-        Poison.decode(body) |> IO.inspect
+        Poison.decode(body)
       e ->
-        IO.inspect "ERRROR"
-        e |> IO.inspect
+        e
     end
   end
 
+  @doc """
+  Posts a metrics result to Upgrade.
+  """
   def log(enrollment_id, correctness) do
     body = encode_body(%{
       "userId" => enrollment_id,
@@ -120,12 +151,23 @@ defmodule Oli.Delivery.Experiments do
     })
 
     case http().post(url("/api/v1/log"), body, headers()) do
-      {:ok, %{status_code: 200, body: body}} -> Poison.decode(body)
-      e -> e |> IO.inspect
+      {:ok, %{status_code: 200, body: body}} ->
+        Logger.info("Logged experiment for [#{enrollment_id}]")
+        Poison.decode(body)
+
+      {:error, e} ->
+        Oli.Utils.Appsignal.capture_error(e)
+        Logger.error("Could not log experiment for [#{enrollment_id}]")
+        {:error, e}
+
+      e ->
+        Oli.Utils.Appsignal.capture_error(e)
+        Logger.error("Could not log experiment for [#{enrollment_id}]")
+        e
     end
   end
 
-  def mark_for(results, decision_point) do
+  defp mark_for(results, decision_point) do
     dp = Enum.find(results, fn d -> d["expPoint"] == decision_point end)
 
     %{decision_point: decision_point, target: dp["expId"], condition: dp["assignedCondition"]["conditionCode"]}
@@ -150,6 +192,4 @@ defmodule Oli.Delivery.Experiments do
       ]
     end
   end
-
-
 end
