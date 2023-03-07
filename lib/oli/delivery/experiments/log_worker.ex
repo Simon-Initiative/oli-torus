@@ -1,5 +1,5 @@
 defmodule Oli.Delivery.Experiments.LogWorker do
-  use Oban.Worker, queue: :snapshots, max_attempts: 3
+  use Oban.Worker, queue: :default, max_attempts: 3
 
   import Ecto.Query, warn: false
   alias Oli.Repo
@@ -60,6 +60,10 @@ defmodule Oli.Delivery.Experiments.LogWorker do
 
   end
 
+  @doc """
+  Schedule a log posting job.  If Upgrade integration is not enabled in this
+  instance of the platform, do nothing.
+  """
   def maybe_schedule(result, activity_attempt_guid, section_slug) do
 
     case Oli.Delivery.Experiments.experiments_enabled?() do
