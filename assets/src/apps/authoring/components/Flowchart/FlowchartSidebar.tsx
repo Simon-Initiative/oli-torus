@@ -17,10 +17,7 @@ interface FlowchartSidebarProps {}
 export const FlowchartSidebar: React.FC<FlowchartSidebarProps> = () => {
   const selected = useSelector(selectCurrentActivity);
   return (
-    <div className="flowchart-sidebar">
-      Sidebar
-      {selected && <SelectedScreen screen={selected} />}
-    </div>
+    <div className="flowchart-sidebar">{selected && <SelectedScreen screen={selected} />}</div>
   );
 };
 
@@ -35,7 +32,6 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
       {questionType && (
         <div>
           <h3>{questionType}</h3>
-          <small>{questionId}</small>
         </div>
       )}
 

@@ -11,6 +11,31 @@ export interface DropdownModel extends JanusAbsolutePositioned, JanusCustomCss {
   fontSize?: number;
 }
 
+export const simpleUISchema = {};
+
+export const simpleSchema: JSONSchema7Object = {
+  label: {
+    type: 'string',
+    title: 'Label',
+    description: 'text label for the dropdown',
+  },
+  optionLabels: {
+    title: 'Dropdown Options',
+    type: 'array',
+    description: 'list of options',
+    items: {
+      $ref: '#/definitions/optionLabel',
+    },
+  },
+  definitions: {
+    optionLabel: {
+      type: 'string',
+      description: 'text for the dropdown item',
+      $anchor: 'optionLabel',
+    },
+  },
+};
+
 export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',

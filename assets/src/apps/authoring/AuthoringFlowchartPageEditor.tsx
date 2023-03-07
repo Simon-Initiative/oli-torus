@@ -2,7 +2,8 @@ import React, { useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
-import { SimplifiedRightMenu } from './components/RightMenu/SimplifiedRightMenu';
+import RightMenu from './components/RightMenu/RightMenu';
+
 import { ScreenList } from './components/ScreenList/ScreenList';
 
 import { SidePanel } from './components/SidePanel';
@@ -31,7 +32,11 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
   }, [dispatch]);
 
   return (
-    <div id="advanced-authoring" className="advanced-authoring flowchart-editor ">
+    <div
+      id="advanced-authoring"
+      className="advanced-authoring flowchart-editor "
+      ref={authoringContainer}
+    >
       <HeaderNav
         panelState={panelState}
         isVisible={panelState.top}
@@ -52,7 +57,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
         panelState={panelState}
         onToggle={() => handlePanelStateChange({ right: !panelState.right })}
       >
-        <SimplifiedRightMenu />
+        <RightMenu />
       </SidePanel>
     </div>
   );

@@ -3,15 +3,17 @@ import { JSONSchema7 } from 'json-schema';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import partSchema, {
   partUiSchema,
+  simplifiedPartSchema,
+  simplifiedPartUiSchema,
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
 import { Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { isEqual } from 'lodash';
 import { clone } from '../../../../utils/common';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
-import { setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
+import { selectAppMode, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
 import { setCurrentSelection } from '../../store/parts/slice';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
@@ -20,6 +22,7 @@ import { RightPanelTabs } from './RightMenu';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
+import { PartAuthoringMode } from '../../../../components/parts/partsApi';
 
 interface Props {
   currentActivity: IActivity;
@@ -63,10 +66,36 @@ const getComponentData = (instance: any, partDef: any) => {
   return transformPartModelToSchema(data);
 };
 
-const getComponentSchema = (instance: any): JSONSchema7 => {
-  // schema
+const getComponentSchema = (instance: any, partEditMode: PartAuthoringMode): JSONSchema7 => {
+  return partEditMode === 'simple'
+    ? getSimplifiedComponentSchema(instance)
+    : getExpertComponentSchema(instance);
+};
+
+// The "simple" ui with only the common properties sorted in a logical order
+const getSimplifiedComponentSchema = (instance: any): JSONSchema7 => {
   if (instance && instance.getSchema) {
-    const customPartSchema = instance.getSchema();
+    const customPartSchema = instance.getSchema('simple');
+    const newSchema: any = {
+      ...simplifiedPartSchema,
+      properties: {
+        custom: { type: 'object', properties: { ...customPartSchema } },
+        ...simplifiedPartSchema.properties,
+      },
+    };
+    if (customPartSchema.definitions) {
+      newSchema.definitions = customPartSchema.definitions;
+      delete newSchema.properties.custom.properties.definitions;
+    }
+    return newSchema;
+  }
+
+  return simplifiedPartSchema; // default schema for components that don't specify.
+};
+
+const getExpertComponentSchema = (instance: any): JSONSchema7 => {
+  if (instance && instance.getSchema) {
+    const customPartSchema = instance.getSchema('expert');
     const newSchema: any = {
       ...partSchema,
       properties: {
@@ -84,10 +113,32 @@ const getComponentSchema = (instance: any): JSONSchema7 => {
   return partSchema; // default schema for components that don't specify.
 };
 
-const getComponentUISchema = (instance: any) => {
+const getComponentUISchema = (instance: any, partEditMode: PartAuthoringMode) => {
+  return partEditMode === 'simple'
+    ? getSimplifiedComponentUISchema(instance)
+    : getExpertComponentUISchema(instance);
+};
+
+const getSimplifiedComponentUISchema = (instance: any) => {
   // ui schema
   if (instance && instance.getUiSchema) {
-    const customPartUiSchema = instance.getUiSchema();
+    const customPartUiSchema = instance.getUiSchema('simple');
+    const newUiSchema = {
+      ...simplifiedPartUiSchema,
+      custom: {
+        'ui:title': 'Component Options',
+        ...customPartUiSchema,
+      },
+    };
+    return newUiSchema;
+  }
+  return simplifiedPartUiSchema; // default ui schema for components that don't specify.
+};
+
+const getExpertComponentUISchema = (instance: any) => {
+  // ui schema
+  if (instance && instance.getUiSchema) {
+    const customPartUiSchema = instance.getUiSchema('expert');
     const newUiSchema = {
       ...partUiSchema,
       custom: {
@@ -108,6 +159,10 @@ export const PartPropertyEditor: React.FC<Props> = ({
   existingIds,
 }) => {
   const dispatch = useDispatch();
+
+  const appMode = useSelector(selectAppMode);
+  const partEditMode: PartAuthoringMode = appMode === 'expert' ? 'expert' : 'simple';
+
   const [shouldShowConfirmDelete, , showConfirmDelete, hideConfirmDelete] = useToggle(false);
 
   const partDef = useMemo(
@@ -128,13 +183,13 @@ export const PartPropertyEditor: React.FC<Props> = ({
   );
 
   const componentSchema = useMemo(
-    () => getComponentSchema(currentPartInstance),
-    [currentPartInstance],
+    () => getComponentSchema(currentPartInstance, partEditMode),
+    [currentPartInstance, partEditMode],
   );
 
   const componentUiSchema = useMemo(
-    () => getComponentUISchema(currentPartInstance),
-    [currentPartInstance],
+    () => getComponentUISchema(currentPartInstance, partEditMode),
+    [currentPartInstance, partEditMode],
   );
 
   const handleDeleteComponent = useCallback(() => {
@@ -210,6 +265,8 @@ export const PartPropertyEditor: React.FC<Props> = ({
         modelChanges.id = currentPartSelection;
       }
 
+      // We can use the same transformation functions for expert & simplified because the RJSF library passes
+      // back any unknown properties unchanged.
       modelChanges = transformPartSchemaToModel(modelChanges);
       if (currentPartInstance && currentPartInstance.transformSchemaToModel) {
         modelChanges.custom = {
@@ -247,7 +304,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
           <Button>
             <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
           </Button>
-          {selectedPartDef && (
+          {selectedPartDef && partEditMode === 'expert' && (
             <CompJsonEditor
               onChange={handleEditComponentJson}
               jsonValue={selectedPartDef}
