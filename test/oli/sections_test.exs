@@ -1128,30 +1128,10 @@ defmodule Oli.SectionsTest do
   end
 
   describe "is_student?/2" do
-    @valid_attrs %{
-      end_date: ~U[2010-04-17 00:00:00.000000Z],
-      open_and_free: true,
-      registration_open: true,
-      start_date: ~U[2010-04-17 00:00:00.000000Z],
-      title: "some title",
-      context_id: "context_id"
-    }
-
     setup do
-      map = Seeder.base_project_with_resource2()
-
-      institution = Map.get(map, :institution)
-      project = Map.get(map, :project)
-
-      valid_attrs =
-        Map.put(@valid_attrs, :institution_id, institution.id)
-        |> Map.put(:base_project_id, project.id)
-
-      user = user_fixture()
-
-      {:ok, section} = valid_attrs |> Sections.create_section()
-
-      {:ok, Map.merge(map, %{section: section, user: user})}
+      user = insert(:user)
+      section = insert(:section)
+      {:ok, %{section: section, user: user}}
     end
 
     test "returns false for enrolled users that are not students", %{
