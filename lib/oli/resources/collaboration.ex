@@ -73,11 +73,12 @@ defmodule Oli.Resources.Collaboration do
       iex> list_collaborative_spaces_in_section("invalid")
       []
   """
-  @spec list_collaborative_spaces_in_section(String.t()) :: list(%CollabSpaceConfig{})
-  def list_collaborative_spaces_in_section(section_slug) do
+  @spec list_collaborative_spaces_in_section(String.t(), limit: String.t(), offset: String.t()) ::
+          {Integer.t(), list(%CollabSpaceConfig{})}
+  def list_collaborative_spaces_in_section(section_slug, opts \\ []) do
     page_type_id = ResourceType.get_id_by_type("page")
 
-    Repo.all(
+    query =
       from(
         section in Section,
         join: section_resource in SectionResource,
@@ -130,10 +131,37 @@ defmodule Oli.Resources.Collaboration do
               "select max(inserted_at) from posts where section_id = ? and resource_id = ?",
               section.id,
               page_revision.resource_id
-            )
+            ),
+          count: over(count(page_revision.id))
         }
       )
-    )
+
+    query =
+      case opts[:limit] do
+        nil ->
+          query
+
+        limit ->
+          query
+          |> limit(^limit)
+      end
+
+    query =
+      case opts[:offset] do
+        nil ->
+          query
+
+        offset ->
+          query
+          |> offset(^offset)
+      end
+
+    results = Repo.all(query)
+
+    case length(results) do
+      0 -> {0, []}
+      _ -> {List.first(results).count, Enum.map(results, &Map.delete(&1, :count))}
+    end
   end
 
   @doc """
