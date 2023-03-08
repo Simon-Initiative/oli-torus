@@ -491,7 +491,7 @@ defmodule Oli.Resources.Collaboration do
     |> join(:left, [p, s, sr, spp, pr, rev, u], p2 in Post,
       on: p2.parent_post_id == p.id or p2.thread_root_id == p.id
     )
-    |> where([p, s, sr, spp, pr, rev, u, p2], is_nil(p2))
+    |> where([p, s, sr, spp, pr, rev, u, p2], is_nil(p2) and is_nil(p.parent_post_id) and is_nil(p.thread_root_id))
     |> Repo.all()
     |> return_posts_with_count()
   end
