@@ -36,8 +36,13 @@ defmodule Oli.Rendering.Alternatives do
     {:ok, groups} = groups_fn.(section_slug)
     by_id = Enum.reduce(groups, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
+    enrollment_id = case enrollment do
+      nil -> nil
+      e -> e.id
+    end
+
     alternatives_selector_fn.(
-      %AlternativesStrategyContext{enrollment_id: enrollment.id, user: user, section_slug: section_slug, mode: mode, project_slug: project_slug, alternative_groups_by_id: by_id},
+      %AlternativesStrategyContext{enrollment_id: enrollment_id, user: user, section_slug: section_slug, mode: mode, project_slug: project_slug, alternative_groups_by_id: by_id},
       element
     )
     |> render_selected_alternatives(context, writer)

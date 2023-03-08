@@ -1313,7 +1313,7 @@ defmodule Oli.Delivery.Sections do
   # Recursive helper to traverse the hierarchy of the section resources and create the page to ancestor
   # container map.
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
-    Enum.map(sr.children, fn sr_id ->
+    case Enum.map(sr.children, fn sr_id ->
       sr = Map.get(all, sr_id)
       case MapSet.member?(container_ids, sr.resource_id) do
         true ->
@@ -1321,8 +1321,10 @@ defmodule Oli.Delivery.Sections do
           |> Map.merge(page_map)
         false -> Map.put(page_map, sr.resource_id, ancestors)
       end
-    end)
-    |> Enum.reduce(fn m, a -> Map.merge(m, a) end)
+    end) do
+      [] -> %{}
+      other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
+    end
   end
 
   defp set_contained_page_counts(section_id) do

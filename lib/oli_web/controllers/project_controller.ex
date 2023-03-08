@@ -109,7 +109,8 @@ defmodule OliWeb.ProjectController do
             Publishing.get_latest_published_publication_by_slug(project.slug),
           publishers: Inventories.list_publishers(),
           title: "Overview | " <> project.title,
-          language_codes: Oli.LanguageCodesIso639.codes()
+          language_codes: Oli.LanguageCodesIso639.codes(),
+          can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?()
         }
 
         conn
@@ -187,7 +188,8 @@ defmodule OliWeb.ProjectController do
             Publishing.get_latest_published_publication_by_slug(project.slug),
           publishers: Inventories.list_publishers(),
           title: "Overview | " <> project.title,
-          language_codes: Oli.LanguageCodesIso639.codes()
+          language_codes: Oli.LanguageCodesIso639.codes(),
+          can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?()
         }
 
         conn
