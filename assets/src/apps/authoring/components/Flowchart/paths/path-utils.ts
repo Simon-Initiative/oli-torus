@@ -15,6 +15,7 @@
 import { MarkerType } from 'reactflow';
 import {
   IActivity,
+  IDropdownPartLayout,
   IMCQPartLayout,
   IPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
@@ -23,6 +24,9 @@ import { createAlwaysGoToPath, createUnknownPathWithDestination } from './path-f
 import {
   AllPaths,
   AlwaysGoToPath,
+  ComponentPath,
+  ComponentPaths,
+  componentTypes,
   DestinationPath,
   DestinationPaths,
   EndOfActivityPath,
@@ -43,7 +47,12 @@ const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
   return paths;
 };
 
+export const isComponentPath = (path: AllPaths): path is ComponentPaths =>
+  componentTypes.includes(path.type);
+
 export const isMCQ = (screen: IPartLayout): screen is IMCQPartLayout => screen.type === 'janus-mcq';
+export const isDropdown = (screen: IPartLayout): screen is IDropdownPartLayout =>
+  screen.type === 'janus-dropdown';
 
 export const isEndOfActivityPath = (path: AllPaths): path is EndOfActivityPath =>
   path.type === 'end-of-activity';
@@ -116,3 +125,13 @@ export const getDownstreamScreenIds = (screen: IActivity): number[] =>
     .filter(isDestinationPath)
     .map((path: DestinationPaths) => path.destinationScreenId)
     .filter(isValidNumber) || [];
+
+// Adds a componentId attribute, if the path should have one.
+export const addComponentId = (path: AllPaths, componentId: string | null): AllPaths => {
+  if (!componentId) return path;
+  if (!isComponentPath(path)) return path;
+  return {
+    ...path,
+    componentId,
+  };
+};

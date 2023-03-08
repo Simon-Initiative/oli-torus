@@ -1,15 +1,19 @@
 import {
   IActivity,
+  IDropdownPartLayout,
   IMCQPartLayout,
   IPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import {
   createAlwaysGoToPath,
+  createDropdownCorrectPath,
+  createDropdownIncorrectPath,
   createMultipleChoiceCorrectPath,
   createMultipleChoiceIncorrectPath,
+  createUnknownPathWithDestination,
 } from './path-factories';
 import { AllPaths } from './path-types';
-import { isMCQ } from './path-utils';
+import { isDropdown, isMCQ } from './path-utils';
 
 // Given a screen, return all the path types that are available for us.
 export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
@@ -18,9 +22,26 @@ export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
       return createCATAChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
     case 'multiple-choice':
       return createMultipleChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
+    case 'dropdown':
+      return createDropdownChoicePathOptions(screen.content?.partsLayout.find(isDropdown));
     default:
       return [createAlwaysGoToPath()]; // All other screens only have an "always go to" path
   }
+};
+
+const createDefaultPathTypes = () => {
+  return [createAlwaysGoToPath(), createUnknownPathWithDestination()];
+};
+
+const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefined) => {
+  if (dropdown) {
+    return [
+      createDropdownCorrectPath(dropdown.id),
+      createDropdownIncorrectPath(dropdown.id),
+      ...createDefaultPathTypes(),
+    ];
+  }
+  return [];
 };
 
 const createCATAChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
@@ -43,6 +64,7 @@ type QuestionType =
   | 'multi-line-text'
   | 'input-text'
   | 'input-number'
+  | 'dropdown'
   | 'none';
 
 const questionMapping: Record<string, QuestionType> = {
@@ -50,6 +72,7 @@ const questionMapping: Record<string, QuestionType> = {
   'janus-multi-line-text': 'multi-line-text',
   'janus-input-text': 'input-text',
   'janus-input-number': 'input-number',
+  'janus-dropdown': 'dropdown',
 };
 
 const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
@@ -60,6 +83,7 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   'multi-line-text': 'Multi-line Text',
   'input-text': 'Text Input',
   'input-number': 'Number Input',
+  dropdown: 'Dropdown',
   none: 'No question',
 };
 

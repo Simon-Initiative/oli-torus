@@ -19,7 +19,7 @@ import {
   FlowchartEventContextProps,
 } from './FlowchartEventContext';
 import { FlowchartModeOptions } from './FlowchartModeOptions';
-import { FlowchartSidebar } from './FlowchartSidebar';
+import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './FlowchartTopToolbar';
 
 /*

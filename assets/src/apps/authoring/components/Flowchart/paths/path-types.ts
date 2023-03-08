@@ -3,7 +3,7 @@ export interface AuthoringFlowchartScreenData {
 }
 
 interface BasePath {
-  type: string;
+  type: RuleTypes;
   id: string;
   ruleId: string | null;
   completed: boolean;
@@ -16,14 +16,25 @@ export interface ComponentPath extends DestinationPath {
   componentId: string | null;
 }
 
+export interface DropdownCorrectPath extends ComponentPath {
+  type: 'dropdown-correct';
+}
+
+export interface DropdownIncorrectPath extends ComponentPath {
+  type: 'dropdown-incorrect';
+}
+
+export interface DropdownCommonErrorPath extends ComponentPath {
+  type: 'dropdown-common-error';
+  selectedOption: number;
+}
+
 export interface MultipleChoiceCorrectPath extends ComponentPath {
   type: 'multiple-choice-correct';
-  correctOption: number;
 }
 
 export interface MultipleChoiceIncorrectPath extends ComponentPath {
   type: 'multiple-choice-incorrect';
-  correctOption: number;
 }
 
 export interface MultipleChoiceCommonErrorPath extends ComponentPath {
@@ -47,13 +58,39 @@ export interface UnknownPathWithDestination extends DestinationPath {
   type: 'unknown-reason-path';
 }
 
-export type DestinationPaths =
+export type ComponentPaths =
   | MultipleChoiceCorrectPath
   | MultipleChoiceIncorrectPath
   | MultipleChoiceCommonErrorPath
-  | AlwaysGoToPath
-  | UnknownPathWithDestination;
+  | DropdownCorrectPath
+  | DropdownIncorrectPath;
+
+export type DestinationPaths = ComponentPaths | AlwaysGoToPath | UnknownPathWithDestination;
 
 export type AllPaths = EndOfActivityPath | DestinationPaths;
 
-export type RuleTypes = AllPaths['type'];
+export const ruleTypes = [
+  'unknown-reason-path',
+  'always-go-to',
+  'multiple-choice-correct',
+  'multiple-choice-incorrect',
+  'multiple-choice-common-error',
+  'end-of-activity',
+  'dropdown-correct',
+  'dropdown-incorrect',
+  'dropdown-common-error',
+  'unknown-reason-path',
+] as const;
+
+export const componentTypes = [
+  'multiple-choice-correct',
+  'multiple-choice-incorrect',
+  'multiple-choice-common-error',
+  'end-of-activity',
+  'dropdown-correct',
+  'dropdown-incorrect',
+  'dropdown-common-error',
+];
+
+type RuleTuple = typeof ruleTypes;
+export type RuleTypes = RuleTuple[number];

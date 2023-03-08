@@ -154,5 +154,55 @@
       font-weight: 700;
     }
   }
+
+  .path-editor-completed,
+  .path-editor-incomplete {
+    border-radius: 4px;
+    padding: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    select {
+      border: none;
+      background-color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem;
+
+      margin: 0.25rem;
+
+      &:hover {
+        cursor: pointer;
+      }
+    }
+
+    label {
+      margin-bottom: 0;
+      font-weight: 700;
+    }
+    .param-box {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .path-param {
+      background-color: #fff;
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+
+  .path-editor-completed {
+    background-color: #e7f0ff;
+  }
+  .path-editor-incomplete {
+    background-color: #f6e7ff;
+  }
 }
 @import 'react-flow.scss';

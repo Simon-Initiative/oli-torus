@@ -19,6 +19,26 @@ interface IBasePartLayout {
   custom: Record<string, any>;
 }
 
+export interface IDropdownPartLayout extends IBasePartLayout {
+  type: 'janus-dropdown';
+  custom: {
+    x: number;
+    y: number;
+    z: number;
+    label: string;
+    width: number;
+    height: number;
+    prompt: string;
+    enabled: boolean;
+    fontSize: number;
+    maxScore: number;
+    showLabel: boolean;
+    optionLabels: string[];
+    customCssClass: string;
+    requiresManualGrading: boolean;
+  };
+}
+
 export interface IMCQPartLayout extends IBasePartLayout {
   type: 'janus-mcq';
   custom: {
@@ -46,7 +66,7 @@ export interface IMCQPartLayout extends IBasePartLayout {
   };
 }
 
-type KnownPartLayouts = IMCQPartLayout;
+type KnownPartLayouts = IMCQPartLayout | IDropdownPartLayout;
 
 interface OtherPartLayout extends IBasePartLayout {
   [key: string]: any;

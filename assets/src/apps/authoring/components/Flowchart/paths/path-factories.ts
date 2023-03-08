@@ -1,20 +1,49 @@
 import guid from '../../../../../utils/guid';
 import {
   AlwaysGoToPath,
+  DestinationPath,
+  DropdownCorrectPath,
+  DropdownIncorrectPath,
   EndOfActivityPath,
   MultipleChoiceCorrectPath,
   MultipleChoiceIncorrectPath,
+  RuleTypes,
   UnknownPathWithDestination,
 } from './path-types';
 
 export const createUnknownPathWithDestination = (
-  destinationScreenId: number,
+  destinationScreenId: number | null = null,
 ): UnknownPathWithDestination => ({
   type: 'unknown-reason-path',
   id: guid(),
   ruleId: null,
   destinationScreenId,
   completed: false,
+});
+
+const createDestinationPath = (destinationScreenId: number | null = null) => ({
+  id: guid(),
+  ruleId: null,
+  destinationScreenId,
+  completed: false,
+});
+
+export const createDropdownIncorrectPath = (
+  componentId: string,
+  destinationScreenId: number | null = null,
+): DropdownIncorrectPath => ({
+  ...createDestinationPath(destinationScreenId),
+  type: 'dropdown-incorrect',
+  componentId,
+});
+
+export const createDropdownCorrectPath = (
+  componentId: string,
+  destinationScreenId: number | null = null,
+): DropdownCorrectPath => ({
+  ...createDestinationPath(destinationScreenId),
+  type: 'dropdown-correct',
+  componentId,
 });
 
 export const createMultipleChoiceIncorrectPath = (
@@ -26,7 +55,6 @@ export const createMultipleChoiceIncorrectPath = (
   destinationScreenId,
   completed: false,
   componentId: null,
-  correctOption: 0,
 });
 
 export const createMultipleChoiceCorrectPath = (
@@ -38,7 +66,6 @@ export const createMultipleChoiceCorrectPath = (
   destinationScreenId,
   completed: false,
   componentId: null,
-  correctOption: 0,
 });
 
 export const createAlwaysGoToPath = (
