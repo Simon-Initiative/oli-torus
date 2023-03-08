@@ -3,6 +3,9 @@
 @import 'bootstrap-shims';
 @import 'tailwindcss/utilities';
 @import 'transitions';
+@import 'input';
+@import 'text';
+@import 'button';
 
 a,
 a.btn.btn-link {

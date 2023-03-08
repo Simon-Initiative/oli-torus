@@ -806,6 +806,48 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Learning Objectives"
       assert html_response(conn, 200) =~ "objective one"
     end
+
+    test "page renders the collab space if configured",
+         %{
+           user: user,
+           conn: conn,
+           section: section,
+           collab_space_page_revision: page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
+    end
+
+    test "page does not render the collab space if it's not configured",
+         %{
+           user: user,
+           conn: conn,
+           section: section,
+           page_revision: page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      refute html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
+    end
+
+    test "page does not render the collab space if it's disabled",
+         %{
+           user: user,
+           conn: conn,
+           section: section,
+           disabled_collab_space_page_revision: page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      refute html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
+    end
   end
 
   describe "independent learner page_delivery_controller" do
@@ -1688,8 +1730,32 @@ defmodule OliWeb.PageDeliveryControllerTest do
       objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
     }
 
+    collab_space_config = build(:collab_space_config, status: :enabled)
+
+    collab_space_attrs = %{
+      title: "collab space page",
+      slug: "collab_space_revision",
+      content: %{
+        "model" => []
+      },
+      collab_space_config: collab_space_config
+    }
+
+    collab_space_config = build(:collab_space_config, status: :disabled)
+
+    disabled_collab_space_attrs = %{
+      title: "collab space page",
+      slug: "collab_space_revision",
+      content: %{
+        "model" => []
+      },
+      collab_space_config: collab_space_config
+    }
+
     map = Seeder.add_page(map, graded_attrs, :page)
     map = Seeder.add_page(map, ungraded_attrs, :ungraded_page)
+    map = Seeder.add_page(map, collab_space_attrs, :collab_space_page)
+    map = Seeder.add_page(map, disabled_collab_space_attrs, :disabled_collab_space_page)
 
     exploration_page_1 = %{
       graded: false,
@@ -1760,7 +1826,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
      section: map.section,
      revision: map.revision1,
      page_revision: map.page.revision,
-     ungraded_page_revision: map.ungraded_page.revision}
+     ungraded_page_revision: map.ungraded_page.revision,
+     collab_space_page_revision: map.collab_space_page.revision,
+     disabled_collab_space_page_revision: map.disabled_collab_space_page.revision}
   end
 
   defp setup_independent_learner_section(_) do

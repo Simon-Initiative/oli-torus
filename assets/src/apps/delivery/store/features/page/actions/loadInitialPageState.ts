@@ -10,7 +10,7 @@ import {
   getAssignScript,
   getEnvState,
 } from '../../../../../../adaptivity/scripting';
-import { RootState } from '../../../rootReducer';
+import { DeliveryRootState } from '../../../rootReducer';
 import { setHistoryNavigationTriggered } from '../../adaptivity/slice';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
 import {
@@ -40,13 +40,13 @@ export const loadInitialPageState = createAsyncThunk(
     // wait for this to resolve so that state will be updated
     await dispatch(setGroups({ groups }));
 
-    const currentGroup = selectCurrentGroup(getState() as RootState);
+    const currentGroup = selectCurrentGroup(getState() as DeliveryRootState);
     if (currentGroup?.layout === LayoutType.DECK) {
       // write initial session state (TODO: factor out elsewhere)
-      const resourceAttemptGuid = selectResourceAttemptGuid(getState() as RootState);
+      const resourceAttemptGuid = selectResourceAttemptGuid(getState() as DeliveryRootState);
       dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
-      const sequence = selectSequence(getState() as RootState);
-      const sessionState = sequence.reduce((acc, entry) => {
+      const sequence = selectSequence(getState() as DeliveryRootState);
+      const sessionState: any = sequence.reduce((acc: any, entry) => {
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
         return acc;
       }, {});

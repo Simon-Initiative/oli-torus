@@ -1,0 +1,11 @@
+h6.torus-h6 {
+  @apply text-sm font-semibold;
+}
+
+span.torus-span {
+  @apply text-gray-400 text-sm font-normal;
+}
+
+small.torus-small {
+  @apply text-gray-400 text-xs font-normal;
+}

@@ -71,7 +71,7 @@ const HistoryNavigation: React.FC = () => {
       )[0];
       return {
         id: foundSequence.custom?.sequenceId,
-        name: foundSequence.custom?.sequenceName || foundSequence.id,
+        name: foundSequence.custom?.sequenceName || String(foundSequence.resourceId),
         timestamp: snapshot[`session.visitTimestamps.${foundSequence.custom?.sequenceId}`],
       };
     })

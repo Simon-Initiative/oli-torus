@@ -1,13 +1,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getLocalizedStateSnapshot } from 'adaptivity/scripting';
-import { RootState } from 'apps/delivery/store/rootReducer';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';
 import AdaptivitySlice from '../name';
 
 export const getLocalizedCurrentStateSnapshot = createAsyncThunk(
   `${AdaptivitySlice}/getLocalizedCurrentStateSnapshot`,
   async (payload, thunkAPI) => {
-    const currentActivityTree = selectCurrentActivityTree(thunkAPI.getState() as RootState);
+    const currentActivityTree = selectCurrentActivityTree(thunkAPI.getState() as DeliveryRootState);
     if (!currentActivityTree) {
       return { snapshot: {} };
     }

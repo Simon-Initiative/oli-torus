@@ -1,0 +1,7 @@
+.torus-input {
+  @apply border border-gray-300 p-3 w-full rounded-sm text-sm;
+}
+
+textarea.torus-input {
+  @apply resize-none;
+}

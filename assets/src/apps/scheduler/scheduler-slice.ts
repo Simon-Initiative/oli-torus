@@ -36,7 +36,7 @@ export interface HierarchyItem extends HierarchyItemSrc {
 }
 
 export interface SchedulerState {
-  schedule: HierarchyItem[] | [];
+  schedule: HierarchyItem[];
   startDate: DateWithoutTime | null;
   endDate: DateWithoutTime | null;
   selectedId: number | null;
@@ -97,7 +97,7 @@ const buildHierarchyItems = (items: HierarchyItemSrc[]): HierarchyItem[] => {
   }));
 };
 
-const initialState = { schedule: [] } as SchedulerState;
+const initialState = { schedule: [] as HierarchyItem[] } as SchedulerState;
 
 interface MovePayload {
   itemId: number;

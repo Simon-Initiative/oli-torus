@@ -96,7 +96,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   }, [isDirty]);
 
   const handleRuleChange = (rule: any) => {
-    const existing = currentActivity?.authoring.rules.find((r: any) => r.id === rule.id);
+    const existing = currentActivity?.authoring?.rules?.find((r: any) => r.id === rule.id);
     const diff = JSON.stringify(rule) !== JSON.stringify(existing);
     /*console.log('RULE CHANGE: ', {
       rule,
@@ -107,7 +107,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       console.warn("rule not found, shouldn't happen!!!");
       return;
     }
-    if (diff) {
+    if (diff && currentActivity?.authoring?.rules) {
       const activityClone = clone(currentActivity);
       const rulesClone = currentActivity ? [...currentActivity.authoring.rules] : [];
       rulesClone[currentActivity?.authoring.rules.indexOf(existing)] = rule;
