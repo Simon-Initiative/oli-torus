@@ -14,8 +14,9 @@ defmodule Oli.Delivery.Experiments do
   Upgrade intergration are enabled.
   """
   def experiments_enabled?() do
-    case Application.fetch_env(:oli, :upgrade_experiment_provider) do
-      :error -> false
+    case Application.fetch_env(:oli, :upgrade_experiment_provider)[:user_url] do
+      nil -> false
+      "" -> false
       _ -> true
     end
   end
