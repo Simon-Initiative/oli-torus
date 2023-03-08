@@ -79,14 +79,3 @@ __FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_at
 __ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__
 -->
 <% end %>
-
-<div class="container mt-5">
-  <%=
-    live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
-      session: %{
-        "collab_space_config" => @collab_space_config,
-        "section_slug" => @section_slug,
-        "page_slug" => @slug
-      })
-  %>
-</div>

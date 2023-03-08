@@ -154,11 +154,9 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         onFetchOptions={() =>
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
-              return Promise.resolve(
-                result.alternatives.map((a) => ({ value: a.id, title: a.title })),
-              );
+              return result.alternatives.map((a) => ({ value: a.id, title: a.title }));
             } else {
-              return Promise.reject(result.message);
+              throw result.message;
             }
           })
         }

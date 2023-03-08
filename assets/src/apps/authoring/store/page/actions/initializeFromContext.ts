@@ -52,7 +52,9 @@ export const initializeFromContext = createAsyncThunk(
       // if there are any activities defined that are not in a group they will be
       // assimilated into a new group
       if (!children.length) {
-        const { payload: newActivity } = await dispatch(createNewActivity({}));
+        const { payload: newActivity } = await dispatch(
+          createNewActivity({ title: 'Welcome Screen' }),
+        );
         children.push(newActivity);
       }
       // create sequence map of activities which is the group children

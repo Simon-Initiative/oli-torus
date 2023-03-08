@@ -27,8 +27,8 @@ defmodule Oli.Interop.Ingest.Processor.Hyperlinks do
         Map.put(m, Map.get(resource_id_to_legacy, r.resource_id), r)
       end)
 
-    {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project)
-    {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(activity_map, project)
+    {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project, page_map)
+    {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(activity_map, project, page_map)
 
     state
   end

@@ -1,30 +1,39 @@
 defmodule OliWeb.CollaborationLive.Posts.Sort do
   use Surface.Component
 
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Field, RadioButton, Select}
-
   prop sort, :struct, required: true
 
   def render(assigns) do
     ~F"""
-      <Form for={:sort} change="sort" class="d-flex">
-        <Select field="sort_by" options={"Date": "inserted_at", "# of Replies": "replies_count"} class="custom-select custom-select mr-2" selected={@sort.by}/>
+    <div class="flex gap-2">
+      <div class="flex text-xs">
+        <button
+          phx-click="sort"
+          phx-value-sort_by="inserted_at"
+          phx-value-sort_order={@sort.order}
+          class={"#{if @sort.by == :inserted_at, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white"} rounded-l-sm py-1 h-8 w-20"}
+        >
+          Date
+        </button>
+        <button
+          phx-click="sort"
+          phx-value-sort_by="replies_count"
+          phx-value-sort_order={@sort.order}
+          class={"#{if @sort.by == :replies_count, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white"} rounded-r-sm py-1 h-8 w-20"}
+        >
+          Popularity
+        </button>
+      </div>
 
-        <Field name="sort_order" class="control w-100 d-flex align-items-center">
-          <div class="btn-group btn-group-toggle">
-            <label class={"btn btn-outline-secondary" <> if @sort.order == :desc, do: " active", else: ""}>
-              <RadioButton value="desc" checked={@sort.order == :desc} opts={hidden: true}/>
-              <i class='fa fa-sort-amount-down'></i>
-            </label>
-
-            <label class={"btn btn-outline-secondary" <> if @sort.order == :asc, do: " active", else: ""}>
-              <RadioButton value="asc" checked={@sort.order == :asc} opts={hidden: true}/>
-              <i class='fa fa-sort-amount-up'></i>
-            </label>
-          </div>
-        </Field>
-      </Form>
+      <button
+        type="button"
+        phx-click="sort"
+        phx-value-sort_by={@sort.by}
+        phx-value-sort_order={if @sort.order == :desc, do: "asc", else: "desc"}
+      >
+        <i class={"fa fa-sort-amount-#{if @sort.order == :desc, do: "up", else: "down"}"} />
+      </button>
+    </div>
     """
   end
 end

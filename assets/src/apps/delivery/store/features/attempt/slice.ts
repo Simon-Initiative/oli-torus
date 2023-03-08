@@ -8,7 +8,7 @@ import {
   Slice,
 } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
-import { RootState } from '../../rootReducer';
+import { DeliveryRootState } from '../../rootReducer';
 import AttemptSlice from './name';
 
 interface ExtrinsicState extends Record<string, unknown> {
@@ -77,11 +77,12 @@ export const {
   upsertActivityAttemptState,
 } = slice.actions;
 
-export const selectState = (state: RootState): AttemptState => state[AttemptSlice] as AttemptState;
+export const selectState = (state: DeliveryRootState): AttemptState =>
+  state[AttemptSlice] as AttemptState;
 export const { selectAll, selectById, selectTotal } = adapter.getSelectors(selectState);
 
 export const selectActivityAttemptState = (
-  state: RootState,
+  state: DeliveryRootState,
   activityId: number | undefined,
 ): ActivityState | undefined => {
   const attempts = selectAll(state);
