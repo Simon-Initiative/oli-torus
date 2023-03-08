@@ -1,4 +1,5 @@
-import React, { PropsWithChildren, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useState } from 'react';
+import { Transition } from '@tailwindui/react';
 import { classNames } from 'utils/classNames';
 import { UserAccountMenu, User, Routes } from './UserAccountMenu';
 
@@ -158,12 +159,16 @@ interface NavLinkProps {
 const NavLink = ({ href, active, name }: NavLinkProps) => (
   <a
     href={href}
-    className={classNames(
-      'block no-underline px-6 py-2 hover:no-underline border-b border-transparent text-current hover:text-delivery-primary-400',
-      active && 'font-bold border-b border-delivery-primary !text-delivery-primary',
-    )}
+    className="block no-underline px-6 py-2 hover:no-underline text-current hover:text-delivery-primary-400"
   >
-    {name}
+    <div
+      className={classNames(
+        'border-b-2',
+        active ? 'font-bold border-delivery-primary !text-delivery-primary' : 'border-transparent',
+      )}
+    >
+      {name}
+    </div>
   </a>
 );
 
@@ -176,19 +181,39 @@ interface NavExpandProps {
   };
 }
 
+type NavExpandMouseEvent = MouseEvent & { isNavExpandEvent: true };
+
 const NavExpand = ({ name, popout, active }: PropsWithChildren<NavExpandProps>) => {
   const [show, setShow] = useState(false);
 
+  useEffect(() => {
+    document.addEventListener('click', (e) => {
+      if (!(e as NavExpandMouseEvent).isNavExpandEvent) {
+        setShow(false);
+      }
+    });
+  }, []);
+
   return (
-    <div>
+    <div
+      onClick={(e) => {
+        (e.nativeEvent as NavExpandMouseEvent).isNavExpandEvent = true;
+      }}
+    >
       <div
-        className={classNames(
-          'block no-underline px-6 py-2 cursor-pointer hover:no-underline border-b border-transparent text-current hover:text-delivery-primary-400',
-          active && 'font-bold border-b border-delivery-primary !text-delivery-primary',
-        )}
+        className="block no-underline px-6 py-2 cursor-pointer hover:no-underline text-current hover:text-delivery-primary-400"
         onClick={() => setShow(!show)}
       >
-        <div>{name}</div>
+        <div
+          className={classNames(
+            'border-b-2',
+            active
+              ? 'font-bold border-delivery-primary !text-delivery-primary'
+              : 'border-transparent',
+          )}
+        >
+          {name}
+        </div>
       </div>
       <PopoutContainer show={show}>
         {renderComponent(popout.component, popout.props)}
@@ -202,11 +227,16 @@ interface PopoutContainerProps {
 }
 
 const PopoutContainer = ({ show, children }: PropsWithChildren<PopoutContainerProps>) => (
-  <div
-    className={`${
-      show ? '' : 'hidden'
-    } overflow-y-auto lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:w-[600px] lg:pl-[200px] lg:bg-white dark:lg:bg-gray-900 lg:z-[-1] h-[400px] lg:h-screen lg:shadow`}
+  <Transition
+    show={show}
+    enter="transition-all duration-100"
+    enterFrom="opacity-0 h-0 lg:w-0"
+    enterTo="opacity-100"
+    leave="transition-all duration-150"
+    leaveFrom="opacity-100"
+    leaveTo="opacity-0 h-0 lg:w-0"
+    className="h-[400px] lg:w-[600px] overflow-y-auto lg:fixed lg:left-0 lg:top-0 lg:bottom-0 pl-4 lg:pl-[200px] lg:bg-white/80 dark:lg:bg-gray-900/80 lg:backdrop-blur-xl lg:z-[-1] lg:h-screen lg:shadow-lg"
   >
     {children}
-  </div>
+  </Transition>
 );
