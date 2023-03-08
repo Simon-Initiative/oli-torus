@@ -778,7 +778,9 @@ defmodule OliWeb.Router do
     live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
     live("/students", Delivery.InstructorDashboard.StudentsLive)
     live("/content", Delivery.InstructorDashboard.ContentLive)
-    live("/discussions", Delivery.InstructorDashboard.DiscussionLive)
+    live("/discussions", Delivery.InstructorDashboard.DiscussionsLive)
+    live("/assignments", Delivery.InstructorDashboard.AssignmentsLive)
+    live("/other", Delivery.InstructorDashboard.OtherLive)
 
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
@@ -805,13 +807,15 @@ defmodule OliWeb.Router do
     ])
 
     # Redirect deprecated routes
-    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
-    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
+    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
+    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
 
     live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive, :preview)
     live("/students", Delivery.InstructorDashboard.StudentsLive, :preview)
     live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
-    live("/discussions", Delivery.InstructorDashboard.DiscussionLive, :preview)
+    live("/discussions", Delivery.InstructorDashboard.DiscussionsLive, :preview)
+    live("/assignments", Delivery.InstructorDashboard.AssignmentsLive, :preview)
+    live("/other", Delivery.InstructorDashboard.OtherLive, :preview)
 
     get("/exploration", PageDeliveryController, :exploration_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)

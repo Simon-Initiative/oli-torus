@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.DiscussionLive do
+defmodule OliWeb.Delivery.InstructorDashboard.AssignmentsLive do
   use OliWeb, :live_view
 
   alias OliWeb.Sections.Mount
@@ -36,7 +36,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionLive do
   def render(assigns) do
     ~H"""
       <InstructorDashboard.main_layout {assigns}>
-        <InstructorDashboard.discussion {assigns} />
+        <InstructorDashboard.assignments {assigns} />
       </InstructorDashboard.main_layout>
     """
   end

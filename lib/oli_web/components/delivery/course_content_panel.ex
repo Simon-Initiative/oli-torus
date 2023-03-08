@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.CourseContentPanel do
             <div class="d-flex flex-row my-2">
               <div class="flex-1"></div>
               <div>
-                <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
+                <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.OtherLive, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
               </div>
             </div>
           <% end %>
