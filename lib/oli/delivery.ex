@@ -122,8 +122,9 @@ defmodule Oli.Delivery do
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
       enroll(user.id, section.id, lti_params)
+      {:ok, updated_section} = maybe_update_section_contains_explorations(section)
 
-      section
+      updated_section
     end)
   end
 
@@ -257,31 +258,27 @@ defmodule Oli.Delivery do
     end
   end
 
-  defp update_contains_explorations(section_slug, value) do
-    result =
-      from(
-        s in Section,
-        update: [set: [contains_explorations: ^value]],
-        where: s.slug == ^section_slug
-      )
-      |> Repo.update_all([])
-
-    {:ok, result}
+  defp update_contains_explorations(section, value) do
+    section
+    |> Section.changeset(%{contains_explorations: value})
+    |> Repo.update()
   end
 
-  def maybe_update_section_contains_explorations(%Section{
-        slug: section_slug,
-        contains_explorations: contains_explorations
-      }) do
+  def maybe_update_section_contains_explorations(
+        %Section{
+          slug: section_slug,
+          contains_explorations: contains_explorations
+        } = section
+      ) do
     case {contains_explorations(section_slug), contains_explorations} do
       {true, false} ->
-        update_contains_explorations(section_slug, true)
+        update_contains_explorations(section, true)
 
       {false, true} ->
-        update_contains_explorations(section_slug, false)
+        update_contains_explorations(section, false)
 
       _ ->
-        {:ok, "No need to update records"}
+        {:ok, section}
     end
   end
 end

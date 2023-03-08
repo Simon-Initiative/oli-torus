@@ -39,7 +39,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       |> assign(
         :links,
         if is_preview_mode?(assigns) do
-          get_preview_links(assigns.section, path_info)
+          get_preview_links(assigns[:section], path_info)
         else
           get_links(assigns, path_info)
         end
@@ -81,7 +81,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     ]
   end
 
-  defp get_preview_links(%Section{contains_explorations: false}, path_info) do
+  defp get_preview_links(_, path_info) do
     [
       %{
         name: "Home",
@@ -128,7 +128,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     ]
   end
 
-  defp get_links(%{section: %{contains_explorations: false}} = assigns, path_info) do
+  defp get_links(assigns, path_info) do
     hierarchy =
       assigns[:section]
       |> Oli.Repo.preload([:root_section_resource])

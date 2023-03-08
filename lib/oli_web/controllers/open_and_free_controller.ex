@@ -2,6 +2,7 @@ defmodule OliWeb.OpenAndFreeController do
   use OliWeb, :controller
 
   alias Oli.{Repo, Publishing, Branding}
+  alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course
@@ -361,8 +362,9 @@ defmodule OliWeb.OpenAndFreeController do
       with {:ok, section} <- Sections.create_section(section_params),
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
-           {:ok, _enrollment} <- enroll(conn, section) do
-        section
+           {:ok, _enrollment} <- enroll(conn, section),
+           {:ok, updated_section} <- Delivery.maybe_update_section_contains_explorations(section) do
+        updated_section
       else
         {:error, changeset} -> Repo.rollback(changeset)
       end
