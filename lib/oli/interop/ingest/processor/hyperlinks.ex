@@ -20,7 +20,15 @@ defmodule Oli.Interop.Ingest.Processor.Hyperlinks do
         Map.put(m, Map.get(resource_id_to_legacy, r.resource_id), r)
       end)
 
-    {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project)
+    activity_map =
+      Oli.Publishing.query_unpublished_revisions_by_type(project.slug, "activity")
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m ->
+        Map.put(m, Map.get(resource_id_to_legacy, r.resource_id), r)
+      end)
+
+    {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project, page_map)
+    {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(activity_map, project, page_map)
 
     state
   end
