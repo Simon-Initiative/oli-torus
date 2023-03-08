@@ -1127,42 +1127,69 @@ defmodule Oli.SectionsTest do
     end
   end
 
-  describe "is_student?/2" do
+  describe "get_student_roles?/2" do
     setup do
       user = insert(:user)
       section = insert(:section)
       {:ok, %{section: section, user: user}}
     end
 
-    test "returns false for enrolled users that are not students", %{
-      section: section,
-      user: user
-    } do
+    test "returns false for student and instructor when users are enrolled with any other roles",
+         %{
+           section: section,
+           user: user
+         } do
       other_roles = [
         :context_administrator,
         :context_content_developer,
-        :context_instructor,
         :context_learner,
         :context_mentor,
         :context_manager,
-        :context_member,
-        :context_officer
+        :context_member
       ]
 
-      not_student_random_role = Enum.random(other_roles)
+      not_student_nor_instructor_random_role = Enum.random(other_roles)
 
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(not_student_random_role)])
+      Sections.enroll(user.id, section.id, [
+        ContextRoles.get_role(not_student_nor_instructor_random_role),
+        ContextRoles.get_role(:context_officer)
+      ])
 
-      refute Sections.is_student?(user, section.slug)
+      assert %{is_student?: false, is_instructor?: false} ==
+               Sections.get_user_roles(user, section.slug)
     end
 
-    test "returns true for enrolled students", %{
+    test "returns true when enrolled as student", %{
       section: section,
       user: user
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      assert Sections.is_student?(user, section.slug)
+      assert %{is_student?: true, is_instructor?: false} ==
+               Sections.get_user_roles(user, section.slug)
+    end
+
+    test "returns true when enrolled as instructor", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      assert %{is_student?: false, is_instructor?: true} ==
+               Sections.get_user_roles(user, section.slug)
+    end
+
+    test "returns true when enrolled as instructor and student", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [
+        ContextRoles.get_role(:context_instructor),
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      assert %{is_student?: true, is_instructor?: true} ==
+               Sections.get_user_roles(user, section.slug)
     end
   end
 

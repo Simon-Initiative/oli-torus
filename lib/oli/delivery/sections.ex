@@ -121,25 +121,35 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Determines if a user is a student in a given section.
+  Determines the user roles (student / instructor) in a given section
   """
-  def is_student?(nil, _) do
-    false
-  end
-
-  def is_student?(%User{id: id} = user, section_slug) do
-    is_enrolled?(id, section_slug) && has_student_role?(user, section_slug)
-  end
-
-  @doc """
-  Determines if user has student role.
-  """
-  def has_student_role?(%User{} = user, section_slug) do
-    ContextRoles.has_role?(
-      user,
-      section_slug,
-      ContextRoles.get_role(:context_learner)
+  def get_user_roles(%User{id: user_id}, section_slug) do
+    from(
+      e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+      preload: :context_roles
     )
+    |> Repo.one()
+    |> reduce_to_roles(%{is_instructor?: false, is_student?: false})
+  end
+
+  defp reduce_to_roles(nil, roles), do: roles
+
+  defp reduce_to_roles(%Enrollment{} = enrollment, roles) do
+    Enum.reduce(enrollment.context_roles, roles, fn context_role, acum ->
+      case context_role do
+        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 3} ->
+          Map.put(acum, :is_instructor?, true)
+
+        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 4} ->
+          Map.put(acum, :is_student?, true)
+
+        _ ->
+          acum
+      end
+    end)
   end
 
   @doc """
@@ -639,7 +649,6 @@ defmodule Oli.Delivery.Sections do
       )
     )
   end
-
 
   @doc """
   For a section resource record, map its children SR records to resource ids,
@@ -1276,23 +1285,25 @@ defmodule Oli.Delivery.Sections do
   aggregating progress complete across all pages within a container.
   """
   def rebuild_contained_pages(%Section{id: section_id} = section) do
-    section_resources = from(sr in SectionResource, where: sr.section_id == ^section_id)
-    |> Repo.all()
+    section_resources =
+      from(sr in SectionResource, where: sr.section_id == ^section_id)
+      |> Repo.all()
 
     rebuild_contained_pages(section, section_resources)
   end
 
   def rebuild_contained_pages(%Section{slug: slug, id: section_id} = section, section_resources) do
-
     # First start be deleting all existing contained pages for this section.
     from(cp in ContainedPage, where: cp.section_id == ^section_id)
-    |> Repo.delete_all
+    |> Repo.delete_all()
 
     # We will need the set of resource ids for all containers in the hierarchy.
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
-    container_ids = DeliveryResolver.revisions_of_type(slug, container_type_id)
-    |> Enum.map(fn rev -> rev.resource_id end)
-    |> MapSet.new()
+
+    container_ids =
+      DeliveryResolver.revisions_of_type(slug, container_type_id)
+      |> Enum.map(fn rev -> rev.resource_id end)
+      |> MapSet.new()
 
     # From the section resources, locate the root section resource, and also create a lookup map
     # from section_resource id to each section resource.
@@ -1317,9 +1328,12 @@ defmodule Oli.Delivery.Sections do
     page_map = rebuild_contained_pages_helper(root, {[nil], %{}, map, container_ids})
 
     # Now convert the page_map to a list of maps for bulk insert
-    insertions = Enum.reduce(page_map, [], fn {page_id, ancestors}, all ->
-      Enum.map(ancestors, fn id -> %{section_id: section_id, container_id: id, page_id: page_id} end) ++ all
-    end)
+    insertions =
+      Enum.reduce(page_map, [], fn {page_id, ancestors}, all ->
+        Enum.map(ancestors, fn id ->
+          %{section_id: section_id, container_id: id, page_id: page_id}
+        end) ++ all
+      end)
 
     insertion_count = Repo.insert_all(ContainedPage, insertions)
 
@@ -1329,7 +1343,6 @@ defmodule Oli.Delivery.Sections do
     {:ok, _} = set_contained_page_counts(section_id)
 
     {:ok, insertion_count}
-
   end
 
   # Recursive helper to traverse the hierarchy of the section resources and create the page to ancestor
@@ -1337,31 +1350,36 @@ defmodule Oli.Delivery.Sections do
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
     Enum.map(sr.children, fn sr_id ->
       sr = Map.get(all, sr_id)
+
       case MapSet.member?(container_ids, sr.resource_id) do
         true ->
-          rebuild_contained_pages_helper(sr, {[sr.resource_id | ancestors], page_map, all, container_ids})
+          rebuild_contained_pages_helper(
+            sr,
+            {[sr.resource_id | ancestors], page_map, all, container_ids}
+          )
           |> Map.merge(page_map)
-        false -> Map.put(page_map, sr.resource_id, ancestors)
+
+        false ->
+          Map.put(page_map, sr.resource_id, ancestors)
       end
     end)
     |> Enum.reduce(fn m, a -> Map.merge(m, a) end)
   end
 
   defp set_contained_page_counts(section_id) do
-    sql =
-      """
-      UPDATE section_resources
-      SET
-        contained_page_count = subquery.count,
-        updated_at = NOW()
-      FROM (
-          SELECT COUNT(*) as count, container_id
-          FROM contained_pages
-          WHERE section_id = $1
-          GROUP BY container_id
-      ) AS subquery
-      WHERE section_resources.resource_id = subquery.container_id and section_resources.section_id = $2
-      """
+    sql = """
+    UPDATE section_resources
+    SET
+      contained_page_count = subquery.count,
+      updated_at = NOW()
+    FROM (
+        SELECT COUNT(*) as count, container_id
+        FROM contained_pages
+        WHERE section_id = $1
+        GROUP BY container_id
+    ) AS subquery
+    WHERE section_resources.resource_id = subquery.container_id and section_resources.section_id = $2
+    """
 
     Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id])
   end

@@ -93,6 +93,8 @@ defmodule Oli.Delivery.Page.PageContext do
     {:ok, collab_space_config} =
       Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
 
+    user_roles = Sections.get_user_roles(user, section_slug)
+
     %PageContext{
       user: Attempts.get_user_from_attempt(resource_attempt),
       review_mode: true,
@@ -106,8 +108,8 @@ defmodule Oli.Delivery.Page.PageContext do
       bib_revisions: bib_revisions,
       historical_attempts: retrieve_historical_attempts(hd(resource_attempts)),
       collab_space_config: collab_space_config,
-      is_instructor: Sections.is_instructor?(user, section_slug),
-      is_student: Sections.is_student?(user, section_slug)
+      is_instructor: user_roles.is_instructor?,
+      is_student: user_roles.is_student?
     }
   end
 
@@ -191,6 +193,8 @@ defmodule Oli.Delivery.Page.PageContext do
     {:ok, collab_space_config} =
       Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
 
+    user_roles = Sections.get_user_roles(user, section_slug)
+
     %PageContext{
       user: user,
       review_mode: false,
@@ -204,8 +208,8 @@ defmodule Oli.Delivery.Page.PageContext do
       bib_revisions: bib_revisions,
       historical_attempts: nil,
       collab_space_config: collab_space_config,
-      is_instructor: Sections.is_instructor?(user, section_slug),
-      is_student: Sections.is_student?(user, section_slug)
+      is_instructor: user_roles.is_instructor?,
+      is_student: user_roles.is_student?
     }
   end
 
