@@ -13,7 +13,7 @@ defmodule OliWeb.Common.PagedTable do
   prop page_change, :event, default: "paged_table_page_change"
   prop selection_change, :event, default: "paged_table_selection_change"
   prop show_bottom_paging, :boolean, default: true
-  prop additional_table_class, :string, default: true
+  prop additional_table_class, :string, default: ""
 
   def render(assigns) do
     ~F"""
