@@ -1,4 +1,4 @@
-defmodule OliWeb.Components.Delivery.Discussion do
+defmodule OliWeb.Components.Delivery.DiscussionActivityLive do
   use Surface.LiveView
   use OliWeb.Common.Modal
 
@@ -13,7 +13,7 @@ defmodule OliWeb.Components.Delivery.Discussion do
   data discussion_table_model, :struct
   data collab_space_table_model, :struct
   data filter, :string, default: "all"
-  data limit, :number, default: 3
+  data limit, :number, default: 10
   data offset, :number, default: 0
 
   def mount(_params, %{"section_slug" => section_slug}, socket) do
@@ -61,25 +61,27 @@ defmodule OliWeb.Components.Delivery.Discussion do
           </form>
         </div>
 
-        {#if @filter == :by_discussion}
-          <PagedTable
-            table_model={@collab_space_table_model}
-            filter=""
-            page_change="paged_table_page_change"
-            total_count={@count}
-            offset={@offset}
-            limit={@limit}
-            additional_table_class="border-0" />
-        {#else}
-          <PagedTable
-            table_model={@discussion_table_model}
-            filter=""
-            page_change="paged_table_page_change"
-            total_count={@count}
-            offset={@offset}
-            limit={@limit}
-            additional_table_class="border-0" />
-        {/if}
+        <div id="discussion_activity_table">
+          {#if @filter == :by_discussion}
+            <PagedTable
+              table_model={@collab_space_table_model}
+              filter=""
+              page_change="paged_table_page_change"
+              total_count={@count}
+              offset={@offset}
+              limit={@limit}
+              additional_table_class="border-0" />
+          {#else}
+            <PagedTable
+              table_model={@discussion_table_model}
+              filter=""
+              page_change="paged_table_page_change"
+              total_count={@count}
+              offset={@offset}
+              limit={@limit}
+              additional_table_class="border-0" />
+          {/if}
+        </div>
       </div>
     </div>
     """
