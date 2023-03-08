@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { classNames } from 'utils/classNames';
 
 interface CourseContentOutlineProps {
   sectionSlug: string;
@@ -6,17 +7,89 @@ interface CourseContentOutlineProps {
 }
 
 export const CourseContentOutline = ({ sectionSlug, hierarchy }: CourseContentOutlineProps) => {
-  console.log(hierarchy);
+  const items = flatten({ type: 'root', ...hierarchy }, sectionSlug);
+  const active = items.find((i: FlattenedItem) => i.isActive);
+  const activeContainerSlug = active?.containerSlug;
+
+  useEffect(() => {
+    // ensure the active item is scrolled into view when the course outline is initially rendered
+    if (active) {
+      const element = document.querySelector(`#outline-item-${active.slug}`);
+
+      if (element) {
+        element.scrollIntoView();
+      }
+    }
+  }, []);
 
   return (
-    <div className="px-6 lg:px-2 lg:py-5">
-      <div className="hidden lg:block mb-4 font-bold">Course Content</div>
+    <div className="lg:w-[400px]">
+      <div className="hidden lg:block p-4 font-bold">Course Content</div>
       <div>
-        <ContainerItem sectionSlug={sectionSlug} item={hierarchy} level={0} />
+        {items.map((pageItemProps) => (
+          <PageItem
+            key={pageItemProps.id}
+            {...pageItemProps}
+            sectionSlug={sectionSlug}
+            activeContainerSlug={activeContainerSlug}
+          />
+        ))}
       </div>
     </div>
   );
 };
+
+type FlattenedItem = {
+  type: 'page' | 'container';
+  title: string;
+  id: string;
+  slug: string;
+  level: number;
+  containerSlug: string | undefined;
+  isActive: boolean;
+};
+
+const flatten = (
+  item: HierarchyItem | Root,
+  sectionSlug: string,
+  containerSlug?: string | undefined,
+  level = 0,
+): FlattenedItem[] =>
+  item.type === 'root'
+    ? item.children.reduce(
+        (acc, c) => [...acc, ...flatten(c, sectionSlug, containerSlug, level + 1)],
+        [],
+      )
+    : item.type === 'container'
+    ? [
+        {
+          id: item.id,
+          type: item.type,
+          title: item.title,
+          slug: item.slug,
+          level,
+          containerSlug: item.slug,
+          isActive: isCurrentUrl(sectionSlug, item.type, item.slug),
+        },
+        ...item.children.reduce(
+          (acc: FlattenedItem[], c: HierarchyItem) => [
+            ...acc,
+            ...flatten(c, sectionSlug, item.slug, level + 1),
+          ],
+          [],
+        ),
+      ]
+    : [
+        {
+          id: item.id,
+          type: item.type,
+          title: item.title,
+          slug: item.slug,
+          level,
+          containerSlug,
+          isActive: isCurrentUrl(sectionSlug, item.type, item.slug),
+        },
+      ];
 
 interface Root {
   type: 'root';
@@ -40,51 +113,40 @@ interface Page {
 
 type HierarchyItem = Container | Page;
 
-interface OutlineItemProps {
-  item: HierarchyItem;
-  level: number;
-  sectionSlug: string;
-}
-
-const OutlineItem = ({ item, level, sectionSlug }: OutlineItemProps) =>
-  item.type === 'container' ? (
-    <ContainerItem sectionSlug={sectionSlug} item={item} level={level} />
-  ) : (
-    <PageItem sectionSlug={sectionSlug} item={item} level={level} />
-  );
-
-interface ContainerItemProps {
-  item: Container | Root;
-  level: number;
-  sectionSlug: string;
-}
-
-const ContainerItem = ({ item, level, sectionSlug }: ContainerItemProps) => (
-  <div>
-    {item.type === 'container' && (
-      <div className="my-4">
-        <a href={url(sectionSlug, item.type, item.slug)}>{item.title}</a>
-      </div>
-    )}
-    <div>
-      {item.children.map((c) => (
-        <OutlineItem key={c.id} item={c} level={level + 1} sectionSlug={sectionSlug} />
-      ))}
-    </div>
-  </div>
-);
-
-interface PageItemProps {
-  item: Page;
-  level: number;
-  sectionSlug: string;
-}
-
-const PageItem = ({ item: { type, title, slug }, level, sectionSlug }: PageItemProps) => (
-  <div className="my-4" style={{ marginLeft: level * 10 }}>
-    <a href={url(sectionSlug, type, slug)}>{title}</a>
-  </div>
-);
-
 const url = (sectionSlug: string, type: string, slug: string) =>
   `/sections/${sectionSlug}/${type}/${slug}`;
+
+const isCurrentUrl = (sectionSlug: string, type: string, slug: string) => {
+  return window.location.href.endsWith(url(sectionSlug, type, slug));
+};
+
+interface PageItemProps extends FlattenedItem {
+  activeContainerSlug: string | undefined;
+  sectionSlug: string;
+}
+
+const PageItem = ({
+  type,
+  title,
+  slug,
+  level,
+  sectionSlug,
+  containerSlug,
+  activeContainerSlug,
+}: PageItemProps) => (
+  <a
+    id={`outline-item-${slug}`}
+    href={url(sectionSlug, type, slug)}
+    className={classNames(
+      'block p-3 border-l-[8px] text-current hover:text-delivery-primary hover:no-underline',
+      activeContainerSlug &&
+        (containerSlug === activeContainerSlug || slug == activeContainerSlug) &&
+        'border-delivery-primary-100',
+      isCurrentUrl(sectionSlug, type, slug)
+        ? '!border-delivery-primary bg-delivery-primary-50'
+        : 'border-transparent',
+    )}
+  >
+    <div style={{ marginLeft: level * 20 }}>{title}</div>
+  </a>
+);

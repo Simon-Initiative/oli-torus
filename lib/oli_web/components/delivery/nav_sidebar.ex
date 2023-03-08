@@ -44,7 +44,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
               href: "#",
               active: is_active(path_info, :overview)
             },
-            %{name: "Course Content", href: "#", active: is_active(path_info, "")},
+            %{name: "Course Content", href: "#", active: is_active(path_info, :content)},
             %{name: "Discussion", href: "#", active: is_active(path_info, :discussion)},
             %{name: "Assignments", href: "#", active: is_active(path_info, "")},
             %{
@@ -70,7 +70,8 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
               popout: %{
                 component: "Components.CourseContentOutline",
                 props: %{hierarchy: hierarchy, sectionSlug: assigns[:section].slug}
-              }
+              },
+              active: is_active(path_info, :content)
             },
             %{
               name: "Discussion",
@@ -132,9 +133,13 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   defp is_active(["sections", _, "overview"], :overview), do: true
   defp is_active(["sections", _, "exploration"], :exploration), do: true
   defp is_active(["sections", _, "discussion"], :discussion), do: true
+  defp is_active(["sections", _, "page", _], :content), do: true
+  defp is_active(["sections", _, "container", _], :content), do: true
   defp is_active(["sections", _, "preview", "overview"], :overview), do: true
   defp is_active(["sections", _, "preview", "exploration"], :exploration), do: true
   defp is_active(["sections", _, "preview", "discussion"], :discussion), do: true
+  defp is_active(["sections", _, "preview", "page", _], :content), do: true
+  defp is_active(["sections", _, "preview", "container", _], :content), do: true
   defp is_active(_, _), do: false
 
   defp home_url(assigns) do
