@@ -23,8 +23,8 @@ export const CourseContentOutline = ({ sectionSlug, hierarchy }: CourseContentOu
   }, []);
 
   return (
-    <div className="pl-3 lg:py-5 lg:w-[400px]">
-      <div className="hidden lg:block mb-4 font-bold">Course Content</div>
+    <div className="lg:w-[400px]">
+      <div className="hidden lg:block p-4 font-bold">Course Content</div>
       <div>
         {items.map((pageItemProps) => (
           <PageItem
