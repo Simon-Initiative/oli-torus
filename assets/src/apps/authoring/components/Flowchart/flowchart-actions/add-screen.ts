@@ -5,6 +5,7 @@ import guid from '../../../../../utils/guid';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
   selectActivityById,
+  selectAllActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
@@ -62,10 +63,13 @@ export const addFlowchartScreen = createAsyncThunk(
       const activityTypes = selectActivityTypes(rootState);
       const currentLesson = selectPageState(rootState);
       const sequence = selectSequence(rootState);
+      const otherActivityNames = selectAllActivities(rootState).map((a) => a.title || '');
 
       const group = selectAllGroups(rootState)[0];
 
-      const { title = 'New Screen', screenType = 'blank_screen' } = payload;
+      const { title: requestedTitle = 'New Screen', screenType = 'blank_screen' } = payload;
+
+      const title = clearTitle(requestedTitle, otherActivityNames);
 
       const activity: IActivityTemplate = {
         ...createActivityTemplate(),
@@ -178,3 +182,11 @@ export const addFlowchartScreen = createAsyncThunk(
     }
   },
 );
+
+const clearTitle = (title: string, otherActivityNames: string[], level = 0): string => {
+  const newTitle = level === 0 ? title : `${title} (${level})`;
+  if (otherActivityNames.includes(newTitle)) {
+    return clearTitle(title, otherActivityNames, level + 1);
+  }
+  return newTitle;
+};
