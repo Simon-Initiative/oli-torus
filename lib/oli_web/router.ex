@@ -591,6 +591,11 @@ defmodule OliWeb.Router do
     post("/s/failure", PaymentProviders.StripeController, :failure)
 
     post("/c/create-payment-form", PaymentProviders.CashnetController, :init_form)
+  end
+
+  scope "/api/v1/payments", OliWeb do
+    pipe_through([:skip_csrf_protection, :delivery])
+
     post("/c/success", PaymentProviders.CashnetController, :success)
     post("/c/failure", PaymentProviders.CashnetController, :failure)
   end

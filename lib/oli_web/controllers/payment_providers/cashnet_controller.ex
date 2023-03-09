@@ -6,7 +6,6 @@ defmodule OliWeb.PaymentProviders.CashnetController do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Paywall.Providers.Cashnet
-  alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
 
@@ -49,45 +48,46 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   @doc """
   JSON endpoint that allows client-side reporting of payment processing success.
   """
-  def success(conn, payload) do
+  def success(conn, %{"lname" => lname, "result" => result, "ref1val1" => payment_id} = payload) do
     # get payment, stamp it as having been finalized
     Logger.debug("CashnetController:success started", payload)
 
     Logger.error("CashnetController could not finalize payment")
 
-    json(conn, %{
-      result: "success",
-      reason: "testing"
-    })
+    if lname == System.get_env("CASHNET_NAME", "none") && result == "0" do
+      IO.inspect("the issue is the found here")
+      case Cashnet.finalize_payment(payload) do
+        {:ok, %{slug: slug}} ->
+          Logger.debug("CashnetController:success ended", %{
+            payment_id: payload["ref1val1"],
+            section_slug: slug
+          })
 
-    # case Stripe.finalize_payment(intent) do
-    #   {:ok, %{slug: slug}} ->
-    #     Logger.debug("StripeController:success ended", %{
-    #       intent_id: intent["id"],
-    #       section_slug: slug
-    #     })
+          json(conn, %{
+            result: "success"
+          })
 
-    #     json(conn, %{
-    #       result: "success",
-    #       url: Routes.page_delivery_path(conn, :index, slug)
-    #     })
+        {:error, reason} when is_binary(reason) ->
+          Logger.error("CashnetController could not finalize Cashnet payment: #{reason}: Payment Id: #{payment_id}")
 
-    #   {:error, reason} when is_binary(reason) ->
-    #     Logger.error("StripeController could not finalize payment: #{reason}")
+          json(conn, %{
+            result: "failure"
+          })
 
-    #     json(conn, %{
-    #       result: "failure",
-    #       reason: reason
-    #     })
+        e ->
+          {_, _msg} = Oli.Utils.log_error("Could not finalize Cashnet payment", e)
 
-    #   e ->
-    #     {_, msg} = Oli.Utils.log_error("Could not finalize stripe payment", e)
+          json(conn, %{
+            result: "failure"
+          })
+      end
+    else
+      Logger.error(
+        "CashnetController caught attempt to initialize payment from untrusted source"
+      )
 
-    #     json(conn, %{
-    #       result: "failure",
-    #       reason: msg
-    #     })
-    # end
+      error(conn, 401, "unauthorized, payment origin is from untrusted source")
+    end
   end
 
    @doc """
@@ -95,13 +95,12 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   """
   def failure(conn, payload) do
     # get payment, stamp it as having been finalized
-    Logger.debug("CashnetController:success started", payload)
+    Logger.debug("CashnetController:failure ", payload)
 
-    Logger.error("CashnetController could not finalize payment")
+    Oli.Utils.log_error("Could not finalize Cashnet payment", payload)
 
     json(conn, %{
-      result: "failure",
-      reason: "testing"
+      result: "failure"
     })
 
   end
@@ -127,11 +126,6 @@ defmodule OliWeb.PaymentProviders.CashnetController do
           # created in the system but in a "pending" state
           case Cashnet.create_form(section, user, conn.host) do
             {:ok, %{cashnet_form: cashnet_form}} ->
-              # Logger.debug("CashnetController:init_form ended", %{
-              #   intent_id: id,
-              #   section_slug: section_slug,
-              #   user_id: user.id
-              # })
 
               json(conn, %{cashnetForm: cashnet_form})
 

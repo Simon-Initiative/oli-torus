@@ -112,7 +112,7 @@ config :oli, :stripe_provider,
 config :oli, :cashnet_provider,
   cashnet_store: System.get_env("CASHNET_STORE"),
   cashnet_checkout_url: System.get_env("CASHNET_CHECKOUT_URL"),
-  cmu_gl_number: System.get_env("CMU_GL_NUMBER")
+  cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]

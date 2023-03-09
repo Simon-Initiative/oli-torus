@@ -48,7 +48,6 @@ function doPurchase(purchase: any) {
       }
     })
     .then((data) => {
-      console.log(data);
       const d = document.getElementById('cashnet-form');
       d?.insertAdjacentHTML('afterbegin', data.cashnetForm);
       const f = document.forms.namedItem('cashnet');
