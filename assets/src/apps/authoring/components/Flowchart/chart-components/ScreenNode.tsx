@@ -66,9 +66,9 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
         ref={drop}
       >
         <div className="button-bar">
-          <ScreenButton onClick={() => onAddScreen({ prevNodeId: data.resourceId })}>
+          {/* <ScreenButton onClick={() => onAddScreen({ prevNodeId: data.resourceId })}>
             <Icon icon="plus" />
-          </ScreenButton>
+          </ScreenButton> */}
 
           <ScreenButton onClick={() => onEditScreen(data.resourceId!)}>
             <Icon icon="edit" />

@@ -46,6 +46,7 @@ export const FlowchartEditor = () => {
   const onAddScreen = useCallback(
     (params: FlowchartAddScreenParams) => {
       const { prevNodeId, nextNodeId, screenType } = params;
+
       dispatch(
         addFlowchartScreen({
           fromScreenId: prevNodeId,

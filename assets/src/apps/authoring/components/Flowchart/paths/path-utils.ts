@@ -40,6 +40,7 @@ const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
     // If there's no flowchart data, create it.
     screen.authoring.flowchart = {
       paths: [],
+      screenType: 'blank_screen',
     };
   }
 
@@ -102,6 +103,14 @@ export const setUnknownPathDestination = (screen: IActivity, destinationScreenId
 export const hasDestinationPath = (screen: IActivity) => {
   const paths = getPathsFromScreen(screen);
   return paths.some(isDestinationPath);
+};
+
+// If this screen points to destination, remove that path
+export const removeDestinationPath = (screen: IActivity, destinationScreenId: number) => {
+  const paths = getPathsFromScreen(screen);
+  screen.authoring!.flowchart!.paths = paths.filter(
+    (p) => !('destinationScreenId' in p) || p.destinationScreenId !== destinationScreenId,
+  );
 };
 
 export const setGoToAlwaysPath = (screen: IActivity, destinationScreenId: number) => {

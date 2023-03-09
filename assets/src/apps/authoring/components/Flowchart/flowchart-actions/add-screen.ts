@@ -30,6 +30,7 @@ import { createAlwaysGoToPath, createEndOfActivityPath } from '../paths/path-fac
 import { AuthoringFlowchartScreenData } from '../paths/path-types';
 import {
   hasDestinationPath,
+  removeDestinationPath,
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
@@ -103,6 +104,11 @@ export const addFlowchartScreen = createAsyncThunk(
         const fromScreen = cloneT(selectActivityById(rootState, payload.fromScreenId));
 
         if (fromScreen) {
+          if (payload.toScreenId) {
+            // If we're adding a screen in the middle of a path, we need to update the destination of the "to" screen
+            removeDestinationPath(fromScreen, payload.toScreenId);
+          }
+
           if (hasDestinationPath(fromScreen)) {
             // If the "from" doesn't have any other paths, we can use an always-path, but if it does, we default
             // to an unknwon-path for the user to fill in later.
@@ -110,6 +116,7 @@ export const addFlowchartScreen = createAsyncThunk(
           } else {
             setGoToAlwaysPath(fromScreen, createResults.resourceId);
           }
+
           // TODO - these two should be a single operation?
           await dispatch(upsertActivity({ activity: fromScreen }));
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
