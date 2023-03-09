@@ -1139,21 +1139,18 @@ defmodule Oli.SectionsTest do
            section: section,
            user: user
          } do
-      other_roles = [
-        :context_administrator,
-        :context_content_developer,
-        :context_learner,
-        :context_mentor,
-        :context_manager,
-        :context_member
-      ]
+      other_roles =
+        [
+          :context_administrator,
+          :context_content_developer,
+          :context_mentor,
+          :context_manager,
+          :context_member,
+          :context_officer
+        ]
+        |> Enum.map(&ContextRoles.get_role(&1))
 
-      not_student_nor_instructor_random_role = Enum.random(other_roles)
-
-      Sections.enroll(user.id, section.id, [
-        ContextRoles.get_role(not_student_nor_instructor_random_role),
-        ContextRoles.get_role(:context_officer)
-      ])
+      Sections.enroll(user.id, section.id, other_roles)
 
       assert %{is_student?: false, is_instructor?: false} ==
                Sections.get_user_roles(user, section.slug)
