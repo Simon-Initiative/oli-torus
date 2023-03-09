@@ -11,6 +11,8 @@ import {
 import { FlowchartEventContext } from '../FlowchartEventContext';
 import { screenTypes } from '../screens/screen-factories';
 import { ScreenButton } from './ScreenButton';
+import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
+import { useToggle } from '../../../../../components/hooks/useToggle';
 
 interface NodeProps {
   data: IActivity;
@@ -37,6 +39,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
     useContext(FlowchartEventContext);
   const selectedId = useSelector(selectCurrentActivityId);
   const selected = selectedId === data.resourceId;
+  const [showConfirmDelete, toggleConfirmDelete] = useToggle(false);
 
   const onDrop = (item: any) => {
     onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
@@ -76,12 +79,25 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
           {/* <ScreenButton onClick={dontDoNothing}>
             <Icon icon="clone" />
           </ScreenButton> */}
-          <ScreenButton onClick={() => onDeleteScreen(data.resourceId!)}>
+          <ScreenButton onClick={toggleConfirmDelete}>
             <Icon icon="trash" />
           </ScreenButton>
         </div>
       </div>
       <small className="text-gray-400">{data.resourceId}</small>
+
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Screen"
+          elementName={data.title}
+          deleteHandler={() => {
+            onDeleteScreen(data.resourceId!);
+            toggleConfirmDelete();
+          }}
+          cancelHandler={toggleConfirmDelete}
+        />
+      )}
     </div>
   );
 };
