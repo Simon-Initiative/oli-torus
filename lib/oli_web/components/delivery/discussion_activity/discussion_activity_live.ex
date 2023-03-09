@@ -195,11 +195,11 @@ defmodule OliWeb.Components.Delivery.DiscussionActivityLive do
       :collab_space_table_model => collab_space_table_model
     } = socket.assigns
 
-    offset = if is_integer(offset), do: offset, else: String.to_integer(offset)
-    filter = String.to_atom(filter)
+    offset = safe_to_integer(offset)
+    filter = safe_to_atom(filter)
 
     offset =
-      case filter != String.to_atom(socket.assigns.filter) do
+      case filter != safe_to_atom(socket.assigns.filter) do
         true -> 0
         _ -> offset
       end
@@ -249,6 +249,20 @@ defmodule OliWeb.Components.Delivery.DiscussionActivityLive do
         offset: offset,
         count: count
       )
+    end
+  end
+
+  defp safe_to_atom(value) do
+    case is_binary(value) do
+      true -> String.to_atom(value)
+      _ -> value
+    end
+  end
+
+  defp safe_to_integer(value) do
+    case is_integer(value) do
+      true -> value
+      _ -> String.to_integer(value)
     end
   end
 end
