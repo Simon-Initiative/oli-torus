@@ -41,7 +41,8 @@ export const saveActivity = createAsyncThunk(
 
       const isReadOnlyMode = selectReadOnly(rootState);
 
-      if (!activity.authoring.parts?.length) {
+      if (!activity?.authoring?.parts?.length) {
+        activity.authoring = activity.authoring || {};
         // There were no parts, so generate a default.
         activity.authoring.parts = [
           {
@@ -175,7 +176,8 @@ export const bulkSaveActivity = createAsyncThunk(
 
     if (!isReadOnlyMode) {
       const updates: BulkActivityUpdate[] = activities.map((activity) => {
-        if (!activity.authoring.parts?.length) {
+        if (!activity?.authoring?.parts?.length) {
+          activity.authoring = activity.authoring || {};
           activity.authoring.parts = [
             {
               id: '__default',

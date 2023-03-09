@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Activities.Model
   alias Oli.Delivery.Evaluation.Explanation
   alias Oli.Delivery.Evaluation.ExplanationContext
+  alias Oli.Delivery.Experiments.LogWorker
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
@@ -316,14 +317,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
       roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 
-      case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+      result = case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
            |> persist_evaluations(part_inputs, roll_up_fn, datashop_session_id) do
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
         _ -> Repo.rollback("unknown error")
       end
+
+      Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
+      result
     end)
     |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+    |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
   end
 
   @doc """
@@ -504,15 +509,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               normalize_mode
             )
 
-          persist_client_evaluations(
+          result = persist_client_evaluations(
             part_inputs,
             client_evaluations,
             roll_up_fn,
             false,
             datashop_session_id
           )
+          Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
+
+          result
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
+
 
       _ ->
         {:error, "Activity type does not allow client evaluation"}
@@ -564,6 +574,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           )
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
 
       _ ->
         {:error, "Activity type does not allow client evaluation"}

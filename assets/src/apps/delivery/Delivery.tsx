@@ -145,10 +145,4 @@ const Delivery: React.FC<DeliveryProps> = ({
   );
 };
 
-const ReduxApp: React.FC<DeliveryProps> = (props) => (
-  <Provider store={store}>
-    <Delivery {...props} />
-  </Provider>
-);
-
-export default ReduxApp;
+export default Delivery;

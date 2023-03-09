@@ -1,0 +1,30 @@
+<h1 class="title"><%= @title %> (Preview)</h1>
+
+<script>
+  window.userToken = "<%= assigns[:user_token] %>";
+</script>
+
+<%= if Oli.Resources.ResourceType.is_container(@revision) do %>
+  <%= render OliWeb.PageDeliveryView, "container.html", Map.merge(assigns, %{
+    children: @hierarchy_node.children,
+    active_page: nil
+  }) %>
+<% else %>
+  <Components.Delivery.PageDelivery.learning_objectives objectives={@objectives} />
+
+  <div class="content">
+    <%= raw(@html) %>
+  </div>
+
+  <div class="container mt-5">
+    <%=
+      live_render(@conn, OliWeb.CollaborationLive.CollabSpaceConfigView,
+        session: %{
+          "collab_space_config" => @collab_space_config,
+          "section_slug" => @section_slug,
+          "page_slug" => @revision.slug,
+          "is_delivery" => true
+        })
+    %>
+  </div>
+<% end %>

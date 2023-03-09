@@ -374,7 +374,8 @@ defmodule Oli.Resources do
            %{
              id: a.resource_id,
              title: a.title,
-             options: a.content["options"]
+             options: a.content["options"],
+             strategy: Map.get(a.content, "strategy", "user_section_preference")
            }
          end)}
 

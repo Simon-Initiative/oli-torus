@@ -32,7 +32,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
           /* console.log('ACTIVITY" TO MAP: ', { activity }); */
           const activityParts = activity?.content?.partsLayout.map((part: any) => {
             const authorPartDef =
-              activity.authoring.parts.find((partDef: any) => partDef.id === part.id) || {};
+              activity.authoring?.parts.find((partDef: any) => partDef.id === part.id) || {};
 
             const partDefinition = {
               ...authorPartDef,
@@ -76,7 +76,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
         return;
       }
 
-      if (!isEqual(childActivity.authoring.parts, combinedParts)) {
+      if (!isEqual(childActivity.authoring?.parts, combinedParts)) {
         const clone = JSON.parse(JSON.stringify(childActivity));
         clone.authoring.parts = combinedParts;
         activitiesToUpdate.push(clone);

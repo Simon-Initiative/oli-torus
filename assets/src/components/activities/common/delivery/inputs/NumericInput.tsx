@@ -18,7 +18,7 @@ export const NumericInput: React.FC<Props> = (props) => {
       placeholder={props.placeholder}
       type="number"
       aria-label="answer submission textbox"
-      className="form-control"
+      className="border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-600"
       onChange={(e) => props.onChange(e.target.value)}
       onBlur={props.onBlur}
       onKeyUp={props.onKeyUp}

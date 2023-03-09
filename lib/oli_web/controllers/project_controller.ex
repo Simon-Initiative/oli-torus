@@ -28,6 +28,7 @@ defmodule OliWeb.ProjectController do
       active: :overview,
       collaborators: Accounts.project_authors(project),
       activities_enabled: Activities.advanced_activities(project, is_admin?),
+      can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?(),
       changeset:
         Utils.value_or(
           Map.get(project_params, :changeset),
@@ -108,7 +109,8 @@ defmodule OliWeb.ProjectController do
             Publishing.get_latest_published_publication_by_slug(project.slug),
           publishers: Inventories.list_publishers(),
           title: "Overview | " <> project.title,
-          language_codes: Oli.LanguageCodesIso639.codes()
+          language_codes: Oli.LanguageCodesIso639.codes(),
+          can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?()
         }
 
         conn
@@ -186,7 +188,8 @@ defmodule OliWeb.ProjectController do
             Publishing.get_latest_published_publication_by_slug(project.slug),
           publishers: Inventories.list_publishers(),
           title: "Overview | " <> project.title,
-          language_codes: Oli.LanguageCodesIso639.codes()
+          language_codes: Oli.LanguageCodesIso639.codes(),
+          can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?()
         }
 
         conn

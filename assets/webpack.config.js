@@ -26,11 +26,13 @@ const populateEntries = () => {
     bibliography: ['./src/apps/BibliographyApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
+    scheduler: ['./src/apps/SchedulerApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
     cashnetclient: ['./src/payment/cashnet/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
     keepalive: ['./src/phoenix/keep-alive.ts'],
+    delivery_adaptive_themes_default_light: ['./styles/adaptive/light.scss'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});

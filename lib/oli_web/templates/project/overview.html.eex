@@ -33,6 +33,17 @@
         <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}), class: "form-control", required: true %>
       </div>
 
+      <%= if @can_enable_experiments do %>
+        <div class="form-label-group mb-3">
+          <%= label f, :has_experiments, "Enable Upgrade-based Experiments", class: "control-label" %>
+          <%= checkbox f, :has_experiments, class: "form-control w-50", required: false %>
+
+          <%= if @project.has_experiments do %>
+            <a type="button" class="btn btn-link pl-0" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Experiments.ExperimentsView, @project.slug) %>">Manage Experiments</a>
+          <% end %>
+
+        </div>
+      <% end %>
       <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
 
     </div>

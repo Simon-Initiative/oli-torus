@@ -1,0 +1,96 @@
+import { Button, LargeButton } from 'components/misc/Button';
+import { CloseButton } from 'components/misc/CloseButton';
+import { EditLink } from 'components/misc/EditLink';
+import { Canvas, Meta, Story } from '@storybook/addon-docs';
+import { TorusBG } from './TorusBG';
+
+<Meta title="Torus/Buttons" />
+
+# Standard styled buttons
+
+## Common properties
+
+- variant - `primary` or `secondary`
+- All other valid `<button>` properties
+
+## Button
+
+Normal sized button
+
+<Story name="Button">
+  <TorusBG>
+    <Button>Save Changes</Button>
+    <Button>Ok</Button>
+    <Button variant="secondary">Cancel</Button>
+    <Button disabled>Disabled</Button>
+    <Button variant="secondary" disabled>
+      Disabled
+    </Button>
+  </TorusBG>
+</Story>
+
+```jsx
+import { Button } from 'components/misc/Button';
+
+<Button>Save Changes</Button>
+<Button>Ok</Button>
+<Button variant="secondary">Cancel</Button>
+<Button disabled>Disabled</Button>
+<Button variant="secondary" disabled>Disabled</Button>
+```
+
+## LargeButton
+
+Large version of the button.
+
+<Story name="Large Buttons">
+  <TorusBG>
+    <LargeButton>Save Changes</LargeButton>
+    <LargeButton>Ok</LargeButton>
+    <LargeButton variant="secondary">Cancel</LargeButton>
+    <LargeButton disabled>Disabled</LargeButton>
+    <LargeButton variant="secondary" disabled>
+      Disabled
+    </LargeButton>
+  </TorusBG>
+</Story>
+
+```jsx
+import { LargeButton } from 'components/misc/Button';
+
+<LargeButton>Save Changes</LargeButton>
+<LargeButton>Ok</LargeButton>
+<LargeButton variant="secondary">Cancel</LargeButton>
+<LargeButton disabled>Disabled</LargeButton>
+<LargeButton variant="secondary" disabled>Disabled</LargeButton>
+```
+
+## CloseButton
+
+Appropriate for closing dialogs, etc
+
+<Story name="CloseButton">
+  <TorusBG>
+    <CloseButton />
+  </TorusBG>
+</Story>
+
+```jsx
+import { CloseButton } from 'components/misc/CloseButton';
+
+<CloseButton />;
+```
+
+## EditLink
+
+<Story name="EditLink">
+  <TorusBG>
+    <EditLink />
+  </TorusBG>
+</Story>
+
+```jsx
+import { EditLink } from 'components/misc/EditLink';
+
+<EditLink />;
+```

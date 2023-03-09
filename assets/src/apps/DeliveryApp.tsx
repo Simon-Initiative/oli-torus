@@ -1,4 +1,5 @@
 import Delivery from './delivery/Delivery';
 import { registerApplication } from './app';
+import deliveryStore from '../apps/delivery/store';
 
-registerApplication('Delivery', Delivery);
+registerApplication('Delivery', Delivery, deliveryStore);

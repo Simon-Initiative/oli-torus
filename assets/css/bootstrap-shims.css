@@ -1,4 +1,13 @@
 /** Bootstrap Shims **/
+@import './bs/accordion';
+@import './bs/modal';
+@import './bs/nav-tabs';
+@import './bs/dropdown';
+@import './bs/offcanvas';
+@import './bs/spinner';
+@import './bs/switch';
+@import './bs/popover';
+
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;
 }
@@ -216,7 +225,7 @@ input.form-control,
 .input-group select,
 select.custom-select,
 select.form-control {
-  @apply border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600;
+  @apply border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700;
 }
 
 input.form-control-sm,
@@ -385,11 +394,11 @@ input.form-control-sm,
 }
 
 .card {
-  @apply block p-6 rounded-lg shadow-lg bg-white;
+  @apply block p-6 rounded-lg shadow-lg bg-white text-gray-700 dark:bg-slate-800 dark:text-gray-100;
 }
 
 .card-body {
-  @apply text-gray-700 text-base;
+  @apply text-base dark:text-gray-100;
 }
 
 .modal {
@@ -464,30 +473,71 @@ input.form-control-sm,
 }
 
 .sr-only {
-  @apply visually-hidden;
+  @apply hidden;
 }
 
 table {
-  @apply min-w-full border;
+  @apply min-w-full border dark:border-gray-800 dark:text-gray-300;
 }
 table thead th {
-  @apply border-b border-r p-2 bg-gray-100 font-semibold;
+  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-delivery-body-dark dark:border-gray-800;
 }
-table tbody tr {
-  @apply border-b;
+table tr {
+  @apply border-b dark:border-gray-800;
 }
-table tbody td {
-  @apply border-r p-2;
+table td {
+  @apply border-r p-2 dark:border-gray-800;
 }
 
 table.table-striped tbody tr:nth-child(even) {
-  @apply bg-gray-100;
+  @apply bg-gray-100 dark:bg-gray-600;
 }
 
 table.table-striped tbody tr:nth-child(odd) {
-  @apply bg-white;
+  @apply bg-white dark:bg-delivery-body-dark;
 }
 
 .d-none {
   @apply hidden;
+}
+
+.fade {
+  transition: opacity 0.15s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade {
+    transition: none;
+  }
+}
+.fade:not(.show) {
+  opacity: 0;
+}
+
+.collapse.show {
+  visibility: visible;
+}
+
+.collapse:not(.show) {
+  display: none;
+}
+
+.collapsing {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.35s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .collapsing {
+    transition: none;
+  }
+}
+.collapsing.collapse-horizontal {
+  width: 0;
+  height: auto;
+  transition: width 0.35s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .collapsing.collapse-horizontal {
+    transition: none;
+  }
 }

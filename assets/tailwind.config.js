@@ -4,22 +4,20 @@
 
 const plugin = require('tailwindcss/plugin');
 const tailwindFormsPlugin = require('@tailwindcss/forms');
-const tailwindElementsPlugin = require('tw-elements/dist/plugin');
 const tailwindCSSVariablesPlugin = require('tailwind-css-variables');
 const theme = require('./tailwind.theme.js');
 
 module.exports = {
   content: [
-    './src/**/*.{html,js,jsx,ts,tsx}',
+    './src/**/*.{html,js,jsx,ts,tsx,mdx}',
+    '../lib/oli/rendering/**/*.ex',
     '../lib/*_web.ex',
     '../lib/*_web/**/*.*ex',
-    './node_modules/tw-elements/dist/js/**/*.js',
   ],
   darkMode: 'class',
   theme,
   plugins: [
     tailwindFormsPlugin,
-    tailwindElementsPlugin,
     tailwindCSSVariablesPlugin({ oli: 'oli' }, {}),
     plugin(({ addVariant }) =>
       addVariant('phx-no-feedback', ['&.phx-no-feedback', '.phx-no-feedback &']),
@@ -33,5 +31,6 @@ module.exports = {
     plugin(({ addVariant }) =>
       addVariant('phx-change-loading', ['&.phx-change-loading', '.phx-change-loading &']),
     ),
+    require('@tailwindcss/container-queries'),
   ],
 };

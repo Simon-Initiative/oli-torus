@@ -140,7 +140,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         |> recycle_user_session(user)
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision1.slug))
 
-      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
+      assert html_response(conn, 200) =~ "Page one"
     end
   end
 
@@ -211,7 +211,11 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         end_date: DateTime.add(DateTime.utc_now(), 3600)
       })
 
-    insert(:section_project_publication, %{project: project, section: section, publication: publication})
+    insert(:section_project_publication, %{
+      project: project,
+      section: section,
+      publication: publication
+    })
 
     %{
       section: section,

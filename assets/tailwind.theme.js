@@ -2,9 +2,6 @@
 const colors = require('tailwindcss/colors');
 
 module.exports = {
-  fontFamily: {
-    sans: ['Open Sans', 'sans-serif'],
-  },
   extend: {
     colors: {
       primary: colors.blue['500'],
@@ -65,9 +62,6 @@ module.exports = {
       'feedback-partially-correct-bg': colors.yellow['200'],
       'feedback-partially-correct-color': colors.black,
       'feedback-partially-correct-graphic-color': colors.yellow['500'],
-      'hints-bg': colors.gray['200'],
-      'hints-border': colors.gray['500'],
-      'hints-color': colors.black,
       delivery: {
         body: {
           DEFAULT: '#f3f5f8',
@@ -89,6 +83,7 @@ module.exports = {
         },
         header: {
           DEFAULT: '#222439',
+          600: '#52526b',
           700: '#3b3b4d',
           800: '#2a2a3e',
           dark: {
@@ -108,10 +103,57 @@ module.exports = {
           800: '#2b0b75',
           900: '#1a0746',
         },
+        hints: {
+          bg: {
+            DEFAULT: colors.gray['100'],
+            dark: {
+              DEFAULT: colors.gray['700'],
+            },
+          },
+          border: {
+            DEFAULT: colors.gray['200'],
+            dark: {
+              DEFAULT: colors.gray['600'],
+            },
+          },
+        },
+        purpose: {
+          label: {
+            bg: {
+              DEFAULT: '#222439',
+              dark: {
+                DEFAULT: '#2f3d52',
+              },
+            },
+          },
+        },
       },
+    },
+    fontFamily: {
+      sans: ['Open Sans', 'sans-serif'],
+    },
+    fontSize: {
+      xs: '0.8rem',
     },
     forms: {
       borderRadius: 4,
+    },
+    extend: {
+      keyframes: {
+        'slide-in-right': {
+          '0%': {
+            transform: 'translateX(100%)',
+          },
+          '100%': {
+            transform: 'translateX(0)',
+          },
+        },
+      },
+      animation: {
+        'slide-in-right': {
+          'slide-in-right': 'slide-in-right 0.5s ease-out',
+        },
+      },
     },
   },
 };

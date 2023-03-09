@@ -155,12 +155,19 @@
   }
 
   .hints.card {
-    color: var(--color-hints-color);
-    background-color: var(--color-hints-bg);
-    border: var(--color-hints-border);
+    background-color: var(--color-delivery-hints-bg);
+    border: 2px solid var(--color-delivery-hints-border);
+    border-radius: 0;
   }
 
   p:last-of-type {
     margin-bottom: 0;
+  }
+}
+
+html.dark {
+  .hints.card {
+    background-color: var(--color-delivery-hints-bg-dark);
+    border: 2px solid var(--color-delivery-hints-border-dark);
   }
 }

@@ -1,14 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { acquireLock, releaseLock } from 'data/persistence/lock';
 import AppSlice from '../name';
-import { RootState } from '../../rootReducer';
+import { AuthoringRootState } from '../../rootReducer';
 import { selectProjectSlug, selectRevisionSlug } from '../slice';
 
 export const acquireEditingLock = createAsyncThunk(
   `${AppSlice}/acquireEditingLock`,
   async (_, { getState, rejectWithValue }) => {
-    const projectSlug = selectProjectSlug(getState() as RootState);
-    const resourceSlug = selectRevisionSlug(getState() as RootState);
+    const projectSlug = selectProjectSlug(getState() as AuthoringRootState);
+    const resourceSlug = selectRevisionSlug(getState() as AuthoringRootState);
 
     try {
       const lockResult = await acquireLock(projectSlug, resourceSlug);
@@ -31,8 +31,8 @@ export const acquireEditingLock = createAsyncThunk(
 export const releaseEditingLock = createAsyncThunk(
   `${AppSlice}/releaseEditingLock`,
   async (_, { getState }) => {
-    const projectSlug = selectProjectSlug(getState() as RootState);
-    const resourceSlug = selectRevisionSlug(getState() as RootState);
+    const projectSlug = selectProjectSlug(getState() as AuthoringRootState);
+    const resourceSlug = selectRevisionSlug(getState() as AuthoringRootState);
     const lockResult = await releaseLock(projectSlug, resourceSlug);
     if (lockResult.type !== 'released') {
       throw new Error('releasing lock failed');

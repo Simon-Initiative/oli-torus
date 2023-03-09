@@ -1,0 +1,82 @@
+import { PromptModal } from 'components/misc/PromptModal';
+import { TorusBG } from './TorusBG';
+
+<Meta title="Torus/PromptModal" />
+
+# Prompt Modal
+
+### Usage
+
+<Canvas>
+  <Story name="Default Usage">
+    <TorusBG className="h-72">
+      <PromptModal title="Are you sure?" className="absolute">
+        Are you sure you really want to do this entirely <b>ill-advised</b> thing?
+      </PromptModal>
+    </TorusBG>
+  </Story>
+</Canvas>
+
+```tsx
+import { PromptModal } from 'components/misc/PromptModal';
+
+<Story name="Prompt Modal">
+  <PromptModal title="Are you sure?" onConfirm={...} onCancel={...}>
+    Are you sure you really want to do this entirely <b>ill-advised</b> thing?
+  </PromptModal>
+</Story>;
+```
+
+### Button Labels
+
+You can customize the button labels
+
+<Canvas>
+  <Story name="Prompt Modal">
+    <TorusBG className="h-96">
+      <PromptModal title="Confirmation" confirmText="Yup!" cancelText="Nope!" className="absolute">
+        Are you sure you really want to do this entirely <b>ill-advised</b> thing?
+      </PromptModal>
+    </TorusBG>
+  </Story>
+</Canvas>
+
+```tsx
+import { PromptModal } from 'components/misc/PromptModal';
+
+<Story name="Prompt Modal">
+  <PromptModal title="Confirmation" confirmText="Yup!" cancelText="Nope!" onConfirm={...} onCancel={...}>
+    Are you sure you really want to do this entirely <b>ill-advised</b> thing?
+  </PromptModal>
+</Story>;
+```
+
+**_Note:_** This doc page specifies className="absolute" to prevent the modal from covering other content of the page and overlapping with each other,
+this is not normally required as it's positioned fixed by default.
+
+## Quick-use hook
+
+There is a hook that makes the most common use-case of displaying a prompt modal easier.
+
+```tsx
+import { usePromptModal } from '../../components/misc/PromptModal';
+
+const YourComponent = () => {
+  const onReset = () => {
+    // Do something
+  };
+
+  const { Modal, showModal } = usePromptModal(
+    'Are you sure you want to reset the schedule to the default values?',
+    onReset,
+  );
+
+  return (
+    <div>
+      Your component content.
+      <button onClick={showModal}>Show Modal</button>
+      {Modal}
+    </div>
+  );
+};
+```

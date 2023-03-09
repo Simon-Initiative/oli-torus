@@ -107,6 +107,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
+  pipeline :require_exploration_pages do
+    plug(Oli.Plugs.RequireExplorationPages)
+  end
+
   pipeline :enforce_enroll_and_paywall do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
@@ -381,6 +385,11 @@ defmodule OliWeb.Router do
     # Objectives
     live("/:project_id/objectives", ObjectivesLive.Objectives)
 
+    # Experiment management
+    live("/:project_id/experiments", Experiments.ExperimentsView)
+    get("/:project_id/experiments/segment.json", ExperimentController, :segment_download)
+    get("/:project_id/experiments/experiment.json", ExperimentController, :experiment_download)
+
     # Curriculum
     live(
       "/:project_id/curriculum/:container_slug/edit/:revision_slug",
@@ -600,6 +609,14 @@ defmodule OliWeb.Router do
     post("/c/failure", PaymentProviders.CashnetController, :failure)
   end
 
+  # Endpoints for client-side scheduling UI
+  scope "/api/v1/scheduling/:section_slug", OliWeb.Api do
+    pipe_through([:api, :delivery_and_admin, :require_section])
+
+    put("/", SchedulingController, :update)
+    get("/", SchedulingController, :index)
+  end
+
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -751,40 +768,62 @@ defmodule OliWeb.Router do
   end
 
   ### Sections - Student Course Delivery
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
       :require_section,
+      :delivery,
+      :require_exploration_pages,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :pow_email_layout
     ])
 
-    get("/:section_slug/overview", PageDeliveryController, :index)
-    get("/:section_slug/container/:revision_slug", PageDeliveryController, :container)
-    get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
-    get("/:section_slug/page/:revision_slug/page/:page", PageDeliveryController, :page)
-    get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
+    get("/overview", PageDeliveryController, :index)
+
+    get("/exploration", PageDeliveryController, :exploration)
+    get("/discussion", PageDeliveryController, :discussion)
+    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
+    live("/students", Delivery.InstructorDashboard.StudentsLive)
+    live("/content", Delivery.InstructorDashboard.ContentLive)
+    live("/discussions", Delivery.InstructorDashboard.DiscussionLive)
+
+    get("/container/:revision_slug", PageDeliveryController, :container)
+    get("/page/:revision_slug", PageDeliveryController, :page)
+    get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
+    get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
     get(
-      "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review",
+      "/page/:revision_slug/attempt/:attempt_guid/review",
       PageDeliveryController,
       :review_attempt
     )
   end
 
   ### Sections - Preview
-  scope "/sections/:section_slug/preview/", OliWeb do
+  scope "/sections/:section_slug/preview", OliWeb do
     pipe_through([
       :browser,
       :require_section,
+      :require_exploration_pages,
       :authorize_section_preview,
       :delivery_and_admin,
+      :delivery_layout,
       :pow_email_layout
     ])
 
-    get("/overview", PageDeliveryController, :index_preview)
+    # Redirect deprecated routes
+    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
+    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
+
+    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive, :preview)
+    live("/students", Delivery.InstructorDashboard.StudentsLive, :preview)
+    live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
+    live("/discussions", Delivery.InstructorDashboard.DiscussionLive, :preview)
+
+    get("/exploration", PageDeliveryController, :exploration_preview)
+    get("/discussion", PageDeliveryController, :discussion_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
@@ -817,6 +856,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
     post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)
+    live("/:section_slug/schedule", Sections.ScheduleView)
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)

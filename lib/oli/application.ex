@@ -57,7 +57,7 @@ defmodule Oli.Application do
         Oli.Publishing.Publications.DiffAgent,
 
         # Starts Cachex to store user/author info across requests
-        Oli.AccountLookupCache,
+        Oli.AccountLookupCache
 
       ] ++ maybe_node_js_config()
 
