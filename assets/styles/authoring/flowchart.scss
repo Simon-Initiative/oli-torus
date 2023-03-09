@@ -225,6 +225,14 @@ $font-family-sans-serif: var(--font-sans);
     align-items: center;
     margin-bottom: 0.5rem;
 
+    .icon-button {
+      outline: none;
+      border: none;
+      background: none;
+      text-align: center;
+      padding: 0.1rem 0.25rem;
+    }
+
     select {
       border: none;
       background-color: #fff;

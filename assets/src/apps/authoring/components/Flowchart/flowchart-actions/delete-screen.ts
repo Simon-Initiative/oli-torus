@@ -43,7 +43,7 @@ export const deleteFlowchartScreen = createAsyncThunk(
     dispatch(deleteActivity({ activityId: screenId }));
     dispatch(removeScreenGromGroup(screenId, rootState));
 
-    await dispatch(savePage({ undoable: false }));
+    dispatch(savePage({ undoable: false, immiediate: true }));
   },
 );
 

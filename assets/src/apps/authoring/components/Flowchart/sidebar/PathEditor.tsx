@@ -3,6 +3,8 @@ import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
+import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
+import { deletePath } from '../flowchart-actions/delete-path';
 import { replacePath } from '../flowchart-actions/replace-path';
 import { AllPaths, DestinationPath, DestinationPaths, RuleTypes } from '../paths/path-types';
 import { addComponentId, addDestinationId, isDestinationPath } from '../paths/path-utils';
@@ -87,6 +89,8 @@ const PathEditor: React.FC<EditParams> = ({
   const [workingPath, setWorkingPath] = useState<AllPaths>(path);
   const onEdit = (props: any) => setWorkingPath((p: AllPaths) => ({ ...p, ...props }));
   const onDestinationChange = (screenId: string) => onEdit({ destinationScreenId: screenId });
+  const [showDeleteConfirm, toggleDeleteConfirm] = useToggle(false);
+  const dispatch = useDispatch();
   const onIdChange = (id: string) => {
     if (id === workingPath.id) return;
     const target = availablePaths.find((p) => p.id === id);
@@ -107,6 +111,17 @@ const PathEditor: React.FC<EditParams> = ({
     delete filtered[String(screenId)];
     return filtered;
   }, [screens, screenId]);
+
+  const onDelete = () => {
+    //onDeleteScreen(data.resourceId!);
+    dispatch(
+      deletePath({
+        pathId: workingPath.id,
+        screenId: screenId,
+      }),
+    );
+    toggleDeleteConfirm();
+  };
 
   const availableWithCurrent = [workingPath, ...availablePaths];
 
@@ -137,8 +152,22 @@ const PathEditor: React.FC<EditParams> = ({
             />
           </>
         )}
-        <Icon onClick={onSave} icon="save" />
+        <button onClick={toggleDeleteConfirm} className="icon-button">
+          <Icon icon="trash" />
+        </button>
+        <button onClick={onSave} className="icon-button">
+          <Icon icon="save" />
+        </button>
       </div>
+      {showDeleteConfirm && (
+        <ConfirmDelete
+          show={true}
+          elementType="Rule"
+          elementName={workingPath.label}
+          deleteHandler={onDelete}
+          cancelHandler={toggleDeleteConfirm}
+        />
+      )}
     </div>
   );
 };
@@ -156,7 +185,9 @@ const ReadOnlyPath: React.FC<ROParams> = ({ path, toggleEditMode, className, scr
       <label>{path.label}</label>
       <div className="param-box">
         {isDestinationPath(path) && <DestinationLabel path={path} screens={screens} />}
-        <Icon onClick={toggleEditMode} icon="edit" />
+        <button onClick={toggleEditMode} className="icon-button">
+          <Icon icon="edit" />
+        </button>
       </div>
     </div>
   );
