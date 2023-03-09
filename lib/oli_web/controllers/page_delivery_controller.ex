@@ -515,7 +515,8 @@ defmodule OliWeb.PageDeliveryController do
           bibReferences: context.bib_revisions
         },
         collab_space_config: context.collab_space_config,
-        is_instructor: context.is_instructor
+        is_instructor: context.is_instructor,
+        is_student: context.is_student
       }
     )
   end
@@ -633,7 +634,8 @@ defmodule OliWeb.PageDeliveryController do
                   bibReferences: []
                 },
                 collab_space_config: collab_space_config,
-                is_instructor: true
+                is_instructor: true,
+                is_student: false
               }
             )
 
@@ -782,7 +784,8 @@ defmodule OliWeb.PageDeliveryController do
           bibReferences: bib_entrys
         },
         collab_space_config: collab_space_config,
-        is_instructor: true
+        is_instructor: true,
+        is_student: false
       }
     )
   end
