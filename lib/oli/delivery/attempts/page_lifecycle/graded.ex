@@ -151,16 +151,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   defp finalize_activities(resource_attempt, datashop_session_id) do
 
-    activity_attempts = case resource_attempt.revision do
-      %{content: %{"advancedDelivery" => true}} -> get_latest_non_active_activity_attempts(resource_attempt.id)
-      _ -> get_latest_activity_attempts(resource_attempt.id)
+    {activity_attempts, is_adaptive} = case resource_attempt.revision do
+      %{content: %{"advancedDelivery" => true}} -> {get_latest_non_active_activity_attempts(resource_attempt.id), true}
+      _ -> {get_latest_activity_attempts(resource_attempt.id), false}
     end
 
     Enum.map(activity_attempts, fn a ->
       # some activities will finalize themselves ahead of a graded page
       # submission.  so we only submit those that are still yet to be finalized, and
       # that are scoreable
-      if a.lifecycle_state != :evaluated and a.scoreable do
+      if !is_adaptive and a.lifecycle_state != :evaluated and a.scoreable do
         Evaluate.evaluate_from_stored_input(a.attempt_guid, datashop_session_id)
       else
         []
