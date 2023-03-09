@@ -7,7 +7,7 @@
     <meta name="generator" content="ExDoc v0.28.5">
     <meta name="project" content="OLI Torus v0.23.0">
 
-    <title>EvaluationResponse — OLI Torus v0.23.0</title>
+    <title>Running Upgrade in a Dev Env — OLI Torus v0.23.0</title>
     <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
 
     <script src="dist/sidebar_items-8dacb68999.js"></script>
@@ -96,72 +96,38 @@ OLI Torus
 </button>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/EvaluationResponse.md#L1" title="View Source" class="view-source" rel="help">
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/upgrade/dev-env.md#L1" title="View Source" class="view-source" rel="help">
       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
       <span class="sr-only">View Source</span>
     </a>
 
-  <span>EvaluationResponse</span>
+  <span>Running Upgrade in a Dev Env</span>
 </h1>
 
-<p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / EvaluationResponse</p><h1>Interface: EvaluationResponse</h1><p>Response to a submitted activity evaluation.</p><h2 id="hierarchy" class="section-heading">
-  <a href="#hierarchy" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">hierarchy</p>
-  </a>
-  Hierarchy
-</h2>
-<ul><li><p><a href="success.html"><code class="inline">Success</code></a></p><p>↳ <strong><code class="inline">EvaluationResponse</code></strong></p></li></ul><h2 id="table-of-contents" class="section-heading">
-  <a href="#table-of-contents" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">table-of-contents</p>
-  </a>
-  Table of contents
-</h2>
-<h3 id="properties" class="section-heading">
-  <a href="#properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties</p>
-  </a>
-  Properties
-</h3>
-<ul><li><a href="evaluationresponse.html#actions">actions</a></li><li><a href="evaluationresponse.html#type">type</a></li></ul><h2 id="properties-1" class="section-heading">
-  <a href="#properties-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties-1</p>
-  </a>
-  Properties
-</h2>
-<h3 id="actions" class="section-heading">
-  <a href="#actions" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">actions</p>
-  </a>
-  actions
-</h3>
-<p>• <strong>actions</strong>: <a href="modules.html#action"><code class="inline">Action</code></a>[]</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0898b1e/assets/src/components/activities/DeliveryElement.ts#L20">src/components/activities/DeliveryElement.ts:20</a></p><hr class="medium"/><h3 id="type" class="section-heading">
-  <a href="#type" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">type</p>
-  </a>
-  type
-</h3>
-<p>• <strong>type</strong>: <code class="inline">&quot;success&quot;</code></p><h4>Inherited from</h4><p><a href="success.html">Success</a>.<a href="success.html#type">type</a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0898b1e/assets/src/components/activities/types.ts#L109">src/components/activities/types.ts:109</a></p>
+<p>These instructions will set up a development environment
+for the Upgrade A/B testing platform, paired with your local Torus dev env.</p><ol><li>Clone our fork at <a href="https://github.com/Simon-Initiative/UpGrade">https://github.com/Simon-Initiative/UpGrade</a></li><li>In <code class="inline">backend/packages/Upgrade</code> execute <code class="inline">yarn install</code></li><li>Create a <code class="inline">.env</code> in that directory from the contents of <code class="inline">.env.example</code> from <code class="inline">guides/upgrade/.env.example</code></li><li>In your Postgres, manually create a new database <code class="inline">upgrade</code></li><li>Executing <code class="inline">npm run dev</code> should populate the database.  Subsequent executions will fail until you comment out line 83 of <code class="inline">backend/packages/Upgrade/src/loaders/typeormLoader.ts</code></li><li>From <code class="inline">frontend</code> directory, run <code class="inline">yarn install</code></li><li>From <code class="inline">frontend</code> directtory, run <code class="inline">npm run start</code></li></ol><p>You will also need to specify Torus <code class="inline">.env</code> variables:</p><pre><code class="makeup elixir" translate="no"><span class="nc">UPGRADE_EXPERIMENT_PROVIDER_URL</span><span class="o">=</span><span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">localhost</span><span class="p">:</span><span class="mi">3030</span><span class="w">
+</span><span class="nc">UPGRADE_EXPERIMENT_USER_URL</span><span class="o">=</span><span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">localhost</span><span class="p">:</span><span class="mi">4200</span></code></pre>
 <div class="bottom-actions">
   <div class="bottom-actions-item">
 
-      <a href="deliveryelementprops.html" class="bottom-actions-button" rel="prev">
+      <a href="media.html" class="bottom-actions-button" rel="prev">
         <span class="subheader">
           ← Previous Page
         </span>
         <span class="title">
-DeliveryElementProps
+Media assets
         </span>
       </a>
 
   </div>
   <div class="bottom-actions-item">
 
-      <a href="explanation.html" class="bottom-actions-button" rel="next">
+      <a href="modules.html" class="bottom-actions-button" rel="next">
         <span class="subheader">
           Next Page →
         </span>
         <span class="title">
-Explanation
+modules
         </span>
       </a>
 
