@@ -88,8 +88,27 @@
   @apply hover:text-red-600;
 }
 
-.btn[disabled] {
-  @apply text-gray-400 no-underline hover:no-underline cursor-default;
+.btn[disabled],
+.btn.disabled {
+  @apply text-gray-400 no-underline hover:no-underline cursor-default hover:bg-inherit;
+}
+
+.btn-outline-primary[disabled],
+.btn-outline-primary.disabled,
+.btn-outline-secondary[disabled],
+.btn-outline-secondary.disabled,
+.btn-outline-success[disabled],
+.btn-outline-success.disabled,
+.btn-outline-danger[disabled],
+.btn-outline-danger.disabled,
+.btn-outline-warning[disabled],
+.btn-outline-warning.disabled,
+.btn-outline-info[disabled],
+.btn-outline-info.disabled,
+.btn-outline-light[disabled],
+.btn-outline-light.disabled,
+.btn-outline-dark[disabled] {
+  @apply !border-gray-400;
 }
 
 .btn-primary[disabled],
