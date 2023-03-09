@@ -88,7 +88,9 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
               className="btn-close box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline"
               data-bs-dismiss="modal"
               aria-label="Close"
-            ></button>
+            >
+              <i className="fa-solid fa-xmark fa-xl"></i>
+            </button>
           </div>
           <div className="modal-body relative p-4 pt-0">{children}</div>
           <div className="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">

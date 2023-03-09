@@ -224,7 +224,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
             setModel(m);
           }}
           type="button"
-          className="btn btn-link p-0"
+          className="btn btn-link text-body-color"
           data-toggle="tooltip"
           data-placement="top"
           title="Delete this field"
