@@ -764,7 +764,8 @@ defmodule Oli.TestHelpers do
         context_id: UUID.uuid4(),
         open_and_free: true,
         registration_open: true,
-        type: :enrollable
+        type: :enrollable,
+        contains_explorations: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)

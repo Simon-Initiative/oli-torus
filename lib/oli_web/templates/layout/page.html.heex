@@ -8,7 +8,9 @@
         <script type="text/javascript" src={Routes.static_path(@conn, "/js/" <> script)}></script>
       <% end %>
 
-      <Components.Delivery.ExplorationShade.exploration_shade exploration_pages={Map.get(@conn.assigns, :exploration_pages, nil)} />
+      <%= if assigns.section.contains_explorations do%>
+        <Components.Delivery.ExplorationShade.exploration_shade exploration_pages={Map.get(@conn.assigns, :exploration_pages, nil)} />
+      <% end %>
 
       <div class="w-full flex flex-col xl:flex-row gap-4 p-10">
         <div class={if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config), do: "xl:w-2/3 w-full", else: "w-full"}>

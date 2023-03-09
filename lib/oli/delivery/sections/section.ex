@@ -57,6 +57,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_gating_index, :map, default: %{}, null: false)
     field(:previous_next_index, :map, default: nil, null: true)
     field(:display_curriculum_item_numbering, :boolean, default: true)
+    field(:contains_explorations, :boolean, default: false)
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
 
@@ -146,7 +147,8 @@ defmodule Oli.Delivery.Sections.Section do
       :requires_enrollment,
       :skip_email_verification,
       :publisher_id,
-      :display_curriculum_item_numbering
+      :display_curriculum_item_numbering,
+      :contains_explorations
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

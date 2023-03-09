@@ -9,6 +9,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
 
   slot :inner_block, required: true
 
@@ -38,53 +39,9 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       |> assign(
         :links,
         if is_preview_mode?(assigns) do
-          [
-            %{
-              name: "Home",
-              href: "#",
-              active: is_active(path_info, :overview)
-            },
-            %{name: "Course Content", href: "#", active: is_active(path_info, :content)},
-            %{name: "Discussion", href: "#", active: is_active(path_info, :discussion)},
-            %{name: "Assignments", href: "#", active: is_active(path_info, "")},
-            %{
-              name: "Exploration",
-              href: "#",
-              active: is_active(path_info, :exploration)
-            }
-          ]
+          get_preview_links(assigns[:section], path_info)
         else
-          hierarchy =
-            assigns[:section]
-            |> Oli.Repo.preload([:root_section_resource])
-            |> Sections.build_hierarchy()
-
-          [
-            %{
-              name: "Home",
-              href: home_url(assigns),
-              active: is_active(path_info, :overview)
-            },
-            %{
-              name: "Course Content",
-              popout: %{
-                component: "Components.CourseContentOutline",
-                props: %{hierarchy: hierarchy, sectionSlug: assigns[:section].slug}
-              },
-              active: is_active(path_info, :content)
-            },
-            %{
-              name: "Discussion",
-              href: discussion_url(assigns),
-              active: is_active(path_info, :discussion)
-            },
-            %{name: "Assignments", href: "#", active: is_active(path_info, "")},
-            %{
-              name: "Exploration",
-              href: exploration_url(assigns),
-              active: is_active(path_info, :exploration)
-            }
-          ]
+          get_links(assigns, path_info)
         end
       )
       |> UserAccountMenu.user_account_menu_assigns()
@@ -104,6 +61,100 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         }) %>
       </div>
     """
+  end
+
+  defp get_preview_links(%Section{contains_explorations: true}, path_info) do
+    [
+      %{
+        name: "Home",
+        href: "#",
+        active: is_active(path_info, :overview)
+      },
+      %{name: "Course Content", href: "#", active: is_active(path_info, :content)},
+      %{name: "Discussion", href: "#", active: is_active(path_info, :discussion)},
+      %{name: "Assignments", href: "#", active: is_active(path_info, "")},
+      %{
+        name: "Exploration",
+        href: "#",
+        active: is_active(path_info, :exploration)
+      }
+    ]
+  end
+
+  defp get_preview_links(_, path_info) do
+    [
+      %{
+        name: "Home",
+        href: "#",
+        active: is_active(path_info, :overview)
+      },
+      %{name: "Course Content", href: "#", active: is_active(path_info, :content)},
+      %{name: "Discussion", href: "#", active: is_active(path_info, :discussion)},
+      %{name: "Assignments", href: "#", active: is_active(path_info, "")}
+    ]
+  end
+
+  defp get_links(%{section: %{contains_explorations: true}} = assigns, path_info) do
+    hierarchy =
+      assigns[:section]
+      |> Oli.Repo.preload([:root_section_resource])
+      |> Sections.build_hierarchy()
+
+    [
+      %{
+        name: "Home",
+        href: home_url(assigns),
+        active: is_active(path_info, :overview)
+      },
+      %{
+        name: "Course Content",
+        popout: %{
+          component: "Components.CourseContentOutline",
+          props: %{hierarchy: hierarchy, sectionSlug: assigns[:section].slug}
+        },
+        active: is_active(path_info, :content)
+      },
+      %{
+        name: "Discussion",
+        href: discussion_url(assigns),
+        active: is_active(path_info, :discussion)
+      },
+      %{name: "Assignments", href: "#", active: is_active(path_info, "")},
+      %{
+        name: "Exploration",
+        href: exploration_url(assigns),
+        active: is_active(path_info, :exploration)
+      }
+    ]
+  end
+
+  defp get_links(assigns, path_info) do
+    hierarchy =
+      assigns[:section]
+      |> Oli.Repo.preload([:root_section_resource])
+      |> Sections.build_hierarchy()
+
+    [
+      %{
+        name: "Home",
+        href: home_url(assigns),
+        active: is_active(path_info, :overview)
+      },
+      %{
+        name: "Course Content",
+        popout: %{
+          component: "Components.CourseContentOutline",
+          props: %{hierarchy: hierarchy, sectionSlug: assigns[:section].slug}
+        },
+        active: is_active(path_info, :content)
+      },
+      %{
+        name: "Discussion",
+        href: discussion_url(assigns),
+        active: is_active(path_info, :discussion)
+      },
+      %{name: "Assignments", href: "#", active: is_active(path_info, "")}
+    ]
   end
 
   defp logo_details(assigns) do
