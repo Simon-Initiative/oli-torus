@@ -74,6 +74,8 @@
     "react-bootstrap": "^1.6.5",
     "react-bootstrap-typeahead": "^5.1.4",
     "react-color": "^2.19.3",
+    "react-dnd": "15.1.2",
+    "react-dnd-html5-backend": "15.1.2",
     "react-dom": "^17.0.2",
     "react-keyed-file-browser": "^1.13.1",
     "react-phoenix": "file:../deps/react_phoenix",

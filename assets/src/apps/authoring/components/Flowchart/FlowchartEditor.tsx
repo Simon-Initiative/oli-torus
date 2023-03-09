@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
 import {
   selectAllActivities,
   setCurrentActivityId,
 } from '../../../delivery/store/features/activities/slice';
 
-import { changeAppMode, changeEditMode } from '../../store/app/slice';
-import { SidePanel } from '../SidePanel';
 import { addFlowchartScreen } from './flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
 
@@ -21,6 +22,8 @@ import {
 import { FlowchartModeOptions } from './FlowchartModeOptions';
 import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
+import { changeEditMode } from '../../store/app/slice';
+import { screenTypeToTitle } from './screens/screen-factories';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.
@@ -42,8 +45,15 @@ export const FlowchartEditor = () => {
 
   const onAddScreen = useCallback(
     (params: FlowchartAddScreenParams) => {
-      const { prevNodeId, nextNodeId } = params;
-      dispatch(addFlowchartScreen({ fromScreenId: prevNodeId, toScreenId: nextNodeId }));
+      const { prevNodeId, nextNodeId, screenType } = params;
+      dispatch(
+        addFlowchartScreen({
+          fromScreenId: prevNodeId,
+          toScreenId: nextNodeId,
+          screenType,
+          title: screenType ? screenTypeToTitle[screenType] : 'New Screen',
+        }),
+      );
     },
     [dispatch],
   );
@@ -87,15 +97,17 @@ export const FlowchartEditor = () => {
   return (
     <FlowchartEventContext.Provider value={events}>
       <div className="flowchart-editor">
-        <div className="panel-inner">
-          <FlowchartModeOptions onScreenEditMode={onScreenEdit} />
-          <FlowchartSidebar />
-        </div>
+        <DndProvider backend={HTML5Backend}>
+          <div className="panel-inner">
+            <FlowchartModeOptions onScreenEditMode={onScreenEdit} />
+            <FlowchartSidebar />
+          </div>
 
-        <div className="flowchart-right">
-          <FlowchartTopToolbar />
-          <FlowchartComponent nodes={nodes} edges={edges} />
-        </div>
+          <div className="flowchart-right">
+            <FlowchartTopToolbar />
+            <FlowchartComponent nodes={nodes} edges={edges} />
+          </div>
+        </DndProvider>
       </div>
     </FlowchartEventContext.Provider>
   );

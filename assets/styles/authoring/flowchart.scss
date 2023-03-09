@@ -52,22 +52,51 @@ $font-family-sans-serif: var(--font-sans);
   .flowchart-right {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
+    flex-grow: 3;
+    flex-shrink: 1;
   }
 
   .top-toolbar {
-    //flex flex-row justify-between items-center bg-delivery-body p-2 h-40 border-b-2 dark:text-black
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #999;
-    padding: 8px;
-    height: 200px;
-    border-bottom: 2px solid #e2e8f0;
-    flex-grow: 0;
-    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 0.2fr repeat(2, 1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+
+    .left-header {
+      grid-area: 1 / 1 / 2 / 3;
+      padding-left: 15px;
+      padding-bottom: 0.5rem;
+      padding-top: 0.5rem;
+    }
+    .right-header {
+      grid-area: 1 / 3 / 2 / 6;
+      padding-left: 15px;
+      padding-bottom: 0.5rem;
+      padding-top: 0.5rem;
+    }
+
+    .toolbar-option {
+      // border: 1px solid #fff;
+      cursor: grab;
+      user-select: none;
+      &:hover {
+        background-color: #eee;
+      }
+      &.right-border {
+        border-right: 1px dashed #ccc;
+      }
+      .toolbar-icon {
+        margin-right: 0.5rem;
+        width: 25px;
+        text-align: center;
+        height: 25px;
+        background-color: #b9d7a1;
+        border-radius: 5px;
+        display: inline-block;
+      }
+      padding: 1rem;
+    }
   }
 
   .sidebar-header {
@@ -118,6 +147,10 @@ $font-family-sans-serif: var(--font-sans);
       justify-content: center;
       align-items: center;
       text-align: center;
+
+      &.drop-over {
+        border: 2px solid #b9d7a1 !important;
+      }
 
       &.node-selected {
         border: 2px solid #5b1eea;

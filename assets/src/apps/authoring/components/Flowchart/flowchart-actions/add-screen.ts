@@ -38,6 +38,7 @@ interface AddFlowchartScreenPayload {
   fromScreenId?: number;
   toScreenId?: number;
   title?: string;
+  screenType?: string;
 }
 
 /**
@@ -63,7 +64,7 @@ export const addFlowchartScreen = createAsyncThunk(
 
       const group = selectAllGroups(rootState)[0];
 
-      const { title = 'New Screen' } = payload;
+      const { title = 'New Screen', screenType = 'blank_screen' } = payload;
 
       const activity: IActivityTemplate = {
         ...createActivityTemplate(),
@@ -74,6 +75,7 @@ export const addFlowchartScreen = createAsyncThunk(
 
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
+        screenType,
       };
       activity.model.authoring.flowchart = flowchartData;
 

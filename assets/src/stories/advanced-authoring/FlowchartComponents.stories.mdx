@@ -5,14 +5,41 @@ import { PlaceholderNodeBody } from 'apps/authoring/components/Flowchart/chart-c
 import { FlowchartTopToolbar } from 'apps/authoring/components/Flowchart/toolbar/FlowchartTopToolbar.tsx';
 import { FlowchartSidebar } from 'apps/authoring/components/Flowchart/sidebar/FlowchartSidebar.tsx';
 import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext.tsx';
+import { ToolbarItem } from 'apps/authoring/components/Flowchart/toolbar/ToolbarItem.tsx';
+import { Canvas, Meta, Story } from '@storybook/addon-docs';
 import '../../../styles/index.scss';
 
 <Meta title="Advanced Authoring/Flowchart Components" />
 
 # Top Toolbar
 
-<AdvancedAuthorStorybookContext>
-  <FlowchartTopToolbar />
+<Canvas>
+  <Story name="Top Toolbar">
+    <AdvancedAuthorStorybookContext className="w-full">
+      <div className="w-full flex flex-row">
+        <div className="flowchart-right">
+          <FlowchartTopToolbar />
+        </div>
+      </div>
+    </AdvancedAuthorStorybookContext>
+  </Story>
+</Canvas>
+
+# Drag drop
+
+Drag from the toolbar above to a box here
+
+<AdvancedAuthorStorybookContext className="w-full">
+
+  <div className="w-full flex flex-row">
+    <PlaceholderNodeBody
+      data={{
+        id: '1',
+        type: 'screen',
+        custom: { sequenceName: 'Screen 1' },
+      }}
+    />
+  </div>
 </AdvancedAuthorStorybookContext>
 
 # Sidebar

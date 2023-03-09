@@ -25,6 +25,7 @@ module.exports = {
     };
 
     config.module.rules = config.module.rules.map((oldRule) => {
+      // This injects the sassOptions above into the sass loader so our imports from styles/ work correctly
       if (!oldRule.use) return oldRule;
       return {
         ...oldRule,
@@ -40,7 +41,7 @@ module.exports = {
       };
     });
 
-    console.info(JSON.stringify(config.module.rules, null, 2));
+    // console.info(JSON.stringify(config.module.rules, null, 2));
     return config;
   },
 };
