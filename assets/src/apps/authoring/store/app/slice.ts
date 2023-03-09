@@ -192,9 +192,11 @@ const slice: Slice<AppState> = createSlice({
     builder.addCase(savePage.rejected, (state) => {
       state.hasEditingLock = false;
     });
-    builder.addCase(saveActivity.rejected, (state) => {
-      state.hasEditingLock = false;
-    });
+    if (saveActivity?.rejected) {
+      builder.addCase(saveActivity.rejected, (state) => {
+        state.hasEditingLock = false;
+      });
+    }
     builder.addCase(savePartState.rejected, (state) => {
       state.hasEditingLock = false;
     });

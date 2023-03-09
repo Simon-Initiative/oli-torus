@@ -20,7 +20,7 @@ import {
 } from './FlowchartEventContext';
 import { FlowchartModeOptions } from './FlowchartModeOptions';
 import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
-import { FlowchartTopToolbar } from './FlowchartTopToolbar';
+import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.

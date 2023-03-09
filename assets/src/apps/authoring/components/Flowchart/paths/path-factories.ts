@@ -1,13 +1,12 @@
 import guid from '../../../../../utils/guid';
 import {
   AlwaysGoToPath,
-  DestinationPath,
+  DropdownCommonErrorPath,
   DropdownCorrectPath,
   DropdownIncorrectPath,
   EndOfActivityPath,
   MultipleChoiceCorrectPath,
   MultipleChoiceIncorrectPath,
-  RuleTypes,
   UnknownPathWithDestination,
 } from './path-types';
 
@@ -19,6 +18,8 @@ export const createUnknownPathWithDestination = (
   ruleId: null,
   destinationScreenId,
   completed: false,
+  label: 'Never',
+  priority: 20,
 });
 
 const createDestinationPath = (destinationScreenId: number | null = null) => ({
@@ -28,6 +29,19 @@ const createDestinationPath = (destinationScreenId: number | null = null) => ({
   completed: false,
 });
 
+export const createDropdownCommonErrorPath = (
+  componentId: string,
+  selectedOption: number,
+  destinationScreenId: number | null = null,
+): DropdownCommonErrorPath => ({
+  ...createDestinationPath(destinationScreenId),
+  type: 'dropdown-common-error',
+  selectedOption,
+  componentId,
+  label: `Selected option #${selectedOption + 1}`,
+  priority: 4,
+});
+
 export const createDropdownIncorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
@@ -35,6 +49,8 @@ export const createDropdownIncorrectPath = (
   ...createDestinationPath(destinationScreenId),
   type: 'dropdown-incorrect',
   componentId,
+  label: 'Any Incorrect',
+  priority: 8,
 });
 
 export const createDropdownCorrectPath = (
@@ -44,6 +60,8 @@ export const createDropdownCorrectPath = (
   ...createDestinationPath(destinationScreenId),
   type: 'dropdown-correct',
   componentId,
+  label: 'Correct',
+  priority: 8,
 });
 
 export const createMultipleChoiceIncorrectPath = (
@@ -55,6 +73,8 @@ export const createMultipleChoiceIncorrectPath = (
   destinationScreenId,
   completed: false,
   componentId: null,
+  label: 'Any Incorrect',
+  priority: 8,
 });
 
 export const createMultipleChoiceCorrectPath = (
@@ -66,6 +86,8 @@ export const createMultipleChoiceCorrectPath = (
   destinationScreenId,
   completed: false,
   componentId: null,
+  label: 'Correct',
+  priority: 8,
 });
 
 export const createAlwaysGoToPath = (
@@ -76,6 +98,8 @@ export const createAlwaysGoToPath = (
   ruleId: null,
   destinationScreenId,
   completed: !!destinationScreenId,
+  label: 'Always',
+  priority: 12,
 });
 
 export const createEndOfActivityPath = (): EndOfActivityPath => ({
@@ -83,4 +107,6 @@ export const createEndOfActivityPath = (): EndOfActivityPath => ({
   id: guid(),
   ruleId: null,
   completed: false,
+  label: 'Exit Activity',
+  priority: 16,
 });

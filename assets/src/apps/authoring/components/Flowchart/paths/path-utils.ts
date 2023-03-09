@@ -135,3 +135,13 @@ export const addComponentId = (path: AllPaths, componentId: string | null): AllP
     componentId,
   };
 };
+
+// Adds a destinationId attribute, if the path should have one.
+export const addDestinationId = (path: AllPaths, destinationScreenId: number | null): AllPaths => {
+  if (!destinationScreenId) return path;
+  if (!isDestinationPath(path)) return path;
+  return {
+    ...path,
+    destinationScreenId,
+  };
+};

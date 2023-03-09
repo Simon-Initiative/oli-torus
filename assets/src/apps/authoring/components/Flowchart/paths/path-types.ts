@@ -1,3 +1,5 @@
+import { Priority } from '../../../../../data/messages/messages';
+
 export interface AuthoringFlowchartScreenData {
   paths: AllPaths[];
 }
@@ -7,6 +9,17 @@ interface BasePath {
   id: string;
   ruleId: string | null;
   completed: boolean;
+  label: string;
+  priority: number /*
+  priority: Order in which the rules should be evaluated
+  (lower number means higher priority)
+  Guideline:   (Leaving gaps for future use)
+    4 - A very specific rule, such as a specific common error
+    8 - A rule that is more general, such as "any incorrect" or "correct"
+    12 - The default action, such as "always go to"
+    16 - End of activity
+    20 - A rule that shouldn't really happen such as "never"
+  */;
 }
 export interface DestinationPath extends BasePath {
   destinationScreenId: number | null;
@@ -63,7 +76,8 @@ export type ComponentPaths =
   | MultipleChoiceIncorrectPath
   | MultipleChoiceCommonErrorPath
   | DropdownCorrectPath
-  | DropdownIncorrectPath;
+  | DropdownIncorrectPath
+  | DropdownCommonErrorPath;
 
 export type DestinationPaths = ComponentPaths | AlwaysGoToPath | UnknownPathWithDestination;
 

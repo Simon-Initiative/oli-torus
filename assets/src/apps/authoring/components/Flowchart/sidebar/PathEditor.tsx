@@ -1,23 +1,11 @@
 import { EntityId } from '@reduxjs/toolkit';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
 import { replacePath } from '../flowchart-actions/replace-path';
-import { AllPaths, DestinationPath, RuleTypes } from '../paths/path-types';
-import { addComponentId, isDestinationPath } from '../paths/path-utils';
-
-const ruleLabels: Record<RuleTypes, string> = {
-  'unknown-reason-path': 'Never',
-  'always-go-to': 'Always',
-  'multiple-choice-correct': 'Correct',
-  'multiple-choice-incorrect': 'Any Incorrect',
-  'multiple-choice-common-error': 'Choice Common Error',
-  'end-of-activity': 'End Of Activity',
-  'dropdown-correct': 'Correct',
-  'dropdown-incorrect': 'Any Incorrect',
-  'dropdown-common-error': 'Choice Common Error',
-};
+import { AllPaths, DestinationPath, DestinationPaths, RuleTypes } from '../paths/path-types';
+import { addComponentId, addDestinationId, isDestinationPath } from '../paths/path-utils';
 
 interface Props {
   screenId: EntityId;
@@ -58,6 +46,7 @@ export const PathEditBox: React.FC<Props> = ({
       className={className}
       availablePaths={availablePaths}
       path={path}
+      screenId={screenId}
       questionId={questionId}
       screens={screens}
       toggleEditMode={toggleEditMode}
@@ -80,8 +69,9 @@ interface EditParams {
   toggleEditMode: () => void;
   onChange: (path: AllPaths) => void;
   questionType: string;
-  questionId: EntityId;
+  questionId: string | null;
   screens: Record<string, string>;
+  screenId: EntityId;
 }
 const PathEditor: React.FC<EditParams> = ({
   className,
@@ -90,28 +80,47 @@ const PathEditor: React.FC<EditParams> = ({
   toggleEditMode,
   screens,
   questionId,
+  screenId,
   onChange,
   questionType,
 }) => {
   const [workingPath, setWorkingPath] = useState<AllPaths>(path);
   const onEdit = (props: any) => setWorkingPath((p: AllPaths) => ({ ...p, ...props }));
   const onDestinationChange = (screenId: string) => onEdit({ destinationScreenId: screenId });
+  const onIdChange = (id: string) => {
+    if (id === workingPath.id) return;
+    const target = availablePaths.find((p) => p.id === id);
+    if (!target) return;
+    const { destinationScreenId } = workingPath as DestinationPath;
+    onEdit(addDestinationId(target, destinationScreenId));
+  };
   const onSave = () => {
     onChange(workingPath);
     toggleEditMode();
   };
 
+  const destinationScreens = useMemo(() => {
+    // Don't let the user pick the this screen as the destination
+    const filtered = {
+      ...screens,
+    };
+    delete filtered[String(screenId)];
+    return filtered;
+  }, [screens, screenId]);
+
+  const availableWithCurrent = [workingPath, ...availablePaths];
+
   return (
     <div className={className}>
       {questionId && <span>When {questionType} is</span>}
 
-      {availablePaths.length === 1 && <label>{ruleLabels[availablePaths[0].type] || '???'}</label>}
+      {availableWithCurrent.length === 1 && <label>{availableWithCurrent[0].label}</label>}
 
-      {availablePaths.length > 1 && (
-        <select value={workingPath.type} onChange={(e) => onEdit({ type: e.target.value })}>
-          {availablePaths.map((path, index) => (
-            <option key={index} value={path.type}>
-              {ruleLabels[path.type]}
+      {availableWithCurrent.length > 1 && (
+        <select value={workingPath.id} onChange={(e) => onIdChange(e.target.value)}>
+          {availableWithCurrent.map((path, index) => (
+            <option key={index} value={path.id}>
+              {path.label}
             </option>
           ))}
         </select>
@@ -122,7 +131,7 @@ const PathEditor: React.FC<EditParams> = ({
           <>
             Go to
             <DestinationPicker
-              screens={screens}
+              screens={destinationScreens}
               path={workingPath}
               onChange={onDestinationChange}
             />
@@ -142,10 +151,9 @@ interface ROParams {
 }
 
 const ReadOnlyPath: React.FC<ROParams> = ({ path, toggleEditMode, className, screens }) => {
-  const label = ruleLabels[path.type] || '???';
   return (
     <div className={className}>
-      <label>{label}</label>
+      <label>{path.label}</label>
       <div className="param-box">
         {isDestinationPath(path) && <DestinationLabel path={path} screens={screens} />}
         <Icon onClick={toggleEditMode} icon="edit" />

@@ -6,6 +6,7 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import {
   createAlwaysGoToPath,
+  createDropdownCommonErrorPath,
   createDropdownCorrectPath,
   createDropdownIncorrectPath,
   createMultipleChoiceCorrectPath,
@@ -36,6 +37,9 @@ const createDefaultPathTypes = () => {
 const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefined) => {
   if (dropdown) {
     return [
+      ...dropdown.custom.optionLabels.map((label, index) =>
+        createDropdownCommonErrorPath(dropdown.id, index),
+      ),
       createDropdownCorrectPath(dropdown.id),
       createDropdownIncorrectPath(dropdown.id),
       ...createDefaultPathTypes(),
