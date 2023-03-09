@@ -292,7 +292,7 @@ input.form-control-sm,
 }
 
 .page-item .page-link {
-  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 no-underline;
+  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 no-underline cursor-pointer;
 }
 
 .page-item:not(.disabled) .page-link {
@@ -308,7 +308,7 @@ input.form-control-sm,
 }
 
 .page-item.disabled .page-link {
-  @apply bg-transparent text-gray-400 hover:text-gray-400;
+  @apply cursor-default bg-transparent text-gray-400 hover:text-gray-400;
 }
 
 .alert {
