@@ -17,6 +17,30 @@ module.exports = {
   webpackFinal: async (config) => {
     config.resolve.plugins = [...(config.resolve.plugins || []), new TsconfigPathsPlugin()];
 
+    const sassOptions = {
+      sassOptions: {
+        includePaths: [path.join(__dirname, '../styles')],
+        quietDeps: true,
+      },
+    };
+
+    config.module.rules = config.module.rules.map((oldRule) => {
+      if (!oldRule.use) return oldRule;
+      return {
+        ...oldRule,
+        use: (oldRule.use || []).map((oldUse) => {
+          if (oldUse.loader && oldUse.loader.indexOf('sass-loader') >= 0) {
+            return {
+              ...oldUse,
+              options: sassOptions,
+            };
+          }
+          return oldUse;
+        }),
+      };
+    });
+
+    console.info(JSON.stringify(config.module.rules, null, 2));
     return config;
   },
 };

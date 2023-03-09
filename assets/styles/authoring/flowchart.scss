@@ -1,3 +1,19 @@
+// TODO - figure out how to import variables from advanced-authoring.scss
+// maybe this file should be included from there?
+$nav-height: 65px;
+$panel-side-width: 270px;
+$panel-bg-color-light: #f5f6f7;
+$panel-bg-color-dark: #7b8a8b;
+$panel-font-color-light: #333;
+$panel-font-color-dark: $panel-font-color-light;
+$torus-panel-side-width: 200px;
+$rounded: 4px;
+$ui-border-color: #ccc;
+$panel-section-title-bar-height: 39px;
+$panel-section-title-bar-color: #e8ebed;
+$workspace-bg: var(--color-body);
+$font-family-sans-serif: var(--font-sans);
+
 .flowchart-editor {
   position: fixed;
   bottom: 0;
@@ -8,6 +24,14 @@
   background-color: #fff;
   display: flex;
   flex-direction: row;
+
+  &.storybook {
+    position: relative !important;
+    bottom: unset;
+    right: unset;
+    top: unset;
+    left: unset;
+  }
 
   .flowchart-button {
     border: none;
@@ -93,6 +117,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      text-align: center;
 
       &.node-selected {
         border: 2px solid #5b1eea;

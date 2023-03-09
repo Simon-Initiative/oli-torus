@@ -2,41 +2,45 @@ import { TorusBG } from '../TorusBG.tsx';
 import { ScreenNodeBody } from 'apps/authoring/components/Flowchart/chart-components/ScreenNode.tsx';
 import { ScreenButton } from 'apps/authoring/components/Flowchart/chart-components/ScreenButton.tsx';
 import { PlaceholderNodeBody } from 'apps/authoring/components/Flowchart/chart-components/PlaceholderNode.tsx';
-import { FlowchartTopToolbar } from 'apps/authoring/components/Flowchart/FlowchartTopToolbar.tsx';
-import { FlowchartSidebar } from 'apps/authoring/components/Flowchart/FlowchartSidebar.tsx';
+import { FlowchartTopToolbar } from 'apps/authoring/components/Flowchart/toolbar/FlowchartTopToolbar.tsx';
+import { FlowchartSidebar } from 'apps/authoring/components/Flowchart/sidebar/FlowchartSidebar.tsx';
+import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext.tsx';
+import '../../../styles/index.scss';
 
 <Meta title="Advanced Authoring/Flowchart Components" />
 
 # Top Toolbar
 
-<TorusBG>
+<AdvancedAuthorStorybookContext>
   <FlowchartTopToolbar />
-</TorusBG>
+</AdvancedAuthorStorybookContext>
 
 # Sidebar
 
-<TorusBG>
+<AdvancedAuthorStorybookContext>
   <div className="flex flex-row min-h-[300px]">
     <FlowchartSidebar />
     <div>Rest of content</div>
   </div>
-</TorusBG>
+</AdvancedAuthorStorybookContext>
 
 # Screen Node
 
-<TorusBG>
+<AdvancedAuthorStorybookContext>
   <ScreenNodeBody
     data={{
       id: '1',
+      resourceId: 1001,
+      title: 'Sample Screen',
       type: 'screen',
       custom: { sequenceName: 'Screen 1' },
     }}
   />
-</TorusBG>
+</AdvancedAuthorStorybookContext>
 
 # Placeholder Node
 
-<TorusBG>
+<AdvancedAuthorStorybookContext>
   <PlaceholderNodeBody
     data={{
       id: '1',
@@ -44,10 +48,10 @@ import { FlowchartSidebar } from 'apps/authoring/components/Flowchart/FlowchartS
       custom: { sequenceName: 'Screen 1' },
     }}
   />
-</TorusBG>
+</AdvancedAuthorStorybookContext>
 
 # Screen Button
 
-<TorusBG>
+<AdvancedAuthorStorybookContext>
   <ScreenButton>+</ScreenButton>
-</TorusBG>
+</AdvancedAuthorStorybookContext>
