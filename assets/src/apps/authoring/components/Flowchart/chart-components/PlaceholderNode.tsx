@@ -52,7 +52,7 @@ export const PlaceholderNodeBody: React.FC<NodeProps> = ({ data }) => {
         {hover && <DropMessage />}
         {hover || (
           <button
-            className="flowchart-button"
+            className="flowchart-button secondary"
             onClick={() => onAddScreen({ prevNodeId: data.fromScreenId })}
           >
             Add Screen

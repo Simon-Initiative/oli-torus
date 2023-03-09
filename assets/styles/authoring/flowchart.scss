@@ -39,6 +39,9 @@ $font-family-sans-serif: var(--font-sans);
     color: #fff;
     border-radius: 8px;
     padding: 4px 8px 4px 8px;
+    &.secondary {
+      background-color: #fff;
+    }
     &:hover {
       background-color: #4d14d2;
     }
@@ -138,7 +141,7 @@ $font-family-sans-serif: var(--font-sans);
     .node-box {
       // p-4 text-center border-2 w-32 h-28 bg-white text-delivery-body-dark flex justify-center align-middle flex-col
       padding: 8px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid #bcbfc3;
       width: 128px;
       height: 112px;
       background-color: #fff;
@@ -180,7 +183,6 @@ $font-family-sans-serif: var(--font-sans);
     }
     .placeholder {
       border-style: dashed;
-      border-color: #eee;
     }
   }
 

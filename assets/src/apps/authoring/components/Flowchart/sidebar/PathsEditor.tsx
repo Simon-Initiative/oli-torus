@@ -1,5 +1,7 @@
 import { EntityId } from '@reduxjs/toolkit';
 import React from 'react';
+import { useDispatch } from 'react-redux';
+import { addPath } from '../flowchart-actions/add-path';
 import { AllPaths } from '../paths/path-types';
 import { PathEditBox } from './PathEditor';
 
@@ -22,6 +24,10 @@ export const PathsEditor: React.FC<Props> = ({
   paths,
   screens,
 }) => {
+  const dispatch = useDispatch();
+  const addRule = () => {
+    dispatch(addPath({ screenId }));
+  };
   return (
     <div>
       {paths.map((path, index) => (
@@ -36,6 +42,9 @@ export const PathsEditor: React.FC<Props> = ({
           path={path}
         />
       ))}
+      <button onClick={addRule} className="btn btn-primary">
+        Add Rule
+      </button>
     </div>
   );
 };

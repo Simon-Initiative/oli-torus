@@ -18,7 +18,7 @@ export const createUnknownPathWithDestination = (
   ruleId: null,
   destinationScreenId,
   completed: false,
-  label: 'Never',
+  label: 'Empty Rule',
   priority: 20,
 });
 

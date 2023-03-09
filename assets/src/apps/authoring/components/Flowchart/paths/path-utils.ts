@@ -61,6 +61,12 @@ export const isEndOfActivityPath = (path: AllPaths): path is EndOfActivityPath =
 export const isDestinationPath = (path: AllPaths): path is DestinationPaths =>
   'destinationScreenId' in path;
 
+export const hasDestination = (path: DestinationPath): path is DestinationPaths =>
+  !!path.destinationScreenId;
+
+export const missingDestination = (path: DestinationPath): path is DestinationPaths =>
+  !path.destinationScreenId;
+
 const destinationPathToEdge = (activity: IActivity) => (path: DestinationPath) => ({
   id: String(path.id),
   source: String(activity.id),
@@ -77,7 +83,10 @@ const destinationPathToEdge = (activity: IActivity) => (path: DestinationPath) =
 
 export const buildEdgesForActivity = (activity: IActivity): FlowchartEdge[] => {
   const paths = getPathsFromScreen(activity);
-  return paths.filter(isDestinationPath).map(destinationPathToEdge(activity));
+  return paths
+    .filter(isDestinationPath)
+    .filter(hasDestination)
+    .map(destinationPathToEdge(activity));
 };
 
 export const removeEndOfActivityPath = (screen: IActivity) => {
