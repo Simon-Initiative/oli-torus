@@ -225,7 +225,7 @@ input.form-control,
 .input-group select,
 select.custom-select,
 select.form-control {
-  @apply border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700;
+  @apply border py-1 px-1.5 border-gray-300 rounded w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700;
 }
 
 input.form-control-sm,
@@ -254,7 +254,7 @@ input.form-control-sm,
 }
 
 .form-group input[type='file'] {
-  @apply border border-gray-300 p-1 rounded-md;
+  @apply border border-gray-300 p-1 rounded;
 }
 
 .input-group {
