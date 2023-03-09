@@ -46,7 +46,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   end
 
   @doc """
-  JSON endpoint that allows client-side reporting of payment processing success.
+  An endpoint that allows the cashnet system reporting of payment processing success.
   """
   def success(conn, %{"lname" => lname, "result" => result, "ref1val1" => payment_id} = payload) do
     # get payment, stamp it as having been finalized
@@ -91,7 +91,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   end
 
    @doc """
-  JSON endpoint that allows client-side reporting of payment processing success.
+  An endpoint that allows the cashnet system reporting of payment processing failure.
   """
   def failure(conn, payload) do
     # get payment, stamp it as having been finalized
@@ -117,9 +117,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
     })
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      # Lookup the section, determine the product, and determine the cost. For security
-      # reasons, we *always* calculate cost on the server instead of allowing the client
-      # to pass the cost along to the server.
+      # Lookup the section, determine the product, and determine the cost. 
       case Sections.get_section_by_slug(section_slug) |> trap_nil() do
         {:ok, section} ->
           # Now ask Cashnet to create a payment form, which also results in a %Payment record
