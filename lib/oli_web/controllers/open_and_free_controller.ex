@@ -75,6 +75,8 @@ defmodule OliWeb.OpenAndFreeController do
          blueprint <- Sections.get_section_by_slug(product_slug) do
       context = SessionContext.init(conn)
 
+      project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
+
       utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, context)
       utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, context)
 
@@ -84,6 +86,7 @@ defmodule OliWeb.OpenAndFreeController do
           blueprint_id: blueprint.id,
           type: :enrollable,
           open_and_free: true,
+          has_experiments: project.has_experiments,
           context_id: UUID.uuid4(),
           start_date: utc_start_date,
           end_date: utc_end_date
@@ -143,7 +146,7 @@ defmodule OliWeb.OpenAndFreeController do
            "end_date" => end_date
          } <-
            section_params,
-         %{id: project_id} <- Course.get_project_by_slug(project_slug),
+         %{id: project_id, has_experiments: has_experiments} <- Course.get_project_by_slug(project_slug),
          publication <- Publishing.get_latest_published_publication_by_slug(project_slug) |> Repo.preload(:project) do
 
       context = SessionContext.init(conn)
@@ -165,6 +168,7 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("start_date", utc_start_date)
         |> Map.put("end_date", utc_end_date)
         |> Map.put("customizations", customizations)
+        |> Map.put("has_experiments", has_experiments)
 
       case create_from_publication(conn, publication, section_params) do
         {:ok, section} ->

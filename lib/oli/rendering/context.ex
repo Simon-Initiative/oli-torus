@@ -3,7 +3,8 @@ defmodule Oli.Rendering.Context do
   The context struct that is used by the renderers contains useful
   data that may change the way rendering occurs.
   """
-  defstruct user: nil,
+  defstruct enrollment: nil,
+            user: nil,
             activity_map: %{},
             render_opts: %{
               render_errors: true

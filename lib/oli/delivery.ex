@@ -66,6 +66,8 @@ defmodule Oli.Delivery do
           _ -> blueprint.amount
         end
 
+      project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
+
       {:ok, section} =
         Oli.Delivery.Sections.Blueprint.duplicate(blueprint, %{
           type: :enrollable,
@@ -74,6 +76,7 @@ defmodule Oli.Delivery do
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id,
           blueprint_id: blueprint.id,
+          has_experiments: project.has_experiments,
           amount: amount,
           pay_by_institution: blueprint.pay_by_institution,
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
@@ -81,6 +84,9 @@ defmodule Oli.Delivery do
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
       enroll(user.id, section.id, lti_params)
 
       section
@@ -103,6 +109,7 @@ defmodule Oli.Delivery do
           context_id: lti_params[@context_claims]["id"],
           institution_id: institution.id,
           base_project_id: publication.project_id,
+          has_experiments: publication.project.has_experiments,
           lti_1p3_deployment_id: deployment.id,
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
           line_items_service_url: AGS.get_line_items_url(lti_params, registration),
@@ -111,6 +118,8 @@ defmodule Oli.Delivery do
           customizations: customizations
         })
       {:ok, %Section{}} = Sections.create_section_resources(section, publication)
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
       enroll(user.id, section.id, lti_params)
 
       section
