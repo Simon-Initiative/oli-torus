@@ -7,7 +7,7 @@ export const generateDefaultRule = (path: AllPaths): IAdaptiveRule | null => {
   switch (path.type) {
     case 'end-of-activity':
       return null; // no real rule to generate
-    case 'multiple-choice-correct':
+    case 'correct':
       return generateMultipleChoiceCorrect(path);
     case 'always-go-to':
       return generateAlwaysGoTo(path);

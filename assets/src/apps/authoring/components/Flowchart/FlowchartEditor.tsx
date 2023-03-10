@@ -30,6 +30,7 @@ import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
 import { changeEditMode } from '../../store/app/slice';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { node } from 'webpack';
+import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.
@@ -41,11 +42,12 @@ export const FlowchartEditor = () => {
   const dispatch = useDispatch();
 
   const activities = useSelector(selectAllActivities);
+  const sequence = useSelector(selectSequence);
 
   const activityEdges = buildEdges(activities);
   const activityNodes = activitiesToNodes(activities);
   const placeholders = buildPlaceholders(activities);
-  const starting = buildStartingNode(activities);
+  const starting = buildStartingNode(activities, sequence);
 
   const nodes = [starting.node, ...activityNodes, ...placeholders.nodes];
   const edges = [starting.edge, ...activityEdges, ...placeholders.edges];

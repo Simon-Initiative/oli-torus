@@ -5,12 +5,14 @@ import {
   selectAllActivities,
   selectCurrentActivity,
 } from '../../../../delivery/store/features/activities/slice';
+import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   getAvailablePaths,
   getScreenPrimaryQuestion,
   getScreenQuestionType,
   questionTypeLabels,
 } from '../paths/path-options';
+import { validateScreen } from '../screens/screen-validation';
 
 import { PathsEditor } from './PathsEditor';
 
@@ -27,6 +29,8 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
   const primaryQuestion = getScreenPrimaryQuestion(screen);
   const questionType = questionTypeLabels[getScreenQuestionType(screen)];
   const activities = useSelector(selectAllActivities);
+  const sequence = useSelector(selectSequence);
+  const validations = validateScreen(screen, activities, sequence);
 
   const screens: Record<string, string> = useMemo(() => {
     return activities.reduce((acc, activity) => {
@@ -40,6 +44,11 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
   return (
     <div>
       <h2>{screen.title}</h2>
+
+      {validations.map((err, index) => (
+        <ValidationError key={index}>{err}</ValidationError>
+      ))}
+
       {primaryQuestion && questionType && (
         <div>
           <h3>{questionType}</h3>
@@ -57,4 +66,8 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
       />
     </div>
   );
+};
+
+const ValidationError: React.FC = ({ children }) => {
+  return <div className="validation-error">{children}</div>;
 };

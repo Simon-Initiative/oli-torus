@@ -1,4 +1,3 @@
-import { Priority } from '../../../../../data/messages/messages';
 import { ScreenTypes } from '../screens/screen-factories';
 
 export interface AuthoringFlowchartScreenData {
@@ -31,29 +30,16 @@ export interface ComponentPath extends DestinationPath {
   componentId: string | null;
 }
 
-export interface DropdownCorrectPath extends ComponentPath {
-  type: 'dropdown-correct';
+export interface CorrectPath extends ComponentPath {
+  type: 'correct';
 }
 
-export interface DropdownIncorrectPath extends ComponentPath {
-  type: 'dropdown-incorrect';
+export interface IncorrectPath extends ComponentPath {
+  type: 'incorrect';
 }
 
-export interface DropdownCommonErrorPath extends ComponentPath {
-  type: 'dropdown-common-error';
-  selectedOption: number;
-}
-
-export interface MultipleChoiceCorrectPath extends ComponentPath {
-  type: 'multiple-choice-correct';
-}
-
-export interface MultipleChoiceIncorrectPath extends ComponentPath {
-  type: 'multiple-choice-incorrect';
-}
-
-export interface MultipleChoiceCommonErrorPath extends ComponentPath {
-  type: 'multiple-choice-common-error';
+export interface OptionCommonErrorPath extends ComponentPath {
+  type: 'option-common-error';
   selectedOption: number;
 }
 
@@ -73,13 +59,7 @@ export interface UnknownPathWithDestination extends DestinationPath {
   type: 'unknown-reason-path';
 }
 
-export type ComponentPaths =
-  | MultipleChoiceCorrectPath
-  | MultipleChoiceIncorrectPath
-  | MultipleChoiceCommonErrorPath
-  | DropdownCorrectPath
-  | DropdownIncorrectPath
-  | DropdownCommonErrorPath;
+export type ComponentPaths = CorrectPath | IncorrectPath | OptionCommonErrorPath;
 
 export type DestinationPaths = ComponentPaths | AlwaysGoToPath | UnknownPathWithDestination;
 
@@ -88,13 +68,10 @@ export type AllPaths = EndOfActivityPath | DestinationPaths;
 export const ruleTypes = [
   'unknown-reason-path',
   'always-go-to',
-  'multiple-choice-correct',
-  'multiple-choice-incorrect',
-  'multiple-choice-common-error',
+  'correct',
+  'incorrect',
+  'option-common-error',
   'end-of-activity',
-  'dropdown-correct',
-  'dropdown-incorrect',
-  'dropdown-common-error',
   'unknown-reason-path',
 ] as const;
 

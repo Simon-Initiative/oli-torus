@@ -5,6 +5,7 @@ import { Handle, Position } from 'reactflow';
 import { Icon } from '../../../../../components/misc/Icon';
 import {
   IActivity,
+  selectAllActivities,
   selectCurrentActivityId,
 } from '../../../../delivery/store/features/activities/slice';
 
@@ -13,6 +14,8 @@ import { screenTypes } from '../screens/screen-factories';
 import { ScreenButton } from './ScreenButton';
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { useToggle } from '../../../../../components/hooks/useToggle';
+import { validateScreen } from '../screens/screen-validation';
+import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 
 interface NodeProps {
   data: IActivity;
@@ -41,6 +44,11 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const selected = selectedId === data.resourceId;
   const [showConfirmDelete, toggleConfirmDelete] = useToggle(false);
 
+  const activities = useSelector(selectAllActivities);
+  const sequence = useSelector(selectSequence);
+
+  const isValid = validateScreen(data, activities, sequence).length === 0;
+
   const onDrop = (item: any) => {
     onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
   };
@@ -60,9 +68,17 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   if (selected) classNames.push('node-selected');
   if (hover) classNames.push('drop-over');
 
+  const validity = isValid ? 'node-valid' : 'node-invalid';
+
   return (
-    <div className="flowchart-node">
-      <div className="inline text-center">{data.title}</div>
+    <div className={`flowchart-node ${validity}`}>
+      <div className="title-bar">
+        <div className="title-icon">
+          <Icon icon="page" />
+        </div>
+        <div className="inline text-center">{data.title}</div>
+      </div>
+
       <div
         className={classNames.join(' ')}
         onClick={() => onSelectScreen(data.resourceId!)}

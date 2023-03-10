@@ -87,8 +87,10 @@ const PathEditor: React.FC<EditParams> = ({
   questionType,
 }) => {
   const [workingPath, setWorkingPath] = useState<AllPaths>(path);
-  const onEdit = (props: any) => setWorkingPath((p: AllPaths) => ({ ...p, ...props }));
-  const onDestinationChange = (screenId: string) => onEdit({ destinationScreenId: screenId });
+  const onEdit = (props: Partial<AllPaths>) =>
+    setWorkingPath((p: AllPaths) => ({ ...p, ...(props as any) }));
+  const onDestinationChange = (screenId: string) =>
+    onEdit({ destinationScreenId: parseInt(screenId, 10) });
   const [showDeleteConfirm, toggleDeleteConfirm] = useToggle(false);
   const dispatch = useDispatch();
   const onIdChange = (id: string) => {
@@ -124,6 +126,7 @@ const PathEditor: React.FC<EditParams> = ({
   };
 
   const availableWithCurrent = [workingPath, ...availablePaths];
+  availableWithCurrent.sort((a, b) => a.priority - b.priority);
 
   return (
     <div className={className}>

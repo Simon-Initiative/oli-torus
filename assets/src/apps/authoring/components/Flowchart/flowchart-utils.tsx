@@ -106,11 +106,16 @@ const createPlaceholderEdge = (fromScreenId: string, toScreenId: string): Flowch
   data: { completed: false },
 });
 
+interface HasResourceID {
+  resourceId: number;
+}
+
 // Builds the start node with an edge to the first activity
 export const buildStartingNode = (
   children: IActivity[],
+  sequence: HasResourceID[],
 ): { node: FlowchartStartNode; edge: FlowchartEdge } => {
-  const firstActivity = children.find((c) => !!c.resourceId);
+  const firstActivity = sequence.find((c) => !!c.resourceId);
   const nodeId = guid();
   return {
     node: createStartNode(nodeId, firstActivity?.resourceId || -1),

@@ -24,12 +24,12 @@ import { createAlwaysGoToPath, createUnknownPathWithDestination } from './path-f
 import {
   AllPaths,
   AlwaysGoToPath,
-  ComponentPath,
   ComponentPaths,
   componentTypes,
   DestinationPath,
   DestinationPaths,
   EndOfActivityPath,
+  OptionCommonErrorPath,
 } from './path-types';
 
 const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
@@ -60,6 +60,9 @@ export const isEndOfActivityPath = (path: AllPaths): path is EndOfActivityPath =
 
 export const isDestinationPath = (path: AllPaths): path is DestinationPaths =>
   'destinationScreenId' in path;
+
+export const isOptionCommonErrorPath = (path: AllPaths): path is OptionCommonErrorPath =>
+  path.type === 'option-common-error';
 
 export const hasDestination = (path: DestinationPath): path is DestinationPaths =>
   !!path.destinationScreenId;

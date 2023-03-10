@@ -6,12 +6,10 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import {
   createAlwaysGoToPath,
-  createDropdownCommonErrorPath,
-  createDropdownCorrectPath,
-  createDropdownIncorrectPath,
-  createMultipleChoiceCorrectPath,
-  createMultipleChoiceIncorrectPath,
+  createOptionCommonErrorPath,
+  createCorrectPath,
   createUnknownPathWithDestination,
+  createIncorrectPath,
 } from './path-factories';
 import { AllPaths } from './path-types';
 import { isDropdown, isMCQ } from './path-utils';
@@ -38,10 +36,10 @@ const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefin
   if (dropdown) {
     return [
       ...dropdown.custom.optionLabels.map((label, index) =>
-        createDropdownCommonErrorPath(dropdown.id, index),
+        createOptionCommonErrorPath(dropdown.id, index),
       ),
-      createDropdownCorrectPath(dropdown.id),
-      createDropdownIncorrectPath(dropdown.id),
+      createCorrectPath(dropdown.id),
+      createIncorrectPath(dropdown.id),
       ...createDefaultPathTypes(),
     ];
   }
@@ -51,18 +49,20 @@ const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefin
 const createCATAChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
   if (mcq) {
     // TODO: the per-option incorrect options.
+    return [createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
   }
-  return [createMultipleChoiceCorrectPath(), createMultipleChoiceIncorrectPath()];
+  return [];
 };
 
 const createMultipleChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
   if (mcq) {
     // TODO: the per-option incorrect options.
+    return [createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
   }
-  return [createMultipleChoiceCorrectPath(), createMultipleChoiceIncorrectPath()];
+  return [];
 };
 
-type QuestionType =
+export type QuestionType =
   | 'multiple-choice'
   | 'check-all-that-apply'
   | 'multi-line-text'

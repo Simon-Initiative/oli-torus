@@ -50,14 +50,7 @@ export const PlaceholderNodeBody: React.FC<NodeProps> = ({ data }) => {
     <div className="flowchart-node">
       <div className={className} ref={drop}>
         {hover && <DropMessage />}
-        {hover || (
-          <button
-            className="flowchart-button secondary"
-            onClick={() => onAddScreen({ prevNodeId: data.fromScreenId })}
-          >
-            Add Screen
-          </button>
-        )}
+        {hover || <span>End of Lesson</span>}
       </div>
     </div>
   );

@@ -1,12 +1,10 @@
 import guid from '../../../../../utils/guid';
 import {
   AlwaysGoToPath,
-  DropdownCommonErrorPath,
-  DropdownCorrectPath,
-  DropdownIncorrectPath,
+  CorrectPath,
   EndOfActivityPath,
-  MultipleChoiceCorrectPath,
-  MultipleChoiceIncorrectPath,
+  IncorrectPath,
+  OptionCommonErrorPath,
   UnknownPathWithDestination,
 } from './path-types';
 
@@ -29,63 +27,37 @@ const createDestinationPath = (destinationScreenId: number | null = null) => ({
   completed: false,
 });
 
-export const createDropdownCommonErrorPath = (
+export const createOptionCommonErrorPath = (
   componentId: string,
   selectedOption: number,
   destinationScreenId: number | null = null,
-): DropdownCommonErrorPath => ({
+): OptionCommonErrorPath => ({
   ...createDestinationPath(destinationScreenId),
-  type: 'dropdown-common-error',
+  type: 'option-common-error',
   selectedOption,
   componentId,
   label: `Selected option #${selectedOption + 1}`,
   priority: 4,
 });
 
-export const createDropdownIncorrectPath = (
+export const createIncorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
-): DropdownIncorrectPath => ({
+): IncorrectPath => ({
   ...createDestinationPath(destinationScreenId),
-  type: 'dropdown-incorrect',
+  type: 'incorrect',
   componentId,
   label: 'Any Incorrect',
   priority: 8,
 });
 
-export const createDropdownCorrectPath = (
+export const createCorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
-): DropdownCorrectPath => ({
+): CorrectPath => ({
   ...createDestinationPath(destinationScreenId),
-  type: 'dropdown-correct',
+  type: 'correct',
   componentId,
-  label: 'Correct',
-  priority: 8,
-});
-
-export const createMultipleChoiceIncorrectPath = (
-  destinationScreenId: number | null = null,
-): MultipleChoiceIncorrectPath => ({
-  type: 'multiple-choice-incorrect',
-  id: guid(),
-  ruleId: null,
-  destinationScreenId,
-  completed: false,
-  componentId: null,
-  label: 'Any Incorrect',
-  priority: 8,
-});
-
-export const createMultipleChoiceCorrectPath = (
-  destinationScreenId: number | null = null,
-): MultipleChoiceCorrectPath => ({
-  type: 'multiple-choice-correct',
-  id: guid(),
-  ruleId: null,
-  destinationScreenId,
-  completed: false,
-  componentId: null,
   label: 'Correct',
   priority: 8,
 });

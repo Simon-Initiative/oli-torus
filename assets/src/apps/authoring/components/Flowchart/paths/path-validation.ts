@@ -1,27 +1,22 @@
-import {
-  AllPaths,
-  AlwaysGoToPath,
-  ComponentPath,
-  DropdownCommonErrorPath,
-  MultipleChoiceCorrectPath,
-} from './path-types';
+import { AllPaths, AlwaysGoToPath, ComponentPath, OptionCommonErrorPath } from './path-types';
 
 export const validatePath = (path: AllPaths) => {
   switch (path.type) {
     case 'end-of-activity':
       return true;
 
-    case 'dropdown-correct':
-    case 'dropdown-incorrect':
-    case 'multiple-choice-incorrect':
-    case 'multiple-choice-correct':
+    case 'correct':
+    case 'incorrect':
       return validateComponentRule(path);
 
     case 'always-go-to':
       return validateAlwaysGoTo(path);
 
-    case 'dropdown-common-error':
+    case 'option-common-error':
       return validateSelectedOption(path);
+
+    case 'unknown-reason-path':
+      return false;
 
     default:
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -31,7 +26,7 @@ export const validatePath = (path: AllPaths) => {
   }
 };
 
-const validateSelectedOption = (path: DropdownCommonErrorPath) => {
+const validateSelectedOption = (path: OptionCommonErrorPath) => {
   return validateComponentRule(path) && path.selectedOption !== null;
 };
 
