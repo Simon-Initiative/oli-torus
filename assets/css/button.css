@@ -10,6 +10,10 @@ button.torus-button.secondary {
   @apply btn bg-white text-delivery-primary hover:bg-delivery-primary-50 active:bg-delivery-primary-200 active:text-white;
 }
 
+button.torus-button.outline {
+  @apply btn bg-white text-delivery-primary outline-none border border-delivery-primary hover:bg-delivery-primary-50 active:bg-delivery-primary-200 active:text-white;
+}
+
 button.torus-button.primary:disabled,
 button.torus-button.secondary:disabled {
   @apply bg-gray-200 text-white pointer-events-none cursor-not-allowed;

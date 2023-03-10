@@ -45,13 +45,15 @@ export const AddResource = (props: AddResourceProps) => {
 
   return (
     <AddResourceContent {...props}>
-      <div className="d-flex flex-row">
-        <NonActivities {...props} onSetTip={onChangeTip} onResetTip={onResetTip} />
-        <div className="resource-choices-divider" />
-        <AddActivity {...props} onSetTip={onChangeTip} onResetTip={onResetTip} />
-      </div>
-      <div className="mt-2 ml-2" style={{ lineHeight: 0.8, height: 24 }}>
-        <small className="resource-choices-tip">{tip}</small>
+      <div className="p-2">
+        <div className="d-flex flex-row">
+          <NonActivities {...props} onSetTip={onChangeTip} onResetTip={onResetTip} />
+          <div className="resource-choices-divider" />
+          <AddActivity {...props} onSetTip={onChangeTip} onResetTip={onResetTip} />
+        </div>
+        <div className="mt-2 ml-2" style={{ lineHeight: 0.8, height: 24 }}>
+          <small className="resource-choices-tip">{tip}</small>
+        </div>
       </div>
     </AddResourceContent>
   );

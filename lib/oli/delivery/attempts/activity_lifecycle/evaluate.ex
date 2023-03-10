@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Activities.Model
   alias Oli.Delivery.Evaluation.Explanation
   alias Oli.Delivery.Evaluation.ExplanationContext
+  alias Oli.Delivery.Experiments.LogWorker
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
@@ -327,6 +328,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       result
     end)
     |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+    |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
   end
 
   @doc """
@@ -519,7 +521,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           result
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
-
+        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
 
 
       _ ->
@@ -572,6 +574,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           )
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
 
       _ ->
         {:error, "Activity type does not allow client evaluation"}

@@ -497,6 +497,10 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~ "checked"
 
       assert view
+             |> element("#delivery_setting_collab_space_config_anonymous_posting")
+             |> render() =~ "checked"
+
+      assert view
              |> element("#delivery_setting_collab_space_config_participation_min_replies")
              |> render() =~ "0"
 
@@ -532,7 +536,8 @@ defmodule OliWeb.CollaborationLiveTest do
           collab_space_config: %{
             threaded: false,
             auto_accept: false,
-            participation_min_replies: 2
+            participation_min_replies: 2,
+            anonymous_posting: false
           }
         }
       })
@@ -545,6 +550,10 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("#delivery_setting_collab_space_config_auto_accept")
              |> render() =~ "checked"
 
+      refute view
+             |> element("#delivery_setting_collab_space_config_anonymous_posting")
+             |> render() =~ "checked"
+
       assert view
              |> element("#delivery_setting_collab_space_config_participation_min_replies")
              |> render() =~ "2"
@@ -553,7 +562,8 @@ defmodule OliWeb.CollaborationLiveTest do
                collab_space_config: %{
                  participation_min_replies: 2,
                  auto_accept: false,
-                 threaded: false
+                 threaded: false,
+                 anonymous_posting: false
                }
              } =
                Delivery.get_delivery_setting_by(%{
@@ -705,6 +715,9 @@ defmodule OliWeb.CollaborationLiveTest do
       assert view |> element("#revision_collab_space_config_show_full_history") |> render() =~
                "checked"
 
+      assert view |> element("#revision_collab_space_config_anonymous_posting") |> render() =~
+               "checked"
+
       assert view
              |> element("#revision_collab_space_config_participation_min_replies")
              |> render() =~ "0"
@@ -738,13 +751,17 @@ defmodule OliWeb.CollaborationLiveTest do
           collab_space_config: %{
             threaded: false,
             auto_accept: false,
-            participation_min_replies: 2
+            participation_min_replies: 2,
+            anonymous_posting: false
           }
         }
       })
 
       refute view |> element("#revision_collab_space_config_threaded") |> render() =~ "checked"
       refute view |> element("#revision_collab_space_config_auto_accept") |> render() =~ "checked"
+
+      refute view |> element("#revision_collab_space_config_anonymous_posting") |> render() =~
+               "checked"
 
       assert view
              |> element("#revision_collab_space_config_participation_min_replies")
@@ -1034,7 +1051,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1063,7 +1081,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1110,7 +1129,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1137,7 +1157,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1165,6 +1186,62 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, ".post-content", "#{message}")
     end
 
+    test "creating an anonymous post",
+         %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs} do
+      message = "Testing anonymous post"
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
+          }
+        )
+
+      [initial_post] =
+        Collaboration.list_posts_for_user_in_page_section(
+          section.id,
+          page_revision_cs.resource_id,
+          user.id
+        )
+
+      refute render(view) =~ "(Me as Anonymous user)"
+
+      view
+      |> element("#new_post_form")
+      |> render_submit(%{"post" => %{content: %{message: message}, anonymous: true}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Post successfully created"
+
+      assert_receive {:post_created, %PostSchema{}}
+
+      posts =
+        Collaboration.list_posts_for_user_in_page_section(
+          section.id,
+          page_revision_cs.resource_id,
+          user.id
+        )
+
+      anonymous_post = Enum.find(posts, &(&1.id != initial_post.id))
+
+      assert length(posts) == 2
+
+      assert anonymous_post.content.message == message
+      assert anonymous_post.anonymous
+
+      assert has_element?(view, ".post-index", "#2")
+      assert has_element?(view, ".post-content", "#{message}")
+      assert render(view) =~ "(Me as Anonymous user)"
+    end
+
     test "create post displays error message",
          %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs} do
       {:ok, view, _html} =
@@ -1175,7 +1252,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1214,7 +1292,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1285,7 +1364,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1344,7 +1424,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1403,7 +1484,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1466,7 +1548,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1537,7 +1620,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1580,7 +1664,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1609,7 +1694,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1643,7 +1729,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1750,7 +1837,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1800,7 +1888,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1827,6 +1916,59 @@ defmodule OliWeb.CollaborationLiveTest do
         |> Enum.find(&(&1.content.message == message))
 
       assert has_element?(view, ".post-content", "#{created_post.content.message}")
+    end
+
+    test "collab space does not allow anonymous posting when that config is set to false",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_revision_cs: page_revision_cs
+         } do
+      collab_space_config =
+        build(:collab_space_config, status: :enabled, anonymous_posting: false)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
+          }
+        )
+
+      assert has_element?(view, "button", "Create Post")
+      refute has_element?(view, "button", "Post anonymously")
+    end
+
+    test "collab space allows anonymous posting when that config is set to true",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_revision_cs: page_revision_cs
+         } do
+      collab_space_config = build(:collab_space_config, status: :enabled, anonymous_posting: true)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
+          }
+        )
+
+      assert has_element?(view, "button", "Create Post")
+      assert has_element?(view, "button", "Post anonymously")
     end
   end
 

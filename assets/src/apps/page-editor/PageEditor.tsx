@@ -530,8 +530,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
 
     const PreviewButton = () => (
-      <a
+      <button
         className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
+        disabled={isSaving}
         onClick={() =>
           window.open(
             `/authoring/project/${projectSlug}/preview/${resourceSlug}`,
@@ -540,7 +541,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         }
       >
         Preview <i className="fas fa-external-link-alt ml-1"></i>
-      </a>
+      </button>
     );
 
     return (
