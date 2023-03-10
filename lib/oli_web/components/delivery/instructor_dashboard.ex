@@ -171,7 +171,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             {"Other", path_for(:other, @section_slug, @preview_mode), nil, is_active_tab?(:other, @active_tab)},
           ] do %>
             <li class="nav-item" role="presentation">
-              <a href={href}
+              <.link navigate={href}
                 class={"
                   block
                   border-x-0 border-t-0 border-b-2
@@ -190,7 +190,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   <%= if badge do %>
                   <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
                   <% end %>
-              </a>
+              </.link>
             </li>
           <% end %>
 

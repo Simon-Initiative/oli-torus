@@ -1,7 +1,6 @@
 defmodule OliWeb.Components.Delivery.CourseContentPanel do
   use Phoenix.Component
 
-  import Phoenix.HTML.Link
   import OliWeb.ViewHelpers
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -16,7 +15,9 @@ defmodule OliWeb.Components.Delivery.CourseContentPanel do
             <div class="d-flex flex-row my-2">
               <div class="flex-1"></div>
               <div>
-                <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.OtherLive, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
+                <.link navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.OtherLive, @section_slug)} class="btn btn-warning btn-sm ml-1">
+                  Manage Section
+                </.link>
               </div>
             </div>
           <% end %>

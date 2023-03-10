@@ -775,12 +775,16 @@ defmodule OliWeb.Router do
 
     get("/exploration", PageDeliveryController, :exploration)
     get("/discussion", PageDeliveryController, :discussion)
-    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
-    live("/students", Delivery.InstructorDashboard.StudentsLive)
-    live("/content", Delivery.InstructorDashboard.ContentLive)
-    live("/discussions", Delivery.InstructorDashboard.DiscussionsLive)
-    live("/assignments", Delivery.InstructorDashboard.AssignmentsLive)
-    live("/other", Delivery.InstructorDashboard.OtherLive)
+
+    live_session :instructor_dashboard,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
+      live("/students", Delivery.InstructorDashboard.StudentsLive)
+      live("/content", Delivery.InstructorDashboard.ContentLive)
+      live("/discussions", Delivery.InstructorDashboard.DiscussionsLive)
+      live("/assignments", Delivery.InstructorDashboard.AssignmentsLive)
+      live("/other", Delivery.InstructorDashboard.OtherLive)
+    end
 
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
@@ -810,12 +814,15 @@ defmodule OliWeb.Router do
     get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
     get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
 
-    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive, :preview)
-    live("/students", Delivery.InstructorDashboard.StudentsLive, :preview)
-    live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
-    live("/discussions", Delivery.InstructorDashboard.DiscussionsLive, :preview)
-    live("/assignments", Delivery.InstructorDashboard.AssignmentsLive, :preview)
-    live("/other", Delivery.InstructorDashboard.OtherLive, :preview)
+    live_session :instructor_dashboard_preview,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive, :preview)
+      live("/students", Delivery.InstructorDashboard.StudentsLive, :preview)
+      live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
+      live("/discussions", Delivery.InstructorDashboard.DiscussionsLive, :preview)
+      live("/assignments", Delivery.InstructorDashboard.AssignmentsLive, :preview)
+      live("/other", Delivery.InstructorDashboard.OtherLive, :preview)
+    end
 
     get("/exploration", PageDeliveryController, :exploration_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)
