@@ -166,3 +166,7 @@ export const addDestinationId = (path: AllPaths, destinationScreenId: number | n
     destinationScreenId,
   };
 };
+
+export const sortByPriority = (a: AllPaths, b: AllPaths) => {
+  return a.priority - b.priority;
+};

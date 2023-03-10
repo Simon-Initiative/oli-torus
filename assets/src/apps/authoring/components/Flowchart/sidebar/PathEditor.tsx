@@ -7,7 +7,12 @@ import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { deletePath } from '../flowchart-actions/delete-path';
 import { replacePath } from '../flowchart-actions/replace-path';
 import { AllPaths, DestinationPath, DestinationPaths, RuleTypes } from '../paths/path-types';
-import { addComponentId, addDestinationId, isDestinationPath } from '../paths/path-utils';
+import {
+  addComponentId,
+  addDestinationId,
+  isDestinationPath,
+  sortByPriority,
+} from '../paths/path-utils';
 
 interface Props {
   screenId: EntityId;
@@ -126,7 +131,7 @@ const PathEditor: React.FC<EditParams> = ({
   };
 
   const availableWithCurrent = [workingPath, ...availablePaths];
-  availableWithCurrent.sort((a, b) => a.priority - b.priority);
+  availableWithCurrent.sort(sortByPriority);
 
   return (
     <div className={className}>

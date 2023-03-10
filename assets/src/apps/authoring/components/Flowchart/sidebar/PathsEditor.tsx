@@ -3,6 +3,7 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import { addPath } from '../flowchart-actions/add-path';
 import { AllPaths } from '../paths/path-types';
+import { sortByPriority } from '../paths/path-utils';
 import { PathEditBox } from './PathEditor';
 
 interface Props {
@@ -28,9 +29,10 @@ export const PathsEditor: React.FC<Props> = ({
   const addRule = () => {
     dispatch(addPath({ screenId }));
   };
+  const sortedPath = [...paths].sort(sortByPriority);
   return (
     <div>
-      {paths.map((path, index) => (
+      {sortedPath.map((path) => (
         <PathEditBox
           screens={screens}
           questionId={questionId}
