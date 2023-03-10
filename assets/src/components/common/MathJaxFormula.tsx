@@ -13,14 +13,24 @@ import { sanitizeMathML } from '../../utils/mathmlSanitizer';
 
 const cssClass = (inline: boolean) => (inline ? 'formula-inline' : 'formula');
 
-/* istanbul ignore next */
-let lastPromise = window?.MathJax?.startup?.promise;
-/* istanbul ignore next */
-if (!lastPromise) {
-  typeof jest === 'undefined' &&
-    console.warn('Load the MathJax script before this one or unpredictable rendering might occur.');
-  lastPromise = Promise.resolve();
-}
+const getGlobalLastPromise = () => {
+  /* istanbul ignore next */
+  let lastPromise = window?.MathJax?.startup?.promise;
+  /* istanbul ignore next */
+  if (!lastPromise) {
+    console.info('NO LAST PROMISE');
+    typeof jest === 'undefined' &&
+      console.warn(
+        'Load the MathJax script before this one or unpredictable rendering might occur.',
+      );
+    lastPromise = Promise.resolve();
+  }
+  return lastPromise;
+};
+
+const setGlobalLastPromise = (promise: Promise<any>) => {
+  window.MathJax.startup.promise = promise;
+};
 
 /**
  * React hook that returns a ref for you to put on your span that containst the mathjax markup.
@@ -36,7 +46,9 @@ const useMathJax = (src: string) => {
       if (node) {
         // According to the mathJax docs, you should only let 1 instance typeset at a time, so
         // that's what the promise chain here does.
+        let lastPromise = getGlobalLastPromise();
         lastPromise = lastPromise.then(() => window.MathJax.typesetPromise([node]));
+        setGlobalLastPromise(lastPromise);
       }
     },
     [src],
