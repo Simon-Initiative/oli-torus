@@ -226,7 +226,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu context={@context} current_user={@current_user} />
+            <UserAccountMenu.menu is_liveview={true} context={@context} current_user={@current_user} />
           <% end %>
           <div class="flex items-center border-l border-slate-300">
             <button
