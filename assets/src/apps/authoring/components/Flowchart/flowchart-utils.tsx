@@ -18,6 +18,18 @@ export interface FlowchartScreenNode {
   draggable: false;
 }
 
+interface FlowchartStartNodeData {
+  toScreenId: number;
+}
+
+export interface FlowchartStartNode {
+  id: string;
+  position: { x: number; y: number };
+  data: FlowchartStartNodeData;
+  type: 'start';
+  draggable: false;
+}
+
 export interface FlowchartPlaceholderNode {
   id: string;
   position: { x: number; y: number };
@@ -26,7 +38,7 @@ export interface FlowchartPlaceholderNode {
   draggable: false;
 }
 
-export type FlowchartNode = FlowchartScreenNode | FlowchartPlaceholderNode;
+export type FlowchartNode = FlowchartScreenNode | FlowchartPlaceholderNode | FlowchartStartNode;
 
 export interface Point {
   x: number;
@@ -70,6 +82,14 @@ interface PlaceholderNodeAndEdge {
   edge: FlowchartEdge;
 }
 
+const createStartNode = (id: string, toScreenId: number): FlowchartStartNode => ({
+  id,
+  position: { x: 0, y: 0 },
+  data: { toScreenId },
+  draggable: false,
+  type: 'start',
+});
+
 const createPlaceholderNode = (id: string, fromScreenId: number): FlowchartPlaceholderNode => ({
   id,
   position: { x: 0, y: 0 },
@@ -85,6 +105,18 @@ const createPlaceholderEdge = (fromScreenId: string, toScreenId: string): Flowch
   type: 'placeholder',
   data: { completed: false },
 });
+
+// Builds the start node with an edge to the first activity
+export const buildStartingNode = (
+  children: IActivity[],
+): { node: FlowchartStartNode; edge: FlowchartEdge } => {
+  const firstActivity = children.find((c) => !!c.resourceId);
+  const nodeId = guid();
+  return {
+    node: createStartNode(nodeId, firstActivity?.resourceId || -1),
+    edge: createPlaceholderEdge(nodeId, String(firstActivity?.resourceId)),
+  };
+};
 
 export const buildPlaceholders = (
   children: IActivity[],

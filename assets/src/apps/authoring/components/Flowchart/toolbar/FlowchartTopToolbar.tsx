@@ -11,7 +11,7 @@ export const FlowchartTopToolbar: React.FC<FlowchartTopToolbarProps> = () => {
 
       <ToolbarItem label="Blank screen" screenType="blank_screen" icon="file" />
       <ToolbarItem label="Welcome screen" border={true} screenType="welcome_screen" icon="file" />
-      <ToolbarItem label="Multiple choice question" screenType="multiple_choice" icon="file" />
+      <ToolbarItem label="Multiple choice" screenType="multiple_choice" icon="file" />
       <ToolbarItem label="Multiline text input" screenType="multiline_text" icon="file" />
       <ToolbarItem label="Slider" screenType="slider" icon="file" />
       <ToolbarItem label="Hub and spoke" screenType="hub_and" icon="file" />

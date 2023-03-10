@@ -11,7 +11,12 @@ import {
 import { addFlowchartScreen } from './flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
 
-import { buildEdges, buildPlaceholders, activitiesToNodes } from './flowchart-utils';
+import {
+  buildEdges,
+  buildPlaceholders,
+  activitiesToNodes,
+  buildStartingNode,
+} from './flowchart-utils';
 
 import { FlowchartComponent } from './FlowchartComponent';
 import {
@@ -24,6 +29,7 @@ import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
 import { changeEditMode } from '../../store/app/slice';
 import { screenTypeToTitle } from './screens/screen-factories';
+import { node } from 'webpack';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.
@@ -39,9 +45,10 @@ export const FlowchartEditor = () => {
   const activityEdges = buildEdges(activities);
   const activityNodes = activitiesToNodes(activities);
   const placeholders = buildPlaceholders(activities);
+  const starting = buildStartingNode(activities);
 
-  const nodes = [...activityNodes, ...placeholders.nodes];
-  const edges = [...activityEdges, ...placeholders.edges];
+  const nodes = [starting.node, ...activityNodes, ...placeholders.nodes];
+  const edges = [starting.edge, ...activityEdges, ...placeholders.edges];
 
   const onAddScreen = useCallback(
     (params: FlowchartAddScreenParams) => {

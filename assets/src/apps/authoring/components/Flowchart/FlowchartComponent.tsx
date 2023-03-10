@@ -9,6 +9,7 @@ import { FloatingEdge } from './chart-components/FloatingEdge';
 import FloatingConnectionLine from './chart-components/FloatingConnectionLine';
 import { PlaceholderNode } from './chart-components/PlaceholderNode';
 import { PlaceholderEdge } from './chart-components/PlaceholderEdge';
+import { StartNode } from './chart-components/StartNode';
 
 interface FlowchartComponentProps {
   nodes: FlowchartNode[];
@@ -18,6 +19,7 @@ interface FlowchartComponentProps {
 const NodeTypes = {
   screen: ScreenNode,
   placeholder: PlaceholderNode,
+  start: StartNode,
 };
 
 const EdgeTypes = {

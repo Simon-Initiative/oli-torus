@@ -131,11 +131,23 @@ $font-family-sans-serif: var(--font-sans);
       font-size: 10px;
     }
   }
+  .flowchart-start-node {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: #b9d7a1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
   .flowchart-node {
     // align-middle justify-center flex h-[156px] flex-col
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     height: 156px;
 
     .node-box {
