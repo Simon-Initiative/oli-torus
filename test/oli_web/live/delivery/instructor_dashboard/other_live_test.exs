@@ -20,8 +20,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
     test "can not access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
 
-      redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fother&section=#{section.slug}"
+      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fother"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_other_route(section.slug))

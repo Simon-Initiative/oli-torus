@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearning_objectives&section=#{section.slug}"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearning_objectives"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_learning_objectives_route(section.slug))
@@ -58,7 +58,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
       conn: conn
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       # LearningObjectives tab is the selected one
