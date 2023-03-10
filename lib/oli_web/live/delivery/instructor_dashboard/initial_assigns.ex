@@ -23,18 +23,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InitialAssigns do
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
 
-        context = SessionContext.init(session)
-
-        preview_mode = socket.assigns[:live_action] == :preview
-
         {:cont,
          assign(socket,
-           context: context,
+           context: SessionContext.init(session),
            current_user: current_user,
            title: section.title,
            description: section.description,
            section_slug: section_slug,
-           preview_mode: preview_mode,
+           preview_mode: socket.assigns[:live_action] == :preview,
            section: section
          )}
     end
