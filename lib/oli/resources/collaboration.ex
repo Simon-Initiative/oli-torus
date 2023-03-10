@@ -73,96 +73,78 @@ defmodule Oli.Resources.Collaboration do
       iex> list_collaborative_spaces_in_section("invalid")
       []
   """
-  @spec list_collaborative_spaces_in_section(String.t(), limit: String.t(), offset: String.t()) ::
+  @spec list_collaborative_spaces_in_section(String.t(), limit: Integer.t(), offset: Integer.t()) ::
           {Integer.t(), list(%CollabSpaceConfig{})}
   def list_collaborative_spaces_in_section(section_slug, opts \\ []) do
     page_type_id = ResourceType.get_id_by_type("page")
 
-    query =
-      from(
-        section in Section,
-        join: section_resource in SectionResource,
-        on: section.id == section_resource.section_id,
-        join: page_revision in Revision,
-        on:
-          page_revision.resource_id == section_resource.resource_id and
-            page_revision.resource_type_id == ^page_type_id,
-        join: section_project_publication in SectionsProjectsPublications,
-        on:
-          section.id == section_project_publication.section_id and
-            section_resource.project_id == section_project_publication.project_id,
-        join: published_resource in PublishedResource,
-        on:
-          published_resource.publication_id == section_project_publication.publication_id and
-            published_resource.revision_id == page_revision.id,
-        left_join: delivery_setting in DeliverySetting,
-        on:
-          delivery_setting.section_id == section.id and
-            delivery_setting.resource_id == page_revision.resource_id,
-        where:
-          section.slug == ^section_slug and
-            (not is_nil(page_revision.collab_space_config) or
-               not is_nil(delivery_setting.collab_space_config)),
-        select: %{
-          id: fragment("concat(?, '_', ?)", section.id, page_revision.id),
-          section: section,
-          page: page_revision,
-          collab_space_config:
-            fragment(
-              "case when ? is null then ? else ? end",
-              delivery_setting.collab_space_config,
-              page_revision.collab_space_config,
-              delivery_setting.collab_space_config
-            ),
-          number_of_posts:
-            fragment(
-              "select count(*) from posts where section_id = ? and resource_id = ?",
-              section.id,
-              page_revision.resource_id
-            ),
-          number_of_posts_pending_approval:
-            fragment(
-              "select count(*) from posts where section_id = ? and resource_id = ? and status = 'submitted'",
-              section.id,
-              page_revision.resource_id
-            ),
-          most_recent_post:
-            fragment(
-              "select max(inserted_at) from posts where section_id = ? and resource_id = ?",
-              section.id,
-              page_revision.resource_id
-            ),
-          count: over(count(page_revision.id))
-        }
-      )
-
-    query =
-      case opts[:limit] do
-        nil ->
-          query
-
-        limit ->
-          query
-          |> limit(^limit)
-      end
-
-    query =
-      case opts[:offset] do
-        nil ->
-          query
-
-        offset ->
-          query
-          |> offset(^offset)
-      end
-
-    results = Repo.all(query)
-
-    case length(results) do
-      0 -> {0, []}
-      _ -> {List.first(results).count, Enum.map(results, &Map.delete(&1, :count))}
-    end
+    from(
+      section in Section,
+      join: section_resource in SectionResource,
+      on: section.id == section_resource.section_id,
+      join: page_revision in Revision,
+      on:
+        page_revision.resource_id == section_resource.resource_id and
+          page_revision.resource_type_id == ^page_type_id,
+      join: section_project_publication in SectionsProjectsPublications,
+      on:
+        section.id == section_project_publication.section_id and
+          section_resource.project_id == section_project_publication.project_id,
+      join: published_resource in PublishedResource,
+      on:
+        published_resource.publication_id == section_project_publication.publication_id and
+          published_resource.revision_id == page_revision.id,
+      left_join: delivery_setting in DeliverySetting,
+      on:
+        delivery_setting.section_id == section.id and
+          delivery_setting.resource_id == page_revision.resource_id,
+      where:
+        section.slug == ^section_slug and
+          (not is_nil(page_revision.collab_space_config) or
+             not is_nil(delivery_setting.collab_space_config)),
+      select: %{
+        id: fragment("concat(?, '_', ?)", section.id, page_revision.id),
+        section: section,
+        page: page_revision,
+        collab_space_config:
+          fragment(
+            "case when ? is null then ? else ? end",
+            delivery_setting.collab_space_config,
+            page_revision.collab_space_config,
+            delivery_setting.collab_space_config
+          ),
+        number_of_posts:
+          fragment(
+            "select count(*) from posts where section_id = ? and resource_id = ?",
+            section.id,
+            page_revision.resource_id
+          ),
+        number_of_posts_pending_approval:
+          fragment(
+            "select count(*) from posts where section_id = ? and resource_id = ? and status = 'submitted'",
+            section.id,
+            page_revision.resource_id
+          ),
+        most_recent_post:
+          fragment(
+            "select max(inserted_at) from posts where section_id = ? and resource_id = ?",
+            section.id,
+            page_revision.resource_id
+          ),
+        count: over(count(page_revision.id))
+      }
+    )
+    |> maybe_add_query_limit(opts[:limit])
+    |> maybe_add_query_offset(opts[:offset])
+    |> Repo.all()
+    |> return_results_with_count()
   end
+
+  defp maybe_add_query_limit(query, nil), do: query
+  defp maybe_add_query_limit(query, limit), do: limit(query, ^limit)
+
+  defp maybe_add_query_offset(query, nil), do: query
+  defp maybe_add_query_offset(query, offset), do: offset(query, ^offset)
 
   @doc """
   Returns a list of all pages that has a collab space config related.
@@ -465,7 +447,7 @@ defmodule Oli.Resources.Collaboration do
       iex> list_posts_in_section_for_instructor("example_section", :need_approval, 0, 5)
       [%Post{status: :archived}, ...]
 
-      iex> list_posts_in_section_for_instructor("example_section", :need_reponse, 0, 5)
+      iex> list_posts_in_section_for_instructor("example_section", :need_response, 0, 5)
       []
   """
 
@@ -479,7 +461,7 @@ defmodule Oli.Resources.Collaboration do
     )
     |> where([p], p.status == :submitted)
     |> Repo.all()
-    |> return_posts_with_count()
+    |> return_results_with_count()
   end
 
   def list_posts_in_section_for_instructor(section_slug, :need_response, opts) do
@@ -491,9 +473,12 @@ defmodule Oli.Resources.Collaboration do
     |> join(:left, [p, s, sr, spp, pr, rev, u], p2 in Post,
       on: p2.parent_post_id == p.id or p2.thread_root_id == p.id
     )
-    |> where([p, s, sr, spp, pr, rev, u, p2], is_nil(p2) and is_nil(p.parent_post_id) and is_nil(p.thread_root_id))
+    |> where(
+      [p, s, sr, spp, pr, rev, u, p2],
+      is_nil(p2) and is_nil(p.parent_post_id) and is_nil(p.thread_root_id)
+    )
     |> Repo.all()
-    |> return_posts_with_count()
+    |> return_results_with_count()
   end
 
   def list_posts_in_section_for_instructor(section_slug, :all, opts) do
@@ -503,13 +488,13 @@ defmodule Oli.Resources.Collaboration do
       Keyword.get(opts, :limit)
     )
     |> Repo.all()
-    |> return_posts_with_count()
+    |> return_results_with_count()
   end
 
-  defp return_posts_with_count([]), do: {0, []}
+  defp return_results_with_count([]), do: {0, []}
 
-  defp return_posts_with_count(posts) do
-    {List.first(posts).count, Enum.map(posts, &Map.delete(&1, :count))}
+  defp return_results_with_count([first_post | _rest] = posts) do
+    {first_post.count, Enum.map(posts, &Map.delete(&1, :count))}
   end
 
   defp do_list_posts_in_section_for_instructor(section_slug, offset, limit) do
