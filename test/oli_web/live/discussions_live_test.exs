@@ -6,8 +6,17 @@ defmodule OliWeb.DiscussionsLiveTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Resources.ResourceType
-  alias OliWeb.Components.Delivery.DiscussionActivityLive
   alias Oli.Delivery.Sections
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.InstructorDashboard.DiscussionLive
+
+  defp discussions_live_path(section_slug) do
+    Routes.live_path(
+      OliWeb.Endpoint,
+      DiscussionLive,
+      section_slug
+    )
+  end
 
   defp create_section(_conn) do
     user = insert(:user)
@@ -155,10 +164,8 @@ defmodule OliWeb.DiscussionsLiveTest do
 
     test "shows discussions tab", %{conn: conn, instructor: instructor, section: section} do
       enroll_user_to_section(instructor, section, :context_instructor)
-      {:ok, view, _html} =
-        live_isolated(conn, DiscussionActivityLive,
-          session: %{"section_slug" => section.slug}
-        )
+
+      {:ok, view, _html} = live(conn, discussions_live_path(section.slug))
 
       assert has_element?(view, "h4", "Discussion Activity")
       assert has_element?(view, "small", "Filter by")
@@ -166,12 +173,12 @@ defmodule OliWeb.DiscussionsLiveTest do
 
     test "shows all posts by default", %{conn: conn, instructor: instructor, section: section} do
       enroll_user_to_section(instructor, section, :context_instructor)
-      {:ok, view, _html} =
-        live_isolated(conn, DiscussionActivityLive,
-          session: %{"section_slug" => section.slug}
-        )
 
-      assert has_element?(view, "select[value='all']")
+      {:ok, view, _html} = live(conn, discussions_live_path(section.slug))
+
+      open_browser(view)
+
+      assert has_element?(view, "option[value='all'][selected]")
       assert has_element?(view, "div", "Showing all results (5 total)")
       assert get_elements_in_table_count(view) == 5
     end
@@ -183,10 +190,7 @@ defmodule OliWeb.DiscussionsLiveTest do
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
 
-      {:ok, view, _html} =
-        live_isolated(conn, DiscussionActivityLive,
-          session: %{"section_slug" => section.slug}
-        )
+      {:ok, view, _html} = live(conn, discussions_live_path(section.slug))
 
       view |> element("form[phx-change='filter']") |> render_change(%{filter: "need_approval"})
 
@@ -201,12 +205,11 @@ defmodule OliWeb.DiscussionsLiveTest do
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
 
-      {:ok, view, _html} =
-        live_isolated(conn, DiscussionActivityLive,
-          session: %{"section_slug" => section.slug}
-        )
+      {:ok, view, _html} = live(conn, discussions_live_path(section.slug))
 
       view |> element("form[phx-change='filter']") |> render_change(%{filter: "need_response"})
+
+      open_browser(view)
 
       assert get_elements_in_table_count(view) == 3
       refute view |> has_element?("p", "Page 1 - answered post")
@@ -219,10 +222,7 @@ defmodule OliWeb.DiscussionsLiveTest do
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
 
-      {:ok, view, _html} =
-        live_isolated(conn, DiscussionActivityLive,
-          session: %{"section_slug" => section.slug}
-        )
+      {:ok, view, _html} = live(conn, discussions_live_path(section.slug))
 
       view |> element("form[phx-change='filter']") |> render_change(%{filter: "by_discussion"})
 

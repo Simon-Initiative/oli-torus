@@ -361,7 +361,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     ~H"""
       <.tabs active_tab={:discussions} section_slug={@section_slug} preview_mode={@preview_mode} />
 
-      <%= live_render(@socket, OliWeb.Components.Delivery.DiscussionActivityLive, [session: %{"section_slug" => @section_slug}, id: "discussion_activity"]) %>
+      <.live_component
+        id="discussion_activity_table"
+        module={OliWeb.Components.Delivery.DiscussionActivity}
+        limit={@limit}
+        filter={@filter}
+        offset={@offset}
+        count={@count}
+        collab_space_table_model={@collab_space_table_model}
+        discussion_table_model={@discussion_table_model}
+        parent_component_id={@parent_component_id} />
     """
   end
 
