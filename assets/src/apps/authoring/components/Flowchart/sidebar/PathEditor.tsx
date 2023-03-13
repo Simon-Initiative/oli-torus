@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
+import { clone } from '../../../../../utils/common';
 import { selectAutoOpenPath } from '../../../store/flowchart/flowchart-slice';
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { deletePath } from '../flowchart-actions/delete-path';
@@ -95,7 +96,7 @@ const PathEditor: React.FC<EditParams> = ({
   onChange,
   questionType,
 }) => {
-  const [workingPath, setWorkingPath] = useState<AllPaths>(path);
+  const [workingPath, setWorkingPath] = useState<AllPaths>(clone(path));
   const onEdit = (props: Partial<AllPaths>) =>
     setWorkingPath((p: AllPaths) => ({ ...p, ...(props as any) }));
   const onDestinationChange = (screenId: string) =>
@@ -218,6 +219,7 @@ const DestinationPicker: React.FC<DestinationPickerProps> = ({ path, screens, on
           {screens[screenId]}
         </option>
       ))}
+      <option value="-1">-- Create new screen --</option>
     </select>
   );
 };
