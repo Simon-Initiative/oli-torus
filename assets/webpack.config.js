@@ -28,6 +28,7 @@ const populateEntries = () => {
     delivery: ['./src/apps/DeliveryApp.tsx'],
     scheduler: ['./src/apps/SchedulerApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
+    cashnetclient: ['./src/payment/cashnet/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
     keepalive: ['./src/phoenix/keep-alive.ts'],
