@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
+defmodule OliWeb.Delivery.InstructorDashboard.ManageLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -8,10 +8,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
 
-  defp live_view_other_route(section_slug) do
+  defp live_view_manage_route(section_slug) do
     Routes.live_path(
       OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.OtherLive,
+      OliWeb.Delivery.InstructorDashboard.ManageLive,
       section_slug
     )
   end
@@ -20,10 +20,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
     test "can not access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
 
-      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fother"
+      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fmanage"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_other_route(section.slug))
+               live(conn, live_view_manage_route(section.slug))
     end
   end
 
@@ -37,7 +37,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
       redirect_path = "/unauthorized"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_other_route(section.slug))
+               live(conn, live_view_manage_route(section.slug))
     end
   end
 
@@ -48,7 +48,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
       redirect_path = "/unauthorized"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_other_route(section.slug))
+               live(conn, live_view_manage_route(section.slug))
     end
 
     test "can access page if enrolled to section", %{
@@ -58,16 +58,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, live_view_other_route(section.slug))
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
 
-      # Other tab is the selected one
+      # Manage tab is the selected one
       assert has_element?(
                view,
-               ~s{a[href="#{live_view_other_route(section.slug)}"].border-b-2},
-               "Other"
+               ~s{a[href="#{live_view_manage_route(section.slug)}"].border-b-2},
+               "Manage"
              )
 
-      # Other tab content gets rendered
+      # Manage tab content gets rendered
       assert has_element?(view, ~s{div[id="overview"]})
     end
   end
