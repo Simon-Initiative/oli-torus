@@ -10,7 +10,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
   require Logger
 
   @doc """
-  Renders the page to start the direct payment processing flow via stripe.
+  Renders the page to start the direct payment processing flow via cashnet.
   """
   def show(conn, section, user, %{amount: decimal} = amount) do
     Logger.debug("CashnetController:show", %{
@@ -55,7 +55,6 @@ defmodule OliWeb.PaymentProviders.CashnetController do
     Logger.error("CashnetController could not finalize payment")
 
     if lname == System.get_env("CASHNET_NAME", "none") && result == "0" do
-      IO.inspect("the issue is the found here")
       case Cashnet.finalize_payment(payload) do
         {:ok, %{slug: slug}} ->
           Logger.debug("CashnetController:success ended", %{
@@ -117,15 +116,15 @@ defmodule OliWeb.PaymentProviders.CashnetController do
     })
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      # Lookup the section, determine the product, and determine the cost. 
+      # Lookup the section, determine the product, and determine the cost.
       case Sections.get_section_by_slug(section_slug) |> trap_nil() do
         {:ok, section} ->
           # Now ask Cashnet to create a payment form, which also results in a %Payment record
           # created in the system but in a "pending" state
           case Cashnet.create_form(section, user, conn.host) do
-            {:ok, %{cashnet_form: cashnet_form}} ->
+            {:ok, %{payment_ref: payment_ref, cashnet_form: cashnet_form}} ->
 
-              json(conn, %{cashnetForm: cashnet_form})
+              json(conn, %{paymentRef: payment_ref, cashnetForm: cashnet_form})
 
             e ->
               {_, msg} = Oli.Utils.log_error("CashnetController:init_form failed.", e)

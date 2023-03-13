@@ -910,6 +910,12 @@ defmodule Oli.TestHelpers do
     load_env_file("test/config/stripe_config.exs")
   end
 
+  def load_cashnet_config(), do: load_cashnet_config(nil)
+
+  def load_cashnet_config(_conn) do
+    load_env_file("test/config/cashnet_config.exs")
+  end
+
   def reset_test_payment_config() do
     load_env_file("test/config/config.exs")
   end

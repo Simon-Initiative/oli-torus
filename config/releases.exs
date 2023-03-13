@@ -124,6 +124,7 @@ config :oli, :stripe_provider,
 config :oli, :cashnet_provider,
   cashnet_store: System.get_env("CASHNET_STORE"),
   cashnet_checkout_url: System.get_env("CASHNET_CHECKOUT_URL"),
+  cashnet_client: System.get_env("CASHNET_CLIENT"),
   cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
 config :oli, :upgrade_experiment_provider,

@@ -53,7 +53,7 @@ function doPurchase(purchase: any) {
       const f = document.forms.namedItem('cashnet');
       if (f) {
         f.submit();
-        // f.remove();
+        f.remove();
       }
 
       loading(false);

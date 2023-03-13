@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
       generation_date: DateTime.utc_now(),
       amount: section.amount,
       provider_type: :cashnet,
+      provider_id: UUID.uuid4(),
       section_id: section.id
     }
 
@@ -20,18 +21,20 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
           [
             {:cashnet_store, cashnet_store},
             {:cashnet_checkout_url, cashnet_checkout_url},
+            {:cashnet_client, cashnet_client},
             {:cashnet_gl_number, cashnet_gl_number}
           ]} <-
            Application.fetch_env(:oli, :cashnet_provider),
          {:ok, payment} <- Oli.Delivery.Paywall.create_pending_payment(user, section, attrs) do
       {:ok,
        %{
+         payment_ref: payment.provider_id,
          cashnet_form:
            ~s|<form action="#{cashnet_checkout_url}" id="cmupayment" name="cashnet" method="post" target="_blank">
-           <input type="hidden" name="virtual" value="CMU_TRAIN#{cashnet_store}"/>
+           <input type="hidden" name="virtual" value="#{cashnet_client}#{cashnet_store}"/>
            <input type="hidden" name="signouturl" value="https://#{host}#{Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}"/>
            <input type="hidden" name="ref1type1" value="#{cashnet_store}-payment_ref"/>
-           <input type="hidden" name="ref1val1" value="#{payment.id}"/>
+           <input type="hidden" name="ref1val1" value="#{payment.provider_id}"/>
 
            <input type="hidden" name="fname" value="#{safe_get(user.given_name, "Unknown")}"/>
            <input type="hidden" name="lname" value="#{safe_get(user.family_name, "Unknown")}"/>
@@ -68,8 +71,8 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
   in the system that has not yet been applied.  It then applies that
   payment be setting the application date and by linking it to an enrollment.
   """
-  def finalize_payment(%{"ref1val1" => id} = payload) do
-    case Oli.Delivery.Paywall.get_provider_payment(:cashnet, id) do
+  def finalize_payment(%{"ref1val1" => provider_id} = payload) do
+    case Oli.Delivery.Paywall.get_provider_payment(:cashnet, provider_id) do
       nil ->
         {:error, "Payment does not exist"}
 
