@@ -156,6 +156,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  part_attempts
                ) do
             {:ok, _} ->
+
+              Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(resource_attempt.attempt_guid, activity_attempt_guid, :updated)
+
               {:ok, decodedResults}
 
             {:error, err} ->

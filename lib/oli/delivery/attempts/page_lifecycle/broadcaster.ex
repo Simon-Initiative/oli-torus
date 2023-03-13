@@ -29,6 +29,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Broadcaster do
     )
   end
 
+  def broadcast_attempt_updated(resource_attempt_guid, activity_attempt_guid, change_type) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      message_attempt(resource_attempt_guid),
+      {change_type,activity_attempt_guid}
+    )
+  end
+
   def subscribe_to_lms_grade_update(section_id, resource_access_id, _) do
     PubSub.subscribe(Oli.PubSub, message_grade_update(section_id, resource_access_id))
   end
@@ -41,6 +49,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Broadcaster do
     PubSub.subscribe(Oli.PubSub, message_grade_update(section_id))
   end
 
+  def subscribe_to_attempt(resource_attempt_guid) do
+    PubSub.subscribe(Oli.PubSub, message_attempt(resource_attempt_guid))
+  end
+
+
   def unsubscribe_to_lms_grade_update(section_id) do
     PubSub.unsubscribe(Oli.PubSub, message_grade_update(section_id))
   end
@@ -52,4 +65,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Broadcaster do
   def message_grade_update(section_id) do
     "lms_grade_update_#{section_id}:*"
   end
+
+  def message_attempt(resource_attempt_guid) do
+    "attempt_updated_#{resource_attempt_guid}:*"
+  end
+
 end
