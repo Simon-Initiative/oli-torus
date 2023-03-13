@@ -121,6 +121,30 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def assignments(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      # TODO: Need to fetch assignments
+      render(
+        conn,
+        "assignments.html",
+        section_slug: section_slug,
+        preview_mode: false
+      )
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
   def discussion(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section

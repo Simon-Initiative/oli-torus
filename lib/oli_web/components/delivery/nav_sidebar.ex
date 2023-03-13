@@ -119,7 +119,11 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         href: discussion_url(assigns),
         active: is_active(path_info, :discussion)
       },
-      %{name: "Assignments", href: "#", active: is_active(path_info, "")},
+      %{
+        name: "Assignments",
+        href: assignments_url(assigns),
+        active: is_active(path_info, :assignments)
+      },
       %{
         name: "Exploration",
         href: exploration_url(assigns),
@@ -153,7 +157,11 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         href: discussion_url(assigns),
         active: is_active(path_info, :discussion)
       },
-      %{name: "Assignments", href: "#", active: is_active(path_info, "")}
+      %{
+        name: "Assignments",
+        href: assignments_url(assigns),
+        active: is_active(path_info, :assignments)
+      }
     ]
   end
 
@@ -181,17 +189,17 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     }
   end
 
-  defp is_active(["sections", _, "overview"], :overview), do: true
-  defp is_active(["sections", _, "exploration"], :exploration), do: true
-  defp is_active(["sections", _, "discussion"], :discussion), do: true
-  defp is_active(["sections", _, "page", _], :content), do: true
-  defp is_active(["sections", _, "container", _], :content), do: true
-  defp is_active(["sections", _, "preview", "overview"], :overview), do: true
-  defp is_active(["sections", _, "preview", "exploration"], :exploration), do: true
-  defp is_active(["sections", _, "preview", "discussion"], :discussion), do: true
-  defp is_active(["sections", _, "preview", "page", _], :content), do: true
-  defp is_active(["sections", _, "preview", "container", _], :content), do: true
-  defp is_active(_, _), do: false
+  defp is_active(path_info, path) do
+    case {List.last(path_info), path} do
+      {"overview", :overview} -> true
+      {"exploration", :exploration} -> true
+      {"discussion", :discussion} -> true
+      {"page", :content} -> true
+      {"container", :content} -> true
+      {"assignments", :assignments} -> true
+      _ -> false
+    end
+  end
 
   defp home_url(assigns) do
     if assigns[:preview_mode] do
@@ -218,6 +226,14 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       Routes.page_delivery_path(OliWeb.Endpoint, :discussion_preview, assigns[:section_slug])
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :discussion, assigns[:section_slug])
+    end
+  end
+
+  defp assignments_url(assigns) do
+    if assigns[:preview_mode] do
+      Routes.page_delivery_path(OliWeb.Endpoint, :assignments_preview, assigns[:section_slug])
+    else
+      Routes.page_delivery_path(OliWeb.Endpoint, :assignments, assigns[:section_slug])
     end
   end
 end
