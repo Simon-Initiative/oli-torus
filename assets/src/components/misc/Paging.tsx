@@ -1,5 +1,14 @@
 import * as React from 'react';
 
+function range(start: number, stop: number, step = 1) {
+  const a = [start];
+  let b = start;
+  while (b < stop) {
+    a.push((b += step || 1));
+  }
+  return a;
+}
+
 export interface Page {
   offset: number;
   limit: number;
@@ -12,9 +21,7 @@ export interface PagingProps {
   children?: (item: any, index: number) => React.ReactNode;
 }
 
-// https://getbootstrap.com/docs/4.0/components/pagination/
-//
-// Implements Bootrap pagination, with a maximum of nine directly navigable
+// Implements pagination, with a maximum of nine directly navigable
 // page buttons and "previous" and "next" buttons, with the current page
 // highlighted
 //
@@ -23,76 +30,67 @@ export interface PagingProps {
 export const Paging: React.FC<PagingProps> = (props: PagingProps) => {
   const { totalResults, page, onPageChange } = props;
   const lastPageIndex = Math.ceil(totalResults / page.limit) - 1;
-  const renderedPages = Math.min(lastPageIndex + 1, 9);
-  const pages = [];
   const currentPage = page.offset / page.limit;
-
-  let start: number;
-  // Handle cases where we have less than nine pages of results
-  if (lastPageIndex <= 9) {
-    start = 0;
-    // Will render like:
-    //
-    // Previous 1 2 3 Next
-    //          ^
-    //        current
-  } else if (lastPageIndex - currentPage < 4) {
-    // We have more than nine total pages of results, but not enough pages
-    // that we can simply 'center' current page, so we right align the
-    // current page as far as we can
-    //
-    // Previous 3 4 5 6 7 8 9 10 11 Next
-    //                        ^
-    //                      current
-    start = 8 - (lastPageIndex - currentPage);
-  } else {
-    // We have more than enough pages to allow us to just 'center'
-    // the current page, placing four pages to the left and four
-    // to the right of it.
-    //
-    // Will render like:
-    //
-    // Previous 3 4 5 6 7 8 9 10 11 Next
-    //                  ^
-    //                current
-    start = currentPage - 4;
-  }
-
-  for (let i = 0; i < renderedPages; i++) {
-    pages.push(
-      <li key={i} className={`page-item ${start + i === currentPage ? 'active' : ''}`}>
-        <a
-          className="page-link"
-          onClick={() => onPageChange({ offset: (start + i) * page.limit, limit: page.limit })}
-        >
-          {i + 1}
-        </a>
-      </li>,
-    );
-  }
-
-  const previousPage = { offset: page.offset - page.limit, limit: page.limit };
-  const nextPage = { offset: page.offset + page.limit, limit: page.limit };
-
   const upper = Math.min(page.offset + page.limit, totalResults);
 
-  const label = `Showing result ${page.offset + 1} - ${upper} of ${totalResults} total`;
+  const firstPage = { offset: 0, limit: page.limit };
+  const previousPage = { offset: page.offset - page.limit, limit: page.limit };
+  const nextPage = { offset: page.offset + page.limit, limit: page.limit };
+  const lastPage = { offset: lastPageIndex * page.limit, limit: page.limit };
+
+  const start = Math.max(currentPage - 4, 0);
+  const end = Math.min(currentPage + 4, lastPageIndex);
+
+  const pages = range(start, end).map((i) => (
+    <li key={i} className={`page-item ${i === currentPage ? 'active' : ''}`}>
+      <button
+        className="page-link"
+        onClick={() => onPageChange({ offset: i * page.limit, limit: page.limit })}
+      >
+        {i + 1}
+      </button>
+    </li>
+  ));
 
   return (
     <div className="d-flex justify-content-between">
-      <div>{label}</div>
+      <div>
+        Showing result {page.offset + 1} - {upper} of {totalResults} total
+      </div>
       <nav aria-label="Activity Bank Paging">
         <ul className="pagination">
           <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
-            <a className="page-link" onClick={() => onPageChange(previousPage)}>
-              Previous
-            </a>
+            <button
+              className="page-link"
+              onClick={() => currentPage > 0 && onPageChange(firstPage)}
+            >
+              <i className="fas fa-angle-double-left"></i>
+            </button>
+          </li>
+          <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
+            <button
+              className="page-link"
+              onClick={() => currentPage > 0 && onPageChange(previousPage)}
+            >
+              <i className="fas fa-angle-left"></i>
+            </button>
           </li>
           {pages}
           <li className={`page-item ${currentPage === lastPageIndex ? 'disabled' : ''}`}>
-            <a className="page-link" onClick={() => onPageChange(nextPage)}>
-              Next
-            </a>
+            <button
+              className="page-link"
+              onClick={() => currentPage < lastPageIndex && onPageChange(nextPage)}
+            >
+              <i className="fas fa-angle-right"></i>
+            </button>
+          </li>
+          <li className={`page-item ${currentPage === lastPageIndex ? 'disabled' : ''}`}>
+            <button
+              className="page-link"
+              onClick={() => currentPage < lastPageIndex && onPageChange(lastPage)}
+            >
+              <i className="fas fa-angle-double-right"></i>
+            </button>
           </li>
         </ul>
       </nav>

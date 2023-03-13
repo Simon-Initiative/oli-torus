@@ -88,8 +88,27 @@
   @apply hover:text-red-600;
 }
 
-.btn[disabled] {
-  @apply text-gray-400 no-underline hover:no-underline cursor-default;
+.btn[disabled],
+.btn.disabled {
+  @apply text-gray-400 no-underline hover:no-underline cursor-default hover:bg-inherit;
+}
+
+.btn-outline-primary[disabled],
+.btn-outline-primary.disabled,
+.btn-outline-secondary[disabled],
+.btn-outline-secondary.disabled,
+.btn-outline-success[disabled],
+.btn-outline-success.disabled,
+.btn-outline-danger[disabled],
+.btn-outline-danger.disabled,
+.btn-outline-warning[disabled],
+.btn-outline-warning.disabled,
+.btn-outline-info[disabled],
+.btn-outline-info.disabled,
+.btn-outline-light[disabled],
+.btn-outline-light.disabled,
+.btn-outline-dark[disabled] {
+  @apply !border-gray-400;
 }
 
 .btn-primary[disabled],
@@ -225,7 +244,7 @@ input.form-control,
 .input-group select,
 select.custom-select,
 select.form-control {
-  @apply border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700;
+  @apply border py-1 px-1.5 border-gray-300 rounded w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700;
 }
 
 input.form-control-sm,
@@ -254,7 +273,7 @@ input.form-control-sm,
 }
 
 .form-group input[type='file'] {
-  @apply border border-gray-300 p-1 rounded-md;
+  @apply border border-gray-300 p-1 rounded;
 }
 
 .input-group {
@@ -292,7 +311,7 @@ input.form-control-sm,
 }
 
 .page-item .page-link {
-  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 no-underline;
+  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 no-underline cursor-pointer;
 }
 
 .page-item:not(.disabled) .page-link {
@@ -308,7 +327,7 @@ input.form-control-sm,
 }
 
 .page-item.disabled .page-link {
-  @apply bg-transparent text-gray-400 hover:text-gray-400;
+  @apply cursor-default bg-transparent text-gray-400 hover:text-gray-400;
 }
 
 .alert {

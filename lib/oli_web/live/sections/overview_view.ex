@@ -34,12 +34,17 @@ defmodule OliWeb.Sections.OverviewView do
       [
         Breadcrumb.new(%{
           full_title: "Section Overview",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+          link:
+            Routes.live_path(
+              OliWeb.Endpoint,
+              OliWeb.Delivery.InstructorDashboard.OtherLive,
+              section.slug
+            )
         })
       ]
   end
 
-  def mount(%{"section_slug" => section_slug}, session, socket) do
+  def mount(_params, %{"section_slug" => section_slug} = session, socket) do
     case Mount.for(section_slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})

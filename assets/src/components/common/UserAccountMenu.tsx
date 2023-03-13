@@ -82,7 +82,8 @@ export const UserAccountMenu = ({
                 <CreateAccountPopup sectionSlug={sectionSlug} />
               </React.Fragment>
             )}
-            {(user.role != Roles.Student || user.isIndependentInstructor) &&
+            {(!(user.role === Roles.Student || user.isIndependentLearner) ||
+              user.isIndependentInstructor) &&
               (user.linkedAuthorAccount ? (
                 <>
                   <DropdownItem>

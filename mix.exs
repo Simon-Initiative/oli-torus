@@ -180,6 +180,7 @@ defmodule Oli.MixProject do
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_dashboard, "~> 0.7.0"},
+      {:phoenix_live_react, "~> 0.4"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_live_view, "~> 0.18"},
       {:phoenix_pubsub, "~> 2.0"},
