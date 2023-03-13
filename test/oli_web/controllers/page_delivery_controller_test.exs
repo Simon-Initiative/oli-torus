@@ -726,39 +726,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ ~s|<div data-react-class="Components.PaginationControls"|
     end
 
-    test "index show manage section button when accessing as instructor", %{
-      conn: conn,
-      user: user,
-      section: section
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      conn =
-        conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 302) =~
-               Routes.live_path(
-                 conn,
-                 OliWeb.Delivery.InstructorDashboard.ManageLive,
-                 section.slug
-               )
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(
-          Routes.live_path(
-            conn,
-            OliWeb.Delivery.InstructorDashboard.ContentLive,
-            section.slug
-          )
-        )
-
-      assert html_response(conn, 200) =~ "Course Overview"
-      assert html_response(conn, 200) =~ "Manage Section"
-    end
-
     test "page renders learning objectives in ungraded pages but not graded, except for review mode",
          %{
            user: user,

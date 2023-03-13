@@ -16,14 +16,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentLiveTest do
     )
   end
 
-  defp live_view_other_route(section_slug) do
-    Routes.live_path(
-      OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.ManageLive,
-      section_slug
-    )
-  end
-
   describe "user" do
     test "can not access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
@@ -77,13 +69,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentLiveTest do
 
       # Module tab content gets rendered
       assert has_element?(view, ~s{h5}, "Course Overview")
-
-      # Module tab manage section button links to "Other" tab
-      assert has_element?(
-               view,
-               ~s{a[href="#{live_view_other_route(section.slug)}"]},
-               "Manage Section"
-             )
     end
   end
 end
