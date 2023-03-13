@@ -41,7 +41,7 @@ defmodule OliWeb.PageDeliveryController do
               to:
                 Routes.live_path(
                   OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.OtherLive,
+                  OliWeb.Delivery.InstructorDashboard.ManageLive,
                   section_slug
                 )
             )

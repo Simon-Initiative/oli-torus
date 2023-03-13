@@ -37,7 +37,7 @@ defmodule OliWeb.Sections.OverviewView do
           link:
             Routes.live_path(
               OliWeb.Endpoint,
-              OliWeb.Delivery.InstructorDashboard.OtherLive,
+              OliWeb.Delivery.InstructorDashboard.ManageLive,
               section.slug
             )
         })

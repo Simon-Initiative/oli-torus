@@ -890,6 +890,10 @@ defmodule Oli.Delivery.Sections do
         skip_resource_ids: processed_ids
       )
 
+      IO.inspect(%{root_section_resource_id: root_section_resource_id},
+        label: "%{root_section_resource_id: root_section_resource_id}"
+      )
+
       update_section(section, %{root_section_resource_id: root_section_resource_id})
       |> case do
         {:ok, section} ->
@@ -1316,10 +1320,17 @@ defmodule Oli.Delivery.Sections do
       |> Enum.map(fn rev -> rev.resource_id end)
       |> MapSet.new()
 
+    IO.inspect(section, label: "section")
+
     # From the section resources, locate the root section resource, and also create a lookup map
     # from section_resource id to each section resource.
-    root = Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
-    map = Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
+    root =
+      Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
+      |> IO.inspect(label: "root")
+
+    map =
+      Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
+      |> IO.inspect(label: "map")
 
     # Now recursively traverse the containers within the course section hierarchy, starting with the root
     # to build a map of page resource_ids to lists of the ancestor container resource_ids.  The resultant
@@ -1360,20 +1371,20 @@ defmodule Oli.Delivery.Sections do
   # container map.
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
     case Enum.map(sr.children, fn sr_id ->
-      sr = Map.get(all, sr_id)
+           sr = Map.get(all, sr_id)
 
-      case MapSet.member?(container_ids, sr.resource_id) do
-        true ->
-          rebuild_contained_pages_helper(
-            sr,
-            {[sr.resource_id | ancestors], page_map, all, container_ids}
-          )
-          |> Map.merge(page_map)
+           case MapSet.member?(container_ids, sr.resource_id) do
+             true ->
+               rebuild_contained_pages_helper(
+                 sr,
+                 {[sr.resource_id | ancestors], page_map, all, container_ids}
+               )
+               |> Map.merge(page_map)
 
-        false ->
-          Map.put(page_map, sr.resource_id, ancestors)
-      end
-    end) do
+             false ->
+               Map.put(page_map, sr.resource_id, ancestors)
+           end
+         end) do
       [] -> %{}
       other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
     end
@@ -1457,7 +1468,8 @@ defmodule Oli.Delivery.Sections do
 
     # For a section based on this project, update the has_experiments in the section to match that
     # setting in the project.
-    if section.base_project_id == project_id and project.has_experiments != section.has_experiments do
+    if section.base_project_id == project_id and
+         project.has_experiments != section.has_experiments do
       Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
     end
 

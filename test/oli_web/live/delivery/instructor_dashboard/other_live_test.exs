@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
+defmodule OliWeb.Delivery.InstructorDashboard.ManageLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -11,7 +11,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.OtherLiveTest do
   defp live_view_other_route(section_slug) do
     Routes.live_path(
       OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.OtherLive,
+      OliWeb.Delivery.InstructorDashboard.ManageLive,
       section_slug
     )
   end

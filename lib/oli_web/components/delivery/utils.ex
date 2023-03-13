@@ -102,7 +102,7 @@ defmodule OliWeb.Components.Delivery.Utils do
         "Independent"
 
       :administrator ->
-        "LMS Administrator"
+        "Administrator"
 
       :instructor ->
         "Instructor"

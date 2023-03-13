@@ -14,7 +14,7 @@ defmodule OliWeb.Common.CardListing do
     <div class="select-sources">
       <div class="card-deck mr-0 ml-0 inline-flex flex-wrap">
         {#for item <- @model.rows}
-          <a :on-click={@selected} class="course-card-link mb-2 no-underline" phx-value-id={action_id(item)}>
+          <a :on-click={@selected} class="course-card-link mb-2 no-underline hover:no-underline" phx-value-id={action_id(item)}>
             <div class="card mb-2 mr-1 ml-1 h-100">
               <img src={cover_image(item)} class="card-img-top" alt="course image">
               <div class="card-body">

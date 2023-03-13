@@ -740,7 +740,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 302) =~
                Routes.live_path(
                  conn,
-                 OliWeb.Delivery.InstructorDashboard.OtherLive,
+                 OliWeb.Delivery.InstructorDashboard.ManageLive,
                  section.slug
                )
 

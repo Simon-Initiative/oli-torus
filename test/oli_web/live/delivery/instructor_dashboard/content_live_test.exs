@@ -19,7 +19,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentLiveTest do
   defp live_view_other_route(section_slug) do
     Routes.live_path(
       OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.OtherLive,
+      OliWeb.Delivery.InstructorDashboard.ManageLive,
       section_slug
     )
   end
