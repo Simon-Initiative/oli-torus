@@ -3,6 +3,8 @@ defmodule OliWeb.Components.Delivery.CourseProgressPanel do
 
   import OliWeb.Components.Delivery.Utils
 
+  attr :progress, :integer
+
   def progress_panel(assigns) do
     ~H"""
       <div class="bg-white dark:bg-gray-800 shadow">
@@ -14,15 +16,17 @@ defmodule OliWeb.Components.Delivery.CourseProgressPanel do
             Overall Course Progress
           </div>
           <div>
-            <.progress_bar percent={10} />
+            <.progress_bar percent={@progress} />
           </div>
-          <div class="text-delivery-primary flex flex-row justify-end">
+          <%!-- TODO: UX removed until infrastructure is in place --%>
+          <%!-- <div class="text-delivery-primary flex flex-row justify-end">
             <a href="#" class="px-6 py-2.5 text-delivery-primary hover:text-delivery-primary-600 hover:underline active:text-delivery-primary-700">
               View <i class="fa-solid fa-arrow-right ml-1"></i>
             </a>
-          </div>
+          </div> --%>
         </div>
-        <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+        <%!-- TODO: UX removed until infrastructure is in place --%>
+        <%!-- <div class="p-4 border-t border-gray-100 dark:border-gray-700">
           <div class="font-semibold">
             Overall Assignment Progress
           </div>
@@ -41,7 +45,7 @@ defmodule OliWeb.Components.Delivery.CourseProgressPanel do
               View Grades in LMS <i class="fa-solid fa-arrow-right ml-1"></i>
             </a>
           </div>
-        </div>
+        </div> --%>
       </div>
     """
   end

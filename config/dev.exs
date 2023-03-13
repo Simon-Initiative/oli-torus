@@ -40,6 +40,12 @@ config :oli, :stripe_provider,
   public_secret: "pk_test_TYooMQauvdEDq54NiTphI7jx",
   private_secret: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
 
+config :oli, :cashnet_provider,
+  cashnet_store: System.get_env("CASHNET_STORE"),
+  cashnet_checkout_url: System.get_env("CASHNET_CHECKOUT_URL"),
+  cashnet_client: System.get_env("CASHNET_CLIENT"),
+  cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
