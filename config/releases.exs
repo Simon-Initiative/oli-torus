@@ -61,6 +61,15 @@ if System.get_env("PAYMENT_PROVIDER") == "stripe" &&
   """
 end
 
+if System.get_env("PAYMENT_PROVIDER") == "cashnet" &&
+     (!System.get_env("CASHNET_STORE") || !System.get_env("CASHNET_CHECKOUT_URL")
+     || !System.get_env("CASHNET_CLIENT") || !System.get_env("CASHNET_GL_NUMBER")) do
+  raise """
+  Cashnet payment provider not configured correctly. CASHNET_STORE, CASHNET_CHECKOUT_URL,
+  CASHNET_CLIENT and CASHNET_GL_NUMBER values must be set.
+  """
+end
+
 media_url =
   System.get_env("MEDIA_URL") ||
     raise """
