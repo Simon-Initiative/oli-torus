@@ -52,8 +52,6 @@ defmodule OliWeb.PaymentProviders.CashnetController do
     # get payment, stamp it as having been finalized
     Logger.debug("CashnetController:success started", payload)
 
-    Logger.error("CashnetController could not finalize payment")
-
     if lname == System.get_env("CASHNET_NAME", "none") && result == "0" do
       case Cashnet.finalize_payment(payload) do
         {:ok, %{slug: slug}} ->
