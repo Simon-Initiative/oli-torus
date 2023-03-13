@@ -3,9 +3,10 @@
   <div class="relative flex-1 flex flex-col pb-[60px]">
     <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
 
-    <Components.Delivery.UpNext.up_next user={@current_user} />
+    <%!-- TODO: UX removed until infrastructure is in place --%>
+    <%!-- <Components.Delivery.UpNext.up_next user={@current_user} /> --%>
 
-    <div class="container mx-auto px-10 mt-3 mb-5 flex flex-col lg:flex-row">
+    <%!-- <div class="container mx-auto px-10 mt-3 mb-5 flex flex-col lg:flex-row">
       <div class="lg:basis-2/3">
         <Components.Delivery.LearningOpportunities.opportunities />
       </div>
@@ -17,6 +18,12 @@
         <div class="mt-4">
           <Components.Delivery.CourseProgressPanel.progress_panel />
         </div>
+      </div>
+    </div> --%>
+
+    <div class="px-10">
+      <div class="container mx-auto mt-3">
+        <Components.Delivery.CourseProgressPanel.progress_panel progress={@progress} />
       </div>
     </div>
 

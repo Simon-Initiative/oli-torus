@@ -38,13 +38,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
         <div class="flex-1 flex flex-col">
 
-          <.actions actions={[
-            %PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} },
-            %PriorityAction{ type: :grade, title: "Grade assignment 3.2 Quiz", description: "There are answers that could not be automatically graded. Grade these answers before your in-person class on 10/2/2022", action_link: {"Grade", "#"} },
-            %PriorityAction{ type: :review, title: "Review possible in-class activities to supplement Learning Objective 1", description: "Review suggested activities before your in-person class on 10/2/2022", action_link: {"Review", "#"} },
-            %PriorityAction{ type: :review, title: "Review 3.3 Determining Empirical and Molecular Formulas", description: "Review content before it opens to your class on 10/3/2022", action_link: {"Review", "#"} },
-            %PriorityAction{ type: :review, title: "Review 3.3 Determining Empirical and Molecular Formulas", description: "Review content before it opens to your class on 10/3/2022", action_link: {"Review", "#"} }
-          ]} />
+          <.actions />
 
           <div class="relative flex-1 flex flex-col pb-[60px]">
 
@@ -164,10 +158,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
           <%= for {label, href, badge, active} <- [
             {"Learning Objectives", path_for(:learning_objectives, @section_slug, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
-            {"Students", path_for(:students, @section_slug, @preview_mode), 3, is_active_tab?(:students, @active_tab)},
-            {"Modules", path_for(:content, @section_slug, @preview_mode), 2, is_active_tab?(:content, @active_tab)},
-            {"Discussion Activity", path_for(:discussions, @section_slug, @preview_mode), 7, is_active_tab?(:discussions, @active_tab)},
-            {"Assignments", path_for(:assignments, @section_slug, @preview_mode), 1, is_active_tab?(:assignments, @active_tab)},
+            {"Students", path_for(:students, @section_slug, @preview_mode), nil, is_active_tab?(:students, @active_tab)},
+            {"Modules", path_for(:content, @section_slug, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
+            {"Discussion Activity", path_for(:discussions, @section_slug, @preview_mode), nil, is_active_tab?(:discussions, @active_tab)},
+            {"Assignments", path_for(:assignments, @section_slug, @preview_mode), nil, is_active_tab?(:assignments, @active_tab)},
             {"Other", path_for(:other, @section_slug, @preview_mode), nil, is_active_tab?(:other, @active_tab)},
           ] do %>
             <li class="nav-item" role="presentation">
@@ -260,18 +254,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           <div class="font-bold text-slate-300">
             <%= @title %>
           </div>
-          <div class="border-l border-white ml-4 pl-4">
+          <%!-- <div class="border-l border-white ml-4 pl-4">
             Section 2360
-          </div>
-          <div class="font-thin border-l border-white ml-4 pl-4">
+          </div> --%>
+          <%!-- <div class="font-thin border-l border-white ml-4 pl-4">
             Mon/Wed 12:00 PM
-          </div>
+          </div> --%>
         </div>
       </div>
     </div>
     """
   end
 
+  @doc """
+  Takes a list of actions and renders a set of action cards
+
+  E.g.
+    ```
+    <.actions actions=[%PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }] />
+    ```
+  """
   attr :actions, :list, default: []
 
   def actions(assigns) do
