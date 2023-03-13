@@ -19,15 +19,17 @@ export const addPath = createAsyncThunk(
     const { screenId } = payload;
     const rootState = getState() as AuthoringRootState;
     const screen = selectActivityById(rootState, screenId);
-    if (!screen) return;
+    if (!screen) return null;
     const paths = screen.authoring?.flowchart?.paths;
-    if (!paths) return;
+    if (!paths) return null;
     const newPaths = [...paths];
-    newPaths.push(createUnknownPathWithDestination());
+    const newPath = createUnknownPathWithDestination();
+    newPaths.push(newPath);
     const modifiedScreen = clone(screen);
     modifiedScreen.authoring.flowchart.paths = newPaths;
 
     await dispatch(upsertActivity({ activity: modifiedScreen }));
     dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
+    return newPath;
   },
 );

@@ -15,6 +15,7 @@ import HistorySlice from './history/name';
 import HistoryReducer from './history/slice';
 import { media } from '../../../state/media';
 import { modal } from '../../../state/modal';
+import FlowchartReducer, { FlowchartSlice } from './flowchart/flowchart-slice';
 
 const rootReducer = combineReducers({
   [AppSlice]: AppReducer,
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
   [ActivitiesSlice]: ActivitiesReducer,
   [ClipboardSlice]: ClipboardReducer,
   [HistorySlice]: HistoryReducer,
+  [FlowchartSlice]: FlowchartReducer,
   media,
   modal,
 });

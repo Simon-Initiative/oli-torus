@@ -1,8 +1,9 @@
 import { EntityId } from '@reduxjs/toolkit';
 import React, { useMemo, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
+import { selectAutoOpenPath } from '../../../store/flowchart/flowchart-slice';
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { deletePath } from '../flowchart-actions/delete-path';
 import { replacePath } from '../flowchart-actions/replace-path';
@@ -33,6 +34,7 @@ export const PathEditBox: React.FC<Props> = ({
   path,
   screens,
 }) => {
+  const autoOpen = useSelector(selectAutoOpenPath);
   const [editMode, toggleEditMode] = useToggle(false);
   const className = path.completed ? 'path-editor-completed' : 'path-editor-incomplete';
   const dispatch = useDispatch();
@@ -47,7 +49,9 @@ export const PathEditBox: React.FC<Props> = ({
     );
   };
 
-  return editMode ? (
+  const effectiveEditMode = editMode || autoOpen === path.id;
+
+  return effectiveEditMode ? (
     <PathEditor
       questionType={questionType}
       className={className}
