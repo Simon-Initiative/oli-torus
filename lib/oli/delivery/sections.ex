@@ -890,10 +890,6 @@ defmodule Oli.Delivery.Sections do
         skip_resource_ids: processed_ids
       )
 
-      IO.inspect(%{root_section_resource_id: root_section_resource_id},
-        label: "%{root_section_resource_id: root_section_resource_id}"
-      )
-
       update_section(section, %{root_section_resource_id: root_section_resource_id})
       |> case do
         {:ok, section} ->
@@ -1320,17 +1316,10 @@ defmodule Oli.Delivery.Sections do
       |> Enum.map(fn rev -> rev.resource_id end)
       |> MapSet.new()
 
-    IO.inspect(section, label: "section")
-
     # From the section resources, locate the root section resource, and also create a lookup map
     # from section_resource id to each section resource.
-    root =
-      Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
-      |> IO.inspect(label: "root")
-
-    map =
-      Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
-      |> IO.inspect(label: "map")
+    root = Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
+    map = Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
 
     # Now recursively traverse the containers within the course section hierarchy, starting with the root
     # to build a map of page resource_ids to lists of the ancestor container resource_ids.  The resultant
