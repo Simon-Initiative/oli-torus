@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.AdminIndexLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   alias Lti_1p3.Tool.ContextRoles
@@ -12,8 +12,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the index view", %{conn: conn} do
-      {:error,
-       {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fsections"}}} =
+      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fsections"}}} =
         live(conn, @live_view_index_route)
     end
   end
@@ -63,12 +62,14 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     end
 
     test "applies filtering", %{conn: conn} do
-      s1 = insert(:section,
-        type: :enrollable,
-        open_and_free: true,
-        start_date: yesterday(),
-        end_date: tomorrow()
-      )
+      s1 =
+        insert(:section,
+          type: :enrollable,
+          open_and_free: true,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
       s2 = insert(:section, type: :enrollable, status: :deleted)
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
@@ -139,7 +140,14 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       institution = insert(:institution, name: "OtherInsti")
       blueprint = insert(:section, title: "TestSection")
 
-      s1 = insert(:section, type: :enrollable, base_project: other_project, title: "Testing", blueprint: blueprint)
+      s1 =
+        insert(:section,
+          type: :enrollable,
+          base_project: other_project,
+          title: "Testing",
+          blueprint: blueprint
+        )
+
       s2 = insert(:section, type: :enrollable, base_project: project, institution: institution)
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
@@ -180,23 +188,23 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
     test "applies sorting", %{conn: conn} do
       project = insert(:project, title: "Project", authors: [])
-      s1 = insert(:section, type: :enrollable, amount: Money.new(:USD, 100000))
+      s1 = insert(:section, type: :enrollable, amount: Money.new(:USD, 100_000))
       s2 = insert(:section, type: :enrollable, base_project: project)
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       # by title
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~ s1.title
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ s1.title
 
       view
       |> element("th[phx-click=\"paged_table_sort\"]", "Title")
       |> render_click(%{sort_by: "title"})
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~ s2.title
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ s2.title
 
       # by cost
       view
@@ -204,16 +212,16 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       |> render_click(%{sort_by: "requires_payment"})
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~ s2.title
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ s2.title
 
       view
       |> element("th[phx-click=\"paged_table_sort\"]", "Cost")
       |> render_click(%{sort_by: "requires_payment"})
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~ s1.title
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ s1.title
 
       # by instructor
       user = insert(:user, name: "Instructor")
@@ -224,16 +232,16 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       |> render_click(%{sort_by: "instructor"})
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~ s2.title
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ s2.title
 
       view
       |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
       |> render_click(%{sort_by: "instructor"})
 
       assert view
-      |> element("tr:first-child > td:first-child")
-      |> render() =~ s1.title
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ s1.title
     end
 
     test "applies paging", %{conn: conn} do

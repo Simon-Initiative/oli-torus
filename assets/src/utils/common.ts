@@ -24,6 +24,16 @@ export function clone(o: any) {
   return JSON.parse(JSON.stringify(o));
 }
 
+/**
+ * Performs a deep copy, or clone, of an object -- keeping the type
+ *
+ * @param o the object to clone
+ * @returns the cloned object
+ */
+export function cloneT<T>(o: T) {
+  return JSON.parse(JSON.stringify(o)) as T;
+}
+
 // Matches server implementation in `lib/oli/activities/parse_utils.ex`
 export function removeEmpty(items: any[]) {
   return items.filter(hasContent);
@@ -36,7 +46,7 @@ function hasContent(item: any): boolean {
 
     if (item?.type) {
       const s = schema[item.type as ModelTypes];
-      const sc = schema;
+      // const sc = schema;
       // We'll assume void elements are content.
       if (s?.isVoid) return true;
     }

@@ -1,0 +1,53 @@
+import { TorusBG } from '../TorusBG.tsx';
+import { ScreenNodeBody } from 'apps/authoring/components/Flowchart/chart-components/ScreenNode.tsx';
+import { ScreenButton } from 'apps/authoring/components/Flowchart/chart-components/ScreenButton.tsx';
+import { PlaceholderNodeBody } from 'apps/authoring/components/Flowchart/chart-components/PlaceholderNode.tsx';
+import { FlowchartTopToolbar } from 'apps/authoring/components/Flowchart/FlowchartTopToolbar.tsx';
+import { FlowchartSidebar } from 'apps/authoring/components/Flowchart/FlowchartSidebar.tsx';
+
+<Meta title="Advanced Authoring/Flowchart Components" />
+
+# Top Toolbar
+
+<TorusBG>
+  <FlowchartTopToolbar />
+</TorusBG>
+
+# Sidebar
+
+<TorusBG>
+  <div className="flex flex-row min-h-[300px]">
+    <FlowchartSidebar />
+    <div>Rest of content</div>
+  </div>
+</TorusBG>
+
+# Screen Node
+
+<TorusBG>
+  <ScreenNodeBody
+    data={{
+      id: '1',
+      type: 'screen',
+      custom: { sequenceName: 'Screen 1' },
+    }}
+  />
+</TorusBG>
+
+# Placeholder Node
+
+<TorusBG>
+  <PlaceholderNodeBody
+    data={{
+      id: '1',
+      type: 'screen',
+      custom: { sequenceName: 'Screen 1' },
+    }}
+  />
+</TorusBG>
+
+# Screen Button
+
+<TorusBG>
+  <ScreenButton>+</ScreenButton>
+</TorusBG>

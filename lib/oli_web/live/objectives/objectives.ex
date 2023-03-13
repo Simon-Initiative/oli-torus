@@ -161,36 +161,38 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     ~F"""
       {render_modal(assigns)}
 
-      <FilterBox table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
-        <Filter
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query} />
-      </FilterBox>
+      <div class="container mx-auto">
+        <FilterBox table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
+          <Filter
+            change="change_search"
+            reset="reset_search"
+            apply="apply_search"
+            query={@query} />
+        </FilterBox>
 
-      <div class="d-flex flex-row-reverse">
-        <button class="btn btn-primary" :on-click="display_new_modal">Create new Objective</button>
-      </div>
+        <div class="d-flex flex-row-reverse">
+          <button class="btn btn-primary" :on-click="display_new_modal">Create new Objective</button>
+        </div>
 
-      <div id="objectives-table" class="p-4">
-        <Table
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort={@sort}
-          page_change={@page_change}
-          show_bottom_paging={@show_bottom_paging}
-          additional_table_class={@additional_table_class}
-          with_body={true}>
+        <div id="objectives-table" class="my-4">
+          <Table
+            filter={@query}
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            sort={@sort}
+            page_change={@page_change}
+            show_bottom_paging={@show_bottom_paging}
+            additional_table_class={@additional_table_class}
+            with_body={true}>
 
-          <Listing
-            rows={@table_model.rows}
-            selected={@selected}
-            project_slug={@project.slug} />
-        </Table>
+            <Listing
+              rows={@table_model.rows}
+              selected={@selected}
+              project_slug={@project.slug} />
+          </Table>
+        </div>
       </div>
     """
   end
@@ -224,6 +226,9 @@ defmodule OliWeb.ObjectivesLive.Objectives do
        modal_assigns: modal_assigns
      )}
   end
+
+  def handle_event("hide_modal", _, socket),
+    do: {:noreply, hide_modal(socket, modal_assigns: nil)}
 
   def handle_event("display_new_modal", _, socket),
     do: new_modal(Resources.change_revision(%Revision{}), socket)

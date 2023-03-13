@@ -3,10 +3,10 @@ defmodule Oli.Ingest.RewireLinks do
   # page being linked to.  This function takes all pages and rewires
   # all links that it finds in their contents, only saving new revisions for those that
   # have a rewired link.
-  def rewire_all_hyperlinks(page_map, project) do
+  def rewire_all_hyperlinks(page_map, project, lookup_map) do
     Map.values(page_map)
     |> Enum.map(fn revision ->
-      rewire_hyperlinks(revision, page_map, project.slug)
+      rewire_hyperlinks(revision, lookup_map, project.slug)
     end)
 
     {:ok, page_map}
@@ -45,13 +45,26 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   defp rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
-    IO.inspect(idref)
     {true, Map.put(other, "idref", Map.get(page_map, idref).resource_id)}
   end
 
   defp rewire(%{"model" => model} = item, link_builder, page_map) do
     case rewire(model, link_builder, page_map) do
       {true, model} -> {true, Map.put(item, "model", model)}
+      {false, _} -> {false, item}
+    end
+  end
+
+  defp rewire(%{"stem" => stem} = item, link_builder, page_map) do
+    case rewire(stem, link_builder, page_map) do
+      {true, stem} -> {true, Map.put(item, "stem", stem)}
+      {false, _} -> {false, item}
+    end
+  end
+
+  defp rewire(%{"content" => content} = item, link_builder, page_map) do
+    case rewire(content, link_builder, page_map) do
+      {true, content} -> {true, Map.put(item, "content", content)}
       {false, _} -> {false, item}
     end
   end

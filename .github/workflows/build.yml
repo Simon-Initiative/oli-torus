@@ -170,6 +170,9 @@ jobs:
       - name: 🧹 Lint
         run: cd assets && yarn run prettier && yarn run lint
 
+      - name: 👁️ Typecheck
+        run: yarn --cwd assets check-types
+
       - name: 🔨 Build
         run: yarn --cwd assets run deploy
 

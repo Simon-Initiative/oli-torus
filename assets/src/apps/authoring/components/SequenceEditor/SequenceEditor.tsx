@@ -1,11 +1,13 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
+  selectAppMode,
   selectIsAdmin,
   selectProjectSlug,
   setCurrentRule,
@@ -38,28 +40,26 @@ import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const SequenceEditor: React.FC<any> = () => {
+const SequenceEditor: React.FC = () => {
   const dispatch = useDispatch();
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
   const currentGroup = useSelector(selectCurrentGroup);
   const currentActivity = useSelector(selectCurrentActivity);
   const allActivities = useSelector(selectAllActivities);
-  const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
+  const hierarchy = useMemo(() => getHierarchy(sequence), [sequence]);
+  const [open, toggleOpen] = useToggle(true);
+
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
+
   const isAdmin = useSelector(selectIsAdmin);
   const projectSlug = useSelector(selectProjectSlug);
 
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
-
-  useEffect(() => {
-    const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
-    return setHierarchy(newHierarchy);
-  }, [sequence]);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
@@ -594,10 +594,10 @@ const SequenceEditor: React.FC<any> = () => {
     );
 
   return (
-    <Accordion className="aa-sequence-editor" defaultActiveKey="0">
+    <Accordion className="aa-sequence-editor" defaultActiveKey="0" activeKey={open ? '0' : '-1'}>
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
-          <ContextAwareToggle eventKey="0" />
+          <ContextAwareToggle eventKey="0" onClick={toggleOpen} />
           <span className="title">Sequence Editor</span>
         </div>
         <OverlayTrigger
@@ -616,7 +616,7 @@ const SequenceEditor: React.FC<any> = () => {
 
             <Dropdown.Menu>
               <Dropdown.Item
-                onClick={() => {
+                onClick={(event) => {
                   handleItemAdd(undefined);
                 }}
               >

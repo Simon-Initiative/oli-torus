@@ -7,7 +7,7 @@ import { clone } from 'utils/common';
 import cloneDeep from 'lodash/cloneDeep';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
-import { RootState } from '../../rootReducer';
+import { AuthoringRootState } from '../../rootReducer';
 import { PageState, selectRevisionSlug, selectState, setRevisionSlug, updatePage } from '../slice';
 import PageSlice from '../name';
 import { createUndoAction } from '../../history/slice';
@@ -24,13 +24,13 @@ export const savePage = createAsyncThunk(
   async (payload: PagePayload, { getState, dispatch }) => {
     const { undoable = false } = payload;
 
-    const isReadOnlyMode = selectReadOnly(getState() as RootState);
+    const isReadOnlyMode = selectReadOnly(getState() as AuthoringRootState);
     if (isReadOnlyMode) {
       return;
     }
-    const projectSlug = selectProjectSlug(getState() as RootState);
-    const revisionSlug = selectRevisionSlug(getState() as RootState);
-    const currentPage = selectState(getState() as RootState);
+    const projectSlug = selectProjectSlug(getState() as AuthoringRootState);
+    const revisionSlug = selectRevisionSlug(getState() as AuthoringRootState);
+    const currentPage = selectState(getState() as AuthoringRootState);
 
     const model = selectAllGroups(getState() as any);
 

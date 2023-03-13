@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Header do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.UserAccountMenu
-  alias OliWeb.Components.Delivery.HelpButton
+  alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   def header(assigns) do
@@ -27,7 +27,7 @@ defmodule OliWeb.Components.Header do
 
         <%= if not is_preview_mode?(assigns) do %>
           <div class="nav-item my-2 my-lg-0 mr-2">
-            <HelpButton.help_button />
+            <Buttons.help_button />
           </div>
         <% end %>
 

@@ -580,7 +580,8 @@ defmodule Oli.Seeder do
       title: "some title",
       context_id: UUID.uuid4(),
       base_project_id: map.project.id,
-      institution_id: map.institution.id
+      institution_id: map.institution.id,
+      contains_explorations: map[:contains_explorations] || false
     }
 
     {:ok, section} =

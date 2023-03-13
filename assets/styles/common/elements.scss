@@ -1,13 +1,6 @@
 $heading-margin-bottom: 0.5em;
 $element-margin-bottom: 1.5em;
 
-.popup-anchor,
-span.term {
-  font-weight: bold;
-  color: #63a372;
-  font-style: italic;
-}
-
 .structured-content,
 .activity-editor .rich-text-editor,
 .content {
@@ -419,6 +412,17 @@ span.term {
     p:last-of-type {
       margin: 0;
     }
+  }
+
+  .popup-anchor,
+  span.term {
+    font-weight: bold;
+    color: #63a372;
+    font-style: italic;
+  }
+
+  .popover-body {
+    max-width: 276px;
   }
 }
 

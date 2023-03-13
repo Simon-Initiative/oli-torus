@@ -12,7 +12,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
     ~F"""
       <div id="accordion" class="accordion">
         {#for {item, index} <- Enum.with_index(@rows)}
-          <div id={item.slug} class="card max-w-full border border-light mb-3 p-0">
+          <div id={item.slug} class="card max-w-full border mb-3 p-0">
             <div class="card-header d-flex justify-content-between p-2" id={"heading#{index}"}>
               <button
                 class="flex-1 btn w-75 text-left"
@@ -24,7 +24,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
                 phx-value-slug={item.slug}>
                 {item.title}
               </button>
-              <div class="d-flex flex-column font-weight-light small bg-secondary p-2 rounded pr-4">
+              <div class="d-flex flex-column font-weight-light small p-2 pr-4">
                 <div><i class="fa fa-cubes c0183 mr-1"></i>Sub-Objectives {item.sub_objectives_count}</div>
                 <div><i class="far fa-file c0183 mr-1"></i>Pages {item.page_attachments_count}</div>
                 <div><i class="fa fa-list mr-1"></i>Activities {item.activity_attachments_count}</div>

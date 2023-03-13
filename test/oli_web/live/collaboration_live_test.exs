@@ -1,5 +1,5 @@
 defmodule OliWeb.CollaborationLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Oli.Factory
@@ -343,7 +343,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
         |> get(live_view_instructor_preview(section.slug, page_revision_cs.slug))
 
-      assert html_response(conn, 200) =~ "<h3 class=\"card-title\">Collaborative Space</h3>"
+      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
     end
   end
 
@@ -497,6 +497,10 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~ "checked"
 
       assert view
+             |> element("#delivery_setting_collab_space_config_anonymous_posting")
+             |> render() =~ "checked"
+
+      assert view
              |> element("#delivery_setting_collab_space_config_participation_min_replies")
              |> render() =~ "0"
 
@@ -532,7 +536,8 @@ defmodule OliWeb.CollaborationLiveTest do
           collab_space_config: %{
             threaded: false,
             auto_accept: false,
-            participation_min_replies: 2
+            participation_min_replies: 2,
+            anonymous_posting: false
           }
         }
       })
@@ -545,6 +550,10 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("#delivery_setting_collab_space_config_auto_accept")
              |> render() =~ "checked"
 
+      refute view
+             |> element("#delivery_setting_collab_space_config_anonymous_posting")
+             |> render() =~ "checked"
+
       assert view
              |> element("#delivery_setting_collab_space_config_participation_min_replies")
              |> render() =~ "2"
@@ -553,7 +562,8 @@ defmodule OliWeb.CollaborationLiveTest do
                collab_space_config: %{
                  participation_min_replies: 2,
                  auto_accept: false,
-                 threaded: false
+                 threaded: false,
+                 anonymous_posting: false
                }
              } =
                Delivery.get_delivery_setting_by(%{
@@ -705,6 +715,9 @@ defmodule OliWeb.CollaborationLiveTest do
       assert view |> element("#revision_collab_space_config_show_full_history") |> render() =~
                "checked"
 
+      assert view |> element("#revision_collab_space_config_anonymous_posting") |> render() =~
+               "checked"
+
       assert view
              |> element("#revision_collab_space_config_participation_min_replies")
              |> render() =~ "0"
@@ -738,13 +751,17 @@ defmodule OliWeb.CollaborationLiveTest do
           collab_space_config: %{
             threaded: false,
             auto_accept: false,
-            participation_min_replies: 2
+            participation_min_replies: 2,
+            anonymous_posting: false
           }
         }
       })
 
       refute view |> element("#revision_collab_space_config_threaded") |> render() =~ "checked"
       refute view |> element("#revision_collab_space_config_auto_accept") |> render() =~ "checked"
+
+      refute view |> element("#revision_collab_space_config_anonymous_posting") |> render() =~
+               "checked"
 
       assert view
              |> element("#revision_collab_space_config_participation_min_replies")
@@ -1018,43 +1035,7 @@ defmodule OliWeb.CollaborationLiveTest do
   describe "student - collab space view" do
     setup [:user_conn, :create_project_and_section]
 
-    test "does not display the collab space when page don't have one configured",
-         %{conn: conn, user: user, section: section, page_revision: page_revision} do
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          CollabSpaceView,
-          session: %{
-            "current_user_id" => user.id,
-            "collab_space_config" => page_revision.collab_space_config,
-            "section_slug" => section.slug,
-            "page_slug" => page_revision.slug
-          }
-        )
-
-      refute has_element?(view, "h3", "Collaborative Space")
-    end
-
-    test "does not display the collab space when collab space is disabled",
-         %{conn: conn, user: user, section: section, page_revision: page_revision} do
-      collab_space_config = build(:collab_space_config, status: :disabled)
-
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          CollabSpaceView,
-          session: %{
-            "current_user_id" => user.id,
-            "collab_space_config" => collab_space_config,
-            "section_slug" => section.slug,
-            "page_slug" => page_revision.slug
-          }
-        )
-
-      refute has_element?(view, "h3", "Collaborative Space")
-    end
-
-    test "displays the collab space when is enabled",
+    test "displays the collab space",
          %{
            conn: conn,
            user: user,
@@ -1070,14 +1051,15 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space")
-      assert has_element?(view, "h5", "Active users (1)")
+      assert has_element?(view, "h3", "Discussion")
+      assert has_element?(view, "h3", "Active users (1)")
       assert has_element?(view, ".post-index", "#1")
-      assert has_element?(view, ".card-body", "#{first_post.content.message}")
+      assert has_element?(view, ".post-content", "#{first_post.content.message}")
     end
 
     test "presence",
@@ -1099,7 +1081,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1114,10 +1097,10 @@ defmodule OliWeb.CollaborationLiveTest do
 
       send(view.pid, %{event: "presence_diff"})
 
-      assert has_element?(view, "h5", "Active users (3)")
-      assert has_element?(view, ".list-group-item", "#{user.name}")
-      assert has_element?(view, ".list-group-item", "#{test_user.name}")
-      assert has_element?(view, ".list-group-item", "#{other_test_user.name}")
+      assert has_element?(view, "h3", "Active users (3)")
+      assert has_element?(view, ".collab-space__active-users li", "#{user.name}")
+      assert has_element?(view, ".collab-space__active-users li", "#{test_user.name}")
+      assert has_element?(view, ".collab-space__active-users li", "#{other_test_user.name}")
     end
 
     test "sorting",
@@ -1146,19 +1129,20 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      assert has_element?(view, ".accordion-item:first-child", "#{first_post.content.message}")
-      assert has_element?(view, ".accordion-item:nth-child(2)", "#{test_post.content.message}")
+      assert has_element?(view, "#postsList > div:first-of-type", "#{first_post.content.message}")
+      assert has_element?(view, "#postsList > div:nth-child(2)", "#{test_post.content.message}")
 
       view
-      |> element("form[phx-change=\"sort\"")
-      |> render_change(%{"sort" => %{"sort_by" => :replies_count, "sort_order" => :desc}})
+      |> element("button[phx-value-sort_by=\"replies_count\"")
+      |> render_click(%{"sort_by" => "replies_count", "sort_order" => "desc"})
 
-      assert has_element?(view, ".accordion-item:first-child", "#{test_post.content.message}")
-      assert has_element?(view, ".accordion-item:nth-child(2)", "#{first_post.content.message}")
+      assert has_element?(view, "#postsList > div:first-child", "#{test_post.content.message}")
+      assert has_element?(view, "#postsList > div:nth-child(2)", "#{first_post.content.message}")
     end
 
     test "creating a post",
@@ -1173,16 +1157,13 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
       view
-      |> element("button[phx-click=\"display_create_modal\"")
-      |> render_click()
-
-      view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("#new_post_form")
       |> render_submit(%{"post" => %{content: %{message: message}}})
 
       assert view
@@ -1202,7 +1183,63 @@ defmodule OliWeb.CollaborationLiveTest do
       assert length(posts) == 2
 
       assert has_element?(view, ".post-index", "#2")
-      assert has_element?(view, ".card-body", "#{message}")
+      assert has_element?(view, ".post-content", "#{message}")
+    end
+
+    test "creating an anonymous post",
+         %{conn: conn, user: user, section: section, page_revision_cs: page_revision_cs} do
+      message = "Testing anonymous post"
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => page_revision_cs.collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
+          }
+        )
+
+      [initial_post] =
+        Collaboration.list_posts_for_user_in_page_section(
+          section.id,
+          page_revision_cs.resource_id,
+          user.id
+        )
+
+      refute render(view) =~ "(Me as Anonymous user)"
+
+      view
+      |> element("#new_post_form")
+      |> render_submit(%{"post" => %{content: %{message: message}, anonymous: true}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Post successfully created"
+
+      assert_receive {:post_created, %PostSchema{}}
+
+      posts =
+        Collaboration.list_posts_for_user_in_page_section(
+          section.id,
+          page_revision_cs.resource_id,
+          user.id
+        )
+
+      anonymous_post = Enum.find(posts, &(&1.id != initial_post.id))
+
+      assert length(posts) == 2
+
+      assert anonymous_post.content.message == message
+      assert anonymous_post.anonymous
+
+      assert has_element?(view, ".post-index", "#2")
+      assert has_element?(view, ".post-content", "#{message}")
+      assert render(view) =~ "(Me as Anonymous user)"
     end
 
     test "create post displays error message",
@@ -1215,16 +1252,13 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
       view
-      |> element("button[phx-click=\"display_create_modal\"")
-      |> render_click()
-
-      view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("#new_post_form")
       |> render_submit(%{"post" => %{content: %{other_key: "Testing post"}}})
 
       assert view
@@ -1258,23 +1292,24 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
       refute has_element?(
                view,
-               "button[phx-click=\"display_edit_modal\"][phx-value-id=\"#{new_post_2.id}\"]"
+               "button[phx-click=\"set_editing_post\"][phx-value-post_id=\"#{new_post_2.id}\"]"
              )
 
-      assert has_element?(view, ".card-body", "#{new_post_1.content.message}")
+      assert has_element?(view, ".post-content", "#{new_post_1.content.message}")
 
       view
-      |> element("button[phx-click=\"display_edit_modal\"][phx-value-id=\"#{new_post_1.id}\"]")
+      |> element("button[phx-click=\"set_editing_post\"][phx-value-post_id=\"#{new_post_1.id}\"]")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"edit_post\"")
+      |> element("form#edit_post_form_#{new_post_1.id}")
       |> render_submit(%{"post" => %{content: %{message: "Another text"}}})
 
       assert view
@@ -1292,8 +1327,8 @@ defmodule OliWeb.CollaborationLiveTest do
         )
         |> Enum.find(&(&1.id == new_post_1.id))
 
-      assert has_element?(view, ".card-body", "#{updated_post.content.message}")
-      refute has_element?(view, ".card-body", "#{new_post_1.content.message}")
+      assert has_element?(view, ".post-content", "#{updated_post.content.message}")
+      refute has_element?(view, ".post-content", "#{new_post_1.content.message}")
     end
 
     test "deleting a post",
@@ -1329,7 +1364,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
@@ -1343,7 +1379,7 @@ defmodule OliWeb.CollaborationLiveTest do
                "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]:disabled"
              )
 
-      assert has_element?(view, ".card-body", "#{post.content.message}")
+      assert has_element?(view, ".post-content", "#{post.content.message}")
 
       view
       |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{post_id}\"]")
@@ -1369,7 +1405,7 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert length(posts) == 3
 
-      refute has_element?(view, ".card-body", "#{post.content.message}")
+      refute has_element?(view, ".post-content", "#{post.content.message}")
     end
 
     test "creating a reply",
@@ -1388,18 +1424,13 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
       view
-      |> element(
-        "button[phx-click=\"display_reply_to_post_modal\"][phx-value-parent_id=\"#{first_post.id}\"]"
-      )
-      |> render_click()
-
-      view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("form#reply_form_#{first_post.id}")
       |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
 
       assert view
@@ -1419,13 +1450,9 @@ defmodule OliWeb.CollaborationLiveTest do
       reply = Enum.find(posts, &(&1.thread_root_id == first_post.id))
       assert length(posts) == 2
 
-      assert has_element?(view, ".accordion-body", "#{reply.content.message}")
+      expand_replies(view, first_post.id)
 
-      assert has_element?(
-               view,
-               "button[phx-click=\"set_selected\"][phx-value-id=\"#{first_post.id}\"]",
-               "1"
-             )
+      assert has_element?(view, ".post-content", "#{reply.content.message}")
     end
 
     test "editing a reply",
@@ -1457,16 +1484,19 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
+      expand_replies(view, first_post.id)
+
       view
-      |> element("button[phx-click=\"display_edit_modal\"][phx-value-id=\"#{reply.id}\"]")
+      |> element("button[phx-click=\"set_editing_post\"][phx-value-post_id=\"#{reply.id}\"]")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"edit_post\"")
+      |> element("form#edit_post_form_#{reply.id}}")
       |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
 
       assert view
@@ -1484,14 +1514,8 @@ defmodule OliWeb.CollaborationLiveTest do
         )
         |> Enum.find(&(&1.id == reply.id))
 
-      refute has_element?(view, ".accordion-body", "#{reply.content.message}")
-      assert has_element?(view, ".accordion-body", "#{updated_reply.content.message}")
-
-      assert has_element?(
-               view,
-               "button[phx-click=\"set_selected\"][phx-value-id=\"#{first_post.id}\"]",
-               "1"
-             )
+      refute has_element?(view, ".post-content", "#{reply.content.message}")
+      assert has_element?(view, ".post-content", "#{updated_reply.content.message}")
     end
 
     test "deleting a reply",
@@ -1524,16 +1548,19 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
+
+      expand_replies(view, parent_post.id)
 
       assert has_element?(
                view,
                "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]:disabled"
              )
 
-      assert has_element?(view, ".accordion-body", "#{reply.content.message}")
+      assert has_element?(view, ".post-content", "#{reply.content.message}")
 
       view
       |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply_id}\"]")
@@ -1564,7 +1591,7 @@ defmodule OliWeb.CollaborationLiveTest do
                "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post.id}\"]:disabled"
              )
 
-      refute has_element?(view, ".accordion-body", "#{reply.content.message}")
+      refute has_element?(view, ".post-content", "#{reply.content.message}")
     end
 
     test "creating a reply of a reply",
@@ -1593,18 +1620,15 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      view
-      |> element(
-        "button[phx-click=\"display_reply_to_reply_modal\"][phx-value-root_id=\"#{first_post.id}\"][phx-value-parent_id=\"#{reply.id}\"]"
-      )
-      |> render_click()
+      expand_replies(view, first_post.id)
 
       view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("form#reply_form_#{reply.id}")
       |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
 
       assert view
@@ -1624,14 +1648,8 @@ defmodule OliWeb.CollaborationLiveTest do
       reply_reply = Enum.find(posts, &(&1.parent_post_id == reply.id))
       assert length(posts) == 3
 
-      assert has_element?(view, ".accordion-body", "#{reply_reply.content.message}")
-      assert has_element?(view, ".accordion-body", "Replied #1.1")
-
-      assert has_element?(
-               view,
-               "button[phx-click=\"set_selected\"][phx-value-id=\"#{first_post.id}\"]",
-               "2"
-             )
+      assert has_element?(view, ".post-content", "#{reply_reply.content.message}")
+      assert has_element?(view, ".reply-info", "Replying to #1.1")
     end
 
     test "collab space is archived",
@@ -1646,13 +1664,14 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space")
-      assert has_element?(view, "h6", "Archived")
-      assert has_element?(view, "button[phx-click=\"display_create_modal\"]:disabled")
+      assert has_element?(view, "h3", "Discussion")
+      assert has_element?(view, "span", "Archived")
+      assert has_element?(view, "form#new_post_form button[type=submit]:disabled")
       assert has_element?(view, ".readonly")
     end
 
@@ -1675,11 +1694,12 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      assert has_element?(view, "#accordion_post_#{post.id}.readonly")
+      assert has_element?(view, "#post_#{post.id}.readonly")
     end
 
     test "reply is archived",
@@ -1709,11 +1729,14 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      assert has_element?(view, "#accordion_reply_#{reply.id}.readonly")
+      expand_replies(view, first_post.id)
+
+      assert has_element?(view, "#post_reply_#{reply.id}")
     end
 
     test "collab space has auto accept false",
@@ -1734,11 +1757,7 @@ defmodule OliWeb.CollaborationLiveTest do
         )
 
       view
-      |> element("button[phx-click=\"display_create_modal\"")
-      |> render_click()
-
-      view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("#new_post_form")
       |> render_submit(%{"post" => %{content: %{message: message}}})
 
       assert view
@@ -1758,18 +1777,12 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert has_element?(
                view,
-               "#accordion_post_#{created_post.id} .badge-info",
+               "#post_#{created_post.id}_actions .badge-info",
                "Pending approval"
              )
 
       view
-      |> element(
-        "button[phx-click=\"display_reply_to_post_modal\"][phx-value-parent_id=\"#{created_post.id}\"]"
-      )
-      |> render_click()
-
-      view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("form#reply_form_#{created_post.id}")
       |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
 
       assert view
@@ -1787,7 +1800,13 @@ defmodule OliWeb.CollaborationLiveTest do
         )
         |> Enum.find(&(&1.parent_post_id == created_post.id))
 
-      assert has_element?(view, "#accordion_reply_#{reply.id} .badge-info", "Pending approval")
+      expand_replies(view, created_post.id)
+
+      assert has_element?(
+               view,
+               "#post_#{reply.id}_actions .badge-info",
+               "Pending approval"
+             )
     end
 
     test "collab space is no threaded",
@@ -1818,21 +1837,22 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space")
+      assert has_element?(view, "h3", "Discussion")
       assert has_element?(view, ".post-index", "#2")
-      assert has_element?(view, ".card-body", "#{first_post.content.message}")
-      assert has_element?(view, ".card-body", "#{reply.content.message}")
+      assert has_element?(view, ".post-content", "#{first_post.content.message}")
+      assert has_element?(view, ".post-content", "#{reply.content.message}")
 
       refute has_element?(
                view,
-               "button[phx-click=\"display_reply_to_post_modal\"][phx-value-parent_id=\"#{first_post.id}\"]"
+               "button[phx-click=\"set_selected\"][phx-value-id=\"#{first_post.id}\"]"
              )
 
-      refute has_element?(view, "#accordion_reply#{reply.id}")
+      refute has_element?(view, "#post_#{reply.id}_replies")
     end
 
     test "collab space does not show full history",
@@ -1868,19 +1888,16 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space")
-      refute has_element?(view, ".card-body", "#{post.content.message}")
+      assert has_element?(view, "h3", "Discussion")
+      refute has_element?(view, ".post-content", "#{post.content.message}")
 
       view
-      |> element("button[phx-click=\"display_create_modal\"")
-      |> render_click()
-
-      view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("#new_post_form")
       |> render_submit(%{"post" => %{content: %{message: message}}})
 
       assert view
@@ -1898,7 +1915,60 @@ defmodule OliWeb.CollaborationLiveTest do
         )
         |> Enum.find(&(&1.content.message == message))
 
-      assert has_element?(view, ".card-body", "#{created_post.content.message}")
+      assert has_element?(view, ".post-content", "#{created_post.content.message}")
+    end
+
+    test "collab space does not allow anonymous posting when that config is set to false",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_revision_cs: page_revision_cs
+         } do
+      collab_space_config =
+        build(:collab_space_config, status: :enabled, anonymous_posting: false)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
+          }
+        )
+
+      assert has_element?(view, "button", "Create Post")
+      refute has_element?(view, "button", "Post anonymously")
+    end
+
+    test "collab space allows anonymous posting when that config is set to true",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_revision_cs: page_revision_cs
+         } do
+      collab_space_config = build(:collab_space_config, status: :enabled, anonymous_posting: true)
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          CollabSpaceView,
+          session: %{
+            "current_user_id" => user.id,
+            "collab_space_config" => collab_space_config,
+            "section_slug" => section.slug,
+            "page_slug" => page_revision_cs.slug,
+            "is_student" => true
+          }
+        )
+
+      assert has_element?(view, "button", "Create Post")
+      assert has_element?(view, "button", "Post anonymously")
     end
   end
 
@@ -1928,11 +1998,7 @@ defmodule OliWeb.CollaborationLiveTest do
         )
 
       view
-      |> element("button[phx-click=\"display_create_modal\"")
-      |> render_click()
-
-      view
-      |> element("form[phx-submit=\"create_post\"")
+      |> element("#new_post_form")
       |> render_submit(%{"post" => %{content: %{message: message}}})
 
       assert view
@@ -1951,7 +2017,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert length(posts) == 3
 
       assert has_element?(view, ".post-index", "#3")
-      assert has_element?(view, ".card-body", "#{message}")
+      assert has_element?(view, ".post-content", "#{message}")
     end
 
     test "deleting a post",
@@ -1994,6 +2060,8 @@ defmodule OliWeb.CollaborationLiveTest do
                "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post_id}\"]"
              )
 
+      expand_replies(view, parent_post_id)
+
       assert has_element?(
                view,
                "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{reply.id}\"]"
@@ -2004,13 +2072,8 @@ defmodule OliWeb.CollaborationLiveTest do
                "button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{first_post.id}\"]"
              )
 
-      view
-      |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{parent_post_id}\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"delete_posts\"")
-      |> render_click()
+      display_delete_modal(view, parent_post_id)
+      confirm_delete(view)
 
       assert view
              |> element("div.alert.alert-info")
@@ -2066,28 +2129,21 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert has_element?(
                view,
-               "#accordion_post_#{second_post.id} .badge-info",
+               "#post_#{second_post.id}_actions .badge-info",
                "Pending approval"
              )
 
-      view
-      |> element("button[phx-click=\"display_accept_modal\"][phx-value-id=\"#{second_post.id}\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"accept_post\"")
-      |> render_click()
+      display_accept_modal(view, second_post.id)
+      confirm_accept(view)
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully edited"
 
-      assert has_element?(view, "#accordion_post_#{second_post.id}")
-
       refute has_element?(
                view,
-               "#accordion_post_#{second_post.id} .badge-info",
+               "#post_#{second_post.id}_actions .badge-info",
                "Pending approval"
              )
     end
@@ -2126,20 +2182,17 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert has_element?(
                view,
-               "#accordion_post_#{second_post.id} .badge-info",
+               "#post_#{second_post.id}_actions .badge-info",
                "Pending approval"
              )
 
-      assert has_element?(view, "#accordion_reply_#{post.id}")
-      assert has_element?(view, "#accordion_post_#{first_post.id}")
+      expand_replies(view, second_post.id)
 
-      view
-      |> element("button[phx-click=\"display_reject_modal\"][phx-value-id=\"#{second_post.id}\"]")
-      |> render_click()
+      assert has_element?(view, "#post_reply_#{post.id}")
+      assert has_element?(view, "#post_#{first_post.id}")
 
-      view
-      |> element("button[phx-click=\"reject_post\"")
-      |> render_click()
+      display_reject_modal(view, second_post.id)
+      confirm_reject(view)
 
       assert view
              |> element("div.alert.alert-info")
@@ -2154,9 +2207,9 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert length(posts) == 1
 
-      refute has_element?(view, "#accordion_post_#{second_post.id}")
-      refute has_element?(view, "#accordion_reply_#{post.id}")
-      assert has_element?(view, "#accordion_post_#{first_post.id}")
+      refute has_element?(view, "#post_#{second_post.id}")
+      refute has_element?(view, "#post_reply#{post.id}")
+      assert has_element?(view, "#post_#{first_post.id}")
     end
 
     test "archive post",
@@ -2190,39 +2243,31 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      refute has_element?(view, "#accordion_post_#{first_post.id}.accordion-item.readonly")
-      refute has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+      expand_replies(view, first_post.id)
 
-      view
-      |> element("button[phx-click=\"display_archive_modal\"][phx-value-id=\"#{reply.id}\"]")
-      |> render_click()
+      refute has_element?(view, "#post_#{first_post.id}.readonly")
+      refute has_element?(view, "#post_reply_#{reply.id}.readonly")
 
-      view
-      |> element("button[phx-click=\"archive_post\"")
-      |> render_click()
+      display_archive_modal(view, reply.id)
+      confirm_archive(view)
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully edited"
 
-      refute has_element?(view, "#accordion_post_#{first_post.id}.accordion-item.readonly")
-      assert has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+      refute has_element?(view, "#post_#{first_post.id}.readonly")
+      assert has_element?(view, "#post_reply_#{reply.id}.readonly")
 
-      view
-      |> element("button[phx-click=\"display_archive_modal\"][phx-value-id=\"#{first_post.id}\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"archive_post\"")
-      |> render_click()
+      display_archive_modal(view, first_post.id)
+      confirm_archive(view)
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully edited"
 
-      assert has_element?(view, "#accordion_post_#{first_post.id}.accordion-item.readonly")
+      assert has_element?(view, "#post_#{first_post.id}.readonly")
     end
 
     test "unarchive post",
@@ -2264,39 +2309,97 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "#accordion_post_#{post.id}.accordion-item.readonly")
-      assert has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+      expand_replies(view, post.id)
 
-      view
-      |> element("button[phx-click=\"display_unarchive_modal\"][phx-value-id=\"#{reply.id}\"]")
-      |> render_click()
+      assert has_element?(view, "#post_#{post.id}.readonly")
+      assert has_element?(view, "#post_reply_#{reply.id}.readonly")
 
-      view
-      |> element("button[phx-click=\"unarchive_post\"")
-      |> render_click()
+      display_unarchive_modal(view, reply.id)
+      confirm_unarchive(view)
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully edited"
 
-      assert has_element?(view, "#accordion_post_#{post.id}.accordion-item.readonly")
-      refute has_element?(view, "#accordion_reply_#{reply.id}.reply.readonly")
+      assert has_element?(view, "#post_#{post.id}.readonly")
+      refute has_element?(view, "#post_reply_#{reply.id}.readonly")
 
-      view
-      |> element("button[phx-click=\"display_unarchive_modal\"][phx-value-id=\"#{post.id}\"]")
-      |> render_click()
-
-      view
-      |> element("button[phx-click=\"unarchive_post\"")
-      |> render_click()
+      display_unarchive_modal(view, post.id)
+      confirm_unarchive(view)
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
                "Post successfully edited"
 
-      refute has_element?(view, "#accordion_post_#{post.id}.accordion-item.readonly")
+      refute has_element?(view, "#post_#{post.id}.readonly")
     end
+  end
+
+  defp expand_replies(view, post_id) do
+    view
+    |> element("button[phx-click=\"set_selected\"][phx-value-id=\"#{post_id}\"]")
+    |> render_click()
+  end
+
+  defp display_delete_modal(view, post_id) do
+    view
+    |> element("button[phx-click=\"display_delete_modal\"][phx-value-id=\"#{post_id}\"]")
+    |> render_click()
+  end
+
+  defp confirm_delete(view) do
+    view
+    |> element("button[phx-click=\"delete_posts\"")
+    |> render_click()
+  end
+
+  defp display_accept_modal(view, post_id) do
+    view
+    |> element("button[phx-click=\"display_accept_modal\"][phx-value-id=\"#{post_id}\"]")
+    |> render_click()
+  end
+
+  defp confirm_accept(view) do
+    view
+    |> element("button[phx-click=\"accept_post\"")
+    |> render_click()
+  end
+
+  defp display_reject_modal(view, post_id) do
+    view
+    |> element("button[phx-click=\"display_reject_modal\"][phx-value-id=\"#{post_id}\"]")
+    |> render_click()
+  end
+
+  defp confirm_reject(view) do
+    view
+    |> element("button[phx-click=\"reject_post\"")
+    |> render_click()
+  end
+
+  defp display_archive_modal(view, post_id) do
+    view
+    |> element("button[phx-click=\"display_archive_modal\"][phx-value-id=\"#{post_id}\"]")
+    |> render_click()
+  end
+
+  defp confirm_archive(view) do
+    view
+    |> element("button[phx-click=\"archive_post\"")
+    |> render_click()
+  end
+
+  defp display_unarchive_modal(view, post_id) do
+    view
+    |> element("button[phx-click=\"display_unarchive_modal\"][phx-value-id=\"#{post_id}\"]")
+    |> render_click()
+  end
+
+  defp confirm_unarchive(view) do
+    view
+    |> element("button[phx-click=\"unarchive_post\"")
+    |> render_click()
   end
 end

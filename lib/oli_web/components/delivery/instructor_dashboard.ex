@@ -143,16 +143,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             <li class="nav-item" role="presentation">
               <a href={href}
                 class={"
-                  nav-link
                   block
-                  border-x-0 border-t-0 border-b-2 border-transparent
-                  px-6
+                  border-x-0 border-t-0 border-b-2
+                  px-1
                   py-3
-                  my-2
-                  hover:border-transparent hover:bg-gray-100
-                  focus:border-transparent
-                  normal-case
-                  #{active && "active font-bold"}
+                  m-2
+                  text-body-color
+                  bg-transparent
+                  hover:no-underline
+                  hover:text-body-color
+                  hover:border-delivery-primary-200
+                  focus:border-delivery-primary-200
+                  #{if active, do: "border-delivery-primary", else: "border-transparent"}
                 "}>
                   <%= label %>
                   <%= if badge do %>
@@ -265,7 +267,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def action_card(assigns) do
     ~H"""
-      <div class="flex flex-col bg-white shadow p-4 mr-4 max-w-[300px] shrink-0">
+      <div class="flex flex-col bg-white dark:bg-gray-800 shadow p-4 mr-4 max-w-[300px] shrink-0">
         <div class="flex my-2">
           <span class={"rounded-full py-1 px-6 #{badge_bg_color(@action.type)} text-white"}>
             <%= badge_title(@action.type) %>

@@ -11,7 +11,7 @@ module.exports = {
       info: '#3498db',
       selection: '#2c67c4',
       hover: colors.blue['600'],
-      light: colors.blue['700'],
+      light: colors.gray['300'],
       body: {
         DEFAULT: colors.white,
         50: '#f9f9f9',
@@ -131,6 +131,9 @@ module.exports = {
     },
     fontFamily: {
       sans: ['Open Sans', 'sans-serif'],
+    },
+    fontSize: {
+      xs: '0.8rem',
     },
     forms: {
       borderRadius: 4,

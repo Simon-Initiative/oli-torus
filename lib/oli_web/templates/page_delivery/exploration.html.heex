@@ -3,7 +3,9 @@
   <div class="relative flex-1 flex flex-col pb-[60px]">
     <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
 
-    <Components.Delivery.ExplorationShade.exploration_shade />
+    <%= if assigns.section.contains_explorations do%>
+      <Components.Delivery.ExplorationShade.exploration_shade />
+    <% end %>
 
     <div class="container mx-auto px-10 mt-3 mb-5 flex flex-col">
       <%= live_render @conn, Components.Delivery.ExplorationList, session: %{ "section_slug" => @section_slug } %>
