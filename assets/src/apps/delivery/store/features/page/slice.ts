@@ -119,14 +119,7 @@ export const selectPageContent = createSelector(selectState, (state) => state.co
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
-export const selectScreenIdleTimeOutInSeconds = createSelector(
-  selectState,
-  (state) => state.screenIdleTimeOutInSeconds,
-);
-export const selectScreenIdleExpirationTime = createSelector(
-  selectState,
-  (state) => state.screenIdleExpireTime,
-);
+
 export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectScreenIdleTimeOutInSeconds = createSelector(
   selectState,
