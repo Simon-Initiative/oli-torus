@@ -72,7 +72,7 @@ export const missingDestination = (path: DestinationPath): path is DestinationPa
   !path.destinationScreenId;
 
 const destinationPathToEdge = (activity: IActivity) => (path: DestinationPath) => ({
-  id: String(path.id),
+  id: `${activity.id}-${path.id}`,
   source: String(activity.id),
   target: String(path.destinationScreenId),
   type: 'floating',
