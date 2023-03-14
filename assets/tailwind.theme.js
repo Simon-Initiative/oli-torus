@@ -91,17 +91,8 @@ module.exports = {
           },
         },
         primary: {
-          DEFAULT: '#5B1EEA',
-          50: '#eee8fd',
-          100: '#ccb9f8',
-          200: '#aa8af4',
-          300: '#885cf0',
-          400: '#662deb',
-          500: '#5B1EEA',
-          600: '#4d14d2',
-          700: '#3c0fa3',
-          800: '#2b0b75',
-          900: '#1a0746',
+          DEFAULT: colors.blue['500'],
+          ...colors.blue,
         },
         hints: {
           bg: {

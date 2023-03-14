@@ -20,6 +20,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
   alias Oli.Resources.{Collaboration, PageContent, Revision}
+  alias Oli.Delivery.Metrics
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -40,7 +41,7 @@ defmodule OliWeb.PageDeliveryController do
               to:
                 Routes.live_path(
                   OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.ContentLive,
+                  OliWeb.Delivery.InstructorDashboard.ManageLive,
                   section_slug
                 )
             )
@@ -53,7 +54,8 @@ defmodule OliWeb.PageDeliveryController do
               display_curriculum_item_numbering: section.display_curriculum_item_numbering,
               preview_mode: false,
               page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-              container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+              container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+              progress: learner_progress(section.id, user.id)
             )
           end
       end
@@ -66,6 +68,22 @@ defmodule OliWeb.PageDeliveryController do
         _ ->
           render(conn, "not_authorized.html")
       end
+    end
+  end
+
+  defp learner_progress(section_id, user_id) do
+    case Metrics.progress_for(section_id, user_id) do
+      progress when is_float(progress) ->
+        (progress * 100)
+        |> round()
+        # if there is any progress at all, we want to represent that by at least showing 1% min
+        |> max(1)
+        # ensure we never show progress above 100%
+        |> min(100)
+
+      _ ->
+        # if there is no progress (nil) then return 0%
+        0
     end
   end
 
@@ -429,16 +447,20 @@ defmodule OliWeb.PageDeliveryController do
         Map.put(acc, survey_id, survey_state)
       end)
 
-    base_project_slug = case section.has_experiments do
-      true ->
-        Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
-        _ -> nil
-    end
+    base_project_slug =
+      case section.has_experiments do
+        true ->
+          Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
 
-    enrollment = case section.has_experiments do
-      true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
-      _ -> nil
-    end
+        _ ->
+          nil
+      end
+
+    enrollment =
+      case section.has_experiments do
+        true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
+        _ -> nil
+      end
 
     render_context = %Context{
       # Allow admin authors to review student work

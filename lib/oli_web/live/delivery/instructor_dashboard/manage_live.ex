@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.StudentsLive do
+defmodule OliWeb.Delivery.InstructorDashboard.ManageLive do
   use OliWeb, :live_view
 
   alias OliWeb.Components.Delivery.InstructorDashboard
@@ -12,7 +12,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsLive do
   def render(assigns) do
     ~H"""
       <InstructorDashboard.main_layout {assigns}>
-        <InstructorDashboard.students {assigns} />
+        <InstructorDashboard.manage {assigns} />
       </InstructorDashboard.main_layout>
     """
   end

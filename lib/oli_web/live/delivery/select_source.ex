@@ -134,7 +134,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
   def render(assigns) do
     ~F"""
-      <div class="d-flex flex-column mt-4">
+      <div class="d-flex flex-column mt-4 mx-4">
         <FilterBox table_model={@table_model} show_sort={is_cards_view?(@live_action, @view_type)} show_more_opts={is_instructor?(@live_action)}>
           <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
 
