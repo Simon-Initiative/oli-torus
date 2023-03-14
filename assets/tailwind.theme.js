@@ -1,4 +1,11 @@
 /* eslint-disable */
+
+/**
+ * Extend the default tailwind color palette by overriding specific colors.
+ *
+ * More colors can be added or overridden. Useful utility for generating a
+ * palette of shades for a specific color: https://www.tailwindshades.com/
+ */
 const colors = {
   ...require('tailwindcss/colors'),
   blue: {
