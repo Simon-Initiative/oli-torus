@@ -174,9 +174,6 @@ defmodule OliWeb.Attempt.AttemptLive do
         left_join: ra in ResourceAttempt,
         on:
           aa.resource_attempt_id == ra.id,
-        left_join: pa in PartAttempt,
-        on:
-          aa.id == pa.activity_attempt_id,
         left_join: r in Oli.Resources.Revision,
           on:
             aa.revision_id == r.id,
