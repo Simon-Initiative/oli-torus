@@ -20,15 +20,16 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
     """
   end
 
-  attr :read_by, Date, default: nil
+  attr :scheduling_type, :atom, values: [:read_by, :inclass_activity]
+  attr :end_date, Date, default: nil
   attr :est_reading_time, Timex.Duration, default: nil
 
   def details(assigns) do
     ~H"""
       <div class="flex flex-row my-2">
-        <%= if @read_by do %>
+        <%= if @end_date do %>
           <div class="py-1.5 px-4 bg-gray-100 text-gray-700 rounded">
-            Read by <%= format_date(@read_by) %>
+            <%= scheduling_type_label(@scheduling_type) %> <%= format_date(@end_date) %>
           </div>
         <% end %>
         <%= if @est_reading_time do %>
@@ -39,6 +40,9 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
       </div>
     """
   end
+
+  defp scheduling_type_label(:read_by), do: "Read by"
+  defp scheduling_type_label(:inclass_activity), do: "In-class activity"
 
   attr(:objectives, :list, required: true)
 
