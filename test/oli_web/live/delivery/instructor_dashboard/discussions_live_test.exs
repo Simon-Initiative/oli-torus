@@ -212,8 +212,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_discussions_route(section.slug))
 
-      open_browser(view)
-
       assert has_element?(view, "option[value='all'][selected]")
       assert has_element?(view, "div", "Showing all results (5 total)")
       assert get_elements_in_table_count(view) == 5
@@ -244,8 +242,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLiveTest do
       {:ok, view, _html} = live(conn, live_view_discussions_route(section.slug))
 
       view |> element("form[phx-change='filter']") |> render_change(%{filter: "need_response"})
-
-      open_browser(view)
 
       assert get_elements_in_table_count(view) == 3
       refute view |> has_element?("p", "Page 1 - answered post")
