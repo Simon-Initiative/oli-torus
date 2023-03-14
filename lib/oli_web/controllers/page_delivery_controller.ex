@@ -538,7 +538,11 @@ defmodule OliWeb.PageDeliveryController do
         },
         collab_space_config: context.collab_space_config,
         is_instructor: context.is_instructor,
-        is_student: context.is_student
+        is_student: context.is_student,
+        scheduling_type: section_resource.scheduling_type,
+        end_date: section_resource.end_date,
+        # TODO: implement reading time estimation
+        est_reading_time: nil
       }
     )
   end

@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Delivery.PageDelivery do
   use Phoenix.Component
 
+  import OliWeb.Components.Delivery.Utils
+
   attr(:title, :string, required: true)
   attr(:page_number, :integer, required: true)
   attr(:review_mode, :boolean, required: true)
@@ -18,18 +20,29 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
     """
   end
 
+  attr :scheduling_type, :atom, values: [:read_by, :inclass_activity]
+  attr :end_date, Date, default: nil
+  attr :est_reading_time, Timex.Duration, default: nil
+
   def details(assigns) do
     ~H"""
       <div class="flex flex-row my-2">
-        <div class="py-1.5 px-4 bg-gray-100 text-gray-700 rounded">
-          Read by 10-03-2022
-        </div>
-        <div class="py-1.5 px-4 bg-gray-100 text-gray-700 rounded ml-1">
-          Estimated reading time: 5 mins
-        </div>
+        <%= if @end_date do %>
+          <div class="py-1.5 px-4 bg-gray-100 text-gray-700 rounded">
+            <%= scheduling_type_label(@scheduling_type) %> <%= format_date(@end_date) %>
+          </div>
+        <% end %>
+        <%= if @est_reading_time do %>
+          <div class="py-1.5 px-4 bg-gray-100 text-gray-700 rounded ml-1">
+            Estimated reading time: <%= format_duration(@est_reading_time) %>
+          </div>
+        <% end %>
       </div>
     """
   end
+
+  defp scheduling_type_label(:read_by), do: "Read by"
+  defp scheduling_type_label(:inclass_activity), do: "In-class activity"
 
   attr(:objectives, :list, required: true)
 

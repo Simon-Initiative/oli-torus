@@ -20,7 +20,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
               badge_bg_color="bg-green-700"
               title="3.3 Molarity"
               percent_complete={20}
-              complete_by_date={Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1)}
+              complete_by_date={format_date(~D[2020-10-03])}
               open_href="#"
               percent_students_completed={80}
               />
@@ -30,7 +30,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
               badge_bg_color="bg-fuchsia-800"
               title="Unit 3.1: Understanding Chem 101"
               percent_complete={0}
-              complete_by_date={Oli.Cldr.Date.to_string(~D[2020-10-03]) |> elem(1)}
+              complete_by_date={format_date(~D[2020-10-03])}
               open_href="#"
               request_extension_href="#"
               percent_students_completed={80}
