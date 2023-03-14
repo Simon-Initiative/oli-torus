@@ -4,7 +4,7 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
-  alias OliWeb.Common.{Breadcrumb, PagedTable}
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.SortableTable.Table
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Router.Helpers, as: Routes
@@ -126,7 +126,7 @@ defmodule OliWeb.Attempt.AttemptLive do
   end
 
 
-  def handle_event("select", %{"id" => id} = p, socket) do
+  def handle_event("select", %{"id" => id} = _p, socket) do
     {id, _} = Integer.parse(id)
 
     attempt = Core.get_activity_attempt_by(id: id)
