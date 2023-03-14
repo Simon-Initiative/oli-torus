@@ -6,6 +6,7 @@ import {
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
+import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { createEndOfActivityPath } from '../paths/path-factories';
 
@@ -15,7 +16,7 @@ interface DeletePathPayload {
 }
 
 export const deletePath = createAsyncThunk(
-  `${ActivitiesSlice}/deletePath`,
+  `${FlowchartSlice}/deletePath`,
   async (payload: DeletePathPayload, { dispatch, getState }) => {
     const { pathId, screenId } = payload;
     const rootState = getState() as AuthoringRootState;

@@ -1,6 +1,10 @@
 import React, { useCallback, useRef } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectCurrentActivity } from '../delivery/store/features/activities/slice';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
+import { applyTemplate } from './components/Flowchart/flowchart-actions/apply-template';
+import { Template } from './components/Flowchart/template-types';
+import { TemplatePicker } from './components/Flowchart/TemplatePicker';
 import HeaderNav from './components/HeaderNav';
 import RightMenu from './components/RightMenu/RightMenu';
 
@@ -30,6 +34,16 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
   const onFlowchartMode = useCallback(() => {
     dispatch(changeEditMode({ mode: 'flowchart' }));
   }, [dispatch]);
+  const activity = useSelector(selectCurrentActivity);
+
+  const requiresTemplateSelection = !activity?.authoring?.flowchart?.templateApplied;
+  const onApplyTemplate = useCallback(
+    (template: Template) => {
+      if (!activity || !template) return;
+      dispatch(applyTemplate({ screenId: activity.id, template }));
+    },
+    [activity, dispatch],
+  );
 
   return (
     <div
@@ -58,6 +72,12 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
         onToggle={() => handlePanelStateChange({ right: !panelState.right })}
       >
         <RightMenu />
+        {requiresTemplateSelection && (
+          <TemplatePicker
+            screenType={activity?.authoring?.flowchart?.screenType}
+            onPick={onApplyTemplate}
+          />
+        )}
       </SidePanel>
     </div>
   );

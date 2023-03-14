@@ -109,7 +109,7 @@ export const getScreenQuestionType = (screen: IActivity): QuestionType => {
 };
 
 export const getScreenPrimaryQuestion = (screen: IActivity): IPartLayout | undefined => {
-  return screen.content?.partsLayout.find(
+  return screen.content?.partsLayout?.find(
     (part) => availableQuestionTypes.indexOf(part.type) !== -1,
   );
 };

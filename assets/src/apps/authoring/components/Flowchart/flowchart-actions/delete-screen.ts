@@ -12,6 +12,7 @@ import { selectSequence } from '../../../../delivery/store/features/groups/selec
 import { selectCurrentGroup, upsertGroup } from '../../../../delivery/store/features/groups/slice';
 
 import { bulkSaveActivity } from '../../../store/activities/actions/saveActivity';
+import { FlowchartSlice } from '../../../store/flowchart/name';
 import { savePage } from '../../../store/page/actions/savePage';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { selectPathsToScreen } from '../flowchart-selectors';
@@ -28,7 +29,7 @@ interface DeleteFlowchartScreenPayload {
 }
 
 export const deleteFlowchartScreen = createAsyncThunk(
-  `${ActivitiesSlice}/addFlowchartScreen`,
+  `${FlowchartSlice}/addFlowchartScreen`,
   async (payload: DeleteFlowchartScreenPayload, { dispatch, getState }) => {
     const { screenId } = payload;
     const rootState = getState() as AuthoringRootState;

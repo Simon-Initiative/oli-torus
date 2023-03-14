@@ -22,6 +22,7 @@ import {
   selectAppMode,
   ActivityRegistration,
 } from '../../../store/app/slice';
+import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { savePage } from '../../../store/page/actions/savePage';
@@ -51,7 +52,7 @@ interface AddFlowchartScreenPayload {
  *      - No layers / parent screens
  */
 export const addFlowchartScreen = createAsyncThunk(
-  `${ActivitiesSlice}/addFlowchartScreen`,
+  `${FlowchartSlice}/addFlowchartScreen`,
   async (payload: AddFlowchartScreenPayload, { dispatch, getState }) => {
     try {
       const rootState = getState() as AuthoringRootState;
@@ -81,6 +82,7 @@ export const addFlowchartScreen = createAsyncThunk(
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
         screenType,
+        templateApplied: false,
       };
       activity.model.authoring.flowchart = flowchartData;
 

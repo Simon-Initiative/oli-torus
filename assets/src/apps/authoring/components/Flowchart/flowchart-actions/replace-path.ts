@@ -7,6 +7,7 @@ import {
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
+import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { AllPaths } from '../paths/path-types';
 import { isDestinationPath } from '../paths/path-utils';
@@ -20,7 +21,7 @@ interface ReplacePathPayload {
 }
 
 export const replacePath = createAsyncThunk(
-  `${ActivitiesSlice}/replacePath`,
+  `${FlowchartSlice}/replacePath`,
   async (payload: ReplacePathPayload, { dispatch, getState }) => {
     const { oldPathId, newPath, screenId } = payload;
 

@@ -3,6 +3,7 @@ import { ScreenTypes } from '../screens/screen-factories';
 export interface AuthoringFlowchartScreenData {
   screenType: ScreenTypes;
   paths: AllPaths[];
+  templateApplied: boolean;
 }
 
 interface BasePath {

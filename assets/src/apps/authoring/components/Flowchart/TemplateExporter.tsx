@@ -3,12 +3,13 @@ import { Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { IActivity, selectAllActivities } from '../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import { Template } from './template-types';
 
 interface Props {
   onToggleExport: () => void;
 }
 
-const exportActivity = (id: number, seq: any[], activities: IActivity[]) => {
+const exportActivity = (id: number, seq: any[], activities: IActivity[]): Template => {
   const sequence = seq.find((s) => s.resourceId === id);
   const { resourceId, custom } = sequence;
   const { layerRef } = custom;
@@ -19,9 +20,13 @@ const exportActivity = (id: number, seq: any[], activities: IActivity[]) => {
     name: activity?.title || 'Untitled',
     templateType: parentSequence.custom.sequenceName,
     parts: activity?.authoring?.parts || [],
-    partLayouts: activity?.content?.partsLayout || [],
+    partsLayout: activity?.content?.partsLayout || [],
   };
 };
+
+const preamble = `import { Template } from './template-types';
+
+export const templates: Template[] =`;
 
 export const TemplateExporter: React.FC<Props> = ({ onToggleExport }) => {
   const seq = useSelector(selectSequence);
@@ -32,7 +37,7 @@ export const TemplateExporter: React.FC<Props> = ({ onToggleExport }) => {
     .map((s) => exportActivity(s.resourceId, seq, activities));
 
   const onCopy = () => {
-    navigator.clipboard.writeText(JSON.stringify(exp, null, 2));
+    navigator.clipboard.writeText(preamble + JSON.stringify(exp, null, 2));
   };
 
   return (

@@ -5,14 +5,13 @@ import { replacePath } from '../../components/Flowchart/flowchart-actions/replac
 import { AllPaths } from '../../components/Flowchart/paths/path-types';
 import { deletePath } from '../../components/Flowchart/flowchart-actions/delete-path';
 import { AuthoringRootState } from '../rootReducer';
+import { FlowchartSlice } from './name';
 
 interface FlowchartState {
   autoOpenPath: string | null; // A rule ID specified here will automatically be open in the UI, useful for when adding a new rule.
 }
 
 const initialState = { autoOpenPath: null } as FlowchartState;
-
-export const FlowchartSlice = 'flowchart';
 
 const flowchartSlice = createSlice({
   name: 'flowchart',
