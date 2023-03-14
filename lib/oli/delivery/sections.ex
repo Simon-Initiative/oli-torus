@@ -1360,20 +1360,20 @@ defmodule Oli.Delivery.Sections do
   # container map.
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
     case Enum.map(sr.children, fn sr_id ->
-      sr = Map.get(all, sr_id)
+           sr = Map.get(all, sr_id)
 
-      case MapSet.member?(container_ids, sr.resource_id) do
-        true ->
-          rebuild_contained_pages_helper(
-            sr,
-            {[sr.resource_id | ancestors], page_map, all, container_ids}
-          )
-          |> Map.merge(page_map)
+           case MapSet.member?(container_ids, sr.resource_id) do
+             true ->
+               rebuild_contained_pages_helper(
+                 sr,
+                 {[sr.resource_id | ancestors], page_map, all, container_ids}
+               )
+               |> Map.merge(page_map)
 
-        false ->
-          Map.put(page_map, sr.resource_id, ancestors)
-      end
-    end) do
+             false ->
+               Map.put(page_map, sr.resource_id, ancestors)
+           end
+         end) do
       [] -> %{}
       other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
     end
@@ -1457,7 +1457,8 @@ defmodule Oli.Delivery.Sections do
 
     # For a section based on this project, update the has_experiments in the section to match that
     # setting in the project.
-    if section.base_project_id == project_id and project.has_experiments != section.has_experiments do
+    if section.base_project_id == project_id and
+         project.has_experiments != section.has_experiments do
       Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
     end
 

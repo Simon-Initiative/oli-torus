@@ -88,8 +88,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           section_slug
         )
 
-      :other ->
-        Routes.other_path(
+      :manage ->
+        Routes.manage_path(
           OliWeb.Endpoint,
           :preview,
           section_slug
@@ -134,10 +134,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           section_slug
         )
 
-      :other ->
+      :manage ->
         Routes.live_path(
           OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.OtherLive,
+          OliWeb.Delivery.InstructorDashboard.ManageLive,
           section_slug
         )
     end
@@ -145,7 +145,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   attr :active_tab, :atom,
     required: true,
-    values: [:learning_objectives, :students, :content, :discussions, :assignments, :other]
+    values: [:learning_objectives, :students, :content, :discussions, :assignments, :manage]
 
   attr :section_slug, :string, required: true
   attr :preview_mode, :boolean, required: true
@@ -162,7 +162,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             {"Modules", path_for(:content, @section_slug, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
             {"Discussion Activity", path_for(:discussions, @section_slug, @preview_mode), nil, is_active_tab?(:discussions, @active_tab)},
             {"Assignments", path_for(:assignments, @section_slug, @preview_mode), nil, is_active_tab?(:assignments, @active_tab)},
-            {"Other", path_for(:other, @section_slug, @preview_mode), nil, is_active_tab?(:other, @active_tab)},
+            {"Manage", path_for(:manage, @section_slug, @preview_mode), nil, is_active_tab?(:manage, @active_tab)},
           ] do %>
             <li class="nav-item" role="presentation">
               <.link navigate={href}
@@ -373,9 +373,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  def other(assigns) do
+  def manage(assigns) do
     ~H"""
-      <.tabs active_tab={:other} section_slug={@section_slug} preview_mode={@preview_mode} />
+      <.tabs active_tab={:manage} section_slug={@section_slug} preview_mode={@preview_mode} />
       <div class="container mx-auto mt-3 mb-5">
         <div class="bg-white dark:bg-gray-800 p-8 shadow">
           <%= live_render(@socket, OliWeb.Sections.OverviewView, id: "overview", session: %{"section_slug" => @section_slug}) %>

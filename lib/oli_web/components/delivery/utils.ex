@@ -102,7 +102,7 @@ defmodule OliWeb.Components.Delivery.Utils do
         "Independent"
 
       :administrator ->
-        "LMS Administrator"
+        "Administrator"
 
       :instructor ->
         "Instructor"
@@ -306,4 +306,9 @@ defmodule OliWeb.Components.Delivery.Utils do
       </div>
     """
   end
+
+  def format_date(date), do: Oli.Cldr.Date.to_string(date) |> elem(1)
+
+  def format_duration(%Timex.Duration{} = duration),
+    do: Timex.format_duration(duration, :humanized)
 end
