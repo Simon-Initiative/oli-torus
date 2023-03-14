@@ -60,7 +60,7 @@ defmodule OliWeb.Attempt.TableModel do
     if row.updated do
       ~F"""
       <div style="background-color: black; color: white;">UPDATED</div>
-       """
+      """
     else
       ~F"""
       <div></div>
@@ -76,14 +76,14 @@ defmodule OliWeb.Attempt.TableModel do
         <strong>{row.attempt_guid}</strong>
 
       </div>
-       """
+      """
     else
       ~F"""
       <div>
         <span style="color: blue; cursor: pointer;""><u>{row.attempt_guid}</u></span>
 
       </div>
-       """
+      """
     end
   end
 
