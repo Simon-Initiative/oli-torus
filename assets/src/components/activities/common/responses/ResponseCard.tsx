@@ -3,7 +3,7 @@ import React from 'react';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { Response } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Descendant } from 'slate';
 
 interface Props {

@@ -137,7 +137,7 @@ defmodule Oli.Interop.Ingest do
                container_map,
                as_author
              ),
-           {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project) do
+           {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project, page_map) do
         project
       else
         {:error, error} -> Repo.rollback(error)
@@ -334,7 +334,7 @@ defmodule Oli.Interop.Ingest do
             true -> nil
             _ -> labels
           end
-          
+
         Oli.Authoring.Course.create_project(title, as_author, %{
           description: Map.get(project_details, "description"),
           legacy_svn_root: Map.get(project_details, "svnRoot"),

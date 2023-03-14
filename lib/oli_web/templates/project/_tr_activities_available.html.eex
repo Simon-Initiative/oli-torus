@@ -1,14 +1,14 @@
-<tr>
-  <td><%= "#{@activity_enabled.title}"%></td>
-  <td class="user-actions text-center">
+<div class="flex flex-row py-3 border-b last:border-b-0">
+  <div class="flex-1"><%= "#{@activity_enabled.title}"%></div>
+  <div class="user-actions">
     <%= if @activity_enabled.global do %>
       <%= "---"%>
     <% else %>
       <%= if @activity_enabled.enabled do %>
-        <%= link "Remove", to: Routes.project_activity_path(@conn, :disable_activity, @project, @activity_enabled.slug), method: :put, class: "btn btn-link text-danger" %>
+        <%= link "Disable", to: Routes.project_activity_path(@conn, :disable_activity, @project, @activity_enabled.slug), method: :put, class: "btn btn-link text-danger" %>
       <% else %>
-        <%= link "Add", to: Routes.project_activity_path(@conn, :enable_activity, @project, @activity_enabled.slug), method: :put, class: "btn btn-link" %>
+        <%= link "Enable", to: Routes.project_activity_path(@conn, :enable_activity, @project, @activity_enabled.slug), method: :put, class: "btn btn-link" %>
       <% end %>
     <% end %>
-  </td>
-</tr>
+  </div>
+</div>

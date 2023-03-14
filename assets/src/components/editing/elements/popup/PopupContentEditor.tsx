@@ -59,14 +59,12 @@ export const PopupContentEditor = (props: Props) => {
     </div>
   );
 
-  // onCancel={props.onCancel}
-  //     onOk={() => props.onDone({ content, trigger, ...audioParams })}
   return (
-    <div className="row popup__content_editor" contentEditable={false}>
-      <h2>Popup Content</h2>
-      <div className="col-12">
+    <div className="row text-body-color ml-5 border border-dashed p-4" contentEditable={false}>
+      <h2 className="text-lg">Popup Content</h2>
+      <div className="col-span-12">
         <span className="mb-4">Shown to students when triggered</span>
-        <div className="popup__modalContent">
+        <div className="min-w-[600px]">
           {triggerSettings}
 
           <RichTextEditor

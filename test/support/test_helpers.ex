@@ -682,6 +682,206 @@ defmodule Oli.TestHelpers do
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
   end
 
+  def project_section_revisions(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Graded page revision
+    page_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Progress test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true}
+      )
+
+    other_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Other test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true},
+        relates_to: [page_revision.resource_id],
+        purpose: :application
+      )
+
+    # Associate nested graded page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: other_revision.resource.id})
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_revision.resource.id, other_revision.resource.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id,
+        published: nil
+      })
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    # Publish nested page resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: other_revision.resource,
+      revision: other_revision,
+      author: author
+    })
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        contains_explorations: true
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    {:ok,
+     project: project,
+     section: section,
+     page_revision: page_revision,
+     other_revision: other_revision}
+  end
+
+  def create_section_with_posts(_conn) do
+    user = insert(:user)
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    page_resource = insert(:resource)
+
+    page_revision =
+      insert(:revision,
+        resource: page_resource,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        content: %{"model" => []},
+        title: "Other revision A"
+      )
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
+
+    collab_space_config = build(:collab_space_config, status: :enabled)
+    page_resource_cs = insert(:resource)
+
+    page_revision_cs =
+      insert(:revision,
+        resource: page_resource_cs,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        content: %{"model" => []},
+        slug: "page_revision_cs",
+        collab_space_config: collab_space_config,
+        title: "Other revision B"
+      )
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_cs.id})
+
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_resource.id, page_resource_cs.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id,
+        published: nil
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_resource_cs,
+      revision: page_revision_cs,
+      author: author
+    })
+
+    section = insert(:section, base_project: project, type: :enrollable)
+    {:ok, _sr} = Sections.create_section_resources(section, publication)
+
+    insert(:post, section: section, resource: page_resource_cs, user: user)
+
+    insert(:post,
+      content: %{message: "Other post"},
+      section: section,
+      resource: page_resource_cs,
+      user: user
+    )
+
+    other_user_1 = insert(:user)
+    other_user_2 = insert(:user)
+
+    insert(:post, section: section, resource: page_resource_cs, user: other_user_1)
+    insert(:post, section: section, resource: page_resource_cs, user: other_user_2)
+
+    [
+      project: project,
+      publication: publication,
+      page_revision: page_revision,
+      page_revision_cs: page_revision_cs,
+      section: section,
+      author: author,
+      user: user,
+      page_resource_cs: page_resource_cs
+    ]
+  end
+
   def enroll_user_to_section(user, section, role) do
     Sections.enroll(user.id, section.id, [
       ContextRoles.get_role(role)
@@ -710,6 +910,12 @@ defmodule Oli.TestHelpers do
     load_env_file("test/config/stripe_config.exs")
   end
 
+  def load_cashnet_config(), do: load_cashnet_config(nil)
+
+  def load_cashnet_config(_conn) do
+    load_env_file("test/config/cashnet_config.exs")
+  end
+
   def reset_test_payment_config() do
     load_env_file("test/config/config.exs")
   end
@@ -718,5 +924,41 @@ defmodule Oli.TestHelpers do
     path
     |> Config.Reader.read!()
     |> Application.put_all_env()
+  end
+
+  @doc """
+  Renders an html binary to a file in test-results/<module_path>/output.html
+  for easier debugging of tests that verify html content.
+
+  Examples:
+    ```
+    conn = get(Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, page_revision_slug))
+
+    inspect_html_file(html_response(conn, 200))
+
+    ...
+    ```
+  """
+  defmacro inspect_html_file(html) do
+    quote do
+      path_parts =
+        ["test-results", "html"]
+        |> Enum.concat(
+          Module.split(__MODULE__)
+          |> Enum.map(&String.downcase/1)
+        )
+
+      dir = Path.join(path_parts)
+
+      filepath =
+        path_parts
+        |> Enum.concat(["output.html"])
+        |> Path.join()
+
+      File.mkdir_p!(dir)
+      File.write!(filepath, unquote(html))
+
+      IO.write("\nhtml file rendered to #{filepath}\n")
+    end
   end
 end

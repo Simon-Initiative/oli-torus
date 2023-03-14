@@ -62,7 +62,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
       const newAttemptUrl = `/sections/${sectionSlug}/page/${revisionSlug}/attempt`;
       redirectTo = newAttemptUrl;
     }
-    if (isPreviewMode) {
+    if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
       window.location.href = redirectTo;

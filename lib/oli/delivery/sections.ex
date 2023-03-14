@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.ContainedPage
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
@@ -36,6 +37,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Utils.Slug
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
+  alias Oli.Delivery
+  alias Ecto.Multi
 
   require Logger
 
@@ -120,14 +123,46 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Determines if a user is an instructor in a given section.
+  Determines the user roles (student / instructor) in a given section
   """
-  def is_instructor?(nil, _) do
-    false
+  def get_user_roles(%User{id: user_id}, section_slug) do
+    from(
+      e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+      preload: :context_roles
+    )
+    |> Repo.one()
+    |> reduce_to_roles(%{is_instructor?: false, is_student?: false})
   end
 
+  defp reduce_to_roles(nil, roles), do: roles
+
+  defp reduce_to_roles(%Enrollment{} = enrollment, roles) do
+    Enum.reduce(enrollment.context_roles, roles, fn context_role, acum ->
+      case context_role do
+        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 3} ->
+          Map.put(acum, :is_instructor?, true)
+
+        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 4} ->
+          Map.put(acum, :is_student?, true)
+
+        _ ->
+          acum
+      end
+    end)
+  end
+
+  @doc """
+  Determines if a user is an instructor in a given section.
+  """
   def is_instructor?(%User{id: id} = user, section_slug) do
     is_enrolled?(id, section_slug) && has_instructor_role?(user, section_slug)
+  end
+
+  def is_instructor?(_, _) do
+    false
   end
 
   @doc """
@@ -161,13 +196,11 @@ defmodule Oli.Delivery.Sections do
     user.can_create_sections
   end
 
+  def is_independent_instructor?(_), do: false
+
   @doc """
   Determines if a user is an administrator in a given section.
   """
-  def is_admin?(nil, _) do
-    false
-  end
-
   def is_admin?(%User{} = user, section_slug) do
     PlatformRoles.has_roles?(
       user,
@@ -178,6 +211,10 @@ defmodule Oli.Delivery.Sections do
       :any
     ) ||
       ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator))
+  end
+
+  def is_admin?(_, _) do
+    false
   end
 
   @doc """
@@ -561,6 +598,59 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  @doc """
+  Gets all sections that use a particular project when their 'end_date' attribute is not nil and is later than the current date.
+
+  ## Examples
+      iex> get_active_sections_by_project(project_id)
+      [%Section{}, ...]
+
+      iex> get_active_sections_by_project(invalid_project_id)
+      []
+  """
+  def get_active_sections_by_project(project_id) do
+    today = DateTime.utc_now()
+
+    Repo.all(
+      from(
+        section in Section,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == section.id,
+        where:
+          spp.project_id == ^project_id and
+            (not is_nil(section.end_date) and section.end_date >= ^today),
+        select: section,
+        preload: [section_project_publications: [:publication]]
+      )
+    )
+  end
+
+  @doc """
+  Gets all sections and products that will be affected by forcing the publication update.
+
+  ## Examples
+      iex> get_push_force_affected_sections(project_id, previous_publication_id)
+      %{product_count: 1, section_count: 1}
+  """
+  def get_push_force_affected_sections(project_id, previous_publication_id) do
+    today = DateTime.utc_now()
+
+    Repo.one(
+      from(
+        section in Section,
+        join: spp in SectionsProjectsPublications,
+        on: section.id == spp.section_id,
+        where:
+          spp.project_id == ^project_id and section.status == :active and
+            spp.publication_id == ^previous_publication_id and
+            (is_nil(section.end_date) or section.end_date >= ^today),
+        select: %{
+          product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
+          section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
+        }
+      )
+    )
+  end
 
   @doc """
   For a section resource record, map its children SR records to resource ids,
@@ -571,12 +661,12 @@ defmodule Oli.Delivery.Sections do
       [1, 2, 3, 4]
   """
   def map_section_resource_children_to_resource_ids(root_section_resource) do
-
-    srs = from(s in SectionResource,
-      where: s.id in ^root_section_resource.children
-    )
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
+    srs =
+      from(s in SectionResource,
+        where: s.id in ^root_section_resource.children
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
 
     Enum.map(root_section_resource.children, fn sr_id -> Map.get(srs, sr_id) end)
   end
@@ -900,6 +990,39 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  @doc """
+  Returns information about the projects that have been remixed in a section.
+
+  ## Examples
+
+      iex> get_remixed_projects(1, 1)
+      [%{id: 2, description: "description of project 2", title: "Project 2", ...}]
+
+      iex> get_remixed_projects(1, 2)
+      []
+  """
+
+  def get_remixed_projects(section_id, current_project_id) do
+    Repo.all(
+      from(
+        project in Project,
+        join: spp in SectionsProjectsPublications,
+        on: spp.project_id == project.id,
+        join: pub in Publication,
+        on: pub.id == spp.publication_id,
+        where:
+          spp.section_id == ^section_id and
+            spp.project_id != ^current_project_id,
+        select: %{
+          id: project.id,
+          title: project.title,
+          description: project.description,
+          publication: pub
+        }
+      )
+    )
+  end
+
   def rebuild_section_resources(
         section: %Section{id: section_id} = section,
         publication: publication
@@ -1033,7 +1156,8 @@ defmodule Oli.Delivery.Sections do
         project_publications
       ) do
     if Hierarchy.finalized?(hierarchy) do
-      Repo.transaction(fn ->
+      Multi.new()
+      |> Multi.run(:rebuild_section_resources, fn _repo, _ ->
         # ensure there are no duplicate resources so as to not violate the
         # section_resource [section_id, resource_id] database constraint
         hierarchy =
@@ -1045,6 +1169,14 @@ defmodule Oli.Delivery.Sections do
 
         rebuild_section_resources(section, section_resources, project_publications)
       end)
+      |> Multi.run(
+        :maybe_update_exploration_pages,
+        fn _repo, _ ->
+          # updates contains_explorations field in sections
+          Delivery.maybe_update_section_contains_explorations(section)
+        end
+      )
+      |> Repo.transaction()
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
@@ -1149,8 +1281,120 @@ defmodule Oli.Delivery.Sections do
       # Rebuild section previous next index
       PreviousNextIndex.rebuild(section)
 
+      {:ok, _} = rebuild_contained_pages(section, section_resources)
+
       section_resources
     end)
+  end
+
+  @doc """
+  Rebuilds the "contained pages" relations for a course section.  A "contained page" for a
+  container is the full set of pages found immeidately within that container or in any of
+  its sub-containers.  For every container in a course section, one row will exist in this
+  "contained pages" table for each contained page.  This allows a straightforward join through
+  this relation from a container to then all of its contained pages - to power calculations like
+  aggregating progress complete across all pages within a container.
+  """
+  def rebuild_contained_pages(%Section{id: section_id} = section) do
+    section_resources =
+      from(sr in SectionResource, where: sr.section_id == ^section_id)
+      |> Repo.all()
+
+    rebuild_contained_pages(section, section_resources)
+  end
+
+  def rebuild_contained_pages(%Section{slug: slug, id: section_id} = section, section_resources) do
+    # First start be deleting all existing contained pages for this section.
+    from(cp in ContainedPage, where: cp.section_id == ^section_id)
+    |> Repo.delete_all()
+
+    # We will need the set of resource ids for all containers in the hierarchy.
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    container_ids =
+      DeliveryResolver.revisions_of_type(slug, container_type_id)
+      |> Enum.map(fn rev -> rev.resource_id end)
+      |> MapSet.new()
+
+    # From the section resources, locate the root section resource, and also create a lookup map
+    # from section_resource id to each section resource.
+    root = Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
+    map = Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
+
+    # Now recursively traverse the containers within the course section hierarchy, starting with the root
+    # to build a map of page resource_ids to lists of the ancestor container resource_ids.  The resultant
+    # map will look like:
+    #
+    # %{
+    #   234 => [32, 25, nil],
+    #   135 => [33, 25, nil],
+    #   299 => [25, nil],
+    #   408 => [nil]
+    # }
+    #
+    # The `nil` entries above represent their presence in the root container, and each preceding resource id
+    # references a parent container (like Unit, module, etc).  All container references besides the root are
+    # true resource_id references, and not ids of the section resoource.
+    #
+    page_map = rebuild_contained_pages_helper(root, {[nil], %{}, map, container_ids})
+
+    # Now convert the page_map to a list of maps for bulk insert
+    insertions =
+      Enum.reduce(page_map, [], fn {page_id, ancestors}, all ->
+        Enum.map(ancestors, fn id ->
+          %{section_id: section_id, container_id: id, page_id: page_id}
+        end) ++ all
+      end)
+
+    insertion_count = Repo.insert_all(ContainedPage, insertions)
+
+    # Finally, update the contained_page_count of the container section resource
+    # records.  We calculate this and cache it on the section resource to simplify
+    # the queries that calculate progress
+    {:ok, _} = set_contained_page_counts(section_id)
+
+    {:ok, insertion_count}
+  end
+
+  # Recursive helper to traverse the hierarchy of the section resources and create the page to ancestor
+  # container map.
+  defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
+    case Enum.map(sr.children, fn sr_id ->
+           sr = Map.get(all, sr_id)
+
+           case MapSet.member?(container_ids, sr.resource_id) do
+             true ->
+               rebuild_contained_pages_helper(
+                 sr,
+                 {[sr.resource_id | ancestors], page_map, all, container_ids}
+               )
+               |> Map.merge(page_map)
+
+             false ->
+               Map.put(page_map, sr.resource_id, ancestors)
+           end
+         end) do
+      [] -> %{}
+      other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
+    end
+  end
+
+  defp set_contained_page_counts(section_id) do
+    sql = """
+    UPDATE section_resources
+    SET
+      contained_page_count = subquery.count,
+      updated_at = NOW()
+    FROM (
+        SELECT COUNT(*) as count, container_id
+        FROM contained_pages
+        WHERE section_id = $1
+        GROUP BY container_id
+    ) AS subquery
+    WHERE section_resources.resource_id = subquery.container_id and section_resources.section_id = $2
+    """
+
+    Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id])
   end
 
   @doc """
@@ -1172,6 +1416,7 @@ defmodule Oli.Delivery.Sections do
 
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
+    project = Oli.Repo.get(Oli.Authoring.Course.Project, project_id)
     current_publication = get_current_publication(section_id, project_id)
     current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
@@ -1209,6 +1454,13 @@ defmodule Oli.Delivery.Sections do
               perform_update(:minor, section, project_id, new_publication, current_hierarchy)
           end
       end
+
+    # For a section based on this project, update the has_experiments in the section to match that
+    # setting in the project.
+    if section.base_project_id == project_id and
+         project.has_experiments != section.has_experiments do
+      Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
+    end
 
     Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
 
@@ -1380,6 +1632,7 @@ defmodule Oli.Delivery.Sections do
       # resources and cleaning up any deleted ones
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
+      Delivery.maybe_update_section_contains_explorations(section)
 
       {:ok}
     end)
@@ -1656,5 +1909,39 @@ defmodule Oli.Delivery.Sections do
       true ->
         {:available, section}
     end
+  end
+
+  defp build_helper(id, previous_next_index) do
+    node = Map.get(previous_next_index, id)
+
+    Map.put(
+      node,
+      "children",
+      Enum.map(node["children"], fn id ->
+        build_helper(id, previous_next_index)
+      end)
+    )
+  end
+
+  def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
+    Enum.map(resource_ids, fn resource_id -> build_helper(resource_id, previous_next_index) end)
+  end
+
+  def build_hierarchy(section) do
+    {:ok, _, previous_next_index} =
+      PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
+
+    # Retrieve the top level resource ids, and convert them to strings
+    resource_ids =
+      Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
+        section.root_section_resource
+      )
+      |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
+
+    %{
+      id: "hierarchy_built_with_previous_next_index",
+      # Recursively build the map based hierarchy from the structure defined by previous_next_index
+      children: build_hierarchy_from_top_level(resource_ids, previous_next_index)
+    }
   end
 end

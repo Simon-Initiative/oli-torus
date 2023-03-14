@@ -1,148 +1,143 @@
-@use 'authoring/theme' as authoring;
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  background: #f8f9fb;
+  border: 2px solid #e5e6e8;
+  border-radius: 8px;
 
-:global(html.authoring) {
-  .toolbar {
-    display: flex;
-    flex-direction: row;
-    background: var(--authoring-toolbar-bg);
-    border: 2px solid var(--authoring-toolbar-border-color);
-    border-radius: 8px;
+  z-index: var(--z-30);
+  box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
+  -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
 
-    z-index: authoring.$z-content-3;
-    box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.45);
-    -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.45);
-
-    &.fixedToolbar {
-      border: none;
-      border-bottom: 2px solid var(--authoring-toolbar-border-color);
-      border-radius: 0px;
-      margin-bottom: 0;
-      box-shadow: none;
-      -webkit-box-shadow: none;
-
-      .toolbarGroup {
-        margin: 0;
-      }
-
-      .toolbarButton {
-        &:first-of-type {
-          margin-left: 0;
-          border-top-left-radius: 0;
-          border-bottom-left-radius: 0;
-        }
-
-        &:last-of-type {
-          margin-right: 0;
-          border-top-right-radius: 0;
-          border-bottom-right-radius: 0;
-        }
-      }
-    }
-  }
-
-  .toolbarGroup {
-    display: flex;
-    flex-direction: row;
-    margin: 6px 0;
-    border-left: 2px solid var(--authoring-toolbar-group-separator-color);
-
-    &:first-of-type {
-      border-left: none;
-    }
-  }
-
-  .toolbarButton {
-    display: flex;
-    flex-direction: row;
-    font-weight: 400;
-    color: var(--authoring-toolbar-color);
-    text-align: center;
-    vertical-align: middle;
-    align-items: center;
-    user-select: none;
-    background-color: transparent;
-    padding: 0.2rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1;
+  &.fixedToolbar {
     border: none;
+    border-bottom: 2px solid #e5e6e8;
+    border-radius: 0px;
+    margin-bottom: 0;
+    box-shadow: none;
+    -webkit-box-shadow: none;
 
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
-      border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-
-    margin-left: 0px;
-    margin-right: 0px;
-    &:first-of-type {
-      margin-left: 0.25rem;
-      border-top-left-radius: 6px;
-      border-bottom-left-radius: 6px;
+    .toolbarGroup {
+      margin: 0;
     }
-
-    &:last-of-type {
-      margin-right: 0.25rem;
-      border-top-right-radius: 6px;
-      border-bottom-right-radius: 6px;
-    }
-
-    &:hover {
-      background-color: var(--authoring-toolbar-group-separator-color);
-    }
-
-    &.active {
-      background: var(--authoring-toolbar-active-bg);
-      color: var(--authoring-toolbar-active-color);
-    }
-  }
-
-  .toolbarButtonGroup {
-    display: flex;
-    flex-direction: row;
-  }
-
-  .toolbarButtonContent {
-    height: 24px;
-    min-width: 24px;
-  }
-
-  .icon {
-    display: flex;
-    align-items: center;
-    margin-right: 8px;
-    height: 24px;
-    min-width: 24px;
-  }
-
-  .buttonText {
-    text-align: center;
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 600;
-  }
-
-  .dropdownGroup {
-    display: flex;
-    flex-direction: column;
-    padding: 8px;
-    overflow-y: auto;
-    background: var(--authoring-toolbar-bg);
-    border: 2px solid var(--authoring-toolbar-border-color);
 
     .toolbarButton {
-      display: inline-flex;
-      align-items: center;
-      text-align: left;
-      border-radius: 6px;
+      &:first-of-type {
+        margin-left: 0;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+      }
 
-      &:first-of-type,
       &:last-of-type {
-        margin-left: 0px;
-        margin-right: 0px;
-        border-radius: 6px;
+        margin-right: 0;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
+  }
+}
+
+.toolbarGroup {
+  display: flex;
+  flex-direction: row;
+  border-left: 2px solid var(--toolbar-group-separator-color);
+
+  &:first-of-type {
+    border-left: none;
+
+    .toolbarButton {
+      &:first-of-type {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
       }
     }
   }
 
-  .description {
-    margin-left: 6px;
-    line-height: 32px;
+  &:last-of-type {
+    .toolbarButton {
+      &:last-of-type {
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+      }
+    }
   }
+}
+
+.toolbarButton {
+  display: flex;
+  flex-direction: row;
+  font-weight: 400;
+  color: var(--toolbar-color);
+  text-align: center;
+  vertical-align: middle;
+  align-items: center;
+  user-select: none;
+  background-color: transparent;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1;
+  border: none;
+
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+  &:hover {
+    background-color: #edeef0;
+  }
+
+  &.active {
+    background: #6b7281;
+    color: #f8f9fb;
+  }
+}
+
+.toolbarButtonGroup {
+  display: flex;
+  flex-direction: row;
+}
+
+.toolbarButtonContent {
+  height: 24px;
+  min-width: 24px;
+  padding: 5px;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  min-width: 24px;
+}
+
+.buttonText {
+  text-align: center;
+}
+
+.dropdownGroup {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  overflow-y: auto;
+  background: #f8f9fb;
+  border: 2px solid #e5e6e8;
+
+  .toolbarButton {
+    display: inline-flex;
+    align-items: center;
+    text-align: left;
+    border-radius: 6px;
+
+    &:first-of-type,
+    &:last-of-type {
+      margin-left: 0px;
+      margin-right: 0px;
+      border-radius: 6px;
+    }
+  }
+}
+
+.description {
+  margin-left: 6px;
+  line-height: 32px;
 }

@@ -1,87 +1,88 @@
-@use 'authoring/theme' as authoring;
-@import 'bootstrap';
 @import 'common/mixins.scss';
 
-html.authoring {
-  .editors {
-    flex: 1;
-    min-width: 0;
-    border: 2px solid authoring.$gray-200;
-    margin-top: 20px;
-    padding: 20px 0px;
+.editors {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-gray-200);
+  margin-top: 20px;
+  padding: 20px 0px;
 
-    .resource-block-editor-and-controls {
-      .content-block {
+  .resource-block-editor-and-controls {
+    .content-block {
+      .slate-editor {
+        border: none;
+
+        .popup-anchor {
+          cursor: inherit;
+          padding-right: 2px;
+        }
+      }
+
+      // handle the special case when purpose type is none, apply the
+      // padding styles to slate editor itself. this allows slate to utilize
+      // the entire surrounding padding for cursor events and allow for easier
+      // selection etc..
+      &.purpose-none {
         .slate-editor {
-          border: none;
-        }
+          @include clearfix;
+          cursor: initial;
+          padding: 1.3em 10px;
 
-        // handle the special case when purpose type is none, apply the
-        // padding styles to slate editor itself. this allows slate to utilize
-        // the entire surrounding padding for cursor events and allow for easier
-        // selection etc..
-        &.purpose-none {
-          .slate-editor {
-            @include clearfix;
-            cursor: initial;
-            padding: 1.3em 10px;
-
-            &.structured-content {
-              padding: 1.3em calc(50% - 400px);
-            }
+          &.structured-content {
+            padding: 1.3em calc(50% - 400px);
           }
         }
       }
+    }
 
-      .activity-block {
-        .test-mode-handler {
-          padding: 1.3em calc(50% - 400px);
-        }
+    .activity-block {
+      .test-mode-handler {
+        padding: 1.3em calc(50% - 400px);
       }
+    }
 
-      .resource-block-editor {
-        .btn-purpose {
-          min-width: 150px;
-          border: 1px solid authoring.$gray-200;
+    .resource-block-editor {
+      .btn-purpose {
+        min-width: 150px;
+        border: 1px solid var(--color-gray-200);
 
-          text-align: left;
-          &.dropdown-toggle::after {
-            float: right;
-            margin-top: 0.7em;
-          }
+        text-align: left;
+        &.dropdown-toggle::after {
+          float: right;
+          margin-top: 0.7em;
+        }
+
+        &:hover {
+          border-color: rgba(var(--body-color, 0.6));
+          background: rgba(var(--body-color, 0.05));
+        }
+
+        &:disabled {
+          background-color: var(--color-slate-100);
 
           &:hover {
-            border-color: rgba(authoring.$body-color, 0.6);
-            background: rgba(authoring.$body-color, 0.05);
-          }
-
-          &:disabled {
-            background-color: authoring.$card-cap-bg;
-
-            &:hover {
-              border-color: rgba(authoring.$body-color, 0.1);
-              background: authoring.$card-cap-bg;
-            }
+            border-color: rgba(var(--body-color, 0.1));
+            background: var(--color-slate-100);
           }
         }
       }
+    }
 
-      .assistive-text {
-        position: absolute;
-        margin: -1px;
-        border: 0;
-        padding: 0;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-      }
+    .assistive-text {
+      position: absolute;
+      margin: -1px;
+      border: 0;
+      padding: 0;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
     }
   }
 }
 
 html.dark {
   .editors {
-    border-color: authoring.$gray-800;
+    border-color: var(--color-gray-800);
   }
 }

@@ -26,12 +26,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   def persist_evaluations({:ok, []}, _, roll_up_fn, _), do: roll_up_fn.({:ok, []})
 
   def persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn, datashop_session_id) do
-    evaluated_inputs = Enum.zip(part_inputs, evaluations)
-
     right_now = DateTime.utc_now()
 
     {values, params, _} =
-      Enum.map(evaluated_inputs, fn pair -> attrs_for(pair, datashop_session_id, right_now) end)
+      part_inputs
+      |> Enum.zip(evaluations)
+      |> Enum.map(fn pair -> attrs_for(pair, datashop_session_id, right_now) end)
       |> Enum.filter(fn attrs -> !is_nil(attrs) end)
       |> Enum.reduce({[], [], 0}, fn pa, {values, params, i} ->
         {
@@ -75,8 +75,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
             datashop_session_id = batch_values.datashop_session_id,
             updated_at = NOW()
           FROM (
-              VALUES
-              #{values}
+              VALUES #{values}
           ) AS batch_values (attempt_guid, response, lifecycle_state, date_evaluated, date_submitted, score, out_of, feedback, datashop_session_id)
           WHERE part_attempts.attempt_guid = batch_values.attempt_guid
         """
@@ -86,6 +85,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
           e -> e
         end
     end
+  end
+
+  def bulk_update_activity_attempts(_, []), do: {:ok, []}
+
+  def bulk_update_activity_attempts(values, params) do
+    sql = """
+      UPDATE activity_attempts
+      SET
+        score = batch_values.score,
+        out_of = batch_values.out_of,
+        lifecycle_state = batch_values.lifecycle_state,
+        date_evaluated = batch_values.date_evaluated,
+        date_submitted = batch_values.date_submitted
+      FROM (VALUES #{values}) AS batch_values (activity_attempt_guid, score, out_of, lifecycle_state, date_evaluated, date_submitted)
+      WHERE activity_attempts.attempt_guid = batch_values.activity_attempt_guid
+    """
+
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp attrs_for(

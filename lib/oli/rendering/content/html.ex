@@ -96,7 +96,9 @@ defmodule Oli.Rendering.Content.Html do
     captioned_content(context, attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9"#{iframe_width}>
-        <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        <div class="embed-wrapper">
+          <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        </div>
       </div>
       """
     ])
@@ -107,9 +109,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def audio(%Context{} = context, _, %{"src" => src} = attrs) do
-    captioned_content(context, attrs, [~s|<audio controls src="#{escape_xml!(src)}">
+    captioned_content(context, attrs, [
+      ~s|<audio aria-label="#{attrs["alt"]}" controls src="#{escape_xml!(src)}">
       Your browser does not support the <code>audio</code> element.
-    </audio>\n|])
+    </audio>\n|
+    ])
   end
 
   def audio(%Context{} = context, _, e) do
@@ -199,11 +203,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ol(%Context{} = _context, next, %{"style" => style}) do
-    ["<ol class=\"list-#{style}\">", next.(), "</ol>\n"]
+    ["<ol class=\"list-#{style} list-inside pl-2\">", next.(), "</ol>\n"]
   end
 
   def ol(%Context{} = _context, next, _) do
-    ["<ol>", next.(), "</ol>\n"]
+    ["<ol class=\"list-decimal list-inside pl-2\">", next.(), "</ol>\n"]
   end
 
   def dl(%Context{}, next, title, %{}) do
@@ -226,11 +230,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ul(%Context{} = _context, next, %{"style" => style}) do
-    ["<ul class=\"list-#{style}\">", next.(), "</ul>\n"]
+    ["<ul class=\"list-#{style} list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
   def ul(%Context{} = _context, next, _) do
-    ["<ul>", next.(), "</ul>\n"]
+    ["<ul class=\"list-disc list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
   def li(%Context{} = _context, next, _) do
@@ -277,8 +281,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def dialog_speaker_portrait() do
-    # "<div class=\"material-icons speaker-portrait\">person</div>"
-    ""
+    ~s|<i class="fa-solid fa-image-portrait"></i>|
   end
 
   def dialog_speaker(speaker_id, %{"speakers" => speakers}) do
@@ -331,7 +334,8 @@ defmodule Oli.Rendering.Content.Html do
 
   defp audio_player(src) do
     audio_id = UUID.uuid4()
-    play_code = "document.getElementById(\"#{audio_id}\").play();"
+    # See app.ts for toggleAudio()
+    play_code = "window.toggleAudio(document.getElementById(\"#{audio_id}\"));"
     audio_element = "<audio id='#{audio_id}' src='#{escape_xml!(src)}' preload='auto'></audio>"
     [audio_element, play_code, audio_id]
   end
@@ -346,7 +350,7 @@ defmodule Oli.Rendering.Content.Html do
 
         [
           "<span class='pronunciation'>",
-          "<span class='material-icons-outlined play-button' onClick='#{play_code}'>play_circle</span>",
+          ~s|<span class='play-button' onClick='#{play_code}'><i class="fa-solid fa-circle-play"></i></span>|,
           "<span class='pronunciation-player' onClick='#{play_code}'>",
           audio_element,
           next.(),
@@ -653,7 +657,7 @@ defmodule Oli.Rendering.Content.Html do
             ~s|<div class="title flex-grow-1">|,
             escape_xml!(title),
             "</div>",
-            ~s|<i class="las la-external-link-square-alt la-2x"></i>|,
+            ~s|<i class="fas fa-external-link-square-alt la-2x self-center"></i>|,
             "</div>\n"
           ]
         end,
@@ -687,7 +691,7 @@ defmodule Oli.Rendering.Content.Html do
 
     popup_content =
       case parse_html_content(content) do
-        "" -> "<i class='material-icons'>volume_up</i>"
+        "" -> ~s|<i class="fa-solid fa-volume-high"></i>|
         content -> content
       end
 
@@ -698,23 +702,18 @@ defmodule Oli.Rendering.Content.Html do
       <span
         tabindex="0"
         role="button"
-        class="term popup__anchorText#{if !String.contains?(trigger, "hover") do
-        " popup__click"
+        class="term popup-anchor#{if !String.contains?(trigger, "hover") do
+        " popup-click"
       else
         ""
       end}"
-        data-trigger="#{trigger}"
-        data-toggle="popover"
-        data-placement="top"
-        data-html="true"
         data-audio="#{audio_id}"
-        data-template='
-          <div class="popover popup__content" role="tooltip">
-            <div class="arrow"></div>
-            <h3 class="popover-header"></h3>
-            <div class="popover-body"></div>
-          </div>'
-        data-content="#{escape_xml!(popup_content)}">
+        data-bs-trigger="#{trigger}"
+        data-bs-toggle="popover"
+        data-bs-placement="top"
+        data-bs-container=".content"
+        data-bs-html="true"
+        data-bs-content="#{escape_xml!(popup_content)}">
         #{next.()}
         #{audio_element}
       </span>\n

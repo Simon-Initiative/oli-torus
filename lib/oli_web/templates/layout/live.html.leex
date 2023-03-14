@@ -5,7 +5,7 @@
     <%= live_flash(@flash, :info) %>
 
     <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="info">
-      <span aria-hidden="true">&times;</span>
+      <i class="fa-solid fa-xmark fa-lg"></i>
     </button>
 
   </div>
@@ -17,11 +17,12 @@
     <%= live_flash(@flash, :error) %>
 
     <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
-      <span aria-hidden="true">&times;</span>
+      <i class="fa-solid fa-xmark fa-lg"></i>
     </button>
 
   </div>
 <% end %>
 
 <script id="keep-alive" type="text/javascript" src="<%= Routes.static_path(OliWeb.Endpoint, "/js/keepalive.js") %>"></script>
+
 <%= @inner_content %>

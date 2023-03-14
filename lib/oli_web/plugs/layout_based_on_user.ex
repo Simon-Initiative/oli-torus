@@ -15,7 +15,7 @@ defmodule Oli.Plugs.LayoutBasedOnUser do
         Controller.put_root_layout(conn, {OliWeb.LayoutView, "workspace.html"})
 
       _ ->
-        Controller.put_root_layout(conn, {OliWeb.LayoutView, "delivery.html"})
+        Controller.put_root_layout(conn, {OliWeb.LayoutView, "delivery_admin.html"})
     end
   end
 end

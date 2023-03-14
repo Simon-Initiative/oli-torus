@@ -112,7 +112,7 @@ defmodule OliWeb.Sections.SectionsView do
     type_opts = @type_opts
 
     ~F"""
-      <div>
+      <div class="container mx-auto">
         <FilterBox
           card_header_text="Browse Course Sections"
           card_body_text=""

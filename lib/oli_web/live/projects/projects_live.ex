@@ -4,10 +4,12 @@ defmodule OliWeb.Projects.ProjectsLive do
   """
 
   use OliWeb, :surface_view
+  use OliWeb.Common.Modal
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
+  alias OliWeb.Projects.CreateProjectModal
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Course
@@ -18,8 +20,6 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Accounts
   alias OliWeb.Common.SessionContext
   alias OliWeb.Projects.TableModel
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{TextInput, Label, ErrorTag}
 
   @limit 25
 
@@ -37,8 +37,6 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   data author, :any
   data is_admin, :boolean, default: false
-
-  data changeset, :any, default: Project.new_project_changeset(%Project{title: ""})
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
     %SessionContext{author: author} = context = SessionContext.init(session)
@@ -154,82 +152,50 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   def render(assigns) do
     ~F"""
-    <div class="projects-title-row mb-4">
-      <div class="container">
-        <div class="row">
-          <div class="col-12">
-            <div class="d-flex justify-content-between align-items-baseline">
-              <div>
-                {#if @is_admin}
-                  <div class="form-check" style="display: inline;">
-                    <input type="checkbox" class="form-check-input" id="allCheck" checked={@show_all} phx-click="toggle_show_all">
-                    <label class="form-check-label" for="allCheck">Show all projects</label>
-                  </div>
-                {/if}
-                <div class={"form-check #{if @is_admin, do: "ml-4", else: ""}"} style="display: inline;">
-                  <input type="checkbox" class="form-check-input" id="deletedCheck" checked={@show_deleted} phx-click="toggle_show_deleted">
-                  <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
-                </div>
+    {render_modal(assigns)}
+
+    <div class="container mx-auto">
+      <div class="projects-title-row mb-4">
+        <div class="d-flex justify-content-between align-items-baseline">
+          <div>
+            {#if @is_admin}
+              <div class="form-check" style="display: inline;">
+                <input type="checkbox" class="form-check-input" id="allCheck" checked={@show_all} phx-click="toggle_show_all">
+                <label class="form-check-label" for="allCheck">Show all projects</label>
               </div>
-
-              <div class="flex-grow-1"></div>
-
-              <button id="button-new-project"
-                class="btn btn-sm btn-primary ml-2"
-                data-toggle="modal"
-                data-target="#modal-new-project">
-                <i class="fa fa-plus"></i> New Project
-              </button>
+            {/if}
+            <div class={"form-check #{if @is_admin, do: "ml-4", else: ""}"} style="display: inline;">
+              <input type="checkbox" class="form-check-input" id="deletedCheck" checked={@show_deleted} phx-click="toggle_show_deleted">
+              <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
             </div>
           </div>
 
+          <div class="flex-grow-1"></div>
+
+          <button id="button-new-project"
+            class="btn btn-sm btn-primary ml-2" phx-click="show_create_project_modal">
+            <i class="fa fa-plus"></i> New Project
+          </button>
         </div>
       </div>
-    </div>
 
-    <div class="container mb-4">
-      <div class="row">
-        <div class="col-12">
-          <TextSearch event_target={:live_view} id="text-search" apply="text_search_apply" reset="text_search_reset" change="text_search_change" text={@text_search} />
+      <div class="container mb-4">
+        <div class="grid grid-cols-12">
+          <div class="col-span-12">
+            <TextSearch event_target={:live_view} id="text-search" apply="text_search_apply" reset="text_search_reset" change="text_search_change" text={@text_search} />
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="container">
-      <div class="row">
-        <div id="projects-table" class="col-12">
+      <div class="grid grid-cols-12">
+        <div id="projects-table" class="col-span-12">
           <PagedTable page_change="paged_table_page_change" sort="paged_table_sort"
             total_count={@total_count} filter={@text_search}
             selection_change={nil} allow_selection={false}
             limit={@limit} offset={@offset} table_model={@table_model} show_bottom_paging={true} />
         </div>
       </div>
-    </div>
 
-    <div class="modal fade" id="modal-new-project" tabindex="-1" role="dialog" aria-labelledby="new-project-modal" aria-hidden="true">
-      <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Create Project</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <Form for={@changeset} action={Routes.project_path(@socket, :create)}>
-            <div class="modal-body">
-              <div class="form-label-group">
-                <TextInput id="input-title" field={:title} class="form-control input-bold" opts={[required: true, placeholder: "e.g. Introduction to Psychology"]}/>
-                <Label field={:title} class="control-label text-secondary">This can be changed later</Label>
-                <ErrorTag field={:title}></ErrorTag>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-primary" phx-disable-with="Creating Project...">Create Project</button>
-            </div>
-          </Form>
-        </div>
-      </div>
     </div>
     """
   end
@@ -262,6 +228,26 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   def handle_event("toggle_show_deleted", _, socket) do
     patch_with(socket, %{show_deleted: !socket.assigns.show_deleted})
+  end
+
+  def handle_event("show_create_project_modal", _, socket) do
+    modal_assigns = %{
+      id: "create_project",
+      changeset: Project.new_project_changeset(%Project{title: ""})
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <CreateProjectModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("validate_project", %{"project" => %{"title" => _title}}, socket) do
+    {:noreply, socket}
   end
 
   def handle_event(event, params, socket) do

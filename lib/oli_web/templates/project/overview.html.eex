@@ -1,16 +1,11 @@
-<style>
-  .action-button {
-    width: 100px;
-  }
-</style>
-<div class="overview container">
+<div class="overview container mx-auto">
 <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
-  <div class="row py-5 ">
-    <div class="col-md-4">
+  <div class="grid grid-cols-12 py-5 ">
+    <div class="col-span-4 mr-4">
       <h4>Details</h4>
       <div class="text-muted">Your project title and description will be shown to students when you publish this project.</div>
     </div>
-    <div class="col-md-8">
+    <div class="col-span-8">
 
       <div class="form-label-group mb-3">
         <%= label f, :title, "Project ID", class: "control-label" %>
@@ -28,7 +23,7 @@
         <%= label f, :description, "Latest Publication", class: "control-label" %>
         <%= case @latest_published_publication do %>
           <% %{edition: edition, major: major, minor: minor} -> %>
-            <p class="text-secondary"><%= "v#{edition}.#{major}.#{minor}" %></p>
+            <p class="text-secondary"><%= OliWeb.Common.Utils.render_version(edition, major, minor) %></p>
           <% _ -> %>
             <p class="text-secondary">This project has not been published</p>
         <% end %>
@@ -38,20 +33,31 @@
         <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}), class: "form-control", required: true %>
       </div>
 
+      <%= if @can_enable_experiments do %>
+        <div class="form-label-group mb-3">
+          <%= label f, :has_experiments, "Enable Upgrade-based Experiments", class: "control-label" %>
+          <%= checkbox f, :has_experiments, class: "form-control w-50", required: false %>
+
+          <%= if @project.has_experiments do %>
+            <a type="button" class="btn btn-link pl-0" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Experiments.ExperimentsView, @project.slug) %>">Manage Experiments</a>
+          <% end %>
+
+        </div>
+      <% end %>
       <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
 
     </div>
   </div>
 
-  <div class="row py-5 border-bottom">
-  <div class="col-md-4">
+  <div class="grid grid-cols-12 py-5 border-b">
+  <div class="col-span-4 mr-4">
     <h4>Project Attributes</h4>
     <div class="text-muted">
       Project wide configuration, not all options may be relevant for all
       subject areas.
     </div>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
 
     <div class="d-block">
       <%= inputs_for f, :attributes, fn fp -> %>
@@ -67,7 +73,7 @@
       <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
     </div>
 
-    <div>
+    <div class="mt-5">
       <div><a type="button" class="btn btn-link pl-0" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesEditor, @project.slug) %>">Manage Alternatives</a></div>
       <small>Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.</small>
     </div>
@@ -76,22 +82,22 @@
 
 <% end %>
 
-<div class="row py-5 border-bottom">
-  <div class="col-md-4">
+<div class="grid grid-cols-12 py-5 border-b">
+  <div class="col-span-4 mr-4">
     <h4>Project Labels</h4>
     <div class="text-muted">Project wide customization of labels.</div>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
     <%= live_render @conn, OliWeb.Projects.CustomizationLive, session: %{ "project_slug" => @project.slug } %>
   </div>
 </div>
 
-<div class="row py-5 border-bottom">
-  <div class="col-md-4">
+<div class="grid grid-cols-12 py-5 border-b">
+  <div class="col-span-4 mr-4">
     <h4>Collaborators</h4>
     <div class="text-muted">Invite other authors by email to contribute to your project. Specify multiple separated by a comma.</div>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
     <script src="https://www.google.com/recaptcha/api.js"></script>
     <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
     <div class="form-group">
@@ -123,36 +129,33 @@
 </div>
 </div>
 
-<div class="row py-5 border-bottom">
-  <div class="col-md-4">
+<div class="grid grid-cols-12 py-5 border-b">
+  <div class="col-span-4 mr-4">
     <h4>Advanced Activities</h4>
     <div class="text-muted">Enable advanced activity types for your project to include in your curriculum.</div>
   </div>
-  <div class="col-md-8">
-    <table class="table table-sm">
-      <tbody>
-        <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
-      </tbody>
-    </table>
+  <div class="col-span-8">
+    <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
   </div>
 </div>
 
 
 
 <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
-<div class="row py-5">
-  <div class="col-md-4">
+
+<div class="grid grid-cols-12 py-5">
+  <div class="col-span-4 mr-4">
     <h4>Actions</h4>
   </div>
-  <div class="col-md-8">
+  <div class="col-span-8">
     <div class="d-flex align-items-center">
-      <p>
+      <div>
         <%= button("Duplicate",
                     to: Routes.project_path(@conn, :clone_project, @project),
                     method: :post,
                     class: "btn btn-link action-button",
                     data_confirm: "Are you sure you want to duplicate this project?") %>
-      </p>
+      </div>
       <span>Create a complete copy of this project.</span>
     </div>
     <div class="d-flex align-items-center">
@@ -182,9 +185,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Are you absolutely sure?</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="container form-container">

@@ -5,23 +5,27 @@ export const ModalLaunch = {
     // initialize the bootstrap modal
     const id = this.el.getAttribute('id');
     this.id = id;
-    ($('#' + id) as any).modal({});
+    // ($('#' + id) as any).modal({});
+    // ($(this.el) as any).modal({});
+
+    this.modal = new (window as any).bootstrap.Modal(this.el, {});
+    this.modal.show();
 
     const scrollPosition = lockScroll();
 
     // wire up server-side hide event
-    (this as any).handleEvent('_bsmodal.hide', () => {
-      ($('#' + id) as any).modal('hide');
+    (this as any).handleEvent('phx_modal.hide', () => {
+      this.modal.hide();
     });
 
     // handle hiding of a modal as a result of many different methods
     // (modal close button, escape key, etc...)
     $(`#${id}`).on('hidden.bs.modal', () => {
-      (this as any).pushEvent('_bsmodal.unmount');
+      (this as any).pushEvent('phx_modal.unmount');
       unlockScroll(scrollPosition);
     });
   },
   destroyed(): void {
-    ($('#' + this.id) as any).modal('hide');
+    this.modal.hide();
   },
 };

@@ -35,7 +35,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
@@ -61,7 +61,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
         conn
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
-      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
+      assert html_response(conn, 200) =~ "Page one"
     end
 
     test "blocks access to gated resource with a closed gating condition", %{
@@ -271,7 +271,8 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
         conn
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
-      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
+      assert html_response(conn, 200) =~ "Page one"
+      assert html_response(conn, 200) =~ "Estimated reading time"
     end
   end
 

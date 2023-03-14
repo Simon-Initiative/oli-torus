@@ -1,0 +1,42 @@
+import { InfoTip } from 'components/misc/InfoTip';
+import { Tooltip } from 'components/common/Tooltip';
+
+<Meta title="Torus/Tooltips" />
+
+# Tooltips
+
+## Tooltip
+
+Here is a sample text with a tooltip:
+
+<Tooltip title="Here is my tooltip.">Some Content</Tooltip>
+
+```tsx
+import { Tooltip } from 'components/common/Tooltip';
+
+<Tooltip title="Here is my tooltip.">Some Content</Tooltip>;
+```
+
+<Tooltip placement="right" title="Here is my tooltip.">
+  Some Content with tooltip to the right
+</Tooltip>
+
+```tsx
+import { Tooltip } from 'components/common/Tooltip';
+
+<Tooltip placement="right" title="Here is my tooltip.">
+  Some Content with tooltip to the right
+</Tooltip>;
+```
+
+## InfoTip
+
+Provides an icon with a tooltip.
+
+This is an infotip: <InfoTip title="It's this icon with this tooltip" />
+
+```tsx
+import { Heading } from 'components/misc/Heading';
+
+<span>This is an infotip:</span> <InfoTip title="It's this icon with this tooltip" />
+```

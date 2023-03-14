@@ -7,7 +7,7 @@ defmodule OliWeb.ProjectControllerTest do
 
   import Oli.Factory
 
-  @basic_get_routes [:overview, :publish, :insights]
+  @basic_get_routes [:overview, :insights]
   setup [:author_project_conn]
   @valid_attrs %{title: "default title"}
   @invalid_attrs %{title: ""}
@@ -60,25 +60,6 @@ defmodule OliWeb.ProjectControllerTest do
       assert response =~ "Overview"
       assert response =~ project.title
       assert response =~ publisher.name
-    end
-  end
-
-  describe "publish" do
-    test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :publish, project.slug))
-      assert html_response(conn, 200) =~ "Publish"
-    end
-
-    test "displays the published date", %{project: project} = context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
-      {:ok, publication} = Oli.Publishing.publish_project(project, "New publication")
-
-      conn = get(conn, Routes.project_path(conn, :publish, project.slug))
-      assert html_response(conn, 200) =~ "Publish"
-
-      assert html_response(conn, 200) =~
-               "Last published <strong>" <>
-                 OliWeb.Common.Utils.render_date(publication, :published, session_context)
     end
   end
 

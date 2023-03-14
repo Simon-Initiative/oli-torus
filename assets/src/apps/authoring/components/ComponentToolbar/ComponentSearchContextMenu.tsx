@@ -13,7 +13,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import cloneDeep from 'lodash/cloneDeep';
 
-const ComponentSearchContextMenu: React.FC = () => {
+const ComponentSearchContextMenu: React.FC<{
+  authoringContainer: React.RefObject<HTMLElement>;
+}> = ({ authoringContainer }) => {
   const [show, setShow] = useState(false);
   const [target, setTarget] = useState(null);
   const paths = useSelector(selectPaths);
@@ -105,7 +107,7 @@ const ComponentSearchContextMenu: React.FC = () => {
           show={show}
           target={target}
           placement="bottom"
-          container={document.getElementById('advanced-authoring')}
+          container={authoringContainer.current}
           containerPadding={20}
           rootClose={true}
           onHide={() => setShow(false)}
@@ -120,7 +122,7 @@ const ComponentSearchContextMenu: React.FC = () => {
                     action
                     onClick={() => handlePartClick(part)}
                     key={part.id}
-                    className="d-flex align-items-center justify-content-between"
+                    className="d-flex w-full align-items-center justify-content-between"
                   >
                     <div>
                       <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>

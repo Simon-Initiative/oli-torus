@@ -7,6 +7,7 @@ defmodule OliWeb.Pow.UserContext do
     repo: Oli.Repo,
     user: Oli.Accounts.User
 
+  alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -78,4 +79,8 @@ defmodule OliWeb.Pow.UserContext do
         {:error, error}
     end
   end
+
+  @impl true
+  def update(user, attrs),
+    do: Accounts.update_user(user, attrs)
 end

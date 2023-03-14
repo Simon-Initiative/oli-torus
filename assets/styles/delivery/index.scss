@@ -1,15 +1,11 @@
 @import 'activity.scss';
 @import 'alternatives.scss';
-@import 'controls.scss';
-@import 'footer.scss';
-@import 'main.scss';
+@import 'course-outline.scss';
 @import 'mixins.scss';
 @import 'phx.scss';
-@import 'variables.scss';
 
 @import 'layout/delivery.scss';
-@import 'layout/footer.scss';
 
 @import 'page_delivery/after_finalized.scss';
+@import 'page_delivery/collab_space.scss';
 @import 'page_delivery/page.scss';
-@import 'page_delivery/prologue.scss';

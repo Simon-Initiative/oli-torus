@@ -40,15 +40,15 @@ const _TorusAudioBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
           size="sm"
           aria-label="Select Audio File"
         >
-          <span className="material-icons-outlined">mic</span>
+          <i className="fa-solid fa-microphone"></i>
         </Button>
 
         {hasAudio && (
           <Button size="sm" variant="secondary" onClick={playAudio}>
             {isPlaying ? (
-              <span className="material-icons-outlined">stop_circle</span>
+              <i className="fa-solid fa-circle-stop"></i>
             ) : (
-              <span className="material-icons-outlined">play_circle</span>
+              <i className="fa-solid fa-circle-play"></i>
             )}
           </Button>
         )}

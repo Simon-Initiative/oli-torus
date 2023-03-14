@@ -1,17 +1,17 @@
 <%= render OliWeb.LayoutView, "_delivery_header.html", Map.merge(assigns, %{logo_link: "#", hide_user: true}) %>
 
-<div class="container box-form-container">
-  <div class="my-3">
-    <h2>Registration Requested</h2>
-  </div>
+<div class="pb-[60px]">
+  <div class="container box-form-container">
+    <div class="my-3">
+      <h2>Registration Requested</h2>
+    </div>
 
-  <div>
-    <p>
-      Your institution's registration is pending approval. You will receive an email once your request has been approved.
-    </p>
+    <div class="text-center">
+      <p>
+        Your institution's registration is pending approval. You will receive an email once your request has been approved.
+      </p>
 
-    <div class="row justify-content-md-center my-3">
-      <div class="col col-8">
+      <div>
         <table class="table table-sm text-center border">
             <tr>
                 <td>
@@ -35,9 +35,8 @@
             </tr>
         </table>
       </div>
+      <p>For help and more information regarding your request, please <a href='javascript:;' onclick="showHelpModal();">contact support</a>.</p>
     </div>
 
-    <p>For help and more information regarding your request, please <a href='javascript:;' onclick="showHelpModal();">contact support</a>.</p>
-  </div>
-
-<%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+  <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+</div>

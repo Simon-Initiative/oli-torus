@@ -10,7 +10,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
     ~F"""
     <form>
       <div class="form-row">
-        <div class="col-11">
+        <div class="col-span-11">
           {feedback(assigns)}
         </div>
         <div class="col">
@@ -39,7 +39,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
     ~F"""
     <form>
       <div class="form-row">
-        <div class="col-10">
+        <div class="col-span-10">
           <textarea id={"feedback_" <> @part_attempt.attempt_guid} phx-hook="TextInputListener" phx-value-change={@feedback_changed.name}
             class="form-control" placeholder="Enter feedback for the student..." autocomplete="on" wrap="soft" maxlength="2000">{@part_scoring.feedback}</textarea>
         </div>
@@ -85,5 +85,4 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <textarea id={@part_attempt.attempt_guid} disabled class="form-control" wrap="soft" maxlength="2000">{@part_scoring.feedback}</textarea>
     """
   end
-
 end

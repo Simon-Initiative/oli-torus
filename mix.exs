@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.22.3",
+      version: "0.23.0",
       elixir: "~> 1.14.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -77,6 +77,7 @@ defmodule Oli.MixProject do
       "guides/lti/config.md",
       "guides/ingest/overview.md",
       "guides/ingest/media.md",
+      "guides/upgrade/dev-env.md",
       "assets/typedocs/modules.md"
     ] ++ list_typedoc_files()
   end
@@ -96,6 +97,7 @@ defmodule Oli.MixProject do
       "Activity SDK": ~r/guides\/activities\/.?/,
       "LTI 1.3": ~r/guides\/lti\/.?/,
       "Content ingestion": ~r/guides\/ingest\/.?/,
+      "Upgrade integration": ~r/guides\/upgrade\/.?/,
       "Client Side API": ~r/assets\/typedocs\/modules.md/,
       Interfaces: ~r/assets\/typedocs\/interfaces\/.?/,
       Enums: ~r/assets\/typedocs\/enums\/.?/,
@@ -133,6 +135,7 @@ defmodule Oli.MixProject do
       {:bamboo_phoenix, "~> 1.0"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 2.2"},
+      {:cachex, "~> 3.5"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 2.3"},
       {:decimal, "~> 2.0"},
@@ -143,6 +146,10 @@ defmodule Oli.MixProject do
       {:ex_aws, "~> 2.2"},
       {:ex_aws_s3, "~> 2.3"},
       {:ex_aws_lambda, "~> 2.0"},
+      {:ex_cldr, "~> 2.34"},
+      {:ex_cldr_plugs, "~> 1.2"},
+      {:ex_cldr_calendars, "~> 1.21"},
+      {:ex_cldr_dates_times, "~> 2.0"},
       {:ex_json_schema, "~> 0.9.1"},
       {:ex_machina, "~> 2.7.0", only: [:hound, :test]},
       {:ex_money, "~> 5.12"},
@@ -173,6 +180,7 @@ defmodule Oli.MixProject do
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_dashboard, "~> 0.7.0"},
+      {:phoenix_live_react, "~> 0.4"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_live_view, "~> 0.18"},
       {:phoenix_pubsub, "~> 2.0"},
@@ -189,6 +197,7 @@ defmodule Oli.MixProject do
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
       {:sweet_xml, "~> 0.7.1"},
+      {:tailwind, "~> 0.1.9"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
@@ -213,7 +222,10 @@ defmodule Oli.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
 
       # resets the database in the :test env
-      "test.ecto.reset": ["ecto.reset"]
+      "test.ecto.reset": ["ecto.reset"],
+
+      # deploy tailwind assets
+      "assets.deploy": ["tailwind default --minify", "phx.digest"]
     ]
   end
 end

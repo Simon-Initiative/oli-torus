@@ -21,7 +21,7 @@ export const TextInput: React.FC<Props> = ({
       placeholder={placeholder}
       type="text"
       aria-label="answer submission textbox"
-      className="form-control"
+      className="border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-600"
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
       onKeyUp={onKeyUp}

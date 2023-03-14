@@ -83,10 +83,10 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
     ~H"""
       <div>
         <%= if !is_container?(@child) do %>
-            <div class="col-4 entry-section">
+            <div class="col-span-4 entry-section">
               <%= render_objectives(assigns, determine_objectives(@activity_ids, @activity_map, @objective_map)) %>
             </div>
-            <div class="col-4 entry-section">
+            <div class="col-span-4 entry-section">
               <%= render_activities(assigns, determine_activities(@activity_ids, @activity_map)) %>
             </div>
         <% else %>

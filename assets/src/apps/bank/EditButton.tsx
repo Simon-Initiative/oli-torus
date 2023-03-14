@@ -18,7 +18,7 @@ export const EditButton = (props: EditButtonProps) => {
       data-placement="top"
       title="Finish editing this activity"
     >
-      <i className="las la-check"></i> Done
+      <i className="fas fa-check"></i> Done
     </button>
   ) : (
     <button
@@ -30,7 +30,7 @@ export const EditButton = (props: EditButtonProps) => {
       data-placement="top"
       title="Enable editing of this activity"
     >
-      <i className="las la-lock"></i> Edit
+      <i className="fas fa-lock"></i> Edit
     </button>
   );
 };

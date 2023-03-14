@@ -57,7 +57,7 @@ defmodule OliWeb.Admin.AdminView do
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}>Manage Third-Party API Keys</a></li>
           <li>
             <a href={Routes.live_dashboard_path(OliWeb.Endpoint, :home)} target="_blank">
-              <span>View System Performance Dashboard</span> <i class="las la-external-link-alt align-self-center ml-1"></i>
+              <span>View System Performance Dashboard</span> <i class="fas fa-external-link-alt self-center ml-1"></i>
             </a>
           </li>
         </ul>

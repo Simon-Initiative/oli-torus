@@ -19,7 +19,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         unit1_container: unit1_container,
         revision1: revision1,
         revision2: revision2
-      },
+      }
     } do
       conn =
         get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
@@ -60,12 +60,45 @@ defmodule OliWeb.RemixSectionLiveTest do
         section_1: section_1
       }
     } do
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
 
       {:ok, _view, html} = live(conn)
 
       assert html =~ "Admin"
       assert html =~ "Customize Content"
+    end
+
+    test "remix section remove and save (including last course material)", %{
+      conn: conn,
+      map: %{
+        section_1: section_1
+      }
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      node_children_uuids =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_remove_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+
+      open_modal_and_confirm_removal(node_children_uuids, view)
+
+      assert render(view) =~ "<p>There&#39;s nothing here.</p>"
+
+      view
+      |> element("#save")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_1.slug)
+      )
     end
   end
 
@@ -108,7 +141,14 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("#save")
       |> render_click()
 
-      assert_redirect(view, Routes.page_delivery_path(conn, :index, section.slug))
+      assert_redirect(
+        view,
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.ContentLive,
+          section.slug
+        )
+      )
     end
 
     test "breadcrumbs render correctly", %{
@@ -176,7 +216,50 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("#save")
       |> render_click()
 
-      assert_redirect(view, Routes.page_delivery_path(conn, :index, section.slug))
+      assert_redirect(
+        view,
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.ContentLive,
+          section.slug
+        )
+      )
+    end
+
+    test "remix section remove and save (including last course material)", %{
+      conn: conn,
+      map: %{
+        section_1: section
+      }
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      node_children_uuids =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_remove_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+
+      open_modal_and_confirm_removal(node_children_uuids, view)
+
+      assert render(view) =~ "<p>There&#39;s nothing here.</p>"
+
+      view
+      |> element("#save")
+      |> render_click()
+
+      assert_redirect(
+        view,
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.ContentLive,
+          section.slug
+        )
+      )
     end
   end
 
@@ -189,7 +272,11 @@ defmodule OliWeb.RemixSectionLiveTest do
       revision1: revision1,
       revision2: revision2
     } do
-      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug))
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug)
+        )
 
       {:ok, view, _html} = live(conn)
 
@@ -201,7 +288,11 @@ defmodule OliWeb.RemixSectionLiveTest do
       conn: conn,
       prod: prod
     } do
-      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug))
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug)
+        )
 
       {:ok, view, _html} = live(conn)
 
@@ -263,7 +354,10 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("#save")
       |> render_click()
 
-      assert_redirect(view, Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, oaf_section_1))
+      assert_redirect(
+        view,
+        Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, oaf_section_1)
+      )
     end
 
     test "remix section items and add materials items are ordered correctly", %{
@@ -316,6 +410,20 @@ defmodule OliWeb.RemixSectionLiveTest do
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
              |> render() =~ "#{latest2.title}"
     end
+  end
+
+  defp open_modal_and_confirm_removal([], view), do: view
+
+  defp open_modal_and_confirm_removal([uuid | tail], view) do
+    view
+    |> element(~s{button[phx-click="show_remove_modal"][phx-value-uuid="#{uuid}"]})
+    |> render_click()
+
+    view
+    |> element(~s{button[phx-click="RemoveModal.remove"]})
+    |> render_click()
+
+    open_modal_and_confirm_removal(tail, view)
   end
 
   defp setup_admin_session(%{conn: conn}) do

@@ -36,12 +36,11 @@
 
     <%= if @preview_mode == true do %>
     <!-- Preview Mode Styles -->
-      <link id="preview-theme-light" rel="stylesheet" href="/css/preview_default.css" />
+      <link id="preview-theme-light" rel="stylesheet" href="/css/preview.css" />
     <% end %>
 
     <!-- Janus Part Component external CSS Files -->
     <link rel="stylesheet" href="/css/janus_image_carousel_delivery.css"/>
-    <link id="vendor-css" rel="stylesheet" href="/css/vendor.css" />
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 

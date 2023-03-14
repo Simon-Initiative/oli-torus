@@ -39,6 +39,10 @@ import '../ResourceEditor.scss';
 import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { Page, Paging } from 'components/misc/Paging';
 import { classNames } from 'utils/classNames';
+import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
+import Appsignal from '@appsignal/javascript';
+import { initAppSignal } from '../../utils/appsignal';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 import styles from './ActivityBank.modules.scss';
 
 const PAGE_SIZE = 5;
@@ -49,6 +53,7 @@ export interface ActivityBankProps {
   allObjectives: Objective[]; // All objectives
   allTags: Tag[]; // All tags
   totalCount: number;
+  appsignalKey: string | null;
 }
 
 type ActivityBankState = {
@@ -66,6 +71,7 @@ type ActivityBankState = {
   editedSlug: Maybe<string>;
   filterExpressions: BankTypes.Expression[];
   canBeUpdated: boolean; // tracks whether or not the "Update" button should be enabled
+  appsignal: Appsignal | null;
 };
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
@@ -183,7 +189,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
   constructor(props: ActivityBankProps) {
     super(props);
 
+    const appsignal = initAppSignal(props.appsignalKey, 'Activity Bank Editor', {
+      projectSlug: props.projectSlug,
+    });
+
     this.state = {
+      appsignal,
       activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(),
       messages: [],
       persistence: 'idle',
@@ -571,80 +582,89 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     );
 
     return (
-      <div className="resource-editor row">
-        <div className="col-12">
-          <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+      <React.StrictMode>
+        <AppsignalContext.Provider value={this.state.appsignal}>
+          <ErrorBoundary>
+            <ModalDisplay />
 
-          <Banner
-            dismissMessage={(msg) =>
-              this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
-            }
-            executeAction={(message, action) => action.execute(message)}
-            messages={this.state.messages}
-          />
-          <div className="d-flex justify-content-end">
-            <PersistenceStatus persistence={this.state.persistence} />
-          </div>
-          <div className="d-flex justify-content-between">
-            {overviewLabel}
-            <CreateActivity
-              projectSlug={props.projectSlug}
-              editorMap={props.editorMap}
-              onAdd={this.onActivityAdd}
-            />
-          </div>
-          <hr />
+            <div className="resource-editor">
+              <div>
+                <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
-          <LogicFilter
-            expressions={this.state.filterExpressions}
-            editMode={true}
-            allowText={true}
-            projectSlug={props.projectSlug}
-            editorMap={props.editorMap}
-            allObjectives={this.state.allObjectives}
-            allTags={this.state.allTags}
-            onRegisterNewObjective={onRegisterNewObjective}
-            onRegisterNewTag={onRegisterNewTag}
-            onChange={(filterExpressions) => {
-              this.setState({ filterExpressions, canBeUpdated: true });
-            }}
-            onRemove={() => true}
-          />
+                <Banner
+                  dismissMessage={(msg) =>
+                    this.setState({
+                      messages: this.state.messages.filter((m) => msg.guid !== m.guid),
+                    })
+                  }
+                  executeAction={(message, action) => action.execute(message)}
+                  messages={this.state.messages}
+                />
+                <div className="d-flex justify-content-end">
+                  <PersistenceStatus persistence={this.state.persistence} />
+                </div>
+                <div className="d-flex justify-content-between mb-4">
+                  <div className="flex-1">{overviewLabel}</div>
+                  <CreateActivity
+                    projectSlug={props.projectSlug}
+                    editorMap={props.editorMap}
+                    onAdd={this.onActivityAdd}
+                  />
+                </div>
 
-          <div className="d-flex justify-content-end">
-            <button
-              className="btn btn-secondary mr-3"
-              disabled={isEmptyFilterLogic(this.state.filterExpressions)}
-              onClick={() => {
-                this.setState({ filterExpressions: defaultFilters(), canBeUpdated: true });
-              }}
-            >
-              Clear all
-            </button>
-            <button
-              className="btn btn-secondary"
-              disabled={!this.state.canBeUpdated}
-              onClick={() => {
-                this.setState({ paging: defaultPaging(), canBeUpdated: false });
-                this.fetchActivities(
-                  translateFilterToLogic(this.state.filterExpressions),
-                  defaultPaging(),
-                );
-              }}
-            >
-              Apply Filters
-            </button>
-          </div>
+                <LogicFilter
+                  expressions={this.state.filterExpressions}
+                  editMode={true}
+                  allowText={true}
+                  projectSlug={props.projectSlug}
+                  editorMap={props.editorMap}
+                  allObjectives={this.state.allObjectives}
+                  allTags={this.state.allTags}
+                  onRegisterNewObjective={onRegisterNewObjective}
+                  onRegisterNewTag={onRegisterNewTag}
+                  onChange={(filterExpressions) => {
+                    this.setState({ filterExpressions, canBeUpdated: true });
+                  }}
+                  onRemove={() => true}
+                />
 
-          <hr className="mb-4" />
+                <div className="d-flex justify-end my-4">
+                  <button
+                    className="btn btn-secondary mr-3"
+                    disabled={isEmptyFilterLogic(this.state.filterExpressions)}
+                    onClick={() => {
+                      this.setState({ filterExpressions: defaultFilters(), canBeUpdated: true });
+                    }}
+                  >
+                    Clear all
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    disabled={!this.state.canBeUpdated}
+                    onClick={() => {
+                      this.setState({ paging: defaultPaging(), canBeUpdated: false });
+                      this.fetchActivities(
+                        translateFilterToLogic(this.state.filterExpressions),
+                        defaultPaging(),
+                      );
+                    }}
+                  >
+                    Apply Filters
+                  </button>
+                </div>
 
-          {pagingOrPlaceholder}
+                <hr className="mb-4" />
 
-          {activities}
+                {pagingOrPlaceholder}
 
-          {this.state.totalCount > 0 ? pagingOrPlaceholder : null}
-        </div>
-      </div>
+                {activities}
+
+                {this.state.totalCount > 0 ? pagingOrPlaceholder : null}
+              </div>
+            </div>
+          </ErrorBoundary>
+        </AppsignalContext.Provider>
+      </React.StrictMode>
     );
   }
 }

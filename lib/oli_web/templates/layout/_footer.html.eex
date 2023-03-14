@@ -4,23 +4,22 @@
   footer =  Application.fetch_env!(:oli, :footer)
 %>
 
-<footer>
-  <div class="container">
-    <div class="row">
-      <div class="col-sm-auto text-left">
-        <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
-      </div>
-      <div class="col-sm-auto text-center">
-        <%= footer[:text] %><a href="<%= footer[:link_1_location] %>" target="_blank"><%= footer[:link_1_text] %></a>
-      </div>
-      <div class="col-sm-auto text-center">
-        <a href="<%= footer[:link_2_location] %>" target="_blank"> <%= footer[:link_2_text] %></a>
-      </div>
-      <div class="col-sm text-right">
-        Version <%= Application.fetch_env!(:oli, :build).version %> (<%= Application.fetch_env!(:oli, :build).sha |> String.upcase %>) <%= Timex.format!(Application.fetch_env!(:oli, :build).date, "%m/%d/%Y", :strftime) %>
-      </div>
+<footer class="flex flex-row h-[60px] overflow-hidden absolute bottom-0 left-0 right-0 bg-gray-100">
+  <div class="container mx-auto flex flex-row px-10 items-center text-sm">
+    <div class="text-left">
+      <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
+    </div>
+    <div class="flex-1 text-center">
+      <%= footer[:text] %><a href="<%= footer[:link_1_location] %>" target="_blank"><%= footer[:link_1_text] %></a>
+    </div>
+    <div class="flex-1 text-center">
+      <a href="<%= footer[:link_2_location] %>" target="_blank"> <%= footer[:link_2_text] %></a>
+    </div>
+    <div class="text-right">
+      Version <%= Application.fetch_env!(:oli, :build).version %> (<%= Application.fetch_env!(:oli, :build).sha |> String.upcase %>) <%= Timex.format!(Application.fetch_env!(:oli, :build).date, "%m/%d/%Y", :strftime) %>
     </div>
   </div>
+
   <script>
     OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(@conn, :retrieve) %>', {privacyPoliciesUrl: '<%= privacy_policies_url %>'}));
   </script>

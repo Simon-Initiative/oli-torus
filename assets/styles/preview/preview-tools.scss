@@ -1,22 +1,21 @@
 #PreviewTools {
   @import './preview-tools-reset.scss';
-  @import 'authoring/variables';
-  @import 'bootstrap';
 
-  box-shadow: 0px 0px 5px 1px $black;
-  background: $gray-100;
+  box-shadow: 0px 0px 5px 1px black;
+  background: #f1f5f9;
   display: flex;
   flex-direction: column;
   position: fixed;
   top: 70px;
   left: 0;
-  z-index: $z-highest;
+  z-index: 1000;
   width: 60px;
   min-width: 0;
   border-radius: 0px 5px 5px 0px;
 
   .action-picker {
     padding: 12px;
+    text-align: center;
   }
   &.opened {
     top: 70px;
@@ -28,7 +27,7 @@
   .pt-header {
     position: relative;
     padding: 8px;
-    border-bottom: 1px solid $gray-400;
+    border-bottom: 1px solid #94a3b8;
     > button {
       float: right;
       margin-top: 5px;
@@ -37,20 +36,20 @@
     }
     > div {
       display: flex;
-      background: $gray-100;
+      background: #f1f5f9;
       align-items: center;
       padding: 7px;
       margin: 0;
     }
     .pt-title {
       margin-left: 8px;
-      color: $black;
+      color: black;
       font-size: 18px;
     }
   }
   .pt-body {
     overflow: auto;
-    color: $gray-800;
+    color: #1e293b;
     .preview-tools-view {
       overflow: auto;
       counter-reset: li;
@@ -62,7 +61,7 @@
         counter-increment: li;
 
         a {
-          color: $gray-800;
+          color: #1e293b;
           display: block;
           position: relative;
           padding: 8px 8px;
@@ -78,7 +77,7 @@
           direction: rtl;
         }
         &.active a {
-          color: $white;
+          color: white;
         }
       }
     }
@@ -90,19 +89,19 @@
         padding: 0.5rem 1rem;
       }
       .correct {
-        border-left: 4px solid $green;
+        border-left: 4px solid #4ade80;
       }
       .incorrect {
-        border-left: 4px solid $yellow;
+        border-left: 4px solid #facc15;
       }
       .initState {
-        border-left: 4px solid $secondary;
+        border-left: 4px solid #d4d4d4;
       }
       .even {
-        border-left: 4px solid $gray-600;
+        border-left: 4px solid #475569;
       }
       .odd {
-        border-left: 4px solid $gray-500;
+        border-left: 4px solid #64748b;
       }
       .chevron-arrow {
         display: inline-block;
@@ -114,7 +113,7 @@
         }
       }
       .card-header button {
-        color: $body-color;
+        color: black;
       }
     }
   }
@@ -158,7 +157,7 @@
     }
     .apply-changes {
       display: flex;
-      background-color: $gray-300;
+      background-color: #cbd5e1;
       button {
         flex-grow: 1;
       }

@@ -38,3 +38,5 @@ if (!window.keepAlive) {
 
   window.keepAlive();
 }
+
+export {};

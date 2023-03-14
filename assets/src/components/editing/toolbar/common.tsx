@@ -5,15 +5,11 @@ import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
 import { Command, CommandContext } from '../elements/commands/interfaces';
 
-const buttonContent = (icon: string, description: string | undefined) =>
-  icon ? (
-    <span className="material-icons">{icon}</span>
-  ) : (
-    <span className="toolbar-button-text">{description}</span>
-  );
+const buttonContent = (icon: JSX.Element, description: string | undefined) =>
+  icon ? icon : <span className="toolbar-button-text">{description}</span>;
 
 export interface ToolbarButtonProps {
-  icon: (editor: Editor) => string;
+  icon: (editor: Editor) => JSX.Element;
   command: Command;
   context: CommandContext;
   description?: (editor: Editor) => string;

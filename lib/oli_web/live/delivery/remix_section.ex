@@ -28,7 +28,12 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Delivery.Sections.Section
 
   defp redirect_after_save(:instructor, %Section{slug: slug}),
-    do: Routes.page_delivery_path(OliWeb.Endpoint, :index, slug)
+    do:
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Delivery.InstructorDashboard.ContentLive,
+        slug
+      )
 
   defp redirect_after_save(:open_and_free, section),
     do: Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, section)
@@ -621,7 +626,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     ~H"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="las la-arrow-left"></i></button>
+        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="fas fa-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{

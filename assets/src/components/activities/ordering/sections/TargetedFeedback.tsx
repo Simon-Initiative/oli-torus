@@ -53,7 +53,7 @@ export const TargetedFeedback: React.FC = () => {
         </ResponseCard>
       ))}
       <AuthoringButtonConnected
-        className="align-self-start btn btn-link"
+        className="self-start btn btn-link"
         action={() => dispatch(Actions.addTargetedFeedback())}
       >
         Add targeted feedback

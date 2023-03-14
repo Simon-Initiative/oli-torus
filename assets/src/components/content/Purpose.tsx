@@ -29,7 +29,6 @@ export const Purpose = (props: PurposeProps) => {
         <div className="dropdown">
           <button
             type="button"
-            id="purposeTypeButton"
             disabled={disabled}
             style={disabled ? { pointerEvents: 'none' } : {}}
             className={classNames('btn btn-sm dropdown-toggle btn-purpose', disabled && 'disabled')}
@@ -38,6 +37,7 @@ export const Purpose = (props: PurposeProps) => {
             aria-expanded="false"
           >
             {purposeLabel}
+            <i className="fa-solid fa-caret-down w-2 ml-auto"></i>
           </button>
           <div className="dropdown-menu dropdown-menu-right" aria-labelledby="purposeTypeButton">
             {options}

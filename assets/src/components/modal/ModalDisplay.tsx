@@ -8,12 +8,10 @@ type ModalDisplayProps = {
 };
 
 const ModalDisplay = (props: ModalDisplayProps): JSX.Element => {
-  const modals = props.modal
-    .toArray()
-    .reverse()
-    .map((component, i) => <div key={i}>{component}</div>);
-
-  return <div>{modals}</div>;
+  return props.modal.caseOf({
+    just: (modal) => <>{modal}</>,
+    nothing: () => <></>,
+  });
 };
 
 interface StateProps {

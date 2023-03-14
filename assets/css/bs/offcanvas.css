@@ -1,0 +1,11 @@
+.offcanvas-backdrop.fade {
+  opacity: 0;
+}
+
+.offcanvas-backdrop.show {
+  opacity: 0.5;
+}
+
+.offcanvas.show {
+  transform: none;
+}

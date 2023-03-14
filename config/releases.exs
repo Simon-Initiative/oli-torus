@@ -61,6 +61,15 @@ if System.get_env("PAYMENT_PROVIDER") == "stripe" &&
   """
 end
 
+if System.get_env("PAYMENT_PROVIDER") == "cashnet" &&
+     (!System.get_env("CASHNET_STORE") || !System.get_env("CASHNET_CHECKOUT_URL")
+     || !System.get_env("CASHNET_CLIENT") || !System.get_env("CASHNET_GL_NUMBER")) do
+  raise """
+  Cashnet payment provider not configured correctly. CASHNET_STORE, CASHNET_CHECKOUT_URL,
+  CASHNET_CLIENT and CASHNET_GL_NUMBER values must be set.
+  """
+end
+
 media_url =
   System.get_env("MEDIA_URL") ||
     raise """
@@ -119,6 +128,17 @@ config :oli, :vendor_property,
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
   private_secret: System.get_env("STRIPE_PRIVATE_SECRET")
+
+config :oli, :cashnet_provider,
+  cashnet_store: System.get_env("CASHNET_STORE"),
+  cashnet_checkout_url: System.get_env("CASHNET_CHECKOUT_URL"),
+  cashnet_client: System.get_env("CASHNET_CLIENT"),
+  cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
+
+config :oli, :upgrade_experiment_provider,
+  url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
+  user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
+  api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,

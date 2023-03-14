@@ -327,6 +327,100 @@ defmodule Oli.SectionsTest do
       section = insert(:snapshot).section
       assert Sections.has_student_data?(section.slug)
     end
+
+    test "get_remixed_projects/2 returns a list of remixed projects for a section", %{
+      section: section
+    } do
+      remixed_projects = Sections.get_remixed_projects(section.id, section.base_project_id)
+      assert 0 = length(remixed_projects)
+
+      insert(:section_project_publication, %{section: section})
+      insert(:section_project_publication, %{section: section})
+
+      remixed_projects = Sections.get_remixed_projects(section.id, section.base_project_id)
+      assert 2 = length(remixed_projects)
+    end
+
+    test "get_active_sections_by_project/1 returns course sections actives for a project" do
+      %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      section1 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      section2 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      {:ok, _sr} = Sections.create_section_resources(section1, publication)
+      {:ok, _sr} = Sections.create_section_resources(section2, publication)
+
+      assert project.id
+             |> Sections.get_active_sections_by_project()
+             |> length == 2
+    end
+
+    test "get_active_sections_by_project/1 does not return active course sections for a project" do
+      %{publication: _publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      assert project.id
+             |> Sections.get_active_sections_by_project()
+             |> length == 0
+    end
+
+    test "get_push_force_affected_sections/2 returns all sections that will be affected by forcing the publication update" do
+      %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      section1 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      section2 =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      product1 = insert(:section, base_project: project)
+
+      {:ok, _sr} = Sections.create_section_resources(section1, publication)
+      {:ok, _sr} = Sections.create_section_resources(section2, publication)
+      {:ok, _sr} = Sections.create_section_resources(product1, publication)
+
+      %{product_count: product_count, section_count: section_count} =
+        Sections.get_push_force_affected_sections(project.id, publication.id)
+
+      assert section_count == 2
+      assert product_count == 1
+    end
+
+    test "get_push_force_affected_sections/2 does not return sections or products that will be affected by forcing the publication update" do
+      %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      %{product_count: product_count, section_count: section_count} =
+        Sections.get_push_force_affected_sections(project.id, publication.id)
+
+      assert section_count == 0
+      assert product_count == 0
+    end
   end
 
   describe "section resources" do
@@ -1030,6 +1124,69 @@ defmodule Oli.SectionsTest do
         |> Repo.all()
 
       assert section_resources |> Enum.count() == 8
+    end
+  end
+
+  describe "get_student_roles?/2" do
+    setup do
+      user = insert(:user)
+      section = insert(:section)
+      {:ok, %{section: section, user: user}}
+    end
+
+    test "returns false for student and instructor when users are enrolled with any other roles",
+         %{
+           section: section,
+           user: user
+         } do
+      other_roles =
+        [
+          :context_administrator,
+          :context_content_developer,
+          :context_mentor,
+          :context_manager,
+          :context_member,
+          :context_officer
+        ]
+        |> Enum.map(&ContextRoles.get_role(&1))
+
+      Sections.enroll(user.id, section.id, other_roles)
+
+      assert %{is_student?: false, is_instructor?: false} ==
+               Sections.get_user_roles(user, section.slug)
+    end
+
+    test "returns true when enrolled as student", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      assert %{is_student?: true, is_instructor?: false} ==
+               Sections.get_user_roles(user, section.slug)
+    end
+
+    test "returns true when enrolled as instructor", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      assert %{is_student?: false, is_instructor?: true} ==
+               Sections.get_user_roles(user, section.slug)
+    end
+
+    test "returns true when enrolled as instructor and student", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [
+        ContextRoles.get_role(:context_instructor),
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      assert %{is_student?: true, is_instructor?: true} ==
+               Sections.get_user_roles(user, section.slug)
     end
   end
 

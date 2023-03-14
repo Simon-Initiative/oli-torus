@@ -59,8 +59,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
         </p>
       </div>
       <div className="accordion" id="preferenceAccordion">
-        <div className="card z-depth-0 bordered">
-          <div className="card-header d-flex justify-content-between" id="headingOne">
+        <div className="accordion-item bg-white border border-gray-200">
+          <div className="accordion-header mb-0 flex justify-content-between" id="headingOne">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link"
@@ -74,26 +74,30 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 <i className="fas fa-angle-down rotate-icon"></i>
               </button>
             </div>
-            <div className="custom-control custom-switch d-inline-block">
+            <div className="form-check form-switch inline-block p-2">
               <input
                 type="checkbox"
-                className="custom-control-input"
+                role="switch"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
                 id="strictCookies"
                 checked
                 disabled
               />
-              <label className="custom-control-label small pt-1" htmlFor="strictCookies">
+              <label
+                className="form-check-label inline-block text-gray-800 small"
+                htmlFor="strictCookies"
+              >
                 On
               </label>
             </div>
           </div>
           <div
             id="collapseOne"
-            className="collapse"
+            className="accordion-collapse collapse"
             aria-labelledby="headingOne"
             data-parent="#preferenceAccordion"
           >
-            <div className="card-body">
+            <div className="accordion-body py-4 px-5">
               <div className="mb-2">
                 <p>
                   These cookies are necessary for our website to function properly and cannot be
@@ -141,8 +145,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
             </div>
           </div>
         </div>
-        <div className="card z-depth-0 bordered">
-          <div className="card-header d-flex justify-content-between" id="headingTwo">
+        <div className="accordion-item bg-white border border-gray-200">
+          <div className="accordion-header mb-0 flex justify-content-between" id="headingTwo">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link collapsed"
@@ -156,26 +160,27 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 <i className="fas fa-angle-down rotate-icon"></i>
               </button>
             </div>
-            <div className="custom-control custom-switch d-inline-block">
+            <div className="form-check form-switch inline-block p-2">
               <input
                 type="checkbox"
-                className="custom-control-input"
+                role="switch"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
                 id="functionalCookies"
                 checked={functionalActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label className="custom-control-label small pt-1" htmlFor="functionalCookies">
+              <label className="custom-control-label small" htmlFor="functionalCookies">
                 {functionalLabel}
               </label>
             </div>
           </div>
           <div
             id="collapseTwo"
-            className="collapse"
+            className="accordion-collapse collapse"
             aria-labelledby="headingTwo"
             data-parent="#preferenceAccordion"
           >
-            <div className="card-body">
+            <div className="accordion-body py-4 px-5">
               <div className="mb-2">
                 <p>
                   These cookies are used to provide you with a more personalized experience on our
@@ -214,8 +219,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
             </div>
           </div>
         </div>
-        <div className="card z-depth-0 bordered">
-          <div className="card-header d-flex justify-content-between" id="headingThree">
+        <div className="accordion-item bg-white border border-gray-200">
+          <div className="accordion-header mb-0 flex justify-content-between" id="headingThree">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link collapsed"
@@ -229,26 +234,27 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 <i className="fas fa-angle-down rotate-icon"></i>
               </button>
             </div>
-            <div className="custom-control custom-switch d-inline-block">
+            <div className="form-check form-switch inline-block p-2">
               <input
                 type="checkbox"
-                className="custom-control-input"
+                role="switch"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
                 id="analyticsCookies"
                 checked={analyticsActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label className="custom-control-label small pt-1" htmlFor="analyticsCookies">
+              <label className="custom-control-label small" htmlFor="analyticsCookies">
                 {analyticsLabel}
               </label>
             </div>
           </div>
           <div
             id="collapseThree"
-            className="collapse"
+            className="accordion-collapse collapse"
             aria-labelledby="headingThree"
             data-parent="#preferenceAccordion"
           >
-            <div className="card-body">
+            <div className="accordion-body py-4 px-5">
               <div className="mb-2">
                 <p>
                   These cookies are used to collect information to analyze the traffic to our
@@ -296,8 +302,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
             </div>
           </div>
         </div>
-        <div className="card z-depth-0 bordered">
-          <div className="card-header d-flex justify-content-between" id="headingFour">
+        <div className="accordion-item bg-white border border-gray-200">
+          <div className="accordion-header mb-0 flex justify-content-between" id="headingFour">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link collapsed"
@@ -311,26 +317,27 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 <i className="fas fa-angle-down rotate-icon"></i>
               </button>
             </div>
-            <div className="custom-control custom-switch d-inline-block">
+            <div className="form-check form-switch inline-block p-2">
               <input
                 type="checkbox"
-                className="custom-control-input"
+                role="switch"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
                 id="targetingCookies"
                 checked={targetingActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label className="custom-control-label small pt-1" htmlFor="targetingCookies">
+              <label className="custom-control-label small" htmlFor="targetingCookies">
                 {targetingLabel}
               </label>
             </div>
           </div>
           <div
             id="collapseFour"
-            className="collapse"
+            className="accordion-collapse collapse"
             aria-labelledby="headingFour"
             data-parent="#preferenceAccordion"
           >
-            <div className="card-body">
+            <div className="accordion-body py-4 px-5">
               <div className="mb-2">
                 <p>
                   These cookies are used to show advertising that is likely to be of interest to you

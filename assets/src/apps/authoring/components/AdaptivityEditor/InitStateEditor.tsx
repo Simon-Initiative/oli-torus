@@ -19,6 +19,7 @@ import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
+  authoringContainer: React.RefObject<HTMLElement>;
 }
 
 export interface InitialState {
@@ -31,10 +32,16 @@ export interface InitialState {
 
 interface InitStateItemProps {
   state: InitialState;
+  authoringContainer: React.RefObject<HTMLElement>;
   onChange: (id: string, key: string, value: string) => void;
   onDelete: (id: string) => void;
 }
-const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
+const InitStateItem: React.FC<InitStateItemProps> = ({
+  state,
+  authoringContainer,
+  onChange,
+  onDelete,
+}) => {
   const typeRef = useRef<HTMLSelectElement>(null);
 
   const [target, setTarget] = useState(state.target);
@@ -194,7 +201,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
   );
 };
 
-export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
+export const InitStateEditor: React.FC<InitStateEditorProps> = ({ authoringContainer }) => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const [initState, setInitState] = useState([]);
@@ -308,6 +315,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
                   state={state}
                   onChange={handleChange}
                   onDelete={handleDelete}
+                  authoringContainer={authoringContainer}
                 />
               ))}
             </div>

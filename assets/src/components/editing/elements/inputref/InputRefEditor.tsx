@@ -86,7 +86,7 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
             display: 'inline-block',
             userSelect: 'none',
           } as React.CSSProperties)}
-          className="form-control"
+          className="form-control border border-gray-400 rounded p-1"
         >
           {friendlyType(input.inputType)}
           {props.children}

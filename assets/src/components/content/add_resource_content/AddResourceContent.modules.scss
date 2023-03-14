@@ -1,4 +1,3 @@
-@use 'authoring/theme' as authoring;
 @import 'common/mixins';
 
 .addResourceContent {
@@ -28,14 +27,14 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 2px solid authoring.$gray-500;
-      color: authoring.$gray-500;
+      border: 2px solid var(--color-gray-500);
+      color: var(--color-gray-500);
       opacity: inherit;
       transition: opacity 200ms ease-out, background-color 200ms ease-out;
 
       i {
         vertical-align: text-top;
-        color: authoring.$gray-500;
+        color: var(--color-gray-500);
         transition: transform 200ms ease-in-out, color 200ms ease-in-out;
       }
     }
@@ -47,18 +46,18 @@
 
   .insertButtonContainer {
     .insertButton {
-      background-color: authoring.$primary;
-      border-color: authoring.$primary;
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
 
-      i {
-        color: authoring.$white;
+      svg {
+        color: var(--color-white);
         transform: rotate(45deg);
       }
     }
   }
 
   .insertAdornment {
-    background-color: authoring.$primary;
+    background-color: var(--color-primary);
   }
 }
 
@@ -70,7 +69,7 @@
   display: block;
   width: 100%;
   height: 2px;
-  background-color: authoring.$gray-500;
+  background-color: var(--color-gray-500);
   opacity: inherit;
   transition: opacity 200ms ease-out;
 }
@@ -86,7 +85,7 @@
 
 .insertButton {
   border: 2px solid transparent;
-  background-color: rgba($color: authoring.$body-color, $alpha: 0.6);
+  background-color: rgba($color: var(--color-body-color), $alpha: 0.6);
   color: white;
 }
 
@@ -96,7 +95,7 @@
   width: fit-content;
   z-index: 500;
   border-radius: 6px;
-  border-color: authoring.$light !important;
+  border-color: var(--color-light) !important;
 
   &:global(.popover) {
     max-width: unset !important;
@@ -111,8 +110,8 @@
   flex-direction: column;
   border-radius: 2px;
   overflow: hidden;
-  background-color: authoring.$body-bg;
-  border-color: authoring.$light;
+  background-color: var(--color-body);
+  border-color: var(--color-light);
 
   :global(.header) {
     padding-left: 6px;
@@ -126,12 +125,12 @@
   }
 
   :global(.type-label) {
-    color: authoring.$body-color;
+    color: var(--color-body-color);
     font-size: 0.8em;
     font-weight: 300;
   }
   :global(.resource-choice-header) {
-    color: authoring.$body-color;
+    color: var(--color-body-color);
     font-size: 0.9em;
     font-weight: 400;
     text-transform: uppercase;
@@ -143,25 +142,25 @@
     min-height: 50px;
     max-width: 70px;
     min-width: 70px;
-    background-color: authoring.$body-bg;
-    color: authoring.$body-color;
+    background-color: var(--color-body);
+    color: var(--color-body-color);
 
     &:hover {
-      color: authoring.$primary;
+      color: var(--color-primary);
     }
     &:active {
       transform: translateY(4px);
     }
 
     &[disabled] {
-      color: authoring.$gray-500;
+      color: var(--color-gray-500);
 
       .type-label {
-        color: authoring.$gray-500;
+        color: var(--color-gray-500);
       }
 
       &:hover {
-        color: authoring.$gray-500;
+        color: var(--color-gray-500);
       }
       &:active {
         transform: none;
@@ -170,18 +169,19 @@
   }
 
   :global(.resource-choice-icon) {
-    font-size: 24px;
+    font-size: 1.3em;
+    color: var(--color-gray-600);
   }
 
   :global(.resource-choices-divider) {
-    border-left-color: authoring.$light;
+    border-left-color: var(--color-light);
     border-left-width: 1px;
     border-left-style: solid;
   }
 
   :global(.resource-choices-tip) {
     font-size: 0.8em;
-    color: authoring.$body-color;
+    color: var(--color-body-color);
   }
 
   :global(.resource-choices) {
@@ -198,7 +198,7 @@
     max-width: 210px;
   }
   :global(.type-description) {
-    color: authoring.$body-color;
+    color: var(--color-body-color);
     font-size: 0.8em;
   }
 }

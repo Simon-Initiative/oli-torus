@@ -43,7 +43,7 @@ defmodule OliWeb.Common.Modal do
   end
   ```
 
-  4. Dismiss modal using bootstrap javascript (data-dismiss="modal", escape key, etc...)
+  4. Dismiss modal using bootstrap javascript (data-bs-dismiss="modal", escape key, etc...)
   or using the `hide_modal(socket, assigns)` function. Hide modal can optionally take any
   cleanup assigns to be set after the modal has disappeared and is no longer being rendered.
   ```
@@ -65,7 +65,7 @@ defmodule OliWeb.Common.Modal do
         end
       end
 
-      def handle_event("_bsmodal.unmount", _, socket) do
+      def handle_event("phx_modal.unmount", _, socket) do
         case socket.assigns do
           %{__modal_assigns_after_hide__: assigns_after_hide}
           when not is_nil(assigns_after_hide) ->
@@ -88,7 +88,7 @@ defmodule OliWeb.Common.Modal do
 
       def hide_modal(socket, assigns_after_hide \\ []) do
         socket
-        |> push_event("_bsmodal.hide", %{})
+        |> push_event("phx_modal.hide", %{})
         |> assign(:__modal_assigns_after_hide__, assigns_after_hide)
       end
     end

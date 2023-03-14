@@ -17,7 +17,7 @@ export const DeleteBibEntry = (props: DeleteBibEntryProps) => {
       title="Delete this entry"
       aria-pressed="false"
     >
-      <i className="las la-trash-alt"></i>
+      <i className="fas fa-trash-alt"></i>
     </button>
   );
 };

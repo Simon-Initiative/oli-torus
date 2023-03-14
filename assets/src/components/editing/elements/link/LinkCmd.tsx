@@ -1,10 +1,11 @@
+import React from 'react';
 import { Transforms, Editor, Element } from 'slate';
 import { isActive } from '../../slateUtils';
 import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 
 export const commandDesc = createButtonCommandDesc({
-  icon: 'insert_link',
+  icon: <i className="fa-solid fa-link"></i>,
   description: 'Link (⌘L)',
   execute: (_context, editor, _params) => {
     const selection = editor.selection;

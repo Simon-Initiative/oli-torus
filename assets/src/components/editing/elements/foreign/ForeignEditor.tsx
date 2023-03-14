@@ -57,7 +57,7 @@ export const ForeignEditor = (props: Props) => {
           <Toolbar.Group>
             <CommandButton
               description={createButtonCommandDesc({
-                icon: 'edit',
+                icon: <i className="fa-solid fa-pencil"></i>,
                 description: 'Change Language',
                 execute: onChangeLang,
               })}

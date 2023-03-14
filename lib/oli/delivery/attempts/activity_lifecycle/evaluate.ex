@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Activities.Model
   alias Oli.Delivery.Evaluation.Explanation
   alias Oli.Delivery.Evaluation.ExplanationContext
+  alias Oli.Delivery.Experiments.LogWorker
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
@@ -32,7 +33,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id)
 
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
-        submit_active_part_attempts(part_attempts)
+        part_attempts_submitted = submit_active_part_attempts(part_attempts)
 
         custom = Map.get(delivery, "custom", %{})
 
@@ -77,7 +78,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           rules,
           activitiesRequiredForEvaluation,
           variablesRequiredForEvaluation,
-          datashop_session_id
+          datashop_session_id,
+          part_attempts_submitted
         )
 
       e ->
@@ -86,25 +88,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp submit_active_part_attempts(part_attempts) do
-    update_values =
-      Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
-      |> Enum.map(fn pa -> "('#{pa.attempt_guid}')" end)
-      |> Enum.join(",")
+    now = Timex.now()
 
-    sql = """
-      UPDATE part_attempts
-      SET
-        lifecycle_state = 'submitted',
-        date_submitted = NOW(),
-        updated_at = NOW()
-      FROM (
-          VALUES
-          #{update_values}
-      ) AS batch_values (attempt_guid)
-      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
-    """
-
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    part_attempts
+    |> Enum.filter(fn pa -> pa.lifecycle_state == :active end)
+    |> Enum.map(fn pa ->
+      %{pa | lifecycle_state: :submitted, date_submitted: now, updated_at: now}
+    end)
   end
 
   def evaluate_from_rules(
@@ -116,7 +106,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         rules,
         activitiesRequiredForEvaluation,
         variablesRequiredForEvaluation,
-        datashop_session_id
+        datashop_session_id,
+        part_attempts
       ) do
     state =
       case variablesRequiredForEvaluation do
@@ -162,7 +153,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  activity_attempt_guid,
                  client_evaluations,
                  :do_not_normalize,
-                 datashop_session_id
+                 datashop_session_id,
+                 part_attempts
                ) do
             {:ok, _} ->
               {:ok, decodedResults}
@@ -329,14 +321,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
       roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 
-      case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+      result = case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
            |> persist_evaluations(part_inputs, roll_up_fn, datashop_session_id) do
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
         _ -> Repo.rollback("unknown error")
       end
+
+      Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
+      result
     end)
     |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+    |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
   end
 
   @doc """
@@ -381,43 +377,91 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, evaluations}
   end
 
-  @doc """
-  Evaluates an activity attempt using only the already stored state present in
-  the child part attempts.  This exists primarly to allow graded pages to
-  submit all of the contained activites when the student clicks "Submit Answers".
-  """
-  def evaluate_from_stored_input(activity_attempt_guid, datashop_session_id) do
-    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+  def update_part_attempts_and_get_activity_attempts(resource_attempt, datashop_session_id) do
 
-    # derive the part_attempts from the currently saved state that we expect
-    # to find in the part_attempts
+    activity_attempts = case resource_attempt.revision do
+      %{content: %{"advancedDelivery" => true}} -> get_latest_non_active_activity_attempts(resource_attempt.id)
+      _ -> get_latest_activity_attempts(resource_attempt.id)
+    end
+
+    Enum.reduce_while(
+      activity_attempts,
+      {0, [], [], []},
+      fn activity_attempt,
+         {
+           i,
+           activity_attempt_values,
+           activity_attempt_params,
+           part_attempt_guids
+         } = acc ->
+        if activity_attempt.lifecycle_state != :evaluated and activity_attempt.scoreable do
+          activity_attempt = Map.put(activity_attempt, :resource_attempt, resource_attempt)
+
+          case update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
+            {:ok, part_inputs} ->
+              part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+
+              %{
+                score: score,
+                out_of: out_of,
+                lifecycle_state: lifecycle_state,
+                date_evaluated: date_evaluated,
+                date_submitted: date_submitted
+              } = determine_activity_rollup_attrs(part_inputs, part_attempts, activity_attempt)
+
+              {:cont,
+               {
+                 i + 6,
+                 activity_attempt_values ++
+                   [
+                     "($#{i + 1}, $#{i + 2}::double precision, $#{i + 3}::double precision, $#{i + 4}, $#{i + 5}::timestamp, $#{i + 6}::timestamp)"
+                   ],
+                 activity_attempt_params ++
+                   [
+                     activity_attempt.attempt_guid,
+                     score,
+                     out_of,
+                     Atom.to_string(lifecycle_state),
+                     date_evaluated,
+                     date_submitted
+                   ],
+                 part_attempt_guids ++
+                   Enum.map(part_attempts, fn part_attempt -> part_attempt.attempt_guid end)
+               }}
+
+            error ->
+              {:halt, error}
+          end
+        else
+          {:cont, acc}
+        end
+      end
+    )
+  end
+
+  defp update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
+    part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+
     part_inputs =
-      Enum.map(part_attempts, fn p ->
-        input =
-          case p.response do
-            nil -> nil
-            map -> Map.get(map, "input")
-          end
-
-        files =
-          case p.response do
-            nil -> nil
-            map -> Map.get(map, "files", [])
-          end
+      part_attempts
+      |> Enum.map(fn pa ->
+        {input, files} =
+          if pa.response,
+            do: {Map.get(pa.response, "input"), Map.get(pa.response, "files", [])},
+            else: {nil, nil}
 
         %{
-          attempt_guid: p.attempt_guid,
+          attempt_guid: pa.attempt_guid,
           input: %StudentInput{input: input, files: files}
         }
       end)
+      |> filter_already_evaluated(part_attempts)
 
-    part_inputs = filter_already_evaluated(part_inputs, part_attempts)
-    roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
-
-    case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-         |> persist_evaluations(part_inputs, roll_up_fn, datashop_session_id) do
-      {:ok, _} -> part_attempts
-      {:error, error} -> Repo.rollback(error)
+    case activity_attempt
+         |> do_evaluate_submissions(part_inputs, part_attempts)
+         |> persist_evaluations(part_inputs, fn result -> result end, datashop_session_id) do
+      {:ok, _} -> {:ok, part_inputs}
+      e -> e
     end
   end
 
@@ -445,7 +489,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         activity_attempt_guid,
         client_evaluations,
         normalize_mode \\ :normalize,
-        datashop_session_id
+        datashop_session_id,
+        part_attempts_input \\ nil
       ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
@@ -462,7 +507,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
       %Oli.Activities.ActivityRegistration{allow_client_evaluation: true} ->
         Repo.transaction(fn ->
-          part_attempts = get_latest_part_attempts(activity_attempt_guid)
+          part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
           part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
           roll_up_fn =
@@ -473,15 +518,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               normalize_mode
             )
 
-          persist_client_evaluations(
+          result = persist_client_evaluations(
             part_inputs,
             client_evaluations,
             roll_up_fn,
             false,
             datashop_session_id
           )
+          Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
+
+          result
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
+
 
       _ ->
         {:error, "Activity type does not allow client evaluation"}
@@ -533,6 +583,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           )
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
 
       _ ->
         {:error, "Activity type does not allow client evaluation"}
@@ -625,11 +676,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload(resource_attempt: [:revision], revision: [])
 
-    %ActivityAttempt{
-      resource_attempt: resource_attempt,
-      attempt_number: attempt_number
-    } = activity_attempt
+    do_evaluate_submissions(activity_attempt, part_inputs, part_attempts)
+  end
 
+  defp do_evaluate_submissions(
+         %ActivityAttempt{
+           resource_attempt: resource_attempt,
+           attempt_number: attempt_number
+         } = activity_attempt,
+         part_inputs,
+         part_attempts
+       ) do
     activity_model = select_model(activity_attempt)
 
     {:ok, %Model{parts: parts}} = Model.parse(activity_model)
@@ -701,6 +758,44 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     no_op_fn = fn result -> result end
 
+    case determine_activity_rollup_state(part_inputs, part_attempts) do
+      :evaluated -> evaluated_fn
+      :submitted -> submitted_fn
+      :no_op -> no_op_fn
+    end
+  end
+
+  defp determine_activity_rollup_attrs(part_inputs, part_attempts, activity_attempt) do
+    case determine_activity_rollup_state(part_inputs, part_attempts) do
+      :evaluated ->
+        %Result{score: score, out_of: out_of} =
+          Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
+
+        {score, out_of} = {normalize_to_one(score, out_of), 1.0}
+
+        %{
+          score: score,
+          out_of: out_of,
+          lifecycle_state: :evaluated,
+          date_evaluated: DateTime.utc_now(),
+          date_submitted: DateTime.utc_now()
+        }
+
+      :submitted ->
+        %{
+          score: nil,
+          out_of: nil,
+          lifecycle_state: :submitted,
+          date_evaluated: nil,
+          date_submitted: DateTime.utc_now()
+        }
+
+      :no_op ->
+        activity_attempt
+    end
+  end
+
+  defp determine_activity_rollup_state(part_inputs, part_attempts) do
     count_if = fn attempts, type ->
       Enum.reduce(attempts, 0, fn a, c ->
         if a.lifecycle_state == type do
@@ -742,9 +837,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     case {count_if.(part_attempts, :evaluated), count_if.(part_attempts, :submitted),
           count_if.(part_attempts, :active)} do
-      {_, 0, 0} -> evaluated_fn
-      {_, _, 0} -> submitted_fn
-      {_, _, _} -> no_op_fn
+      {_, 0, 0} -> :evaluated
+      {_, _, 0} -> :submitted
+      {_, _, _} -> :no_op
     end
   end
 

@@ -71,7 +71,7 @@ export const AnswerKey: React.FC<Props> = (props) => {
       ))}
       <AuthoringButtonConnected
         ariaLabel="Add targeted feedback"
-        className="align-self-start btn btn-link"
+        className="self-start btn btn-link"
         action={() => dispatch(addTargetedFeedbackFillInTheBlank(props.partId))}
       >
         Add targeted feedback

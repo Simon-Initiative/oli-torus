@@ -1,7 +1,5 @@
-import { BibEntry } from 'data/content/bibentry';
 import React, { useEffect, useState } from 'react';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
+import { BibEntry } from 'data/content/bibentry';
 import * as BibPersistence from 'data/persistence/bibentry';
 import * as Immutable from 'immutable';
 import { BibEntryView } from './BibEntryView';
@@ -17,13 +15,13 @@ import { CitationModel, fromEntryType } from './citation_model';
 import { BibEntryEditor } from './BibEntryEditor';
 import { cslSchema, toFriendlyLabel } from './common';
 import { Page, Paging } from 'components/misc/Paging';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
 
 const ajv = new Ajv({ removeAdditional: true, allowUnionTypes: true });
 const validate = ajv.compile(cslSchema);
 
 const Cite = (window as any).cite;
-
-const store = configureStore();
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -256,10 +254,10 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
         <div key={key} className="d-flex justify-content-start mb-4">
           <div className="mr-2">
             <div className="mb-1">
-              <EditBibEntry icon="las la-edit" onEdit={onEdit} />
+              <EditBibEntry icon="fas fa-edit" onEdit={onEdit} />
             </div>
             <div className="mb-1">
-              <EditBibEntry icon="las la-user-edit" onEdit={onManualEdit} />
+              <EditBibEntry icon="fas fa-user-edit" onEdit={onManualEdit} />
             </div>
             {/* <div>
               <DeleteBibEntry onDelete={onDeleted} />
@@ -306,7 +304,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           Add Entry (Manual Editor)
         </button>
         <div className="dropdown-menu" aria-labelledby="createButton">
-          <div className="overflow-auto bg-light" style={{ maxHeight: '300px' }}>
+          <div className="overflow-auto" style={{ maxHeight: '300px' }}>
             {cslSchema.items.properties['type'].enum.map((e: string) => (
               <a
                 onClick={() => {
@@ -326,28 +324,34 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
   );
 
   return (
-    <div className="resource-editor row">
-      <div className="col-12">
-        <Banner
-          dismissMessage={(msg) => setMessages(messages.filter((m) => msg.guid !== m.guid))}
-          executeAction={(message, action) => action.execute(message)}
-          messages={messages}
-        />
-        <div className="d-flex justify-content-start">
-          <button type="button" className="btn btn-link" onClick={() => onPlainCreateOrEdit()}>
-            <i className="las la-solid la-plus"></i> Add Entry
-          </button>
-          {createEntryDropdown}
+    <React.StrictMode>
+      <ErrorBoundary>
+        <ModalDisplay />
+
+        <div className="resource-editor row">
+          <div className="col-span-12">
+            <Banner
+              dismissMessage={(msg) => setMessages(messages.filter((m) => msg.guid !== m.guid))}
+              executeAction={(message, action) => action.execute(message)}
+              messages={messages}
+            />
+            <div className="d-flex justify-content-start">
+              <button type="button" className="btn btn-link" onClick={() => onPlainCreateOrEdit()}>
+                <i className="fas fa-solid la-plus"></i> Add Entry
+              </button>
+              {createEntryDropdown}
+            </div>
+            <hr className="mb-4" />
+
+            {pagingOrPlaceholder}
+
+            {bibEntryViews}
+
+            {totalCount > 0 ? pagingOrPlaceholder : null}
+          </div>
         </div>
-        <hr className="mb-4" />
-
-        {pagingOrPlaceholder}
-
-        {bibEntryViews}
-
-        {totalCount > 0 ? pagingOrPlaceholder : null}
-      </div>
-    </div>
+      </ErrorBoundary>
+    </React.StrictMode>
   );
 };
 
@@ -355,10 +359,4 @@ function defaultPaging() {
   return { offset: 0, limit: PAGE_SIZE };
 }
 
-const BibliographyApp: React.FC<BibliographyProps> = (props) => (
-  <Provider store={store}>
-    <Bibliography {...props} />
-  </Provider>
-);
-
-export default BibliographyApp;
+export default Bibliography;

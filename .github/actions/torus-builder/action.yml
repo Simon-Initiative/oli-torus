@@ -8,6 +8,6 @@ runs:
   using: "docker"
   # image: 'Dockerfile'
   ## Use the prebuilt builder image on docker hub until github improves caching across builds
-  image: olisimon/torus-builder:1.2.0
+  image: olisimon/torus-builder:1.3.0
   args:
     - ${{ inputs.build-sha }}

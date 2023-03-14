@@ -3,9 +3,9 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(communities, context) do
+  def new(rows, context) do
     SortableTableModel.new(
-      rows: communities,
+      rows: rows,
       column_specs: [
         %ColumnSpec{
           name: :page_title,

@@ -1,12 +1,10 @@
-@use 'authoring/theme' as authoring;
-
 .code-editor {
   margin-bottom: 8px;
   width: 100%;
   border: 2px solid black;
 
   &.active {
-    border: 2px solid authoring.$primary;
+    border: 2px solid var(--color-primary);
   }
 
   pre {

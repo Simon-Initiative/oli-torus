@@ -10,6 +10,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Resources.{ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
   alias Oli.Repo
+  alias Oli.Accounts.User
 
   import Ecto.Query, warn: false
   import Oli.Utils
@@ -258,6 +259,65 @@ defmodule Oli.Resources.Collaboration do
   # Posts
 
   @doc """
+  Returns the list of posts that a user can see.
+
+  ## Examples
+
+      iex> list_posts_for_user_in_page_section(1, 1, 1))
+      [%Post{status: :archived}, ...]
+
+      iex> list_posts_for_user_in_page_section(2, 2, 2)
+      []
+  """
+  def list_posts_for_user_in_page_section(section_id, resource_id, user_id, enter_time \\ nil) do
+    filter_by_enter_time =
+      if is_nil(enter_time) do
+        true
+      else
+        dynamic([p], p.inserted_at >= ^enter_time or p.updated_at >= ^enter_time)
+      end
+
+    Repo.all(
+      from(
+        post in Post,
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        where: ^filter_by_enter_time,
+        select: post,
+        order_by: [asc: :inserted_at],
+        preload: [:user]
+      )
+    )
+  end
+
+  @doc """
+  Returns the list of posts that a instructor can see.
+
+  ## Examples
+
+      iex> list_posts_for_instructor_in_page_section(1, 1)
+      [%Post{status: :submitted}, ...]
+
+      iex> list_posts_for_instructor_in_page_section(2, 2)
+      []
+  """
+  def list_posts_for_instructor_in_page_section(section_id, resource_id) do
+    Repo.all(
+      from(
+        post in Post,
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            post.status != :deleted,
+        select: post,
+        order_by: [asc: :inserted_at],
+        preload: [:user]
+      )
+    )
+  end
+
+  @doc """
   Returns the list of posts that meets the criteria passed in the filter.
 
   ## Examples
@@ -276,6 +336,95 @@ defmodule Oli.Resources.Collaboration do
         select_merge: %{
           replies_count: fragment("select count(*) from posts where thread_root_id = ?", post.id)
         }
+      )
+    )
+  end
+
+  @doc """
+  Returns the list of posts created by an user in a section.
+
+  ## Examples
+
+      iex> list_last_posts_for_user(1, 1, 5)
+      [%Post{status: :archived}, ...]
+
+      iex> list_last_posts_for_user(2, 2, 10)
+      []
+  """
+
+  def list_lasts_posts_for_user(user_id, section_id, limit) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on:
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
+            sr.numbering_level > 0,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        where:
+          post.section_id == ^section_id and post.user_id == ^user_id and
+            (post.status in [:approved, :archived] or
+               (post.status == :submitted and post.user_id == ^user_id)),
+        select: %{
+          id: post.id,
+          content: post.content,
+          user_name: user.name,
+          title: rev.title,
+          updated_at: post.updated_at
+        },
+        order_by: [desc: :updated_at],
+        limit: ^limit
+      )
+    )
+  end
+
+  @doc """
+  Returns the list of posts created in all resources of section.
+
+  ## Examples
+
+      iex> list_last_posts_for_section(1, 1, 5)
+      [%Post{status: :archived}, ...]
+
+      iex> list_last_posts_for_section(2, 2, 10)
+      []
+  """
+
+  def list_lasts_posts_for_section(user_id, section_id, limit) do
+    Repo.all(
+      from(
+        post in Post,
+        join: sr in SectionResource,
+        on:
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
+            sr.numbering_level > 0,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == post.resource_id,
+        join: rev in Revision,
+        on: rev.id == pr.revision_id,
+        join: user in User,
+        on: post.user_id == user.id,
+        where:
+          post.section_id == ^section_id and post.user_id != ^user_id and
+            post.status in [:approved, :archived],
+        select: %{
+          id: post.id,
+          content: post.content,
+          user_name: user.name,
+          title: rev.title,
+          updated_at: post.updated_at
+        },
+        order_by: [desc: :updated_at],
+        limit: ^limit
       )
     )
   end
@@ -326,6 +475,22 @@ defmodule Oli.Resources.Collaboration do
     post
     |> Post.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Delete a post or a set of posts.
+
+  ## Examples
+
+      iex> delete_posts(post)
+      {number, nil | returned data}` where number is the number of deleted entries
+  """
+  def delete_posts(%Post{} = post) do
+    from(
+      p in Post,
+      where: ^post.id == p.id or ^post.id == p.parent_post_id or ^post.id == p.thread_root_id
+    )
+    |> Repo.update_all(set: [status: :deleted])
   end
 
   @doc """

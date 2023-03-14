@@ -1,11 +1,9 @@
 @import 'admin.scss';
 @import 'advanced-authoring.scss';
-@import 'alternatives.scss';
 @import 'community.scss';
 @import 'controls.scss';
 @import 'image-upload.scss';
 @import 'institutions.scss';
-@import 'main.scss';
 @import 'modal.scss';
 @import 'model-editors.scss';
 @import 'objectives.scss';
@@ -13,16 +11,8 @@
 @import 'react-typeahead.scss';
 @import 'tree.scss';
 @import 'typography.scss';
-@import 'variables.scss';
 
-@import 'layout/default.scss';
-@import 'layout/footer.scss';
-@import 'layout/header.scss';
 @import 'layout/workspace.scss';
-
-@import 'palettes/acrylic.scss';
-@import 'palettes/distinct.scss';
-@import 'palettes/flatui.scss';
 
 @import 'project/overview.scss';
 @import 'project/review.scss';
@@ -31,6 +21,7 @@
 @import 'shared/phx.scss';
 
 @import 'static_page/index.scss';
+
 @import 'formula.scss';
 @import 'definition.scss';
 @import 'dialog.scss';
@@ -38,3 +29,5 @@
 @import 'foreign.scss';
 @import 'conjugation.scss';
 @import 'description-list.scss';
+
+@import 'flowchart.scss';

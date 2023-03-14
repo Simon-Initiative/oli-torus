@@ -4,47 +4,47 @@
     <div class="label mt-1">Projects</div>
   </a>
 
-  <div class="btn-group dropright hoverdriven my-1">
-    <button type="button" class="sidebar-item btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+  <div class="btn-group dropend relative hoverdriven my-1">
+    <button type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
       <img src="/images/icons/icon-create-light.svg" height="35px" width="32px"/>
       <div class="label mt-1">Create</div>
     </button>
-    <div class="dropdown-menu">
-      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :overview, @project) %>">Overview</a>
-      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.ObjectivesLive.Objectives, @project.slug) %>">Objectives</a>
-      <a class="dropdown-item" href="<%= Routes.activity_bank_path(@conn, :index, @project.slug) %>">Activity Bank</a>
-      <a class="dropdown-item" href="<%= Routes.bibliography_path(@conn, :index, @project.slug) %>">Bibliography</a>
-      <a class="dropdown-item" href="<%= Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>">Curriculum</a>
+    <ul class="dropdown-menu">
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.project_path(@conn, :overview, @project) %>">Overview</a></li>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.ObjectivesLive.Objectives, @project.slug) %>">Objectives</a></li>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.activity_bank_path(@conn, :index, @project.slug) %>">Activity Bank</a></li>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.bibliography_path(@conn, :index, @project.slug) %>">Bibliography</a></li>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>">Curriculum</a></li>
 
-      <div class="dropdown-divider"></div>
+      <hr class="dropdown-divider" />
 
-      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.PagesView, @project.slug) %>">All Pages</a>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.PagesView, @project.slug) %>">All Pages</a></li>
       <%= if Accounts.is_admin?(@current_author) do %>
-        <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.ActivitiesView, @project.slug) %>">All Activities</a>
+        <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.ActivitiesView, @project.slug) %>">All Activities</a></li>
       <% end %>
 
-     </div>
+     </ul>
   </div>
 
-  <div class="btn-group dropright hoverdriven my-1">
-    <button type="button" class="sidebar-item btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+  <div class="btn-group dropend relative hoverdriven my-1">
+    <button type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
       <img src="/images/icons/icon-publish-light.svg" height="32px" width="32px"/>
       <div class="label mt-1">Publish</div>
     </button>
     <div class="dropdown-menu">
       <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>">Review</a>
       <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, @project.slug) %>">Products</a>
-      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :publish, @project) %>">Publish</a>
+      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, @project.slug) %>">Publish</a>
     </div>
   </div>
 
-  <div class="btn-group dropright hoverdriven my-1">
-    <button type="button" class="sidebar-item btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+  <div class="btn-group dropend relative hoverdriven my-1">
+    <button type="button" class="sidebar-item btn" data-bs-toggle="dropdown" data-bs-offset="0,-1" aria-haspopup="true" aria-expanded="false">
       <img src="/images/icons/icon-improve-light.svg" height="35px" width="32px"/>
       <div class="label mt-1">Improve</div>
     </button>
     <div class="dropdown-menu">
-      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :insights, @project) %>">Insights</a>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.project_path(@conn, :insights, @project) %>">Insights</a></li>
     </div>
   </div>
 

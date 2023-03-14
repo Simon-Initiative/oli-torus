@@ -1,0 +1,18 @@
+<%= render_layout "delivery.html", assigns do %>
+
+<a id='skip-nav' class='screenreader-text' href='#main-content'>
+  Skip Navigation
+</a>
+
+<div class="default pb-[60px]">
+  <Components.Header.header {assigns} />
+
+  <main role="main" id="main-content">
+
+    <%= @inner_content %>
+
+  </main>
+
+</div>
+
+<% end %>

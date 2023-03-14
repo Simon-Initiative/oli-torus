@@ -3,14 +3,21 @@ defmodule Oli.Resources.Collaboration.CollabSpaceConfig do
 
   import Ecto.Changeset
 
+  @status_values [:disabled, :enabled, :archived]
+  @default_status :disabled
+
+  def status_values(), do: @status_values
+  def default_status(), do: @default_status
+
   @derive Jason.Encoder
   @primary_key false
   embedded_schema do
-    field :status, Ecto.Enum, values: [:disabled, :enabled, :archived], default: :disabled
+    field :status, Ecto.Enum, values: @status_values, default: @default_status
 
     field :threaded, :boolean, default: true
     field :auto_accept, :boolean, default: true
     field :show_full_history, :boolean, default: true
+    field :anonymous_posting, :boolean, default: true
 
     field :participation_min_replies, :integer, default: 0
     field :participation_min_posts, :integer, default: 0
@@ -30,6 +37,7 @@ defmodule Oli.Resources.Collaboration.CollabSpaceConfig do
       :threaded,
       :auto_accept,
       :show_full_history,
+      :anonymous_posting,
       :participation_min_replies,
       :participation_min_posts
     ])

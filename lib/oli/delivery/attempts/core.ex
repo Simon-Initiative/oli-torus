@@ -592,8 +592,10 @@ defmodule Oli.Delivery.Attempts.Core do
         on:
           aa.resource_attempt_id == aa2.resource_attempt_id and aa.resource_id == aa2.resource_id and
             aa.id < aa2.id,
+        left_join: rev in assoc(aa, :revision),
         where: aa.resource_attempt_id == ^resource_attempt_id and is_nil(aa2),
-        select: aa
+        select: aa,
+        preload: [revision: rev]
       )
     )
   end
@@ -685,6 +687,19 @@ defmodule Oli.Delivery.Attempts.Core do
         select: a
       )
     )
+  end
+
+  def is_first_activity_attempt?(activity_attempt_guid) do
+    attempt_number = Repo.one(
+      from(a in ActivityAttempt,
+        where: a.attempt_guid == ^activity_attempt_guid,
+        select: a.attempt_number
+      )
+    )
+    case attempt_number do
+      1 -> true
+      _ -> false
+    end
   end
 
   @doc """

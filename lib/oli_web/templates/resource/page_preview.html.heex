@@ -1,0 +1,21 @@
+<%= if not is_nil(@container) and
+  Oli.Resources.ResourceType.is_container(@container.revision) do %>
+  <%= render OliWeb.PageDeliveryView, "container.html", Map.merge(assigns, %{
+    children: @container.children,
+    active_page: nil
+  }) %>
+<% else %>
+
+  <Components.Delivery.PageDelivery.header title={@context.title} page_number={0} review_mode={false} />
+
+  <Components.Delivery.PageDelivery.details />
+
+  <div id="eventIntercept" class="content">
+    <%= raw(@content_html) %>
+  </div>
+  <script>
+    OLI.initPreviewActivityBridge('eventIntercept');
+  </script>
+<% end %>
+
+<%= render OliWeb.BibliographyView, "_references.html", conn: @conn, context: @context, bib_app_params: @bib_app_params, action: :preview %>

@@ -4,8 +4,11 @@ defmodule Oli.Resources.Collaboration.Post do
   import Ecto.Changeset
 
   schema "posts" do
-    field :content, :map, default: %{}
-    field :status, Ecto.Enum, values: [:submitted, :approved, :deleted, :archived], default: :approved
+    embeds_one :content, Oli.Resources.Collaboration.PostContent, on_replace: :update
+
+    field :status, Ecto.Enum,
+      values: [:submitted, :approved, :deleted, :archived],
+      default: :approved
 
     belongs_to :user, Oli.Accounts.User
     belongs_to :section, Oli.Delivery.Sections.Section
@@ -14,6 +17,7 @@ defmodule Oli.Resources.Collaboration.Post do
     belongs_to :thread_root, Oli.Resources.Collaboration.Post
 
     field :replies_count, :integer, virtual: true
+    field :anonymous, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -21,14 +25,15 @@ defmodule Oli.Resources.Collaboration.Post do
   def changeset(post, attrs \\ %{}) do
     post
     |> cast(attrs, [
-      :content,
       :status,
       :user_id,
       :section_id,
       :resource_id,
       :parent_post_id,
       :thread_root_id,
-      :replies_count
+      :replies_count,
+      :anonymous
     ])
+    |> cast_embed(:content)
   end
 end

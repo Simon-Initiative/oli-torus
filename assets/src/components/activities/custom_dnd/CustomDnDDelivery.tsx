@@ -14,6 +14,8 @@ import {
   listenForReviewAttemptChange,
   submitPart,
   resetAndSubmitPart,
+  resetAndSavePart,
+  resetPart,
 } from 'data/activities/DeliveryState';
 
 import { safelySelectFiles } from 'data/activities/utils';
@@ -40,9 +42,28 @@ export const CustomDnDComponent: React.FC = () => {
     onSubmitPart,
   } = useDeliveryElementContext<CustomDnDSchema>();
   const { surveyId } = context;
+
+  // Question model contains partIds w/choice values of form partId_choiceId.
+  // Initial Torus implementation attached partIds to targets and choiceIds
+  // to draggables ("initiators"). But for some legacy questions it is
+  // necessary to do the other way round because fewer draggables than targets.
+  // partIdBearers will indicate which DND elements carry the partIds to enable
+  // code to handle either form. Note model is the same in either case.
+  type DndElementType = 'draggables' | 'targets';
+  const firstPartId = state.parts[0].partId;
+  const partIdBearers: DndElementType = model.initiators.includes(`input_val="${firstPartId}"`)
+    ? 'draggables'
+    : 'targets';
+
+  // state we pass is always a mapping from targetId to draggableId
   const initialState = state.parts.reduce((m: any, p) => {
     if (p.response !== null) {
-      m[p.partId] = p.response.input;
+      const choiceId = p.response.input.substr((p.partId as string).length + 1);
+      if (partIdBearers === 'targets') {
+        m[p.partId] = choiceId;
+      } else {
+        m[choiceId] = p.partId;
+      }
     }
     return m;
   }, {});
@@ -85,17 +106,35 @@ export const CustomDnDComponent: React.FC = () => {
     return null;
   }
 
-  const onSubmit = (partId: string, value: string) => {
+  const onFocusChange = (targetId: string, draggableId: string | null) => {
+    setFocusedPart(partIdBearers === 'targets' ? targetId : draggableId);
+  };
+
+  const onDetach = (targetId: string, draggableId: string) => {
+    // update on detaching draggable from target
+    const partId = partIdBearers === 'targets' ? targetId : draggableId;
+
+    const part = findPart(partId);
+    if (part === null) console.log('part not found! id=' + partId);
+    else {
+      dispatch(resetPart(uiState.attemptState.attemptGuid, part.attemptGuid, onResetPart));
+    }
+  };
+
+  const onSubmit = (targetId: string, draggableId: string) => {
+    const [partId, choiceId] =
+      partIdBearers === 'targets' ? [targetId, draggableId] : [draggableId, targetId];
+    const response = partId + '_' + choiceId;
+    // console.log('DND onSubmit: partId=' + partId + ' response= ' + response);
+
     const state = getState();
     const part = state.attemptState.parts.find((p: any) => p.partId === partId);
-
-    const response: string = partId + '_' + value;
     if (part !== undefined) {
       if (part.dateEvaluated !== null) {
         dispatch(
           resetAndSubmitPart(
             uiState.attemptState.attemptGuid,
-            findPart(partId).attemptGuid,
+            part.attemptGuid,
             toStudentResponse(response),
             onResetPart,
             onSubmitPart,
@@ -105,7 +144,7 @@ export const CustomDnDComponent: React.FC = () => {
         dispatch(
           submitPart(
             uiState.attemptState.attemptGuid,
-            findPart(partId).attemptGuid,
+            part.attemptGuid,
             toStudentResponse(response),
             onSubmitPart,
           ),
@@ -129,7 +168,8 @@ export const CustomDnDComponent: React.FC = () => {
             setResetListener(() => listener);
           }}
           onSubmitPart={onSubmit}
-          onFocusChange={(partId) => setFocusedPart(partId)}
+          onFocusChange={onFocusChange}
+          onDetach={onDetach}
         />
         <GradedPointsConnected />
 

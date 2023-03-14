@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -457,7 +457,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_admin\"")
-      |> render_submit(%{collaborator: %{email: author.email}})
+      |> render_submit(%{admin: %{email: author.email}})
 
       assert view
              |> element("div.alert.alert-info")
@@ -481,7 +481,7 @@ defmodule OliWeb.CommunityLiveTest do
       |> render_submit(%{collaborator: %{email: author.email}})
 
       error_message =
-        "Some of the community admins couldn&#39;t be added because the users don&#39;t exist in the system or are already associated."
+        "Some of the community admin(s) couldn&#39;t be added because the author(s) don&#39;t exist in the system or are already associated."
 
       assert view
              |> element("div.alert.alert-danger")
@@ -511,7 +511,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-submit=\"add_admin\"")
-      |> render_submit(%{collaborator: %{email: Enum.join(emails, ",")}})
+      |> render_submit(%{admin: %{email: Enum.join(emails, ",")}})
 
       assert view
              |> element("div.alert.alert-info")
@@ -577,7 +577,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_admin\"")
-      |> render_change(%{collaborator: %{email: author.name}})
+      |> render_change(%{admin: %{email: author.name}})
 
       assert view
              |> element("#admin_matches")
@@ -586,7 +586,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       view
       |> element("form[phx-change=\"suggest_admin\"")
-      |> render_change(%{collaborator: %{email: "other_name"}})
+      |> render_change(%{admin: %{email: "other_name"}})
 
       refute view
              |> element("#admin_matches")
@@ -612,7 +612,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Community member(s) successfully added."
+               "Community member successfully added."
 
       assert 2 == length(Groups.list_community_members(community.id))
     end
@@ -631,7 +631,7 @@ defmodule OliWeb.CommunityLiveTest do
       |> render_submit(%{collaborator: %{email: user.email}})
 
       error_message =
-        "Some of the community members couldn&#39;t be added because the users don&#39;t exist in the system or are already associated."
+        "Member couldn&#39;t be added because the user don&#39;t exist in the system or is already associated."
 
       assert view
              |> element("div.alert.alert-danger")
@@ -646,29 +646,6 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~ error_message
 
       assert 1 == length(Groups.list_community_members(community.id))
-    end
-
-    test "adds more than one community member correctly", %{
-      conn: conn,
-      community: community
-    } do
-      emails = insert_pair(:user) |> Enum.map(& &1.email)
-      insert(:community_member_account, %{community: community})
-
-      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
-
-      assert 1 == length(Groups.list_community_members(community.id))
-
-      view
-      |> element("form[phx-submit=\"add_member\"")
-      |> render_submit(%{collaborator: %{email: Enum.join(emails, ",")}})
-
-      assert view
-             |> element("div.alert.alert-info")
-             |> render() =~
-               "Community member(s) successfully added."
-
-      assert 3 == length(Groups.list_community_members(community.id))
     end
 
     test "removes community member correctly", %{
@@ -742,6 +719,42 @@ defmodule OliWeb.CommunityLiveTest do
              |> element("#member_matches")
              |> render() =~
                user.email
+    end
+
+    test "adds community member with same email more than once displaying modal", %{
+      conn: conn,
+      community: community
+    } do
+      email = "example@test.com"
+      user_1 = insert(:user, email: email)
+      user_2 = insert(:user, email: email, independent_learner: false)
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 0 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("form[phx-change=\"suggest_member\"")
+      |> render_change(%{collaborator: %{email: email}})
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: email}})
+
+      assert has_element?(view, ".modal-title", "Select user")
+      assert has_element?(view, ".modal-body", "Sub: #{user_1.sub}")
+      assert has_element?(view, ".modal-body", "Sub: #{user_2.sub}")
+
+      view
+      |> element("button[phx-click=\"add_member\"][phx-value-collaborator-id=\"#{user_1.id}\"]")
+      |> render_click(%{"collaborator-id": user_1.id})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member successfully added."
+
+      assert 1 == length(Groups.list_community_members(community.id))
     end
 
     test "adds community institution correctly", %{

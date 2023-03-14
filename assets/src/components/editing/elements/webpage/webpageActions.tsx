@@ -69,7 +69,7 @@ export function selectWebpage(): Promise<string | null> {
 }
 
 export const insertWebpage = createButtonCommandDesc({
-  icon: 'public',
+  icon: <i className="fa-solid fa-globe"></i>,
   description: 'Webpage',
   execute: (_context, editor) => {
     const at = editor.selection;

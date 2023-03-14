@@ -34,7 +34,7 @@ interface SelectImageProps {
 const SelectImageButton = (props: SelectImageProps) => (
   <CommandButton
     description={createButtonCommandDesc({
-      icon: 'insert_photo',
+      icon: <i className="fa-solid fa-image"></i>,
       description: 'Select Image',
       execute: (context, _editor) =>
         selectImage(context.projectSlug, props.model.src).then((selection) =>
@@ -51,7 +51,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: '',
+      icon: <i className="fa-solid fa-image"></i>,
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

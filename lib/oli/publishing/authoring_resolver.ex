@@ -285,4 +285,60 @@ defmodule Oli.Publishing.AuthoringResolver do
       numbering_tracker
     }
   end
+
+  @doc """
+  Returns the current revisions of all page resources whose purpose type matches the one it receives as parameter
+  ## Examples
+      iex> get_by_purpose(valid_project_slug, valid_purpose)
+      [%Revision{}, ...]
+
+      iex> get_by_purpose(invalid_project_slug, invalid_purpose)
+      []
+  """
+
+  def get_by_purpose(project_slug, purpose) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.all(
+      from(
+        revision in Revision,
+        join: pub_res in PublishedResource,
+        on: pub_res.revision_id == revision.id,
+        where:
+          pub_res.publication_id in subquery(project_working_publication(project_slug)) and
+            revision.purpose ==
+              ^purpose and
+            revision.resource_type_id == ^page_id and revision.deleted == false,
+        order_by: [asc: :resource_id]
+      )
+    )
+  end
+
+  @doc """
+  Returns the current revisions of all page resources whose have the given resource_id in their "relates_to" attribute
+  ## Examples
+      iex> targeted_via_related_to(valid_project_slug, valid_resource_id)
+      [%Revision{}, ...]
+
+      iex> targeted_via_related_to(invalid_project_slug, invalid_resource_id)
+      []
+  """
+
+  def targeted_via_related_to(project_slug, resource_id) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.all(
+      from(
+        revision in Revision,
+        join: pub_res in PublishedResource,
+        on: pub_res.revision_id == revision.id,
+        where:
+          pub_res.publication_id in subquery(project_working_publication(project_slug)) and
+            ^resource_id in revision.relates_to and
+            revision.resource_type_id == ^page_id and
+            revision.deleted == false,
+        order_by: [asc: :resource_id]
+      )
+    )
+  end
 end

@@ -188,8 +188,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   def policy_desc(:allows_review), do: "Allow the review of previously completed attempts"
 
   def render_condition_options(
-        %{gating_condition: %{type: :schedule, data: data}, context: context} =
-          assigns
+        %{gating_condition: %{type: :schedule, data: data}, context: context} = assigns
       ) do
     initial_start_date =
       data
@@ -250,12 +249,12 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
       </label>
     </div>
     <div class="mb-4 row mt-2 ml-3">
-      <div class="col-sm-2">
+      <div class="sm:col-span-2">
         <input type="number" class="form-control" id="min-score-value"
           disabled={!checked_from_min_score(data)}
           min="0" max="100" value={value_from_min_score(data)} phx-hook="TextInputListener" phx-value-change="change_min_score">
       </div>
-      <label for="min-score-value" class="col-sm-1 col-form-label">%</label>
+      <label for="min-score-value" class="sm:col-span-1 col-form-label">%</label>
     </div>
     """
   end

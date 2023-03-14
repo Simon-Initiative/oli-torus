@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.OverviewLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -162,7 +162,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "a[href=\"#{Routes.content_path(OliWeb.Endpoint, :preview, section.slug)}\"]",
                "Preview Course as Instructor"
              )
 
@@ -183,7 +183,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug)}\"]"
+               "a[href=\"#{Routes.source_materials_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, section.slug)}\"]"
              )
 
       assert render(view) =~ "Manage"
@@ -366,7 +366,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "a[href=\"#{Routes.content_path(OliWeb.Endpoint, :preview, section.slug)}\"]",
                "Preview Course as Instructor"
              )
     end

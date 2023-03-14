@@ -12,7 +12,7 @@ export const TextInput: React.FC<InputProps> = ({ input, onEditInput }) => {
     <div className="d-flex flex-md-row mb-2">
       <select
         disabled={!editMode}
-        className="form-control mr-2"
+        className="form-control mr-2 border"
         style={{ width: 250 }}
         value={input.operator}
         onChange={({ target: { value } }) => {
@@ -42,6 +42,8 @@ export const TextInput: React.FC<InputProps> = ({ input, onEditInput }) => {
 };
 
 const textOptions: { value: string; displayValue: string }[] = [
+  { value: 'equals', displayValue: 'Equals exactly' },
+  { value: 'iequals', displayValue: 'Equals ignoring case' },
   { value: 'contains', displayValue: 'Contains' },
   { value: 'notcontains', displayValue: "Doesn't Contain" },
   { value: 'regex', displayValue: 'Regex' },

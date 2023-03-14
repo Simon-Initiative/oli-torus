@@ -25,7 +25,7 @@
   </div>
 
   <div class="form-row" phx-update="ignore">
-    <div class="form-group col-md-6">
+    <div class="form-group md:col-span-6">
       <div class="text-secondary my-1">Start Date</div>
       <div class="input-group date">
         <%= datetime_local_input f, :start_date, class: "form-control " <> error_class(f, :start_date, "is-invalid"),
@@ -38,7 +38,7 @@
       </div>
       <%= error_tag f, :start_date %>
     </div>
-    <div class="form-group col-md-6">
+    <div class="form-group md:col-span-6">
       <div class="text-secondary my-1">End Date</div>
       <div class="input-group date">
         <%= datetime_local_input f, :end_date, class: "form-control " <> error_class(f, :end_date, "is-invalid"),
@@ -60,9 +60,9 @@
       Registration Open
     </div>
 
-    <div class="custom-control custom-switch" style="width: 88px;">
-      <%= checkbox f, :registration_open, class: "custom-control-input" <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open) %>
-      <%= label f, :registration_open, class: "custom-control-label" do %>
+    <div class="form-check form-switch" style="width: 88px;">
+      <%= checkbox f, :registration_open, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open) %>
+      <%= label f, :registration_open, class: "form-check-label inline-block text-gray-800" do %>
         <%= if @changeset.data.registration_open do "Yes" else "No" end %>
       <% end %>
       <%= error_tag f, :registration_open %>
@@ -80,9 +80,9 @@
       Requires Enrollment
     </div>
 
-    <div class="custom-control custom-switch" style="width: 88px;">
-      <%= checkbox f, :requires_enrollment, class: "custom-control-input" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
-      <%= label f, :requires_enrollment, class: "custom-control-label" do %>
+    <div class="form-check form-switch" style="width: 88px;">
+      <%= checkbox f, :requires_enrollment, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
+      <%= label f, :requires_enrollment, class: "form-check-label inline-block text-gray-800" do %>
         <%= if @changeset.data.requires_enrollment do "Yes" else "No" end %>
       <% end %>
       <%= error_tag f, :requires_enrollment %>
@@ -100,9 +100,9 @@
       Omit student email verification
     </div>
 
-    <div class="custom-control custom-switch" style="width: 88px;">
-      <%= checkbox f, :skip_email_verification, class: "custom-control-input" <> error_class(f, :skip_email_verification, "is-invalid"), autofocus: focusHelper(f, :skip_email_verification) %>
-      <%= label f, :skip_email_verification, class: "custom-control-label" do %>
+    <div class="form-check form-switch" style="width: 88px;">
+      <%= checkbox f, :skip_email_verification, class: "form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-white bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm" <> error_class(f, :skip_email_verification, "is-invalid"), autofocus: focusHelper(f, :skip_email_verification) %>
+      <%= label f, :skip_email_verification, class: "form-check-label inline-block text-gray-800" do %>
         <%= if @changeset.data.skip_email_verification do "Yes" else "No" end %>
       <% end %>
       <%= error_tag f, :skip_email_verification %>

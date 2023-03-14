@@ -4,7 +4,7 @@ defmodule OliWeb.Common.Components do
   """
   use Phoenix.Component
 
-  def materials_icon_button(assigns) do
+  def icon_button(assigns) do
     assigns =
       assigns
       |> assign(
@@ -23,7 +23,7 @@ defmodule OliWeb.Common.Components do
       )
 
     ~H"""
-      <button class={@class} phx-click={@on_click} {@values}><span class="material-icons"><%= @icon %></span></button>
+      <button class={@class} phx-click={@on_click} {@values}><i class={@icon}></i></button>
     """
   end
 end

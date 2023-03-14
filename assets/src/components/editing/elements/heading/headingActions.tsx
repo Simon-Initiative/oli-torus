@@ -1,3 +1,4 @@
+import React from 'react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
@@ -5,7 +6,7 @@ import { getNearestBlock, isActive, isTopLevel } from 'components/editing/slateU
 import { Editor, Element, Transforms } from 'slate';
 
 export const toggleHeading = createButtonCommandDesc({
-  icon: 'title',
+  icon: <i className="fa-solid fa-heading"></i>,
   description: 'Heading',
   active: (editor) => isActive(editor, ['h1', 'h2']),
   execute: (_ctx, editor) => switchType(editor, 'h2'),
@@ -28,27 +29,13 @@ const selectedType = (editor: Editor) =>
     nothing: () => 'p',
   });
 
-const icon = (editor: Editor) => {
-  const type = selectedType(editor);
-  switch (type) {
-    case 'h1':
-      return 'title';
-    case 'h2':
-      return 'text_fields';
-    default:
-      return 'title';
-  }
-};
-
 export const headingTypeDescs = [
   createButtonCommandDesc({
-    icon: '',
     description: 'H1',
     active: (editor) => isActive(editor, ['h1']),
     execute: (_ctx, editor) => switchType(editor, 'h1'),
   }),
   createButtonCommandDesc({
-    icon: '',
     description: 'H2',
     active: (editor) => isActive(editor, ['h2']),
     execute: (_ctx, editor) => switchType(editor, 'h2'),
@@ -57,7 +44,6 @@ export const headingTypeDescs = [
 
 export const headingLevelDesc = (editor: Editor) =>
   createButtonCommandDesc({
-    icon: '',
     description: isActive(editor, 'h1') ? 'H1' : 'H2',
     active: (editor) => isActive(editor, ['h1', 'h2']),
     execute: () => {},
@@ -65,7 +51,7 @@ export const headingLevelDesc = (editor: Editor) =>
 
 export const commandDesc: CommandDescription = {
   type: 'CommandDesc',
-  icon,
+  icon: () => <i className="fa-solid fa-heading"></i>,
   description: () => 'Title (# or ##)',
   command: {
     execute: (_context, editor) => {

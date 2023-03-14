@@ -1,5 +1,6 @@
 import React, { PropsWithChildren, useEffect, useRef } from 'react';
-import { lockScroll, unlockScroll } from './utils';
+import { classNames } from 'utils/classNames';
+import { valueOr } from 'utils/common';
 
 interface Modal {
   modal: any;
@@ -17,7 +18,8 @@ export interface ModalProps {
   okClassName?: string;
   cancelLabel?: string;
   disableOk?: boolean;
-  backdrop?: string;
+  backdrop?: boolean | 'static';
+  keyboard?: boolean;
   hideDialogCloseButton?: boolean;
   title: string;
   hideOkButton?: boolean;
@@ -32,7 +34,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
   const { children } = props;
   const modal = useRef<HTMLDivElement>(null);
 
-  const okLabel = props.okLabel !== undefined ? props.okLabel : 'Insert';
+  const okLabel = props.okLabel !== undefined ? props.okLabel : 'Ok';
   const cancelLabel = props.cancelLabel !== undefined ? props.cancelLabel : 'Cancel';
   const okClassName = props.okClassName !== undefined ? props.okClassName : 'primary';
   const size = props.size || 'lg';
@@ -40,8 +42,8 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
   useEffect(() => {
     if (modal.current) {
       const currentModal = modal.current;
+
       (window as any).$(currentModal).modal('show');
-      const scrollPosition = lockScroll();
 
       $(currentModal).on('hidden.bs.modal', (e) => {
         onCancel(e);
@@ -49,10 +51,9 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
 
       return () => {
         (window as any).$(currentModal).modal('hide');
-        unlockScroll(scrollPosition);
       };
     }
-  }, [modal]);
+  }, []);
 
   const onCancel = (e: any) => {
     e.preventDefault();
@@ -65,19 +66,34 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
   };
 
   return (
-    <div ref={modal} data-backdrop={props.backdrop} className="modal">
-      <div className={`modal-dialog modal-dialog-centered modal-${size}`} role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">{props.title}</h5>
-            {props.hideDialogCloseButton === true ? null : (
-              <button type="button" className="close" onClick={onCancel} data-dismiss="modal">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            )}
+    <div
+      ref={modal}
+      className={classNames(
+        'modal fade fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto',
+      )}
+      data-bs-backdrop={props.backdrop}
+      data-bs-keyboard={valueOr(props.keyboard, true)}
+      tabIndex={-1}
+      aria-labelledby={`${props.title} modal`}
+      aria-hidden="true"
+    >
+      <div className={`modal-dialog modal-${size} relative w-auto pointer-events-none`}>
+        <div className="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current">
+          <div className="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
+            <h5 className="text-xl font-medium leading-normal text-gray-800" id="exampleModalLabel">
+              {props.title}
+            </h5>
+            <button
+              type="button"
+              className="btn-close box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            >
+              <i className="fa-solid fa-xmark fa-xl"></i>
+            </button>
           </div>
-          <div className="modal-body">{children}</div>
-          <div className="modal-footer">
+          <div className="modal-body relative p-4 pt-0">{children}</div>
+          <div className="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
             {props.footer ? (
               props.footer
             ) : (
@@ -85,9 +101,9 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
                 {props.hideCancelButton === true ? null : (
                   <button
                     type="button"
-                    className="btn btn-link"
+                    className="btn btn-link ml-2"
                     onClick={onCancel}
-                    data-dismiss="modal"
+                    data-bs-dismiss="modal"
                   >
                     {cancelLabel}
                   </button>
@@ -97,7 +113,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
                     disabled={props.disableOk}
                     type="button"
                     onClick={onOk}
-                    className={`btn btn-${okClassName}`}
+                    className={`btn btn-${okClassName} ml-2`}
                   >
                     {okLabel}
                   </button>
@@ -112,5 +128,5 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
 };
 
 Modal.defaultProps = {
-  backdrop: 'true',
+  backdrop: true,
 };

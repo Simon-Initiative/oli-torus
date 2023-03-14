@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { ESBuildMinifyPlugin } = require('esbuild-loader');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const LicensePlugin = require('webpack-license-plugin');
 
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
@@ -25,10 +26,13 @@ const populateEntries = () => {
     bibliography: ['./src/apps/BibliographyApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
+    scheduler: ['./src/apps/SchedulerApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
+    cashnetclient: ['./src/payment/cashnet/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
     keepalive: ['./src/phoenix/keep-alive.ts'],
+    delivery_adaptive_themes_default_light: ['./styles/adaptive/light.scss'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -55,38 +59,11 @@ const populateEntries = () => {
     };
   });
 
-  const themePaths = [
-    ...glob
-      .sync('./styles/themes/authoring/*.scss')
-      .map((p) => ({ prefix: 'authoring_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/authoring/custom/*.scss')
-      .map((p) => ({ prefix: 'authoring_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/delivery/*.scss')
-      .map((p) => ({ prefix: 'delivery_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/delivery/custom/*.scss')
-      .map((p) => ({ prefix: 'delivery_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/delivery/adaptive_themes/*/light.scss')
-      .map((p) => ({ prefix: 'delivery_adaptive_themes_default_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/preview/*.scss')
-      .map((p) => ({ prefix: 'preview_', themePath: p })),
-  ];
-
-  const foundThemes = themePaths.map(({ prefix, themePath }) => {
-    const theme = path.basename(themePath, '.scss');
-
-    return {
-      [prefix + theme]: themePath,
-    };
-  });
+  const styleSheets = [{ styles: './styles/index.scss' }, { preview: './styles/preview.scss' }];
 
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.
-  const merged = [...foundActivities, ...foundParts, ...foundThemes].reduce(
+  const merged = [...foundActivities, ...foundParts, ...styleSheets].reduce(
     (p, c) => Object.assign({}, p, c),
     initialEntries,
   );
@@ -98,7 +75,7 @@ const populateEntries = () => {
     Object.keys(initialEntries).length +
       2 * foundActivities.length +
       2 * foundParts.length +
-      foundThemes.length
+      styleSheets.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',
@@ -321,5 +298,17 @@ module.exports = (env, options) => ({
       ],
     }),
     new MonacoWebpackPlugin(),
+    new LicensePlugin({
+      outputFilename: '../licenses.json',
+      licenseOverrides: {
+        'janus-script@1.9.2': 'MIT',
+        'phoenix_html@3.2.0': 'MIT',
+        'typed-function@2.0.0': 'MIT',
+      },
+      unacceptableLicenseTest: (licenseIdentifier) => {
+        // unacceptable licenses
+        return ['GPL', 'AGPL', 'LGPL', 'NGPL'].includes(licenseIdentifier);
+      },
+    }),
   ].filter((plugin) => plugin !== undefined),
 });

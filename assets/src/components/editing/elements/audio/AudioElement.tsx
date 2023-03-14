@@ -4,7 +4,10 @@ import { EditorProps } from 'components/editing/elements/interfaces';
 import { updateModel } from 'components/editing/elements/utils';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { useSlate } from 'slate-react';
+import { HoverContainer } from '../../toolbar/HoverContainer';
+import { AudioToolbar } from './AudioSettings';
 export interface AudioProps extends EditorProps<ContentModel.Audio> {}
+
 export const AudioEditor = (props: AudioProps) => {
   const editor = useSlate();
 
@@ -14,12 +17,27 @@ export const AudioEditor = (props: AudioProps) => {
   return (
     <div {...props.attributes} contentEditable={false} className="m-4 pl-4 pr-4 text-center">
       {props.children}
-      <audio src={props.model.src} controls />
-      <CaptionEditor
-        onEdit={(caption) => onEdit({ caption })}
-        model={props.model}
-        commandContext={props.commandContext}
-      />
+      <HoverContainer
+        style={{ margin: '0 auto', display: 'block' }}
+        isOpen={true}
+        align="start"
+        position="top"
+        content={
+          <AudioToolbar
+            commandContext={props.commandContext}
+            model={props.model}
+            onEdit={onEdit}
+            projectSlug={props.commandContext.projectSlug}
+          />
+        }
+      >
+        <audio src={props.model.src} controls />
+        <CaptionEditor
+          onEdit={(caption) => onEdit({ caption })}
+          model={props.model}
+          commandContext={props.commandContext}
+        />
+      </HoverContainer>
     </div>
   );
 };

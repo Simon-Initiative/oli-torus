@@ -1,200 +1,199 @@
-@use 'authoring/theme' as authoring;
+.contentOutlineContainer {
+  position: relative;
+  width: 0px;
+  flex-shrink: 0;
+  z-index: var(--z-10);
 
-:global(html.authoring) {
-  .contentOutlineContainer {
-    position: relative;
-    width: 0px;
-    flex-shrink: 0;
-    z-index: authoring.$z-content-1;
+  transition: width 200ms ease-out;
+}
 
-    transition: width 200ms ease-out;
-  }
+.contentOutlineContainerShow {
+  margin-top: 20px;
+  margin-right: 10px;
+  width: 300px;
+}
 
-  .contentOutlineContainerShow {
-    margin-top: 20px;
-    margin-right: 10px;
-    width: 300px;
-  }
+.contentOutlineToggle {
+  position: absolute;
+  top: 100px;
+  left: -15px;
+  border: none;
+}
 
-  .contentOutlineToggle {
-    position: absolute;
-    top: 100px;
-    left: -15px;
-    border: none;
-  }
+.contentOutlineToggleSticky {
+  position: sticky;
+  top: 100px;
+  left: -15px;
+}
 
-  .contentOutlineToggleSticky {
-    position: sticky;
-    top: 100px;
-    left: -15px;
-  }
+.contentOutlineToggleButton {
+  width: 30px;
+  height: 30px;
+  color: var(--color-body-color);
+  font-size: 16px;
+  font-weight: 800;
+  border: 2px solid var(--color-gray-400);
+  border-radius: 50%;
+  background: var(--color-body);
+  padding: 0 1px 0 0;
+  cursor: pointer;
 
-  .contentOutlineToggleButton {
-    width: 30px;
-    height: 30px;
-    color: authoring.$body-color;
-    font-size: 16px;
-    font-weight: 800;
-    border: 2px solid authoring.$gray-400;
-    border-radius: 50%;
-    background: authoring.$body-bg;
-    padding: 0 1px 0 0;
-    cursor: pointer;
-
-    &:hover {
-      color: authoring.$selection;
-      border-color: authoring.$selection;
-    }
-  }
-
-  .contentOutline {
-    position: sticky;
-    width: 100%;
-    top: 80px;
-    border-radius: 6px;
-    border: 4px solid authoring.$gray-200;
-    background: authoring.$gray-200;
-  }
-
-  .groupedOutline {
-    @extend .contentOutline;
-    padding-left: 10px;
-    border: none;
-  }
-
-  .contentOutlineItems {
-    overflow: auto;
-  }
-
-  .contentOutlineItemsReorderMode {
-    padding-bottom: 60px;
-  }
-
-  .toolbar {
-    display: flex;
-    flex-direction: row;
-    padding: 4px;
-  }
-
-  .toolbarButton {
-    border: none;
-    border-radius: 4px;
-    color: authoring.$body-color;
-    font-size: 14px;
-
-    &:hover {
-      background: authoring.$gray-400;
-    }
-  }
-
-  .buttonPrimary {
-    background-color: authoring.$primary;
-    color: authoring.$white;
-
-    &:hover {
-      background: authoring.$hover;
-    }
-  }
-
-  .item {
-    display: flex;
-    flex-direction: row;
-    padding: 6px 12px;
-    border-radius: 4px;
-    background: authoring.$body-bg;
-    min-height: 60px;
-    margin-bottom: 4px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  .contentLink {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    overflow: hidden;
-    cursor: pointer;
-  }
-
-  .group {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 4px;
-  }
-
-  .groupContainer {
-    display: flex;
-    flex-direction: row;
-    background: authoring.$body-bg;
-    overflow: hidden;
-    padding: 6px 0px 6px 12px;
-    border-radius: 4px;
-    min-height: 60px;
-    margin-bottom: 4px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  .groupLink {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    cursor: pointer;
-  }
-
-  .icon {
-    border-radius: 6px;
-    padding: 4px;
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    text-align: center;
-    margin-top: 10px;
-    margin-right: 10px;
-    background-color: authoring.$gray-200;
-    border: 2px solid authoring.$gray-400;
-
-    :global i {
-      vertical-align: text-top;
-    }
-  }
-
-  .description {
-    display: block;
-    overflow: hidden;
-  }
-
-  .title {
-    display: block;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-weight: 600;
-    font-size: 14px;
-  }
-
-  .descriptionContent {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .expandToggle {
-    padding: 4px;
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    text-align: center;
-    margin-top: 10px;
-    margin-right: 10px;
+  &:hover {
+    color: var(--color-selection);
+    border-color: var(--color-selection);
   }
 }
 
-:global(html.authoring.dark) {
+.contentOutline {
+  position: sticky;
+  width: 100%;
+  top: 80px;
+  border-radius: 6px;
+  border: 4px solid var(--color-gray-200);
+  background: var(--color-gray-200);
+}
+
+.groupedOutline {
+  @extend .contentOutline;
+  padding-left: 10px;
+  border: none;
+}
+
+.contentOutlineItems {
+  overflow: auto;
+}
+
+.contentOutlineItemsReorderMode {
+  padding-bottom: 60px;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  padding: 4px;
+}
+
+.toolbarButton {
+  border: none;
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: var(--color-body-color);
+  font-size: 14px;
+
+  &:hover {
+    background: var(--color-gray-400);
+    color: var(--color-white);
+  }
+}
+
+.buttonPrimary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+
+  &:hover {
+    background: var(--color-hover);
+  }
+}
+
+.item {
+  display: flex;
+  flex-direction: row;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: var(--color-body);
+  min-height: 60px;
+  margin-bottom: 4px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.contentLink {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+
+.groupContainer {
+  display: flex;
+  flex-direction: row;
+  background: var(--color-body);
+  overflow: hidden;
+  padding: 6px 0px 6px 12px;
+  border-radius: 4px;
+  min-height: 60px;
+  margin-bottom: 4px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.groupLink {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  cursor: pointer;
+}
+
+.icon {
+  border-radius: 6px;
+  padding: 4px;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: 10px;
+  margin-right: 10px;
+  background-color: var(--color-gray-200);
+  border: 2px solid var(--color-gray-400);
+  color: var(--color-gray-400);
+
+  :global i {
+    vertical-align: text-top;
+  }
+}
+
+.description {
+  display: block;
+  overflow: hidden;
+}
+
+.title {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.descriptionContent {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.expandToggle {
+  padding: 4px;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+:global(html.dark) {
   .contentOutlineToggleButton {
     border-radius: 50%;
   }
@@ -202,16 +201,16 @@
   .contentOutline,
   .groupedOutline {
     border-radius: 6px;
-    border-color: authoring.$gray-800;
-    background: authoring.$gray-800;
+    border-color: var(--color-gray-800);
+    background: var(--color-gray-800);
   }
 
   .toolbarButton {
     border-radius: 4px;
-    background: authoring.$gray-800;
+    background: var(--color-gray-800);
 
     &:hover {
-      background: authoring.$gray-900;
+      background: var(--color-gray-900);
     }
   }
 }

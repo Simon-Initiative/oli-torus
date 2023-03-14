@@ -228,7 +228,6 @@ const DeckLayoutFooter: React.FC = () => {
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const isPreviewMode = useSelector(selectPreviewMode);
-
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -531,6 +530,7 @@ const DeckLayoutFooter: React.FC = () => {
   };
 
   const checkHandler = () => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsLoading(true);
     /* console.log('CHECK BUTTON CLICKED', {
       isGoodFeedback,

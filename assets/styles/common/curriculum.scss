@@ -1,5 +1,3 @@
-@import "authoring/variables";
-
 .curriculum-editor {
   .targeted-objectives {
     .objective {
@@ -22,29 +20,24 @@
   }
 
   .no-objectives {
-    color: $warning;
+    color: var(--color-warning);
   }
 
   .curriculum-entry {
-    border: 1px solid $gray-400;
+    border: 1px solid var(--color-gray-300);
     border-radius: 4px;
-    box-shadow: 1px 1px 8px 1px rgba($color: $gray-400, $alpha: 0.33);
+    box-shadow: 1px 1px 8px 1px var(--color-gray-200);
     cursor: grab;
-    background-color: $body-bg;
-    color: $body-color;
+    background-color: var(--color-body);
+    color: var(--color-body-color);
 
     &:active {
       cursor: grabbing;
-      border-color: $primary;
+      border-color: var(--color-primary);
     }
 
     &.active {
-      border-color: $primary;
-    }
-
-    .entry-title {
-      font-size: 14px;
-      font-weight: 600;
+      border-color: var(--color-primary);
     }
 
     .badge {
