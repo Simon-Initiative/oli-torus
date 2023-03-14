@@ -25,8 +25,9 @@ export const applyTemplate = createAsyncThunk(
 
       const modifiedScreen = applyTemplateToActivity(screen, template);
       if (!modifiedScreen) return null;
-      await dispatch(upsertActivity({ activity: modifiedScreen }));
+
       dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
+      await dispatch(upsertActivity({ activity: modifiedScreen }));
       return modifiedScreen;
     } catch (e) {
       console.error(e);

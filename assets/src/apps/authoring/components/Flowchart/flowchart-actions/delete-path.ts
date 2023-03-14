@@ -31,7 +31,7 @@ export const deletePath = createAsyncThunk(
     const modifiedScreen = clone(screen);
     modifiedScreen.authoring.flowchart.paths = newPaths;
 
-    await dispatch(upsertActivity({ activity: modifiedScreen }));
     dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
+    await dispatch(upsertActivity({ activity: modifiedScreen }));
   },
 );

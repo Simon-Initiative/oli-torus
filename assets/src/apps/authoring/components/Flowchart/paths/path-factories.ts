@@ -1,4 +1,5 @@
 import guid from '../../../../../utils/guid';
+import { IDropdownPartLayout } from '../../../../delivery/store/features/activities/slice';
 import {
   AlwaysGoToPath,
   CorrectPath,
@@ -20,31 +21,36 @@ export const createUnknownPathWithDestination = (
   priority: 20,
 });
 
-const createDestinationPath = (destinationScreenId: number | null = null) => ({
-  id: guid(),
+const createDestinationPath = (id: string, destinationScreenId: number | null = null) => ({
+  id,
   ruleId: null,
   destinationScreenId,
   completed: false,
 });
 
 export const createOptionCommonErrorPath = (
-  componentId: string,
+  dropdown: IDropdownPartLayout,
   selectedOption: number,
   destinationScreenId: number | null = null,
-): OptionCommonErrorPath => ({
-  ...createDestinationPath(destinationScreenId),
-  type: 'option-common-error',
-  selectedOption,
-  componentId,
-  label: `Selected option #${selectedOption + 1}`,
-  priority: 4,
-});
+): OptionCommonErrorPath => {
+  const optionLabel =
+    dropdown.custom.optionLabels[selectedOption] || `Option #${selectedOption + 1}`;
+
+  return {
+    ...createDestinationPath(`option-common-error-${selectedOption}`, destinationScreenId),
+    type: 'option-common-error',
+    selectedOption,
+    componentId: dropdown.id,
+    label: 'Selected option ' + optionLabel.substring(0, 20),
+    priority: 4,
+  };
+};
 
 export const createIncorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
 ): IncorrectPath => ({
-  ...createDestinationPath(destinationScreenId),
+  ...createDestinationPath('incorrect', destinationScreenId),
   type: 'incorrect',
   componentId,
   label: 'Any Incorrect',
@@ -55,7 +61,7 @@ export const createCorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
 ): CorrectPath => ({
-  ...createDestinationPath(destinationScreenId),
+  ...createDestinationPath('correct', destinationScreenId),
   type: 'correct',
   componentId,
   label: 'Correct',
@@ -66,7 +72,7 @@ export const createAlwaysGoToPath = (
   destinationScreenId: null | number = null,
 ): AlwaysGoToPath => ({
   type: 'always-go-to',
-  id: guid(),
+  id: 'always-go-to',
   ruleId: null,
   destinationScreenId,
   completed: !!destinationScreenId,
@@ -76,7 +82,7 @@ export const createAlwaysGoToPath = (
 
 export const createEndOfActivityPath = (): EndOfActivityPath => ({
   type: 'end-of-activity',
-  id: guid(),
+  id: 'end-of-activity',
   ruleId: null,
   completed: false,
   label: 'Exit Activity',

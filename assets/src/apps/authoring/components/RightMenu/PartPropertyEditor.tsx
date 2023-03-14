@@ -268,6 +268,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
       // We can use the same transformation functions for expert & simplified because the RJSF library passes
       // back any unknown properties unchanged.
       modelChanges = transformPartSchemaToModel(modelChanges);
+
       if (currentPartInstance && currentPartInstance.transformSchemaToModel) {
         modelChanges.custom = {
           ...modelChanges.custom,

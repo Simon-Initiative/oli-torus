@@ -74,7 +74,9 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <Button onClick={onOk}>Ok</Button>
+        <Button disabled={selectedTemplate === null} onClick={onOk}>
+          Ok
+        </Button>
       </Modal.Footer>
     </Modal>
   );

@@ -21,17 +21,18 @@ interface Props {
   questionType: string;
   availablePaths: AllPaths[];
   path: AllPaths;
-  screenTitle: string;
+
   questionId: string | null;
   screens: Record<string, string>;
+  usedPathIds: string[];
 }
 
 export const PathEditBox: React.FC<Props> = ({
-  screenTitle,
   screenId,
   questionId,
   questionType,
   availablePaths,
+  usedPathIds,
   path,
   screens,
 }) => {
@@ -62,6 +63,7 @@ export const PathEditBox: React.FC<Props> = ({
       questionId={questionId}
       screens={screens}
       toggleEditMode={toggleEditMode}
+      usedPathIds={usedPathIds}
       onChange={(newPath) => onPathChanged(path.id, newPath)}
     />
   ) : (
@@ -84,6 +86,7 @@ interface EditParams {
   questionId: string | null;
   screens: Record<string, string>;
   screenId: EntityId;
+  usedPathIds: string[];
 }
 const PathEditor: React.FC<EditParams> = ({
   className,
@@ -95,6 +98,7 @@ const PathEditor: React.FC<EditParams> = ({
   screenId,
   onChange,
   questionType,
+  usedPathIds,
 }) => {
   const [workingPath, setWorkingPath] = useState<AllPaths>(clone(path));
   const onEdit = (props: Partial<AllPaths>) =>
@@ -135,7 +139,26 @@ const PathEditor: React.FC<EditParams> = ({
     toggleDeleteConfirm();
   };
 
-  const availableWithCurrent = [workingPath, ...availablePaths];
+  const availableWithCurrent = availablePaths.filter((pathOption) => {
+    if (path.type === 'unknown-reason-path' && pathOption.type === 'unknown-reason-path') {
+      // These are special, and you can have as many as you like.
+      // But we don't want to show more than one in the dropdown list.
+      return false;
+    }
+
+    // If this was the original path, we want to allow it
+    if (pathOption.id === path.id) return true;
+
+    // We don't want to allow the user to pick a path ID that is already in use
+    return !usedPathIds.includes(pathOption.id);
+  });
+
+  if (availableWithCurrent.find((p) => p.id === workingPath.id) === undefined) {
+    // In the case where we previously picked a path, but that path is no longer available to choose from the list.
+    // Like if it was for option #4, but now we only have 3 options, we have to manually add it.
+    availableWithCurrent.push(workingPath);
+  }
+
   availableWithCurrent.sort(sortByPriority);
 
   return (
@@ -165,13 +188,14 @@ const PathEditor: React.FC<EditParams> = ({
             />
           </>
         )}
-        <button onClick={toggleDeleteConfirm} className="icon-button">
-          <Icon icon="trash" />
-        </button>
-        <button onClick={onSave} className="icon-button">
-          <Icon icon="save" />
-        </button>
       </div>
+
+      <button onClick={onSave} className="btn btn-primary">
+        <Icon icon="save" /> Save Rule
+      </button>
+      <button onClick={toggleDeleteConfirm} className="icon-button">
+        <Icon icon="trash" />
+      </button>
       {showDeleteConfirm && (
         <ConfirmDelete
           show={true}

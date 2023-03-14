@@ -41,6 +41,7 @@ const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
     screen.authoring.flowchart = {
       paths: [],
       screenType: 'blank_screen',
+      templateApplied: false,
     };
   }
 

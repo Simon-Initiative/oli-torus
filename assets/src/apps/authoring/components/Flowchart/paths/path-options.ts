@@ -36,7 +36,7 @@ const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefin
   if (dropdown) {
     return [
       ...dropdown.custom.optionLabels.map((label, index) =>
-        createOptionCommonErrorPath(dropdown.id, index),
+        createOptionCommonErrorPath(dropdown, index),
       ),
       createCorrectPath(dropdown.id),
       createIncorrectPath(dropdown.id),

@@ -8,6 +8,8 @@ export interface Template {
     inherited: boolean;
     owner: string;
     type: string;
+    gradingApproach?: 'automatic' | 'manual';
+    outOf?: number;
   }[];
   partsLayout: IPartLayout[];
 }

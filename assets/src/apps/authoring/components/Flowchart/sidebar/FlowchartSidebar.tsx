@@ -49,17 +49,10 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
         <ValidationError key={index}>{err}</ValidationError>
       ))}
 
-      {primaryQuestion && questionType && (
-        <div>
-          <h3>{questionType}</h3>
-        </div>
-      )}
-
       <PathsEditor
         screens={screens}
         questionId={primaryQuestion?.id || ''}
         screenId={screen.id}
-        screenTitle={screen.title || 'Screen'}
         questionType={questionType}
         availablePaths={getAvailablePaths(screen)}
         paths={screen.authoring?.flowchart?.paths || []}

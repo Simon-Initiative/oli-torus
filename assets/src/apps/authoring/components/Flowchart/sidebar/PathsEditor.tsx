@@ -11,13 +11,11 @@ interface Props {
   availablePaths: AllPaths[];
   paths: AllPaths[];
   screenId: EntityId;
-  screenTitle: string;
   questionId: string | null;
   screens: Record<string, string>;
 }
 
 export const PathsEditor: React.FC<Props> = ({
-  screenTitle,
   screenId,
   questionId,
   questionType,
@@ -30,6 +28,7 @@ export const PathsEditor: React.FC<Props> = ({
     dispatch(addPath({ screenId }));
   };
   const sortedPath = [...paths].sort(sortByPriority);
+  const usedPathIds = paths.map((p) => p.id);
   return (
     <div>
       {sortedPath.map((path) => (
@@ -37,10 +36,10 @@ export const PathsEditor: React.FC<Props> = ({
           screens={screens}
           questionId={questionId}
           screenId={screenId}
-          screenTitle={screenTitle}
           key={path.id}
           questionType={questionType}
           availablePaths={availablePaths}
+          usedPathIds={usedPathIds}
           path={path}
         />
       ))}

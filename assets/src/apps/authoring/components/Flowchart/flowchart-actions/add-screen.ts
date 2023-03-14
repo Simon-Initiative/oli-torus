@@ -124,8 +124,8 @@ export const addFlowchartScreen = createAsyncThunk(
           }
 
           // TODO - these two should be a single operation?
-          await dispatch(upsertActivity({ activity: fromScreen }));
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
+          await dispatch(upsertActivity({ activity: fromScreen }));
         }
       }
 
