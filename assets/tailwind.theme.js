@@ -1,4 +1,5 @@
 /* eslint-disable */
+const tailwindColors = require('tailwindcss/colors');
 
 /**
  * Extend the default tailwind color palette by overriding specific colors.
@@ -7,7 +8,8 @@
  * palette of shades for a specific color: https://www.tailwindshades.com/
  */
 const colors = {
-  ...require('tailwindcss/colors'),
+  ...tailwindColors,
+  gray: tailwindColors.neutral,
   blue: {
     DEFAULT: '#3B76D3',
     50: '#D1DFF5',
@@ -145,9 +147,9 @@ module.exports = {
         },
       },
       footer: {
-        DEFAULT: '#eceef1',
+        DEFAULT: colors.gray['100'],
         dark: {
-          DEFAULT: '#222439',
+          DEFAULT: '#323233',
         },
       },
       header: {

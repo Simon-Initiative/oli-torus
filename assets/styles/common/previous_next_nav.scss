@@ -8,6 +8,7 @@
     border: 1px solid var(--color-gray-400);
     box-shadow: 1px 1px 6px -2px rgba(0, 0, 0, 0.25);
     max-width: 400px;
+    height: fit-content;
     color: var(--color-delivery-primary);
 
     &:hover {
@@ -34,6 +35,7 @@
   .page-nav-link,
   .page-nav-link-placeholder {
     margin-top: 20px;
+    width: 30%;
   }
 
   .nav-label {

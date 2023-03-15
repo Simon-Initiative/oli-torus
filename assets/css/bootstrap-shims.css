@@ -1,4 +1,11 @@
-/** Bootstrap Shims **/
+/**
+ * Bootstrap Shims
+ *
+ * These are temporary styles intended to bridge the gap of conversion
+ * from bootstrap to a pure-tailwind style approach. These should only
+ * be tweaked or utilzed to fix existing code but should not be relied
+ * upon for forward development.
+ **/
 @import './bs/accordion';
 @import './bs/modal';
 @import './bs/nav-tabs';
@@ -51,7 +58,7 @@
   @apply text-white hover:text-white bg-blue-400 hover:bg-blue-500;
 }
 .btn-light {
-  @apply text-gray-800 hover:text-gray-800 bg-gray-100 hover:bg-gray-200;
+  @apply text-gray-800 dark:text-white hover:text-gray-800 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-500;
 }
 .btn-dark {
   @apply text-white hover:text-white bg-gray-700 hover:bg-gray-900;
@@ -168,6 +175,7 @@
             absolute
             hidden
             bg-white
+            dark:bg-gray-900
             text-base
             z-50
             float-left
@@ -203,13 +211,15 @@ h6.dropdown-item {
             w-full
             whitespace-nowrap
             bg-transparent
-            text-gray-700
-            hover:bg-gray-100;
+            text-gray-800
+            dark:text-white
+            hover:bg-gray-100
+            dark:hover:bg-gray-800;
 }
 
 a.dropdown-item,
 .dropdown-item a {
-  @apply no-underline text-gray-700;
+  @apply no-underline text-gray-700 dark:text-white;
 }
 
 .nav nav-tabs {
@@ -414,11 +424,11 @@ input.form-control-sm,
 }
 
 .card {
-  @apply block p-6 rounded-lg shadow-lg bg-white text-gray-700 dark:bg-slate-800 dark:text-gray-100;
+  @apply block p-6 rounded-lg shadow-lg bg-white dark:bg-neutral-800 dark:border-neutral-600;
 }
 
 .card-body {
-  @apply text-base dark:text-gray-100;
+  @apply text-base;
 }
 
 .modal {
@@ -430,7 +440,7 @@ input.form-control-sm,
 }
 
 .modal-content {
-  @apply border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current;
+  @apply border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white dark:bg-body-dark bg-clip-padding rounded-md outline-none;
 }
 
 .modal-header {
@@ -446,7 +456,7 @@ input.form-control-sm,
 }
 
 .modal-dialog .modal-header .btn-close {
-  @apply box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline m-0;
+  @apply box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline m-0;
 }
 
 .flex-fill {

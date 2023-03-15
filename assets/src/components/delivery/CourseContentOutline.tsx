@@ -143,7 +143,7 @@ const PageItem = ({
         (containerSlug === activeContainerSlug || slug == activeContainerSlug) &&
         'border-delivery-primary-100',
       isCurrentUrl(sectionSlug, type, slug)
-        ? '!border-delivery-primary bg-delivery-primary-50'
+        ? '!border-delivery-primary bg-delivery-primary-50 dark:bg-delivery-primary-800'
         : 'border-transparent',
     )}
   >

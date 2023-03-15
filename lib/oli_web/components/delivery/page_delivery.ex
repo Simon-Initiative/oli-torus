@@ -28,12 +28,12 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
     ~H"""
       <div class="flex flex-row my-2">
         <%= if @end_date do %>
-          <div class="py-1.5 px-4 bg-gray-100 text-gray-700 rounded">
+          <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded">
             <%= scheduling_type_label(@scheduling_type) %> <%= format_date(@end_date) %>
           </div>
         <% end %>
         <%= if @est_reading_time do %>
-          <div class="py-1.5 px-4 bg-gray-100 text-gray-700 rounded ml-1">
+          <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded ml-1">
             Estimated reading time: <%= format_duration(@est_reading_time) %>
           </div>
         <% end %>

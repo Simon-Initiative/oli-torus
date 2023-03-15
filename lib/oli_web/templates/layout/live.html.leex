@@ -1,6 +1,6 @@
 
 <%= if live_flash(@flash, :info) do %>
-  <div class="alert alert-info" role="alert">
+  <div class="alert alert-info flex flex-row justify-between" role="alert">
 
     <%= live_flash(@flash, :info) %>
 
@@ -12,7 +12,7 @@
 <% end %>
 
 <%= if live_flash(@flash, :error) do %>
-  <div class="alert alert-danger" role="alert">
+  <div class="alert alert-danger flex flex-row justify-between" role="alert">
 
     <%= live_flash(@flash, :error) %>
 
