@@ -15,7 +15,7 @@ defmodule Oli.Interop.Ingest.Processor.BibEntries do
     legacy_id = Map.get(resource, "legacyId", nil)
     legacy_path = Map.get(resource, "legacyPath", nil)
     title = Map.get(resource, "title", "missing title")
-    content = Map.get(resource, "content")
+    content = Map.get(resource, "content", %{})
 
     %{
       slug: Oli.Utils.Slug.slug_with_prefix(slug_prefix, title),
