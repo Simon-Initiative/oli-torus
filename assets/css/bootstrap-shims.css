@@ -356,7 +356,7 @@ input.form-control-sm,
 }
 
 .alert-info {
-  @apply bg-indigo-100 text-indigo-700;
+  @apply bg-blue-50 text-blue-700;
 }
 
 .alert-light {
