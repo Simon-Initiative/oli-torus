@@ -45,7 +45,6 @@ export const loadInitialPageState = createAsyncThunk(
       // write initial session state (TODO: factor out elsewhere)
       const resourceAttemptGuid = selectResourceAttemptGuid(getState() as RootState);
       dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
-
       const sequence = selectSequence(getState() as RootState);
       const sessionState = sequence.reduce((acc, entry) => {
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
