@@ -74,7 +74,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                 class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
                 type="button"
                 disabled={@is_editing}
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 title="Edit"
                 :on-click="set_editing_post"
                 phx-value-post_id={@post.id}
@@ -85,7 +85,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               {#unless @is_instructor}
                 <span
                   class="d-inline-block"
-                  data-toggle="tooltip"
+                  data-bs-toggle="tooltip"
                   title={if has_replies?(@post, @parent_replies, @post.id),
                     do: "Cannot be deleted because it has replies",
                     else: "Delete"}
@@ -109,7 +109,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
                 class={"btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200" <>
                   if not @parent_is_archived, do: " not-readonly", else: ""}
                 type="button"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 title={if is_archived?(@post.status), do: "Unarchive", else: "Archive"}
                 :on-click={if is_archived?(@post.status), do: "display_unarchive_modal", else: "display_archive_modal"}
                 phx-value-id={@post.id}
@@ -121,7 +121,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               <button
                 class="btn btn-link p-0 text-delivery-primary hover:text-delivery-primary-700 disabled:text-gray-200"
                 type="button"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 title="Delete"
                 :on-click="display_delete_modal"
                 phx-value-id={@post.id}
@@ -142,7 +142,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
             <div class="flex gap-2">
               <button
                 class="btn btn-sm btn-success rounded-button"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 title="Accept"
                 :on-click="display_accept_modal"
                 phx-value-id={@post.id}
@@ -153,7 +153,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
 
               <button
                 class="btn btn-sm btn-danger rounded-button"
-                data-toggle="tooltip"
+                data-bs-toggle="tooltip"
                 title="Reject"
                 :on-click="display_reject_modal"
                 phx-value-id={@post.id}

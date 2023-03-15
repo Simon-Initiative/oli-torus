@@ -297,7 +297,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           type="button"
           id="createButton"
           className="btn btn-link dropdown-toggle btn-purpose"
-          data-toggle="dropdown"
+          data-bs-toggle="dropdown"
           aria-haspopup="true"
           aria-expanded="false"
         >

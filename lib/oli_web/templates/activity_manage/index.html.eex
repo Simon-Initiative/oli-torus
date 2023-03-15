@@ -9,17 +9,17 @@
             <th>Slug</th>
             <th>Description</th>
             <th>
-              <span data-toggle="tooltip" data-placement="top" title="Where this activity performs attempt evaluation. This is configurable only within the activity implementation.">
+              <span data-bs-toggle="tooltip" data-bs-placement="top" title="Where this activity performs attempt evaluation. This is configurable only within the activity implementation.">
                 Eval Method
               </span>
             </th>
             <th>
-              <span data-toggle="tooltip" data-placement="top" title="Determines whether the activity type is automatically available to all projects or whether an author must opt-in to having access to it">
+              <span data-bs-toggle="tooltip" data-bs-placement="top" title="Determines whether the activity type is automatically available to all projects or whether an author must opt-in to having access to it">
                 Availability
               </span>
             </th>
             <th>
-              <span data-toggle="tooltip" data-placement="top" title="Determines which users the activity type is visible to as a choice in a project">
+              <span data-bs-toggle="tooltip" data-bs-placement="top" title="Determines which users the activity type is visible to as a choice in a project">
                 Visibiilty
               </span>
             </th>
@@ -37,7 +37,7 @@
               <td><%= "#{if activity.globally_visible do "All Users" else "Admins only" end}"%></td>
               <td>
                 <div class="btn-group">
-                  <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Actions
                   </button>
                   <div class="dropdown-menu">

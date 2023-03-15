@@ -7,6 +7,7 @@
 @import './bs/spinner';
 @import './bs/switch';
 @import './bs/popover';
+@import './bs/tooltip';
 
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;
@@ -355,7 +356,7 @@ input.form-control-sm,
 }
 
 .alert-info {
-  @apply bg-indigo-100 text-indigo-700;
+  @apply bg-blue-50 text-blue-700;
 }
 
 .alert-light {

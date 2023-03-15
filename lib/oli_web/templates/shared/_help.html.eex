@@ -16,7 +16,9 @@
           </h5>
           <button type="button"
             class="btn-close box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline"
-            data-bs-dismiss="modal" aria-label="Close"></button>
+            data-bs-dismiss="modal" aria-label="Close">
+              <i class="fa-solid fa-xmark fa-xl"></i>
+          </button>
         </div>
         <div class="modal-body relative p-4">
           <h5 id="help-success-message" class="hidden text-success">Your help request has been submitted</h5>
@@ -68,9 +70,16 @@
         </div>
         <div
           class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
+          <button
+            type="button"
+            class="btn btn-link ml-2"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
           <%= submit "Send Request",
             id: "button-create-author",
-            class: "btn btn-primary",
+            class: "btn btn-primary ml-2",
             phx_disable_with: "Requesting help..." %>
         </div>
       </form>

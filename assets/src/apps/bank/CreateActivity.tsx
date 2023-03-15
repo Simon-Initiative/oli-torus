@@ -82,7 +82,7 @@ export const CreateActivity = (props: CreateActivityProps) => {
           type="button"
           id="createButton"
           className="btn btn-primary dropdown-toggle"
-          data-toggle="dropdown"
+          data-bs-toggle="dropdown"
           aria-haspopup="true"
           aria-expanded="false"
         >

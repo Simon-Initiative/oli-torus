@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CitationModel, DateField, isDateField, isNameField, NameField } from './citation_model';
 import { TextInput } from 'components/common/TextInput';
 import { cslSchema, ignoredAttributes, toFriendlyLabel } from './common';
+import { Tooltip } from 'components/common/Tooltip';
 
 export interface BibEntryEditorProps {
   citationModel: CitationModel;
@@ -211,27 +212,25 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
         <label className="control-label" htmlFor={key1}>
           {renderLabel(key1)}
         </label>
-        <button
-          onClick={() => {
-            let m: CitationModel = { id: '', type: '' };
-            m = Object.entries(model).reduce(function (obj, entry) {
-              if (entry[0] != key1) {
-                obj = { ...obj, [entry[0]]: entry[1] };
-              }
-              return obj;
-            }, m);
+        <Tooltip title="Delete this field">
+          <button
+            onClick={() => {
+              let m: CitationModel = { id: '', type: '' };
+              m = Object.entries(model).reduce(function (obj, entry) {
+                if (entry[0] != key1) {
+                  obj = { ...obj, [entry[0]]: entry[1] };
+                }
+                return obj;
+              }, m);
 
-            setModel(m);
-          }}
-          type="button"
-          className="btn btn-link text-body-color"
-          data-toggle="tooltip"
-          data-placement="top"
-          title="Delete this field"
-          aria-pressed="false"
-        >
-          <i className="fas fa-trash-alt"></i>
-        </button>
+              setModel(m);
+            }}
+            type="button"
+            className="btn btn-link text-body-color"
+          >
+            <i className="fas fa-trash-alt"></i>
+          </button>
+        </Tooltip>
         <div className="sm:col-span-12">{renderAttributeEditor(key1, value1)}</div>
       </div>
     );
@@ -260,7 +259,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
             type="button"
             id="createButton"
             className="btn btn-link dropdown-toggle btn-purpose"
-            data-toggle="dropdown"
+            data-bs-toggle="dropdown"
             aria-haspopup="true"
             aria-expanded="false"
           >
@@ -294,7 +293,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
           type="button"
           id="createButton"
           className="btn btn-link dropdown-toggle btn-purpose"
-          data-toggle="dropdown"
+          data-bs-toggle="dropdown"
           aria-haspopup="true"
           aria-expanded="false"
         >
