@@ -178,7 +178,7 @@ defmodule OliWeb.Resources.PagesView do
       <div class="my-3 d-flex flex-row">
         <div class="flex-grow-1" />
           <div class="btn-group">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               Create
             </button>
             <div class="dropdown-menu dropdown-menu-right">

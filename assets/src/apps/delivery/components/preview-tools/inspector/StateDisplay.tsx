@@ -30,8 +30,8 @@ const StateDisplay: React.FC<StateDisplayProps> = ({ label, state, onChange }) =
           <button
             className="btn btn-link btn-block text-left"
             type="button"
-            // data-toggle="collapse"
-            // data-target={`#collapseRoot${label}`}
+            // data-bs-toggle="collapse"
+            // data-bs-target={`#collapseRoot${label}`}
             aria-expanded={expandedPanels[`panel-Root${label}`]}
             aria-controls={`collapseRoot${label}`}
             onClick={() =>

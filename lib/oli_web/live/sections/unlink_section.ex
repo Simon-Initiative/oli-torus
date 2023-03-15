@@ -7,7 +7,7 @@ defmodule OliWeb.Sections.UnlinkSection do
   def render(assigns) do
     ~F"""
     <div>
-      <button type="button" class="btn btn-sm btn-outline-danger" data-toggle="modal" data-target="#deleteSectionModal">Unlink Course Section from LMS</button>
+      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteSectionModal">Unlink Course Section from LMS</button>
 
       <div class="modal fade" id="deleteSectionModal" tabindex="-1" role="dialog" aria-labelledby="deleteSectionModal" aria-hidden="true">
         <div class="modal-dialog" role="document">

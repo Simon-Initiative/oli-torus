@@ -13,8 +13,8 @@ export const DeleteActivity = (props: DeleteActivityProps) => {
       onClick={() => onDelete()}
       type="button"
       className="btn btn-outline-secondary"
-      data-toggle="tooltip"
-      data-placement="top"
+      data-bs-toggle="tooltip"
+      data-bs-placement="top"
       title="Delete this activity"
       aria-pressed="false"
     >

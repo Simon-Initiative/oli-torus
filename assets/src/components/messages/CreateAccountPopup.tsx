@@ -61,7 +61,7 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
             <button
               type="button"
               className="btn btn-sm btn-link dropdown-toggle dropdown-toggle-split"
-              data-toggle="dropdown"
+              data-bs-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
             >

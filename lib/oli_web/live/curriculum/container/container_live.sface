@@ -11,7 +11,7 @@
   <div class="grid grid-cols-12">
     <div class="col-span-12">
       <div class="change-view-buttons">
-        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        <div class="btn-group btn-group-toggle" data-bs-toggle="buttons">
           <label
             phx-click="change-view"
             phx-value-view="Basic"
