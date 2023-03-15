@@ -274,7 +274,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       console.error('[initCurrentActivity] bad tree??', currentActivityTree);
       return;
     }
-    await dispatch(initializeActivity(currentActivity.resourceId));
+    await dispatch(initializeActivity(currentActivity.resourceId!));
   }, [currentActivityTree, dispatch]);
 
   const handleActivityReady = useCallback(

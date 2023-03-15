@@ -20,8 +20,8 @@ export const validatePath = (path: AllPaths) => {
 
     default:
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      // const _exhaustiveCheck: never = rule; -- TODO - type checking
-      console.error('Unknown rule type', path.type);
+      const _exhaustiveCheck: never = path; // Will throw type error if any rule type is not handled
+
       return false;
   }
 };

@@ -1,3 +1,4 @@
+import { EntityId } from '@reduxjs/toolkit';
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -22,7 +23,7 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
   const currentActivityId = useSelector(selectCurrentActivityId);
 
   const onSelectScreen = useCallback(
-    (screenResourceId: number) => {
+    (screenResourceId: EntityId) => {
       dispatch(setCurrentActivityId({ activityId: screenResourceId }));
     },
     [dispatch],
@@ -36,7 +37,7 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
           <li
             className={currentActivityId === activity.id ? 'active' : ''}
             key={activity.id}
-            onClick={() => onSelectScreen(activity.resourceId)}
+            onClick={() => onSelectScreen(activity.resourceId!)}
           >
             <div className="page-icon">
               <span>?</span>

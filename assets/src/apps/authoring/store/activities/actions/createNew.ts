@@ -64,6 +64,8 @@ export const createNew = createAsyncThunk(
     if (appMode === 'flowchart') {
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [createEndOfActivityPath()],
+        screenType: 'blank_screen',
+        templateApplied: false,
       };
       activity.model.authoring.flowchart = flowchartData;
     } else {
