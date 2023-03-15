@@ -1,9 +1,5 @@
-import React, { useContext } from 'react';
-import { useDrop } from 'react-dnd';
+import React from 'react';
 import { Handle, Position } from 'reactflow';
-import { FlowchartPlaceholderNodeData } from '../flowchart-utils';
-import { FlowchartEventContext } from '../FlowchartEventContext';
-import { screenTypes } from '../screens/screen-factories';
 
 /**
  * This is the empty node on the flowchart that allows you to add new screens to the graph.
@@ -12,7 +8,7 @@ import { screenTypes } from '../screens/screen-factories';
  */
 
 interface NodeProps {
-  data: {};
+  data: any;
 }
 
 // Note: use className="nodrag" on interactive pieces here.
@@ -34,5 +30,3 @@ export const StartNodeBody: React.FC<NodeProps> = ({ data }) => {
     </div>
   );
 };
-
-const DropMessage: React.FC = () => <span>Drop here to add new screen</span>;
