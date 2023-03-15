@@ -1,4 +1,4 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
+import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
 import {
   checkIfFirstEventHasNavigation,
   processResults,
@@ -238,11 +238,11 @@ export const triggerCheck = createAsyncThunk(
 
         const scoringContext: ScoringContext = {
           currentAttemptNumber: currentAttempt?.attemptNumber || 1,
-          maxAttempt: currentActivity.content.custom.maxAttempt || 0,
-          maxScore: currentActivity.content.custom.maxScore || 0,
-          trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
-          negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
-          isManuallyGraded: currentActivity.authoring?.parts.some(
+          maxAttempt: currentActivity.content?.custom.maxAttempt || 0,
+          maxScore: currentActivity.content?.custom.maxScore || 0,
+          trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
+          negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,
+          isManuallyGraded: !!currentActivity.authoring?.parts?.some(
             (p: any) => p.gradingApproach === 'manual',
           ),
         };
@@ -332,7 +332,7 @@ export const triggerCheck = createAsyncThunk(
     const actionsByType = processResults(checkResult);
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
-    let expectedResumeActivityId = currentActivity.id;
+    let expectedResumeActivityId: EntityId = currentActivity.id;
     //check if the check result have any navigation else don't do anything
     if (checkResult.length && hasNavigation) {
       const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(checkResult[0]);
@@ -409,13 +409,13 @@ export const triggerCheck = createAsyncThunk(
         switch (navTarget) {
           case 'next':
             const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));
-            expectedResumeActivityId = nextActivityId;
+            expectedResumeActivityId = nextActivityId as EntityId;
             break;
           default:
             const { payload: expectedNextActivityId } = await dispatch(
               findNextSequenceId(navTarget),
             );
-            expectedResumeActivityId = expectedNextActivityId;
+            expectedResumeActivityId = expectedNextActivityId as EntityId;
         }
         if (expectedResumeActivityId) {
           const resumeTarget: ApplyStateOperation = {

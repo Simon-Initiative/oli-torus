@@ -48,7 +48,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
       console.warn('[EverApp] READY BUT NO TREE????', props);
       return; // very bad!
     }
-    const currentActivityIds = currentActivityTree.map((a) => a.id);
+    const currentActivityIds = currentActivityTree.map((a) => String(a.id));
     return {
       snapshot: getLocalizedStateSnapshot(currentActivityIds),
       context: {

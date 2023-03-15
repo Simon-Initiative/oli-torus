@@ -8,6 +8,7 @@ import React from 'react';
 export interface FlowchartAddScreenParams {
   prevNodeId?: number;
   nextNodeId?: number;
+  screenType?: string;
 }
 
 export interface FlowchartEventContextProps {
