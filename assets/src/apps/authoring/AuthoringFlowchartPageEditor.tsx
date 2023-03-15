@@ -1,9 +1,17 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectCurrentActivity } from '../delivery/store/features/activities/slice';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
+import { applyTemplate } from './components/Flowchart/flowchart-actions/apply-template';
+import { Template } from './components/Flowchart/template-types';
+import { TemplatePicker } from './components/Flowchart/TemplatePicker';
 import HeaderNav from './components/HeaderNav';
-import { SimplifiedRightMenu } from './components/RightMenu/SimplifiedRightMenu';
-import SequenceEditor from './components/SequenceEditor/SequenceEditor';
+import RightMenu from './components/RightMenu/RightMenu';
+
+import { ScreenList } from './components/ScreenList/ScreenList';
+
 import { SidePanel } from './components/SidePanel';
+import { changeEditMode } from './store/app/slice';
 
 interface PanelState {
   left: boolean;
@@ -22,9 +30,27 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
   handlePanelStateChange,
 }) => {
   const authoringContainer = useRef<HTMLDivElement>(null);
+  const dispatch = useDispatch();
+  const onFlowchartMode = useCallback(() => {
+    dispatch(changeEditMode({ mode: 'flowchart' }));
+  }, [dispatch]);
+  const activity = useSelector(selectCurrentActivity);
+
+  const requiresTemplateSelection = !activity?.authoring?.flowchart?.templateApplied;
+  const onApplyTemplate = useCallback(
+    (template: Template) => {
+      if (!activity || !template) return;
+      dispatch(applyTemplate({ screenId: activity.id, template }));
+    },
+    [activity, dispatch],
+  );
 
   return (
-    <div id="advanced-authoring" className={`advanced-authoring`}>
+    <div
+      id="advanced-authoring"
+      className="advanced-authoring flowchart-editor "
+      ref={authoringContainer}
+    >
       <HeaderNav
         panelState={panelState}
         isVisible={panelState.top}
@@ -35,8 +61,9 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
         panelState={panelState}
         onToggle={() => handlePanelStateChange({ left: !panelState.left })}
       >
-        <SequenceEditor />
+        <ScreenList onFlowchartMode={onFlowchartMode} />
       </SidePanel>
+
       <EditingCanvas />
 
       <SidePanel
@@ -44,7 +71,13 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
         panelState={panelState}
         onToggle={() => handlePanelStateChange({ right: !panelState.right })}
       >
-        <SimplifiedRightMenu />
+        <RightMenu />
+        {requiresTemplateSelection && (
+          <TemplatePicker
+            screenType={activity?.authoring?.flowchart?.screenType}
+            onPick={onApplyTemplate}
+          />
+        )}
       </SidePanel>
     </div>
   );

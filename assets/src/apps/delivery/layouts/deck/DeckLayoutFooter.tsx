@@ -289,7 +289,8 @@ const DeckLayoutFooter: React.FC = () => {
           );
           if (partAttempt?.length) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             scopedTarget = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -374,7 +375,8 @@ const DeckLayoutFooter: React.FC = () => {
 
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             scopedTarget = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -425,7 +427,8 @@ const DeckLayoutFooter: React.FC = () => {
           const lstVar = op.params.target.split('.');
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             target = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`

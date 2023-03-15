@@ -11,7 +11,7 @@ import {
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
-
+import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 import {
   findInSequence,
   SequenceBank,
@@ -98,7 +98,7 @@ const RightMenu: React.FC<any> = () => {
     const currentIds: string[] =
       currentActivityTree?.reduce((acc, activity) => {
         const ids: string[] = (activity.content?.partsLayout || []).map(
-          (p: { id: string }): string => p.id,
+          (p: IPartLayout): string => p.id,
         );
         return acc.concat(ids);
       }, [] as string[]) || [];

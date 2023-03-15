@@ -1,3 +1,4 @@
+import { EntityId } from '@reduxjs/toolkit';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import React, { useEffect, useState } from 'react';
@@ -18,7 +19,7 @@ const EditingCanvas: React.FC = () => {
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
-  const [currentActivityId, setCurrentActivityId] = useState<string>('');
+  const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
 
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
@@ -133,7 +134,7 @@ const EditingCanvas: React.FC = () => {
             currentActivityTree.map((activity) => (
               <AuthoringActivityRenderer
                 key={activity.id}
-                activityModel={activity}
+                activityModel={activity as any}
                 editMode={activity.id === currentActivityId}
                 configEditorId={configEditorId}
                 onSelectPart={handlePartSelect}

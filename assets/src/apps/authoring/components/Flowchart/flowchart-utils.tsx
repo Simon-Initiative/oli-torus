@@ -2,7 +2,8 @@
 import { MarkerType } from 'reactflow';
 import guid from '../../../../utils/guid';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
-import { buildEdgesForActivity, isEndOfActivityPath } from './flowchart-path-utils';
+import { AllPaths } from './paths/path-types';
+import { buildEdgesForActivity, isEndOfActivityPath } from './paths/path-utils';
 
 export interface FlowchartPlaceholderNodeData {
   fromScreenId: number;
@@ -17,6 +18,18 @@ export interface FlowchartScreenNode {
   draggable: false;
 }
 
+interface FlowchartStartNodeData {
+  toScreenId: number;
+}
+
+export interface FlowchartStartNode {
+  id: string;
+  position: { x: number; y: number };
+  data: FlowchartStartNodeData;
+  type: 'start';
+  draggable: false;
+}
+
 export interface FlowchartPlaceholderNode {
   id: string;
   position: { x: number; y: number };
@@ -25,7 +38,7 @@ export interface FlowchartPlaceholderNode {
   draggable: false;
 }
 
-export type FlowchartNode = FlowchartScreenNode | FlowchartPlaceholderNode;
+export type FlowchartNode = FlowchartScreenNode | FlowchartPlaceholderNode | FlowchartStartNode;
 
 export interface Point {
   x: number;
@@ -69,6 +82,14 @@ interface PlaceholderNodeAndEdge {
   edge: FlowchartEdge;
 }
 
+const createStartNode = (id: string, toScreenId: number): FlowchartStartNode => ({
+  id,
+  position: { x: 0, y: 0 },
+  data: { toScreenId },
+  draggable: false,
+  type: 'start',
+});
+
 const createPlaceholderNode = (id: string, fromScreenId: number): FlowchartPlaceholderNode => ({
   id,
   position: { x: 0, y: 0 },
@@ -85,6 +106,23 @@ const createPlaceholderEdge = (fromScreenId: string, toScreenId: string): Flowch
   data: { completed: false },
 });
 
+interface HasResourceID {
+  resourceId: number;
+}
+
+// Builds the start node with an edge to the first activity
+export const buildStartingNode = (
+  children: IActivity[],
+  sequence: HasResourceID[],
+): { node: FlowchartStartNode; edge: FlowchartEdge } => {
+  const firstActivity = sequence.find((c) => !!c.resourceId);
+  const nodeId = guid();
+  return {
+    node: createStartNode(nodeId, firstActivity?.resourceId || -1),
+    edge: createPlaceholderEdge(nodeId, String(firstActivity?.resourceId)),
+  };
+};
+
 export const buildPlaceholders = (
   children: IActivity[],
 ): { nodes: FlowchartPlaceholderNode[]; edges: FlowchartEdge[] } => {
@@ -93,7 +131,7 @@ export const buildPlaceholders = (
     .map((item) => {
       const paths = item.authoring?.flowchart?.paths || [];
       const nodeId = guid();
-      return paths.filter(isEndOfActivityPath).map((path) => {
+      return paths.filter(isEndOfActivityPath).map((_path: AllPaths) => {
         return {
           node: createPlaceholderNode(nodeId, item.resourceId!),
           edge: createPlaceholderEdge(String(item.resourceId!), nodeId),
