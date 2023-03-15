@@ -45,7 +45,7 @@ export const loadInitialPageState = createAsyncThunk(
       // write initial session state (TODO: factor out elsewhere)
       const resourceAttemptGuid = selectResourceAttemptGuid(getState() as RootState);
       dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
-      const isReviewMode = selectReviewMode;
+
       const sequence = selectSequence(getState() as RootState);
       const sessionState = sequence.reduce((acc, entry) => {
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
@@ -60,7 +60,7 @@ export const loadInitialPageState = createAsyncThunk(
 
       // Sets up Current Active Everapp to None
       sessionState['app.active'] = 'none';
-
+      const isReviewMode = selectReviewMode;
       // read all user state for the assigned everapps into the session state
       /* console.log('INIT PAGE', params); */
       if (params.content.custom?.everApps) {
