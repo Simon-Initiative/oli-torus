@@ -104,10 +104,15 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    const { simId, key } = payload;
     if (isReviewMode) {
+      const { snapshot } = await onRequestLatestState();
+      const keyData = snapshot[`app.${simId}.${key}`];
+      if (keyData) {
+        return keyData;
+      }
       return undefined;
     }
-    const { simId, key } = payload;
     const data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
     if (data) {
       const value = data[simId]?.[key];
