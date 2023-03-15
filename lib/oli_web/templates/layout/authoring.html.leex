@@ -67,7 +67,7 @@
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
   </head>
-  <body class="dark:bg-gray-800 dark:text-white">
+  <body class="dark:bg-body-dark dark:text-white">
     <input type="hidden" id="layout-id" data-layout-id="authoring">
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
