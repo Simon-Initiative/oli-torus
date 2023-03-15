@@ -7,6 +7,7 @@ import {
   numericOperator,
   rangeOperator,
   RuleOperator,
+  vnumber,
 } from 'data/activities/model/rules';
 import guid from 'utils/guid';
 import { classNames } from 'utils/classNames';
@@ -30,10 +31,12 @@ export interface InvalidNumber {
 
 export interface ValidNumber {
   kind: EditableNumberKind.Valid;
-  value: number;
+  value: number | string;
 }
 
 export type EditableNumber = InvalidNumber | ValidNumber;
+
+const isVariable = (s: vnumber): boolean => typeof s === 'string' && s.match(/^@@\w+@@$/) !== null;
 
 const parsedNumberOrEmptyString = (num: number | undefined) =>
   num != undefined && !isNaN(num) ? num : '';
@@ -44,9 +47,16 @@ const editableNumberFromNum = (num: number | undefined): EditableNumber =>
     : { kind: EditableNumberKind.Invalid, value: parsedNumberOrEmptyString(num) };
 
 const editableNumberFromString = (num: string): EditableNumber =>
-  num.length > 0 && !isNaN(parseFloat(num))
+  isVariable(num)
+    ? { kind: EditableNumberKind.Valid, value: num }
+    : num.length > 0 && !isNaN(parseFloat(num))
     ? { kind: EditableNumberKind.Valid, value: parseFloat(num) }
     : { kind: EditableNumberKind.Invalid, value: parsedNumberOrEmptyString(parseFloat(num)) };
+
+const editableNumberFromVNum = (vnum: vnumber): EditableNumber =>
+  typeof (vnum === 'string')
+    ? editableNumberFromString(vnum as string)
+    : editableNumberFromNum(vnum as number);
 
 interface SimpleNumericInputProps extends InputProps {
   input: InputNumeric;
@@ -56,7 +66,7 @@ interface SimpleNumericInputProps extends InputProps {
 const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
   const numericInputRef = createRef<HTMLInputElement>();
-  const [editableNumber, setEditableNumber] = useState(editableNumberFromNum(input.value));
+  const [editableNumber, setEditableNumber] = useState(editableNumberFromVNum(input.value));
   const editableNumberInvalid = editableNumber.kind === EditableNumberKind.Invalid;
 
   return (
@@ -64,7 +74,7 @@ const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditIn
       <input
         ref={numericInputRef}
         disabled={!editMode}
-        type="number"
+        type="text"
         className={classNames('form-control', editableNumberInvalid && 'is-invalid')}
         onChange={({ target: { value } }) => {
           const newEditableNumber = editableNumberFromString(value);
@@ -104,10 +114,10 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
   const lowerBoundInputRef = createRef<HTMLInputElement>();
   const upperBoundInputRef = createRef<HTMLInputElement>();
   const [editableLowerBound, setEditableLowerBound] = useState(
-    editableNumberFromNum(input.lowerBound),
+    editableNumberFromVNum(input.lowerBound),
   );
   const [editableUpperBound, setEditableUpperBound] = useState(
-    editableNumberFromNum(input.upperBound),
+    editableNumberFromVNum(input.upperBound),
   );
   const lowerBoundInvalid = editableLowerBound.kind === EditableNumberKind.Invalid;
   const upperBoundInvalid = editableUpperBound.kind === EditableNumberKind.Invalid;
@@ -119,7 +129,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
           ref={lowerBoundInputRef}
           placeholder="Lower bound"
           disabled={!editMode}
-          type="number"
+          type="text"
           className={classNames('form-control', lowerBoundInvalid && 'is-invalid')}
           onChange={({ target: { value } }) => {
             const newEditableLowerBound = editableNumberFromString(value);
@@ -138,7 +148,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
           ref={upperBoundInputRef}
           placeholder="Upper bound"
           disabled={!editMode}
-          type="number"
+          type="text"
           className={classNames('form-control mr-3', upperBoundInvalid && 'is-invalid')}
           onChange={({ target: { value } }) => {
             const editableUpperBound = editableNumberFromString(value);
@@ -245,7 +255,7 @@ const DIGITS: Record<string, boolean> = {
   '9': true,
 };
 const isDigit = (c: string): boolean => DIGITS[c];
-const numberOfDigits = (value: number) => value.toString().split('').filter(isDigit).length;
+const numberOfDigits = (value: vnumber) => value.toString().split('').filter(isDigit).length;
 
 const inferPrecision = (input: InputNumeric | InputRange) => {
   switch (input.kind) {
