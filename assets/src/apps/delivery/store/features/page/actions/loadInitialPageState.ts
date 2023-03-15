@@ -39,7 +39,7 @@ export const loadInitialPageState = createAsyncThunk(
     }
     // wait for this to resolve so that state will be updated
     await dispatch(setGroups({ groups }));
-
+    const isReviewMode = selectReviewMode;
     const currentGroup = selectCurrentGroup(getState() as RootState);
     if (currentGroup?.layout === LayoutType.DECK) {
       // write initial session state (TODO: factor out elsewhere)
@@ -59,7 +59,6 @@ export const loadInitialPageState = createAsyncThunk(
 
       // Sets up Current Active Everapp to None
       sessionState['app.active'] = 'none';
-      const isReviewMode = selectReviewMode;
       // read all user state for the assigned everapps into the session state
       /* console.log('INIT PAGE', params); */
       if (params.content.custom?.everApps) {
