@@ -165,7 +165,9 @@
     <div class="d-flex align-items-center">
       <%= case Oli.Publishing.get_latest_published_publication_by_slug(@project.slug) do %>
         <% nil -> %>
-        <button disabled class="btn btn-link action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
+        <button disabled class="btn btn-link action-button">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Project must be published to generate a datashop export file.">Download</span>
+        </button>
         <% _pub -> %>
         <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-link action-button") %>
       <% end %>
@@ -175,6 +177,7 @@
       <button type="button" class="btn btn-link text-danger action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
       <span>Permanently delete this project.</span>
     </div>
+</p>
   </div>
 </div>
 </div>

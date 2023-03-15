@@ -65,8 +65,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <button
                 className="btn btn-link"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseOne"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseOne"
                 aria-expanded="true"
                 aria-controls="collapseOne"
               >
@@ -110,7 +110,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">
@@ -151,8 +151,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <button
                 className="btn btn-link collapsed"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseTwo"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseTwo"
                 aria-expanded="false"
                 aria-controls="collapseTwo"
               >
@@ -192,7 +192,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">
@@ -225,8 +225,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <button
                 className="btn btn-link collapsed"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseThree"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseThree"
                 aria-expanded="false"
                 aria-controls="collapseThree"
               >
@@ -271,7 +271,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">
@@ -308,8 +308,8 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <button
                 className="btn btn-link collapsed"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseFour"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseFour"
                 aria-expanded="false"
                 aria-controls="collapseFour"
               >
@@ -355,7 +355,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">

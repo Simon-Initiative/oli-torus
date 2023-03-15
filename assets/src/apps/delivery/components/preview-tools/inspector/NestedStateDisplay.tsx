@@ -39,8 +39,8 @@ const NestedStateDisplay: React.FC<NestedStateDisplayProps> = ({
           className="btn btn-link btn-block text-left"
           type="button"
           // TODO: figure out why Bootstrap collapse is breaking in recursion
-          // data-toggle="collapse"
-          // data-target={`#collapse${rootLevel}${levelIndex}`}
+          // data-bs-toggle="collapse"
+          // data-bs-target={`#collapse${rootLevel}${levelIndex}`}
           aria-expanded={expandedPanels[`panel-${rootLevel}${levelIndex}`]}
           aria-controls={`collapse${rootLevel}${levelIndex}`}
           onClick={() =>

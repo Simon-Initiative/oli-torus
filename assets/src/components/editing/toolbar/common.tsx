@@ -48,10 +48,10 @@ export const DropdownToolbarButton = (props: ToolbarButtonProps) => {
       align="start"
     >
       <button
-        data-container={`#${props.parentRef?.current?.id}`}
-        data-toggle="tooltip"
+        data-bs-container={`#${props.parentRef?.current?.id}`}
+        data-bs-toggle="tooltip"
         ref={(r) => ($(r as any) as any).tooltip()}
-        data-placement="top"
+        data-bs-placement="top"
         title={props.tooltip}
         className={classNames('btn', props.style, props.active && 'active')}
         onClick={(_e) => {

@@ -21,7 +21,7 @@ defmodule OliWeb.ManualGrading.FilterButton do
       <button
         disabled={!@selection}
         type="button"
-        data-toggle="tooltip"
+        data-bs-toggle="tooltip"
         title={@tooltip}
         class={classes}
         :on-click={@clicked} phx-value-key={@key} phx-value-active={active}>

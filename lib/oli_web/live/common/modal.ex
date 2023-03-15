@@ -1,6 +1,6 @@
 defmodule OliWeb.Common.Modal do
   @moduledoc """
-  A Phoenix LiveView compliant Bootstrap modal implementation.
+  A Phoenix LiveView modal implementation.
 
   Usage:
 

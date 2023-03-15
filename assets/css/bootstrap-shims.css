@@ -7,6 +7,7 @@
 @import './bs/spinner';
 @import './bs/switch';
 @import './bs/popover';
+@import './bs/tooltip';
 
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;
