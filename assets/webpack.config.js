@@ -139,7 +139,11 @@ module.exports = (env, options) => ({
       apps: path.resolve(__dirname, 'src/apps'),
       adaptivity: path.resolve(__dirname, 'src/adaptivity'),
     },
-    fallback: { vm: require.resolve('vm-browserify') },
+    fallback: {
+      vm: require.resolve('vm-browserify'),
+      'react/jsx-runtime': 'react/jsx-runtime.js',
+      'react/jsx-dev-runtime': 'react/jsx-dev-runtime.js',
+    },
   },
   module: {
     rules: [

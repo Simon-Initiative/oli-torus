@@ -5,7 +5,7 @@ export const TorusBG: React.FC<{ className?: string; dark?: boolean }> = ({
   className,
   dark,
 }) => (
-  <div>
+  <div className="w-full min-w-[800px]">
     <div className={`p-6 relative bg-delivery-body  text-delivery-body-color  ${className}`}>
       {children}
     </div>

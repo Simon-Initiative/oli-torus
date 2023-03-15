@@ -10,6 +10,7 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.Common do
       r =
         case Map.get(e, "result", "") do
           s when is_binary(s) -> s
+          list when is_list(list) -> Kernel.inspect(list)
           number -> Kernel.to_string(number)
         end
 

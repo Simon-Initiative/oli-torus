@@ -1,7 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit';
 import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import { ActivityState } from 'components/activities/types';
-import { selectAllActivities, selectCurrentActivityId } from '../../activities/slice';
+import { IActivity, selectAllActivities, selectCurrentActivityId } from '../../activities/slice';
 import { selectActivityAttemptState } from '../../attempt/slice';
 import { getSequenceLineage } from '../actions/sequence';
 import { GroupsState, selectState } from '../slice';
@@ -32,7 +32,7 @@ export const selectCurrentSequenceId = createSelector(
 
 export const selectCurrentActivityTree = createSelector(
   [selectSequence, selectAllActivities, selectCurrentSequenceId],
-  (sequence, activities, currentSequenceId) => {
+  (sequence, activities, currentSequenceId): null | IActivity[] => {
     const currentSequenceEntry = (sequence as any[]).find(
       (entry) => entry.custom.sequenceId === currentSequenceId,
     );

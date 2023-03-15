@@ -10,6 +10,7 @@ import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
+import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -26,6 +27,7 @@ const widgets: any = {
   TorusImageBrowser: TorusImageBrowser,
   TorusAudioBrowser: TorusAudioBrowser,
   TorusVideoBrowser: TorusVideoBrowser,
+  OptionsCorrectPicker: OptionsCorrectPicker,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
@@ -61,7 +63,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           typeof triggerOnChange === 'boolean'
             ? triggerOnChange
             : Object.keys(changedProp).some((v) => triggerOnChange.indexOf(v) > -1);
-
         setFormData(updatedData);
         if (shouldTriggerChange || changedPropType === 'boolean') {
           // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen

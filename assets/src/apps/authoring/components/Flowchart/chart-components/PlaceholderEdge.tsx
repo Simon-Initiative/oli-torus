@@ -40,6 +40,7 @@ export const PlaceholderEdge: React.FC<FloatingEdgeProps> = ({
     <path
       id={id}
       d={edgePath}
+      fill="none"
       markerEnd={markerEnd}
       stroke="#b3b4b7"
       strokeWidth={2}

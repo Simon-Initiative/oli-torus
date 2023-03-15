@@ -45,7 +45,7 @@ const ScoringOverview: React.FC<{
       }
       const { maxAttempt, maxScore, trapStateScoreScheme } = activity.content?.custom;
 
-      const manualGradingDetails = activity.authoring?.parts.reduce(
+      const manualGradingDetails = (activity.authoring?.parts || []).reduce(
         (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
           const partIsManuallyGraded = part.gradingApproach === 'manual';
           if (partIsManuallyGraded) {

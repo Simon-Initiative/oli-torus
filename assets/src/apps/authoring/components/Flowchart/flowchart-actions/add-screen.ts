@@ -5,6 +5,7 @@ import guid from '../../../../../utils/guid';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
   selectActivityById,
+  selectAllActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
@@ -21,24 +22,26 @@ import {
   selectAppMode,
   ActivityRegistration,
 } from '../../../store/app/slice';
+import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { savePage } from '../../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { createAlwaysGoToPath, createEndOfActivityPath } from '../paths/path-factories';
+import { AuthoringFlowchartScreenData } from '../paths/path-types';
 import {
-  AuthoringFlowchartScreenData,
-  createAlwaysGoToPath,
-  createEndOfActivityPath,
   hasDestinationPath,
+  removeDestinationPath,
   setGoToAlwaysPath,
   setUnknownPathDestination,
-} from '../flowchart-path-utils';
+} from '../paths/path-utils';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;
   toScreenId?: number;
   title?: string;
+  screenType?: string;
 }
 
 /**
@@ -49,7 +52,7 @@ interface AddFlowchartScreenPayload {
  *      - No layers / parent screens
  */
 export const addFlowchartScreen = createAsyncThunk(
-  `${ActivitiesSlice}/addFlowchartScreen`,
+  `${FlowchartSlice}/addFlowchartScreen`,
   async (payload: AddFlowchartScreenPayload, { dispatch, getState }) => {
     try {
       const rootState = getState() as AuthoringRootState;
@@ -61,10 +64,13 @@ export const addFlowchartScreen = createAsyncThunk(
       const activityTypes = selectActivityTypes(rootState);
       const currentLesson = selectPageState(rootState);
       const sequence = selectSequence(rootState);
+      const otherActivityNames = selectAllActivities(rootState).map((a) => a.title || '');
 
       const group = selectAllGroups(rootState)[0];
 
-      const { title = 'New Screen' } = payload;
+      const { title: requestedTitle = 'New Screen', screenType = 'blank_screen' } = payload;
+
+      const title = clearTitle(requestedTitle, otherActivityNames);
 
       const activity: IActivityTemplate = {
         ...createActivityTemplate(),
@@ -75,6 +81,8 @@ export const addFlowchartScreen = createAsyncThunk(
 
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
+        screenType,
+        templateApplied: false,
       };
       activity.model.authoring.flowchart = flowchartData;
 
@@ -102,6 +110,11 @@ export const addFlowchartScreen = createAsyncThunk(
         const fromScreen = cloneT(selectActivityById(rootState, payload.fromScreenId));
 
         if (fromScreen) {
+          if (payload.toScreenId) {
+            // If we're adding a screen in the middle of a path, we need to update the destination of the "to" screen
+            removeDestinationPath(fromScreen, payload.toScreenId);
+          }
+
           if (hasDestinationPath(fromScreen)) {
             // If the "from" doesn't have any other paths, we can use an always-path, but if it does, we default
             // to an unknwon-path for the user to fill in later.
@@ -109,9 +122,10 @@ export const addFlowchartScreen = createAsyncThunk(
           } else {
             setGoToAlwaysPath(fromScreen, createResults.resourceId);
           }
+
           // TODO - these two should be a single operation?
-          await dispatch(upsertActivity({ activity: fromScreen }));
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
+          await dispatch(upsertActivity({ activity: fromScreen }));
         }
       }
 
@@ -170,3 +184,11 @@ export const addFlowchartScreen = createAsyncThunk(
     }
   },
 );
+
+const clearTitle = (title: string, otherActivityNames: string[], level = 0): string => {
+  const newTitle = level === 0 ? title : `${title} (${level})`;
+  if (otherActivityNames.includes(newTitle)) {
+    return clearTitle(title, otherActivityNames, level + 1);
+  }
+  return newTitle;
+};
