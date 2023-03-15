@@ -11,7 +11,7 @@ defmodule OliWeb.Attempt.AttemptLive do
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias OliWeb.Attempt.TableModel
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt, PartAttempt}
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt}
   @retain_count 100
 
   data retain_count, :integer, default: @retain_count
