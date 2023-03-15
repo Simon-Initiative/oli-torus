@@ -433,6 +433,10 @@ $element-margin-bottom: 1.5em;
   .popover-body {
     max-width: 276px;
   }
+
+  table {
+    min-width: fit-content;
+  }
 }
 
 .conjugation {
