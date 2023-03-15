@@ -10,6 +10,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Publishing.DeliveryResolver, as: Resolver
@@ -126,10 +127,12 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      # TODO: Need to fetch assignments
+      assignments = Sections.get_graded_pages(section_slug, user.id)
+
       render(
         conn,
         "assignments.html",
+        assignments: assignments,
         section_slug: section_slug,
         preview_mode: false
       )

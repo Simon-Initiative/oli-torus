@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.AssignmentsList do
-  use Phoenix.LiveView
+  use Phoenix.LiveComponent
 
   alias OliWeb.Components.Delivery.AssignmentCard
 
@@ -9,7 +9,9 @@ defmodule OliWeb.Components.Delivery.AssignmentsList do
       <h3>Assignments</h3>
       <p>Find all your assignments, quizzes and activities associated with graded material.</p>
       <div class="flex flex-col gap-2 mt-6">
-        <AssignmentCard.render />
+      <%= for assignment <- @assignments do %>
+        <AssignmentCard.render assignment={assignment}/>
+      <% end %>
       </div>
     </div>
     """
