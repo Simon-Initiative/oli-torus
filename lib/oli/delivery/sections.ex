@@ -1950,10 +1950,13 @@ defmodule Oli.Delivery.Sections do
     {graded_pages_with_date, other_resources} =
       SectionResource
       |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
-      |> join(:inner, [sr], rev in Revision, on: rev.resource_id == sr.resource_id)
-      |> join(:left, [sr, _, rev], rev2 in Revision,
-        on: rev2.resource_id == rev.resource_id and rev2.id > rev.id
+      |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+        on: spp.section_id == s.id and spp.project_id == sr.project_id
       )
+      |> join(:inner, [sr, _, spp], pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+      )
+      |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
       |> join(:left, [sr], gc in GatingCondition,
         on:
           gc.section_id == sr.section_id and gc.resource_id == sr.resource_id and
@@ -1965,10 +1968,10 @@ defmodule Oli.Delivery.Sections do
             gc2.user_id == ^user_id
       )
       |> where(
-        [sr, s, rev, rev2],
-        s.slug == ^section_slug and sr.numbering_level >= 0 and is_nil(rev2.id)
+        [sr, s],
+        s.slug == ^section_slug and sr.numbering_level >= 0
       )
-      |> select([sr, s, rev, _, gc, gc2], %{
+      |> select([sr, s, _, _, rev, gc, gc2], %{
         id: sr.id,
         title: rev.title,
         end_date:
