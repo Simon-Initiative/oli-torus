@@ -154,7 +154,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  :do_not_normalize,
                  datashop_session_id,
                  part_attempts,
-                 :adaptive_page
+                 {score, out_of}
                ) do
             {:ok, _} ->
 
@@ -439,7 +439,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         normalize_mode \\ :normalize,
         datashop_session_id,
         part_attempts_input \\ nil,
-        execution_context \\ :basic_page
+        use_fixed_score \\ nil
       ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
@@ -459,14 +459,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
           part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
-          roll_up_fn =
-            determine_activity_rollup_fn(
-              activity_attempt_guid,
-              part_inputs,
-              part_attempts,
-              normalize_mode,
-              execution_context
-            )
+          roll_up_fn = case use_fixed_score do
+            nil ->
+              determine_activity_rollup_fn(
+                activity_attempt_guid,
+                part_inputs,
+                part_attempts,
+                normalize_mode
+              )
+            {score, out_of} ->
+              fn result ->
+                evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of)
+                result
+              end
+          end
 
           persist_client_evaluations(
             part_inputs,
@@ -602,6 +608,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     })
   end
 
+  # Allows the adaptive page to mark an activity attempt as evaluated, using a given score and out_of
+  defp evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of) do
+    Logger.debug("rollup_part_attempt_evaluations: score: #{score}, out_of: #{out_of}")
+
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+
+    now = DateTime.utc_now()
+
+    update_activity_attempt(activity_attempt, %{
+      score: score,
+      out_of: out_of,
+      lifecycle_state: :evaluated,
+      date_evaluated: now,
+      date_submitted: now
+    })
+  end
+
+
   defp normalize_to_one(score, out_of) do
     case out_of do
       0 -> 0
@@ -682,8 +706,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          activity_attempt_guid,
          part_inputs,
          part_attempts,
-         normalize_mode \\ :normalize,
-         execution_context \\ :basic_page
+         normalize_mode \\ :normalize
        ) do
 
     evaluated_fn = fn result ->
@@ -691,62 +714,57 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       result
     end
 
-    case execution_context do
-      :adaptive_page -> evaluated_fn
-      _ ->
+    submitted_fn = fn result ->
+      rollup_submitted(activity_attempt_guid)
+      result
+    end
 
-        submitted_fn = fn result ->
-          rollup_submitted(activity_attempt_guid)
-          result
+    no_op_fn = fn result -> result end
+
+    count_if = fn attempts, type ->
+      Enum.reduce(attempts, 0, fn a, c ->
+        if a.lifecycle_state == type do
+          c + 1
+        else
+          c
         end
+      end)
+    end
 
-        no_op_fn = fn result -> result end
+    part_attempts_map =
+      Enum.reduce(part_attempts, %{}, fn pa, m -> Map.put(m, pa.attempt_guid, pa) end)
 
-        count_if = fn attempts, type ->
-          Enum.reduce(attempts, 0, fn a, c ->
-            if a.lifecycle_state == type do
-              c + 1
+    part_attempts =
+      Enum.reduce(part_inputs, part_attempts_map, fn part_input, map ->
+        pa = Map.get(map, part_input.attempt_guid)
+
+        unless is_nil(pa) do
+          if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
+              pa.grading_approach == :automatic do
+            Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :evaluated})
+          else
+            if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
+                pa.grading_approach == :manual do
+              Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :submitted})
             else
-              c
-            end
-          end)
-        end
-
-        part_attempts_map =
-          Enum.reduce(part_attempts, %{}, fn pa, m -> Map.put(m, pa.attempt_guid, pa) end)
-
-        part_attempts =
-          Enum.reduce(part_inputs, part_attempts_map, fn part_input, map ->
-            pa = Map.get(map, part_input.attempt_guid)
-
-            unless is_nil(pa) do
-              if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-                  pa.grading_approach == :automatic do
-                Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :evaluated})
-              else
-                if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-                    pa.grading_approach == :manual do
-                  Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :submitted})
-                else
-                  map
-                end
-              end
-            else
-              Logger.info(
-                "Part attempt with GUID #{part_input.attempt_guid} was not found in part attempts map"
-              )
-
               map
             end
-          end)
-          |> Map.values()
+          end
+        else
+          Logger.info(
+            "Part attempt with GUID #{part_input.attempt_guid} was not found in part attempts map"
+          )
 
-        case {count_if.(part_attempts, :evaluated), count_if.(part_attempts, :submitted),
-              count_if.(part_attempts, :active)} do
-          {_, 0, 0} -> evaluated_fn
-          {_, _, 0} -> submitted_fn
-          {_, _, _} -> no_op_fn
+          map
         end
+      end)
+      |> Map.values()
+
+    case {count_if.(part_attempts, :evaluated), count_if.(part_attempts, :submitted),
+          count_if.(part_attempts, :active)} do
+      {_, 0, 0} -> evaluated_fn
+      {_, _, 0} -> submitted_fn
+      {_, _, _} -> no_op_fn
     end
 
   end

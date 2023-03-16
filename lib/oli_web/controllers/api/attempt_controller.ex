@@ -619,6 +619,7 @@ defmodule OliWeb.Api.AttemptController do
            section_slug,
            activity_attempt_guid,
            client_evaluations,
+           :normalize,
            datashop_session_id
          ) do
       {:ok, evaluations} ->
