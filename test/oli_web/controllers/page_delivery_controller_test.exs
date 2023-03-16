@@ -785,7 +785,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
-      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
+      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Page Discussion</h3>"
     end
 
     test "page does not render the collab space if it's not configured",
