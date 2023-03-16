@@ -4041,6 +4041,10 @@ table.table-striped tbody tr:nth-child(odd) {
   margin-top: 1.25rem;
 }
 
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
 .mt-7 {
   margin-top: 1.75rem;
 }
@@ -4239,6 +4243,10 @@ table.table-striped tbody tr:nth-child(odd) {
 
 .w-52 {
   width: 13rem;
+}
+
+.w-56 {
+  width: 14rem;
 }
 
 .w-6 {
@@ -5067,6 +5075,11 @@ table.table-striped tbody tr:nth-child(odd) {
 .py-1\.5 {
   padding-top: 0.375rem;
   padding-bottom: 0.375rem;
+}
+
+.py-11 {
+  padding-top: 2.75rem;
+  padding-bottom: 2.75rem;
 }
 
 .py-2 {
