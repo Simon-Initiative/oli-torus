@@ -106,7 +106,7 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
           ))}
         </Dropdown.Menu>
       </Dropdown>
-      <div ref={editorContainer} className="border">
+      <div ref={editorContainer}>
         <Suspense fallback={<div>Loading...</div>}>
           <MonacoEditor
             ref={editorRef}
