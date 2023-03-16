@@ -10,6 +10,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Publishing.DeliveryResolver, as: Resolver
@@ -109,6 +110,32 @@ defmodule OliWeb.PageDeliveryController do
             container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
           )
       end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  def assignments(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      assignments = Sections.get_graded_pages(section_slug, user.id)
+
+      render(
+        conn,
+        "assignments.html",
+        assignments: assignments,
+        section_slug: section_slug,
+        preview_mode: false
+      )
     else
       case section do
         %Section{open_and_free: true, requires_enrollment: false} ->
@@ -386,7 +413,8 @@ defmodule OliWeb.PageDeliveryController do
             conn,
             :transition
           ),
-        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
+        screenIdleTimeOutInSeconds:
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -1042,4 +1070,5 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+
 end

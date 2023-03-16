@@ -28,7 +28,7 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       handleSessionExpire();
-    }, 60000);
+    }, 300000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -54,7 +54,7 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
             <div className="type"></div>
             <div className="message">
               <p>
-                Your session will timeout in <b>1 minutes</b>. You want to continue?
+                Your session will timeout in <b>5 minutes</b>. You want to continue?
               </p>
             </div>
           </div>

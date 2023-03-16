@@ -226,8 +226,8 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
-  const isPreviewMode = useSelector(selectPreviewMode);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
+  const isPreviewMode = useSelector(selectPreviewMode);
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -327,6 +327,7 @@ const DeckLayoutFooter: React.FC = () => {
   };
 
   useEffect(() => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
     }

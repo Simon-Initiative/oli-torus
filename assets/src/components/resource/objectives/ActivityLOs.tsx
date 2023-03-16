@@ -62,10 +62,11 @@ const MultiPartSelections = (props: Props) => (
 
 const SinglePartSelection = (props: Props) => {
   const partId = props.partIds[0];
+
   return (
     <ObjectivesSelection
       {...props}
-      selected={props.objectives[partId]}
+      selected={props.objectives[partId] || []}
       objectives={props.allObjectives}
       onEdit={(objectives) => props.onEdit({ ...props.objectives, ...{ [partId]: objectives } })}
     />

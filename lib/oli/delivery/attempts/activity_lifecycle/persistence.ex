@@ -23,6 +23,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
 
   def persist_evaluations({:error, error}, _, _, _), do: {:error, error}
 
+  def persist_evaluations({:ok, []}, _, roll_up_fn, _), do: roll_up_fn.({:ok, []})
+
   def persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn, datashop_session_id) do
     right_now = DateTime.utc_now()
 
