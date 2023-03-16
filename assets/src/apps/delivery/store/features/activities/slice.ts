@@ -88,12 +88,35 @@ interface ICondition {
   value: string; // ex: Correct
 }
 
-export interface IAction {
+export interface IMutateAction {
+  type: 'mutateState';
+  params: {
+    value: string;
+    target: string;
+    operator: string;
+    targetType: number;
+  };
+}
+
+export interface IFeedbackAction {
+  type: 'feedback';
+  params: {
+    id: string;
+    feedback: {
+      custom: any;
+      partsLayout: IPartLayout[];
+    };
+  };
+}
+
+export interface INavigationAction {
+  type: 'navigation';
   params: {
     target: string;
   };
-  type: string; // might be: "navigation" | "feedback" | "score" | "stage";
 }
+
+export type IAction = IMutateAction | INavigationAction | IFeedbackAction; //| IScoreAction | IStageAction;
 
 export interface IEvent {
   params: {
