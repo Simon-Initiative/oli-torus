@@ -83,7 +83,7 @@ $element-margin-bottom: 1.5em;
   pre {
     text-align: left;
     color: var(--color-body-color);
-    background: var(--color-body);
+    background: var(--color-gray-100);
     font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
     letter-spacing: -0.003em;
     border-radius: 6px;
@@ -147,6 +147,8 @@ $element-margin-bottom: 1.5em;
 
     th,
     td {
+      min-width: 100px;
+
       p:last-of-type {
         margin-bottom: 0;
       }
@@ -464,6 +466,17 @@ $element-margin-bottom: 1.5em;
     }
     .clickable:hover {
       text-decoration: underline;
+    }
+  }
+}
+
+html.dark {
+  .structured-content,
+  .activity-editor .rich-text-editor,
+  .content {
+    pre {
+      color: var(--color-body-color-dark);
+      background: var(--color-gray-900);
     }
   }
 }

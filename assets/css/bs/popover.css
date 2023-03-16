@@ -137,6 +137,10 @@
 }
 
 .popover-body {
-  padding: 1rem 1rem;
+  padding: 0.5rem 0.5rem;
   color: #212529;
+}
+
+.popover-body p {
+  margin-bottom: 0;
 }

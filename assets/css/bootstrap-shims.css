@@ -98,7 +98,7 @@
 
 .btn[disabled],
 .btn.disabled {
-  @apply text-gray-400 no-underline hover:no-underline cursor-default hover:bg-inherit;
+  @apply text-gray-400 dark:text-gray-500  no-underline hover:no-underline cursor-default hover:bg-inherit;
 }
 
 .btn-outline-primary[disabled],
@@ -127,7 +127,7 @@
 .btn-info[disabled],
 .btn-light[disabled],
 .btn-dark[disabled] {
-  @apply text-gray-400 bg-gray-200 hover:bg-gray-200 cursor-default;
+  @apply text-gray-400 bg-gray-200 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-default;
 }
 
 .container {
@@ -239,7 +239,7 @@ a.dropdown-item,
       border-x-0 border-t-0 border-b-2 border-transparent
       px-6
       py-3
-      hover:border-transparent hover:bg-gray-100
+      hover:border-transparent hover:bg-gray-100 dark:hover:bg-gray-700
       focus:border-transparent;
 }
 
@@ -424,7 +424,7 @@ input.form-control-sm,
 }
 
 .card {
-  @apply block p-6 rounded-lg shadow-lg bg-white dark:bg-neutral-800 dark:border-neutral-600;
+  @apply block p-6 rounded-lg shadow-lg bg-white dark:bg-[#3e3f44];
 }
 
 .card-body {
@@ -507,16 +507,16 @@ input.form-control-sm,
 }
 
 table {
-  @apply min-w-full border dark:border-gray-800 dark:text-gray-300;
+  @apply min-w-full border dark:border-gray-600 dark:text-gray-300;
 }
 table thead th {
-  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-delivery-body-dark dark:border-gray-800;
+  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-gray-600 dark:border-gray-600;
 }
 table tr {
-  @apply border-b dark:border-gray-800;
+  @apply border-b dark:border-gray-600;
 }
 table td {
-  @apply border-r p-2 dark:border-gray-800;
+  @apply border-r p-2 dark:border-gray-600;
 }
 
 table.table-striped tbody tr:nth-child(even) {

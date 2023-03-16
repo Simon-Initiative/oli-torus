@@ -10,11 +10,11 @@ interface SettingProps {
   editMode: boolean;
   onToggle: () => void;
 }
-const Setting: React.FC<SettingProps> = ({ isEnabled, onToggle, children }) => {
+const Setting: React.FC<SettingProps> = ({ isEnabled, editMode, onToggle, children }) => {
   return (
     <li className="px-4 py-2">
       <div className="form-check">
-        <label className="form-check-label inline-block text-gray-800">
+        <label className="form-check-label inline-block">
           <input
             className="
               form-check-input
@@ -23,6 +23,7 @@ const Setting: React.FC<SettingProps> = ({ isEnabled, onToggle, children }) => {
               border-gray-300
               rounded-sm bg-white
               checked:bg-blue-600
+              hover:checked:bg-blue-600
               checked:border-blue-600
               focus:outline-none
               transition
@@ -38,7 +39,8 @@ const Setting: React.FC<SettingProps> = ({ isEnabled, onToggle, children }) => {
             "
             type="checkbox"
             checked={isEnabled}
-            onChange={() => onToggle()}
+            disabled={!editMode}
+            onChange={() => editMode && onToggle()}
           />
           {children}
         </label>

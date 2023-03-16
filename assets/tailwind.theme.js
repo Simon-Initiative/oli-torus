@@ -62,7 +62,8 @@ module.exports = {
       800: '#404040',
       900: '#262626',
       dark: {
-        DEFAULT: '#1E1E1E',
+        // DEFAULT: '#1E1E1E',
+        DEFAULT: '#2a2b2e',
         50: '#B7B7B7',
         100: '#ADADAD',
         200: '#989898',
@@ -78,7 +79,7 @@ module.exports = {
     'body-color': {
       DEFAULT: '#373A44',
       dark: {
-        DEFAULT: colors.white,
+        DEFAULT: '#f5f5f5',
       },
     },
     workspace: {
@@ -86,7 +87,7 @@ module.exports = {
         bg: {
           DEFAULT: '#f5f8fb',
           dark: {
-            DEFAULT: '#323233',
+            DEFAULT: '#3e3f44;',
           },
         },
       },
@@ -94,7 +95,7 @@ module.exports = {
         bg: {
           DEFAULT: '',
           dark: {
-            DEFAULT: '#252526',
+            DEFAULT: '#3e3f44',
           },
         },
       },
@@ -102,7 +103,7 @@ module.exports = {
         bg: {
           DEFAULT: '#e3e7ec',
           dark: {
-            DEFAULT: '#252526',
+            DEFAULT: '#3e3f44',
           },
         },
       },
@@ -110,7 +111,7 @@ module.exports = {
         bg: {
           DEFAULT: colors.gray['100'],
           dark: {
-            DEFAULT: '#323233',
+            DEFAULT: 'transparent',
           },
         },
       },
@@ -184,7 +185,7 @@ module.exports = {
           bg: {
             DEFAULT: '#222439',
             dark: {
-              DEFAULT: '#2f3d52',
+              DEFAULT: colors.gray['500'],
             },
           },
         },
