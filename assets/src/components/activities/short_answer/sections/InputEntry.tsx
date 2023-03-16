@@ -26,9 +26,11 @@ export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditRe
       Error(`failed to parse input value from rule ${response.rule}`),
     ),
   );
-
+  console.log('InputEntry input= ' + JSON.stringify(input, null, 2));
   const onEditInput = (update: Input) => {
     setInput(update);
+    const rule = makeRule(update);
+    console.log('updated rule ' + rule);
     onEditResponseRule(response.id, makeRule(update));
   };
 

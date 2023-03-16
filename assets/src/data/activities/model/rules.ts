@@ -18,8 +18,8 @@ export enum InputKind {
   Range,
 }
 
-// type when can be EITHER number or variable
-export type vnumber = number | string;
+// type when can be EITHER number or variable to be treated as number
+export type numberOrVar = number | string;
 
 export type InputText = {
   kind: InputKind.Text;
@@ -30,7 +30,7 @@ export type InputText = {
 export type InputNumeric = {
   kind: InputKind.Numeric;
   operator: NumericOperator;
-  value: vnumber;
+  value: numberOrVar;
   precision?: number;
 };
 
@@ -44,8 +44,8 @@ export type InputVariable = {
 export type InputRange = {
   kind: InputKind.Range;
   operator: RangeOperator;
-  lowerBound: vnumber;
-  upperBound: vnumber;
+  lowerBound: numberOrVar;
+  upperBound: numberOrVar;
   inclusive: boolean;
   precision?: number;
 };
@@ -116,7 +116,7 @@ export function rangeOperator(s: string): RangeOperator {
 const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
 const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
 
-const valueWithPrecision = (value: vnumber, precision?: number) =>
+const valueWithPrecision = (value: numberOrVar, precision?: number) =>
   precision !== undefined ? `${value}#${precision}` : `${value}`;
 
 export const unescapeSingleOrMultipleInputs = (
@@ -133,23 +133,24 @@ export const containsRule = (input: string) => `input contains {${escapeInput(in
 export const notContainsRule = (input: string) => invertRule(containsRule(input));
 
 // numeric
-export const eqRule = (value: vnumber, precision?: number) =>
+export const eqRule = (value: numberOrVar, precision?: number) =>
   `input = {${valueWithPrecision(value, precision)}}`;
-export const ltRule = (value: vnumber, precision?: number) =>
+export const ltRule = (value: numberOrVar, precision?: number) =>
   `input < {${valueWithPrecision(value, precision)}}`;
-export const gtRule = (value: vnumber, precision?: number) =>
+export const gtRule = (value: numberOrVar, precision?: number) =>
   `input > {${valueWithPrecision(value, precision)}}`;
 
-export const neqRule = (value: vnumber, precision?: number) => invertRule(eqRule(value, precision));
-export const lteRule = (value: vnumber, precision?: number) =>
+export const neqRule = (value: numberOrVar, precision?: number) =>
+  invertRule(eqRule(value, precision));
+export const lteRule = (value: numberOrVar, precision?: number) =>
   orRules(ltRule(value, precision), eqRule(value, precision));
-export const gteRule = (value: vnumber, precision?: number) =>
+export const gteRule = (value: numberOrVar, precision?: number) =>
   orRules(gtRule(value, precision), eqRule(value, precision));
 
 // range
 const makeRangeRule = (
-  lowerBound: vnumber,
-  upperBound: vnumber,
+  lowerBound: numberOrVar,
+  upperBound: numberOrVar,
   inclusive: boolean,
   precision?: number,
 ) =>
@@ -168,8 +169,8 @@ const rangeBracket = (inclusive: boolean, left: boolean) =>
   inclusive ? (left ? '[' : ']') : left ? '(' : ')';
 
 export const rangeRule = (
-  left: vnumber,
-  right: vnumber,
+  left: numberOrVar,
+  right: numberOrVar,
   inclusive: boolean,
   precision?: number,
 ) => {
@@ -182,8 +183,8 @@ export const rangeRule = (
   return makeRangeRule(lowerBound, upperBound, inclusive, precision);
 };
 export const notRangeRule = (
-  left: vnumber,
-  right: vnumber,
+  left: numberOrVar,
+  right: numberOrVar,
   inclusive: boolean,
   precision?: number,
 ) => invertRule(rangeRule(left, right, inclusive, precision));
@@ -328,7 +329,7 @@ export const matchSingleTextRule = (rule: string): Maybe<InputText> =>
     }));
 
 type ParsedNumericRule = {
-  value: vnumber;
+  value: numberOrVar;
   operator: NumericOperator;
   precision: Maybe<number>;
 };
@@ -338,7 +339,7 @@ export const matchSingleNumberRule = (rule: string): Maybe<InputNumeric> =>
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([value, precision]) =>
       // verify the required values for this matcher are present or return nothing
-      Maybe.sequence<vnumber | NumericOperator | Maybe<number>>({
+      Maybe.sequence<numberOrVar | NumericOperator | Maybe<number>>({
         value,
         operator: parseNumericOperatorFromRule(rule),
         precision: optional(precision),
@@ -356,8 +357,8 @@ export const matchSingleVariableRule = (rule: string): Maybe<InputNumeric> =>
     .lift((matches) => matches.slice(1, 3))
     .bind(([variable, precision]) =>
       // verify the required values for this matcher are present or return nothing
-      Maybe.sequence<vnumber | NumericOperator | Maybe<number>>({
-        variable: Maybe.just(variable),
+      Maybe.sequence<numberOrVar | NumericOperator | Maybe<number>>({
+        value: Maybe.just(variable),
         operator: parseNumericOperatorFromRule(rule),
         precision: optional(maybeAsNumber(precision)),
       }),
@@ -370,8 +371,8 @@ export const matchSingleVariableRule = (rule: string): Maybe<InputNumeric> =>
     }));
 
 type ParsedRangeRule = {
-  lowerBound: vnumber;
-  upperBound: vnumber;
+  lowerBound: numberOrVar;
+  upperBound: numberOrVar;
   operator: RangeOperator;
   inclusive: boolean;
   precision: Maybe<number>;
@@ -384,7 +385,7 @@ const matchBetweenRule = (rule: string): Maybe<InputRange> =>
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([lowerBound, upperBound]) =>
       // verify the required values for this matcher are present or return nothing
-      Maybe.sequence<vnumber | boolean | RangeOperator | Maybe<number>>({
+      Maybe.sequence<numberOrVar | boolean | RangeOperator | Maybe<number>>({
         lowerBound,
         upperBound,
         operator: parseRangeOperatorFromRule(rule),
@@ -412,7 +413,7 @@ const matchRangeRule = (rule: string): Maybe<InputRange> =>
     }))
     .bind(({ bracketOrBrace, matches: [lowerBound, upperBound, precision] }) =>
       // verify the required values for this matcher are present or return nothing
-      Maybe.sequence<vnumber | boolean | RangeOperator | Maybe<number>>({
+      Maybe.sequence<numberOrVar | boolean | RangeOperator | Maybe<number>>({
         lowerBound,
         upperBound,
         operator: parseRangeOperatorFromRule(rule),
@@ -429,16 +430,29 @@ const matchRangeRule = (rule: string): Maybe<InputRange> =>
       precision: valueOrUndefined(precision),
     }));
 
-// !!! In theory could have one bound be variable, other constant. Ignore for now
-const matchVariableRangeRule = (rule: string): Maybe<InputRange> =>
-  parseRegex(rule, /{([[(])\s*(@@\w+@@)\s*,\s*(@@\w+@@)\s*[\])]#?(\d+)?}/)
+// Build REGEXP from pieces for readability. String.raw suppresses backslash escaping
+const VAR = String.raw`(?:@@\w+@@)`;
+const NUM = String.raw`(?:-?[-+\dEe.]+)`;
+const LBR = String.raw`[[(]`;
+const RBR = String.raw`[\])]`;
+const PR = String.raw`\d+`;
+const RANGE = String.raw`{(${LBR})\s*(${NUM}|${VAR})\s*,\s*(${NUM}|${VAR})\s*${RBR}#?(${PR})?}`;
+const RE_RANGE = new RegExp(RANGE);
+
+const matchVariableRangeRule = (rule: string): Maybe<InputRange> => {
+  const m = parseRegex(
+    rule,
+    /{([[(])\s*((?:@@\w+@@)|(?:-?[-+\dEe.]+))\s*,\s*((?:@@\w+@@)|(?:-?[-+\dEe.]+))\s*[\])]#?(\d+)?}/,
+  );
+  console.log('matches: ' + JSON.stringify(m, null, 2));
+  return m
     .lift((matches) => ({
       bracketOrBrace: matches[1],
       matches: matches.slice(2, 5),
     }))
     .bind(({ bracketOrBrace, matches: [lowerBound, upperBound, precision] }) =>
       // verify the required values for this matcher are present or return nothing
-      Maybe.sequence<vnumber | boolean | RangeOperator | Maybe<number>>({
+      Maybe.sequence<numberOrVar | boolean | RangeOperator | Maybe<number>>({
         lowerBound: Maybe.just(lowerBound),
         upperBound: Maybe.just(upperBound),
         operator: parseRangeOperatorFromRule(rule),
@@ -454,14 +468,21 @@ const matchVariableRangeRule = (rule: string): Maybe<InputRange> =>
       inclusive,
       precision: valueOrUndefined(precision),
     }));
+};
 
-export const parseInputFromRule = firstMatch<string, Input>([
+export const parseInputFromRule = (rule: string): Maybe<Input> => {
+  console.log('parseInputFromRule: ' + rule);
+  const result = parseInputFromRule1(rule);
+  console.log('result= ' + JSON.stringify(result, null, 2));
+  return result;
+};
+export const parseInputFromRule1 = firstMatch<string, Input>([
   matchBetweenRule,
   matchRangeRule,
-  matchVariableRangeRule,
   matchSingleNumberRule,
-  matchSingleVariableRule,
   matchSingleTextRule,
+  matchSingleVariableRule,
+  matchVariableRangeRule,
 ]);
 
 export const parseTextOperatorFromRule = (rule: string): Maybe<TextOperator> => {

@@ -7,7 +7,7 @@ import {
   numericOperator,
   rangeOperator,
   RuleOperator,
-  vnumber,
+  numberOrVar,
 } from 'data/activities/model/rules';
 import guid from 'utils/guid';
 import { classNames } from 'utils/classNames';
@@ -26,17 +26,22 @@ export enum EditableNumberKind {
 
 export interface InvalidNumber {
   kind: EditableNumberKind.Invalid;
-  value: number | '';
+  value: numberOrVar;
 }
 
 export interface ValidNumber {
   kind: EditableNumberKind.Valid;
-  value: number | string;
+  value: numberOrVar;
 }
 
 export type EditableNumber = InvalidNumber | ValidNumber;
 
-const isVariable = (s: vnumber): boolean => typeof s === 'string' && s.match(/^@@\w+@@$/) !== null;
+const isVariable = (s: numberOrVar): boolean =>
+  typeof s === 'string' && s.match(/^@@\w+@@$/) !== null;
+
+const isValidNumber = (s: string): boolean =>
+  // allowing .333 but not 33. Need disjunction to allow both
+  typeof s === 'string' && s.match(/^[+-]?\d*\.?\d+(?:[Ee][+-]?\d+)?$/) != null;
 
 const parsedNumberOrEmptyString = (num: number | undefined) =>
   num != undefined && !isNaN(num) ? num : '';
@@ -49,11 +54,11 @@ const editableNumberFromNum = (num: number | undefined): EditableNumber =>
 const editableNumberFromString = (num: string): EditableNumber =>
   isVariable(num)
     ? { kind: EditableNumberKind.Valid, value: num }
-    : num.length > 0 && !isNaN(parseFloat(num))
-    ? { kind: EditableNumberKind.Valid, value: parseFloat(num) }
-    : { kind: EditableNumberKind.Invalid, value: parsedNumberOrEmptyString(parseFloat(num)) };
+    : isValidNumber(num)
+    ? { kind: EditableNumberKind.Valid, value: num }
+    : { kind: EditableNumberKind.Invalid, value: num };
 
-const editableNumberFromVNum = (vnum: vnumber): EditableNumber =>
+const editableNumberFromVNum = (vnum: numberOrVar): EditableNumber =>
   typeof (vnum === 'string')
     ? editableNumberFromString(vnum as string)
     : editableNumberFromNum(vnum as number);
@@ -156,7 +161,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
             setEditableUpperBound(editableUpperBound);
 
             if (editableUpperBound.kind === EditableNumberKind.Valid) {
-              onEditInput({ ...input, lowerBound: editableUpperBound.value });
+              onEditInput({ ...input, upperBound: editableUpperBound.value });
             }
           }}
           value={editableUpperBound.value}
@@ -255,7 +260,7 @@ const DIGITS: Record<string, boolean> = {
   '9': true,
 };
 const isDigit = (c: string): boolean => DIGITS[c];
-const numberOfDigits = (value: vnumber) => value.toString().split('').filter(isDigit).length;
+const numberOfDigits = (value: numberOrVar) => value.toString().split('').filter(isDigit).length;
 
 const inferPrecision = (input: InputNumeric | InputRange) => {
   switch (input.kind) {
