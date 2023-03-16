@@ -1,3 +1,4 @@
+import { EntityId } from '@reduxjs/toolkit';
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
 import { formatNumber, parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
@@ -454,7 +455,7 @@ export const removeStateValues = (env: Environment, keys: string[]): void => {
 };
 
 export const getLocalizedStateSnapshot = (
-  activityIds: string[],
+  activityIds: EntityId[],
   env: Environment = defaultGlobalEnv,
 ) => {
   const snapshot = getEnvState(env);

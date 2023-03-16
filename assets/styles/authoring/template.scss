@@ -1,0 +1,41 @@
+.template-picker {
+  .template-picker-header {
+    flex-direction: column;
+    .screen-filter {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.1rem;
+    }
+  }
+  .picker-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    min-height: 32rem;
+    align-items: first baseline;
+
+    .picker-item {
+      display: inline-block;
+      padding: 1rem;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      &.active,
+      &:hover {
+        background-color: rgb(170, 201, 191);
+      }
+
+      .picker-thumb {
+        border-radius: 0.5rem;
+        width: 12rem;
+        height: 8rem;
+        background-color: #ccc;
+      }
+      .picker-title {
+        text-align: center;
+      }
+    }
+  }
+}

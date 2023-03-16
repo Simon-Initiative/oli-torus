@@ -12,24 +12,24 @@ import { selectSequence } from '../../../../delivery/store/features/groups/selec
 import { selectCurrentGroup, upsertGroup } from '../../../../delivery/store/features/groups/slice';
 
 import { bulkSaveActivity } from '../../../store/activities/actions/saveActivity';
+import { FlowchartSlice } from '../../../store/flowchart/name';
 import { savePage } from '../../../store/page/actions/savePage';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { selectPathsToScreen } from '../flowchart-selectors';
 import {
-  AllPaths,
   createAlwaysGoToPath,
   createEndOfActivityPath,
   createUnknownPathWithDestination,
-  getDownstreamScreenIds,
-  setGoToAlwaysPath,
-} from '../flowchart-path-utils';
-import { selectDefaultDestination, selectPathsToScreen } from '../flowchart-selectors';
+} from '../paths/path-factories';
+import { AllPaths } from '../paths/path-types';
+import { getDownstreamScreenIds } from '../paths/path-utils';
 
 interface DeleteFlowchartScreenPayload {
   screenId: number;
 }
 
 export const deleteFlowchartScreen = createAsyncThunk(
-  `${ActivitiesSlice}/addFlowchartScreen`,
+  `${FlowchartSlice}/addFlowchartScreen`,
   async (payload: DeleteFlowchartScreenPayload, { dispatch, getState }) => {
     const { screenId } = payload;
     const rootState = getState() as AuthoringRootState;
@@ -44,7 +44,7 @@ export const deleteFlowchartScreen = createAsyncThunk(
     dispatch(deleteActivity({ activityId: screenId }));
     dispatch(removeScreenGromGroup(screenId, rootState));
 
-    await dispatch(savePage({ undoable: false }));
+    dispatch(savePage({ undoable: false, immiediate: true }));
   },
 );
 

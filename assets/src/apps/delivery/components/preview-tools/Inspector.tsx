@@ -66,9 +66,9 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
       if (activityVars) {
         ownerVariables = Object.keys(activityVars)?.reduce((col: any, part: any) => {
           const ownerActivity = currentActivityTree?.find(
-            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === part),
+            (activity) => !!(activity.content?.partsLayout || []).find((p: any) => p.id === part),
           );
-          if (ownerActivity.id === activity.id) {
+          if (ownerActivity && ownerActivity.id === activity.id) {
             const partVariables = statePuff[`${activity.id}|stage`];
             const partCol: Record<string, unknown> = {};
             partCol[part] = partVariables[part];

@@ -14,7 +14,6 @@ import {
   listenForReviewAttemptChange,
   submitPart,
   resetAndSubmitPart,
-  resetAndSavePart,
   resetPart,
 } from 'data/activities/DeliveryState';
 
@@ -106,7 +105,7 @@ export const CustomDnDComponent: React.FC = () => {
     return null;
   }
 
-  const onFocusChange = (targetId: string, draggableId: string | null) => {
+  const onFocusChange = (targetId: string | null, draggableId: string | null) => {
     setFocusedPart(partIdBearers === 'targets' ? targetId : draggableId);
   };
 

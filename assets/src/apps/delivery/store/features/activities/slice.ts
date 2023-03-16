@@ -9,12 +9,74 @@ import {
   Slice,
 } from '@reduxjs/toolkit';
 import { ObjectiveMap } from 'data/content/activity';
-import { AuthoringFlowchartScreenData } from '../../../../authoring/components/Flowchart/flowchart-path-utils';
+import { AuthoringFlowchartScreenData } from '../../../../authoring/components/Flowchart/paths/path-types';
 
 import ActivitiesSlice from './name';
+
+interface IBasePartLayout {
+  id: string;
+  type: string;
+  custom: Record<string, any>;
+}
+
+export interface IDropdownPartLayout extends IBasePartLayout {
+  type: 'janus-dropdown';
+  custom: {
+    x: number;
+    y: number;
+    z: number;
+    label: string;
+    width: number;
+    height: number;
+    prompt: string;
+    enabled: boolean;
+    fontSize: number;
+    maxScore: number;
+    showLabel: boolean;
+    optionLabels: string[];
+    customCssClass: string;
+    requiresManualGrading: boolean;
+  };
+}
+
+export interface IMCQPartLayout extends IBasePartLayout {
+  type: 'janus-mcq';
+  custom: {
+    x: number;
+    y: number;
+    z: number;
+    width: number;
+    height: number;
+    fontSize: number;
+    maxScore: number;
+    verticalGap: number;
+    maxManualGrade: number;
+    mcqItems: any[]; // TODO
+    customCssClass: '';
+    layoutType: 'verticalLayout' | 'horizontalLayout';
+    enabled: boolean;
+    randomize: boolean;
+    showLabel: boolean;
+    showNumbering: boolean;
+    overrideHeight: boolean;
+    multipleSelection: boolean;
+    showOnAnswersReport: boolean;
+    requireManualGrading: boolean;
+    requiresManualGrading: boolean;
+  };
+}
+
+type KnownPartLayouts = IMCQPartLayout | IDropdownPartLayout;
+
+interface OtherPartLayout extends IBasePartLayout {
+  [key: string]: any;
+}
+
+export type IPartLayout = KnownPartLayouts | OtherPartLayout;
+
 export interface ActivityContent {
   custom?: any;
-  partsLayout: any[];
+  partsLayout: IPartLayout[];
   [key: string]: any;
 }
 
@@ -60,6 +122,13 @@ export interface IAdaptiveRule {
   priority: number;
 }
 
+export interface AuthoringParts {
+  id: string; // ex: "janus_multi_line_text-1635445943",
+  type: string; // ex: "janus-multi-line-text",
+  owner: string; // ex: "adaptive_activity_5tcap_4078503139",
+  inherited: boolean;
+}
+
 export interface IActivity {
   id: EntityId;
   resourceId?: number;
@@ -67,6 +136,7 @@ export interface IActivity {
   authoring?: {
     rules?: IAdaptiveRule[];
     flowchart?: AuthoringFlowchartScreenData;
+    parts?: AuthoringParts[];
     [key: string]: any;
   };
   content?: ActivityContent;

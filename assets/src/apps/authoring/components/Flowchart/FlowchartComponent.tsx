@@ -9,6 +9,7 @@ import { FloatingEdge } from './chart-components/FloatingEdge';
 import FloatingConnectionLine from './chart-components/FloatingConnectionLine';
 import { PlaceholderNode } from './chart-components/PlaceholderNode';
 import { PlaceholderEdge } from './chart-components/PlaceholderEdge';
+import { StartNode } from './chart-components/StartNode';
 
 interface FlowchartComponentProps {
   nodes: FlowchartNode[];
@@ -18,6 +19,7 @@ interface FlowchartComponentProps {
 const NodeTypes = {
   screen: ScreenNode,
   placeholder: PlaceholderNode,
+  start: StartNode,
 };
 
 const EdgeTypes = {
@@ -28,6 +30,10 @@ const EdgeTypes = {
 export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => {
   const { nodes, edges } = props;
 
+  // if (nodes.length > 1) {
+  //   debugger;
+  // }
+
   const layout = layoutFlowchart(nodes, edges);
   // TODO - we're currently ignoring the dagre edges from layout. I think we could avoid some overlaps by using them.
 
@@ -37,6 +43,9 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
       edgeTypes={EdgeTypes}
       nodes={layout.nodes}
       edges={edges}
+      panOnDrag={true}
+      nodesDraggable={false}
+      nodesConnectable={false}
       connectionLineComponent={FloatingConnectionLine}
       proOptions={{ hideAttribution: true }}
     >

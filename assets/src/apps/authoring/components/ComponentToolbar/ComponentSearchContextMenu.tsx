@@ -12,6 +12,7 @@ import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-boot
 import { useDispatch, useSelector } from 'react-redux';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import cloneDeep from 'lodash/cloneDeep';
+import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 
 const ComponentSearchContextMenu: React.FC<{
   authoringContainer: React.RefObject<HTMLElement>;
@@ -32,7 +33,10 @@ const ComponentSearchContextMenu: React.FC<{
   // TODO: tag parent items so that we can mark them instead?
   const allParts = (currentActivityTree || [])
     .slice(-1)
-    .reduce((acc, activity) => acc.concat(activity.content.partsLayout || []), []);
+    .reduce(
+      (acc, activity) => acc.concat(activity.content?.partsLayout || []),
+      [] as IPartLayout[],
+    );
 
   const handlePartClick = useCallback(
     (part: any) => {
@@ -40,7 +44,7 @@ const ComponentSearchContextMenu: React.FC<{
       if (!currentActivity) {
         return;
       }
-      if (currentActivity.content.partsLayout.find((p: any) => p.id === part.id)) {
+      if ((currentActivity.content?.partsLayout || []).find((p: any) => p.id === part.id)) {
         setShow(!show);
         dispatch(setCurrentSelection({ selection: part.id }));
         dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
@@ -60,7 +64,9 @@ const ComponentSearchContextMenu: React.FC<{
 
   const updateActivityTreeParts = (list: any) => {
     const activity = cloneDeep((currentActivityTree || []).slice(-1)[0]);
-    activity.content.partsLayout = list;
+    if (activity.content) {
+      activity.content.partsLayout = list;
+    }
     dispatch(saveActivity({ activity, undoable: true, immediate: true }));
   };
 
