@@ -10,6 +10,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Publishing.DeliveryResolver, as: Resolver
@@ -20,6 +21,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
   alias Oli.Resources.{Collaboration, PageContent, Revision}
+  alias Oli.Delivery.Metrics
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -40,7 +42,7 @@ defmodule OliWeb.PageDeliveryController do
               to:
                 Routes.live_path(
                   OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.ContentLive,
+                  OliWeb.Delivery.InstructorDashboard.ManageLive,
                   section_slug
                 )
             )
@@ -53,7 +55,8 @@ defmodule OliWeb.PageDeliveryController do
               display_curriculum_item_numbering: section.display_curriculum_item_numbering,
               preview_mode: false,
               page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-              container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+              container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+              progress: learner_progress(section.id, user.id)
             )
           end
       end
@@ -66,6 +69,22 @@ defmodule OliWeb.PageDeliveryController do
         _ ->
           render(conn, "not_authorized.html")
       end
+    end
+  end
+
+  defp learner_progress(section_id, user_id) do
+    case Metrics.progress_for(section_id, user_id) do
+      progress when is_float(progress) ->
+        (progress * 100)
+        |> round()
+        # if there is any progress at all, we want to represent that by at least showing 1% min
+        |> max(1)
+        # ensure we never show progress above 100%
+        |> min(100)
+
+      _ ->
+        # if there is no progress (nil) then return 0%
+        0
     end
   end
 
@@ -91,6 +110,32 @@ defmodule OliWeb.PageDeliveryController do
             container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
           )
       end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  def assignments(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      assignments = Sections.get_graded_pages(section_slug, user.id)
+
+      render(
+        conn,
+        "assignments.html",
+        assignments: assignments,
+        section_slug: section_slug,
+        preview_mode: false
+      )
     else
       case section do
         %Section{open_and_free: true, requires_enrollment: false} ->
@@ -368,7 +413,8 @@ defmodule OliWeb.PageDeliveryController do
             conn,
             :transition
           ),
-        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
+        screenIdleTimeOutInSeconds:
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -429,16 +475,20 @@ defmodule OliWeb.PageDeliveryController do
         Map.put(acc, survey_id, survey_state)
       end)
 
-    base_project_slug = case section.has_experiments do
-      true ->
-        Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
-        _ -> nil
-    end
+    base_project_slug =
+      case section.has_experiments do
+        true ->
+          Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
 
-    enrollment = case section.has_experiments do
-      true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
-      _ -> nil
-    end
+        _ ->
+          nil
+      end
+
+    enrollment =
+      case section.has_experiments do
+        true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
+        _ -> nil
+      end
 
     render_context = %Context{
       # Allow admin authors to review student work
@@ -516,7 +566,11 @@ defmodule OliWeb.PageDeliveryController do
         },
         collab_space_config: context.collab_space_config,
         is_instructor: context.is_instructor,
-        is_student: context.is_student
+        is_student: context.is_student,
+        scheduling_type: section_resource.scheduling_type,
+        end_date: section_resource.end_date,
+        # TODO: implement reading time estimation
+        est_reading_time: nil
       }
     )
   end
@@ -1016,4 +1070,5 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+
 end

@@ -9,7 +9,42 @@ export interface DropdownModel extends JanusAbsolutePositioned, JanusCustomCss {
   prompt: string;
   optionLabels: string[];
   fontSize?: number;
+  correctAnswer?: number;
 }
+
+export const simpleUISchema = {
+  correctAnswer: {
+    'ui:widget': 'OptionsCorrectPicker',
+  },
+};
+
+export const simpleSchema: JSONSchema7Object = {
+  label: {
+    type: 'string',
+    title: 'Label',
+    description: 'text label for the dropdown',
+  },
+  optionLabels: {
+    title: 'Dropdown Options',
+    type: 'array',
+    description: 'list of options',
+    items: {
+      $ref: '#/definitions/optionLabel',
+    },
+  },
+  correctAnswer: {
+    title: 'Correct Answer',
+    type: 'number',
+    default: 0,
+  },
+  definitions: {
+    optionLabel: {
+      type: 'string',
+      description: 'text for the dropdown item',
+      $anchor: 'optionLabel',
+    },
+  },
+};
 
 export const schema: JSONSchema7Object = {
   customCssClass: {
@@ -75,4 +110,5 @@ export const createSchema = (): Partial<DropdownModel> => ({
   prompt: '',
   optionLabels: ['Option 1', 'Option 2'],
   enabled: true,
+  correctAnswer: 0,
 });

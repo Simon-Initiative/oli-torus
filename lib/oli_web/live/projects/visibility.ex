@@ -93,11 +93,11 @@ defmodule OliWeb.Projects.VisibilityLive do
               <ul class="nav nav-tabs">
                 <li class="nav-item">
                   <a phx-click="users_tab" class={"nav-link #{if  @tab == :users, do: "active"}"}
-                                        data-toggle="tab" href="#users">Authors</a>
+                                        data-bs-toggle="tab" href="#users">Authors</a>
                 </li>
                 <li class="nav-item">
                   <a phx-click="institutions_tab" class={"nav-link #{if  @tab == :institutions, do: "active"}"}
-                                        data-toggle="tab" href="#institutions">Institutions</a>
+                                        data-bs-toggle="tab" href="#institutions">Institutions</a>
                 </li>
               </ul>
               <!-- Tab panes -->

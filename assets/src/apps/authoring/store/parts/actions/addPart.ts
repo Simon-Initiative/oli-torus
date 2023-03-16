@@ -1,4 +1,4 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
+import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
 import { selectActivityById } from 'apps/delivery/store/features/activities/slice';
 import {
   findInSequenceByResourceId,
@@ -12,7 +12,7 @@ import { PartsSlice } from '../name';
 
 export const addPart = createAsyncThunk(
   `${PartsSlice}/addPart`,
-  async (payload: { activityId: number; newPartData: any }, { getState, dispatch }) => {
+  async (payload: { activityId: EntityId; newPartData: any }, { getState, dispatch }) => {
     const { activityId, newPartData } = payload;
     const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
     const activity = selectActivityById(rootState, activityId);

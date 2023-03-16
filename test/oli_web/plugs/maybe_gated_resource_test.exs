@@ -272,7 +272,6 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
       assert html_response(conn, 200) =~ "Page one"
-      assert html_response(conn, 200) =~ "Estimated reading time"
     end
   end
 

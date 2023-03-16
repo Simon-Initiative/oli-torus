@@ -75,8 +75,8 @@ export const initializeActivity = createAsyncThunk(
       const syncOps: ApplyStateOperation[] = [];
       for (let i = 0; i < currentActivityTree.length - 1; i++) {
         const ancestor = currentActivityTree[i];
-        for (let p = 0; p < ancestor.content.partsLayout.length; p++) {
-          const part = ancestor.content.partsLayout[p];
+        for (let p = 0; p < (ancestor.content?.partsLayout || []).length; p++) {
+          const part = ancestor.content!.partsLayout[p];
           // get the adaptivity variables for the part
           const Klass = customElements.get(part.type);
           if (Klass) {
@@ -197,10 +197,10 @@ export const initializeActivity = createAsyncThunk(
       }
       const [, targetPart] = s.target.split('.');
       const ownerActivity = currentActivityTree?.find(
-        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
+        (activity) => !!(activity.content?.partsLayout || []).find((p: any) => p.id === targetPart),
       );
       if (s.type === CapiVariableTypes.MATH_EXPR) {
-        return { ...s, target: `${ownerActivity.id}|${s.target}` };
+        return { ...s, target: `${ownerActivity!.id}|${s.target}` };
       }
 
       if (!ownerActivity) {

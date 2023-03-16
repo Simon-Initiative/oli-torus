@@ -15,6 +15,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Publishing
   alias OliWeb.Common.{LtiSession, SessionContext}
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Gating.GatingConditionData
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -682,6 +683,201 @@ defmodule Oli.TestHelpers do
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
   end
 
+  def section_with_gating_conditions(_context) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+    student = insert(:user)
+
+    # Create graded pages
+    graded_page_1_resource = insert(:resource)
+    graded_page_2_resource = insert(:resource)
+    graded_page_3_resource = insert(:resource)
+    graded_page_4_resource = insert(:resource)
+    graded_page_5_resource = insert(:resource)
+
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_1_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_2_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_3_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_4_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_5_resource.id})
+
+    graded_page_1_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 1 - Level 1 (w/ no date)",
+        graded: true,
+        resource: graded_page_1_resource
+      )
+
+    graded_page_2_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 2 - Level 0 (w/ date)",
+        graded: true,
+        resource: graded_page_2_resource
+      )
+
+    graded_page_3_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 3 - Level 1 (w/ no date)",
+        graded: true,
+        resource: graded_page_3_resource
+      )
+
+    graded_page_4_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 4 - Level 0 (w/ gating condition)",
+        graded: true,
+        resource: graded_page_4_resource
+      )
+
+    graded_page_5_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 5 - Level 0 (w/ student gating condition)",
+        graded: true,
+        resource: graded_page_5_resource
+      )
+
+    # Create a unit inside the project
+    unit_one_resource = insert(:resource)
+
+    insert(:project_resource, %{
+      resource_id: unit_one_resource.id,
+      project_id: project.id
+    })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [graded_page_1_resource.id, graded_page_2_resource.id],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Unit #1",
+        resource: unit_one_resource,
+        slug: "first_unit"
+      })
+
+    # Create root container for the project
+    root_container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: root_container_resource.id})
+
+    root_container_revision =
+      insert(:revision, %{
+        resource: root_container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          unit_one_resource.id,
+          graded_page_3_resource.id,
+          graded_page_4_resource.id,
+          graded_page_5_resource.id
+        ],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publicate project, container, pages and unit
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_container_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: root_container_resource,
+      revision: root_container_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_1_resource,
+      revision: graded_page_1_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_2_resource,
+      revision: graded_page_2_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_3_resource,
+      revision: graded_page_3_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_4_resource,
+      revision: graded_page_4_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_5_resource,
+      revision: graded_page_5_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: unit_one_resource,
+      revision: unit_one_revision
+    })
+
+    # Create section
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    enroll_user_to_section(student, section, :context_learner)
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_4_resource,
+      user: nil,
+      data: %GatingConditionData{end_datetime: ~U[2023-01-12 13:30:00Z]}
+    })
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_5_resource,
+      user: nil,
+      data: %GatingConditionData{end_datetime: ~U[2023-06-05 14:00:00Z]}
+    })
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_5_resource,
+      user: student,
+      data: %GatingConditionData{end_datetime: ~U[2023-07-08 14:00:00Z]}
+    })
+
+    %{
+      section: section,
+      graded_page_1: graded_page_1_revision,
+      graded_page_2: graded_page_2_revision,
+      graded_page_3: graded_page_3_revision,
+      graded_page_4: graded_page_4_revision,
+      graded_page_5: graded_page_5_revision,
+      student_with_gating_condition: student
+    }
+  end
+
   def project_section_revisions(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -908,6 +1104,12 @@ defmodule Oli.TestHelpers do
 
   def load_stripe_config(_conn) do
     load_env_file("test/config/stripe_config.exs")
+  end
+
+  def load_cashnet_config(), do: load_cashnet_config(nil)
+
+  def load_cashnet_config(_conn) do
+    load_env_file("test/config/cashnet_config.exs")
   end
 
   def reset_test_payment_config() do

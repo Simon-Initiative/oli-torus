@@ -470,7 +470,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           datashop_session_id_user1
         )
 
-      {:error, "nothing to process"} =
+      {:ok, []} =
         Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,

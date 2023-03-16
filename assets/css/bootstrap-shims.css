@@ -7,6 +7,7 @@
 @import './bs/spinner';
 @import './bs/switch';
 @import './bs/popover';
+@import './bs/tooltip';
 
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;
@@ -307,14 +308,14 @@ input.form-control-sm,
 }
 
 .pagination {
-  @apply flex list-style-none;
+  @apply flex list-style-none gap-1;
 }
 
 .page-item .page-link {
-  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 no-underline cursor-pointer;
+  @apply relative block py-1.5 px-3 rounded-sm border-0 bg-transparent outline-none transition-all duration-75 text-gray-800 no-underline cursor-pointer;
 }
 
-.page-item:not(.disabled) .page-link {
+.page-item:not(.disabled):not(.active) .page-link {
   @apply hover:text-gray-800 hover:bg-gray-200 focus:shadow-none;
 }
 
@@ -323,7 +324,7 @@ input.form-control-sm,
 }
 
 .page-item.active .page-link {
-  @apply bg-blue-500 text-white;
+  @apply bg-delivery-primary-500 text-white;
 }
 
 .page-item.disabled .page-link {
@@ -355,7 +356,7 @@ input.form-control-sm,
 }
 
 .alert-info {
-  @apply bg-indigo-100 text-indigo-700;
+  @apply bg-blue-50 text-blue-700;
 }
 
 .alert-light {

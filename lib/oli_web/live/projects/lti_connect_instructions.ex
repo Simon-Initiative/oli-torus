@@ -34,15 +34,15 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                   </p>
                   <ul class="nav nav-pills justify-content-center mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item">
-                      <a class="nav-link active" id="pills-canvas-tab" data-toggle="pill" href="#pills-canvas" role="tab" aria-controls="pills-canvas" aria-selected="true">Canvas</a>
+                      <a class="nav-link active" id="pills-canvas-tab" data-bs-toggle="pill" href="#pills-canvas" role="tab" aria-controls="pills-canvas" aria-selected="true">Canvas</a>
                     </li>
                     {#if @lti_connect_info.blackboard_application_client_id}
                       <li class="nav-item">
-                        <a class="nav-link" id="pills-blackboard-tab" data-toggle="pill" href="#pills-blackboard" role="tab" aria-controls="pills-blackboard" aria-selected="false">Blackboard</a>
+                        <a class="nav-link" id="pills-blackboard-tab" data-bs-toggle="pill" href="#pills-blackboard" role="tab" aria-controls="pills-blackboard" aria-selected="false">Blackboard</a>
                       </li>
                     {/if}
                     <li class="nav-item">
-                      <a class="nav-link" id="pills-other-tab" data-toggle="pill" href="#pills-other" role="tab" aria-controls="pills-other" aria-selected="false">Other LMS</a>
+                      <a class="nav-link" id="pills-other-tab" data-bs-toggle="pill" href="#pills-other" role="tab" aria-controls="pills-other" aria-selected="false">Other LMS</a>
                     </li>
                   </ul>
 

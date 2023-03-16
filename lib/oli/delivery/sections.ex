@@ -39,6 +39,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.PreviousNextIndex
   alias Oli.Delivery
   alias Ecto.Multi
+  alias Oli.Delivery.Gating.GatingCondition
 
   require Logger
 
@@ -1360,20 +1361,20 @@ defmodule Oli.Delivery.Sections do
   # container map.
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
     case Enum.map(sr.children, fn sr_id ->
-      sr = Map.get(all, sr_id)
+           sr = Map.get(all, sr_id)
 
-      case MapSet.member?(container_ids, sr.resource_id) do
-        true ->
-          rebuild_contained_pages_helper(
-            sr,
-            {[sr.resource_id | ancestors], page_map, all, container_ids}
-          )
-          |> Map.merge(page_map)
+           case MapSet.member?(container_ids, sr.resource_id) do
+             true ->
+               rebuild_contained_pages_helper(
+                 sr,
+                 {[sr.resource_id | ancestors], page_map, all, container_ids}
+               )
+               |> Map.merge(page_map)
 
-        false ->
-          Map.put(page_map, sr.resource_id, ancestors)
-      end
-    end) do
+             false ->
+               Map.put(page_map, sr.resource_id, ancestors)
+           end
+         end) do
       [] -> %{}
       other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
     end
@@ -1457,7 +1458,8 @@ defmodule Oli.Delivery.Sections do
 
     # For a section based on this project, update the has_experiments in the section to match that
     # setting in the project.
-    if section.base_project_id == project_id and project.has_experiments != section.has_experiments do
+    if section.base_project_id == project_id and
+         project.has_experiments != section.has_experiments do
       Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
     end
 
@@ -1942,5 +1944,100 @@ defmodule Oli.Delivery.Sections do
       # Recursively build the map based hierarchy from the structure defined by previous_next_index
       children: build_hierarchy_from_top_level(resource_ids, previous_next_index)
     }
+  end
+
+  def get_graded_pages(section_slug, user_id) do
+    {graded_pages_with_date, other_resources} =
+      SectionResource
+      |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+      |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+        on: spp.section_id == s.id and spp.project_id == sr.project_id
+      )
+      |> join(:inner, [sr, _, spp], pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+      )
+      |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+      |> join(:left, [sr], gc in GatingCondition,
+        on:
+          gc.section_id == sr.section_id and gc.resource_id == sr.resource_id and
+            is_nil(gc.user_id)
+      )
+      |> join(:left, [sr], gc2 in GatingCondition,
+        on:
+          gc2.section_id == sr.section_id and gc2.resource_id == sr.resource_id and
+            gc2.user_id == ^user_id
+      )
+      |> where(
+        [sr, s],
+        s.slug == ^section_slug and sr.numbering_level >= 0
+      )
+      |> select([sr, s, _, _, rev, gc, gc2], %{
+        id: sr.id,
+        title: rev.title,
+        end_date:
+          fragment(
+            "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date) as end_date",
+            gc2.data["end_datetime"],
+            gc.data["end_datetime"],
+            sr.end_date
+          ),
+        graded: rev.graded,
+        resource_type_id: rev.resource_type_id,
+        numbering_level: sr.numbering_level,
+        children: sr.children
+      })
+      |> order_by([{:asc_nulls_last, fragment("end_date")}])
+      |> Repo.all()
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.split_with(fn page ->
+        page.end_date != nil and page.graded == true and
+          page.resource_type_id == ResourceType.get_id_by_type("page")
+      end)
+
+    graded_pages_with_date ++ get_graded_pages_without_date(other_resources)
+  end
+
+  defp get_graded_pages_without_date(resources) do
+    {root_container, graded_pages} = get_root_container_and_graded_pages(resources)
+
+    get_flatten_hierarchy(root_container.children, resources)
+    |> Enum.reduce([], fn id, acc ->
+      Enum.find(graded_pages, &(&1[:id] == id))
+      |> case do
+        nil -> acc
+        page -> [page | acc]
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  defp get_root_container_and_graded_pages(resources) do
+    Enum.reduce(resources, {nil, []}, fn resource, {root_container, graded_pages} = acc ->
+      cond do
+        resource.numbering_level == 0 ->
+          {resource, graded_pages}
+
+        resource.resource_type_id == ResourceType.get_id_by_type("page") and
+            resource.graded == true ->
+          {root_container, [resource | graded_pages]}
+
+        true ->
+          acc
+      end
+    end)
+  end
+
+  defp get_flatten_hierarchy(nil, _), do: []
+  defp get_flatten_hierarchy([], _), do: []
+
+  defp get_flatten_hierarchy([head_id | rest], resources) do
+    [
+      head_id
+      | get_flatten_hierarchy(
+          Enum.find(resources, %{}, &(&1.id == head_id))[:children],
+          resources
+        )
+    ] ++
+      get_flatten_hierarchy(rest, resources)
   end
 end

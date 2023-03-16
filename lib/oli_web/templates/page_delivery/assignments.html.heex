@@ -1,0 +1,10 @@
+
+<Components.Delivery.NavSidebar.main_with_nav {assigns}>
+  <div class="relative flex-1 flex flex-col pb-[60px]">
+    <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
+
+    <Components.Delivery.AssignmentsList.render {assigns} />
+
+    <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
+  </div>
+</Components.Delivery.NavSidebar.main_with_nav>

@@ -2,6 +2,7 @@ import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
 import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import React, { PropsWithChildren, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
+import { classNames } from 'utils/classNames';
 import { SelectTimezone } from './SelectTimezone';
 
 enum Roles {
@@ -170,7 +171,11 @@ export const UserAccountMenu = ({
             <DropdownItem>
               <a
                 href={routes.signout}
-                className="py-1 block w-full"
+                className={classNames(
+                  'py-1 block w-full',
+                  // disable sign out if inside an iframe
+                  window.location !== window.parent.location ? 'disabled' : '',
+                )}
                 data-csrf={csrfToken}
                 data-method="delete"
                 data-to={routes.signout}

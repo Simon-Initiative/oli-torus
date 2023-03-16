@@ -73,6 +73,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   }
   //Need to start the warning 5 minutes before session expires
   const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 300000;
+
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode) {

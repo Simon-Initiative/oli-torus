@@ -23,7 +23,7 @@ export const CodeSettings = (props: CodeSettingsProps) => {
     // Inits the tooltips, since this popover rendres in a react portal
     // this was necessary
     if (ref !== null && ref.current !== null) {
-      (window as any).$('[data-toggle="tooltip"]').tooltip();
+      (window as any).$('[data-bs-toggle="tooltip"]').tooltip();
     }
   });
 

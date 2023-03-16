@@ -1,3 +1,19 @@
+// TODO - figure out how to import variables from advanced-authoring.scss
+// maybe this file should be included from there?
+$nav-height: 65px;
+$panel-side-width: 270px;
+$panel-bg-color-light: #f5f6f7;
+$panel-bg-color-dark: #7b8a8b;
+$panel-font-color-light: #333;
+$panel-font-color-dark: $panel-font-color-light;
+$torus-panel-side-width: 200px;
+$rounded: 4px;
+$ui-border-color: #ccc;
+$panel-section-title-bar-height: 39px;
+$panel-section-title-bar-color: #e8ebed;
+$workspace-bg: var(--color-body);
+$font-family-sans-serif: var(--font-sans);
+
 .flowchart-editor {
   position: fixed;
   bottom: 0;
@@ -9,12 +25,23 @@
   display: flex;
   flex-direction: row;
 
+  &.storybook {
+    position: relative !important;
+    bottom: unset;
+    right: unset;
+    top: unset;
+    left: unset;
+  }
+
   .flowchart-button {
     border: none;
     background-color: #5b1eea;
     color: #fff;
     border-radius: 8px;
     padding: 4px 8px 4px 8px;
+    &.secondary {
+      background-color: #fff;
+    }
     &:hover {
       background-color: #4d14d2;
     }
@@ -28,45 +55,138 @@
   .flowchart-right {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
+    flex-grow: 3;
+    flex-shrink: 1;
   }
 
   .top-toolbar {
-    //flex flex-row justify-between items-center bg-delivery-body p-2 h-40 border-b-2 dark:text-black
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 0.2fr repeat(2, 1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+
+    .left-header {
+      grid-area: 1 / 1 / 2 / 3;
+      padding-left: 15px;
+      padding-bottom: 0.5rem;
+      padding-top: 0.5rem;
+    }
+    .right-header {
+      grid-area: 1 / 3 / 2 / 6;
+      padding-left: 15px;
+      padding-bottom: 0.5rem;
+      padding-top: 0.5rem;
+    }
+
+    .toolbar-option {
+      // border: 1px solid #fff;
+      cursor: grab;
+      user-select: none;
+      &:hover {
+        background-color: #eee;
+      }
+      &.right-border {
+        border-right: 1px dashed #ccc;
+      }
+      .toolbar-icon {
+        margin-right: 0.5rem;
+        width: 25px;
+        text-align: center;
+        height: 25px;
+        background-color: #b9d7a1;
+        border-radius: 5px;
+        display: inline-block;
+      }
+      padding: 1rem;
+    }
+  }
+
+  .sidebar-header {
+    background: $panel-section-title-bar-color;
+    border-top: 1px solid $ui-border-color;
+    border-bottom: 1px solid $ui-border-color;
     display: flex;
-    flex-direction: row;
+    font-family: 'Raleway', $font-family-sans-serif;
+    font-size: 12px;
+    color: $panel-font-color-light;
+    height: $panel-section-title-bar-height;
     justify-content: space-between;
     align-items: center;
-    background-color: #999;
-    padding: 8px;
-    height: 200px;
-    border-bottom: 2px solid #e2e8f0;
-    flex-grow: 0;
-    flex-shrink: 0;
+    padding: 0 4px;
+    .title {
+      font-weight: 700;
+      text-transform: uppercase;
+    }
   }
+
   .flowchart-sidebar {
     width: 275px;
     height: 100%;
-    background-color: #777;
+    background-color: $panel-bg-color-light;
     flex-grow: 0;
     flex-shrink: 0;
     padding: 1rem;
     pre {
       font-size: 10px;
     }
+    .validation-error {
+      background-color: #eeaaaa;
+      border: 1px solid #bd3d3d;
+      border-radius: 4px;
+      padding: 0.5rem;
+      margin: 0.25rem;
+    }
   }
+  .flowchart-start-node {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: #b9d7a1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
   .flowchart-node {
     // align-middle justify-center flex h-[156px] flex-col
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     height: 156px;
+
+    &.node-valid {
+      .title-icon {
+        background-color: #b9d7a1;
+      }
+    }
+
+    &.node-invalid {
+      .title-icon {
+        background-color: #fed2d2;
+      }
+    }
+
+    .title-bar {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .title-icon {
+      margin-right: 0.5rem;
+      width: 25px;
+      text-align: center;
+      height: 25px;
+      border-radius: 5px;
+      display: inline-block;
+    }
 
     .node-box {
       // p-4 text-center border-2 w-32 h-28 bg-white text-delivery-body-dark flex justify-center align-middle flex-col
       padding: 8px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid #bcbfc3;
       width: 128px;
       height: 112px;
       background-color: #fff;
@@ -74,6 +194,11 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      text-align: center;
+
+      &.drop-over {
+        border: 2px solid #85fa25 !important;
+      }
 
       &.node-selected {
         border: 2px solid #5b1eea;
@@ -103,313 +228,106 @@
     }
     .placeholder {
       border-style: dashed;
-      border-color: #eee;
+    }
+  }
+
+  ul.screen-list {
+    list-style: none;
+    padding-left: 4px;
+    li {
+      margin-left: 0px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      .page-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background-color: #b9d7a1;
+        border-radius: 4px;
+        margin-right: 0.5rem;
+      }
+      &:hover {
+        background-color: #eee;
+        cursor: pointer;
+      }
+    }
+
+    li.active {
+      font-weight: 700;
+    }
+  }
+
+  .path-editor-completed,
+  .path-editor-incomplete {
+    border-radius: 4px;
+    padding: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    .icon-button {
+      outline: none;
+      border: none;
+      background: none;
+      text-align: center;
+      padding: 0.1rem 0.25rem;
+    }
+
+    select {
+      border: none;
+      background-color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem;
+
+      margin: 0.25rem;
+
+      &:hover {
+        cursor: pointer;
+      }
+    }
+
+    label {
+      margin-bottom: 0;
+      font-weight: 700;
+    }
+    .param-box {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .path-param {
+      background-color: #fff;
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+
+  .path-editor-completed {
+    background-color: #e7f0ff;
+  }
+  .path-editor-incomplete {
+    background-color: #f6e7ff;
+  }
+
+  .edgeDropSpot {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    vertical-align: middle;
+
+    &.hover {
+      background-color: #b9d7a1;
+      box-shadow: 0px 0px 40px 20px #0ff;
     }
   }
 }
-
-/*
-   Putting in the react-flow styles here so they get compiled and play nice with the new shadow-dom container for the
-   advanced authoring app.
- */
-
-.react-flow__container {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-}
-.react-flow__pane {
-  z-index: 1;
-  cursor: -webkit-grab;
-  cursor: grab;
-}
-.react-flow__pane.selection {
-  cursor: pointer;
-}
-.react-flow__pane.dragging {
-  cursor: -webkit-grabbing;
-  cursor: grabbing;
-}
-.react-flow__viewport {
-  transform-origin: 0 0;
-  z-index: 2;
-  pointer-events: none;
-}
-.react-flow__renderer {
-  z-index: 4;
-}
-.react-flow__selection {
-  z-index: 6;
-}
-.react-flow__nodesselection-rect:focus,
-.react-flow__nodesselection-rect:focus-visible {
-  outline: none;
-}
-.react-flow .react-flow__edges {
-  pointer-events: none;
-  overflow: visible;
-}
-.react-flow__edge-path,
-.react-flow__connection-path {
-  stroke: #2563eb;
-  stroke-width: 2;
-  fill: none;
-}
-.react-flow__edge {
-  pointer-events: visibleStroke;
-  cursor: pointer;
-}
-.react-flow__edge.animated path {
-  stroke-dasharray: 5;
-  -webkit-animation: dashdraw 0.5s linear infinite;
-  animation: dashdraw 0.5s linear infinite;
-}
-.react-flow__edge.animated path.react-flow__edge-interaction {
-  stroke-dasharray: none;
-  -webkit-animation: none;
-  animation: none;
-}
-.react-flow__edge.inactive {
-  pointer-events: none;
-}
-.react-flow__edge.selected,
-.react-flow__edge:focus,
-.react-flow__edge:focus-visible {
-  outline: none;
-}
-.react-flow__edge.selected .react-flow__edge-path,
-.react-flow__edge:focus .react-flow__edge-path,
-.react-flow__edge:focus-visible .react-flow__edge-path {
-  stroke: #555;
-}
-.react-flow__edge-textwrapper {
-  pointer-events: all;
-}
-.react-flow__edge-textbg {
-  fill: white;
-}
-.react-flow__edge .react-flow__edge-text {
-  pointer-events: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-}
-.react-flow__connection {
-  pointer-events: none;
-}
-.react-flow__connection .animated {
-  stroke-dasharray: 5;
-  -webkit-animation: dashdraw 0.5s linear infinite;
-  animation: dashdraw 0.5s linear infinite;
-}
-.react-flow__connectionline {
-  z-index: 1001;
-}
-.react-flow__nodes {
-  pointer-events: none;
-  transform-origin: 0 0;
-}
-.react-flow__node {
-  position: absolute;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  pointer-events: all;
-  transform-origin: 0 0;
-  box-sizing: border-box;
-  transition: transform 0.2s ease-in-out;
-
-  cursor: default;
-}
-.react-flow__node.dragging {
-}
-.react-flow__nodesselection {
-  z-index: 3;
-  transform-origin: left top;
-  pointer-events: none;
-}
-.react-flow__nodesselection-rect {
-  position: absolute;
-  pointer-events: all;
-}
-.react-flow__handle {
-  position: absolute;
-  pointer-events: none;
-  min-width: 5px;
-  min-height: 5px;
-  width: 6px;
-  height: 6px;
-  background: #1a192b;
-  border: 1px solid white;
-  border-radius: 100%;
-}
-.react-flow__handle.connectable {
-  pointer-events: all;
-  cursor: crosshair;
-}
-.react-flow__handle-bottom {
-  top: auto;
-  left: 50%;
-  bottom: -4px;
-  transform: translate(-50%, 0);
-}
-.react-flow__handle-top {
-  left: 50%;
-  top: -4px;
-  transform: translate(-50%, 0);
-}
-.react-flow__handle-left {
-  top: 50%;
-  left: -4px;
-  transform: translate(0, -50%);
-}
-.react-flow__handle-right {
-  right: -4px;
-  top: 50%;
-  transform: translate(0, -50%);
-}
-.react-flow__edgeupdater {
-  cursor: move;
-  pointer-events: all;
-}
-.react-flow__panel {
-  position: absolute;
-  z-index: 5;
-  margin: 15px;
-}
-.react-flow__panel.top {
-  top: 0;
-}
-.react-flow__panel.bottom {
-  bottom: 0;
-}
-.react-flow__panel.left {
-  left: 0;
-}
-.react-flow__panel.right {
-  right: 0;
-}
-.react-flow__panel.center {
-  left: 50%;
-  transform: translateX(-50%);
-}
-.react-flow__attribution {
-  font-size: 10px;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 2px 3px;
-  margin: 0;
-}
-.react-flow__attribution a {
-  text-decoration: none;
-  color: #999;
-}
-@-webkit-keyframes dashdraw {
-  from {
-    stroke-dashoffset: 10;
-  }
-}
-@keyframes dashdraw {
-  from {
-    stroke-dashoffset: 10;
-  }
-}
-.react-flow__edgelabel-renderer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-}
-.react-flow__edge.updating .react-flow__edge-path {
-  stroke: #777;
-}
-.react-flow__edge-text {
-  font-size: 10px;
-}
-.react-flow__node.selectable:focus,
-.react-flow__node.selectable:focus-visible {
-  outline: none;
-}
-.react-flow__node-default,
-.react-flow__node-input,
-.react-flow__node-output,
-.react-flow__node-group {
-  padding: 10px;
-  border-radius: 3px;
-  width: 150px;
-  font-size: 12px;
-  color: #222;
-  text-align: center;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #1a192b;
-  background-color: white;
-}
-.react-flow__node-default.selectable:hover,
-.react-flow__node-input.selectable:hover,
-.react-flow__node-output.selectable:hover,
-.react-flow__node-group.selectable:hover {
-  box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08);
-}
-.react-flow__node-default.selectable.selected,
-.react-flow__node-default.selectable:focus,
-.react-flow__node-default.selectable:focus-visible,
-.react-flow__node-input.selectable.selected,
-.react-flow__node-input.selectable:focus,
-.react-flow__node-input.selectable:focus-visible,
-.react-flow__node-output.selectable.selected,
-.react-flow__node-output.selectable:focus,
-.react-flow__node-output.selectable:focus-visible,
-.react-flow__node-group.selectable.selected,
-.react-flow__node-group.selectable:focus,
-.react-flow__node-group.selectable:focus-visible {
-  box-shadow: 0 0 0 0.5px #1a192b;
-}
-.react-flow__node-group {
-  background-color: rgba(240, 240, 240, 0.25);
-}
-.react-flow__nodesselection-rect,
-.react-flow__selection {
-  background: rgba(0, 89, 220, 0.08);
-  border: 1px dotted rgba(0, 89, 220, 0.8);
-}
-.react-flow__nodesselection-rect:focus,
-.react-flow__nodesselection-rect:focus-visible,
-.react-flow__selection:focus,
-.react-flow__selection:focus-visible {
-  outline: none;
-}
-.react-flow__controls {
-  box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.08);
-}
-.react-flow__controls-button {
-  border: none;
-  background: #fefefe;
-  border-bottom: 1px solid #eee;
-  box-sizing: content-box;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  padding: 5px;
-}
-.react-flow__controls-button:hover {
-  background: #f4f4f4;
-}
-.react-flow__controls-button svg {
-  width: 100%;
-  max-width: 12px;
-  max-height: 12px;
-}
-.react-flow__minimap {
-  background-color: #fff;
-}
+@import 'react-flow.scss';

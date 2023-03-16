@@ -146,7 +146,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
             setEditableUpperBound(editableUpperBound);
 
             if (editableUpperBound.kind === EditableNumberKind.Valid) {
-              onEditInput({ ...input, lowerBound: editableUpperBound.value });
+              onEditInput({ ...input, upperBound: editableUpperBound.value });
             }
           }}
           value={editableUpperBound.value}

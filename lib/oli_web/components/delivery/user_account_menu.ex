@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
   use Phoenix.Component
 
   import OliWeb.Components.Delivery.Utils
+  import PhoenixLiveReact
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
@@ -10,21 +11,32 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   attr :current_user, User
   attr :context, SessionContext
+  attr :is_liveview, :boolean, default: false
 
   def menu(assigns) do
     assigns = user_account_menu_assigns(assigns)
 
     ~H"""
-      <div id="menu" phx-update="ignore">
-        <%= ReactPhoenix.ClientSide.react_component("Components.UserAccountMenu", %{
-          user: @user,
+      <div id="menu">
+        <%= if @is_liveview do %>
+          <%= live_react_component("Components.UserAccountMenu", [user: @user,
           preview: @preview,
           routes: @routes,
           sectionSlug: @section_slug,
           browserTimezone: @browser_timezone,
           defaultTimezone: @default_timezone,
-          timezones: Enum.map(@timezones, &Tuple.to_list/1),
-        }) %>
+          timezones: Enum.map(@timezones, &Tuple.to_list/1)], id: "menu-live-react") %>
+        <% else %>
+          <%= ReactPhoenix.ClientSide.react_component("Components.UserAccountMenu", %{
+            user: @user,
+            preview: @preview,
+            routes: @routes,
+            sectionSlug: @section_slug,
+            browserTimezone: @browser_timezone,
+            defaultTimezone: @default_timezone,
+            timezones: Enum.map(@timezones, &Tuple.to_list/1),
+          }) %>
+        <% end %>
       </div>
     """
   end

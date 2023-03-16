@@ -598,6 +598,15 @@ defmodule OliWeb.Router do
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
     post("/s/success", PaymentProviders.StripeController, :success)
     post("/s/failure", PaymentProviders.StripeController, :failure)
+
+    post("/c/create-payment-form", PaymentProviders.CashnetController, :init_form)
+  end
+
+  scope "/api/v1/payments", OliWeb do
+    pipe_through([:skip_csrf_protection, :delivery])
+
+    post("/c/success", PaymentProviders.CashnetController, :success)
+    post("/c/failure", PaymentProviders.CashnetController, :failure)
   end
 
   # Endpoints for client-side scheduling UI
@@ -758,6 +767,43 @@ defmodule OliWeb.Router do
     post("/:section_slug/payment/code", PaymentController, :apply_code)
   end
 
+  ### Sections - Instructor Dashboard
+
+  scope "/sections/:section_slug", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :delivery_protected,
+      :maybe_gated_resource,
+      :pow_email_layout
+    ])
+
+    live_session :instructor_dashboard,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
+      live("/students", Delivery.InstructorDashboard.StudentsLive)
+      live("/content", Delivery.InstructorDashboard.ContentLive)
+      live("/discussions", Delivery.InstructorDashboard.DiscussionsLive)
+      live("/assignments", Delivery.InstructorDashboard.AssignmentsLive)
+      live("/manage", Delivery.InstructorDashboard.ManageLive)
+    end
+
+    live_session :instructor_dashboard_preview,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      live(
+        "/preview/learning_objectives",
+        Delivery.InstructorDashboard.LearningObjectivesLive,
+        :preview
+      )
+
+      live("/preview/students", Delivery.InstructorDashboard.StudentsLive, :preview)
+      live("/preview/content", Delivery.InstructorDashboard.ContentLive, :preview)
+      live("/preview/discussions", Delivery.InstructorDashboard.DiscussionsLive, :preview)
+      live("/preview/assignments", Delivery.InstructorDashboard.AssignmentsLive, :preview)
+      live("/preview/manage", Delivery.InstructorDashboard.ManageLive, :preview)
+    end
+  end
+
   ### Sections - Student Course Delivery
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
@@ -775,11 +821,7 @@ defmodule OliWeb.Router do
 
     get("/exploration", PageDeliveryController, :exploration)
     get("/discussion", PageDeliveryController, :discussion)
-    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
-    live("/students", Delivery.InstructorDashboard.StudentsLive)
-    live("/content", Delivery.InstructorDashboard.ContentLive)
-    live("/discussions", Delivery.InstructorDashboard.DiscussionLive)
-
+    get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
@@ -805,13 +847,8 @@ defmodule OliWeb.Router do
     ])
 
     # Redirect deprecated routes
-    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
-    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/content")
-
-    live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive, :preview)
-    live("/students", Delivery.InstructorDashboard.StudentsLive, :preview)
-    live("/content", Delivery.InstructorDashboard.ContentLive, :preview)
-    live("/discussions", Delivery.InstructorDashboard.DiscussionLive, :preview)
+    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
+    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
 
     get("/exploration", PageDeliveryController, :exploration_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)

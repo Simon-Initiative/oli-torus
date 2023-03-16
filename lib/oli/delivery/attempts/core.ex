@@ -600,6 +600,23 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def get_latest_non_active_activity_attempts(resource_attempt_id) do
+
+    query = from(
+      aa in ActivityAttempt,
+      where: (aa.lifecycle_state == :evaluated or aa.lifecycle_state == :submitted) and aa.resource_attempt_id ==  ^resource_attempt_id,
+      group_by: aa.resource_id,
+      select: max(aa.id)
+    )
+
+    Repo.all(
+      from(aa in ActivityAttempt ,
+        where: aa.id in subquery(query),
+        select: aa
+      )
+    )
+  end
+
   @doc """
   Retrieves the latest resource attempt for a given resource id,
   context id and user id.  If no attempts exist, returns nil.

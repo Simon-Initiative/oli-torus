@@ -16,8 +16,8 @@ defmodule OliWeb.ObjectivesLive.Listing do
             <div class="card-header d-flex justify-content-between p-2" id={"heading#{index}"}>
               <button
                 class="flex-1 btn w-75 text-left"
-                data-toggle="collapse"
-                data-target={"#collapse#{index}"}
+                data-bs-toggle="collapse"
+                data-bs-target={"#collapse#{index}"}
                 aria-expanded="true"
                 aria-controls={"collapse#{index}"}
                 phx-click="set_selected"

@@ -59,7 +59,7 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
                 <b>
                   {<TimeRemaining remainingTimeInMinutes={remainingTimeInMinutes}></TimeRemaining>}
                 </b>
-                . You want to continue?
+                . Do you want to continue?
               </p>
             </div>
           </div>

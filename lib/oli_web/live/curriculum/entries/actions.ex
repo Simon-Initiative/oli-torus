@@ -11,7 +11,7 @@ defmodule OliWeb.Curriculum.Actions do
     ~H"""
     <div class="entry-actions">
       <div class="dropdown">
-        <button class="btn dropdown-toggle" type="button" data-toggle="dropdown" data-target={"dropdownMenu_#{@child.slug}"} aria-haspopup="true" aria-expanded="false">
+        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-target={"dropdownMenu_#{@child.slug}"} aria-haspopup="true" aria-expanded="false">
           <svg
             aria-hidden="true"
             focusable="false"

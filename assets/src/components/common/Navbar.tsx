@@ -149,17 +149,17 @@ export const Navbar = ({
           <hr className="border-t border-gray-300" />
           <button
             className="
-          block
-          no-underline
-          m-4
-          text-delivery-body-color
-          font-bold
-          hover:no-underline
-          border-b
-          border-transparent
-          hover:text-delivery-primary
-          active:text-delivery-primary-600
-        "
+              block
+              no-underline
+              m-4
+              text-delivery-body-color
+              font-bold
+              hover:no-underline
+              border-b
+              border-transparent
+              hover:text-delivery-primary
+              active:text-delivery-primary-600
+            "
             data-bs-toggle="modal"
             data-bs-target="#help-modal"
           >

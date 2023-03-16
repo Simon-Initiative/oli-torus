@@ -1,7 +1,9 @@
 import React, { useContext } from 'react';
+import { useDrop } from 'react-dnd';
 import { Handle, Position } from 'reactflow';
 import { FlowchartPlaceholderNodeData } from '../flowchart-utils';
 import { FlowchartEventContext } from '../FlowchartEventContext';
+import { screenTypes } from '../screens/screen-factories';
 
 /**
  * This is the empty node on the flowchart that allows you to add new screens to the graph.
@@ -27,16 +29,31 @@ export const PlaceholderNode: React.FC<NodeProps> = ({ data }) => {
 // Just the interior of the node, useful to have separate for storybook
 export const PlaceholderNodeBody: React.FC<NodeProps> = ({ data }) => {
   const { onAddScreen } = useContext(FlowchartEventContext);
+
+  const onDrop = (item: any) => {
+    onAddScreen({ prevNodeId: data.fromScreenId, screenType: item.screenType });
+  };
+
+  const [{ canDrop, isOver }, drop] = useDrop(() => ({
+    accept: screenTypes,
+    drop: onDrop,
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  }));
+
+  const hover = isOver && canDrop;
+  const className = hover ? 'node-box drop-over placeholder' : 'node-box placeholder';
+
   return (
     <div className="flowchart-node">
-      <div className="node-box placeholder">
-        <button
-          className="flowchart-button"
-          onClick={() => onAddScreen({ prevNodeId: data.fromScreenId })}
-        >
-          Add Screen
-        </button>
+      <div className={className} ref={drop}>
+        {hover && <DropMessage />}
+        {hover || <span>End of Lesson</span>}
       </div>
     </div>
   );
 };
+
+const DropMessage: React.FC = () => <span>Drop here to add new screen</span>;

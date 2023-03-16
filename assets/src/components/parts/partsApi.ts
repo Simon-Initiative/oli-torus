@@ -11,3 +11,5 @@ export const customEvents = {
   onGetData: 'getData',
   onSetData: 'setData',
 };
+
+export type PartAuthoringMode = 'expert' | 'simple';
