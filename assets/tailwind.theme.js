@@ -147,7 +147,7 @@ module.exports = {
         },
       },
       footer: {
-        DEFAULT: colors.gray['100'],
+        DEFAULT: '#eceef1',
         dark: {
           DEFAULT: '#323233',
         },
