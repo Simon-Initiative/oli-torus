@@ -59,7 +59,7 @@ const editableNumberFromString = (num: string): EditableNumber =>
     : { kind: EditableNumberKind.Invalid, value: num };
 
 const editableNumberFromVNum = (vnum: numberOrVar): EditableNumber =>
-  typeof (vnum === 'string')
+  typeof vnum === 'string'
     ? editableNumberFromString(vnum as string)
     : editableNumberFromNum(vnum as number);
 
@@ -73,7 +73,6 @@ const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditIn
   const numericInputRef = createRef<HTMLInputElement>();
   const [editableNumber, setEditableNumber] = useState(editableNumberFromVNum(input.value));
   const editableNumberInvalid = editableNumber.kind === EditableNumberKind.Invalid;
-
   return (
     <div>
       <input

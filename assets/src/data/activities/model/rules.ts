@@ -439,10 +439,8 @@ const PR = String.raw`\d+`;
 const RANGE = String.raw`{(${LBR})\s*(${NUM}|${VAR})\s*,\s*(${NUM}|${VAR})\s*${RBR}#?(${PR})?}`;
 const RE_RANGE = new RegExp(RANGE);
 
-const matchVariableRangeRule = (rule: string): Maybe<InputRange> => {
-  const m = parseRegex(rule, RE_RANGE);
-  console.log('matches: ' + JSON.stringify(m, null, 2));
-  return m
+const matchVariableRangeRule = (rule: string): Maybe<InputRange> =>
+  parseRegex(rule, RE_RANGE)
     .lift((matches) => ({
       bracketOrBrace: matches[1],
       matches: matches.slice(2, 5),
@@ -465,15 +463,8 @@ const matchVariableRangeRule = (rule: string): Maybe<InputRange> => {
       inclusive,
       precision: valueOrUndefined(precision),
     }));
-};
 
-export const parseInputFromRule = (rule: string): Maybe<Input> => {
-  console.log('parseInputFromRule: ' + rule);
-  const result = parseInputFromRule1(rule);
-  console.log('result= ' + JSON.stringify(result, null, 2));
-  return result;
-};
-export const parseInputFromRule1 = firstMatch<string, Input>([
+export const parseInputFromRule = firstMatch<string, Input>([
   matchBetweenRule,
   matchRangeRule,
   matchSingleNumberRule,
