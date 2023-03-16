@@ -381,7 +381,7 @@ type ParsedRangeRule = {
 // ** Deprecated ** this format will still be parsed, but will be converted to range rule on save
 // Look for two equality matches, something like `input = {-123} || input = {234.5}`
 const matchBetweenRule = (rule: string): Maybe<InputRange> =>
-  parseRegex(rule, /= {(-?[\d]+)}.* = {(-?[.\d]+)}/)
+  parseRegex(rule, /= {(-?[.\d]+)}.* = {(-?[.\d]+)}/)
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([lowerBound, upperBound]) =>
       // verify the required values for this matcher are present or return nothing
