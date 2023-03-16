@@ -430,7 +430,7 @@ const matchRangeRule = (rule: string): Maybe<InputRange> =>
       precision: valueOrUndefined(precision),
     }));
 
-// Build REGEXP from pieces for readability. String.raw suppresses backslash escaping
+// Pieces for readable RexExp. String.raw used to suppress backslash escaping
 const VAR = String.raw`(?:@@\w+@@)`;
 const NUM = String.raw`(?:-?[-+\dEe.]+)`;
 const LBR = String.raw`[[(]`;
@@ -440,10 +440,7 @@ const RANGE = String.raw`{(${LBR})\s*(${NUM}|${VAR})\s*,\s*(${NUM}|${VAR})\s*${R
 const RE_RANGE = new RegExp(RANGE);
 
 const matchVariableRangeRule = (rule: string): Maybe<InputRange> => {
-  const m = parseRegex(
-    rule,
-    /{([[(])\s*((?:@@\w+@@)|(?:-?[-+\dEe.]+))\s*,\s*((?:@@\w+@@)|(?:-?[-+\dEe.]+))\s*[\])]#?(\d+)?}/,
-  );
+  const m = parseRegex(rule, RE_RANGE);
   console.log('matches: ' + JSON.stringify(m, null, 2));
   return m
     .lift((matches) => ({
