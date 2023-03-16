@@ -27,7 +27,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         _params,
         %{
           "collab_space_config" => collab_space_config,
-          "page_slug" => page_slug
+          "resource_slug" => page_slug
         } = session,
         socket
       ) do
@@ -84,16 +84,19 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
        page_revision: page_revision,
        page_resource: page_resource,
        parent_entity: parent_entity,
-       topic: topic
+       topic: topic,
+       is_overview_render: Map.get(session, "is_overview_render"),
      )}
   end
 
   def render(assigns) do
     ~F"""
-      <div class="card max-w-full">
+      <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none"}"}>
         <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
           <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
-            <h3 class="card-title">Collaborative Space Config</h3>
+            {#unless @is_overview_render}
+              <h3 class="card-title">Collaborative Space Config</h3>
+            {/unless}
             <div>
               <span class="bg-delivery-primary-200 badge badge-info">{humanize(@collab_space_status)}</span>
             </div>

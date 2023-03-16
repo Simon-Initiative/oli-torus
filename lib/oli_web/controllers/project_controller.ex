@@ -13,6 +13,8 @@ defmodule OliWeb.ProjectController do
   alias Oli.Authoring.Clone
   alias Oli.Activities
   alias OliWeb.Insights
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources.Collaboration
 
   def overview(conn, project_params) do
     project = conn.assigns.project
@@ -22,6 +24,14 @@ defmodule OliWeb.ProjectController do
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    %{slug: revision_slug} = AuthoringResolver.root_container(project.slug)
+
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page_in_project(
+        revision_slug,
+        project.slug
+      )
 
     params = %{
       breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
@@ -38,7 +48,9 @@ defmodule OliWeb.ProjectController do
       publishers: Inventories.list_publishers(),
       title: "Overview | " <> project.title,
       attributes: project.attributes,
-      language_codes: Oli.LanguageCodesIso639.codes()
+      language_codes: Oli.LanguageCodesIso639.codes(),
+      collab_space_config: collab_space_config,
+      revision_slug: revision_slug
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")

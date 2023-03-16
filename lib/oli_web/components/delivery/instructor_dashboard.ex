@@ -145,7 +145,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   attr :active_tab, :atom,
     required: true,
-    values: [:learning_objectives, :students, :content, :discussions, :assignments, :manage]
+    values: [:learning_objectives, :students, :content, :discussions, :course_discussion, :assignments, :manage]
 
   attr :section_slug, :string, required: true
   attr :preview_mode, :boolean, required: true
@@ -371,6 +371,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         collab_space_table_model={@collab_space_table_model}
         discussion_table_model={@discussion_table_model}
         parent_component_id={@parent_component_id} />
+    """
+  end
+
+  def course_discussion(assigns) do
+    ~H"""
+      <.tabs active_tab={:course_discussion} section_slug={@section_slug} preview_mode={@preview_mode} />
+      <div class="container mx-auto mt-3 mb-5">
+        <div class="bg-white dark:bg-gray-800 p-8 shadow">
+          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView, id: "course_discussion",
+            session: %{
+              "collab_space_config" => @collab_space_config,
+              "section_slug" => @section_slug,
+              "resource_slug" => @revision_slug,
+              "is_instructor" => true,
+            })
+          %>
+        </div>
+      </div>
     """
   end
 
