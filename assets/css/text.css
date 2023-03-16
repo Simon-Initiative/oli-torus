@@ -1,5 +1,9 @@
+h4.torus-h4 {
+  @apply text-delivery-body-color text-xl font-bold;
+}
+
 h6.torus-h6 {
-  @apply text-sm font-semibold;
+  @apply text-delivery-body-color text-sm font-semibold;
 }
 
 span.torus-span {
@@ -8,4 +12,8 @@ span.torus-span {
 
 small.torus-small {
   @apply text-gray-400 text-xs font-normal;
+}
+
+p.torus-p {
+  @apply text-delivery-body-color font-normal m-0;
 }

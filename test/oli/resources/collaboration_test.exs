@@ -243,7 +243,7 @@ defmodule Oli.Resources.CollaborationTest do
     test "list_collaborative_spaces_in_section/1 returns correctly when no collab spaces present" do
       section = insert(:section)
 
-      assert [] == Collaboration.list_collaborative_spaces_in_section(section.slug)
+      assert {0, []} == Collaboration.list_collaborative_spaces_in_section(section.slug)
     end
 
     test "list_collaborative_spaces_in_section/1 returns collab spaces correctly with posts configured in pages" do
@@ -254,16 +254,17 @@ defmodule Oli.Resources.CollaborationTest do
          section: section
        }} = create_project_with_collab_space_and_posts()
 
-      assert [
-               %{
-                 collab_space_config: returned_collab_space_config,
-                 page: page,
-                 number_of_posts: 2,
-                 number_of_posts_pending_approval: 1,
-                 most_recent_post: _most_recent_post,
-                 section: returned_section
-               }
-             ] = Collaboration.list_collaborative_spaces_in_section(section.slug)
+      assert {1,
+              [
+                %{
+                  collab_space_config: returned_collab_space_config,
+                  page: page,
+                  number_of_posts: 2,
+                  number_of_posts_pending_approval: 1,
+                  most_recent_post: _most_recent_post,
+                  section: returned_section
+                }
+              ]} = Collaboration.list_collaborative_spaces_in_section(section.slug)
 
       assert returned_collab_space_config["status"] |> String.to_atom() ==
                collab_space_config.status
@@ -289,16 +290,17 @@ defmodule Oli.Resources.CollaborationTest do
         collab_space_config: collab_space_config
       )
 
-      assert [
-               %{
-                 collab_space_config: returned_collab_space_config,
-                 page: page,
-                 number_of_posts: 2,
-                 number_of_posts_pending_approval: 1,
-                 most_recent_post: _most_recent_post,
-                 section: returned_section
-               }
-             ] = Collaboration.list_collaborative_spaces_in_section(section.slug)
+      assert {1,
+              [
+                %{
+                  collab_space_config: returned_collab_space_config,
+                  page: page,
+                  number_of_posts: 2,
+                  number_of_posts_pending_approval: 1,
+                  most_recent_post: _most_recent_post,
+                  section: returned_section
+                }
+              ]} = Collaboration.list_collaborative_spaces_in_section(section.slug)
 
       assert returned_collab_space_config["status"] |> String.to_atom() == :archived
       assert returned_collab_space_config["threaded"] == collab_space_config.threaded
