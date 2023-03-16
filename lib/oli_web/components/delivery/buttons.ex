@@ -2,7 +2,6 @@ defmodule OliWeb.Components.Delivery.Buttons do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  alias OliWeb.Router.Helpers, as: Routes
 
   attr :type, :string, default: "button"
   attr :disabled, :boolean, default: false

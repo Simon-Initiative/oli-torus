@@ -395,16 +395,6 @@ $element-margin-bottom: 1.5em;
     margin: 0 auto;
     margin-bottom: $element-margin-bottom;
 
-    // .embed-wrapper {
-    //   position: relative;
-
-    //   .embed-responsive-item {
-    //     position: absolute;
-    //     top: 0;
-    //     left: 0;
-    //   }
-    // }
-
     // ensure embed-responsive is 16:9 ratio
     // https://stackoverflow.com/a/54924505
     &.embed-responsive-16by9 {
