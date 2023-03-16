@@ -85,7 +85,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
        page_resource: page_resource,
        parent_entity: parent_entity,
        topic: topic,
-       is_overview_render: Map.get(session, "is_overview_render"),
+       is_overview_render: Map.get(session, "is_overview_render")
      )}
   end
 

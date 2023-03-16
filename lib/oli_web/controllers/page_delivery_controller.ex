@@ -21,6 +21,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
   alias Oli.Resources.{Collaboration, PageContent, Revision}
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
@@ -36,7 +37,9 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          if Sections.is_instructor?(user, section_slug) do
+          is_instructor = Sections.is_instructor?(user, section_slug)
+
+          if is_instructor do
             conn
             |> redirect(
               to:
@@ -47,6 +50,14 @@ defmodule OliWeb.PageDeliveryController do
                 )
             )
           else
+            %{slug: revision_slug} = DeliveryResolver.root_container(section_slug)
+
+            {:ok, collab_space_config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                revision_slug,
+                section_slug
+              )
+
             render(conn, "index.html",
               title: section.title,
               description: section.description,
@@ -56,6 +67,9 @@ defmodule OliWeb.PageDeliveryController do
               preview_mode: false,
               page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
               container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+              collab_space_config: collab_space_config,
+              revision_slug: revision_slug,
+              is_instructor: is_instructor,
               progress: learner_progress(section.id, user.id)
             )
           end

@@ -81,6 +81,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           section_slug
         )
 
+      :course_discussion ->
+        Routes.course_discussion_path(
+          OliWeb.Endpoint,
+          :preview,
+          section_slug
+        )
+
       :assignments ->
         Routes.assignments_path(
           OliWeb.Endpoint,
@@ -127,6 +134,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           section_slug
         )
 
+      :course_discussion ->
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.CourseDiscussionLive,
+          section_slug
+        )
+
       :assignments ->
         Routes.live_path(
           OliWeb.Endpoint,
@@ -161,6 +175,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             {"Students", path_for(:students, @section_slug, @preview_mode), nil, is_active_tab?(:students, @active_tab)},
             {"Modules", path_for(:content, @section_slug, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
             {"Discussion Activity", path_for(:discussions, @section_slug, @preview_mode), nil, is_active_tab?(:discussions, @active_tab)},
+            {"Course Discussion", path_for(:course_discussion, @section_slug, @preview_mode), nil, is_active_tab?(:course_discussion, @active_tab)},
             {"Assignments", path_for(:assignments, @section_slug, @preview_mode), nil, is_active_tab?(:assignments, @active_tab)},
             {"Manage", path_for(:manage, @section_slug, @preview_mode), nil, is_active_tab?(:manage, @active_tab)},
           ] do %>
@@ -379,14 +394,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <.tabs active_tab={:course_discussion} section_slug={@section_slug} preview_mode={@preview_mode} />
       <div class="container mx-auto mt-3 mb-5">
         <div class="bg-white dark:bg-gray-800 p-8 shadow">
+         <%= if @collab_space_config do%>
           <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView, id: "course_discussion",
             session: %{
               "collab_space_config" => @collab_space_config,
               "section_slug" => @section_slug,
               "resource_slug" => @revision_slug,
               "is_instructor" => true,
+              "title" => "Course Discussion"
             })
           %>
+          <% else %>
+              <h6>There is no collaboration space configured for this Course</h6>
+          <% end %>
         </div>
       </div>
     """

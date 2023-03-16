@@ -2,7 +2,6 @@ defmodule OliWeb.Sections.OverviewView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
-  alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
@@ -11,9 +10,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
-  alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   prop(user, :any)
   data(modal, :any, default: nil)

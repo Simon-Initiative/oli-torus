@@ -68,7 +68,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         %{
           "collab_space_config" => collab_space_config,
           "section_slug" => section_slug,
-          "page_slug" => page_slug
+          "resource_slug" => resource_slug
         } = session,
         socket
       ) do
@@ -85,11 +85,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       end
 
     section = Sections.get_section_by_slug(section_slug)
-    page_resource = Resources.get_resource_from_slug(page_slug)
+    resource = Resources.get_resource_from_slug(resource_slug)
     is_instructor = Map.get(session, "is_instructor", false)
     is_student = Map.get(session, "is_student", false)
+    title = Map.get(session, "title", "Discussion")
 
-    topic = channels_topic(section_slug, page_resource.id)
+    topic = channels_topic(section_slug, resource.id)
 
     PubSub.subscribe(Oli.PubSub, topic)
 
@@ -104,12 +105,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       Collaboration.change_post(%PostSchema{
         user_id: user.id,
         section_id: section.id,
-        resource_id: page_resource.id
+        resource_id: resource.id
       })
 
     search_params = %{
       section_id: section.id,
-      resource_id: page_resource.id,
+      resource_id: resource.id,
       user_id: user.id,
       collab_space_config: collab_space_config,
       enter_time: enter_time,
@@ -122,7 +123,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
      assign(socket,
        topic: topic,
        search_params: search_params,
-       page_resource: page_resource,
+       resource: resource,
        section: section,
        user: user,
        active_users: Presence.list_presences(topic),
@@ -131,7 +132,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
        new_post_changeset: new_post_changeset,
        sort: sort,
        is_instructor: is_instructor,
-       is_student: is_student
+       is_student: is_student,
+       title: title
      )}
   end
 
@@ -143,7 +145,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       <div>
         <div class="flex items-center justify-between p-5">
           <div class="flex items-center justify-between w-full">
-            <h3 class="text-xl font-bold">Discussion</h3>
+            <h3 class="text-xl font-bold">{@title}</h3>
             {#if is_archived?(@collab_space_config.status)}
               <span class="badge badge-info ml-2">Archived</span>
             {/if}
@@ -602,13 +604,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp get_posts(
          %{
            section_id: section_id,
-           resource_id: page_resource_id,
+           resource_id: resource_id,
            collab_space_config: collab_space_config,
            is_instructor: true
          },
          %{by: sort_by, order: sort_order}
        ) do
-    Collaboration.list_posts_for_instructor_in_page_section(section_id, page_resource_id)
+    Collaboration.list_posts_for_instructor_in_page_section(section_id, resource_id)
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
@@ -617,7 +619,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp get_posts(
          %{
            section_id: section_id,
-           resource_id: page_resource_id,
+           resource_id: resource_id,
            user_id: user_id,
            collab_space_config:
              %CollabSpaceConfig{show_full_history: false} = collab_space_config,
@@ -627,7 +629,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
        ) do
     Collaboration.list_posts_for_user_in_page_section(
       section_id,
-      page_resource_id,
+      resource_id,
       user_id,
       enter_time
     )
@@ -639,13 +641,13 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   defp get_posts(
          %{
            section_id: section_id,
-           resource_id: page_resource_id,
+           resource_id: resource_id,
            user_id: user_id,
            collab_space_config: collab_space_config
          },
          %{by: sort_by, order: sort_order}
        ) do
-    Collaboration.list_posts_for_user_in_page_section(section_id, page_resource_id, user_id)
+    Collaboration.list_posts_for_user_in_page_section(section_id, resource_id, user_id)
     |> maybe_threading(collab_space_config)
     |> sort(sort_by, sort_order)
     |> Enum.with_index(1)
