@@ -1,24 +1,36 @@
 import guid from '../../../../../utils/guid';
 import { IAdaptiveRule } from '../../../../delivery/store/features/activities/slice';
+import {
+  SequenceEntry,
+  SequenceEntryChild,
+} from '../../../../delivery/store/features/groups/actions/sequence';
 import { AllPaths, AlwaysGoToPath } from '../paths/path-types';
+import { createNavigationAction } from './create-navigation-action';
 
-// These handle compiling paths into rules.
-export const generateDefaultRule = (path: AllPaths): IAdaptiveRule | null => {
-  switch (path.type) {
-    case 'end-of-activity':
-      return null; // no real rule to generate
-    // case 'correct':
-    //   return generateMultipleChoiceCorrect(path);
-    case 'always-go-to':
-      return generateAlwaysGoTo(path);
-    default:
-      console.error('Unknown rule type', path.type);
-      return null;
-  }
+export const generateRules = (
+  paths: AllPaths[],
+  sequence: SequenceEntry<SequenceEntryChild>[],
+): IAdaptiveRule[] => {
+  return paths.map(generateRule(sequence)).flat();
 };
+// These handle compiling paths into rules.
+const generateRule =
+  (sequence: SequenceEntry<SequenceEntryChild>[]) =>
+  (path: AllPaths): IAdaptiveRule[] => {
+    switch (path.type) {
+      case 'end-of-activity':
+        return []; // no real rule to generate
+      // case 'correct':
+      //   return generateMultipleChoiceCorrect(path);
+      case 'always-go-to':
+        return generateAlwaysGoTo(path, sequence);
+      default:
+        console.error('Unknown rule type', path.type);
+        return [];
+    }
+  };
 
-const generateAlwaysGoTo = (path: AlwaysGoToPath): IAdaptiveRule => {
-  const label = 'always';
+const createRuleTemplate = (label: string): IAdaptiveRule => {
   return {
     id: `r:${guid()}.${label}`,
     name: label,
@@ -26,14 +38,7 @@ const generateAlwaysGoTo = (path: AlwaysGoToPath): IAdaptiveRule => {
     event: {
       type: `r:${guid()}.default`,
       params: {
-        actions: [
-          {
-            type: 'navigation',
-            params: {
-              target: String(path.destinationScreenId),
-            },
-          },
-        ],
+        actions: [],
       },
     },
     correct: true,
@@ -48,41 +53,16 @@ const generateAlwaysGoTo = (path: AlwaysGoToPath): IAdaptiveRule => {
   };
 };
 
-// const generateMultipleChoiceCorrect = (path: MultipleChoiceCorrectPath): IAdaptiveRule => {
-//   const label = 'correct';
-//   return {
-//     id: `r:${guid()}.${label}`,
-//     name: 'correct',
-//     event: {
-//       type: `r:${guid()}.${label}`,
-//       params: {
-//         actions: [
-//           {
-//             type: 'navigation',
-//             params: {
-//               target: String(path.destinationScreenId),
-//             },
-//           },
-//         ],
-//       },
-//     },
-//     correct: true,
-//     default: true,
-//     disabled: false,
-//     priority: 1,
-//     conditions: {
-//       id: `c:${guid()}`,
-//       all: [
-//         {
-//           id: `c:${guid()}`,
-//           fact: `stage.${path.componentId}.selectedChoice`,
-//           type: 1,
-//           value: String(path.correctOption),
-//           operator: 'equal',
-//         },
-//       ],
-//     },
-//     forceProgress: false,
-//     additionalScore: 0,
-//   };
-// };
+const generateAlwaysGoTo = (
+  path: AlwaysGoToPath,
+  sequence: SequenceEntry<SequenceEntryChild>[],
+): IAdaptiveRule[] => {
+  const rule = createRuleTemplate('always');
+  const sequenceEntry = sequence.find((s) => s.resourceId === path.destinationScreenId);
+  if (!sequenceEntry) {
+    console.warn("Couldn't find sequence entry for path", path);
+    return [];
+  }
+  rule.event.params.actions = [createNavigationAction(sequenceEntry.custom.sequenceId)];
+  return [rule];
+};

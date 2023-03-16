@@ -6,12 +6,14 @@ import {
   selectActivityById,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
+import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { AllPaths } from '../paths/path-types';
 import { isDestinationPath } from '../paths/path-utils';
 import { validatePath } from '../paths/path-validation';
+import { generateRules } from '../rules/rule-compilation';
 import { addFlowchartScreen } from './add-screen';
 
 interface ReplacePathPayload {
@@ -36,9 +38,11 @@ export const replacePath = createAsyncThunk(
 
     newPath.completed = validatePath(newPath);
     const rootState = getState() as AuthoringRootState;
+    const sequence = selectSequence(rootState);
     const screen = selectActivityById(rootState, screenId);
     if (!screen) return;
     const paths = screen.authoring?.flowchart?.paths;
+
     if (!paths) return;
     const newPaths = paths.map((path) => {
       if (path.id === oldPathId) {
@@ -48,6 +52,7 @@ export const replacePath = createAsyncThunk(
     });
     const modifiedScreen = clone(screen);
     modifiedScreen.authoring.flowchart.paths = newPaths;
+    modifiedScreen.authoring.rules = generateRules(paths, sequence);
 
     dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
     await dispatch(upsertActivity({ activity: modifiedScreen }));
