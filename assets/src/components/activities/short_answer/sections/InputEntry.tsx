@@ -29,7 +29,6 @@ export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditRe
 
   const onEditInput = (update: Input) => {
     setInput(update);
-    const rule = makeRule(update);
     onEditResponseRule(response.id, makeRule(update));
   };
 
