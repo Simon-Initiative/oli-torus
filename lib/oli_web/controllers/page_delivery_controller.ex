@@ -386,7 +386,8 @@ defmodule OliWeb.PageDeliveryController do
             conn,
             :transition
           ),
-        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
+        screenIdleTimeOutInSeconds:
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -1042,4 +1043,5 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+
 end
