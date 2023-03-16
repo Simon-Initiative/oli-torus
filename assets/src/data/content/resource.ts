@@ -184,13 +184,14 @@ export const createDefaultStructuredContent = (
 });
 
 export const createGroup = (
+  purpose = 'none',
   children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
 ): PurposeGroupContent => ({
   type: 'group',
   id: guid(),
   children,
   layout: 'vertical',
-  purpose: 'didigetthis',
+  purpose,
 });
 
 export const createAlternatives = (

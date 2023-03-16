@@ -185,7 +185,7 @@ module.exports = {
           bg: {
             DEFAULT: '#222439',
             dark: {
-              DEFAULT: colors.gray['500'],
+              DEFAULT: colors.gray['600'],
             },
           },
         },

@@ -322,7 +322,7 @@ input.form-control-sm,
 }
 
 .page-item .page-link {
-  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 no-underline cursor-pointer;
+  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-body-color dark:text-body-color-dark no-underline cursor-pointer;
 }
 
 .page-item:not(.disabled) .page-link {
@@ -334,7 +334,7 @@ input.form-control-sm,
 }
 
 .page-item.active .page-link {
-  @apply bg-blue-500 text-white;
+  @apply bg-blue-500 text-white hover:bg-blue-500 hover:text-white;
 }
 
 .page-item.disabled .page-link {

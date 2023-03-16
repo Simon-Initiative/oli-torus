@@ -118,10 +118,14 @@ const AudioSettingsModal = (props: AudioSettingsProps) => {
                   <button
                     type="button"
                     onClick={playAudio}
-                    className="btn btn-sm btn-outline-success btn-pronunciation-audio tool-button"
+                    className="btn btn-outline-primary btn-pronunciation-audio tool-button"
                   >
-                    <span className="material-icons">
-                      {isPlaying ? 'stop_circle' : 'play_circle'}
+                    <span>
+                      {isPlaying ? (
+                        <i className="fa-solid fa-circle-stop"></i>
+                      ) : (
+                        <i className="fa-solid fa-circle-play"></i>
+                      )}
                     </span>
                   </button>
                 </Tooltip>

@@ -35,6 +35,9 @@
       i {
         vertical-align: text-top;
         color: var(--color-gray-500);
+      }
+
+      svg {
         transition: transform 200ms ease-in-out, color 200ms ease-in-out;
       }
     }
@@ -95,7 +98,7 @@
   width: fit-content;
   z-index: 500;
   border-radius: 6px;
-  border-color: var(--color-light) !important;
+  border-color: var(--color-light);
 
   &:global(.popover) {
     max-width: unset !important;
@@ -142,8 +145,8 @@
     min-height: 50px;
     max-width: 70px;
     min-width: 70px;
-    background-color: var(--color-body);
     color: var(--color-body-color);
+    transition: transform 100ms ease-in-out;
 
     &:hover {
       color: var(--color-primary);
@@ -153,14 +156,14 @@
     }
 
     &[disabled] {
-      color: var(--color-gray-500);
+      color: var(--color-gray-400);
 
       .type-label {
-        color: var(--color-gray-500);
+        color: var(--color-gray-400);
       }
 
       &:hover {
-        color: var(--color-gray-500);
+        color: var(--color-gray-400);
       }
       &:active {
         transform: none;
@@ -170,7 +173,6 @@
 
   :global(.resource-choice-icon) {
     font-size: 1.3em;
-    color: var(--color-gray-600);
   }
 
   :global(.resource-choices-divider) {
@@ -200,5 +202,58 @@
   :global(.type-description) {
     color: var(--color-body-color);
     font-size: 0.8em;
+  }
+}
+
+:global(html.dark) {
+  .addResourcePopover {
+    border-color: var(--color-gray-600);
+  }
+
+  .addResourcePopoverContent {
+    background-color: var(--color-gray-700);
+    border-color: var(--color-gray-600);
+
+    :global(hr) {
+      color: var(--color-gray-600);
+    }
+
+    :global(.type-label) {
+      color: var(--color-body-color-dark);
+    }
+    :global(.resource-choice-header) {
+      color: var(--color-body-color-dark);
+    }
+
+    :global(.resource-choice) {
+      color: var(--color-body-color-dark);
+
+      &:hover {
+        color: var(--color-primary);
+      }
+      &[disabled] {
+        color: var(--color-gray-500);
+
+        .type-label {
+          color: var(--color-gray-500);
+        }
+
+        &:hover {
+          color: var(--color-gray-500);
+        }
+      }
+    }
+
+    :global(.resource-choices-divider) {
+      border-left-color: var(--color-gray-600);
+    }
+
+    :global(.resource-choices-tip) {
+      color: var(--color-body-color-dark);
+    }
+
+    :global(.type-description) {
+      color: var(--color-body-color-dark);
+    }
   }
 }

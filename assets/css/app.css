@@ -32,6 +32,13 @@ a.external-link::after {
   content: '\f08e';
 }
 
+a.download::after {
+  @apply mx-1 text-sm;
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 600;
+  content: '\f019';
+}
+
 p {
   @apply mb-3;
 }

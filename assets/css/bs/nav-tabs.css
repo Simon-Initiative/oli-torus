@@ -5,6 +5,7 @@ html.dark .nav-tabs {
   border-color: var(--color-gray-600);
 }
 .nav-tabs .nav-link {
+  display: inline-block;
   margin-bottom: -1px;
   background: none;
   border: 1px solid transparent;
@@ -36,8 +37,8 @@ html.dark .nav-tabs .nav-link:focus {
 html.dark .nav-tabs .nav-link.active,
 html.dark .nav-tabs .nav-item.show .nav-link {
   color: var(--color-body-color-dark);
-  background-color: var(--color-gray-800);
-  border-color: var(--color-gray-600) var(--color-gray-600) var(--color-gray-800);
+  background-color: var(--color-body-dark);
+  border-color: var(--color-gray-600) var(--color-gray-600) var(--color-body-dark);
 }
 
 .nav-tabs .dropdown-menu {

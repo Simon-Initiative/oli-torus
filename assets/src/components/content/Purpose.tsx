@@ -2,6 +2,7 @@ import React, { PropsWithChildren, useState } from 'react';
 import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
 import guid from 'utils/guid';
 import { PurposeTypes } from 'data/content/resource';
+import { Tooltip } from 'components/common/Tooltip';
 
 export type PurposeProps = {
   editMode: boolean; // Whether or not we can edit
@@ -46,28 +47,13 @@ const MaybePurposeTooltip = ({
   canEditPurpose,
   children,
 }: PropsWithChildren<MaybePurposeTooltipProps>) => {
-  const [id] = useState(guid());
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
   if (canEditPurpose) {
     return <>{children}</>;
   }
 
   return (
-    <OverlayTrigger
-      trigger="click"
-      overlay={
-        <Popover id={id}>
-          <Popover.Content>
-            A purpose is already set on either a parent or child group.
-          </Popover.Content>
-        </Popover>
-      }
-      rootClose={true}
-      show={isPopoverOpen}
-      onToggle={setIsPopoverOpen}
-    >
+    <Tooltip title="A purpose is already set on either a parent or child group.">
       <div>{children}</div>
-    </OverlayTrigger>
+    </Tooltip>
   );
 };

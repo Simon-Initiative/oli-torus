@@ -46,7 +46,7 @@ $element-margin-bottom: 1.5em;
     margin-bottom: $heading-margin-bottom;
   }
 
-  p {
+  & > p {
     line-height: 2em;
     margin-bottom: $element-margin-bottom;
   }
@@ -58,11 +58,6 @@ $element-margin-bottom: 1.5em;
     &:hover {
       color: var(--color-delivery-primary-600);
     }
-  }
-
-  .img-fluid {
-    margin: 1.5em auto;
-    margin-bottom: $element-margin-bottom;
   }
 
   blockquote {
@@ -85,6 +80,7 @@ $element-margin-bottom: 1.5em;
     color: var(--color-body-color);
     background: var(--color-gray-100);
     font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
+    font-size: 0.75em;
     letter-spacing: -0.003em;
     border-radius: 6px;
     padding: 1em;
@@ -97,8 +93,8 @@ $element-margin-bottom: 1.5em;
 
   ul,
   ol {
-    margin-bottom: $element-margin-bottom;
     padding-left: 1.5em;
+    margin-bottom: $element-margin-bottom;
   }
 
   ul li,
@@ -135,11 +131,11 @@ $element-margin-bottom: 1.5em;
     -moz-box-sizing: content-box;
     box-sizing: content-box;
     margin: auto;
-    margin-bottom: $element-margin-bottom;
     border-collapse: collapse;
     table-layout: auto;
     word-wrap: break-word;
     overflow: hidden;
+    margin-bottom: $element-margin-bottom;
 
     th {
       background-color: rgba(var(--color-blue-400), 15%);
@@ -163,8 +159,12 @@ $element-margin-bottom: 1.5em;
     }
   }
 
-  img.d-block {
+  img {
     margin-bottom: $element-margin-bottom;
+  }
+
+  .img-fluid {
+    margin: 1.5em auto;
   }
 
   figure > img.d-block {
@@ -175,8 +175,7 @@ $element-margin-bottom: 1.5em;
   iframe.d-block {
     max-width: 100%;
     max-height: 800px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: auto;
   }
 
   img.float-md-right,
@@ -247,6 +246,8 @@ $element-margin-bottom: 1.5em;
 
   .pronunciation,
   .pronunciation-player {
+    margin-bottom: $element-margin-bottom;
+
     p {
       display: inline;
     }
@@ -264,6 +265,7 @@ $element-margin-bottom: 1.5em;
     margin: 0px 0.5em;
     padding: 2px 0.5em;
     vertical-align: middle;
+    margin-bottom: $element-margin-bottom;
     mjx-container[display='true'] {
       pointer-events: none;
       margin: 0px !important;
@@ -273,6 +275,7 @@ $element-margin-bottom: 1.5em;
   .callout-inline,
   .callout {
     background-color: var(--color-body);
+    margin-bottom: $element-margin-bottom;
   }
 
   .callout-block,
@@ -281,6 +284,7 @@ $element-margin-bottom: 1.5em;
     margin: 8px;
     padding: 12px;
     text-align: center;
+    margin-bottom: $element-margin-bottom;
 
     blockquote,
     ol,
@@ -297,6 +301,8 @@ $element-margin-bottom: 1.5em;
     display: flex;
     flex-direction: column;
     border-radius: 2px;
+    margin-bottom: $element-margin-bottom;
+
     .dialog-line {
       &.speaker-1 {
         background-color: #d1e7dd;
@@ -341,6 +347,8 @@ $element-margin-bottom: 1.5em;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: $element-margin-bottom;
+
     figure {
       figcaption {
         color: var(--color-primary);
@@ -352,12 +360,14 @@ $element-margin-bottom: 1.5em;
   .caption-wrapper {
     display: flex;
     justify-content: center;
+    margin-bottom: $element-margin-bottom;
 
     figure {
-      display: inline-block;
+      display: block;
       background-color: var(--color-gray-100);
       padding: 20px;
       border-radius: 6px;
+      margin: auto;
 
       figcaption {
         margin-bottom: 8px;
@@ -376,31 +386,38 @@ $element-margin-bottom: 1.5em;
     display: block;
     margin-left: auto;
     margin-right: auto;
+    margin-bottom: $element-margin-bottom;
   }
 
   .embed-responsive {
     width: 90%;
     height: 100%;
     margin: 0 auto;
-    margin-bottom: 1.5em;
+    margin-bottom: $element-margin-bottom;
 
-    .embed-wrapper {
+    // .embed-wrapper {
+    //   position: relative;
+
+    //   .embed-responsive-item {
+    //     position: absolute;
+    //     top: 0;
+    //     left: 0;
+    //   }
+    // }
+
+    // ensure embed-responsive is 16:9 ratio
+    // https://stackoverflow.com/a/54924505
+    &.embed-responsive-16by9 {
       position: relative;
+      padding-bottom: 56.25%; /* 16:9 */
+      height: 0;
 
-      .embed-responsive-item {
+      iframe.embed-responsive-item {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-      }
-    }
-
-    &.embed-responsive-16by9 {
-      max-width: 800px;
-
-      .embed-wrapper {
-        padding-top: 56%;
       }
     }
   }
@@ -438,6 +455,19 @@ $element-margin-bottom: 1.5em;
 
   table {
     min-width: fit-content;
+    margin-bottom: $element-margin-bottom;
+  }
+
+  audio {
+    min-width: 50%;
+    margin: auto;
+    margin-bottom: $element-margin-bottom;
+  }
+
+  .video-player {
+    width: 90%;
+    margin: auto;
+    margin-bottom: $element-margin-bottom;
   }
 }
 
@@ -477,6 +507,19 @@ html.dark {
     pre {
       color: var(--color-body-color-dark);
       background: var(--color-gray-900);
+    }
+
+    .caption-wrapper {
+      display: flex;
+      justify-content: center;
+
+      figure {
+        background-color: var(--color-gray-700);
+
+        figcaption {
+          color: white;
+        }
+      }
     }
   }
 }
