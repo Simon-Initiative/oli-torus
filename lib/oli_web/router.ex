@@ -821,7 +821,7 @@ defmodule OliWeb.Router do
 
     get("/exploration", PageDeliveryController, :exploration)
     get("/discussion", PageDeliveryController, :discussion)
-    get("/assignments", PageDeliveryController, :assignments)
+    get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page)

@@ -196,7 +196,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       {"discussion", :discussion} -> true
       {"page", :content} -> true
       {"container", :content} -> true
-      {"assignments", :assignments} -> true
+      {"my_assignments", :assignments} -> true
       _ -> false
     end
   end
