@@ -8,6 +8,10 @@ import {
   IActivity,
   selectActivityById,
 } from '../../../../delivery/store/features/activities/slice';
+import {
+  SequenceEntry,
+  SequenceEntryChild,
+} from '../../../../delivery/store/features/groups/actions/sequence';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup, upsertGroup } from '../../../../delivery/store/features/groups/slice';
 
@@ -23,6 +27,7 @@ import {
 } from '../paths/path-factories';
 import { AllPaths } from '../paths/path-types';
 import { getDownstreamScreenIds } from '../paths/path-utils';
+import { generateRules } from '../rules/rule-compilation';
 
 interface DeleteFlowchartScreenPayload {
   screenId: number;
@@ -54,7 +59,8 @@ const isNotToDestination = (destinationId: number) => (path: AllPaths) =>
   !('destinationScreenId' in path) || path.destinationScreenId !== destinationId;
 
 const removeDestinationPaths =
-  (screenId: number, nextScreenIds: number[]) => (original: IActivity) => {
+  (screenId: number, nextScreenIds: number[], sequence: SequenceEntry<SequenceEntryChild>[]) =>
+  (original: IActivity) => {
     const activity = cloneT(original);
     if (!activity?.authoring?.flowchart) return original;
 
@@ -86,11 +92,18 @@ const removeDestinationPaths =
       activity.authoring.flowchart.paths = [createEndOfActivityPath()];
     }
 
+    activity.authoring.rules = generateRules(
+      activity.authoring.flowchart.paths,
+      sequence,
+      activity,
+    );
+
     return activity;
   };
 
 const removePathsToScreen = (screen: IActivity, rootState: AuthoringRootState) => {
   const inputPaths = selectPathsToScreen(rootState, screen.resourceId!);
+  const sequence = selectSequence(rootState);
   const screenIdsToModify = new Set(inputPaths.map((p) => p.sourceScreenId));
   const screensToModify = Array.from(screenIdsToModify)
     .map((id) => selectActivityById(rootState, id))
@@ -99,7 +112,7 @@ const removePathsToScreen = (screen: IActivity, rootState: AuthoringRootState) =
   const nextScreenIds = getDownstreamScreenIds(screen);
 
   const modifiedScreens = screensToModify.map(
-    removeDestinationPaths(screen.resourceId!, nextScreenIds),
+    removeDestinationPaths(screen.resourceId!, nextScreenIds, sequence),
   );
 
   return bulkSaveActivity({ activities: modifiedScreens });
