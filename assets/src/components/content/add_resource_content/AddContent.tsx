@@ -41,6 +41,6 @@ const addContent = (onAddItem: AddCallback, index: number[]) => {
 };
 
 const addGroup = (onAddItem: AddCallback, index: number[]) => {
-  onAddItem(createGroup(), index);
+  onAddItem(createGroup(index.length > 1 ? 'none' : 'didigetthis'), index);
   document.body.click();
 };

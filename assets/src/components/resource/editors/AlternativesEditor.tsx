@@ -311,7 +311,7 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
           {options}
           <button
             key="add"
-            className={classNames('btn btn-sm', styles.option, styles.add)}
+            className={classNames('btn btn-sm', styles.option)}
             onClick={onCreateAlternative}
           >
             <i className="fas fa-plus"></i>
@@ -346,13 +346,17 @@ const OptionPill = ({
 
   const titleOrWarning = title ?? (
     <Tooltip title="This alternative value no longer exists and should be changed or removed">
-      <i className="fas fa-exclamation-circle text-danger"></i>
+      <span className="align-middle">
+        <i className="fas fa-exclamation-circle text-danger"></i>
+      </span>
     </Tooltip>
   );
 
   const maybeDuplicateWarning = isDuplicate && (
     <Tooltip title="This alternative has the same value as another. One or the other should be changed or removed">
-      <i className="fas fa-exclamation-triangle text-warning mx-1"></i>
+      <span className="align-middle">
+        <i className="fas fa-exclamation-triangle text-warning mx-1"></i>
+      </span>
     </Tooltip>
   );
 

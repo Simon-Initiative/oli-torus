@@ -52,3 +52,18 @@
     }
   }
 }
+
+html.dark {
+  .curriculum-editor {
+    .curriculum-entry {
+      background-color: var(--color-body-dark);
+      color: var(--color-body-color-dark);
+      box-shadow: 1px 1px 8px 1px var(--color-gray-900);
+      border-color: var(--color-gray-600);
+
+      .badge {
+        background-color: var(--color-gray-400);
+      }
+    }
+  }
+}

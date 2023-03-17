@@ -6,8 +6,8 @@
   border-radius: 8px;
 
   z-index: var(--z-30);
-  box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
-  -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
+  box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.8);
+  -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.8);
 
   &.fixedToolbar {
     border: none;
@@ -40,7 +40,7 @@
 .toolbarGroup {
   display: flex;
   flex-direction: row;
-  border-left: 2px solid var(--toolbar-group-separator-color);
+  border-left: 2px solid #e5e6e8;
 
   &:first-of-type {
     border-left: none;
@@ -67,14 +67,13 @@
   display: flex;
   flex-direction: row;
   font-weight: 400;
-  color: var(--toolbar-color);
+  color: #6b7281;
   text-align: center;
   vertical-align: middle;
   align-items: center;
   user-select: none;
   background-color: transparent;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.875rem;
+  padding: 0.375rem 0.6rem;
   line-height: 1;
   border: none;
 
@@ -121,6 +120,7 @@
   overflow-y: auto;
   background: #f8f9fb;
   border: 2px solid #e5e6e8;
+  font-size: 0.875rem;
 
   .toolbarButton {
     display: inline-flex;
@@ -140,4 +140,41 @@
 .description {
   margin-left: 6px;
   line-height: 32px;
+}
+
+:global(html.dark) {
+  .toolbar {
+    background: #3e3f44;
+    border-color: #55565d;
+    box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
+    -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.6);
+
+    &.fixedToolbar {
+      border-color: #55565d;
+    }
+  }
+
+  .toolbarButton {
+    color: #dee2f2;
+  }
+
+  .toolbarGroup {
+    border-color: #55565d;
+  }
+
+  .toolbarButton {
+    &:hover {
+      background-color: #2f2f30;
+    }
+
+    &.active {
+      background: #55565d;
+      color: #f8f9fb;
+    }
+  }
+
+  .dropdownGroup {
+    background: #3e3f44;
+    border-color: #55565d;
+  }
 }

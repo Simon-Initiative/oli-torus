@@ -99,17 +99,17 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
       </Dropdown.Toggle>
       <Dropdown.Menu>
         <Dropdown.Item onClick={onToggleHeader}>Toggle Header</Dropdown.Item>
-        <div className="dropdown-divider"></div>
+        <Dropdown.Divider />
 
-        <h6 className="dropdown-header">Border</h6>
+        <Dropdown.Header>Border</Dropdown.Header>
 
         <Dropdown.Item onClick={onBorderStyle('solid')}>Solid</Dropdown.Item>
 
         <Dropdown.Item onClick={onBorderStyle('hidden')}>Hidden</Dropdown.Item>
 
-        <div className="dropdown-divider"></div>
+        <Dropdown.Divider />
 
-        <h6 className="dropdown-header">Row Style</h6>
+        <Dropdown.Header>Row Style</Dropdown.Header>
 
         <Dropdown.Item onClick={onRowStyle('plain')}>Plain</Dropdown.Item>
 
@@ -119,9 +119,9 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
         {mode == 'table' && <AlignmentOptions editor={editor} />}
         {mode == 'table' && <AddOptions editor={editor} model={model} />}
 
-        <div className="dropdown-divider"></div>
+        <Dropdown.Divider />
 
-        <h6 className="dropdown-header">Delete</h6>
+        <Dropdown.Header>Delete</Dropdown.Header>
         <Dropdown.Item onClick={onDeleteRow}>Row</Dropdown.Item>
         <Dropdown.Item onClick={onDeleteColumn}>Column</Dropdown.Item>
 

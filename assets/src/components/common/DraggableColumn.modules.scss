@@ -24,3 +24,13 @@
   padding: 0.8rem 0.5rem;
   box-shadow: 1px 1px 8px 1px rgb(206 212 218 / 33%);
 }
+
+:global(html.dark) {
+  .draggableColumnIndicator {
+    color: var(--color-gray-500);
+  }
+
+  .draggableColumnCard {
+    background: var(--color-body-dark);
+  }
+}

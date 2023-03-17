@@ -718,7 +718,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = get(conn, redir_path)
-      assert html_response(conn, 200) =~ ~s|<div class="paginated"><div class="elements">|
+      assert html_response(conn, 200) =~ ~s|<div class="paginated"><div class="elements content">|
       assert html_response(conn, 200) =~ "part one"
       assert html_response(conn, 200) =~ ~s|<div class="content-break"></div>|
       assert html_response(conn, 200) =~ "part two"

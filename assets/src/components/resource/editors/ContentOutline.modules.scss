@@ -201,16 +201,24 @@
   .contentOutline,
   .groupedOutline {
     border-radius: 6px;
-    border-color: var(--color-gray-800);
-    background: var(--color-gray-800);
+    border-color: #3e3f44;
+    background: #3e3f44;
   }
 
   .toolbarButton {
     border-radius: 4px;
-    background: var(--color-gray-800);
+    background: #3e3f44;
 
     &:hover {
       background: var(--color-gray-900);
     }
+  }
+
+  .item {
+    background: var(--color-body-dark);
+  }
+
+  .groupContainer {
+    background: var(--color-body-dark);
   }
 }

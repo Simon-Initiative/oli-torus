@@ -77,7 +77,7 @@ export const Navbar = ({
 
   return (
     <div ref={ref}>
-      <nav className="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-900 relative shadow-lg lg:flex select-none z-30">
+      <nav className="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-800 relative shadow-lg lg:flex select-none z-30">
         <div className="w-full">
           <a className="block w-[200px] lg:mb-14 mx-auto" href={logo.href}>
             <img src={logo.src.light} className="inline-block dark:hidden" alt="logo" />
@@ -137,6 +137,30 @@ export const Navbar = ({
               ),
             )}
           </div>
+          <button
+            className="
+              block
+              no-underline
+              m-4
+              text-delivery-body-color
+              dark:text-delivery-body-color-dark
+              font-bold
+              hover:no-underline
+              border-b
+              border-transparent
+              hover:text-delivery-primary
+              dark:hover:text-delivery-primary:text-delivery-primary
+              active:text-delivery-primary-600
+              active:hover:text-delivery-primary-600
+            "
+            data-bs-toggle="modal"
+            data-bs-target="#help-modal"
+          >
+            Tech Support
+          </button>
+
+          <hr className="border-t border-gray-300 dark:border-gray-700" />
+
           <UserAccountMenu
             preview={preview}
             user={user}
@@ -146,25 +170,6 @@ export const Navbar = ({
             defaultTimezone={defaultTimezone}
             timezones={timezones}
           />
-          <hr className="border-t border-gray-300" />
-          <button
-            className="
-              block
-              no-underline
-              m-4
-              text-delivery-body-color
-              font-bold
-              hover:no-underline
-              border-b
-              border-transparent
-              hover:text-delivery-primary
-              active:text-delivery-primary-600
-            "
-            data-bs-toggle="modal"
-            data-bs-target="#help-modal"
-          >
-            Tech Support
-          </button>
         </div>
       </nav>
 

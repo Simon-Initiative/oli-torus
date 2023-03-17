@@ -11,10 +11,6 @@
       margin-right: 10px;
       white-space: nowrap;
 
-      &.add {
-        border-radius: 50%;
-      }
-
       &.warn {
         font-size: 20px;
         font-weight: 600;
@@ -43,6 +39,24 @@
 
         &:hover {
           background-color: var(--color-hover);
+        }
+      }
+    }
+  }
+}
+
+:global(html.dark) {
+  .groupBlockHeader {
+    .options {
+      .option {
+        &.active {
+          &:hover {
+            background-color: var(--color-primary);
+          }
+        }
+
+        &:hover {
+          background-color: var(--color-gray-700);
         }
       }
     }

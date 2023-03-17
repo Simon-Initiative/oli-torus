@@ -7,6 +7,14 @@
 @import 'text';
 @import 'button';
 
+/**
+ * Automatically style all links with blue text and underline on hover.
+ * External links will automatically get an arrow icon appended.
+ *
+ * We may want to consider removing this as it might cause more
+ * styling issues than it is worth. For links that require
+ * different styles, these will have to be explicity overriden.
+ */
 a,
 a.btn.btn-link {
   @apply text-blue-500 hover:text-blue-600 hover:underline;
@@ -22,6 +30,13 @@ a.external-link::after {
   font-family: 'Font Awesome 6 Free';
   font-weight: 600;
   content: '\f08e';
+}
+
+a.download::after {
+  @apply mx-1 text-sm;
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 600;
+  content: '\f019';
 }
 
 p {

@@ -127,17 +127,17 @@ defmodule Oli.Rendering.Content.Html do
   defp tableRowClass(_), do: ""
 
   def table(%Context{} = context, next, attrs) do
-    caption =
-      case attrs do
-        %{"caption" => c} -> caption(context, c)
-        _ -> ""
-      end
+    # caption =
+    #   case attrs do
+    #     %{"caption" => c} -> caption(context, c)
+    #     _ -> ""
+    #   end
 
-    [
-      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>#{caption}",
+    captioned_content(context, attrs, [
+      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
       next.(),
       "</table>\n"
-    ]
+    ])
   end
 
   def tr(%Context{} = _context, next, _) do

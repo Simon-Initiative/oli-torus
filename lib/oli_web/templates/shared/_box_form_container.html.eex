@@ -1,5 +1,5 @@
 
-<div class="block p-6 mt-20 rounded-lg shadow-lg bg-white dark:bg-slate-700 max-w-md mx-auto box-form-container">
+<div class="block p-6 mt-20 rounded-lg shadow-lg bg-white dark:bg-gray-700 max-w-md mx-auto box-form-container">
   <h5 class="text-center text-xl mb-4"><%= @title %></h5>
 
   <%= @inner_content %>

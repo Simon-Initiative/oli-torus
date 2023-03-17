@@ -600,11 +600,13 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                   executeAction={(message, action) => action.execute(message)}
                   messages={this.state.messages}
                 />
-                <div className="d-flex justify-content-end">
-                  <PersistenceStatus persistence={this.state.persistence} />
-                </div>
+                <div className="d-flex justify-content-end"></div>
                 <div className="d-flex justify-content-between mb-4">
-                  <div className="flex-1">{overviewLabel}</div>
+                  <div className="flex-1 py-2">{overviewLabel}</div>
+
+                  <div className="mx-4 py-2">
+                    <PersistenceStatus persistence={this.state.persistence} />
+                  </div>
                   <CreateActivity
                     projectSlug={props.projectSlug}
                     editorMap={props.editorMap}

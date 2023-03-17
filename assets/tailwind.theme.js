@@ -1,4 +1,5 @@
 /* eslint-disable */
+const tailwindColors = require('tailwindcss/colors');
 
 /**
  * Extend the default tailwind color palette by overriding specific colors.
@@ -7,7 +8,8 @@
  * palette of shades for a specific color: https://www.tailwindshades.com/
  */
 const colors = {
-  ...require('tailwindcss/colors'),
+  ...tailwindColors,
+  gray: tailwindColors.neutral,
   blue: {
     DEFAULT: '#3B76D3',
     50: '#D1DFF5',
@@ -60,23 +62,58 @@ module.exports = {
       800: '#404040',
       900: '#262626',
       dark: {
-        DEFAULT: colors.gray['900'],
-        50: '#262626',
-        100: '#404040',
-        200: '#595959',
-        300: '#737373',
-        400: '#8c8c8c',
-        500: '#a6a6a6',
-        600: '#bfbfbf',
-        700: '#d9d9d9',
-        800: '#f2f2f2',
-        900: '#f9f9f9',
+        // DEFAULT: '#1E1E1E',
+        DEFAULT: '#2a2b2e',
+        50: '#B7B7B7',
+        100: '#ADADAD',
+        200: '#989898',
+        300: '#848484',
+        400: '#707070',
+        500: '#5B5B5B',
+        600: '#474747',
+        700: '#323232',
+        800: '#1E1E1E',
+        900: '#020202',
       },
     },
     'body-color': {
       DEFAULT: '#373A44',
       dark: {
-        DEFAULT: colors.white,
+        DEFAULT: '#f5f5f5',
+      },
+    },
+    workspace: {
+      header: {
+        bg: {
+          DEFAULT: '#f5f8fb',
+          dark: {
+            DEFAULT: '#3e3f44;',
+          },
+        },
+      },
+      breadcrumb: {
+        bg: {
+          DEFAULT: '',
+          dark: {
+            DEFAULT: '#3e3f44',
+          },
+        },
+      },
+      sidebar: {
+        bg: {
+          DEFAULT: '#e3e7ec',
+          dark: {
+            DEFAULT: '#3e3f44',
+          },
+        },
+      },
+      footer: {
+        bg: {
+          DEFAULT: colors.gray['100'],
+          dark: {
+            DEFAULT: 'transparent',
+          },
+        },
       },
     },
     'choice-selected-bg': colors.blue['400'],
@@ -113,7 +150,7 @@ module.exports = {
       footer: {
         DEFAULT: '#eceef1',
         dark: {
-          DEFAULT: '#222439',
+          DEFAULT: '#323233',
         },
       },
       header: {
@@ -148,7 +185,7 @@ module.exports = {
           bg: {
             DEFAULT: '#222439',
             dark: {
-              DEFAULT: '#2f3d52',
+              DEFAULT: colors.gray['600'],
             },
           },
         },
