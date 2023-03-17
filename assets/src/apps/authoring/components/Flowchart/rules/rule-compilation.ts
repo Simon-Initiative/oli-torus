@@ -1,68 +1,49 @@
-import guid from '../../../../../utils/guid';
-import { IAdaptiveRule } from '../../../../delivery/store/features/activities/slice';
+import { IActivity, IAdaptiveRule } from '../../../../delivery/store/features/activities/slice';
 import {
   SequenceEntry,
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
-import { AllPaths, AlwaysGoToPath } from '../paths/path-types';
-import { createNavigationAction } from './create-navigation-action';
+import { getScreenQuestionType } from '../paths/path-options';
+import { isAlwaysPath } from '../paths/path-utils';
+import { generateDropdownRules } from './create-dropdown-rules';
+import { generateAlwaysGoTo } from './create-generic-rule';
 
 export const generateRules = (
-  paths: AllPaths[],
+  screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
 ): IAdaptiveRule[] => {
-  return paths.map(generateRule(sequence)).flat();
-};
-// These handle compiling paths into rules.
-const generateRule =
-  (sequence: SequenceEntry<SequenceEntryChild>[]) =>
-  (path: AllPaths): IAdaptiveRule[] => {
-    switch (path.type) {
-      case 'end-of-activity':
-        return []; // no real rule to generate
-      // case 'correct':
-      //   return generateMultipleChoiceCorrect(path);
-      case 'always-go-to':
-        return generateAlwaysGoTo(path, sequence);
-      default:
-        console.error('Unknown rule type', path.type);
-        return [];
-    }
-  };
-
-const createRuleTemplate = (label: string): IAdaptiveRule => {
-  return {
-    id: `r:${guid()}.${label}`,
-    name: label,
-    priority: 1,
-    event: {
-      type: `r:${guid()}.default`,
-      params: {
-        actions: [],
-      },
-    },
-    correct: true,
-    default: true,
-    disabled: false,
-    conditions: {
-      id: `b:${guid()}`,
-      all: [],
-    },
-    forceProgress: false,
-    additionalScore: 0,
-  };
-};
-
-const generateAlwaysGoTo = (
-  path: AlwaysGoToPath,
-  sequence: SequenceEntry<SequenceEntryChild>[],
-): IAdaptiveRule[] => {
-  const rule = createRuleTemplate('always');
-  const sequenceEntry = sequence.find((s) => s.resourceId === path.destinationScreenId);
-  if (!sequenceEntry) {
-    console.warn("Couldn't find sequence entry for path", path);
+  try {
+    const rules = _generateRules(screen, sequence);
+    console.info('Debug rules generated:', rules);
+    return rules;
+  } catch (e) {
+    console.error('Error generating rules for screen', screen, e);
     return [];
   }
-  rule.event.params.actions = [createNavigationAction(sequenceEntry.custom.sequenceId)];
-  return [rule];
+};
+
+export const _generateRules = (
+  screen: IActivity,
+  sequence: SequenceEntry<SequenceEntryChild>[],
+): IAdaptiveRule[] => {
+  const questionType = getScreenQuestionType(screen);
+  switch (questionType) {
+    case 'dropdown':
+      return generateDropdownRules(screen, sequence);
+    default:
+      return createBlankScreenRules(screen, sequence);
+  }
+};
+
+const createBlankScreenRules = (
+  screen: IActivity,
+  sequence: SequenceEntry<SequenceEntryChild>[],
+): IAdaptiveRule[] => {
+  const notBlank = screen.authoring?.flowchart?.screenType !== 'blank';
+  notBlank && console.warn('Using generic blank screen rules for screen', screen);
+  const paths = screen.authoring?.flowchart?.paths || [];
+  return paths
+    .filter(isAlwaysPath)
+    .map((path) => generateAlwaysGoTo(path, sequence))
+    .flat();
 };

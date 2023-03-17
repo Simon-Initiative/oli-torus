@@ -11,6 +11,7 @@ import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
+import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -28,6 +29,7 @@ const widgets: any = {
   TorusAudioBrowser: TorusAudioBrowser,
   TorusVideoBrowser: TorusVideoBrowser,
   OptionsCorrectPicker: OptionsCorrectPicker,
+  OptionsCustomErrorFeedbackAuthoring: OptionsCustomErrorFeedbackAuthoring,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({

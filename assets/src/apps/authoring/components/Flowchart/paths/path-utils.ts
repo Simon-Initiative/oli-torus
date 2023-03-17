@@ -26,9 +26,11 @@ import {
   AlwaysGoToPath,
   ComponentPaths,
   componentTypes,
+  CorrectPath,
   DestinationPath,
   DestinationPaths,
   EndOfActivityPath,
+  IncorrectPath,
   OptionCommonErrorPath,
 } from './path-types';
 
@@ -61,6 +63,13 @@ export const isEndOfActivityPath = (path: AllPaths): path is EndOfActivityPath =
 
 export const isDestinationPath = (path: AllPaths): path is DestinationPaths =>
   'destinationScreenId' in path;
+
+export const isAlwaysPath = (path: AllPaths): path is AlwaysGoToPath =>
+  path.type === 'always-go-to';
+
+export const isCorrectPath = (path: AllPaths): path is CorrectPath => path.type === 'correct';
+
+export const isIncorrectPath = (path: AllPaths): path is IncorrectPath => path.type === 'incorrect';
 
 export const isOptionCommonErrorPath = (path: AllPaths): path is OptionCommonErrorPath =>
   path.type === 'option-common-error';
