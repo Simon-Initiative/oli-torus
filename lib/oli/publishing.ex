@@ -499,6 +499,24 @@ defmodule Oli.Publishing do
     )
   end
 
+  @doc """
+  Returns true if the project is published (has at least one publication)
+
+   ## Examples
+
+      iex> is_published?("published-project-slug")
+      true
+
+      iex> is_published?("unpublished-project-slug")
+      false
+  """
+  def project_published?(project_slug) do
+    case get_latest_published_publication_by_slug(project_slug) do
+      nil -> false
+      _ -> true
+    end
+  end
+
   def last_publication_query(),
     do:
       from(p in Publication,
