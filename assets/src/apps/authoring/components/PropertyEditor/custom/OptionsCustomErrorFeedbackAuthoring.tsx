@@ -51,9 +51,14 @@ export const OptionsCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> =
       }
       newFeedback[index] = newOptionValue;
 
+      if (newFeedback.length > options.length) {
+        // Used to have more options, we can trim the feedback now.
+        newFeedback.splice(options.length);
+      }
+
       onChange(newFeedback);
     },
-    [onChange, value],
+    [onChange, options.length, value],
   );
 
   return (

@@ -39,7 +39,7 @@ export const createOptionCommonErrorPath = (
   return {
     ...createDestinationPath(`option-common-error-${selectedOption}`, destinationScreenId),
     type: 'option-common-error',
-    selectedOption,
+    selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: dropdown.id,
     label: 'Selected option ' + optionLabel.substring(0, 20),
     priority: 4,

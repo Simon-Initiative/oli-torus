@@ -34,6 +34,10 @@ export interface IDropdownPartLayout extends IBasePartLayout {
     maxScore: number;
     showLabel: boolean;
     optionLabels: string[];
+    correctAnswer?: number;
+    correctFeedback?: string;
+    incorrectFeedback?: string;
+    commonErrorFeedback?: string[];
     customCssClass: string;
     requiresManualGrading: boolean;
   };
@@ -80,7 +84,7 @@ export interface ActivityContent {
   [key: string]: any;
 }
 
-interface ICondition {
+export interface ICondition {
   fact: string; // ex: stage.dropdown.selectedItem,
   id: string; // ex: c:3723326255,
   operator: string; // ex: equal,
@@ -133,7 +137,7 @@ export interface IAdaptiveRule {
   conditions: {
     any?: ICondition[];
     all?: ICondition[];
-    id: string;
+    id?: string;
   };
   correct: boolean;
   default: boolean;

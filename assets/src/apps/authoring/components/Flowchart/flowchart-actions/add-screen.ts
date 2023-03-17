@@ -125,11 +125,7 @@ export const addFlowchartScreen = createAsyncThunk(
           }
 
           if (fromScreen.authoring?.flowchart) {
-            fromScreen.authoring.rules = generateRules(
-              fromScreen.authoring.flowchart.paths,
-              sequence,
-              fromScreen,
-            );
+            fromScreen.authoring.rules = generateRules(fromScreen, sequence);
           }
 
           // TODO - these two should be a single operation?
