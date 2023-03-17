@@ -13,6 +13,8 @@ defmodule OliWeb.ProjectController do
   alias Oli.Authoring.Clone
   alias Oli.Activities
   alias OliWeb.Insights
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources.Collaboration
 
   def overview(conn, project_params) do
     project = conn.assigns.project
@@ -22,6 +24,8 @@ defmodule OliWeb.ProjectController do
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    {collab_space_config, revision_slug} = get_collab_space_config_and_revision(project.slug)
 
     params = %{
       breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
@@ -38,7 +42,9 @@ defmodule OliWeb.ProjectController do
       publishers: Inventories.list_publishers(),
       title: "Overview | " <> project.title,
       attributes: project.attributes,
-      language_codes: Oli.LanguageCodesIso639.codes()
+      language_codes: Oli.LanguageCodesIso639.codes(),
+      collab_space_config: collab_space_config,
+      revision_slug: revision_slug
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
@@ -57,6 +63,18 @@ defmodule OliWeb.ProjectController do
     |> send_download({:binary, Insights.export(project)},
       filename: "analytics_#{project.slug}.zip"
     )
+  end
+
+  defp get_collab_space_config_and_revision(project_slug) do
+    %{slug: revision_slug} = AuthoringResolver.root_container(project_slug)
+
+    {:ok, collab_space_config} =
+      Collaboration.get_collab_space_config_for_page_in_project(
+        revision_slug,
+        project_slug
+      )
+
+    {collab_space_config, revision_slug}
   end
 
   def review_project(conn, _params) do
@@ -99,6 +117,7 @@ defmodule OliWeb.ProjectController do
         |> redirect(to: Routes.project_path(conn, :overview, project))
 
       {:error, %Ecto.Changeset{} = changeset} ->
+        {collab_space_config, revision_slug} = get_collab_space_config_and_revision(project.slug)
         overview_params = %{
           breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
           active: :overview,
@@ -110,7 +129,9 @@ defmodule OliWeb.ProjectController do
           publishers: Inventories.list_publishers(),
           title: "Overview | " <> project.title,
           language_codes: Oli.LanguageCodesIso639.codes(),
-          can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?()
+          can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?(),
+          collab_space_config: collab_space_config,
+          revision_slug: revision_slug
         }
 
         conn

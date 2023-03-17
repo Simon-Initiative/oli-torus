@@ -784,6 +784,7 @@ defmodule OliWeb.Router do
       live("/students", Delivery.InstructorDashboard.StudentsLive)
       live("/content", Delivery.InstructorDashboard.ContentLive)
       live("/discussions", Delivery.InstructorDashboard.DiscussionsLive)
+      live("/course_discussion", Delivery.InstructorDashboard.CourseDiscussionLive)
       live("/assignments", Delivery.InstructorDashboard.AssignmentsLive)
       live("/manage", Delivery.InstructorDashboard.ManageLive)
     end
@@ -799,6 +800,7 @@ defmodule OliWeb.Router do
       live("/preview/students", Delivery.InstructorDashboard.StudentsLive, :preview)
       live("/preview/content", Delivery.InstructorDashboard.ContentLive, :preview)
       live("/preview/discussions", Delivery.InstructorDashboard.DiscussionsLive, :preview)
+      live("/preview/course_discussion", Delivery.InstructorDashboard.CourseDiscussionLive, :preview)
       live("/preview/assignments", Delivery.InstructorDashboard.AssignmentsLive, :preview)
       live("/preview/manage", Delivery.InstructorDashboard.ManageLive, :preview)
     end

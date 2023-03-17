@@ -83,13 +83,13 @@ defmodule OliWeb.Sections.OverviewLiveTest do
   end
 
   describe "user can access when is logged in as an instructor and is enrolled in the section" do
-    setup [:user_conn]
+    setup [:user_conn, :section_with_assessment]
 
     test "loads correctly", %{
       conn: conn,
-      user: user
+      user: user,
+      section: section
     } do
-      section = insert(:section, %{type: :enrollable})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, _view, html} = live(conn, live_view_overview_route(section.slug))
@@ -100,13 +100,13 @@ defmodule OliWeb.Sections.OverviewLiveTest do
   end
 
   describe "admin is prioritized over instructor when both logged in" do
-    setup [:admin_conn, :user_conn]
+    setup [:admin_conn, :user_conn, :section_with_assessment]
 
     test "loads correctly", %{
       conn: conn,
-      user: user
+      user: user,
+      section: section
     } do
-      section = insert(:section, %{type: :enrollable})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, _view, html} = live(conn, live_view_overview_route(section.slug))
@@ -117,7 +117,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
   end
 
   describe "overview live view as admin" do
-    setup [:admin_conn, :create_section]
+    setup [:admin_conn, :section_with_assessment]
 
     test "returns 404 when section not exists", %{conn: conn} do
       conn = get(conn, live_view_overview_route("not_exists"))
@@ -125,9 +125,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert response(conn, 404)
     end
 
-    test "loads section data correctly", %{conn: conn} do
-      section = insert(:section, open_and_free: true)
-
+    test "loads section data correctly", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       assert render(view) =~ "Overview"
@@ -155,8 +153,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     end
 
     test "loads section links correctly", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{open_and_free: false})
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
-
       assert render(view) =~ "Curriculum"
       assert render(view) =~ "Manage the content delivered to students"
 
@@ -226,6 +224,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     end
 
     test "unlink section from lms", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{open_and_free: false})
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       assert render(view) =~ "LMS Admin"
@@ -274,13 +273,16 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       refute Sections.get_section_by_slug(section.slug)
     end
 
-    test "archives a section when it has students associated data", %{conn: conn} do
-      section = insert(:snapshot).section
+    test "archives a section when it has students associated data", %{
+      conn: conn,
+      section: section
+    } do
+      insert(:snapshot, section: section)
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       assert render(view) =~
-               "Delete Section"
+      "Delete Section"
 
       view
       |> element("button[phx-click=\"show_delete_modal\"]")
@@ -288,10 +290,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert view
              |> element("#delete_section_modal")
-             |> render() =~ """
-               This section has student data and will be archived rather than deleted.
-               Are you sure you want to archive it? You will no longer have access to the data. Archiving this section will make it so students can no longer access it.
-             """
+             |> render() =~
+               "This section has student data and will be archived rather than deleted.\n  Are you sure you want to archive it? You will no longer have access to the data. Archiving this section will make it so students can no longer access it.\n"
 
       view
       |> element("button[phx-click=\"delete_section\"]")
@@ -340,10 +340,29 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert %Section{status: :active} = Sections.get_section!(section.id)
     end
+
+    test "renders Collaboration Space config correctly (when not enabled by authoring)", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+      assert render(view) =~ "Collaboration Space"
+      assert render(view) =~ "You are not allowed to have a collaboration space in this resource"
+    end
+
+    test "renders Collaboration Space config correctly (when enabled by authoring)", %{
+      conn: conn
+    } do
+      {:ok, %{section: section}} = create_project_with_collab_space_and_posts()
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert render(view) =~ "Collaboration Space"
+      assert has_element?(view, "#collab_space_config")
+    end
   end
 
   describe "overview live view as instructor" do
-    setup [:instructor_conn, :create_section]
+    setup [:instructor_conn, :section_with_assessment]
 
     test "returns 404 when section not exists", %{conn: conn} do
       conn = get(conn, live_view_overview_route("not_exists"))
@@ -351,8 +370,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert response(conn, 404)
     end
 
-    test "loads section data correctly", %{conn: conn, instructor: instructor} do
-      section = insert(:section, open_and_free: true, type: :enrollable)
+    test "loads section data correctly", %{conn: conn, instructor: instructor, section: section} do
       enroll_user_to_section(instructor, section, :context_instructor)
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))

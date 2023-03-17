@@ -9,6 +9,8 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.Collaboration
 
   prop(user, :any)
   data(modal, :any, default: nil)
@@ -54,6 +56,14 @@ defmodule OliWeb.Sections.OverviewView do
           Sections.check_for_available_publication_updates(section)
           |> Enum.count()
 
+        %{slug: revision_slug} = DeliveryResolver.root_container(section.slug)
+
+        {:ok, collab_space_config} =
+          Collaboration.get_collab_space_config_for_page_in_section(
+            revision_slug,
+            section.slug
+          )
+
         {:ok,
          assign(socket,
            is_system_admin: type == :admin,
@@ -63,7 +73,10 @@ defmodule OliWeb.Sections.OverviewView do
            user: user,
            section: section,
            updates_count: updates_count,
-           submission_count: Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section)
+           submission_count:
+             Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section),
+           collab_space_config: collab_space_config,
+           resource_slug: revision_slug
          )}
     end
   end
@@ -137,6 +150,22 @@ defmodule OliWeb.Sections.OverviewView do
           <li><a href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)} class={"btn btn-link"}>Browse Collaborative Spaces</a></li>
           <li><button type="button" class=" btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button></li>
         </ul>
+      </Group>
+      <Group label="Collaboration Space" description="Allows to activate and configure a collaborative space for the root resource of a section">
+        <div class="container mx-auto">
+          {#if @collab_space_config && @collab_space_config.status != :disabled}
+            {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView, id: "collab_space_config",
+                session: %{
+                  "collab_space_config" => @collab_space_config,
+                  "section_slug" => @section.slug,
+                  "resource_slug" => @resource_slug,
+                  "is_overview_render" => true,
+                  "is_delivery" => true
+                })}
+          {#else}
+            <p class="ml-8 mt-2">You are not allowed to have a collaboration space in this resource.<br>Please contact the admin to be granted with that permission.</p>
+          {/if}
+        </div>
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">
         <ul class="link-list">
