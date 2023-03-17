@@ -36,6 +36,7 @@ import {
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
+import { generateRules } from '../rules/rule-compilation';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;
@@ -123,6 +124,14 @@ export const addFlowchartScreen = createAsyncThunk(
             setGoToAlwaysPath(fromScreen, createResults.resourceId);
           }
 
+          if (fromScreen.authoring?.flowchart) {
+            fromScreen.authoring.rules = generateRules(
+              fromScreen.authoring.flowchart.paths,
+              sequence,
+              fromScreen,
+            );
+          }
+
           // TODO - these two should be a single operation?
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
           await dispatch(upsertActivity({ activity: fromScreen }));
@@ -162,6 +171,8 @@ export const addFlowchartScreen = createAsyncThunk(
         title,
         tags: [],
       };
+
+      // TODO - figure out initial rules generation here.
       dispatch(saveActivity({ activity: reduxActivity, undoable: false, immediate: true }));
       await dispatch(upsertActivity({ activity: reduxActivity }));
 

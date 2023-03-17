@@ -5,10 +5,12 @@ import {
   selectActivityById,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
+import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { createEndOfActivityPath } from '../paths/path-factories';
+import { generateRules } from '../rules/rule-compilation';
 
 interface DeletePathPayload {
   pathId: string;
@@ -20,6 +22,7 @@ export const deletePath = createAsyncThunk(
   async (payload: DeletePathPayload, { dispatch, getState }) => {
     const { pathId, screenId } = payload;
     const rootState = getState() as AuthoringRootState;
+    const sequence = selectSequence(rootState);
     const screen = selectActivityById(rootState, screenId);
     if (!screen) return;
     const paths = screen.authoring?.flowchart?.paths;
@@ -30,6 +33,7 @@ export const deletePath = createAsyncThunk(
     }
     const modifiedScreen = clone(screen);
     modifiedScreen.authoring.flowchart.paths = newPaths;
+    modifiedScreen.authoring.rules = generateRules(newPaths, sequence, modifiedScreen);
 
     dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
     await dispatch(upsertActivity({ activity: modifiedScreen }));
