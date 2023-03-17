@@ -30,11 +30,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Broadcaster do
   end
 
   def broadcast_attempt_updated(resource_attempt_guid, activity_attempt_guid, change_type) do
-    PubSub.broadcast(
-      Oli.PubSub,
-      message_attempt(resource_attempt_guid),
-      {change_type,activity_attempt_guid}
-    )
+    # We only broadcast these messages when the live debugging aspect of the attempt debugger
+    # is enabled
+    if Oli.Features.enabled?("live-debugging") do
+      PubSub.broadcast(
+        Oli.PubSub,
+        message_attempt(resource_attempt_guid),
+        {change_type,activity_attempt_guid}
+      )
+    end
   end
 
   def subscribe_to_lms_grade_update(section_id, resource_access_id, _) do
