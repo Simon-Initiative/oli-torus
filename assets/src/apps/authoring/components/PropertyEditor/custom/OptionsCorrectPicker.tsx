@@ -41,7 +41,7 @@ export const OptionsCorrectPicker: React.FC<CorrectOptionProps> = ({
       const newVal = parseInt(e.currentTarget.value, 10);
       onChange(newVal);
     },
-    [id, onBlur, onChange],
+    [onChange],
   );
 
   return (
@@ -54,7 +54,7 @@ export const OptionsCorrectPicker: React.FC<CorrectOptionProps> = ({
         value={value === undefined ? -1 : value}
       >
         {options.map((option: string, index: number) => (
-          <option value={index} key={index}>
+          <option value={index + 1} key={index}>
             {option}
           </option>
         ))}
