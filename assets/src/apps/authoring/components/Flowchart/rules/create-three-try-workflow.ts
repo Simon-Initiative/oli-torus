@@ -60,8 +60,35 @@ export const generateThreeTryWorkflow = (
 
   // [?? A rule to catch an empty response]
 
-  // [A first/second-attempt specific incorrect rule with feedback, no nav] x n
-  for (const commonError of commonErrors) {
+  // [Common errors that have nav]
+  for (const commonError of commonErrors.filter((e) => e.destinationId)) {
+    rules.push(
+      generateDestinationRule(
+        `common-error-${rules.length}`,
+        commonError.conditions.map(newId),
+        commonError.destinationId || null,
+        false,
+        commonError.feedback,
+      ),
+    );
+  }
+
+  // [3+ incorrect, that sets the correct value in the control - with incorrect feedback plus nav]
+  incorrect.destinationId &&
+    rules.push(
+      generateDestinationRule(
+        'incorrect-3-times',
+        [thirdOrLaterTry(), ...incorrect.conditions.map(newId)],
+        incorrect.destinationId,
+        false,
+        DEFAULT_FILLED_IN_FEEDBACK,
+        [...setCorrectAction],
+      ),
+    );
+
+  // [Common errors that don't have nav]
+  // These have to come after the 3+ incorrect rule, but the ones with destinations set have to come before
+  for (const commonError of commonErrors.filter((e) => !e.destinationId)) {
     rules.push(
       generateDestinationRule(
         `common-error-${rules.length}`,
@@ -82,19 +109,6 @@ export const generateThreeTryWorkflow = (
         null,
         false,
         incorrect.feedback,
-      ),
-    );
-
-  // [A third (or later) (incorrect) attempt rule, that sets the correct value in the control - with incorrect feedback plus nav]
-  incorrect.destinationId &&
-    rules.push(
-      generateDestinationRule(
-        'incorrect-3-times',
-        [thirdOrLaterTry(), ...incorrect.conditions.map(newId)],
-        incorrect.destinationId,
-        false,
-        DEFAULT_FILLED_IN_FEEDBACK,
-        [...setCorrectAction],
       ),
     );
 
