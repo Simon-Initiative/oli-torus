@@ -159,7 +159,7 @@ export const listSettingButtonGroups = [
         const [, at] = target;
         Transforms.setNodes(
           editor,
-          { type: 'ul', style: undefined },
+          { type: 'ul', style: 'disc' },
           { at, match: (e) => Element.isElement(e) && e.type === 'ol', mode: 'lowest' },
         );
       },
@@ -179,7 +179,7 @@ export const listSettingButtonGroups = [
         const [, at] = target;
         Transforms.setNodes(
           editor,
-          { type: 'ol', style: undefined },
+          { type: 'ol', style: 'decimal' },
           { at, match: (e) => Element.isElement(e) && e.type === 'ul', mode: 'lowest' },
         );
       },
