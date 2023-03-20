@@ -524,7 +524,7 @@ defmodule OliWeb.PageDeliveryController do
         end,
       activity_map: context.activities,
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
-      alternatives_groups_fn: &Resources.alternatives_groups(&1, Resolver),
+      alternatives_groups_fn: fn -> Resources.alternatives_groups(section_slug, Resolver) end,
       alternatives_selector_fn: &Resources.Alternatives.select/2,
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       bib_app_params: context.bib_revisions,
