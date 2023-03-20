@@ -47,7 +47,7 @@ export const FormulaToolbar: React.FC<Props> = ({ setSubtype, subtype }) => {
       </div>
 
       {active?.reference && (
-        <a target="_blank" rel="noreferrer" href={active.reference}>
+        <a className="external" target="_blank" rel="noreferrer" href={active.reference}>
           {active.label} Reference
         </a>
       )}

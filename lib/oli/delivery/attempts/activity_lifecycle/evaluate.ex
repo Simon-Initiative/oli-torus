@@ -139,9 +139,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         Logger.debug("Out of: #{out_of}")
 
         client_evaluations = to_client_results(score, out_of, part_inputs)
-
         if scoringContext.isManuallyGraded do
-          # TODO: update part attempts?
+
+          case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
+            nil -> Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
+            activity_attempt -> update_activity_attempt(activity_attempt, %{lifecycle_state: :submitted, date_submitted: DateTime.utc_now()})
+          end
+
           {:ok, decodedResults}
         else
           case apply_client_evaluation(
@@ -374,9 +378,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   def update_part_attempts_and_get_activity_attempts(resource_attempt, datashop_session_id) do
-    resource_attempt.id
-    |> get_latest_activity_attempts()
-    |> Enum.reduce_while(
+
+    activity_attempts = case resource_attempt.revision do
+      %{content: %{"advancedDelivery" => true}} -> get_latest_non_active_activity_attempts(resource_attempt.id)
+      _ -> get_latest_activity_attempts(resource_attempt.id)
+    end
+
+    Enum.reduce_while(
+      activity_attempts,
       {0, [], [], []},
       fn activity_attempt,
          {
@@ -657,7 +666,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   # Evaluate a list of part_input submissions for a matching list of part_attempt records
-  defp evaluate_submissions(_, [], _), do: {:error, "nothing to process"}
+  defp evaluate_submissions(_, [], _) do
+    {:ok, []}
+  end
+
 
   defp evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts) do
     activity_attempt =

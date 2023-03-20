@@ -1,4 +1,11 @@
-/** Bootstrap Shims **/
+/**
+ * Bootstrap Shims
+ *
+ * These are temporary styles intended to bridge the gap of conversion
+ * from bootstrap to a pure-tailwind style approach. These should only
+ * be tweaked or utilzed to fix existing code but should not be relied
+ * upon for forward development.
+ **/
 @import './bs/accordion';
 @import './bs/modal';
 @import './bs/nav-tabs';
@@ -7,6 +14,7 @@
 @import './bs/spinner';
 @import './bs/switch';
 @import './bs/popover';
+@import './bs/tooltip';
 
 .btn {
   @apply px-3 py-2 rounded-sm cursor-pointer;
@@ -50,7 +58,7 @@
   @apply text-white hover:text-white bg-blue-400 hover:bg-blue-500;
 }
 .btn-light {
-  @apply text-gray-800 hover:text-gray-800 bg-gray-100 hover:bg-gray-200;
+  @apply text-gray-800 dark:text-white hover:text-gray-800 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-500;
 }
 .btn-dark {
   @apply text-white hover:text-white bg-gray-700 hover:bg-gray-900;
@@ -90,7 +98,7 @@
 
 .btn[disabled],
 .btn.disabled {
-  @apply text-gray-400 no-underline hover:no-underline cursor-default hover:bg-inherit;
+  @apply text-gray-400 dark:text-gray-500  no-underline hover:no-underline cursor-default hover:bg-inherit;
 }
 
 .btn-outline-primary[disabled],
@@ -119,7 +127,7 @@
 .btn-info[disabled],
 .btn-light[disabled],
 .btn-dark[disabled] {
-  @apply text-gray-400 bg-gray-200 hover:bg-gray-200 cursor-default;
+  @apply text-gray-400 bg-gray-200 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-default;
 }
 
 .container {
@@ -167,6 +175,7 @@
             absolute
             hidden
             bg-white
+            dark:bg-gray-900
             text-base
             z-50
             float-left
@@ -202,13 +211,15 @@ h6.dropdown-item {
             w-full
             whitespace-nowrap
             bg-transparent
-            text-gray-700
-            hover:bg-gray-100;
+            text-gray-800
+            dark:text-white
+            hover:bg-gray-100
+            dark:hover:bg-gray-800;
 }
 
 a.dropdown-item,
 .dropdown-item a {
-  @apply no-underline text-gray-700;
+  @apply no-underline text-gray-700 dark:text-white;
 }
 
 .nav nav-tabs {
@@ -228,7 +239,7 @@ a.dropdown-item,
       border-x-0 border-t-0 border-b-2 border-transparent
       px-6
       py-3
-      hover:border-transparent hover:bg-gray-100
+      hover:border-transparent hover:bg-gray-100 dark:hover:bg-gray-700
       focus:border-transparent;
 }
 
@@ -244,7 +255,7 @@ input.form-control,
 .input-group select,
 select.custom-select,
 select.form-control {
-  @apply border py-1 px-1.5 border-gray-300 rounded w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700;
+  @apply border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700;
 }
 
 input.form-control-sm,
@@ -273,7 +284,7 @@ input.form-control-sm,
 }
 
 .form-group input[type='file'] {
-  @apply border border-gray-300 p-1 rounded;
+  @apply border border-neutral-300 p-1 rounded;
 }
 
 .input-group {
@@ -285,11 +296,11 @@ input.form-control-sm,
 }
 
 .input-group-append {
-  @apply flex items-stretch rounded-tr-none rounded-br-none rounded text-gray-600  border-0;
+  @apply flex items-stretch rounded-tr-none rounded-br-none rounded text-neutral-600  border-0;
 }
 
 .input-group-append button {
-  @apply rounded-none border-r-0 border-gray-300 last:border last:rounded-tr-md last:rounded-br-md whitespace-nowrap;
+  @apply rounded-none border-r-0 border-neutral-300 last:border last:rounded-tr-md last:rounded-br-md whitespace-nowrap;
 }
 
 .text-success {
@@ -307,14 +318,14 @@ input.form-control-sm,
 }
 
 .pagination {
-  @apply flex list-style-none;
+  @apply flex list-style-none gap-1;
 }
 
 .page-item .page-link {
-  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-gray-800 no-underline cursor-pointer;
+  @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-body-color dark:text-body-color-dark no-underline cursor-pointer;
 }
 
-.page-item:not(.disabled) .page-link {
+.page-item:not(.disabled):not(.active) .page-link {
   @apply hover:text-gray-800 hover:bg-gray-200 focus:shadow-none;
 }
 
@@ -323,7 +334,7 @@ input.form-control-sm,
 }
 
 .page-item.active .page-link {
-  @apply bg-blue-500 text-white;
+  @apply bg-blue-500 text-white hover:bg-blue-500 hover:text-white;
 }
 
 .page-item.disabled .page-link {
@@ -355,7 +366,7 @@ input.form-control-sm,
 }
 
 .alert-info {
-  @apply bg-indigo-100 text-indigo-700;
+  @apply bg-blue-50 text-blue-700;
 }
 
 .alert-light {
@@ -413,11 +424,11 @@ input.form-control-sm,
 }
 
 .card {
-  @apply block p-6 rounded-lg shadow-lg bg-white text-gray-700 dark:bg-slate-800 dark:text-gray-100;
+  @apply block p-6 rounded-lg shadow-lg bg-white dark:bg-[#3e3f44];
 }
 
 .card-body {
-  @apply text-base dark:text-gray-100;
+  @apply text-base;
 }
 
 .modal {
@@ -429,7 +440,7 @@ input.form-control-sm,
 }
 
 .modal-content {
-  @apply border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current;
+  @apply border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white dark:bg-body-dark bg-clip-padding rounded-md outline-none;
 }
 
 .modal-header {
@@ -445,7 +456,7 @@ input.form-control-sm,
 }
 
 .modal-dialog .modal-header .btn-close {
-  @apply box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline m-0;
+  @apply box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline m-0;
 }
 
 .flex-fill {
@@ -496,16 +507,16 @@ input.form-control-sm,
 }
 
 table {
-  @apply min-w-full border dark:border-gray-800 dark:text-gray-300;
+  @apply min-w-full border dark:border-gray-600 dark:text-gray-300;
 }
 table thead th {
-  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-delivery-body-dark dark:border-gray-800;
+  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-gray-600 dark:border-gray-600;
 }
 table tr {
-  @apply border-b dark:border-gray-800;
+  @apply border-b dark:border-gray-600;
 }
 table td {
-  @apply border-r p-2 dark:border-gray-800;
+  @apply border-r p-2 dark:border-gray-600;
 }
 
 table.table-striped tbody tr:nth-child(even) {

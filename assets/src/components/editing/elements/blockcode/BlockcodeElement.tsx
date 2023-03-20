@@ -8,7 +8,7 @@ import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguag
 import * as monaco from 'monaco-editor';
 import { RefEditorInstance } from '@uiw/react-monacoeditor';
 import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
-import { DropdownSelect, DropdownItem } from 'components/common/DropdownSelect';
+import { Dropdown } from 'react-bootstrap';
 import './BlockcodeElement.scss';
 
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
@@ -81,29 +81,32 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
 
   return (
     <div {...props.attributes} contentEditable={false}>
-      <DropdownSelect
-        className="my-2"
-        text={props.model.language}
-        bsBtnClass="btn-outline-secondary btn-sm"
-      >
-        {CodeLanguages.all().map(({ prettyName }, i) => (
-          <DropdownItem
-            key={i}
-            onClick={() => {
-              onEdit({ language: prettyName });
+      <Dropdown>
+        <Dropdown.Toggle className="my-2" variant="outline-primary" size="sm">
+          {props.model.language}
+          <i className="fa-solid fa-caret-down ml-2"></i>
+        </Dropdown.Toggle>
 
-              const model = editorRef.current?.editor?.getModel();
-              if (model) {
-                monaco.editor.setModelLanguage(model, prettyName);
-              }
-            }}
-            className={prettyName === props.model.language ? 'active' : ''}
-          >
-            {prettyName}
-          </DropdownItem>
-        ))}
-      </DropdownSelect>
-      <div ref={editorContainer} className="border">
+        <Dropdown.Menu>
+          {CodeLanguages.all().map(({ prettyName }, i) => (
+            <Dropdown.Item
+              key={i}
+              onClick={() => {
+                onEdit({ language: prettyName });
+
+                const model = editorRef.current?.editor?.getModel();
+                if (model) {
+                  monaco.editor.setModelLanguage(model, prettyName);
+                }
+              }}
+              className={prettyName === props.model.language ? 'active' : ''}
+            >
+              {prettyName}
+            </Dropdown.Item>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown>
+      <div ref={editorContainer}>
         <Suspense fallback={<div>Loading...</div>}>
           <MonacoEditor
             ref={editorRef}

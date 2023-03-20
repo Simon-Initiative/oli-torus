@@ -14,7 +14,7 @@ export const RemoveButton: React.FC<Props> = (props) => (
     ariaLabel="Remove"
     editMode={props.editMode}
     action={props.onClick}
-    className="text-body-color hover:text-red-500"
+    className="text-body-color dark:text-body-color-dark hover:text-red-500"
   >
     <i className="fa-solid fa-xmark fa-xl"></i>
   </AuthoringButton>

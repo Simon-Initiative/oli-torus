@@ -10,6 +10,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Publishing.DeliveryResolver, as: Resolver
@@ -20,6 +21,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
   alias Oli.Resources.{Collaboration, PageContent, Revision}
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
@@ -35,7 +37,9 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          if Sections.is_instructor?(user, section_slug) do
+          is_instructor = Sections.is_instructor?(user, section_slug)
+
+          if is_instructor do
             conn
             |> redirect(
               to:
@@ -46,6 +50,14 @@ defmodule OliWeb.PageDeliveryController do
                 )
             )
           else
+            %{slug: revision_slug} = DeliveryResolver.root_container(section_slug)
+
+            {:ok, collab_space_config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                revision_slug,
+                section_slug
+              )
+
             render(conn, "index.html",
               title: section.title,
               description: section.description,
@@ -55,6 +67,9 @@ defmodule OliWeb.PageDeliveryController do
               preview_mode: false,
               page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
               container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+              collab_space_config: collab_space_config,
+              revision_slug: revision_slug,
+              is_instructor: is_instructor,
               progress: learner_progress(section.id, user.id)
             )
           end
@@ -109,6 +124,32 @@ defmodule OliWeb.PageDeliveryController do
             container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
           )
       end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  def assignments(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      assignments = Sections.get_graded_pages(section_slug, user.id)
+
+      render(
+        conn,
+        "assignments.html",
+        assignments: assignments,
+        section_slug: section_slug,
+        preview_mode: false
+      )
     else
       case section do
         %Section{open_and_free: true, requires_enrollment: false} ->
@@ -386,7 +427,8 @@ defmodule OliWeb.PageDeliveryController do
             conn,
             :transition
           ),
-        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
+        screenIdleTimeOutInSeconds:
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -538,7 +580,11 @@ defmodule OliWeb.PageDeliveryController do
         },
         collab_space_config: context.collab_space_config,
         is_instructor: context.is_instructor,
-        is_student: context.is_student
+        is_student: context.is_student,
+        scheduling_type: section_resource.scheduling_type,
+        end_date: section_resource.end_date,
+        # TODO: implement reading time estimation
+        est_reading_time: nil
       }
     )
   end
@@ -1038,4 +1084,5 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+
 end

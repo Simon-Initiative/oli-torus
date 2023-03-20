@@ -46,7 +46,7 @@ export const initializeFromContext = createAsyncThunk(
       ...params.context.activities[id],
     }));
     let pageModel = params.context.content.model;
-    if (!pageModel.length) {
+    if (!pageModel.length || !pageModel[0].children.length) {
       // this should be a "new" lesson, at no point should we allow the model
       // to be empty while controlled by the authoring tool
       // if there are any activities defined that are not in a group they will be

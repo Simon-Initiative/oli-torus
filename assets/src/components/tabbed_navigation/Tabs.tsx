@@ -15,7 +15,7 @@ const TabComponent: React.FunctionComponent<TabProps> = ({ index, children, acti
     {React.Children.map(
       children,
       (child, _index) =>
-        React.isValidElement(child) && React.cloneElement(child, { activetab: activeTab }),
+        React.isValidElement(child) && React.cloneElement(child as any, { activetab: activeTab }),
     )}
   </div>
 );
@@ -38,7 +38,7 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
                     setActiveTab(index);
                   }}
                   className={'nav-link' + (index === activeTab ? ' active' : '')}
-                  data-toggle="tab"
+                  data-bs-toggle="tab"
                   href="#"
                   role="tab"
                   aria-controls={'tab-' + index}
@@ -58,7 +58,7 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
           (child, index) =>
             React.isValidElement(child) &&
             isValidChild(child, TabbedNavigation) &&
-            React.cloneElement(child, { index, key: 'tab-content-' + index, activeTab }),
+            React.cloneElement(child as any, { index, key: 'tab-content-' + index, activeTab }),
         )}
       </div>
     </>

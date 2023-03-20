@@ -139,9 +139,28 @@
   </div>
 </div>
 
-
-
 <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
+
+<div class="grid grid-cols-12 py-5 border-b">
+  <div class="col-span-4 mr-4">
+    <h4>Collaboration Space</h4>
+    <div class="text-muted">Allows to activate and configure a collaborative space for the root resource of a project.</div>
+  </div>
+  <div class="col-span-8">
+    <div class="container mx-auto">
+      <%=
+        live_render(@conn, OliWeb.CollaborationLive.CollabSpaceConfigView,
+          session: %{
+            "collab_space_config" => @collab_space_config,
+            "project_slug" => @project.slug,
+            "resource_slug" => @revision_slug,
+            "is_overview_render" => true,
+          })
+      %>
+    </div>
+  </div>
+</div>
+
 
 <div class="grid grid-cols-12 py-5">
   <div class="col-span-4 mr-4">
@@ -165,7 +184,9 @@
     <div class="d-flex align-items-center">
       <%= case Oli.Publishing.get_latest_published_publication_by_slug(@project.slug) do %>
         <% nil -> %>
-        <button disabled class="btn btn-link action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
+        <button disabled class="btn btn-link action-button">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Project must be published to generate a datashop export file.">Download</span>
+        </button>
         <% _pub -> %>
         <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-link action-button") %>
       <% end %>
@@ -175,6 +196,7 @@
       <button type="button" class="btn btn-link text-danger action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
       <span>Permanently delete this project.</span>
     </div>
+</p>
   </div>
 </div>
 </div>

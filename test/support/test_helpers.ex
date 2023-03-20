@@ -15,6 +15,8 @@ defmodule Oli.TestHelpers do
   alias Oli.Publishing
   alias OliWeb.Common.{LtiSession, SessionContext}
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Gating.GatingConditionData
+  alias Oli.Resources.ResourceType
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -626,7 +628,6 @@ defmodule Oli.TestHelpers do
         children: [unit_one_resource.id, page_revision.resource.id],
         content: %{},
         deleted: false,
-        slug: "root_container",
         title: "Root Container"
       })
 
@@ -680,6 +681,435 @@ defmodule Oli.TestHelpers do
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
+  end
+
+  def section_with_gating_conditions(_context) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+    student = insert(:user)
+
+    # Create graded pages
+    graded_page_1_resource = insert(:resource)
+    graded_page_2_resource = insert(:resource)
+    graded_page_3_resource = insert(:resource)
+    graded_page_4_resource = insert(:resource)
+    graded_page_5_resource = insert(:resource)
+
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_1_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_2_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_3_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_4_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_5_resource.id})
+
+    graded_page_1_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 1 - Level 1 (w/ no date)",
+        graded: true,
+        resource: graded_page_1_resource
+      )
+
+    graded_page_2_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 2 - Level 0 (w/ date)",
+        graded: true,
+        resource: graded_page_2_resource
+      )
+
+    graded_page_3_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 3 - Level 1 (w/ no date)",
+        graded: true,
+        resource: graded_page_3_resource
+      )
+
+    graded_page_4_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 4 - Level 0 (w/ gating condition)",
+        graded: true,
+        resource: graded_page_4_resource
+      )
+
+    graded_page_5_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 5 - Level 0 (w/ student gating condition)",
+        graded: true,
+        resource: graded_page_5_resource
+      )
+
+    # Create a unit inside the project
+    unit_one_resource = insert(:resource)
+
+    insert(:project_resource, %{
+      resource_id: unit_one_resource.id,
+      project_id: project.id
+    })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [graded_page_1_resource.id, graded_page_2_resource.id],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Unit #1",
+        resource: unit_one_resource,
+        slug: "first_unit"
+      })
+
+    # Create root container for the project
+    root_container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: root_container_resource.id})
+
+    root_container_revision =
+      insert(:revision, %{
+        resource: root_container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          unit_one_resource.id,
+          graded_page_3_resource.id,
+          graded_page_4_resource.id,
+          graded_page_5_resource.id
+        ],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publicate project, container, pages and unit
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_container_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: root_container_resource,
+      revision: root_container_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_1_resource,
+      revision: graded_page_1_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_2_resource,
+      revision: graded_page_2_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_3_resource,
+      revision: graded_page_3_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_4_resource,
+      revision: graded_page_4_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_5_resource,
+      revision: graded_page_5_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: unit_one_resource,
+      revision: unit_one_revision
+    })
+
+    # Create section
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    enroll_user_to_section(student, section, :context_learner)
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_4_resource,
+      user: nil,
+      data: %GatingConditionData{end_datetime: ~U[2023-01-12 13:30:00Z]}
+    })
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_5_resource,
+      user: nil,
+      data: %GatingConditionData{end_datetime: ~U[2023-06-05 14:00:00Z]}
+    })
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_5_resource,
+      user: student,
+      data: %GatingConditionData{end_datetime: ~U[2023-07-08 14:00:00Z]}
+    })
+
+    %{
+      section: section,
+      graded_page_1: graded_page_1_revision,
+      graded_page_2: graded_page_2_revision,
+      graded_page_3: graded_page_3_revision,
+      graded_page_4: graded_page_4_revision,
+      graded_page_5: graded_page_5_revision,
+      student_with_gating_condition: student
+    }
+  end
+
+  def section_with_assessment_without_collab_space(_context, deployment \\ nil) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Graded page revision
+    page_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Progress test revision",
+        graded: true,
+        content: %{"advancedDelivery" => true}
+      )
+
+    # Associate nested graded page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+
+    unit_one_resource = insert(:resource)
+
+    # Associate unit to the project
+    insert(:project_resource, %{
+      resource_id: unit_one_resource.id,
+      project_id: project.id
+    })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "The first unit",
+        resource: unit_one_resource,
+        slug: "first_unit"
+      })
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [unit_one_resource.id, page_revision.resource.id],
+        content: %{},
+        deleted: false,
+        collab_space_config: nil,
+        title: "Root Container without collab space"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    # Publish nested container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: unit_one_resource,
+      revision: unit_one_revision,
+      author: author
+    })
+
+    # Publish nested page resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
+
+    section =
+      if deployment do
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          lti_1p3_deployment: deployment,
+          registration_open: true,
+          type: :enrollable
+        )
+      else
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+      end
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    {:ok, %{section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}}
+  end
+
+  def create_project_with_collab_space_and_posts() do
+    user = insert(:user)
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Create collab space
+    collab_space_config = build(:collab_space_config)
+
+    # Create page with collab space
+    page_resource_cs = insert(:resource)
+
+    page_revision_cs =
+      insert(:revision, %{
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        collab_space_config: collab_space_config,
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page with collab",
+        resource: page_resource_cs,
+        slug: "page_collab"
+      })
+
+    # Associate page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_cs.id})
+
+    # Create page
+    page_resource = insert(:resource)
+
+    page_revision =
+      insert(:revision, %{
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 1",
+        resource: page_resource,
+        slug: "page_one",
+        collab_space_config: nil
+      })
+
+    # Associate page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
+
+    # Create collab space for root container
+    root_container_collab_space_config = build(:collab_space_config, %{status: :enabled})
+
+    # root container
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_resource_cs.id, page_resource.id],
+        content: %{},
+        collab_space_config: root_container_collab_space_config,
+        deleted: false,
+        title: "Root Container"
+      })
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: nil,
+        root_resource_id: container_resource.id
+      })
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    # Publish page resource
+    insert(:published_resource, %{
+      author: hd(project.authors),
+      publication: publication,
+      resource: page_resource,
+      revision: page_revision
+    })
+
+    # Publish page with collab space resource
+    insert(:published_resource, %{
+      author: hd(project.authors),
+      publication: publication,
+      resource: page_resource_cs,
+      revision: page_revision_cs
+    })
+
+    section = insert(:section, base_project: project)
+    {:ok, _root_section_resource} = Sections.create_section_resources(section, publication)
+
+    first_post = insert(:post, section: section, resource: page_resource_cs, user: user)
+
+    second_post =
+      insert(:post,
+        status: :submitted,
+        content: %{message: "Other post"},
+        section: section,
+        resource: page_resource_cs,
+        user: user
+      )
+
+    {:ok,
+     %{
+       project: project,
+       publication: publication,
+       page_revision: page_revision,
+       page_revision_cs: page_revision_cs,
+       page_resource_cs: page_resource_cs,
+       collab_space_config: collab_space_config,
+       root_container_collab_space_config: root_container_collab_space_config,
+       author: author,
+       section: section,
+       posts: [first_post, second_post]
+     }}
   end
 
   def project_section_revisions(_) do

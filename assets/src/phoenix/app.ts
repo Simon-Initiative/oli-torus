@@ -103,8 +103,34 @@ liveSocket.connect();
 // >> liveSocket.enableLatencySim(1000)
 window.liveSocket = liveSocket;
 
-$(() => {
+document.addEventListener('DOMContentLoaded', () => {
+  // initialize popover elements
+  [].slice
+    .call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    .map((el: HTMLElement) => new Popover(el));
+
+  // initialize tooltip elements
+  [].slice
+    .call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    .map((el: HTMLElement) => new Tooltip(el));
+
+  // initialize command button elements
   $('[data-action="command-button"]').on('click', commandButtonClicked);
+
+  // handle direct tab routing via url hash
+  if (location.hash !== '') {
+    // make tabs navigable by their link's href
+    [].slice
+      .call(document.querySelectorAll('a[data-bs-toggle="tab"][href="' + location.hash + '"]'))
+      .map((el: HTMLElement) => new Tab(el).show());
+  }
+
+  // change the url hash when a new tab is selected
+  [].slice.call(document.querySelectorAll('a[data-bs-toggle="tab"]')).map((el: HTMLElement) =>
+    el.addEventListener('show.bs.tab', (e: any) => {
+      return (location.hash = e.target?.getAttribute('href').substr(1));
+    }),
+  );
 
   (window as any).hljs.highlightAll();
 });

@@ -19,6 +19,7 @@ import {
   expandCellRight,
   splitCell,
 } from './table-cell-merge-operations';
+import { Dropdown } from 'react-bootstrap';
 
 // Dropdown menu that appears in each table cell.
 interface Props {
@@ -91,65 +92,42 @@ export const DropdownMenu: React.FC<Props> = ({ editor, model, mode = 'table' })
   };
 
   return (
-    <div className="dropdown table-dropdown" contentEditable={false}>
-      <button
-        type="button"
-        className="dropdown-toggle btn"
-        data-reference="parent"
-        data-toggle="dropdown"
-        aria-haspopup="true"
-        aria-expanded="false"
-      >
+    <Dropdown className="table-dropdown" contentEditable={false}>
+      <Dropdown.Toggle className="dropdown-toggle btn">
         <span className="sr-only">Toggle Table Cell Options</span>
         <i className="fa-solid fa-ellipsis-vertical"></i>
-      </button>
-      <div className="dropdown-menu">
-        <button type="button" className="dropdown-item" onClick={onToggleHeader}>
-          Toggle Header
-        </button>
-        <div className="dropdown-divider"></div>
+      </Dropdown.Toggle>
+      <Dropdown.Menu>
+        <Dropdown.Item onClick={onToggleHeader}>Toggle Header</Dropdown.Item>
+        <Dropdown.Divider />
 
-        <h6 className="dropdown-header">Border</h6>
+        <Dropdown.Header>Border</Dropdown.Header>
 
-        <button type="button" className="dropdown-item" onClick={onBorderStyle('solid')}>
-          Solid
-        </button>
+        <Dropdown.Item onClick={onBorderStyle('solid')}>Solid</Dropdown.Item>
 
-        <button type="button" className="dropdown-item" onClick={onBorderStyle('hidden')}>
-          Hidden
-        </button>
+        <Dropdown.Item onClick={onBorderStyle('hidden')}>Hidden</Dropdown.Item>
 
-        <div className="dropdown-divider"></div>
+        <Dropdown.Divider />
 
-        <h6 className="dropdown-header">Row Style</h6>
+        <Dropdown.Header>Row Style</Dropdown.Header>
 
-        <button type="button" className="dropdown-item" onClick={onRowStyle('plain')}>
-          Plain
-        </button>
+        <Dropdown.Item onClick={onRowStyle('plain')}>Plain</Dropdown.Item>
 
-        <button type="button" className="dropdown-item" onClick={onRowStyle('alternating')}>
-          Alternating Stripes
-        </button>
+        <Dropdown.Item onClick={onRowStyle('alternating')}>Alternating Stripes</Dropdown.Item>
 
         {mode == 'table' && <SplitOptions editor={editor} />}
         {mode == 'table' && <AlignmentOptions editor={editor} />}
         {mode == 'table' && <AddOptions editor={editor} model={model} />}
 
-        <div className="dropdown-divider"></div>
+        <Dropdown.Divider />
 
-        <h6 className="dropdown-header">Delete</h6>
-        <button type="button" className="dropdown-item" onClick={onDeleteRow}>
-          Row
-        </button>
-        <button type="button" className="dropdown-item" onClick={onDeleteColumn}>
-          Column
-        </button>
+        <Dropdown.Header>Delete</Dropdown.Header>
+        <Dropdown.Item onClick={onDeleteRow}>Row</Dropdown.Item>
+        <Dropdown.Item onClick={onDeleteColumn}>Column</Dropdown.Item>
 
-        <button type="button" className="dropdown-item" onClick={onDeleteTable}>
-          Table
-        </button>
-      </div>
-    </div>
+        <Dropdown.Item onClick={onDeleteTable}>Table</Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
   );
 };
 
@@ -211,21 +189,13 @@ const AddOptions: React.FC<{ editor: Editor; model: TableCell }> = ({ editor, mo
 
   return (
     <>
-      <div className="dropdown-divider"></div>
+      <Dropdown.Divider />
 
-      <h6 className="dropdown-header">Insert</h6>
-      <button type="button" className="dropdown-item" onClick={onAddRowBefore}>
-        Row before
-      </button>
-      <button type="button" className="dropdown-item" onClick={onAddRowAfter}>
-        Row after
-      </button>
-      <button type="button" className="dropdown-item" onClick={onAddColumnBefore}>
-        Column before
-      </button>
-      <button type="button" className="dropdown-item" onClick={onAddColumnAfter}>
-        Column after
-      </button>
+      <Dropdown.Header>Insert</Dropdown.Header>
+      <Dropdown.Item onClick={onAddRowBefore}>Row before</Dropdown.Item>
+      <Dropdown.Item onClick={onAddRowAfter}>Row after</Dropdown.Item>
+      <Dropdown.Item onClick={onAddColumnBefore}>Column before</Dropdown.Item>
+      <Dropdown.Item onClick={onAddColumnAfter}>Column after</Dropdown.Item>
     </>
   );
 };
@@ -245,8 +215,10 @@ const AlignmentOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
   );
   return (
     <>
-      <div className="dropdown-divider"></div>
-      <h6 className="dropdown-header">Alignment</h6>
+      <Dropdown.Divider />
+
+      <Dropdown.Header>Alignment</Dropdown.Header>
+
       <div className="ml-3 btn-group btn-group-toggle">
         <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('left')}>
           <i className="fa-solid fa-align-left"></i>
@@ -269,33 +241,20 @@ const SplitOptions: React.FC<{ editor: Editor }> = ({ editor }) => {
 
   return (
     <>
-      <div className="dropdown-divider"></div>
-      <h6 className="dropdown-header">Split / Merge</h6>
-      <button
-        disabled={!canMergeRight}
-        type="button"
-        className="dropdown-item"
-        onClick={() => expandCellRight(editor)}
-      >
-        Merge Right
-      </button>
-      <button
-        disabled={!canMergeDown}
-        type="button"
-        className="dropdown-item"
-        onClick={() => expandCellDown(editor)}
-      >
-        Merge Down
-      </button>
+      <Dropdown.Divider />
 
-      <button
-        disabled={!canSplit}
-        type="button"
-        className="dropdown-item"
-        onClick={() => splitCell(editor)}
-      >
+      <Dropdown.Header>Split / Merge</Dropdown.Header>
+
+      <Dropdown.Item disabled={!canMergeRight} onClick={() => expandCellRight(editor)}>
+        Merge Right
+      </Dropdown.Item>
+      <Dropdown.Item disabled={!canMergeDown} onClick={() => expandCellDown(editor)}>
+        Merge Down
+      </Dropdown.Item>
+
+      <Dropdown.Item disabled={!canSplit} onClick={() => splitCell(editor)}>
         Split Cell
-      </button>
+      </Dropdown.Item>
     </>
   );
 };

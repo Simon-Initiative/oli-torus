@@ -1,3 +1,4 @@
+import { Tooltip } from 'components/common/Tooltip';
 import React, { useCallback, useRef, useState } from 'react';
 import { AudioSource } from '../../../../data/content/model/elements/types';
 import { MediaItem } from '../../../../types/media';
@@ -61,43 +62,40 @@ export const InlineAudioClipPicker: React.FC<Props> = ({
     <AudioClipProvider>
       <div className="audio-picker audio-picker-inline">
         {children}
-        <button
-          onClick={onChangeAudio}
-          type="button"
-          className="btn btn-sm btn-outline-secondary btn-pronunciation-audio tool-button"
-          data-toggle="tooltip"
-          data-placement="top"
-          title="Browse for audio"
-        >
-          <i className="fa-regular fa-file-audio"></i>
-        </button>
+        <Tooltip title="Browse for audio">
+          <button
+            onClick={onChangeAudio}
+            type="button"
+            className="btn btn-sm btn-outline-secondary btn-pronunciation-audio tool-button"
+          >
+            <i className="fa-regular fa-file-audio"></i>
+          </button>
+        </Tooltip>
         {clipSrc && (
           <>
             {audioPlayer}
-            <button
-              type="button"
-              onClick={playAudio}
-              className="btn btn-sm btn-outline-success btn-pronunciation-audio tool-button"
-              data-toggle="tooltip"
-              data-placement="top"
-              title="Preview audio file"
-            >
-              {isPlaying ? (
-                <i className="fa-solid fa-circle-stop"></i>
-              ) : (
-                <i className="fa-solid fa-circle-play"></i>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onRemoveAudio}
-              className="btn btn-sm btn-outline-danger btn-pronunciation-audio tool-button"
-              data-toggle="tooltip"
-              data-placement="top"
-              title="Remove audio file"
-            >
-              <i className="fa-solid fa-trash"></i>
-            </button>
+            <Tooltip title="Preview audio file">
+              <button
+                type="button"
+                onClick={playAudio}
+                className="btn btn-sm btn-outline-success btn-pronunciation-audio tool-button"
+              >
+                {isPlaying ? (
+                  <i className="fa-solid fa-circle-stop"></i>
+                ) : (
+                  <i className="fa-solid fa-circle-play"></i>
+                )}
+              </button>
+            </Tooltip>
+            <Tooltip title="Remove audio file">
+              <button
+                type="button"
+                onClick={onRemoveAudio}
+                className="btn btn-sm btn-outline-danger btn-pronunciation-audio tool-button"
+              >
+                <i className="fa-solid fa-trash"></i>
+              </button>
+            </Tooltip>
           </>
         )}
       </div>

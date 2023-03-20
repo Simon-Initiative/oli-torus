@@ -336,14 +336,14 @@ defmodule OliWeb.CollaborationLiveTest do
       conn: conn,
       admin: admin,
       section: section,
-      page_revision_cs: page_revision_cs
+      page_revision_cs: page_revision_cs,
     } do
       conn =
         conn
         |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
         |> get(live_view_instructor_preview(section.slug, page_revision_cs.slug))
 
-      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
+      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Page Discussion</h3>"
     end
   end
 
@@ -361,7 +361,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "collab_space_config" => page_revision.collab_space_config,
             "section_slug" => section.slug,
             "is_delivery" => true,
-            "page_slug" => page_revision.slug
+            "resource_slug" => page_revision.slug
           }
         )
 
@@ -398,7 +398,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
             "is_delivery" => true,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -453,7 +453,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
             "is_delivery" => true,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -477,7 +477,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
             "is_delivery" => true,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -525,7 +525,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
             "is_delivery" => true,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -596,7 +596,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
             "is_delivery" => true,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -631,7 +631,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_author_id" => author.id,
             "collab_space_config" => page_revision.collab_space_config,
             "project_slug" => project.slug,
-            "page_slug" => page_revision.slug
+            "resource_slug" => page_revision.slug
           }
         )
 
@@ -662,7 +662,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_author_id" => author.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "project_slug" => project.slug,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -702,7 +702,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_author_id" => author.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "project_slug" => project.slug,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -740,7 +740,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_author_id" => author.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "project_slug" => project.slug,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -782,7 +782,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_author_id" => author.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "project_slug" => project.slug,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -1051,7 +1051,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1081,7 +1081,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1129,7 +1129,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1157,7 +1157,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1198,7 +1198,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1252,7 +1252,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1292,7 +1292,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1364,7 +1364,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1424,7 +1424,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1484,7 +1484,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1548,7 +1548,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1620,7 +1620,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1664,7 +1664,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1694,7 +1694,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1729,7 +1729,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1752,7 +1752,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug
           }
         )
 
@@ -1837,7 +1837,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1888,7 +1888,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1936,7 +1936,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1962,7 +1962,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_student" => true
           }
         )
@@ -1992,7 +1992,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => instructor.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_instructor" => true
           }
         )
@@ -2050,7 +2050,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => instructor.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_instructor" => true
           }
         )
@@ -2122,7 +2122,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => instructor.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_instructor" => true
           }
         )
@@ -2175,7 +2175,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => instructor.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_instructor" => true
           }
         )
@@ -2238,7 +2238,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => instructor.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_instructor" => true
           }
         )
@@ -2304,7 +2304,7 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => instructor.id,
             "collab_space_config" => page_revision_cs.collab_space_config,
             "section_slug" => section.slug,
-            "page_slug" => page_revision_cs.slug,
+            "resource_slug" => page_revision_cs.slug,
             "is_instructor" => true
           }
         )

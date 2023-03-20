@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { makeRequest } from 'data/persistence/common';
 import * as Events from 'data/events';
+import { Dropdown } from 'react-bootstrap';
 
 export interface AttemptDetails {
   attemptNumber: number;
@@ -46,48 +47,33 @@ export const AttemptSelector = (props: AttemptSelectorProps) => {
 
   const choices = attempts.map((a: AttemptDetails) => {
     return (
-      <a
+      <Dropdown.Item
         key={a.attemptGuid}
-        className="dropdown-item"
-        href="#"
         onClick={() => {
           fetchAttempt(activityId, sectionSlug, a.attemptGuid);
           setCurrent(a);
         }}
       >
         Attempt #{a.attemptNumber}: [{a.state}] {a.date}
-      </a>
+      </Dropdown.Item>
     );
   });
 
   if (choices.length > 1) {
-    choices.splice(
-      0,
-      0,
-      <h6 key="previous" className="dropdown-header">
-        Previous attempts
-      </h6>,
-    );
+    choices.splice(0, 0, <Dropdown.Header key="previous">Previous attempts</Dropdown.Header>);
   }
   choices.splice(
     choices.length - 1,
     0,
-    <h6 key="recent" className="dropdown-header">
-      Most recent attempt
-    </h6>,
+    <Dropdown.Header key="recent">Most recent attempt</Dropdown.Header>,
   );
 
   return (
-    <div className="btn-group">
-      <button
-        type="button"
-        className="btn btn-info dropdown-toggle"
-        data-toggle="dropdown"
-        aria-expanded="false"
-      >
+    <Dropdown className="btn-group">
+      <Dropdown.Toggle variant="info" className="btn">
         Attempt #{current.attemptNumber}: [{current.state}] {current.date}
-      </button>
-      <div className="dropdown-menu">{choices}</div>
-    </div>
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="dropdown-menu">{choices}</Dropdown.Menu>
+    </Dropdown>
   );
 };

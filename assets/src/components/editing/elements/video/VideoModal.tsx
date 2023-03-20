@@ -17,7 +17,7 @@ const VideoSRC: React.FC<{ src: ContentModel.VideoSource; onDelete: () => any }>
 }) => (
   <tr>
     <td>
-      <a href={src.url} rel="noreferrer" target="_blank">
+      <a href={src.url} className="download" rel="noreferrer" target="_blank">
         {truncateUrl(src.url)}
       </a>
     </td>

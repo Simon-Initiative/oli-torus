@@ -32,8 +32,8 @@ export const AnswerKey: React.FC<Props> = (props) => {
   return (
     <div className="d-flex flex-column mb-2">
       <div className="alert alert-info" role="alert">
-        For this part, enter the correct initiator identifer here. All other identifiers will be
-        considered incorrect.
+        Use a compound identifier of the form partID_choiceID to represent an answer matching
+        initiator and target with given IDs. Enter correct answer here:
       </div>
       <TextInput
         editMode={editMode}

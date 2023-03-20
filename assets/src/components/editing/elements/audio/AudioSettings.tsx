@@ -11,6 +11,7 @@ import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
 import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
 import { useToggle } from '../../../hooks/useToggle';
 import { useAudio } from '../../../hooks/useAudio';
+import { Tooltip } from 'components/common/Tooltip';
 
 interface SettingsButtonProps {
   model: ContentModel.Audio;
@@ -113,18 +114,21 @@ const AudioSettingsModal = (props: AudioSettingsProps) => {
                 Select
               </button>
               {model.src && (
-                <button
-                  type="button"
-                  onClick={playAudio}
-                  className="btn btn-sm btn-outline-success btn-pronunciation-audio tool-button"
-                  data-toggle="tooltip"
-                  data-placement="top"
-                  title="Preview audio file"
-                >
-                  <span className="material-icons">
-                    {isPlaying ? 'stop_circle' : 'play_circle'}
-                  </span>
-                </button>
+                <Tooltip title="Preview audio file">
+                  <button
+                    type="button"
+                    onClick={playAudio}
+                    className="btn btn-outline-primary btn-pronunciation-audio tool-button"
+                  >
+                    <span>
+                      {isPlaying ? (
+                        <i className="fa-solid fa-circle-stop"></i>
+                      ) : (
+                        <i className="fa-solid fa-circle-play"></i>
+                      )}
+                    </span>
+                  </button>
+                </Tooltip>
               )}
             </div>
           </div>

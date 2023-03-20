@@ -54,7 +54,7 @@ defmodule Oli.Rendering.Elements.Html do
 
       [
         ~s|<div class="paginated">|,
-        ~s|<div class="elements">|,
+        ~s|<div class="elements content">|,
         rendered,
         ~s|</div>|,
         pagination_controls,

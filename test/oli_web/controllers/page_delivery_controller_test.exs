@@ -718,7 +718,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = get(conn, redir_path)
-      assert html_response(conn, 200) =~ ~s|<div class="paginated"><div class="elements">|
+      assert html_response(conn, 200) =~ ~s|<div class="paginated"><div class="elements content">|
       assert html_response(conn, 200) =~ "part one"
       assert html_response(conn, 200) =~ ~s|<div class="content-break"></div>|
       assert html_response(conn, 200) =~ "part two"
@@ -785,7 +785,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
-      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
+      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Page Discussion</h3>"
     end
 
     test "page does not render the collab space if it's not configured",
@@ -1639,6 +1639,83 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
 
       assert html_response(conn, 200) =~ "<h6>There are no posts to show</h6>"
+    end
+  end
+
+  describe "assignments" do
+    setup [:section_with_gating_conditions]
+
+    test "student can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Assignments"
+
+      assert html_response(conn, 200) =~
+               "Find all your assignments, quizzes and activities associated with graded material."
+    end
+
+    test "renders the list of assignments", %{conn: conn, section: section} do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Graded page 1 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 2 - Level 0 (w/ date)"
+      assert html_response(conn, 200) =~ "Graded page 3 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 4 - Level 0 (w/ gating condition)"
+      assert html_response(conn, 200) =~ "Due by 2023-01-12"
+      assert html_response(conn, 200) =~ "Graded page 5 - Level 0 (w/ student gating condition)"
+      assert html_response(conn, 200) =~ "Due by 2023-06-05"
+    end
+
+    test "when a student has a gating condition, it overrides the default gating condition", %{
+      conn: conn,
+      section: section,
+      student_with_gating_condition: student
+    } do
+      enroll_user_to_section(student, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(student, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Graded page 1 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 2 - Level 0 (w/ date)"
+      assert html_response(conn, 200) =~ "Graded page 3 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 4 - Level 0 (w/ gating condition)"
+      assert html_response(conn, 200) =~ "Due by 2023-01-12"
+      assert html_response(conn, 200) =~ "Graded page 5 - Level 0 (w/ student gating condition)"
+      refute html_response(conn, 200) =~ "Due by 2023-06-05"
+      assert html_response(conn, 200) =~ "Due by 2023-07-08"
     end
   end
 

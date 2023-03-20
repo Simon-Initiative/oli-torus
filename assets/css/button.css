@@ -1,7 +1,9 @@
+a.torus-button,
 button.torus-button {
   @apply btn inline-flex items-center gap-2 text-sm;
 }
 
+a.torus-button.primary,
 button.torus-button.primary {
   @apply btn text-white hover:text-white bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700;
 }

@@ -25,7 +25,9 @@ export const applyStateChange = createAsyncThunk(
         const localized = target.replace(`${activity.id}|`, '');
         return localized;
       }, op.target);
-      collect[localizedTarget] = latestSnapshot[op.target];
+      if (localizedTarget) {
+        collect[localizedTarget] = latestSnapshot[op.target];
+      }
       return collect;
     }, {});
 
