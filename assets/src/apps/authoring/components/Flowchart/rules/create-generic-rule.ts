@@ -43,16 +43,18 @@ import { createNavigationAction } from './create-navigation-action';
 //   return [rule];
 // };
 
-export const generateDestinationRule = (
+export const generateRule = (
   label: string,
   conditions: ICondition[],
   destinationId: string | null,
   correct: boolean,
+  priority: number,
   feedback: string | null = null,
   additionalActions: IAction[] = [],
 ): IAdaptiveRule => {
   const rule = createRuleTemplate(label);
   rule.correct = correct;
+  rule.priority = priority;
 
   rule.event.params.actions = [];
   if (destinationId) {
