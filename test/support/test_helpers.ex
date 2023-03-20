@@ -716,6 +716,7 @@ defmodule Oli.TestHelpers do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Graded page 2 - Level 0 (w/ date)",
         graded: true,
+        purpose: :application,
         resource: graded_page_2_resource
       )
 
@@ -725,7 +726,8 @@ defmodule Oli.TestHelpers do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Graded page 3 - Level 1 (w/ no date)",
         graded: true,
-        resource: graded_page_3_resource
+        resource: graded_page_3_resource,
+        relates_to: [graded_page_1_resource.id, graded_page_2_resource.id]
       )
 
     graded_page_4_revision =
@@ -743,7 +745,8 @@ defmodule Oli.TestHelpers do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Graded page 5 - Level 0 (w/ student gating condition)",
         graded: true,
-        resource: graded_page_5_resource
+        resource: graded_page_5_resource,
+        relates_to: [graded_page_4_resource.id]
       )
 
     # Create a unit inside the project
