@@ -43,22 +43,24 @@ export const generateDropdownRules = (
     isOptionCommonErrorPath,
   );
 
-  const correct: IConditionWithFeedback = {
+  const correct: Required<IConditionWithFeedback> = {
     conditions: createDropdownCorrectCondition(question as IDropdownPartLayout),
     feedback: question.custom.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
-    destinationId: getSequenceIdFromScreenResourceId(
-      correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
-      sequence,
-    ),
+    destinationId:
+      getSequenceIdFromScreenResourceId(
+        correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
+        sequence,
+      ) || 'unknown',
   };
 
-  const incorrect: IConditionWithFeedback = {
+  const incorrect: Required<IConditionWithFeedback> = {
     conditions: createDropdownIncorrectCondition(question as IDropdownPartLayout),
     feedback: question.custom.incorrectFeedback || DEFAULT_INCORRECT_FEEDBACK,
-    destinationId: getSequenceIdFromScreenResourceId(
-      incorrectPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
-      sequence,
-    ),
+    destinationId:
+      getSequenceIdFromScreenResourceId(
+        incorrectPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
+        sequence,
+      ) || 'unknown',
   };
 
   const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
@@ -66,7 +68,6 @@ export const generateDropdownRules = (
     feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_INCORRECT_FEEDBACK,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
-  debugger;
 
   commonErrorFeedback.forEach((feedback, index) => {
     if (feedback && index + 1 !== question.custom.correctAnswer) {
@@ -86,6 +87,7 @@ export const generateDropdownRules = (
 
   const setCorrect: IAction[] = [
     {
+      // Sets the correct answer in the dropdown
       type: 'mutateState',
       params: {
         value: String(question.custom.correctAnswer),
@@ -94,9 +96,32 @@ export const generateDropdownRules = (
         targetType: 1,
       },
     },
+    {
+      // Disables the dropdown so the correct answer can be unselected
+      type: 'mutateState',
+      params: {
+        value: 'false',
+        target: `stage.${question.id}.enabled`,
+        operator: '=',
+        targetType: 4,
+      },
+    },
   ];
 
-  return generateThreeTryWorkflow(correct, incorrect, commonErrorConditionsFeedback, setCorrect);
+  const blankCondition: ICondition = createCondition(
+    `stage.${question.id}.selectedItem`,
+    '',
+    'equal',
+    2,
+  );
+
+  return generateThreeTryWorkflow(
+    correct,
+    incorrect,
+    commonErrorConditionsFeedback,
+    setCorrect,
+    blankCondition,
+  );
 };
 
 export const createDropdownCorrectCondition = (question: IDropdownPartLayout): ICondition[] => {
