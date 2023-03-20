@@ -11,7 +11,7 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 
-import { selectProjectSlug, selectReadOnly } from '../../app/slice';
+import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { savePage } from '../../page/actions/savePage';
 import { selectResourceId, selectState as selectCurrentPage } from '../../page/slice';
 import { createUndoAction } from '../../history/slice';
@@ -24,6 +24,8 @@ import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 import { diff } from 'deep-object-diff';
 import { ProjectSlug, ResourceId } from '../../../../../data/types';
 import { SAVE_DEBOUNCE_TIMEOUT, SAVE_DEBOUNCE_OPTIONS } from '../../persistance-options';
+import { generateRules } from '../../../components/Flowchart/rules/rule-compilation';
+import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
@@ -38,6 +40,8 @@ export const saveActivity = createAsyncThunk(
       const resourceId = selectResourceId(rootState);
       const currentActivityState = selectActivityById(rootState, activity.id) as IActivity;
       const group = selectCurrentGroup(rootState);
+      const sequence = selectSequence(rootState);
+      const appMode = selectAppMode(rootState);
 
       const isReadOnlyMode = selectReadOnly(rootState);
 
@@ -57,6 +61,13 @@ export const saveActivity = createAsyncThunk(
         activity.authoring.parts = activity.authoring.parts.filter(
           (part: any) => part.id !== '__default',
         );
+      }
+
+      if (appMode === 'flowchart') {
+        // In flowchart mode, the rules are generated based off of the flowchart paths and
+        // not directly edited by the user. So, we'll generate those rules every time we save
+        // to make sure they are always in sync.
+        activity.authoring.rules = generateRules(activity, sequence);
       }
 
       const changeData: ActivityUpdate = {

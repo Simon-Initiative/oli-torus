@@ -91,7 +91,8 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   none: 'No question',
 };
 
-export const getScreenQuestionType = (screen: IActivity): QuestionType => {
+export const getScreenQuestionType = (screen: IActivity | undefined): QuestionType => {
+  if (!screen) return 'none';
   const question = getScreenPrimaryQuestion(screen);
   if (!question) return 'none';
 
