@@ -14,7 +14,7 @@ export const generateRules = (
 ): IAdaptiveRule[] => {
   try {
     const rules = _generateRules(screen, sequence);
-    console.info('Debug rules generated:', rules);
+    console.info('Rules generated:', rules);
     return rules;
   } catch (e) {
     console.error('Error generating rules for screen', screen, e);

@@ -52,7 +52,6 @@ export const replacePath = createAsyncThunk(
     });
     const modifiedScreen = clone(screen);
     modifiedScreen.authoring.flowchart.paths = newPaths;
-    modifiedScreen.authoring.rules = generateRules(modifiedScreen, sequence);
 
     dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
     await dispatch(upsertActivity({ activity: modifiedScreen }));

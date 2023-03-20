@@ -124,10 +124,6 @@ export const addFlowchartScreen = createAsyncThunk(
             setGoToAlwaysPath(fromScreen, createResults.resourceId);
           }
 
-          if (fromScreen.authoring?.flowchart) {
-            fromScreen.authoring.rules = generateRules(fromScreen, sequence);
-          }
-
           // TODO - these two should be a single operation?
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
           await dispatch(upsertActivity({ activity: fromScreen }));
