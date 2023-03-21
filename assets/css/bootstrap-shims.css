@@ -248,6 +248,14 @@ a.nav-link {
   @apply hover:no-underline;
 }
 
+.form-group {
+  @apply mb-4;
+}
+
+.form-control {
+  @apply block;
+}
+
 .form-group .form-control,
 .form-label-group .form-control,
 input.form-control,
