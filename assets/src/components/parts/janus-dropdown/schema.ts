@@ -22,6 +22,11 @@ export const simpleUISchema = {
   commonErrorFeedback: {
     'ui:widget': 'OptionsCustomErrorFeedbackAuthoring',
   },
+  optionLabels: {
+    items: {
+      'ui:emptyValue': '',
+    },
+  },
 };
 
 export const simpleSchema: JSONSchema7Object = {
@@ -35,7 +40,7 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'array',
     description: 'list of options',
     items: {
-      $ref: '#/definitions/optionLabel',
+      type: 'string',
     },
   },
   correctAnswer: {
@@ -59,13 +64,6 @@ export const simpleSchema: JSONSchema7Object = {
     default: [],
     items: {
       type: 'string',
-    },
-  },
-  definitions: {
-    optionLabel: {
-      type: 'string',
-      description: 'text for the dropdown item',
-      $anchor: 'optionLabel',
     },
   },
 };
@@ -119,7 +117,13 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  optionLabels: {
+    items: {
+      'ui:emptyValue': '',
+    },
+  },
+};
 
 export const adaptivitySchema = {
   selectedIndex: CapiVariableTypes.NUMBER,
