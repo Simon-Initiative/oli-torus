@@ -4,13 +4,14 @@ defmodule OliWeb.Common.TextSearch do
   prop apply, :event, default: "text_search_apply"
   prop reset, :event, default: "text_search_reset"
   prop change, :event, default: "text_search_change"
+  prop placeholder, :string, default: "Search..."
   prop text, :string, default: ""
   prop event_target, :any, required: false, default: :live_view
 
   def render(%{id: id} = assigns) do
     ~F"""
       <div class="input-group" style="max-width: 350px;">
-        <input id={"#{id}-input"} type="text" class="form-control" placeholder="Search..." value={@text} phx-hook="TextInputListener" phx-hook-target={@event_target} phx-target={@event_target} phx-value-change={@change}>
+        <input id={"#{id}-input"} type="text" class="form-control" placeholder={@placeholder} value={@text} phx-hook="TextInputListener" phx-hook-target={@event_target} phx-target={@event_target} phx-value-change={@change}>
         {#if @text != ""}
           <div class="input-group-append">
             <button class="btn btn-outline-secondary" :on-click={@reset} phx-value-id={@id}><i class="fas fa-times"></i></button>
