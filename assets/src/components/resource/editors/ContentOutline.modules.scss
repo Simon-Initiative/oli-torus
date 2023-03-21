@@ -196,6 +196,12 @@
 :global(html.dark) {
   .contentOutlineToggleButton {
     border-radius: 50%;
+    color: var(--color-body-color-dark);
+    background: var(--color-body-dark);
+
+    &:hover {
+      background-color: var(--color-selection);
+    }
   }
 
   .contentOutline,
@@ -208,6 +214,7 @@
   .toolbarButton {
     border-radius: 4px;
     background: #3e3f44;
+    color: var(--color-body-color-dark);
 
     &:hover {
       background: var(--color-gray-900);
