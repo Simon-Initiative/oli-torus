@@ -1,7 +1,6 @@
 import {
   IAction,
   IActivity,
-  IAdaptiveRule,
   ICondition,
   IDropdownPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
@@ -27,11 +26,12 @@ import {
   IConditionWithFeedback,
 } from './create-generic-rule';
 import { generateThreeTryWorkflow } from './create-three-try-workflow';
+import { RulesAndVariables } from './rule-compilation';
 
 export const generateDropdownRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
-): IAdaptiveRule[] => {
+): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IDropdownPartLayout;
 
   const commonErrorFeedback = question.custom.commonErrorFeedback || [];
