@@ -1,4 +1,5 @@
 import guid from '../../../../../utils/guid';
+import uniq from 'lodash/uniq';
 import {
   IAction,
   IAdaptiveRule,
@@ -10,6 +11,7 @@ import {
   DEFAULT_FILLED_IN_FEEDBACK,
   newId,
 } from './create-generic-rule';
+import { RulesAndVariables } from './rule-compilation';
 
 /**
  * This will generate rules for a screen that has three attempts to get it right with appropriate feedback loops.
@@ -38,7 +40,7 @@ export const generateThreeTryWorkflow = (
   commonErrors: IConditionWithFeedback[],
   setCorrectAction: IAction[],
   blankCondition: ICondition,
-): IAdaptiveRule[] => {
+): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
 
   // [Catch a correct answer]
@@ -135,7 +137,15 @@ export const generateThreeTryWorkflow = (
     default: true,
   });
 
-  return rules;
+  const conditions: ICondition[] = rules
+    .filter((r) => !!r)
+    .map((r) => [...(r.conditions.all || []), ...(r.conditions.any || [])])
+    .flat();
+
+  // We're only grabbing variables out of the fact field, make sure nobody calling this will ever have a variable in the value field.
+  const variables = uniq(conditions.map((c: ICondition) => c.fact));
+
+  return { rules, variables };
 };
 
 // const firstOrSecondTry = (): ICondition => ({

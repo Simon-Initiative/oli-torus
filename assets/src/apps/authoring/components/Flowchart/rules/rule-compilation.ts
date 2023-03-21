@@ -8,24 +8,26 @@ import { isAlwaysPath } from '../paths/path-utils';
 import { generateDropdownRules } from './create-dropdown-rules';
 import { generateAlwaysGoTo } from './create-generic-rule';
 
+export type RulesAndVariables = { rules: IAdaptiveRule[]; variables: string[] };
+
 export const generateRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
-): IAdaptiveRule[] => {
+): RulesAndVariables => {
   try {
-    const rules = _generateRules(screen, sequence);
-    console.info('Rules generated:', rules);
-    return rules;
+    const { rules, variables } = _generateRules(screen, sequence);
+    console.info('Rules generated:', variables, rules);
+    return { rules, variables };
   } catch (e) {
     console.error('Error generating rules for screen', screen, e);
-    return [];
+    return { rules: [], variables: [] };
   }
 };
 
 export const _generateRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
-): IAdaptiveRule[] => {
+): RulesAndVariables => {
   const questionType = getScreenQuestionType(screen);
   switch (questionType) {
     case 'dropdown':
@@ -38,12 +40,15 @@ export const _generateRules = (
 const createBlankScreenRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
-): IAdaptiveRule[] => {
+): RulesAndVariables => {
   const notBlank = screen.authoring?.flowchart?.screenType !== 'blank';
   notBlank && console.warn('Using generic blank screen rules for screen', screen);
   const paths = screen.authoring?.flowchart?.paths || [];
-  return paths
-    .filter(isAlwaysPath)
-    .map((path) => generateAlwaysGoTo(path, sequence))
-    .flat();
+  return {
+    rules: paths
+      .filter(isAlwaysPath)
+      .map((path) => generateAlwaysGoTo(path, sequence))
+      .flat(),
+    variables: [],
+  };
 };
