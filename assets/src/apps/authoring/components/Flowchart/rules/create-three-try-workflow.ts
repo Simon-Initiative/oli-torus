@@ -33,6 +33,7 @@ import { RulesAndVariables } from './rule-compilation';
  * @param commonErrors  - A condition for each common error, it must have either feedback or a destination, and can have both.
  * @param setCorrectAction - an IAction that sets the question on screen to the correct answer.
  * @param blankCondition - A condition that checks if the question is currently blank.
+ * @param disableAction - An action that disables the question on screen. This is used when the user is about to be forced to a screen so they don't think they should go and try again
  */
 export const generateThreeTryWorkflow = (
   correct: Required<IConditionWithFeedback>,
@@ -40,8 +41,11 @@ export const generateThreeTryWorkflow = (
   commonErrors: IConditionWithFeedback[],
   setCorrectAction: IAction[],
   blankCondition: ICondition,
+  disableAction: IAction,
 ): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
+
+  const disableIfTrue = (val: boolean) => (val ? [disableAction] : []);
 
   // [Catch a correct answer]
   correct.destinationId &&
@@ -53,6 +57,7 @@ export const generateThreeTryWorkflow = (
         true,
         10,
         correct.feedback,
+        [disableAction],
       ),
       default: true,
     });
@@ -91,6 +96,7 @@ export const generateThreeTryWorkflow = (
         false,
         30,
         commonError.feedback,
+        disableIfTrue(!!commonError.destinationId),
       ),
     );
   }
@@ -120,6 +126,7 @@ export const generateThreeTryWorkflow = (
         false,
         50,
         commonError.feedback,
+        disableIfTrue(!!commonError.destinationId),
       ),
     );
   }

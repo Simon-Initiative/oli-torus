@@ -85,6 +85,17 @@ export const generateDropdownRules = (
     }
   });
 
+  const disableAction: IAction = {
+    // Disables the dropdown so the correct answer can be unselected
+    type: 'mutateState',
+    params: {
+      value: 'false',
+      target: `stage.${question.id}.enabled`,
+      operator: '=',
+      targetType: 4,
+    },
+  };
+
   const setCorrect: IAction[] = [
     {
       // Sets the correct answer in the dropdown
@@ -96,16 +107,7 @@ export const generateDropdownRules = (
         targetType: 1,
       },
     },
-    {
-      // Disables the dropdown so the correct answer can be unselected
-      type: 'mutateState',
-      params: {
-        value: 'false',
-        target: `stage.${question.id}.enabled`,
-        operator: '=',
-        targetType: 4,
-      },
-    },
+    disableAction,
   ];
 
   const blankCondition: ICondition = createCondition(
@@ -121,6 +123,7 @@ export const generateDropdownRules = (
     commonErrorConditionsFeedback,
     setCorrect,
     blankCondition,
+    disableAction,
   );
 };
 
