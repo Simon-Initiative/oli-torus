@@ -528,11 +528,7 @@ table td {
 }
 
 table.table-striped tbody tr:nth-child(even) {
-  @apply bg-gray-100 dark:bg-gray-600;
-}
-
-table.table-striped tbody tr:nth-child(odd) {
-  @apply bg-white dark:bg-delivery-body-dark;
+  @apply bg-gray-100 dark:bg-gray-700;
 }
 
 .d-none {
