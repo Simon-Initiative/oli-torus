@@ -364,12 +364,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  def students(assigns) do
-    ~H"""
-
-    """
-  end
-
   def content(assigns) do
     ~H"""
       <.tabs active_tab={:content} section_slug={@section_slug} preview_mode={@preview_mode} />
