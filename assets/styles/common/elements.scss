@@ -168,6 +168,7 @@ $element-margin-bottom: 1.5em;
   }
 
   .img-fluid {
+    display: inline-block;
     margin: 1.5em auto;
   }
 
@@ -177,6 +178,7 @@ $element-margin-bottom: 1.5em;
 
   img.d-block,
   iframe.d-block {
+    display: block;
     max-width: 100%;
     max-height: 800px;
     margin: auto;
@@ -187,6 +189,14 @@ $element-margin-bottom: 1.5em;
   iframe.float-md-right,
   iframe.float-md-left {
     max-width: 400px;
+  }
+
+  .float-md-right {
+    float: right;
+  }
+
+  .float-md-left {
+    float: left;
   }
 
   .definition {
