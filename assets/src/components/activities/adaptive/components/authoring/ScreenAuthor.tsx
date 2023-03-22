@@ -17,10 +17,12 @@ import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
+import { classNames } from 'utils/classNames';
 import { clone } from 'utils/common';
 import { convertPalette } from '../common/util';
 import AddPartToolbar from './AddPartToolbar';
 import LayoutEditor from './LayoutEditor';
+import styles from './ScreenAuthor.modules.scss';
 
 interface ScreenAuthorProps {
   screen: any;
@@ -373,8 +375,8 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
           pusher.emit(NotificationType.CONFIGURE_SAVE, { id: selectedPartId });
         }}
       />
-      <Container>
-        <Row style={{ padding: 2, borderBottom: '2px solid #eee' }}>
+      <Container className={styles.screenAuthor}>
+        <Row className={styles.toolbar}>
           <Col>
             <AddPartToolbar
               partTypes={allowedParts}
@@ -386,7 +388,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
         <Row style={{ minHeight: (currentScreenData.custom.height || 0) + 100 }}>
           <Col
             ref={canvasRef}
-            className="canvas-dots"
+            className={classNames(styles.layoutEditor, 'canvas-dots')}
             style={{ paddingTop: 50, paddingBottom: 50 }}
           >
             <LayoutEditor
@@ -404,7 +406,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
               configurePortalId={configEditorId}
             />
           </Col>
-          <Col sm={3}>
+          <Col sm={3} className={styles.propertyEditor}>
             <PropertyEditor
               key={currentPropertyData.id || 'screen'}
               schema={currentPropertySchema}

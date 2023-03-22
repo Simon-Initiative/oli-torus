@@ -1,0 +1,34 @@
+.screenAuthor {
+  :global(.row) {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+
+  :global(.col) {
+    flex-basis: 0;
+    flex-grow: 1;
+    max-width: 100%;
+  }
+
+  :global(.col-sm-3) {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+}
+
+.toolbar {
+  padding: 2;
+  border-bottom: '2px solid #eee';
+}
+
+.layoutEditor {
+}
+
+.propertyEditor {
+  :global(.row) {
+    margin-right: 0px;
+    margin-left: 0px;
+  }
+}
