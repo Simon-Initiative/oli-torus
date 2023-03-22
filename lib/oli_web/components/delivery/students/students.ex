@@ -43,6 +43,14 @@ defmodule OliWeb.Components.Delivery.Students do
 
     {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
 
+    table_model =
+      Map.merge(table_model, %{
+        rows: enrollments,
+        sort_order: params.sort_order,
+        sort_by_spec:
+          Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
+      })
+
     {:ok,
      assign(socket,
        total_count: determine_total(enrollments),
