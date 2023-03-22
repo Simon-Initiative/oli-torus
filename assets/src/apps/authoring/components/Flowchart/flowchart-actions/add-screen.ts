@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { create } from 'data/persistence/activity';
 import { cloneT } from '../../../../../utils/common';
 import guid from '../../../../../utils/guid';
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
   selectActivityById,
   selectAllActivities,
@@ -36,7 +35,6 @@ import {
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
-import { generateRules } from '../rules/rule-compilation';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;

@@ -92,7 +92,9 @@ const removeDestinationPaths =
       activity.authoring.flowchart.paths = [createEndOfActivityPath()];
     }
 
-    activity.authoring.rules = generateRules(activity, sequence);
+    const { rules, variables } = generateRules(activity, sequence);
+    activity.authoring.rules = rules;
+    activity.authoring.variablesRequiredForEvaluation = variables;
 
     return activity;
   };
