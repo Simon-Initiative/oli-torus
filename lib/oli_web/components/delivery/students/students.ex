@@ -68,7 +68,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div class="flex items-center border-b border-b-gray-200 pr-6">
           <h4 class="px-10 py-6 torus-h4 mr-auto">Students</h4>
           <form for="search" phx-target={@myself} phx-change="search_student" phx-debounce="5000">
-            <SearchInput.render id="students_search_input" name="student_name" />
+            <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search}/>
           </form>
         </div>
 
