@@ -47,7 +47,8 @@ p {
   @apply mb-0;
 }
 
-.structured-content code {
+.structured-content code,
+.content code {
   color: #e83e8c;
 }
 
