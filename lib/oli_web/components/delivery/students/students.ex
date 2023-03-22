@@ -16,6 +16,15 @@ defmodule OliWeb.Components.Delivery.Students do
   prop total_count, :number, required: true
   prop students_table_model, :struct, required: true
 
+  @default_params %{
+    offset: 0,
+    limit: 25,
+    container_id: nil,
+    sort_order: :asc,
+    sort_by: :name,
+    text_search: nil
+  }
+
   def update(%{params: params, section: section, context: context} = _assigns, socket) do
     params = decode_params(params)
 
@@ -77,7 +86,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket,
            OliWeb.Delivery.InstructorDashboard.StudentsLive,
            socket.assigns.section_slug,
-           Map.merge(socket.assigns.params, %{text_search: student_name})
+           update_params(socket.assigns.params, %{text_search: student_name})
          )
      )}
   end
@@ -90,25 +99,26 @@ defmodule OliWeb.Components.Delivery.Students do
            socket,
            OliWeb.Delivery.InstructorDashboard.StudentsLive,
            socket.assigns.section_slug,
-           sort_by: sort_by
+           update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
      )}
   end
 
   defp decode_params(params) do
     %{
-      offset: Params.get_int_param(params, "offset", 0),
-      limit: Params.get_int_param(params, "limit", 25),
-      container_id: Params.get_int_param(params, "container_id", nil),
-      sort_order: Params.get_atom_param(params, "sort_order", [:asc, :desc], :asc),
-      sort_by: Params.get_atom_param(params, "sort_by", [:name], :name),
-      text_search: Params.get_param(params, "text_search", nil)
+      offset: Params.get_int_param(params, "offset", @default_params.offset),
+      limit: Params.get_int_param(params, "limit", @default_params.limit),
+      container_id: Params.get_int_param(params, "container_id", @default_params.container_id),
+      sort_order:
+        Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
+      # we currently only support sorting by name since the other metrics have not yet been created
+      sort_by: Params.get_atom_param(params, "sort_by", [:name], @default_params.sort_by),
+      text_search: Params.get_param(params, "text_search", @default_params.text_search)
     }
   end
 
   defp add_students_progress(users, section_id, container_id) do
-    users
-    |> Enum.map(fn user ->
+    Enum.map(users, fn user ->
       Map.merge(user, %{progress: Metrics.progress_for(section_id, user.id, container_id)})
     end)
   end
@@ -118,5 +128,25 @@ defmodule OliWeb.Components.Delivery.Students do
       [] -> 0
       [hd | _] -> hd.total_count
     end
+  end
+
+  defp update_params(%{sort_by: current_sort_by, sort_order: current_sort_order} = params, %{
+         sort_by: new_sort_by
+       })
+       when current_sort_by == new_sort_by do
+    toggled_sort_order = if current_sort_order == :asc, do: :desc, else: :asc
+    update_params(params, %{sort_order: toggled_sort_order})
+  end
+
+  defp update_params(params, new_param) do
+    Map.merge(params, new_param)
+    |> purge_default_params()
+  end
+
+  defp purge_default_params(params) do
+    # there is no need to add a param to the url if its value is equal to the default one
+    Map.filter(params, fn {key, value} ->
+      @default_params[key] != value
+    end)
   end
 end
