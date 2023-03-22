@@ -104,7 +104,7 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
-        <ReadOnly label="URL" value={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}/>
+        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
         {#unless is_nil(deployment)}
           <ReadOnly
             label="Institution"
@@ -151,7 +151,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li><button type="button" class=" btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button></li>
         </ul>
       </Group>
-      <Group label="Collaboration Space" description="Allows to activate and configure a collaborative space for the root resource of a section">
+      <Group label="Collaborative Space" description="Activate and configure a collaborative space for this section">
         <div class="container mx-auto">
           {#if @collab_space_config && @collab_space_config.status != :disabled}
             {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView, id: "collab_space_config",
@@ -163,7 +163,7 @@ defmodule OliWeb.Sections.OverviewView do
                   "is_delivery" => true
                 })}
           {#else}
-            <p class="ml-8 mt-2">You are not allowed to have a collaboration space in this resource.<br>Please contact the admin to be granted with that permission.</p>
+            <p class="ml-8 mt-2">Collaborative spaces are not enabled by the course project.<br>Please contact a system administrator to enable.</p>
           {/if}
         </div>
       </Group>

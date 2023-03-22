@@ -33,13 +33,15 @@
 
   .reviews .review-links .review-link .review-link-header {
     font-weight: bold;
-    color: var(--color-gray-800);
     display: flex;
     align-items: center;
+
+    svg {
+      margin-right: 6px;
+    }
   }
 
   .reviews .review-links .review-link .review-link-subheader {
-    color: var(--color-secondary);
     display: flex;
     align-items: center;
   }
@@ -65,7 +67,8 @@
   }
 
   .reviews .review-links .review-link.active {
-    background-color: var(--color-gray-200);
+    background-color: var(--color-primary);
+    color: var(--color-white);
   }
 
   .reviews .review-cards {
@@ -110,5 +113,25 @@
     text-decoration: none;
     color: var(--color-gray-200);
     cursor: pointer;
+  }
+}
+
+html.dark {
+  .review {
+    .reviews .review-links {
+      border-color: var(--color-gray-600);
+    }
+
+    .reviews .review-links .review-link {
+      border-color: var(--color-gray-600);
+    }
+
+    .bd-callout {
+      border-color: var(--color-gray-400);
+    }
+
+    .bd-callout-info {
+      border-left-color: var(--color-cyan-400);
+    }
   }
 }

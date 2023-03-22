@@ -51,7 +51,6 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: <i className="fa-solid fa-image"></i>,
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

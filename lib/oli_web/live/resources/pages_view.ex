@@ -181,15 +181,15 @@ defmodule OliWeb.Resources.PagesView do
 
       <div class="my-3 d-flex flex-row">
         <div class="flex-grow-1" />
-          <div class="btn-group">
+          <div class="dropdown btn-group">
             <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Create
+              Create <i class="fa-solid fa-caret-down ml-2"></i>
             </button>
             <div class="dropdown-menu dropdown-menu-right">
-              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Unscored">Practice Page</button>
-              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Scored">Graded Assessment</button>
+              <button type="button" class="dropdown-item" :on-click="create_page" phx-value-type="Unscored">Practice Page</button>
+              <button type="button" class="dropdown-item" :on-click="create_page" phx-value-type="Scored">Graded Assessment</button>
               {#if Oli.Features.enabled?("adaptivity")}
-                <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Adaptive">Adaptive Page</button>
+                <button type="button" class="dropdown-item" :on-click="create_page" phx-value-type="Adaptive">Adaptive Page</button>
               {/if}
             </div>
           </div>
