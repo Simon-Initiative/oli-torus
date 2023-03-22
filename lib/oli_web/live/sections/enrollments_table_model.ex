@@ -38,20 +38,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       }
     ]
 
-    # column_specs =
-    #   if section.requires_payment do
-    #     base_columns ++
-    #       [
-    #         %ColumnSpec{
-    #           name: :payment_date,
-    #           label: "Paid On",
-    #           render_fn: &OliWeb.Common.Table.Common.render_date/3
-    #         }
-    #       ]
-    #   else
-    #     base_columns
-    #   end
-
     SortableTableModel.new(
       rows: users,
       column_specs: column_specs,
@@ -76,8 +62,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       ) do
     ~F"""
     <div class="flex items-center ml-10">
-      <div class="rounded-full w-2 h-2 bg-red-500"></div>
-      <a class="ml-6" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}>
+      <div class="rounded-full w-2 h-2 bg-red-500" />
+      <a
+        class="ml-6"
+        href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}
+      >
         {Utils.name(name, given_name, family_name)}
       </a>
     </div>
@@ -97,19 +86,19 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{last_interacted_stub: random_datetime})
 
     ~F"""
-      {Timex.format!(@last_interacted_stub, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")}
+    {Timex.format!(@last_interacted_stub, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")}
     """
   end
 
   def stub_overall_mastery(assigns, _user, _) do
     ~F"""
-       {random_stub()}
+    {random_stub()}
     """
   end
 
   def stub_engagement(assigns, _user, _) do
     ~F"""
-      {random_stub()}
+    {random_stub()}
     """
   end
 

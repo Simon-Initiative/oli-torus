@@ -1,46 +1,122 @@
 defmodule OliWeb.Components.Delivery.Students do
   use Surface.LiveComponent
 
-  alias OliWeb.Common.{PagedTable, SearchInput}
+  alias Phoenix.LiveView.JS
 
-  prop limit, :number, default: 10
-  prop filter, :string, required: true
-  prop offset, :number, required: true
-  prop count, :number, required: true
+  alias OliWeb.Common.{PagedTable, SearchInput}
+  alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias OliWeb.Delivery.Sections.EnrollmentsTableModel
+  alias Oli.Delivery.Sections
+  alias OliWeb.Common.Params
+  alias Oli.Delivery.Metrics
+  alias OliWeb.Router.Helpers, as: Routes
+
+  prop params, :map, required: true
+  prop total_count, :number, required: true
   prop students_table_model, :struct, required: true
 
-  def mount(socket) do
-    {:ok, socket}
+  def update(%{params: params, section: section, context: context} = _assigns, socket) do
+    params = decode_params(params)
+
+    enrollments =
+      Sections.browse_enrollments(
+        section,
+        %Paging{offset: params.offset, limit: params.limit},
+        %Sorting{direction: params.sort_order, field: params.sort_by},
+        %EnrollmentBrowseOptions{
+          text_search: params.text_search,
+          is_student: true,
+          is_instructor: false
+        }
+      )
+      |> add_students_progress(section.id, params.container_id)
+
+    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
+
+    {:ok,
+     assign(socket,
+       total_count: determine_total(enrollments),
+       table_model: table_model,
+       params: params,
+       students_table_model: table_model,
+       section_slug: section.slug
+     )}
   end
 
   def render(assigns) do
     ~F"""
-        <div class="p-10">
+    <div class="p-10">
       <div class="bg-white w-full">
         <div class="flex items-center border-b border-b-gray-200 pr-6">
           <h4 class="px-10 py-6 torus-h4 mr-auto">Students</h4>
           <form for="search" phx-target={@myself} phx-change="search_student" phx-debounce="5000">
-            <SearchInput.render
-                    id="students_search_input"
-                    name="student_name"
-                  />
+            <SearchInput.render id="students_search_input" name="student_name" />
           </form>
         </div>
 
-          <PagedTable
-            table_model={@students_table_model}
-            total_count={@count}
-            offset={@offset}
-            limit={@limit}
-            additional_table_class="border-0"
-            />
-            </div>
-            </div>
+        <PagedTable
+          table_model={@students_table_model}
+          total_count={@total_count}
+          offset={@params.offset}
+          limit={@params.limit}
+          filter={@params.text_search}
+          additional_table_class="border-0"
+          sort={JS.push("paged_table_sort", target: @myself)}
+        />
+      </div>
+    </div>
     """
   end
 
   def handle_event("search_student", %{"student_name" => student_name}, socket) do
-    IO.inspect(student_name)
-    {:noreply, socket}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.StudentsLive,
+           socket.assigns.section_slug,
+           Map.merge(socket.assigns.params, %{text_search: student_name})
+         )
+     )}
+  end
+
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by} = _params, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.StudentsLive,
+           socket.assigns.section_slug,
+           sort_by: sort_by
+         )
+     )}
+  end
+
+  defp decode_params(params) do
+    %{
+      offset: Params.get_int_param(params, "offset", 0),
+      limit: Params.get_int_param(params, "limit", 25),
+      container_id: Params.get_int_param(params, "container_id", nil),
+      sort_order: Params.get_atom_param(params, "sort_order", [:asc, :desc], :asc),
+      sort_by: Params.get_atom_param(params, "sort_by", [:name], :name),
+      text_search: Params.get_param(params, "text_search", nil)
+    }
+  end
+
+  defp add_students_progress(users, section_id, container_id) do
+    users
+    |> Enum.map(fn user ->
+      Map.merge(user, %{progress: Metrics.progress_for(section_id, user.id, container_id)})
+    end)
+  end
+
+  defp determine_total(students) do
+    case students do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
   end
 end
