@@ -48,8 +48,8 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
               <ul class="my-3">
                 {#for {status, %{revision: revision}} <- Map.values(@changes)}
                   <li>
-                    <span>{revision.title}</span>
                     <span class={"badge badge-secondary badge-#{status} mr-2"}>{status}</span>
+                    <span>{revision.title}</span>
                   </li>
                 {/for}
               </ul>

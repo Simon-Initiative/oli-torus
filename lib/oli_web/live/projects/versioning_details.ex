@@ -91,7 +91,7 @@ defmodule OliWeb.Projects.VersioningDetails do
               {#match {:no_changes, _}}
             {/case}
             <Field name={:description} class="form-group">
-              <TextArea class="form-control" rows="3" opts={placeholder: "Enter a short description of these changes..."} />
+              <TextArea class="form-control" rows="3" opts={placeholder: "Enter a short description of these changes...", required: true} />
             </Field>
           {#else}
             {#if is_nil(@active_publication_changes)}
