@@ -42,7 +42,7 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
       nodeTypes={NodeTypes}
       edgeTypes={EdgeTypes}
       nodes={layout.nodes}
-      edges={edges}
+      edges={layout.edges}
       panOnDrag={true}
       nodesDraggable={false}
       nodesConnectable={false}
