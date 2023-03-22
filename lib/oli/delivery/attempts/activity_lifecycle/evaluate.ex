@@ -142,7 +142,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
           case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
             nil -> Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
-            activity_attempt -> update_activity_attempt(activity_attempt, %{lifecycle_state: :submitted, date_submitted: DateTime.utc_now()})
+            activity_attempt ->
+
+              # we need to mark the all manually scored part attempts still active to be "submitted", as
+              # as marking the entire activity attempt as being submitted.
+              submission_update = %{
+                lifecycle_state: :submitted,
+                date_submitted: DateTime.utc_now()
+              }
+
+              get_latest_part_attempts(activity_attempt.attempt_guid)
+              |> Enum.filter(fn pa -> pa.grading_approach == :manual and pa.lifecycle_state == :active end)
+              |> Enum.each(fn pa -> update_part_attempt(pa, submission_update) end)
+
+              update_activity_attempt(activity_attempt, submission_update)
           end
 
           {:ok, decodedResults}
