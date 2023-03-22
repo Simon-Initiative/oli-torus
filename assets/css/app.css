@@ -47,11 +47,6 @@ p {
   @apply mb-0;
 }
 
-.structured-content code,
-.content code {
-  color: #e83e8c;
-}
-
 #button-tooltip.tooltip {
   background-color: #fff;
   padding: 4px;
