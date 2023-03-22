@@ -13,6 +13,7 @@
 */
 
 import { MarkerType } from 'reactflow';
+import { cloneT } from '../../../../../utils/common';
 import {
   IActivity,
   IDropdownPartLayout,
@@ -95,7 +96,7 @@ const destinationPathToEdge = (activity: IActivity) => (path: DestinationPath) =
 });
 
 export const buildEdgesForActivity = (activity: IActivity): FlowchartEdge[] => {
-  const paths = getPathsFromScreen(activity);
+  const paths = getPathsFromScreen(cloneT(activity));
   return paths
     .filter(isDestinationPath)
     .filter(hasDestination)
