@@ -1,6 +1,6 @@
 import React, { useCallback, useContext } from 'react';
 import { useDrop } from 'react-dnd';
-import { useStore, getBezierPath } from 'reactflow';
+import { useStore /*getBezierPath*/ } from 'reactflow';
 import { Icon } from '../../../../../components/misc/Icon';
 import { FlowchartEdgeData } from '../flowchart-utils';
 import { FlowchartEventContext } from '../FlowchartEventContext';
@@ -19,6 +19,31 @@ interface FloatingEdgeProps {
   data?: FlowchartEdgeData;
 }
 
+// const createCurvedPath = (points: { x: number; y: number }[]): string => {
+//   switch (points.length) {
+//     case 3:
+//       return (
+//         `M${points[0].x + 65},${points[0].y + 65}` +
+//         `Q${points[1].x + 65},${points[1].y + 65} ` +
+//         `${points[2].x + 65},${points[2].y + 65}`
+//       );
+//     case 4:
+//       return (
+//         `M${points[0].x + 65},${points[0].y + 65}` +
+//         `C${points[1].x + 65},${points[1].y + 65} ` +
+//         `${points[2].x + 65},${points[2].y + 65}` +
+//         `${points[3].x + 65},${points[3].y + 65}`
+//       );
+//     case 5:
+//       return createPath(points.slice(0, 3)) + ' ' + createPath(points.slice(2));
+
+//     default:
+//       return points
+//         .map((p, i) => (i === 0 ? `M${p.x + 65},${p.y + 65}` : `L${p.x + 65},${p.y + 65}`))
+//         .join('');
+//   }
+// };
+
 export const FloatingEdge: React.FC<FloatingEdgeProps> = ({
   id,
   source,
@@ -36,31 +61,45 @@ export const FloatingEdge: React.FC<FloatingEdgeProps> = ({
   const sourceId = sourceNode.data.resourceId;
   const targetId = targetNode.data.resourceId;
 
-  const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
+  //const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
 
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX: sx,
-    sourceY: sy,
-    sourcePosition: sourcePos,
-    targetPosition: targetPos,
-    targetX: tx,
-    targetY: ty,
-  });
+  // Original layout
+  // const [edgePath, labelX, labelY] = getBezierPath({
+  //   sourceX: sx,
+  //   sourceY: sy,
+  //   sourcePosition: sourcePos,
+  //   targetPosition: targetPos,
+  //   targetX: tx,
+  //   targetY: ty,
+  // });
+  const dagrePoints = data?.points || [];
+
+  const center = dagrePoints[Math.floor(dagrePoints.length / 2)];
+  const labelX = center.x + 65;
+  const labelY = center.y + 65;
 
   // Dashed line on incomplete edges
   const dash = data?.completed ? undefined : '4 4';
 
+  const edgePath2 = dagrePoints
+    .map((p, i) => (i === 0 ? `M${p.x + 65},${p.y + 65}` : `L${p.x + 65},${p.y + 65}`))
+    .join('');
+
+  // const edgePath3 = createPath(dagrePoints);
+
+  // Color: 22f
   return (
     <>
       <path
         id={id}
         className="react-flow__edge-path"
-        d={edgePath}
+        d={edgePath2}
         strokeDasharray={dash}
         markerEnd={markerEnd}
         stroke="#22f"
         style={style}
       />
+
       <foreignObject
         width={boxSize}
         height={boxSize}
