@@ -20,8 +20,8 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
 
             <div class="modal-header">
               <h5 class="modal-title">Apply Update - {@newest_publication.project.title}</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <i class="fa-solid fa-xmark fa-xl"></i>
               </button>
             </div>
 
@@ -58,7 +58,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
             </div>
 
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
               <button class="btn btn-warning ml-2" phx-click="apply_update" phx-key="enter">Apply Update</button>
             </div>
 
