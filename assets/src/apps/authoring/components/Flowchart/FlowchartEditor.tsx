@@ -121,7 +121,7 @@ export const FlowchartEditor = () => {
       <div className="flowchart-editor">
         <DndProvider backend={HTML5Backend}>
           <div className="panel-inner">
-            <FlowchartModeOptions onScreenEditMode={onScreenEdit} />
+            <FlowchartModeOptions />
             <FlowchartSidebar />
           </div>
 

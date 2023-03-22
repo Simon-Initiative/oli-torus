@@ -3,6 +3,7 @@ import { create } from 'data/persistence/activity';
 import { cloneT } from '../../../../../utils/common';
 import guid from '../../../../../utils/guid';
 import {
+  IActivity,
   selectActivityById,
   selectAllActivities,
   upsertActivity,
@@ -35,6 +36,7 @@ import {
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
+import { sortScreens } from '../screens/screen-utils';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;
@@ -63,7 +65,8 @@ export const addFlowchartScreen = createAsyncThunk(
       const activityTypes = selectActivityTypes(rootState);
       const currentLesson = selectPageState(rootState);
       const sequence = selectSequence(rootState);
-      const otherActivityNames = selectAllActivities(rootState).map((a) => a.title || '');
+      const otherActivities = selectAllActivities(rootState);
+      const otherActivityNames = otherActivities.map((a) => a.title || '');
 
       const group = selectAllGroups(rootState)[0];
 
@@ -103,10 +106,20 @@ export const addFlowchartScreen = createAsyncThunk(
         return;
       }
 
-      if (payload.fromScreenId) {
-        // In this case, we need to edit that other screen's paths so it goes here.
+      const getLastScreenId = (): number | undefined => {
+        const orderedScreens = sortScreens(otherActivities, sequence);
+        if (orderedScreens.length === 0) {
+          return undefined;
+        }
+        return orderedScreens[orderedScreens.length - 1].resourceId;
+      };
 
-        const fromScreen = cloneT(selectActivityById(rootState, payload.fromScreenId));
+      // If a from-screen isn't specified, then tack it on to the very end of the lesson.
+      const fromScreenId = payload.fromScreenId || getLastScreenId();
+
+      if (fromScreenId) {
+        // In this case, we need to edit that other screen's paths so it goes here.
+        const fromScreen = cloneT(selectActivityById(rootState, fromScreenId));
 
         if (fromScreen) {
           if (payload.toScreenId) {
