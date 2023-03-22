@@ -6401,6 +6401,11 @@ p {
   color: #e83e8c;
 }
 
+#button-tooltip.tooltip {
+  background-color: #fff;
+  padding: 4px;
+}
+
 @media (min-width: 768px) {
   .md\:container {
     width: 100%;
