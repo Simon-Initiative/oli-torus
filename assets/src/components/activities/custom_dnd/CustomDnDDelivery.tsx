@@ -56,7 +56,7 @@ export const CustomDnDComponent: React.FC = () => {
 
   // state we pass is always a mapping from targetId to draggableId
   const initialState = state.parts.reduce((m: any, p) => {
-    if (p.response !== null) {
+    if (p.response !== null && (p.response.input !== null)) {
       const choiceId = p.response.input.substr((p.partId as string).length + 1);
       if (partIdBearers === 'targets') {
         m[p.partId] = choiceId;
