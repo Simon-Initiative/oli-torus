@@ -46,8 +46,3 @@ p {
 .slate-editor p:last-child {
   @apply mb-0;
 }
-
-#button-tooltip.tooltip {
-  background-color: #fff;
-  padding: 4px;
-}
