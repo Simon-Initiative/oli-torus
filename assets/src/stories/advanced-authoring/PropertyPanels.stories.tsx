@@ -6,6 +6,7 @@ import { JSONSchema7Object } from 'json-schema';
 
 import * as DropdownSchema from '../../components/parts/janus-dropdown/schema';
 import * as SliderSchema from '../../components/parts/janus-slider/schema';
+import * as NumberInputSchema from '../../components/parts/janus-input-number/schema';
 import '../../../styles/index.scss';
 import PropertyEditor from '../../apps/authoring/components/PropertyEditor/PropertyEditor';
 import {
@@ -21,6 +22,7 @@ interface PanelDef {
   data: any;
 }
 
+// Replicates the schema-altering logic in PartPropertyEditor
 const updateUISchema = (uiSchema: any): any => {
   const newUiSchema = {
     ...simplifiedPartUiSchema,
@@ -32,6 +34,7 @@ const updateUISchema = (uiSchema: any): any => {
   return newUiSchema;
 };
 
+// Replicates the schema-altering logic in PartPropertyEditor
 const updateSchema = (schema: JSONSchema7Object): JSONSchema7Object => {
   const newSchema: any = {
     ...simplifiedPartSchema,
@@ -54,6 +57,12 @@ const panels: PanelDef[] = [
     uiSchema: updateUISchema(DropdownSchema.simpleUISchema),
     schema: updateSchema(DropdownSchema.simpleSchema),
     data: DropdownSchema.createSchema(),
+  },
+  {
+    title: 'Number Input - simple',
+    uiSchema: updateUISchema(NumberInputSchema.simpleUiSchema),
+    schema: updateSchema(NumberInputSchema.simpleSchema),
+    data: NumberInputSchema.createSchema(),
   },
   {
     title: 'Slider - simple',
