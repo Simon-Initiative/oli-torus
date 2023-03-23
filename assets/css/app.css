@@ -6,6 +6,7 @@
 @import 'input';
 @import 'text';
 @import 'button';
+@import 'table';
 
 /**
  * Automatically style all links with blue text and underline on hover.

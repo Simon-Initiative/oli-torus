@@ -15,26 +15,32 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       %ColumnSpec{
         name: :name,
         label: "STUDENT NAME",
-        render_fn: &__MODULE__.render_name_column/3
+        render_fn: &__MODULE__.render_name_column/3,
+        th_class: "pl-10 instructor_dashboard_th"
       },
       %ColumnSpec{
         name: :last_interaction,
         label: "LAST INTERACTED",
-        render_fn: &__MODULE__.stub_last_interacted/3
+        render_fn: &__MODULE__.stub_last_interacted/3,
+        th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
         name: :progress,
-        label: "COURSE PROGRESS"
+        label: "COURSE PROGRESS",
+        render_fn: &__MODULE__.render_progress_column/3,
+        th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
         name: :overall_mastery,
         label: "OVERALL COURSE MASTERY",
-        render_fn: &__MODULE__.stub_overall_mastery/3
+        render_fn: &__MODULE__.stub_overall_mastery/3,
+        th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
         name: :engagement,
         label: "COURSE ENGAGEMENT",
-        render_fn: &__MODULE__.stub_engagement/3
+        render_fn: &__MODULE__.stub_engagement/3,
+        th_class: "instructor_dashboard_th"
       }
     ]
 
@@ -56,20 +62,31 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           id: id,
           name: name,
           given_name: given_name,
-          family_name: family_name
+          family_name: family_name,
+          progress: progress
         },
         _
       ) do
+    assigns = Map.merge(assigns, %{progress: parse_progress(progress)})
+
     ~F"""
-    <div class="flex items-center ml-10">
-      <div class="rounded-full w-2 h-2 bg-red-500" />
+    <div class="flex items-center ml-8">
+      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
       <a
-        class="ml-6"
+        class="ml-6 text-gray-600 underline hover:text-gray-700"
         href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}
       >
         {Utils.name(name, given_name, family_name)}
       </a>
     </div>
+    """
+  end
+
+  def render_progress_column(assigns, user, _) do
+    assigns = Map.merge(assigns, %{progress: parse_progress(user.progress)})
+
+    ~F"""
+    <div class={if @progress < 50, do: "text-red-600 font-bold"} data-progress-check={if @progress >= 50, do: "true", else: "false"}>{@progress}%</div>
     """
   end
 
@@ -91,16 +108,29 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   end
 
   def stub_overall_mastery(assigns, _user, _) do
+    assigns = Map.merge(assigns, %{overall_mastery: random_value()})
+
     ~F"""
-    {random_stub()}
+      <div class={if @overall_mastery == "Low", do: "text-red-600 font-bold"}>{@overall_mastery}</div>
     """
   end
 
   def stub_engagement(assigns, _user, _) do
+    assigns = Map.merge(assigns, %{engagement: random_value()})
+
     ~F"""
-    {random_stub()}
+      <div class={if @engagement == "Low", do: "text-red-600 font-bold"}>{@engagement}</div>
     """
   end
 
-  defp random_stub(), do: Enum.random(["Low", "Medium", "High", "Not enough data"])
+  defp random_value(), do: Enum.random(["Low", "Medium", "High", "Not enough data"])
+
+  defp parse_progress(progress) do
+    {progress, _} =
+      ((progress && Float.round(progress * 100)) || 0.0)
+      |> Float.to_string()
+      |> Integer.parse()
+
+    progress
+  end
 end

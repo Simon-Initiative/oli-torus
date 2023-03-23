@@ -63,25 +63,23 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def render(assigns) do
     ~F"""
-    <div class="p-10">
-      <div class="bg-white w-full">
-        <div class="flex items-center border-b border-b-gray-200 pr-6">
-          <h4 class="px-10 py-6 torus-h4 mr-auto">Students</h4>
-          <form for="search" phx-target={@myself} phx-change="search_student" phx-debounce="5000">
-            <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search}/>
-          </form>
-        </div>
-
-        <PagedTable
-          table_model={@students_table_model}
-          total_count={@total_count}
-          offset={@params.offset}
-          limit={@params.limit}
-          filter={@params.text_search}
-          additional_table_class="border-0"
-          sort={JS.push("paged_table_sort", target: @myself)}
-        />
+    <div class="px-10 pb-10">
+      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
+        <h4 class="pl-9 torus-h4 mr-auto">Students</h4>
+        <form for="search" phx-target={@myself} phx-change="search_student" class="pb-6 ml-9 sm:pb-0">
+          <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
+        </form>
       </div>
+
+      <PagedTable
+        table_model={@students_table_model}
+        total_count={@total_count}
+        offset={@params.offset}
+        limit={@params.limit}
+        render_top_info={false}
+        additional_table_class="instructor_dashboard_table"
+        sort={JS.push("paged_table_sort", target: @myself)}
+      />
     </div>
     """
   end
