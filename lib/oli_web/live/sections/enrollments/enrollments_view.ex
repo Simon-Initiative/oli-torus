@@ -209,8 +209,10 @@ defmodule OliWeb.Sections.EnrollmentsView do
   end
 
   defp add_students_progress(users, section_id, container_id) do
+    users_progress = Metrics.progress_for(section_id, Enum.map(users, & &1.id), container_id)
+
     Enum.map(users, fn user ->
-      Map.merge(user, %{progress: Metrics.progress_for(section_id, user.id, container_id)})
+      Map.merge(user, %{progress: Map.get(users_progress, user.id)})
     end)
   end
 end
