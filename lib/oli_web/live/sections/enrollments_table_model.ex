@@ -59,16 +59,13 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   def render_name_column(
         assigns,
         %{
-          id: id,
-          name: name,
-          given_name: given_name,
-          family_name: family_name
-        },
+          id: id
+        } = user,
         _
       ) do
     ~F"""
     <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}>
-      {name(name, given_name, family_name)}
+      {name(user)}
     </a>
     """
   end

@@ -174,16 +174,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
       ) do
     ~F"""
       <div :if={user_id}>
-        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{safe_name(user)}</Link>
+        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{OliWeb.Common.Utils.name(user)}</Link>
       </div>
     """
   end
 
-  defp safe_name(user) do
-    case user.name do
-      nil -> "Unknown User"
-      "" -> "Unknown User"
-      _ -> user.name
-    end
-  end
 end
