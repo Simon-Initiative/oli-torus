@@ -3,11 +3,9 @@ defmodule Oli.Resources.CollaborationTest do
 
   import Oli.Factory
 
-  alias Oli.Delivery.Sections
   alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
-  alias Oli.Resources.ResourceType
 
   describe "collaborative spaces" do
     test "upsert_collaborative_space/4 with valid data creates a collaborative space" do
