@@ -772,8 +772,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
-      :delivery_protected,
+      :delivery_and_admin,
       :maybe_gated_resource,
       :pow_email_layout
     ])
