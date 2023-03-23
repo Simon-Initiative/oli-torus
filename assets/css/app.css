@@ -46,7 +46,3 @@ p {
 .slate-editor p:last-child {
   @apply mb-0;
 }
-
-.structured-content code {
-  color: #e83e8c;
-}

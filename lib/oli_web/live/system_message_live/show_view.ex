@@ -28,7 +28,7 @@ defmodule OliWeb.SystemMessageLive.ShowView do
 
         {active_message.message |> Oli.Utils.find_and_linkify_urls_in_string() |> raw()}
 
-        <button id={"system-message-close-#{active_message.id}"} type="button" class="close" data-dismiss="alert" aria-label="Close" phx-hook="SystemMessage" message-id={active_message.id}>
+        <button id={"system-message-close-#{active_message.id}"} type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-hook="SystemMessage" message-id={active_message.id}>
           <i class="fa-solid fa-xmark fa-lg"></i>
         </button>
 
