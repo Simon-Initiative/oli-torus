@@ -11,15 +11,20 @@ interface CorrectOptionProps {
 }
 
 const getPartDef = (currentActivityTree: any, currentPartSelection: any) => {
-  let partDef;
-  for (let i = 0; i < currentActivityTree.length; i++) {
-    const activity = currentActivityTree[i];
-    partDef = activity.content?.partsLayout.find((part: any) => part.id === currentPartSelection);
-    if (partDef) {
-      break;
+  try {
+    let partDef;
+    for (let i = 0; i < currentActivityTree.length; i++) {
+      const activity = currentActivityTree[i];
+      partDef = activity.content?.partsLayout.find((part: any) => part.id === currentPartSelection);
+      if (partDef) {
+        break;
+      }
     }
+    return partDef;
+  } catch (e) {
+    console.log(e);
+    return null;
   }
-  return partDef;
 };
 
 export const OptionsCorrectPicker: React.FC<CorrectOptionProps> = ({
@@ -34,7 +39,7 @@ export const OptionsCorrectPicker: React.FC<CorrectOptionProps> = ({
   const part = getPartDef(activityTree, currentPartSelection);
 
   // TODO - make this widget more generic, right now it's very tied to dropdowns.
-  const options = part?.custom?.optionLabels || [];
+  const options = part?.custom?.optionLabels || ['Option 1', 'Option 2'];
 
   const onSelect = useCallback(
     (e) => {

@@ -52,12 +52,6 @@ export const simplifiedPartSchema: JSONSchema7 = {
       type: 'object',
       title: 'Scoring',
       properties: {
-        requiresManualGrading: {
-          title: 'Requires Manual Grading',
-          type: 'boolean',
-          format: 'checkbox',
-          default: false,
-        },
         maxScore: {
           title: 'Max Score',
           type: 'number',
@@ -112,9 +106,7 @@ export const simplifiedPartUiSchema = {
   Scoring: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Scoring',
-    requiresManualGrading: {
-      classNames: 'col-6',
-    },
+
     maxScore: {
       classNames: 'col-6',
     },

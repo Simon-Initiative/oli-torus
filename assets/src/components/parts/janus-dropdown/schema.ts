@@ -16,6 +16,8 @@ export interface DropdownModel extends JanusAbsolutePositioned, JanusCustomCss {
 }
 
 export const simpleUISchema = {
+  'ui:classNames': 'dropdown-editor',
+  classNames: 'dropdown-editor',
   correctAnswer: {
     'ui:widget': 'OptionsCorrectPicker',
   },
@@ -23,7 +25,9 @@ export const simpleUISchema = {
     'ui:widget': 'OptionsCustomErrorFeedbackAuthoring',
   },
   optionLabels: {
+    classNames: 'dropdown-options-field',
     items: {
+      classNames: 'dropdown-options-field',
       'ui:emptyValue': '',
     },
   },
