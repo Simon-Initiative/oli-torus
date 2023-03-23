@@ -3,6 +3,7 @@ import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { AdvancedFeedbackNumberRange } from '../../../apps/authoring/components/PropertyEditor/custom/AdvancedFeedbackNumberRange';
+import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
 
 export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
   showLabel: boolean;
@@ -16,66 +17,6 @@ export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
   snapInterval: number;
   enabled: boolean;
 }
-
-const correctOrRange: JSONSchema7Object = {
-  title: 'Correct Answer',
-  type: 'object',
-
-  properties: {
-    range: {
-      title: 'Correct Range?',
-      type: 'boolean',
-      default: false,
-    },
-  },
-  allOf: [
-    {
-      if: {
-        properties: {
-          range: {
-            const: false,
-          },
-        },
-      },
-      then: {
-        properties: {
-          correctAnswer: {
-            title: 'Correct value',
-            type: 'number',
-          },
-        },
-        required: ['correctAnswer'],
-      },
-    },
-    {
-      if: {
-        properties: {
-          range: {
-            const: true,
-          },
-        },
-      },
-      then: {
-        properties: {
-          correctMin: { title: 'Min allowed', type: 'number' },
-          correctMax: { title: 'Max allowed', type: 'number' },
-        },
-        required: ['correctMin', 'correctMax'],
-      },
-    },
-  ],
-};
-
-const correctOrRangeUI = {
-  'ui:ObjectFieldTemplate': CustomFieldTemplate,
-  'ui:title': 'Correct Answer',
-  correctMin: {
-    classNames: 'col-6',
-  },
-  correctMax: {
-    classNames: 'col-6',
-  },
-};
 
 export const simpleSchema: JSONSchema7Object = {
   label: {
@@ -110,7 +51,7 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'number',
   },
 
-  answer: correctOrRange,
+  answer: correctOrRange.schema,
 
   correctFeedback: {
     title: 'Correct Feedback',
@@ -122,25 +63,12 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     default: '',
   },
-  advancedFeedback: {
-    title: 'Advanced Feedback',
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        answer: correctOrRange,
-        feedback: {
-          type: 'string',
-          default: '',
-        },
-      },
-    },
-  },
+  advancedFeedback: numericAdvancedFeedback.schema,
 };
 
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
-  answer: correctOrRangeUI,
+  answer: correctOrRange.uiSchema,
   minimum: {
     classNames: 'col-6',
   },
@@ -150,9 +78,7 @@ export const simpleUISchema = {
   snapInterval: {
     classNames: 'col-6',
   },
-  advancedFeedback: {
-    'ui:widget': AdvancedFeedbackNumberRange,
-  },
+  advancedFeedback: numericAdvancedFeedback.uiSchema,
 };
 
 export const schema: JSONSchema7Object = {
