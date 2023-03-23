@@ -68,7 +68,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         _
       ) do
     assigns = Map.merge(assigns, %{progress: parse_progress(progress)})
-
+    # TODO link to "Student Details View" (not yet developed) instead of "Student Progress View"
     ~F"""
     <div class="flex items-center ml-8">
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
