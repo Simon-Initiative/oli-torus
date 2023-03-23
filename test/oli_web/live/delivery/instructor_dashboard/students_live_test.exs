@@ -56,7 +56,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsLiveTest do
       section: section,
       conn: conn
     } do
+      user = insert(:user)
+
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
@@ -67,8 +70,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsLiveTest do
                "Students"
              )
 
-      # Students tab content gets rendered
-      assert has_element?(view, ~s{p}, "Not available yet")
+      # Students table gets rendered
+      assert has_element?(view, "h4", "Students")
+
+      assert render(view) =~
+               OliWeb.Common.Utils.name(user.name, user.given_name, user.family_name)
     end
   end
 end
