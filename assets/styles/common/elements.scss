@@ -276,10 +276,8 @@ $element-margin-bottom: 1.5em;
   .callout-inline,
   .formula-inline {
     display: inline-block;
-    margin: 0px 0.5em;
     padding: 2px 0.5em;
-    vertical-align: middle;
-    margin-bottom: $element-margin-bottom;
+
     mjx-container[display='true'] {
       pointer-events: none;
       margin: 0px !important;
