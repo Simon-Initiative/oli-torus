@@ -14,6 +14,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
   alias Surface.Components.Link
+  alias Oli.Delivery.Metrics
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -103,6 +104,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
+      |> add_students_progress(socket.assigns.section.id, nil)
 
     table_model = Map.put(table_model, :rows, enrollments)
     total_count = determine_total(enrollments)
@@ -197,10 +199,18 @@ defmodule OliWeb.Sections.EnrollmentsView do
         %Sorting{direction: :asc, field: :name},
         @default_options
       )
+      |> add_students_progress(section.id, nil)
 
     total_count = determine_total(enrollments)
+
     {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
 
     %{total_count: total_count, table_model: table_model}
+  end
+
+  defp add_students_progress(users, section_id, container_id) do
+    Enum.map(users, fn user ->
+      Map.merge(user, %{progress: Metrics.progress_for(section_id, user.id, container_id)})
+    end)
   end
 end
