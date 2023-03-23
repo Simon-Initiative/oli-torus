@@ -159,7 +159,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   attr :active_tab, :atom,
     required: true,
-    values: [:learning_objectives, :students, :content, :discussions, :course_discussion, :assignments, :manage]
+    values: [
+      :learning_objectives,
+      :students,
+      :content,
+      :discussions,
+      :course_discussion,
+      :assignments,
+      :manage
+    ]
 
   attr :section_slug, :string, required: true
   attr :preview_mode, :boolean, required: true
