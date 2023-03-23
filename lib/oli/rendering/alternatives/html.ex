@@ -37,7 +37,6 @@ defmodule Oli.Rendering.Alternatives.Html do
         %Context{
           user: user,
           section_slug: section_slug,
-          project_slug: project_slug,
           alternatives_groups_fn: alternatives_groups_fn,
           extrinsic_read_section_fn: extrinsic_read_section_fn,
           mode: mode
@@ -46,14 +45,7 @@ defmodule Oli.Rendering.Alternatives.Html do
           "alternatives_id" => alternatives_id
         }
       ) do
-    {:ok, groups} =
-      case section_slug do
-        nil ->
-          alternatives_groups_fn.(project_slug)
-
-        section_slug ->
-          alternatives_groups_fn.(section_slug)
-      end
+    {:ok, groups} = alternatives_groups_fn.()
 
     options =
       case Enum.find(groups, &(&1.id == alternatives_id)) do
