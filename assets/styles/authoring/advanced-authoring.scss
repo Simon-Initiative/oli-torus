@@ -87,6 +87,23 @@ $font-family-sans-serif: var(--font-sans);
       border-left: 1px solid $ui-border-color;
       border-right: 1px solid $ui-border-color;
 
+      .form-group .p-0.m-0.container-fluid .mb-2.d-flex.align-items-center.row {
+        // This section is a bit of a hack, I tried to target it as narrowly as possible.
+        // The array-editor in the rjsf/bootstrap theme wasn't looking right, this fixes those styles.
+        // Unfortunately, the 3.x.x branch of rjsf/bootstrap doesn't honor the ui schema classNames property,
+        // so it's not possible to more sanely target these.
+        // A longer-term proper fix would be to upgrade rjsf and rjsf/bootstrap from 3.x to 5.x which is a bigger
+        // lift than I want to take right now.
+        .col-lg-9.col-9 {
+          flex: 0 0 65%;
+          padding-right: 0;
+          max-width: 65%;
+        }
+        .py-4.col-lg-3.col-3 {
+          padding-left: 0;
+        }
+      }
+
       &.open {
         right: 0;
         visibility: visible;
