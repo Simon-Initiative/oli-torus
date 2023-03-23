@@ -282,7 +282,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       assert render(view) =~
-      "Delete Section"
+               "Delete Section"
 
       view
       |> element("button[phx-click=\"show_delete_modal\"]")
@@ -346,8 +346,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section: section
     } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
-      assert render(view) =~ "Collaboration Space"
-      assert render(view) =~ "You are not allowed to have a collaboration space in this resource"
+      assert render(view) =~ "Collaborative Space"
+      assert render(view) =~ "Collaborative spaces are not enabled by the course project"
     end
 
     test "renders Collaboration Space config correctly (when enabled by authoring)", %{
@@ -356,7 +356,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       {:ok, %{section: section}} = create_project_with_collab_space_and_posts()
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~ "Collaboration Space"
+      assert render(view) =~ "Collaborative Space"
       assert has_element?(view, "#collab_space_config")
     end
   end
