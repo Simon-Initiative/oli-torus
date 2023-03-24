@@ -3,20 +3,11 @@ defmodule OliWeb.Common.SearchInput do
 
   alias Phoenix.LiveView.JS
 
-  # prop apply, :event, default: "text_search_apply"
-  # prop reset, :event, default: "text_search_reset"
-  # prop change, :event, default: "text_search_change"
-  # prop placeholder, :string, default: "Search..."
-  # prop text, :string, default: ""
-  # prop event_target, :any, required: false, default: :live_view
   attr :class, :string, default: nil
   attr :placeholder, :string, default: ""
   attr :text, :string, default: ""
   attr :id, :string, required: true
   attr :name, :string, required: true
-
-  # attr :on_change, :string, required: true
-  # attr :phx_target, :any, required: true
 
   def render(assigns) do
     ~H"""
@@ -26,20 +17,4 @@ defmodule OliWeb.Common.SearchInput do
       </div>
     """
   end
-
-  # def handle_delegated(event, params, socket, patch_fn) do
-  #   delegate_handle_event(event, params, socket, patch_fn)
-  # end
-
-  # def delegate_handle_event("text_search_reset", %{"id" => _id}, socket, patch_fn) do
-  #   patch_fn.(socket, %{text_search: "", offset: 0})
-  # end
-
-  # def delegate_handle_event("text_search_change", %{"value" => value}, socket, patch_fn) do
-  #   patch_fn.(socket, %{text_search: value, offset: 0})
-  # end
-
-  # def delegate_handle_event(_, _, _, _) do
-  #   :not_handled
-  # end
 end
