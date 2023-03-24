@@ -10,6 +10,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -337,5 +338,73 @@ defmodule Oli.Authoring.Course do
       title: title,
       description: "New family from project creation"
     }
+  end
+
+  defp get_project_survey(project_id) do
+    ProjectResource
+    |> join(:inner, [pr], rev in Revision, on: pr.resource_id == rev.resource_id)
+    |> join(:left, [_, rev], rev2 in Revision,
+      on: rev.resource_id == rev2.resource_id and rev2.id > rev.id
+    )
+    |> where(
+      [pr, rev, rev2],
+      pr.project_id == ^project_id and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("survey") and rev.deleted == false and
+        is_nil(rev2)
+    )
+    |> select([_, rev], rev)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp update_project_required_survey_resource_id(project_id, resource_id) do
+    Project
+    |> where([p], p.id == ^project_id)
+    |> Repo.one()
+    |> Project.changeset(%{required_survey_resource_id: resource_id})
+    |> Repo.update()
+  end
+
+  def create_project_survey(project_id, author_id) do
+    case get_project_survey(project_id) do
+      nil -> do_create_project_survey(project_id, author_id)
+      _ -> {:error, "The project already has a survey"}
+    end
+  end
+
+  defp do_create_project_survey(project_id, author_id) do
+    {:ok, revision} =
+      Oli.Resources.create_new(
+        %{
+          title: "Course Survey",
+          project_id: project_id,
+          author_id: author_id,
+          max_attempts: 1,
+          scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent")
+        },
+        ResourceType.get_id_by_type("survey")
+      )
+
+    create_project_resource(%{
+      project_id: project_id,
+      resource_id: revision.resource_id
+    })
+
+    update_project_required_survey_resource_id(project_id, revision.resource_id)
+  end
+
+  def delete_project_survey(project_id) do
+    case get_project_survey(project_id) do
+      nil -> {:error, "The project doesn't have a survey"}
+      project_survey -> do_delete_project_survey(project_id, project_survey)
+    end
+  end
+
+  defp do_delete_project_survey(project_id, project_survey) do
+    project_survey
+    |> Revision.changeset(%{deleted: true})
+    |> Repo.update()
+
+    update_project_required_survey_resource_id(project_id, nil)
   end
 end
