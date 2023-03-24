@@ -63,7 +63,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def render(assigns) do
     ~F"""
-    <div class="px-10 pb-10">
+    <div class="mx-10 mb-10 bg-white shadow-sm">
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
         <h4 class="pl-9 torus-h4 mr-auto">Students</h4>
         <form for="search" phx-target={@myself} phx-change="search_student" class="pb-6 ml-9 sm:pb-0">
