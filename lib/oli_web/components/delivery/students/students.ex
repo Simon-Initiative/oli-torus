@@ -79,6 +79,7 @@ defmodule OliWeb.Components.Delivery.Students do
         render_top_info={false}
         additional_table_class="instructor_dashboard_table"
         sort={JS.push("paged_table_sort", target: @myself)}
+        page_change={JS.push("paged_table_page_change", target: @myself)}
       />
     </div>
     """
@@ -93,6 +94,19 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.StudentsLive,
            socket.assigns.section_slug,
            update_params(socket.assigns.params, %{text_search: student_name})
+         )
+     )}
+  end
+
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.StudentsLive,
+           socket.assigns.section_slug,
+           update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
   end
