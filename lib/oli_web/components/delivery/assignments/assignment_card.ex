@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Delivery.AssignmentCard do
   use Phoenix.Component
 
+  alias OliWeb.Router.Helpers, as: Routes
+
   def render(assigns) do
     ~H"""
       <div class="flex justify-between items-center bg-delivery-header p-8">
@@ -13,7 +15,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
               No due date
             <% end %>
           </span>
-          <button class="torus-button primary px-2">Quiz</button>
+          <a class="torus-button primary px-2" href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, @assignment.slug)}>Open</a>
         </div>
       </div>
     """
