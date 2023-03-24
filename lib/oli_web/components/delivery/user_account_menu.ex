@@ -6,7 +6,6 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
-  alias OliWeb.Common.SessionContext
 
   attr :current_user, User
   attr :is_liveview, :boolean, default: false

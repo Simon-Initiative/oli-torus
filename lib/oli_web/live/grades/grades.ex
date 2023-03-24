@@ -5,11 +5,8 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.AGS.LineItem
   alias Lti_1p3.Tool.Services.NRPS
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
-  alias Oli.Accounts
-  alias Oli.Repo
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias Oli.Lti.AccessTokenLibrary
   alias OliWeb.Sections.Mount
