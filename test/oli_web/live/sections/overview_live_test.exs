@@ -94,8 +94,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       {:ok, _view, html} = live(conn, live_view_overview_route(section.slug))
 
-      refute html =~ "<nav aria-label=\"breadcrumb"
-      assert html =~ "Overview"
+      assert html =~ "Details"
     end
   end
 
@@ -375,8 +374,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~ "Overview"
-      assert render(view) =~ "Overview of this course section"
+      assert render(view) =~ "Details"
+      assert render(view) =~ "Overview of course section details"
       assert has_element?(view, "input[value=\"#{section.slug}\"]")
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"Direct Delivery\"]")
