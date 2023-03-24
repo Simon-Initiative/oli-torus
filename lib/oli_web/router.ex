@@ -360,18 +360,22 @@ defmodule OliWeb.Router do
   scope "/authoring/project", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
+    live_session :load_projects,
+      on_mount: [Oli.LiveSessionPlugs.SetCurrentAuthor, Oli.LiveSessionPlugs.SetProject] do
+      live("/:project_id/overview", Projects.OverviewLive)
+      live("/:project_id", Projects.OverviewLive)
+    end
+  end
+
+  scope "/authoring/project", OliWeb do
+    pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
+
     # Project display pages
-    get("/:project_id", ProjectController, :overview)
-    get("/:project_id/overview", ProjectController, :overview)
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/insights", ProjectController, :download_analytics)
     post("/:project_id/duplicate", ProjectController, :clone_project)
-
-    # Project
-    put("/:project_id", ProjectController, :update)
-    delete("/:project_id", ProjectController, :delete)
 
     # Alternatives Groups
     live("/:project_id/alternatives", Resources.AlternativesEditor)

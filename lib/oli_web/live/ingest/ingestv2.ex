@@ -123,7 +123,7 @@ defmodule OliWeb.Admin.IngestV2 do
     {#if @ingestion_step == :processed}
       <h4>Ingest succeeded</h4>
 
-      <a href={Routes.project_path(OliWeb.Endpoint, :overview, @state.project.slug)}>Access your new course here</a>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @state.project.slug)}>Access your new course here</a>
     {/if}
     """
   end

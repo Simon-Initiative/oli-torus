@@ -549,7 +549,7 @@ defmodule Oli.TestHelpers do
 
     # Publication of project with root container
     publication =
-      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+      insert(:publication, %{project: project, published: nil, root_resource_id: container_resource.id})
 
     # Publish root container resource
     insert(:published_resource, %{
