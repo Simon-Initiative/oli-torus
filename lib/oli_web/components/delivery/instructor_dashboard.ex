@@ -31,8 +31,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           }
   end
 
-  attr :current_user, User, required: true
-  attr :section, Section, required: true
+  attr :current_user, User
+  attr :section, Section
   attr :breadcrumbs, :list, required: true
   attr :socket_or_conn, :any, required: true
   attr :preview_mode, :boolean, default: false
