@@ -75,6 +75,10 @@ $element-margin-bottom: 1.5em;
     }
   }
 
+  code {
+    color: #e83e8c;
+  }
+
   pre {
     text-align: left;
     color: var(--color-body-color);
@@ -164,6 +168,7 @@ $element-margin-bottom: 1.5em;
   }
 
   .img-fluid {
+    display: inline-block;
     margin: 1.5em auto;
   }
 
@@ -173,6 +178,7 @@ $element-margin-bottom: 1.5em;
 
   img.d-block,
   iframe.d-block {
+    display: block;
     max-width: 100%;
     max-height: 800px;
     margin: auto;
@@ -183,6 +189,14 @@ $element-margin-bottom: 1.5em;
   iframe.float-md-right,
   iframe.float-md-left {
     max-width: 400px;
+  }
+
+  .float-md-right {
+    float: right;
+  }
+
+  .float-md-left {
+    float: left;
   }
 
   .definition {
@@ -262,10 +276,8 @@ $element-margin-bottom: 1.5em;
   .callout-inline,
   .formula-inline {
     display: inline-block;
-    margin: 0px 0.5em;
     padding: 2px 0.5em;
-    vertical-align: middle;
-    margin-bottom: $element-margin-bottom;
+
     mjx-container[display='true'] {
       pointer-events: none;
       margin: 0px !important;

@@ -4,7 +4,7 @@
 
     <%= live_flash(@flash, :info) %>
 
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="info">
+    <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="info">
       <i class="fa-solid fa-xmark fa-lg"></i>
     </button>
 
@@ -16,7 +16,7 @@
 
     <%= live_flash(@flash, :error) %>
 
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
+    <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
       <i class="fa-solid fa-xmark fa-lg"></i>
     </button>
 

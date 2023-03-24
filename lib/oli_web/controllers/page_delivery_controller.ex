@@ -924,9 +924,11 @@ defmodule OliWeb.PageDeliveryController do
 
     section = conn.assigns.section
 
+    is_admin? = Oli.Accounts.is_admin?(author)
+
     if Oli.Accounts.is_admin?(author) or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
-      PageContext.create_for_review(section_slug, attempt_guid, user)
+      PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
       |> render_page(conn, section_slug, false)
     else
       render(conn, "not_authorized.html")
