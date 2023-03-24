@@ -67,6 +67,39 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       assert has_element?(view, "textarea[name=\"project[description]\"]", "updated description")
     end
 
+    test "project can enable required surveys", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
+
+      refute has_element?(view, "input[name=\"survey\"][checked]")
+
+      element(view, "form[phx-change=\"set-required-survey\"]")
+      |> render_change(%{
+        survey: "on"
+      })
+
+      updated_project = Oli.Authoring.Course.get_project!(project.id)
+      assert updated_project.required_survey_resource_id != nil
+      assert has_element?(view, "input[name=\"survey\"][checked]")
+    end
+
+    test "project can disable required surveys", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      Oli.Authoring.Course.create_project_survey(project.id, author.id)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
+
+      assert has_element?(view, "input[name=\"survey\"][checked]")
+
+      element(view, "form[phx-change=\"set-required-survey\"]")
+      |> render_change(%{})
+
+      updated_project = Oli.Authoring.Course.get_project!(project.id)
+      assert updated_project.required_survey_resource_id != nil
+      refute has_element?(view, "input[name=\"survey\"][checked]")
+    end
+
     defp create_project_with_author(author) do
       %{project: project} = base_project_with_curriculum(nil)
       insert(:author_project, project_id: project.id, author_id: author.id)

@@ -12,6 +12,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Project.OverviewSection
+  alias OliWeb.Projects.RequiredSurvey
 
   def mount(_params, _session, socket) do
     project = socket.assigns.project
@@ -157,6 +158,10 @@ defmodule OliWeb.Projects.OverviewLive do
               })
           %>
         </div>
+      </OverviewSection.render>
+
+      <OverviewSection.render title="Required Survey" description="Allows to activate and configure a survey for all students that enter the course for the first time.">
+        <.live_component module={RequiredSurvey} id="required-survey-section" project_id={@project.id} author_id={@current_author.id} enabled={@project.required_survey_resource_id} />
       </OverviewSection.render>
 
       <OverviewSection.render title="Actions" is_last={true}>
