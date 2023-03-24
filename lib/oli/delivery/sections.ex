@@ -1982,6 +1982,12 @@ defmodule Oli.Delivery.Sections do
             gc.data["end_datetime"],
             sr.end_date
           ),
+        scheduled_type: sr.scheduling_type,
+        gate_type: fragment(
+          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
+          gc2.type,
+          gc.type
+        ),
         graded: rev.graded,
         resource_type_id: rev.resource_type_id,
         numbering_level: sr.numbering_level,
