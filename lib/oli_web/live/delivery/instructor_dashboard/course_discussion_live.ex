@@ -22,9 +22,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.CourseDiscussionLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <InstructorDashboard.main_layout {assigns}>
-        <InstructorDashboard.course_discussion {assigns} />
-      </InstructorDashboard.main_layout>
+      <InstructorDashboard.course_discussion {assigns} />
     """
   end
 end

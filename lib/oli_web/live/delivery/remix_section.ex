@@ -196,7 +196,6 @@ defmodule OliWeb.Delivery.RemixSection do
        dragging: nil,
        selected: nil,
        has_unsaved_changes: false,
-       delivery_breadcrumb: true,
        breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
        available_publications: available_publications

@@ -35,7 +35,7 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Section Overview",
+          full_title: "Manage Section",
           link:
             Routes.live_path(
               OliWeb.Endpoint,
@@ -100,7 +100,7 @@ defmodule OliWeb.Sections.OverviewView do
     ~F"""
     {render_modal(assigns)}
     <Groups>
-      <Group label="Overview" description="Overview of this course section">
+      <Group label="Details" description="Overview of course section details">
         <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
@@ -118,10 +118,10 @@ defmodule OliWeb.Sections.OverviewView do
           />
         {/unless}
       </Group>
-      <Group label="Instructors" description="Manage the users with instructor level access">
+      <Group label="Instructors" description="Manage users with instructor level access">
         <Instructors users={@instructors}/>
       </Group>
-      <Group label="Curriculum" description="Manage the content delivered to students">
+      <Group label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
         <li>
           <a target="_blank" href={Routes.content_path(OliWeb.Endpoint, :preview, @section.slug)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>

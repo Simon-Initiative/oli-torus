@@ -11,9 +11,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <InstructorDashboard.main_layout {assigns}>
-        <InstructorDashboard.learning_objectives {assigns} />
-      </InstructorDashboard.main_layout>
+      <InstructorDashboard.learning_objectives {assigns} />
     """
   end
 end

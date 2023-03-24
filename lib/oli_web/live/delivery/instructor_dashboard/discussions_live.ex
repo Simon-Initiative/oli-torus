@@ -35,11 +35,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <InstructorDashboard.main_layout {assigns}>
-        <div id={assigns[:parent_component_id]}>
-          <InstructorDashboard.discussions {assigns} />
-        </div>
-      </InstructorDashboard.main_layout>
+      <div id={assigns[:parent_component_id]}>
+        <InstructorDashboard.discussions {assigns} />
+      </div>
     """
   end
 

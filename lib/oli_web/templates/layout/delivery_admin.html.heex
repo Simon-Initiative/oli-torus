@@ -4,14 +4,13 @@
   Skip Navigation
 </a>
 
-<div class="default pb-[60px]">
-
-  <main role="main" id="main-content">
-
-    <%= @inner_content %>
-
-  </main>
-
-</div>
+<Components.Delivery.InstructorDashboard.main_layout
+  socket_or_conn={OliWeb.Components.Delivery.Utils.socket_or_conn(assigns)}
+  current_user={@current_user}
+  section={@section}
+  preview_mode={assigns[:preview_mode]}
+  breadcrumbs={assigns[:breadcrumbs]}>
+  <%= @inner_content %>
+</Components.Delivery.InstructorDashboard.main_layout>
 
 <% end %>

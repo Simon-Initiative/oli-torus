@@ -100,7 +100,6 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       count_exceptions: count_exceptions(parent_gate_id, gating_condition_id),
       title: title,
       section: section,
-      delivery_breadcrumb: true,
       breadcrumbs: set_breadcrumbs(section, module, title, parent_gate, user_type),
       gating_condition: gating_condition
     )

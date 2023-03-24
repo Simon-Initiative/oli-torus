@@ -79,7 +79,8 @@ defmodule OliWeb.Resources.PagesView do
         total_count = determine_total(pages)
         {:ok, table_model} = PagesTableModel.new(pages, project, context)
 
-        project_hierarchy = AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
+        project_hierarchy =
+          AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
 
         assign(socket,
           context: context,
@@ -147,7 +148,7 @@ defmodule OliWeb.Resources.PagesView do
   def render(assigns) do
     ~F"""
     {render_modal(assigns)}
-    <div>
+    <div class="container mx-auto">
 
       <FilterBox
         card_header_text="Browse All Pages"
