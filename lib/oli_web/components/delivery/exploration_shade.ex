@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
   alias OliWeb.Components.Delivery.ExplorationCard
 
   attr :exploration_pages, :map, default: nil
+  attr :section_slug, :string
 
   def exploration_shade(assigns) do
     ~H"""
@@ -26,9 +27,9 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
         </div>
         <div class="collapse container mx-auto md:px-10 pt-2 pb-4" id="collapseExploration">
           <%= if @exploration_pages && length(@exploration_pages) > 0 do %>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h">
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-4 max-h">
               <%= for exploration <- @exploration_pages do %>
-                <ExplorationCard.render dark={true} exploration={exploration} />
+                <ExplorationCard.render dark={true} exploration={exploration} section_slug={@section_slug}/>
               <% end %>
             </div>
           <% else %>
