@@ -5866,12 +5866,22 @@ h4.torus-h4 {
   color: rgb(55 58 68 / var(--tw-text-opacity));
 }
 
+.dark h4.torus-h4 {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
 h6.torus-h6 {
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 600;
   --tw-text-opacity: 1;
   color: rgb(55 58 68 / var(--tw-text-opacity));
+}
+
+.dark h6.torus-h6 {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 span.torus-span {
@@ -5882,6 +5892,11 @@ span.torus-span {
   color: rgb(163 163 163 / var(--tw-text-opacity));
 }
 
+.dark span.torus-span {
+  --tw-text-opacity: 1;
+  color: rgb(82 82 82 / var(--tw-text-opacity));
+}
+
 small.torus-small {
   font-size: 0.8rem;
   font-weight: 400;
@@ -5889,11 +5904,21 @@ small.torus-small {
   color: rgb(163 163 163 / var(--tw-text-opacity));
 }
 
+.dark small.torus-small {
+  --tw-text-opacity: 1;
+  color: rgb(82 82 82 / var(--tw-text-opacity));
+}
+
 p.torus-p {
   margin: 0px;
   font-weight: 400;
   --tw-text-opacity: 1;
   color: rgb(55 58 68 / var(--tw-text-opacity));
+}
+
+.dark p.torus-p {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 a.torus-button,
@@ -6403,6 +6428,11 @@ p {
   margin-bottom: 0px;
 }
 
+.text-muted {
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
 @media (min-width: 768px) {
   .md\:container {
     width: 100%;
@@ -6765,6 +6795,11 @@ p {
 .dark .dark\:bg-gray-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-gray-900 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(23 23 23 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-slate-700 {
