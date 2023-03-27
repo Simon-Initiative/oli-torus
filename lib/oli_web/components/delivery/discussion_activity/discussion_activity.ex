@@ -43,6 +43,28 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
     {:ok, socket}
   end
 
+  @default_params %{
+    offset: 0,
+    limit: 10,
+    filter: :all
+  }
+
+  def update(assigns, socket) do
+    socket =
+      socket
+      |> assign(
+        title: assigns.section.title,
+        description: assigns.section.description,
+        limit: safe_to_integer(assigns.params["limit"] || @default_params.limit),
+        filter: safe_to_atom(assigns.params["filter"] || @default_params.filter),
+        offset: safe_to_integer(assigns.params["offset"] || @default_params.offset),
+        section_slug: assigns.section.slug
+      )
+      |> do_filter()
+
+    {:ok, socket}
+  end
+
   def render(assigns) do
     ~F"""
     <div class="p-10">
@@ -221,8 +243,9 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
             %{offset: offset}
           )
 
-        discussion_table_model = Map.put(discussion_table_model, :rows, rows)
-        |> Map.put(:data, %{section_slug: section_slug, target: socket.assigns.myself})
+        discussion_table_model =
+          Map.put(discussion_table_model, :rows, rows)
+          |> Map.put(:data, %{section_slug: section_slug, target: socket.assigns.myself})
 
         assign(socket,
           discussion_table_model: discussion_table_model,
