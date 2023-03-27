@@ -296,8 +296,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     Repo.all(
       from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
         where:
-          rev.purpose == ^purpose and rev.deleted == false and rev.resource_type_id == ^page_id and
-            sr.numbering_level > 0,
+          rev.purpose == ^purpose and rev.deleted == false and rev.resource_type_id == ^page_id,
         select: rev,
         order_by: [asc: :resource_id]
       )
@@ -321,8 +320,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
         where:
           ^resource_id in rev.relates_to and rev.deleted == false and
-            rev.resource_type_id == ^page_id and
-            sr.numbering_level > 0,
+            rev.resource_type_id == ^page_id,
         select: rev,
         order_by: [asc: :resource_id]
       )

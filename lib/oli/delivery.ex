@@ -257,8 +257,7 @@ defmodule Oli.Delivery do
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where:
           rev.purpose == :application and rev.deleted == false and
-            rev.resource_type_id == ^page_id and
-            sr.numbering_level > 0,
+            rev.resource_type_id == ^page_id,
         select: rev.id,
         limit: 1
       )
