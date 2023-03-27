@@ -18,20 +18,20 @@ window.userToken = "<%= assigns[:user_token] %>";
   <%= if @resource_attempt.lifecycle_state == :evaluated do  %>
     <div class="mb-2">
     <div class="grid grid-cols-12 justify-content-start">
-      <div class="sm:col-span-3">Started:</div>
-      <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
+      <div class="col-span-3">Started:</div>
+      <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="grid grid-cols-12">
-      <div class="sm:col-span-3">Submitted:</div>
-      <div><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
+      <div class="col-span-3">Submitted:</div>
+      <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
     </div>
     <div class="grid grid-cols-12">
-      <div class="sm:col-span-3">Score:</div>
-      <div><%= show_score(@resource_attempt.score, @resource_attempt.out_of) %>%</div>
+      <div class="col-span-3">Score:</div>
+      <div class="col-span-9"><%= show_score(@resource_attempt.score, @resource_attempt.out_of) %>%</div>
     </div>
     <div class="grid grid-cols-12">
-      <div class="sm:col-span-3">Points:</div>
-      <div><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
+      <div class="col-span-3">Points:</div>
+      <div class="col-span-9"><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
     </div>
     </div>
   <% end %>
@@ -39,11 +39,11 @@ window.userToken = "<%= assigns[:user_token] %>";
     <div class="mb-2">
     <h3>Awaiting Instructor Grading</h3>
     <div class="grid grid-cols-12 justify-content-start">
-      <div class="sm:col-span-3">Started:</div>
+      <div class="col-span-3">Started:</div>
       <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="grid grid-cols-12">
-      <div class="sm:col-span-3">Submitted:</div>
+      <div class="col-span-3">Submitted:</div>
       <div><%= Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
     </div>
     </div>
