@@ -160,7 +160,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.content_path(OliWeb.Endpoint, :preview, section.slug)}\"]",
+               "a[href=\"#{Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)}\"]",
                "Preview Course as Instructor"
              )
 
@@ -282,7 +282,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       assert render(view) =~
-      "Delete Section"
+               "Delete Section"
 
       view
       |> element("button[phx-click=\"show_delete_modal\"]")
@@ -384,7 +384,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.content_path(OliWeb.Endpoint, :preview, section.slug)}\"]",
+               "a[href=\"#{Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)}\"]",
                "Preview Course as Instructor"
              )
     end
