@@ -405,6 +405,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         count={@count}
         collab_space_table_model={@collab_space_table_model}
         discussion_table_model={@discussion_table_model}
+        section_slug={@section_slug}
         parent_component_id={@parent_component_id} />
     """
   end

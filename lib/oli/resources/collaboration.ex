@@ -387,6 +387,7 @@ defmodule Oli.Resources.Collaboration do
           content: post.content,
           user_name: user.name,
           title: rev.title,
+          slug: rev.slug,
           updated_at: post.updated_at
         },
         order_by: [desc: :updated_at],
@@ -431,6 +432,7 @@ defmodule Oli.Resources.Collaboration do
           content: post.content,
           user_name: user.name,
           title: rev.title,
+          slug: rev.slug,
           updated_at: post.updated_at
         },
         order_by: [desc: :updated_at],
@@ -519,6 +521,7 @@ defmodule Oli.Resources.Collaboration do
       id: p.id,
       content: p.content,
       user_name: u.name,
+      slug: r.slug,
       title: r.title,
       inserted_at: p.inserted_at,
       status: p.status,

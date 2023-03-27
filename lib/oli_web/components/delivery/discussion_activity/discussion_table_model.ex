@@ -4,6 +4,8 @@ defmodule OliWeb.Discussion.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
 
+  alias OliWeb.Router.Helpers, as: Routes
+
   def new(posts) do
     column_specs = [
       %ColumnSpec{
@@ -33,7 +35,9 @@ defmodule OliWeb.Discussion.TableModel do
     ~F"""
       <div class="flex flex-col px-10 py-5">
           <div class="flex justify-between mb-6">
-            <span class="torus-span">{post.title}</span>
+            <a class="text-delivery-primary hover:text-delivery-primary" href={Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, assigns.section_slug, post.slug)}>
+              {post.title}
+            </a>
             <span class="torus-span">{FormatDateTime.format_datetime(post.inserted_at, show_timezone: false)}</span>
           </div>
         <div class="flex justify-between gap-2">
