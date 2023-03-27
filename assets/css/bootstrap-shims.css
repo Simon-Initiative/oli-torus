@@ -259,6 +259,7 @@ a.nav-link {
 .form-group .form-control,
 .form-label-group .form-control,
 input.form-control,
+textarea.form-control,
 .input-group input.form-control,
 .input-group select,
 select.custom-select,
