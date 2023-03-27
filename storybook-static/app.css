@@ -3114,6 +3114,7 @@ a.nav-link:hover {
 .form-group .form-control,
 .form-label-group .form-control,
 input.form-control,
+textarea.form-control,
 .input-group input.form-control,
 .input-group select,
 select.custom-select,
@@ -3132,6 +3133,7 @@ select.form-control {
 .form-group .form-control:disabled,
 .form-label-group .form-control:disabled,
 input.form-control:disabled,
+textarea.form-control:disabled,
 .input-group input.form-control:disabled,
 .input-group select:disabled,
 select.custom-select:disabled,
@@ -3145,6 +3147,7 @@ select.form-control:disabled {
 .dark .form-group .form-control,.dark 
 .form-label-group .form-control,.dark 
 input.form-control,.dark 
+textarea.form-control,.dark 
 .input-group input.form-control,.dark 
 .input-group select,.dark 
 select.custom-select,.dark 
