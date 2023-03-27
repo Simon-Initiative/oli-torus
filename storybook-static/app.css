@@ -6691,14 +6691,6 @@ p {
 }
 
 @container card (min-width: 42rem) {
-  .\@2xl\/card\:w-64 {
-    width: 16rem;
-  }
-
-  .\@2xl\/card\:flex-initial {
-    flex: 0 1 auto;
-  }
-
   .\@2xl\/card\:flex-row {
     flex-direction: row;
   }
@@ -6921,8 +6913,8 @@ p {
     display: inline;
   }
 
-  .md\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .md\:grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 
   .md\:flex-row {
