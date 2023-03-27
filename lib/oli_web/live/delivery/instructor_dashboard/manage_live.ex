@@ -11,9 +11,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <InstructorDashboard.main_layout {assigns}>
-        <InstructorDashboard.manage {assigns} />
-      </InstructorDashboard.main_layout>
+      <InstructorDashboard.manage {assigns} />
     """
   end
 end

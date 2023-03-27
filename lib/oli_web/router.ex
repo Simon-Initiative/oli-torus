@@ -778,7 +778,8 @@ defmodule OliWeb.Router do
     ])
 
     live_session :instructor_dashboard,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
       live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
       live("/students", Delivery.InstructorDashboard.StudentsLive)
       live("/content", Delivery.InstructorDashboard.ContentLive)
@@ -789,7 +790,8 @@ defmodule OliWeb.Router do
     end
 
     live_session :instructor_dashboard_preview,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
       live(
         "/preview/learning_objectives",
         Delivery.InstructorDashboard.LearningObjectivesLive,
@@ -799,7 +801,13 @@ defmodule OliWeb.Router do
       live("/preview/students", Delivery.InstructorDashboard.StudentsLive, :preview)
       live("/preview/content", Delivery.InstructorDashboard.ContentLive, :preview)
       live("/preview/discussions", Delivery.InstructorDashboard.DiscussionsLive, :preview)
-      live("/preview/course_discussion", Delivery.InstructorDashboard.CourseDiscussionLive, :preview)
+
+      live(
+        "/preview/course_discussion",
+        Delivery.InstructorDashboard.CourseDiscussionLive,
+        :preview
+      )
+
       live("/preview/assignments", Delivery.InstructorDashboard.AssignmentsLive, :preview)
       live("/preview/manage", Delivery.InstructorDashboard.ManageLive, :preview)
     end

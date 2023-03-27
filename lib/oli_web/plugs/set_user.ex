@@ -19,8 +19,8 @@ defmodule Oli.Plugs.SetCurrentUser do
 
   def set_author(conn) do
     with pow_config <- OliWeb.Pow.PowHelpers.get_pow_config(:author),
-        %{id: author_id} <- Pow.Plug.current_user(conn, pow_config),
-        {:ok, current_author} <- get_author(author_id) do
+         %{id: author_id} <- Pow.Plug.current_user(conn, pow_config),
+         {:ok, current_author} <- get_author(author_id) do
       conn
       |> put_session(:current_author_id, current_author.id)
       |> put_session(:is_community_admin, current_author.community_admin_count > 0)
@@ -59,10 +59,14 @@ defmodule Oli.Plugs.SetCurrentUser do
 
   defp get_author(author_id) do
     case AccountLookupCache.get("author_#{author_id}") do
-      {:ok, %Author{}} = response -> response
+      {:ok, %Author{}} = response ->
+        response
+
       _ ->
         case Accounts.get_author_with_community_admin_count(author_id) do
-          nil -> {:error, :not_found}
+          nil ->
+            {:error, :not_found}
+
           author ->
             AccountLookupCache.put("author_#{author_id}", author)
 
@@ -73,10 +77,14 @@ defmodule Oli.Plugs.SetCurrentUser do
 
   defp get_user(user_id) do
     case AccountLookupCache.get("user_#{user_id}") do
-      {:ok, %User{}} = response -> response
+      {:ok, %User{}} = response ->
+        response
+
       _ ->
         case Accounts.get_user_with_roles(user_id) do
-          nil -> {:error, :not_found}
+          nil ->
+            {:error, :not_found}
+
           user ->
             AccountLookupCache.put("user_#{user_id}", user)
 

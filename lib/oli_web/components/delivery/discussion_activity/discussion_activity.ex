@@ -15,7 +15,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   def render(assigns) do
     ~F"""
     <div class="p-10">
-      <div class="bg-white w-full">
+      <div class="bg-white dark:bg-gray-900 w-full">
         <h4 class="px-10 py-6 border-b border-b-gray-200 torus-h4">Discussion Activity</h4>
 
         <div class="flex items-end gap-2 px-10 py-6 border-b border-b-gray-200">

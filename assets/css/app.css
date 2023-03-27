@@ -46,3 +46,7 @@ p {
 .slate-editor p:last-child {
   @apply mb-0;
 }
+
+.text-muted {
+  @apply text-gray-500;
+}
