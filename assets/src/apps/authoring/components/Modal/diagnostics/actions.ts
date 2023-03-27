@@ -15,7 +15,7 @@ export const updateId = (problem: any, fixed: string) => {
   const activityId = problem.owner.resourceId;
   const partId = problem.item.id;
   const changes = { id: fixed };
-  return updatePart({ activityId, partId, changes });
+  return updatePart({ activityId, partId, changes, mergeChanges: true });
 };
 
 export const updatePartsWithCorrectExpression = (problem: any, fixed: string) => {

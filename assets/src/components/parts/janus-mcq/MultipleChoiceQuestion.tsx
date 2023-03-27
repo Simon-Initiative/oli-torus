@@ -10,23 +10,9 @@ import { contexts } from '../../../types/applicationContext';
 import { parseArray, parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { PartComponentProps } from '../types/parts';
+import { getNodeText } from './mcq-util';
 import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
 import { McqItem, McqModel } from './schema';
-
-// SS assumes the unstyled "text" of the label is the text value
-// there should only be one node in a label text, but we'll concat them jic
-const getNodeText = (node: any): any => {
-  if (Array.isArray(node)) {
-    return node.reduce((txt, newNode) => (txt += getNodeText(newNode)), '');
-  }
-  let nodeText = node.text || '';
-  nodeText += node.children.reduce((childrenText: any, childNode: any) => {
-    let txt = childrenText;
-    txt += getNodeText(childNode);
-    return txt;
-  }, '');
-  return nodeText;
-};
 
 const MCQItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
   return (

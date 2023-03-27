@@ -7,6 +7,7 @@ import { JSONSchema7Object } from 'json-schema';
 import * as DropdownSchema from '../../components/parts/janus-dropdown/schema';
 import * as SliderSchema from '../../components/parts/janus-slider/schema';
 import * as NumberInputSchema from '../../components/parts/janus-input-number/schema';
+import * as MultipleChoiceSchema from '../../components/parts/janus-mcq/schema';
 import '../../../styles/index.scss';
 import PropertyEditor from '../../apps/authoring/components/PropertyEditor/PropertyEditor';
 import {
@@ -57,6 +58,12 @@ const panels: PanelDef[] = [
     uiSchema: updateUISchema(DropdownSchema.simpleUISchema),
     schema: updateSchema(DropdownSchema.simpleSchema),
     data: DropdownSchema.createSchema(),
+  },
+  {
+    title: 'Multiple Choice - simple',
+    uiSchema: updateUISchema(MultipleChoiceSchema.simpleUiSchema),
+    schema: updateSchema(MultipleChoiceSchema.simpleSchema),
+    data: MultipleChoiceSchema.createSchema(),
   },
   {
     title: 'Number Input - simple',

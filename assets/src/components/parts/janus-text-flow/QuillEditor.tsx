@@ -101,7 +101,7 @@ const customHandlers = {
   },
 };
 
-const QuillEditor: React.FC<QuillEditorProps> = ({
+export const QuillEditor: React.FC<QuillEditorProps> = ({
   tree,
   html,
   showSaveCancelButtons = false,
