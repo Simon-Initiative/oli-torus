@@ -28,13 +28,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
        filter: :all,
        offset: 0,
        count: 0,
-       parent_component_id: "discussion_activity"
+       parent_component_id: "discussion_activity",
+       section: section
      )}
   end
 
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+      <%= render_modal(assigns)%>
       <InstructorDashboard.main_layout {assigns}>
         <div id={assigns[:parent_component_id]}>
           <InstructorDashboard.discussions {assigns} />
@@ -71,8 +73,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
     post = Collaboration.get_post_by(%{id: socket.assigns.post_id})
 
     case Collaboration.update_post(post, %{status: :approved}) do
-      {:ok, _} ->
+      {:ok, post} ->
         socket = do_filter(socket, socket.assigns.filter, socket.assigns.offset)
+
+        Phoenix.PubSub.broadcast(
+          Oli.PubSub,
+          channel_topic(socket.assigns.section, post.resource_id),
+          {:post_edited, Oli.Repo.preload(post, :user)}
+        )
 
         {:noreply,
          socket
@@ -97,7 +105,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
       modal_assigns,
       "reject",
       assign(socket, post_id: post_id),
-      "This will also reject the replies if there is any."
+      "This will also reject the replies if there are any."
     )
   end
 
@@ -107,6 +115,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
     case Collaboration.delete_posts(post) do
       {number, nil} when number > 0 ->
         socket = do_filter(socket, socket.assigns.filter, socket.assigns.offset)
+
+        Phoenix.PubSub.broadcast(
+          Oli.PubSub,
+          channel_topic(socket.assigns.section, post.resource_id),
+          {:post_deleted, post.id}
+        )
 
         {:noreply,
          socket
@@ -244,5 +258,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
        modal,
        modal_assigns: modal_assigns
      )}
+  end
+
+  defp channel_topic(section, resource_id) do
+    "collab_space_#{section.slug}_#{resource_id}"
   end
 end

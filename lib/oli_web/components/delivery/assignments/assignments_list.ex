@@ -10,7 +10,7 @@ defmodule OliWeb.Components.Delivery.AssignmentsList do
       <p>Find all your assignments, quizzes and activities associated with graded material.</p>
       <div class="flex flex-col gap-2 mt-6">
       <%= for assignment <- @assignments do %>
-        <AssignmentCard.render assignment={assignment}/>
+        <AssignmentCard.render assignment={assignment} section_slug={@section_slug}/>
       <% end %>
       </div>
     </div>
