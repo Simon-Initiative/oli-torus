@@ -1968,12 +1968,13 @@ defmodule Oli.Delivery.Sections do
             gc2.user_id == ^user_id
       )
       |> where(
-        [sr, s],
-        s.slug == ^section_slug and sr.numbering_level >= 0
+        [sr, s, _, _, _, gc, gc2],
+        s.slug == ^section_slug and sr.numbering_level >= 0 and (is_nil(gc) or gc.type == :schedule) and (is_nil(gc2) or gc2.type == :schedule)
       )
       |> select([sr, s, _, _, rev, gc, gc2], %{
         id: sr.id,
         title: rev.title,
+        slug: rev.slug,
         end_date:
           fragment(
             "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date) as end_date",
@@ -1981,6 +1982,12 @@ defmodule Oli.Delivery.Sections do
             gc.data["end_datetime"],
             sr.end_date
           ),
+        scheduled_type: sr.scheduling_type,
+        gate_type: fragment(
+          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
+          gc2.type,
+          gc.type
+        ),
         graded: rev.graded,
         resource_type_id: rev.resource_type_id,
         numbering_level: sr.numbering_level,
