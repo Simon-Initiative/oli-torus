@@ -54,7 +54,7 @@ defmodule Oli.Delivery.Metrics do
 
     query =
       ContainedPage
-      |> join(:left, [cp], ra in ResourceAccess,
+      |> join(:inner, [cp], ra in ResourceAccess,
         on:
           cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
             ra.user_id in ^user_id_list
