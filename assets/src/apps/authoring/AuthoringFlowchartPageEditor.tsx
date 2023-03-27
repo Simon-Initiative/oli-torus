@@ -5,14 +5,13 @@ import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import { applyTemplate } from './components/Flowchart/flowchart-actions/apply-template';
 import { Template } from './components/Flowchart/template-types';
 import { TemplatePicker } from './components/Flowchart/TemplatePicker';
-import ExpertHeaderNav from './components/ExpertHeaderNav';
-import RightMenu from './components/RightMenu/RightMenu';
 
 import { ScreenList } from './components/ScreenList/ScreenList';
 
 import { SidePanel } from './components/SidePanel';
 import { changeEditMode } from './store/app/slice';
 import FlowchartHeaderNav from './components/FlowchartHeaderNav';
+import RightMenu from './components/RightMenu/RightMenu';
 
 interface PanelState {
   left: boolean;

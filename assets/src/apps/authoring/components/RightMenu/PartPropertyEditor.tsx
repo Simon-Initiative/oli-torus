@@ -282,6 +282,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
           activityId: String(currentActivity.id),
           partId: currentPartSelection,
           changes: modelChanges,
+          mergeChanges: false,
         }),
       );
 
