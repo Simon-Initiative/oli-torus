@@ -1969,7 +1969,7 @@ defmodule Oli.Delivery.Sections do
       )
       |> where(
         [sr, s, _, _, _, gc, gc2],
-        s.slug == ^section_slug and sr.numbering_level >= 0 and (is_nil(gc) or gc.type == :schedule) and (is_nil(gc2) or gc2.type == :schedule)
+        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and (is_nil(gc2) or gc2.type == :schedule)
       )
       |> select([sr, s, _, _, rev, gc, gc2], %{
         id: sr.id,
