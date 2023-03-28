@@ -83,7 +83,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         name: "Course Content",
         popout: %{
           component: "Components.CourseContentOutline",
-          props: %{hierarchy: hierarchy, sectionSlug: section.slug}
+          props: %{hierarchy: hierarchy, sectionSlug: section.slug, isPreview: true}
         },
         active: true
       },
@@ -122,7 +122,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         name: "Course Content",
         popout: %{
           component: "Components.CourseContentOutline",
-          props: %{hierarchy: hierarchy, sectionSlug: nil, projectSlug: project.slug}
+          props: %{hierarchy: hierarchy, sectionSlug: nil, projectSlug: project.slug, isPreview: true}
         },
         active: true
       },
