@@ -9,7 +9,11 @@ interface CourseContentOutlineProps {
   hierarchy: any;
 }
 
-export const CourseContentOutline = ({ sectionSlug, projectSlug, hierarchy }: CourseContentOutlineProps) => {
+export const CourseContentOutline = ({
+  sectionSlug,
+  projectSlug,
+  hierarchy,
+}: CourseContentOutlineProps) => {
   const items = flatten({ ...hierarchy, type: 'root' }, sectionSlug, projectSlug);
   const active = items.find((i: FlattenedItem) => i.isActive);
   const activeContainerSlug = active?.containerSlug;
@@ -119,11 +123,16 @@ interface Page {
 type HierarchyItem = Container | Page;
 
 const url = (sectionSlug: MaybeSlug, projectSlug: MaybeSlug, type: string, slug: string) =>
-sectionSlug ?
-  `/sections/${sectionSlug}/${type}/${slug}`
-  : `/authoring/project/${projectSlug}/preview/${slug}`;
+  sectionSlug
+    ? `/sections/${sectionSlug}/${type}/${slug}`
+    : `/authoring/project/${projectSlug}/preview/${slug}`;
 
-const isCurrentUrl = (sectionSlug: MaybeSlug, projectSlug: MaybeSlug, type: string, slug: string) => {
+const isCurrentUrl = (
+  sectionSlug: MaybeSlug,
+  projectSlug: MaybeSlug,
+  type: string,
+  slug: string,
+) => {
   return window.location.href.endsWith(url(sectionSlug, projectSlug, type, slug));
 };
 
