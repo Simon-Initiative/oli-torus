@@ -236,7 +236,8 @@ defmodule OliWeb.Grades.GradesLive do
     end
   end
 
-  def handle_event("select_page", %{"page" => resource_id}, socket) do
+  def handle_event("select_page", %{"value" => resource_id}, socket) do
+    {resource_id, _} = Integer.parse(resource_id)
     {:noreply, assign(socket, selected_page: resource_id)}
   end
 

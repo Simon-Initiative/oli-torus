@@ -898,6 +898,8 @@ defmodule OliWeb.Router do
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
 
+    live("/:section_slug/debugger/:attempt_guid", Attempt.AttemptLive)
+
     live(
       "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
       Sections.GatingAndScheduling.New
