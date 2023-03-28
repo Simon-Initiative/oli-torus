@@ -16,18 +16,116 @@ import ActivitiesSlice from './name';
 interface IBasePartLayout {
   id: string;
   type: string;
+  x: number;
+  y: number;
+  z: number;
+  width: number;
+  height: number;
+  enabled: boolean;
+  requiresManualGrading: boolean;
   custom: Record<string, any>;
+}
+
+export interface INumberAdvancedFeedback {
+  answer?: {
+    range: boolean;
+    correctMax?: number;
+    correctMin?: number;
+    correctAnswer?: number;
+  };
+  feedback: string;
+}
+
+export interface INumericAnswer {
+  range?: boolean;
+  correctMax?: number;
+  correctMin?: number;
+  correctAnswer?: number;
+}
+export interface ISliderPartLayout extends IBasePartLayout {
+  type: 'janus-slider';
+  custom: {
+    label: string;
+    maximum: number;
+    minimum: number;
+    showLabel: boolean;
+    showTicks: boolean;
+    invertScale: boolean;
+    showDataTip: boolean;
+    snapInterval: number;
+    customCssClass: string;
+    showValueLabels: boolean;
+    showThumbByDefault: boolean;
+
+    answer?: INumericAnswer;
+    correctFeedback?: string;
+    incorrectFeedback?: string;
+    advancedFeedback?: INumberAdvancedFeedback[];
+  };
+}
+
+export interface IMultiLineTextPartLayout extends IBasePartLayout {
+  type: 'janus-multi-line-text';
+  custom: {
+    label: string;
+    prompt: string;
+    fontSize: number;
+    maxScore: number;
+    showLabel: boolean;
+    customCssClass: string;
+    showCharacterCount: boolean;
+    requiresManualGrading: false;
+    minimumLength?: number;
+    correctFeedback?: string;
+    incorrectFeedback?: string;
+  };
+}
+export interface IInputTextPartLayout extends IBasePartLayout {
+  type: 'janus-input-text';
+  custom: {
+    label: string;
+    prompt: string;
+    showLabel: boolean;
+    correctAnswer: {
+      mustContain: string;
+      minimumLength: number;
+      mustNotContain: string;
+    };
+    customCssClass: string;
+    maxManualGrade: number;
+    correctFeedback: string;
+    incorrectFeedback: string;
+    showOnAnswersReport: boolean;
+    requireManualGrading: boolean;
+  };
+}
+
+export interface IInputNumberPartLayout extends IBasePartLayout {
+  type: 'janus-inputNumber';
+  custom: {
+    label: string;
+    answer?: INumericAnswer;
+    prompt: string;
+    maxScore: number;
+    maxValue: number;
+    minValue: number;
+    showLabel: true;
+    unitsLabel: string;
+    maxManualGrade: number;
+    correctFeedback?: string;
+    advancedFeedback?: INumberAdvancedFeedback[];
+
+    incorrectFeedback?: string;
+    showIncrementArrows: boolean;
+    requireManualGrading: boolean;
+    requiresManualGrading: boolean;
+  };
 }
 
 export interface IDropdownPartLayout extends IBasePartLayout {
   type: 'janus-dropdown';
   custom: {
-    x: number;
-    y: number;
-    z: number;
     label: string;
-    width: number;
-    height: number;
     prompt: string;
     enabled: boolean;
     fontSize: number;
@@ -39,18 +137,12 @@ export interface IDropdownPartLayout extends IBasePartLayout {
     incorrectFeedback?: string;
     commonErrorFeedback?: string[];
     customCssClass: string;
-    requiresManualGrading: boolean;
   };
 }
 
 export interface IMCQPartLayout extends IBasePartLayout {
   type: 'janus-mcq';
   custom: {
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
     fontSize: number;
     maxScore: number;
     verticalGap: number;
@@ -65,12 +157,16 @@ export interface IMCQPartLayout extends IBasePartLayout {
     overrideHeight: boolean;
     multipleSelection: boolean;
     showOnAnswersReport: boolean;
-    requireManualGrading: boolean;
-    requiresManualGrading: boolean;
   };
 }
 
-type KnownPartLayouts = IMCQPartLayout | IDropdownPartLayout;
+type KnownPartLayouts =
+  | IMCQPartLayout
+  | IDropdownPartLayout
+  | IInputNumberPartLayout
+  | ISliderPartLayout
+  | IInputTextPartLayout
+  | IMultiLineTextPartLayout;
 
 interface OtherPartLayout extends IBasePartLayout {
   [key: string]: any;

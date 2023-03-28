@@ -42,8 +42,13 @@ export const generateThreeTryWorkflow = (
   setCorrectAction: IAction[],
   blankCondition: ICondition,
   disableAction: IAction,
+  extraOptions: Partial<{
+    threeTimesFeedback: string;
+  }> = {},
 ): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
+
+  const options = { threeTimesFeedback: DEFAULT_FILLED_IN_FEEDBACK, ...extraOptions };
 
   const disableIfTrue = (val: boolean) => (val ? [disableAction] : []);
 
@@ -110,7 +115,7 @@ export const generateThreeTryWorkflow = (
         incorrect.destinationId,
         false,
         40,
-        DEFAULT_FILLED_IN_FEEDBACK,
+        options.threeTimesFeedback,
         [...setCorrectAction],
       ),
     );

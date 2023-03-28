@@ -1,10 +1,14 @@
 import guid from '../../../../../utils/guid';
-import { IDropdownPartLayout } from '../../../../delivery/store/features/activities/slice';
+import {
+  IDropdownPartLayout,
+  IInputNumberPartLayout,
+} from '../../../../delivery/store/features/activities/slice';
 import {
   AlwaysGoToPath,
   CorrectPath,
   EndOfActivityPath,
   IncorrectPath,
+  NumericCommonErrorPath,
   OptionCommonErrorPath,
   UnknownPathWithDestination,
 } from './path-types';
@@ -21,12 +25,31 @@ export const createUnknownPathWithDestination = (
   priority: 20,
 });
 
-const createDestinationPath = (id: string, destinationScreenId: number | null = null) => ({
+const createDestinationPathTemplate = (id: string, destinationScreenId: number | null = null) => ({
   id,
   ruleId: null,
   destinationScreenId,
   completed: false,
 });
+
+export const createInputNumberCommonErrorPath = (
+  ni: IInputNumberPartLayout,
+  index: number,
+): NumericCommonErrorPath => {
+  const feedback = ni.custom!.advancedFeedback![index];
+  const label = feedback.answer?.range
+    ? `Answer is ${feedback.answer.correctMin} to ${feedback.answer.correctMax}`
+    : `Answer is ${feedback.answer?.correctAnswer}`;
+
+  return {
+    ...createDestinationPathTemplate(`input-number-common-error-${index}`),
+    type: 'numeric-common-error',
+    feedbackIndex: index,
+    componentId: ni.id,
+    label,
+    priority: 4,
+  };
+};
 
 export const createOptionCommonErrorPath = (
   dropdown: IDropdownPartLayout,
@@ -37,7 +60,7 @@ export const createOptionCommonErrorPath = (
     dropdown.custom.optionLabels[selectedOption] || `Option #${selectedOption + 1}`;
 
   return {
-    ...createDestinationPath(`option-common-error-${selectedOption}`, destinationScreenId),
+    ...createDestinationPathTemplate(`option-common-error-${selectedOption}`, destinationScreenId),
     type: 'option-common-error',
     selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: dropdown.id,
@@ -50,7 +73,7 @@ export const createIncorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
 ): IncorrectPath => ({
-  ...createDestinationPath('incorrect', destinationScreenId),
+  ...createDestinationPathTemplate('incorrect', destinationScreenId),
   type: 'incorrect',
   componentId,
   label: 'Any Incorrect',
@@ -61,7 +84,7 @@ export const createCorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
 ): CorrectPath => ({
-  ...createDestinationPath('correct', destinationScreenId),
+  ...createDestinationPathTemplate('correct', destinationScreenId),
   type: 'correct',
   componentId,
   label: 'Correct',

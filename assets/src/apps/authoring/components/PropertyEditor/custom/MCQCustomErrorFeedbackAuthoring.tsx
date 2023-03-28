@@ -77,7 +77,6 @@ export const MCQCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> = ({
   return (
     <div className="d-flex justify-content-between flex-column">
       <div className="form-label">{label}</div>
-      {multiSelect || `not multiselect ${correctIndex}`}
 
       {options.map((option: string, index: number) => {
         if (!showOption(index)) {

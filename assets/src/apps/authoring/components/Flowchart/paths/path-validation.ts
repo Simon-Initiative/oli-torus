@@ -1,4 +1,10 @@
-import { AllPaths, AlwaysGoToPath, ComponentPath, OptionCommonErrorPath } from './path-types';
+import {
+  AllPaths,
+  AlwaysGoToPath,
+  ComponentPath,
+  OptionCommonErrorPath,
+  NumericCommonErrorPath,
+} from './path-types';
 
 export const validatePath = (path: AllPaths) => {
   switch (path.type) {
@@ -12,6 +18,9 @@ export const validatePath = (path: AllPaths) => {
     case 'always-go-to':
       return validateAlwaysGoTo(path);
 
+    case 'numeric-common-error':
+      return validateNumericCommonError(path);
+
     case 'option-common-error':
       return validateSelectedOption(path);
 
@@ -24,6 +33,10 @@ export const validatePath = (path: AllPaths) => {
 
       return false;
   }
+};
+
+const validateNumericCommonError = (path: NumericCommonErrorPath) => {
+  return validateComponentRule(path) && path.destinationScreenId !== null;
 };
 
 const validateSelectedOption = (path: OptionCommonErrorPath) => {
