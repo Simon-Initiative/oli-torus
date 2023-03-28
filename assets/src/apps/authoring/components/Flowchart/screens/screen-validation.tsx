@@ -107,8 +107,19 @@ export const validatePathSet = (
   questionType: QuestionType,
 ): ReactNode[] => {
   switch (questionType) {
+    case 'input-text':
+    case 'check-all-that-apply':
+    case 'slider':
+    case 'input-number':
+      return validateCorrectOrIncorrectQuestion(paths);
+
+    case 'multiple-choice':
+      return validateMCQQuestion(paths, question as IMCQPartLayout);
+
     case 'dropdown':
       return validateDropdownQuestion(paths, question as IDropdownPartLayout);
+
+    case 'multi-line-text':
     case 'none':
       return validatePathSetNone(paths);
     default:
@@ -160,6 +171,10 @@ const hasExitPath = (paths: AllPaths[]): boolean => {
   return paths.some((path) => path.type === 'end-of-activity');
 };
 
+const validateMCQQuestion = (paths: AllPaths[], question: IMCQPartLayout): ReactNode[] => {
+  return validateDeterminateQuestion(paths, question.custom.mcqItems.length);
+};
+
 const validateDropdownQuestion = (
   paths: AllPaths[],
   question: IDropdownPartLayout,
@@ -175,6 +190,26 @@ const validateDeterminateQuestion = (paths: AllPaths[], optionCount: number): Re
   const validations: ReactNode[] = [];
 
   if (!coversAllOptions(paths, optionCount)) {
+    validations.push(<span>Not all possible exits are covered.</span>);
+  }
+
+  if (hasExitPath(paths) && paths.length > 1) {
+    validations.push(
+      <span>You can not have both an exit-activity and another path out of this screen.</span>,
+    );
+  }
+
+  if (hasMultipleAlwaysPaths(paths)) {
+    validations.push(<span>You can not have multiple always-go-to paths.</span>);
+  }
+
+  return validations;
+};
+
+const validateCorrectOrIncorrectQuestion = (paths: AllPaths[]): ReactNode[] => {
+  const validations: ReactNode[] = [];
+
+  if (!coversAllOptions(paths, Number.MAX_SAFE_INTEGER)) {
     validations.push(<span>Not all possible exits are covered.</span>);
   }
 
