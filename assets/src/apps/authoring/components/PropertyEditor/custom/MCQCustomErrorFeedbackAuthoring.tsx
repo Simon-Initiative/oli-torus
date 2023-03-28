@@ -46,11 +46,11 @@ export const MCQCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> = ({
   const part = getPartDef(activityTree, currentPartSelection);
   const multiSelect = !!part?.custom?.multipleSelection;
   const options = useMemo(
-    () => part?.custom?.mcqItems.map((v: any) => getNodeText(v.nodes)) || ['Option 1', 'Option 2'],
+    () => part?.custom?.mcqItems?.map((v: any) => getNodeText(v.nodes)) || ['Option 1', 'Option 2'],
     [part],
   );
 
-  const correctIndex = part?.custom?.correctAnswer.indexOf(true) || 0;
+  const correctIndex = (part?.custom?.correctAnswer || []).indexOf(true) || 0;
 
   const OnOptionChanged = useCallback(
     (index) => (newOptionValue: string) => {

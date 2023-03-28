@@ -108,6 +108,7 @@ export const simpleSchema: JSONSchema7Object = {
     items: {
       type: 'boolean',
     },
+    default: [true],
   },
   correctFeedback: {
     title: 'Correct Feedback',
@@ -208,5 +209,9 @@ export const createSchema = (): Partial<McqModel> => {
     showNumbering: false,
     enabled: true,
     mcqItems: [1, 2, 3].map(createSimpleOption),
+    correctAnswer: [true, false, false],
+    correctFeedback: '',
+    incorrectFeedback: '',
+    commonErrorFeedback: [],
   };
 };
