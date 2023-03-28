@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   prop collab_space_table_model, :struct, required: true
   prop discussion_table_model, :struct, required: true
   prop parent_component_id, :string, required: true
+  prop section_slug, :string, required: true
 
   def render(assigns) do
     ~F"""

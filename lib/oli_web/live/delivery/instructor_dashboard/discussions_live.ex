@@ -217,6 +217,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
         )
 
       discussion_table_model = Map.put(discussion_table_model, :rows, rows)
+      |> Map.put(:data, %{section_slug: section_slug})
 
       assign(socket,
         discussion_table_model: discussion_table_model,
