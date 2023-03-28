@@ -10,7 +10,12 @@ interface CourseContentOutlineProps {
   isPreview?: boolean;
 }
 
-export const CourseContentOutline = ({ sectionSlug, projectSlug, hierarchy, isPreview }: CourseContentOutlineProps) => {
+export const CourseContentOutline = ({
+  sectionSlug,
+  projectSlug,
+  hierarchy,
+  isPreview,
+}: CourseContentOutlineProps) => {
   const items = flatten({ ...hierarchy, type: 'root' }, sectionSlug, projectSlug, isPreview);
   const active = items.find((i: FlattenedItem) => i.isActive);
   const activeContainerSlug = active?.containerSlug;
@@ -65,7 +70,10 @@ const flatten = (
 ): FlattenedItem[] =>
   item.type === 'root'
     ? item.children.reduce(
-        (acc, c) => [...acc, ...flatten(c, sectionSlug, projectSlug, isPreview, containerSlug, level + 1)],
+        (acc, c) => [
+          ...acc,
+          ...flatten(c, sectionSlug, projectSlug, isPreview, containerSlug, level + 1),
+        ],
         [],
       )
     : item.type === 'container'
@@ -121,15 +129,26 @@ interface Page {
 
 type HierarchyItem = Container | Page;
 
-const url = (sectionSlug: MaybeSlug, projectSlug: MaybeSlug, type: string, slug: string, isPreview: boolean | undefined) =>
-sectionSlug ?
-  (isPreview
-    ? `/sections/${sectionSlug}/preview/${type}/${slug}`
-    : `/sections/${sectionSlug}/${type}/${slug}`
-  )
-  : `/authoring/project/${projectSlug}/preview/${slug}`;
+const url = (
+  sectionSlug: MaybeSlug,
+  projectSlug: MaybeSlug,
+  type: string,
+  slug: string,
+  isPreview: boolean | undefined,
+) =>
+  sectionSlug
+    ? isPreview
+      ? `/sections/${sectionSlug}/preview/${type}/${slug}`
+      : `/sections/${sectionSlug}/${type}/${slug}`
+    : `/authoring/project/${projectSlug}/preview/${slug}`;
 
-const isCurrentUrl = (sectionSlug: MaybeSlug, projectSlug: MaybeSlug, type: string, slug: string, isPreview: boolean | undefined) => {
+const isCurrentUrl = (
+  sectionSlug: MaybeSlug,
+  projectSlug: MaybeSlug,
+  type: string,
+  slug: string,
+  isPreview: boolean | undefined,
+) => {
   return window.location.href.endsWith(url(sectionSlug, projectSlug, type, slug, isPreview));
 };
 
