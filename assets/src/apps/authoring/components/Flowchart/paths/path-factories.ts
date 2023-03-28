@@ -84,7 +84,7 @@ export const createMCQCommonErrorPath = (
     type: 'option-common-error',
     selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: mcq.id,
-    label: 'Selected option ' + optionLabel.substring(0, 20),
+    label: 'Incorrect option: ' + optionLabel.substring(0, 20),
     priority: 4,
   };
 };

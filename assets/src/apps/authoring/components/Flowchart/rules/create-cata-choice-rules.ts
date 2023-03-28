@@ -78,14 +78,13 @@ export const generateCATAChoiceRules = (
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
 
-  const correctIndex = (question.custom?.correctAnswer || []).findIndex(
-    (answer: boolean) => answer === true,
-  );
-
   commonErrorFeedback.forEach((feedback, index) => {
     if (feedback) {
       const path = commonErrorPaths.find((path) => path.selectedOption === index + 1);
       if (!path) {
+        const isCorrect = !!(
+          question.custom?.correctAnswer && question.custom?.correctAnswer[index]
+        );
         // So here, we had common error feedback authored, and there was NOT a common error path for it.
         // so we only want to show the feedback, without moving to a new screen.
         commonErrorConditionsFeedback.push({
@@ -93,7 +92,7 @@ export const generateCATAChoiceRules = (
             createCondition(
               `stage.${question.id}.selectedChoices`,
               String(index + 1),
-              'contains',
+              isCorrect ? 'notContains' : 'contains',
               3,
             ),
           ],
@@ -158,11 +157,16 @@ export const createCATAIncorrectCondition = (question: IMCQPartLayout, correctAn
 
 const createCATACommonErrorCondition = (path: OptionCommonErrorPath, question: IMCQPartLayout) => {
   if (Number.isInteger(path.selectedOption)) {
+    const isCorrect = !!(
+      question.custom?.correctAnswer && question.custom?.correctAnswer[path.selectedOption - 1]
+    );
+
     return [
       createCondition(
-        `stage.${question.id}.selectedChoice`,
+        `stage.${question.id}.selectedChoices`,
         String(path.selectedOption),
-        'contains',
+        isCorrect ? 'notContains' : 'contains',
+        3,
       ),
     ];
   }

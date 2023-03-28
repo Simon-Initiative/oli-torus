@@ -28,7 +28,6 @@ export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
     case 'input-number':
       return createInputNumberPathOptions(screen.content?.partsLayout.find(isInputNumber));
     case 'check-all-that-apply':
-      return createCATAChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
     case 'multiple-choice':
       return createMultipleChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
     case 'dropdown':
@@ -81,19 +80,15 @@ const createInputNumberPathOptions = (inputNumber: IInputNumberPartLayout | unde
   return [];
 };
 
-const createCATAChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
-  if (mcq) {
-    // TODO: the per-option incorrect options.
-    return [createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
-  }
-  return [];
-};
-
 const createMultipleChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
   if (mcq) {
-    const commonErrorOptions = (mcq.custom?.commonErrorFeedback || []).map((feedback, index) =>
-      createMCQCommonErrorPath(mcq, index),
-    );
+    const multipleSelection = !!mcq.custom?.multipleSelection;
+    const correct = mcq.custom?.correctAnswer || [];
+
+    const commonErrorOptions = (mcq.custom?.mcqItems || [])
+      .map((_, index) => index)
+      .filter((index) => multipleSelection || !correct[index])
+      .map((index) => createMCQCommonErrorPath(mcq, index));
 
     return [...commonErrorOptions, createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
   }

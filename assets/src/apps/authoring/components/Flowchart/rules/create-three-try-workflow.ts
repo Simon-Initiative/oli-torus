@@ -138,14 +138,7 @@ export const generateThreeTryWorkflow = (
 
   // [A generic default incorrect rule with feedback, no nav]
   rules.push({
-    ...generateRule(
-      'default-incorrect',
-      [...incorrect.conditions.map(newId)],
-      null,
-      false,
-      70,
-      incorrect.feedback,
-    ),
+    ...generateRule('default-incorrect', [], null, false, 70, incorrect.feedback),
     default: true,
   });
 

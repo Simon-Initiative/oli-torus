@@ -5,6 +5,7 @@ import {
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenQuestionType } from '../paths/path-options';
 import { isAlwaysPath } from '../paths/path-utils';
+import { generateCATAChoiceRules } from './create-cata-choice-rules';
 import { generateDropdownRules } from './create-dropdown-rules';
 import { generateAlwaysGoTo } from './create-generic-rule';
 import { generateMultilineTextInputRules } from './create-multiline-text-rules';
@@ -35,6 +36,8 @@ export const _generateRules = (
 ): RulesAndVariables => {
   const questionType = getScreenQuestionType(screen);
   switch (questionType) {
+    case 'check-all-that-apply':
+      return generateCATAChoiceRules(screen, sequence);
     case 'multiple-choice':
       return generateMultipleChoiceRules(screen, sequence);
     case 'multi-line-text':
