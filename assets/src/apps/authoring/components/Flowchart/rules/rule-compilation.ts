@@ -8,6 +8,7 @@ import { isAlwaysPath } from '../paths/path-utils';
 import { generateDropdownRules } from './create-dropdown-rules';
 import { generateAlwaysGoTo } from './create-generic-rule';
 import { generateMultilineTextInputRules } from './create-multiline-text-rules';
+import { generateMultipleChoiceRules } from './create-multiple-choice-rules';
 import { generteNumberInputRules as generateNumberInputRules } from './create-number-input-rules';
 import { generateSliderRules } from './create-slider-rules';
 import { generateTextInputRules } from './create-text-input-rules';
@@ -34,6 +35,8 @@ export const _generateRules = (
 ): RulesAndVariables => {
   const questionType = getScreenQuestionType(screen);
   switch (questionType) {
+    case 'multiple-choice':
+      return generateMultipleChoiceRules(screen, sequence);
     case 'multi-line-text':
       return generateMultilineTextInputRules(screen, sequence);
     case 'input-text':

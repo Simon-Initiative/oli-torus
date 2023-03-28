@@ -2,20 +2,19 @@ import {
   IAction,
   IActivity,
   ICondition,
-  IInputNumberPartLayout,
-  INumericAnswer,
+  IMCQPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import {
   SequenceEntry,
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
-import { NumericCommonErrorPath } from '../paths/path-types';
+import { OptionCommonErrorPath } from '../paths/path-types';
 import {
   isAlwaysPath,
   isCorrectPath,
   isIncorrectPath,
-  isNumericCommonErrorPath,
+  isOptionCommonErrorPath,
 } from '../paths/path-utils';
 import { createCondition } from './create-condition';
 import {
@@ -29,23 +28,25 @@ import {
 import { generateThreeTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';
 
-export const generteNumberInputRules = (
+export const generateMultipleChoiceRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
 ): RulesAndVariables => {
-  const question = getScreenPrimaryQuestion(screen) as IInputNumberPartLayout;
+  const question = getScreenPrimaryQuestion(screen) as IMCQPartLayout;
 
-  const advancedFeedback = question.custom?.advancedFeedback || [];
+  // NOTE: question.custom.multipleSelection will always be false here. See the CATA rules generation for true.
 
   const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);
   const correctPath = (screen.authoring?.flowchart?.paths || []).find(isCorrectPath);
   const incorrectPath = (screen.authoring?.flowchart?.paths || []).find(isIncorrectPath);
   const commonErrorPaths = (screen.authoring?.flowchart?.paths || []).filter(
-    isNumericCommonErrorPath,
+    isOptionCommonErrorPath,
   );
 
+  const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
+
   const correct: Required<IConditionWithFeedback> = {
-    conditions: createNumericCorrectCondition(question),
+    conditions: createMCQCorrectCondition(question),
     feedback: question.custom.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
@@ -55,7 +56,7 @@ export const generteNumberInputRules = (
   };
 
   const incorrect: Required<IConditionWithFeedback> = {
-    conditions: createNumericIncorrectCondition(question),
+    conditions: createMCQIncorrectCondition(question),
     feedback: question.custom.incorrectFeedback || DEFAULT_INCORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
@@ -65,28 +66,33 @@ export const generteNumberInputRules = (
   };
 
   const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
-    conditions: createNumericCommonErrorCondition(path, question),
-    feedback: advancedFeedback[path.feedbackIndex].feedback || DEFAULT_INCORRECT_FEEDBACK,
+    conditions: createMCQCommonErrorCondition(path, question),
+    feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_INCORRECT_FEEDBACK,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
 
-  advancedFeedback.forEach((feedback, index) => {
-    if (feedback) {
-      const path = commonErrorPaths.find((path) => path.feedbackIndex === index);
-      if (!path && feedback.answer) {
+  const correctIndex = (question.custom?.correctAnswer || []).findIndex(
+    (answer: boolean) => answer === true,
+  );
+
+  commonErrorFeedback.forEach((feedback, index) => {
+    if (feedback && index !== correctIndex) {
+      const path = commonErrorPaths.find((path) => path.selectedOption === index + 1);
+      if (!path) {
         // So here, we had common error feedback authored, and there was NOT a common error path for it.
         // so we only want to show the feedback, without moving to a new screen.
-
         commonErrorConditionsFeedback.push({
-          conditions: createNumericCondition(question.id, feedback.answer),
-          feedback: feedback.feedback,
+          conditions: [
+            createCondition(`stage.${question.id}.selectedChoice`, String(index + 1), 'equal'),
+          ],
+          feedback,
         });
       }
     }
   });
 
   const disableAction: IAction = {
-    // Disables the dropdown so the correct answer can be unselected
+    // Disables the mcq so the correct answer can not be unselected
     type: 'mutateState',
     params: {
       value: 'false',
@@ -96,17 +102,13 @@ export const generteNumberInputRules = (
     },
   };
 
-  const answer = question.custom.answer?.range
-    ? question.custom.answer.correctMin
-    : question.custom.answer?.correctAnswer;
-
   const setCorrect: IAction[] = [
     {
       // Sets the correct answer in the dropdown
       type: 'mutateState',
       params: {
-        value: String(answer),
-        target: `stage.${question.id}.value`,
+        value: String(correctIndex + 1),
+        target: `stage.${question.id}.selectedChoice`,
         operator: '=',
         targetType: 1,
       },
@@ -115,10 +117,9 @@ export const generteNumberInputRules = (
   ];
 
   const blankCondition: ICondition = createCondition(
-    `stage.${question.id}.value`,
-    'true',
-    'isNaN',
-    2,
+    `stage.${question.id}.selectedChoice`,
+    '0',
+    'equal',
   );
 
   return generateThreeTryWorkflow(
@@ -131,59 +132,38 @@ export const generteNumberInputRules = (
   );
 };
 
-// These answers are specified as either a single correct answer or a range, so 2 options for conditions.
-const createNumericCondition = (
-  questionId: string,
-  answer: INumericAnswer,
-  invert = false,
-): ICondition[] => {
-  if (answer.range) {
+export const createMCQCorrectCondition = (question: IMCQPartLayout): ICondition[] => {
+  const correctIndex = (question.custom?.correctAnswer || []).findIndex(
+    (answer: boolean) => answer === true,
+  );
+  if (correctIndex !== -1) {
     return [
-      createCondition(
-        `stage.${questionId}.value`,
-        `[${answer.correctMin},${answer.correctMax}]`,
-        invert ? 'notInRange' : 'inRange',
-      ),
+      createCondition(`stage.${question.id}.selectedChoice`, String(correctIndex + 1), 'equal'),
     ];
   }
-  return [
-    createCondition(
-      `stage.${questionId}.value`,
-      String(answer.correctAnswer),
-      invert ? 'notEqual' : 'equal',
-    ),
-  ];
+  console.warn("Couldn't find correct answer for dropdown question", question);
+  return [];
 };
 
-export const createNumericCorrectCondition = (question: IInputNumberPartLayout): ICondition[] => {
-  const answer = question.custom.answer;
-  if (!answer) {
-    console.warn("Couldn't find correct answer for numeric question", question);
-    return [];
+export const createMCQIncorrectCondition = (question: IMCQPartLayout) => {
+  const correctIndex = (question.custom?.correctAnswer || []).findIndex(
+    (answer: boolean) => answer === true,
+  );
+  if (correctIndex !== -1) {
+    return [
+      createCondition(`stage.${question.id}.selectedChoice`, String(correctIndex + 1), 'notEqual'),
+    ];
   }
-
-  return createNumericCondition(question.id, answer);
+  console.warn("Couldn't find correct answer for dropdown question", question);
+  return [createNeverCondition()]; // createNeverCondition() will make sure this never fires
 };
 
-export const createNumericIncorrectCondition = (question: IInputNumberPartLayout) => {
-  const answer = question.custom.answer;
-  if (!answer) {
-    console.warn("Couldn't find correct answer for numeric question", question);
-    return [];
+const createMCQCommonErrorCondition = (path: OptionCommonErrorPath, question: IMCQPartLayout) => {
+  if (Number.isInteger(path.selectedOption)) {
+    return [
+      createCondition(`stage.${question.id}.selectedChoice`, String(path.selectedOption), 'equal'),
+    ];
   }
-
-  return createNumericCondition(question.id, answer, true);
-};
-
-const createNumericCommonErrorCondition = (
-  path: NumericCommonErrorPath,
-  question: IInputNumberPartLayout,
-) => {
-  const feedback = (question.custom?.advancedFeedback || [])[path.feedbackIndex];
-  if (feedback && feedback.answer) {
-    return createNumericCondition(question.id, feedback.answer);
-  }
-
   console.warn("Couldn't find correct answer for dropdown question", question);
   return [createNeverCondition()];
 };

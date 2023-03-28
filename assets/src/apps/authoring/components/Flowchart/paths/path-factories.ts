@@ -1,7 +1,9 @@
+import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import guid from '../../../../../utils/guid';
 import {
   IDropdownPartLayout,
   IInputNumberPartLayout,
+  IMCQPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import {
   AlwaysGoToPath,
@@ -51,7 +53,7 @@ export const createInputNumberCommonErrorPath = (
   };
 };
 
-export const createOptionCommonErrorPath = (
+export const createDropdownCommonErrorPath = (
   dropdown: IDropdownPartLayout,
   selectedOption: number,
   destinationScreenId: number | null = null,
@@ -64,6 +66,24 @@ export const createOptionCommonErrorPath = (
     type: 'option-common-error',
     selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: dropdown.id,
+    label: 'Selected option ' + optionLabel.substring(0, 20),
+    priority: 4,
+  };
+};
+
+export const createMCQCommonErrorPath = (
+  mcq: IMCQPartLayout,
+  selectedOption: number,
+  destinationScreenId: number | null = null,
+): OptionCommonErrorPath => {
+  const optionLabel =
+    getNodeText(mcq.custom?.mcqItems[selectedOption].nodes) || `Option #${selectedOption + 1}`;
+
+  return {
+    ...createDestinationPathTemplate(`mcq-common-error-${selectedOption}`, destinationScreenId),
+    type: 'option-common-error',
+    selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
+    componentId: mcq.id,
     label: 'Selected option ' + optionLabel.substring(0, 20),
     priority: 4,
   };
