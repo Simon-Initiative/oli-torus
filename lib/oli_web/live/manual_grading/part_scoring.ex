@@ -41,13 +41,13 @@ defmodule OliWeb.ManualGrading.PartScoring do
       <div class="form-row">
         <div class="col-span-10">
           <textarea id={"feedback_" <> @part_attempt.attempt_guid} phx-hook="TextInputListener" phx-value-change={@feedback_changed.name}
-            class="form-control" placeholder="Enter feedback for the student..." autocomplete="on" wrap="soft" maxlength="2000">{@part_scoring.feedback}</textarea>
+            class="form-control my-3 w-full" placeholder="Enter feedback for the student..." autocomplete="on" wrap="soft" maxlength="2000">{@part_scoring.feedback}</textarea>
         </div>
         <div class="col">
 
           <div class="input-group mb-3">
             <div class="input-group-prepend">
-              <span class="input-group-text">Score</span>
+              <span class="input-group-text p-1 mr-2 whitespace-nowrap align-middle">Score</span>
             </div>
             <input id={"score_" <> @part_attempt.attempt_guid} phx-hook="TextInputListener" phx-value-change={@score_changed.name}
               type="number" class="form-control" step="1" min="0" max={@part_scoring.out_of} value={@part_scoring.score}>
@@ -56,7 +56,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
           <div class="input-group mb-3">
             <div class="input-group-prepend">
-              <span class="input-group-text">Out Of</span>
+              <span class="input-group-text p-1 mr-2 whitespace-nowrap align-middle">Out Of</span>
             </div>
             <input type="text" disabled class="form-control" value={@part_scoring.out_of}>
           </div>

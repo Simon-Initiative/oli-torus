@@ -141,97 +141,99 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     ~F"""
     {render_modal(assigns)}
 
-    <div class="bg-white dark:bg-gray-800 dark:text-delivery-body-color-dark shadow">
-      <div>
-        <div class="flex items-center justify-between p-5">
-          <div class="flex items-center justify-between w-full">
-            <h3 class="text-xl font-bold">{@title}</h3>
-            {#if is_archived?(@collab_space_config.status)}
-              <span class="badge badge-info ml-2">Archived</span>
-            {/if}
+    <div class="container mx-auto">
+      <div class="bg-white dark:bg-gray-800 dark:text-delivery-body-color-dark shadow">
+        <div>
+          <div class="flex items-center justify-between p-5">
+            <div class="flex items-center justify-between w-full">
+              <h3 class="text-xl font-bold">{@title}</h3>
+              {#if is_archived?(@collab_space_config.status)}
+                <span class="badge badge-info ml-2">Archived</span>
+              {/if}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="p-2 pt-0 mb-5">
-        <Form
-          id="new_post_form"
-          for={@new_post_changeset}
-          submit="create_post"
-          opts={autocomplete: "off"}
-          class="bg-gray-100 p-3 rounded-sm"
-        >
-          <HiddenInput field={:user_id} />
-          <HiddenInput field={:section_id} />
-          <HiddenInput field={:resource_id} />
+        <div class="p-2 pt-0 mb-5">
+          <Form
+            id="new_post_form"
+            for={@new_post_changeset}
+            submit="create_post"
+            opts={autocomplete: "off"}
+            class="bg-gray-100 p-3 rounded-sm"
+          >
+            <HiddenInput field={:user_id} />
+            <HiddenInput field={:section_id} />
+            <HiddenInput field={:resource_id} />
 
-          <HiddenInput field={:parent_post_id} />
-          <HiddenInput field={:thread_root_id} />
+            <HiddenInput field={:parent_post_id} />
+            <HiddenInput field={:thread_root_id} />
 
-          <Inputs for={:content}>
-            <Field name={:message}>
-              <TextArea
-                opts={
-                  placeholder: "New post",
-                  "data-grow": "true",
-                  "data-initial-height": 44,
-                  onkeyup: "resizeTextArea(this)"
-                }
-                class="torus-input border-r-0 collab-space__textarea"
-              />
-            </Field>
-          </Inputs>
-          <div class="flex justify-end">
-            {#if @is_student and @collab_space_config.anonymous_posting}
-              <Checkbox id="new_post_anonymous_checkbox" field={:anonymous} class="hidden" />
-              <Buttons.button_with_options
-                id="create_post_button"
-                type="submit"
-                disabled={is_archived?(@collab_space_config.status)}
-                options={[
-                  %{
-                    text: "Post anonymously",
-                    on_click:
-                      JS.dispatch("click", to: "#new_post_anonymous_checkbox")
-                      |> JS.dispatch("click", to: "#create_post_button_button")
+            <Inputs for={:content}>
+              <Field name={:message}>
+                <TextArea
+                  opts={
+                    placeholder: "New post",
+                    "data-grow": "true",
+                    "data-initial-height": 44,
+                    onkeyup: "resizeTextArea(this)"
                   }
-                ]}
-              >
-                Create Post
-              </Buttons.button_with_options>
-            {#else}
-              <Buttons.button disabled={is_archived?(@collab_space_config.status)} type="submit">
-                Create Post
-              </Buttons.button>
-            {/if}
+                  class="torus-input border-r-0 collab-space__textarea"
+                />
+              </Field>
+            </Inputs>
+            <div class="flex justify-end">
+              {#if @is_student and @collab_space_config.anonymous_posting}
+                <Checkbox id="new_post_anonymous_checkbox" field={:anonymous} class="hidden" />
+                <Buttons.button_with_options
+                  id="create_post_button"
+                  type="submit"
+                  disabled={is_archived?(@collab_space_config.status)}
+                  options={[
+                    %{
+                      text: "Post anonymously",
+                      on_click:
+                        JS.dispatch("click", to: "#new_post_anonymous_checkbox")
+                        |> JS.dispatch("click", to: "#create_post_button_button")
+                    }
+                  ]}
+                >
+                  Create Post
+                </Buttons.button_with_options>
+              {#else}
+                <Buttons.button disabled={is_archived?(@collab_space_config.status)} type="submit">
+                  Create Post
+                </Buttons.button>
+              {/if}
+            </div>
+          </Form>
+        </div>
+
+        {#if length(@posts) > 1}
+          <div class="flex justify-end gap-2 py-2 px-5">
+            <Sort sort={@sort} />
           </div>
-        </Form>
-      </div>
+        {#elseif length(@posts) == 0}
+          <div class="border border-gray-100 rounded-sm p-5 flex items-center justify-center m-2">
+            <span class="torus-span">No posts yet</span>
+          </div>
+        {/if}
 
-      {#if length(@posts) > 1}
-        <div class="flex justify-end gap-2 py-2 px-5">
-          <Sort sort={@sort} />
+        <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
+          <PostList
+            posts={@posts}
+            collab_space_config={@collab_space_config}
+            selected={@selected}
+            user_id={@user.id}
+            is_instructor={@is_instructor}
+            is_student={@is_student}
+            editing_post={if @is_edition_mode, do: @editing_post, else: nil}
+          />
         </div>
-      {#elseif length(@posts) == 0}
-        <div class="border border-gray-100 rounded-sm p-5 flex items-center justify-center m-2">
-          <span class="torus-span">No posts yet</span>
+
+        <div class="p-5">
+          <ActiveUsers users={@active_users} />
         </div>
-      {/if}
-
-      <div class={if is_archived?(@collab_space_config.status), do: "readonly", else: ""}>
-        <PostList
-          posts={@posts}
-          collab_space_config={@collab_space_config}
-          selected={@selected}
-          user_id={@user.id}
-          is_instructor={@is_instructor}
-          is_student={@is_student}
-          editing_post={if @is_edition_mode, do: @editing_post, else: nil}
-        />
-      </div>
-
-      <div class="p-5">
-        <ActiveUsers users={@active_users} />
       </div>
     </div>
     """

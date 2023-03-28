@@ -103,7 +103,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
       if !row.section.open_and_free and ResourceAccess.last_grade_update_failed?(resource_access) do
         "badge badge-danger"
       else
-        "badge badge-light"
+        "badge badge-light text-body-color"
       end
 
     if out_of == 0 or out_of == 0.0 do

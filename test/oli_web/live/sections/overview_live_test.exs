@@ -94,8 +94,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       {:ok, _view, html} = live(conn, live_view_overview_route(section.slug))
 
-      refute html =~ "<nav aria-label=\"breadcrumb"
-      assert html =~ "Overview"
+      assert html =~ "Details"
     end
   end
 
@@ -128,8 +127,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     test "loads section data correctly", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~ "Overview"
-      assert render(view) =~ "Overview of this course section"
+      assert render(view) =~ "Details"
+      assert render(view) =~ "Overview of course section details"
       assert has_element?(view, "input[value=\"#{section.slug}\"]")
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"Direct Delivery\"]")
@@ -147,7 +146,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       assert render(view) =~ "Instructors"
-      assert render(view) =~ "Manage the users with instructor level access"
+      assert render(view) =~ "Manage users with instructor level access"
       assert render(view) =~ user_enrolled.given_name
       refute render(view) =~ user_not_enrolled.given_name
     end
@@ -156,7 +155,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       {:ok, section} = Sections.update_section(section, %{open_and_free: false})
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
       assert render(view) =~ "Curriculum"
-      assert render(view) =~ "Manage the content delivered to students"
+      assert render(view) =~ "Manage content delivered to students"
 
       assert has_element?(
                view,
@@ -375,8 +374,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~ "Overview"
-      assert render(view) =~ "Overview of this course section"
+      assert render(view) =~ "Details"
+      assert render(view) =~ "Overview of course section details"
       assert has_element?(view, "input[value=\"#{section.slug}\"]")
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"Direct Delivery\"]")

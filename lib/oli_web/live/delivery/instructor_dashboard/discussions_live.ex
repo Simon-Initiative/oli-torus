@@ -37,11 +37,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
   def render(assigns) do
     ~H"""
       <%= render_modal(assigns)%>
-      <InstructorDashboard.main_layout {assigns}>
-        <div id={assigns[:parent_component_id]}>
-          <InstructorDashboard.discussions {assigns} />
-        </div>
-      </InstructorDashboard.main_layout>
+      <div id={assigns[:parent_component_id]} class="container mx-auto">
+        <InstructorDashboard.discussions {assigns} />
+      </div>
     """
   end
 
@@ -219,6 +217,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLive do
         )
 
       discussion_table_model = Map.put(discussion_table_model, :rows, rows)
+      |> Map.put(:data, %{section_slug: section_slug})
 
       assign(socket,
         discussion_table_model: discussion_table_model,

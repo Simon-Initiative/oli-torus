@@ -92,7 +92,6 @@ defmodule OliWeb.Progress.StudentView do
                page_nodes: page_nodes,
                resource_accesses: resource_accesses,
                breadcrumbs: set_breadcrumbs(type, section, user_id),
-               delivery_breadcrumb: true,
                section: section,
                user: user
              )}
