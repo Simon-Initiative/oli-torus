@@ -12,8 +12,11 @@ import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-boot
 import { useDispatch, useSelector } from 'react-redux';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import cloneDeep from 'lodash/cloneDeep';
+import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 
-const ComponentSearchContextMenu: React.FC = () => {
+const ComponentSearchContextMenu: React.FC<{
+  authoringContainer: React.RefObject<HTMLElement>;
+}> = ({ authoringContainer }) => {
   const [show, setShow] = useState(false);
   const [target, setTarget] = useState(null);
   const paths = useSelector(selectPaths);
@@ -30,7 +33,10 @@ const ComponentSearchContextMenu: React.FC = () => {
   // TODO: tag parent items so that we can mark them instead?
   const allParts = (currentActivityTree || [])
     .slice(-1)
-    .reduce((acc, activity) => acc.concat(activity.content.partsLayout || []), []);
+    .reduce(
+      (acc, activity) => acc.concat(activity.content?.partsLayout || []),
+      [] as IPartLayout[],
+    );
 
   const handlePartClick = useCallback(
     (part: any) => {
@@ -38,7 +44,7 @@ const ComponentSearchContextMenu: React.FC = () => {
       if (!currentActivity) {
         return;
       }
-      if (currentActivity.content.partsLayout.find((p: any) => p.id === part.id)) {
+      if ((currentActivity.content?.partsLayout || []).find((p: any) => p.id === part.id)) {
         setShow(!show);
         dispatch(setCurrentSelection({ selection: part.id }));
         dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
@@ -58,7 +64,9 @@ const ComponentSearchContextMenu: React.FC = () => {
 
   const updateActivityTreeParts = (list: any) => {
     const activity = cloneDeep((currentActivityTree || []).slice(-1)[0]);
-    activity.content.partsLayout = list;
+    if (activity.content) {
+      activity.content.partsLayout = list;
+    }
     dispatch(saveActivity({ activity, undoable: true, immediate: true }));
   };
 
@@ -105,7 +113,7 @@ const ComponentSearchContextMenu: React.FC = () => {
           show={show}
           target={target}
           placement="bottom"
-          container={document.getElementById('advanced-authoring')}
+          container={authoringContainer.current}
           containerPadding={20}
           rootClose={true}
           onHide={() => setShow(false)}
@@ -120,7 +128,7 @@ const ComponentSearchContextMenu: React.FC = () => {
                     action
                     onClick={() => handlePartClick(part)}
                     key={part.id}
-                    className="d-flex align-items-center justify-content-between"
+                    className="d-flex w-full align-items-center justify-content-between"
                   >
                     <div>
                       <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>

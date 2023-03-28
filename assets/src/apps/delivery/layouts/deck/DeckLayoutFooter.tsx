@@ -228,7 +228,6 @@ const DeckLayoutFooter: React.FC = () => {
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const isPreviewMode = useSelector(selectPreviewMode);
-
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -290,7 +289,8 @@ const DeckLayoutFooter: React.FC = () => {
           );
           if (partAttempt?.length) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             scopedTarget = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -376,7 +376,8 @@ const DeckLayoutFooter: React.FC = () => {
 
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             scopedTarget = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -427,7 +428,8 @@ const DeckLayoutFooter: React.FC = () => {
           const lstVar = op.params.target.split('.');
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             target = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -531,6 +533,7 @@ const DeckLayoutFooter: React.FC = () => {
   };
 
   const checkHandler = () => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsLoading(true);
     /* console.log('CHECK BUTTON CLICKED', {
       isGoodFeedback,

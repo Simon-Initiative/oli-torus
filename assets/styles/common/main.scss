@@ -1,0 +1,120 @@
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  color: var(--color-body-color);
+
+  h1,
+  .h1 {
+    font-size: 2em;
+  }
+  h2,
+  .h2 {
+    font-size: 1.75em;
+  }
+  h3,
+  .h3 {
+    font-size: 1.5em;
+  }
+  h4,
+  .h4 {
+    font-size: 1.25em;
+  }
+  h5,
+  .h5 {
+    font-size: 1.125em;
+  }
+  h6,
+  .h6 {
+    font-size: 1em;
+  }
+}
+
+body.modal-open {
+  overflow: visible;
+}
+
+main.main {
+  padding-bottom: 40px;
+}
+
+.torus-logo {
+  font-family: 'Open Sans', sans-serif;
+
+  img {
+    height: 40px;
+  }
+}
+
+.screenreader-text {
+  position: absolute;
+  left: -999px;
+  width: 1px;
+  height: 1px;
+  top: auto;
+
+  &:focus {
+    background-color: #0d6efd !important;
+    color: var(--color-white);
+    display: inline-block;
+    height: auto;
+    width: auto;
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: auto;
+    padding: 10px;
+  }
+}
+
+form .form-label-group .help-block,
+form .form-group .help-block {
+  color: var(--color-danger);
+}
+
+i.unicode-icon {
+  font-style: normal;
+  font-family: serif;
+  font-weight: 700;
+}
+
+.ellipsis-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-flow: row nowrap;
+}
+
+.breadcrumb-bar {
+  height: 2em;
+  background: var(--workspace-breadcrumb-bg);
+
+  .breadcrumb {
+    font-size: 1rem;
+    margin-bottom: 0;
+  }
+}
+
+form .form-label-group .help-block {
+  color: #dc3545;
+}
+
+.custom-select {
+  -webkit-appearance: none;
+}
+
+.system-banner {
+  margin-bottom: 0.4em !important;
+
+  span {
+    color: black;
+  }
+}
+
+/* fix an issue with contenteditable (slate) not being selectable in safari */
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}

@@ -75,7 +75,7 @@ export const ActivityEditorContentOutlineItem = (props: ActivityEditorContentOut
   const { activity } = props;
   return (
     <OutlineItem {...props}>
-      <Icon iconName="las la-shapes" />
+      <Icon iconName="fas fa-shapes" />
       <Description title={activity?.title}>{getActivityDescription(activity)}</Description>
     </OutlineItem>
   );

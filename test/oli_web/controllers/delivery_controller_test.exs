@@ -249,7 +249,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "shows enroll page if user is not enrolled", %{conn: conn, oaf_section_1: section} do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 200) =~ "<h5 class=\"card-title\">#{section.title}</h5>"
+      assert html_response(conn, 200) =~ section.title
       assert html_response(conn, 200) =~ Routes.delivery_path(conn, :process_enroll, section.slug)
     end
 
@@ -262,7 +262,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 302) =~ Routes.page_delivery_path(conn, :index, section.slug)
+      assert html_response(conn, 302) =~
+               Routes.page_delivery_path(conn, :index, section.slug)
     end
 
     test "handles open and free user access when date is before start date", %{
@@ -306,7 +307,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
 
       assert html_response(conn, 200) =~
-               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+               ~s|src="#{cover_image}"|
     end
 
     test "renders product's cover image in enrollment page", %{
@@ -326,7 +327,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
-               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+               ~s|src="#{cover_image}"|
     end
 
     test "if no cover image is set, renders default image in enrollment page", %{
@@ -344,7 +345,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
-               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+               ~s|src="#{cover_image}"|
     end
   end
 

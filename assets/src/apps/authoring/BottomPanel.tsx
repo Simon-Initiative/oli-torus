@@ -1,14 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { debounce } from 'lodash';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { IActivity, selectCurrentActivity } from '../delivery/store/features/activities/slice';
+import {
+  IActivity,
+  IAdaptiveRule,
+  selectCurrentActivity,
+} from '../delivery/store/features/activities/slice';
 import { selectCurrentRule, setCurrentRule } from './store/app/slice';
 import { clone } from '../../utils/common';
 import { saveActivity } from './store/activities/actions/saveActivity';
 import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
 import { getIsLayer } from '../delivery/store/features/groups/actions/sequence';
-import { AdaptiveRule } from './components/AdaptiveRulesList/AdaptiveRulesList';
 import ConfirmDelete from './components/Modal/DeleteConfirmationModal';
 
 export interface BottomPanelProps {
@@ -29,6 +32,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const isLayer = getIsLayer();
 
+  const ref = useRef<HTMLElement>(null);
+
   useEffect(() => {
     if (currentRule === undefined) return;
     if (currentRule !== 'initState') {
@@ -40,9 +45,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const handleCorrectChange = () => {
     const activityClone: IActivity = clone(currentActivity);
     const updatedRule = { ...currentRule, correct: !correct };
-    const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
-      (rule: AdaptiveRule) => rule.id === updatedRule.id,
+    const ruleToUpdate = activityClone.authoring?.rules?.find(
+      (rule: IAdaptiveRule) => rule.id === updatedRule.id,
     );
+    if (!ruleToUpdate) return;
     ruleToUpdate.correct = !correct;
     dispatch(setCurrentRule({ currentRule: updatedRule }));
     setCorrect(!correct);
@@ -52,9 +58,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const handleDisabledChange = () => {
     const activityClone: IActivity = clone(currentActivity);
     const updatedRule = { ...currentRule, disabled: !isDisabled };
-    const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
-      (rule: AdaptiveRule) => rule.id === updatedRule.id,
+    const ruleToUpdate = activityClone.authoring?.rules?.find(
+      (rule: IAdaptiveRule) => rule.id === updatedRule.id,
     );
+    if (!ruleToUpdate) return;
     ruleToUpdate.disabled = !isDisabled;
     dispatch(setCurrentRule({ currentRule: updatedRule }));
     setIsDisabled(!isDisabled);
@@ -73,13 +80,13 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     [],
   );
 
-  const reorderDefaultRules = (rules: AdaptiveRule[], saveChanges?: boolean) => {
+  const reorderDefaultRules = (rules: IAdaptiveRule[], saveChanges?: boolean) => {
     // process the rules to make a defaultRule sandwich before displaying them
     const defaultCorrectIndex = rules.findIndex(
-      (rule: AdaptiveRule) => rule.default && rule.correct,
+      (rule: IAdaptiveRule) => rule.default && rule.correct,
     );
     const defaultWrongIndex = rules.findIndex(
-      (rule: AdaptiveRule) => rule.default && !rule.correct,
+      (rule: IAdaptiveRule) => rule.default && !rule.correct,
     );
 
     if (defaultCorrectIndex === 0 && defaultWrongIndex === rules.length - 1) return rules;
@@ -91,9 +98,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     // set the defaultWrong rule to the last position
     rulesClone.push(rulesClone.splice(defaultWrongIndex, 1)[0]);
 
-    if (saveChanges) {
+    if (saveChanges && currentActivity?.authoring) {
       const activityClone: IActivity = clone(currentActivity);
-      activityClone.authoring.rules = rulesClone;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      activityClone.authoring!.rules = rulesClone;
       debounceSaveChanges(activityClone);
     } else return rulesClone;
   };
@@ -103,8 +111,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
       createCorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
+    if (!activityClone.authoring?.rules) return;
     const currentRuleIndex = activityClone.authoring.rules.findIndex(
-      (rule: AdaptiveRule) => rule.id === currentRule.id,
+      (rule: IAdaptiveRule) => rule.id === currentRule.id,
     );
     activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newCorrectRule);
     activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
@@ -117,8 +126,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
       createIncorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
+    if (!activityClone.authoring?.rules) return;
     const currentRuleIndex = activityClone.authoring.rules.findIndex(
-      (rule: AdaptiveRule) => rule.id === currentRule.id,
+      (rule: IAdaptiveRule) => rule.id === currentRule.id,
     );
     activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newIncorrectRule);
     activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
@@ -128,8 +138,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
 
   const handleDeleteRule = () => {
     const activityClone: IActivity = clone(currentActivity);
+    if (!activityClone.authoring?.rules) return;
     const indexToDelete = activityClone.authoring.rules.findIndex(
-      (rule: AdaptiveRule) => rule.id === currentRule.id,
+      (rule: IAdaptiveRule) => rule.id === currentRule.id,
     );
     if (indexToDelete !== -1) {
       activityClone.authoring.rules.splice(indexToDelete, 1);
@@ -145,13 +156,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     <>
       <section
         id="aa-bottom-panel"
+        ref={ref}
         className={`aa-panel bottom-panel${panelState['bottom'] ? ' open' : ''}`}
         style={{
           left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
           right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
-          bottom: panelState['bottom']
-            ? 0
-            : `calc(-${document.getElementById('aa-bottom-panel')?.clientHeight}px + 39px)`,
+          bottom:
+            panelState['bottom'] || !ref.current
+              ? 0
+              : `calc(-${ref.current?.clientHeight}px + 39px)`,
         }}
       >
         <div className="aa-panel-inner">
@@ -228,50 +241,40 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                     </Tooltip>
                   }
                 >
-                  <div className="dropdown">
-                    <button
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      id="bottom-panel-add-context-trigger"
+                      variant="link"
                       className={`dropdown-toggle btn btn-link p-0 ${
                         currentRule?.default ? 'ml-3' : 'ml-1'
                       }`}
-                      type="button"
-                      id={`bottom-panel-add-context-trigger`}
-                      data-toggle="dropdown"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                      onClick={() => {
-                        ($(`#bottom-panel-add-context-trigger`) as any).dropdown('toggle');
-                      }}
                     >
                       <i className="fa fa-plus" />
-                    </button>
-                    <div
-                      id={`bottom-panel-add-context-menu`}
-                      className="dropdown-menu"
-                      aria-labelledby={`bottom-panel-add-context-trigger`}
-                    >
-                      <button
-                        className="dropdown-item"
-                        onClick={() => {
-                          handleAddCorrectRule();
-                        }}
-                      >
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => handleAddCorrectRule()}>
                         <i className="fa fa-check mr-2" /> New Correct Rule
-                      </button>
-                      <button
-                        className="dropdown-item"
-                        onClick={() => {
-                          handleAddIncorrectRule();
-                        }}
-                      >
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleAddIncorrectRule()}>
+                        {' '}
                         <i className="fa fa-times mr-2" /> New Incorrect Rule
-                      </button>
-                    </div>
-                  </div>
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
                 </OverlayTrigger>
               )}
               <button className="btn btn-link p-0 ml-1" onClick={() => onToggle()}>
-                {panelState['bottom'] && <i className="fa fa-angle-down" />}
-                {!panelState['bottom'] && <i className="fa fa-angle-right" />}
+                {panelState['bottom'] && (
+                  <span>
+                    <i className="fa fa-angle-down" />
+                  </span>
+                )}
+                {!panelState['bottom'] && (
+                  <span>
+                    <i className="fa fa-angle-up" />
+                  </span>
+                )}
               </button>
             </div>
           </div>

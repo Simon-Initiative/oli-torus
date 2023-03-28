@@ -1,13 +1,11 @@
-@import 'authoring/variables';
-
 .dialog-editor {
   position: relative;
   padding-top: 1em;
-  border: 1px solid $body-bg;
+  border: 1px solid var(--color-body);
   padding: 1em;
 
   &.selected {
-    border: 1px dashed $gray-500;
+    border: 1px dashed var(--color-gray-500);
   }
 
   label {
@@ -72,7 +70,7 @@
       width: 120px;
       min-height: 90px;
       position: relative;
-      border: 1px solid $gray-500;
+      border: 1px solid var(--color-gray-500);
       input {
         width: 120px;
       }

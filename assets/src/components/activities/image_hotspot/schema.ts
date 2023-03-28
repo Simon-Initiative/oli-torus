@@ -7,6 +7,7 @@ import {
   Choice,
   RichText,
   makeChoice,
+  makeContent,
 } from '../types';
 import { ID } from 'data/content/model/other';
 import { CATACompatible } from '../check_all_that_apply/actions';
@@ -18,7 +19,9 @@ export class Hotspot implements Choice {
   title?: string;
 }
 
-export function getShape(hotspot: Hotspot): string | undefined {
+export type shapeType = 'circle' | 'rect' | 'poly';
+
+export function getShape(hotspot: Hotspot): shapeType | undefined {
   const n = hotspot.coords.length;
   if (n === 3) return 'circle';
   if (n === 4) return 'rect';
@@ -26,12 +29,12 @@ export function getShape(hotspot: Hotspot): string | undefined {
   return undefined;
 }
 
-export function makeHotspot(): Hotspot {
+export function makeHotspot(coords: number[] = []): Hotspot {
   const hotspot = new Hotspot();
   const choice = makeChoice('');
   hotspot.id = choice.id;
   hotspot.content = choice.content;
-  hotspot.coords = [];
+  hotspot.coords = coords;
   return hotspot;
 }
 

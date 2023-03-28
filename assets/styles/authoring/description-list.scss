@@ -5,7 +5,7 @@
   }
 
   h4 {
-    border: 1px dashed $body-bg;
+    border: 1px dashed var(--color-body);
   }
   h4:hover {
     border: 1px dashed #ccc;
@@ -13,7 +13,7 @@
 
   dd,
   dt {
-    border: 1px dashed $body-bg;
+    border: 1px dashed var(--color-body);
     padding: 0.1em;
     padding-left: 0.1em;
     margin: 2px;
@@ -27,6 +27,7 @@
       top: 0px;
     }
   }
+
   dd:hover,
   dt:hover {
     border: 1px dashed #ccc;

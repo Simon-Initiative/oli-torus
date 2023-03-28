@@ -35,7 +35,7 @@ export const UrlOrUpload = (props: Props) => {
 
   return (
     <>
-      <div className="nav nav-tabs mb-1">
+      <div className="nav nav-tabs flex mb-1">
         <button
           className={classNames('nav-link', whenActive('library', 'active'))}
           onClick={() => setSource('library')}

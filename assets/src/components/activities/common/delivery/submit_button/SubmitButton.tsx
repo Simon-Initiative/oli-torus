@@ -12,7 +12,7 @@ export const SubmitButton: React.FC<Props> = ({ shouldShow = true, disabled = fa
   return (
     <button
       aria-label="submit"
-      className="btn btn-primary align-self-start mt-3 mb-3"
+      className="btn btn-primary self-start mt-3 mb-3"
       disabled={disabled}
       onClick={onClick}
     >

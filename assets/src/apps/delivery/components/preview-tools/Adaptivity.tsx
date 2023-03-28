@@ -58,8 +58,8 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
                 <button
                   className="btn btn-link btn-block text-left"
                   type="button"
-                  data-toggle="collapse"
-                  data-target={`#collapse`}
+                  data-bs-toggle="collapse"
+                  data-bs-target={`#collapse`}
                   aria-expanded={expandedRules[`initState-${currentActivity.id}`]}
                   aria-controls={`collapse`}
                   onClick={(e) =>
@@ -120,8 +120,8 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
                 <button
                   className="btn btn-link btn-block text-left"
                   type="button"
-                  data-toggle="collapse"
-                  data-target={`#collapse${ruleIndex}`}
+                  data-bs-toggle="collapse"
+                  data-bs-target={`#collapse${ruleIndex}`}
                   aria-expanded={expandedRules[`rule-${ruleIndex}`]}
                   aria-controls={`collapse${ruleIndex}`}
                   onClick={(e) =>

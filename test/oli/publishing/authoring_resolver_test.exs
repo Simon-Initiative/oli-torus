@@ -1,6 +1,8 @@
 defmodule Oli.Publishing.AuthoringResolverTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Resources.ResourceType
@@ -221,6 +223,60 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
       assert Enum.count(revisions) == 2
       assert revisions |> Enum.map(& &1.title) |> Enum.sort() == ["Alt 1", "Alt 3"]
+    end
+
+    test "get_by_purpose/2 returns all revisions when receive a valid project_slug and purpose",
+         %{} do
+      {:ok,
+       project: project,
+       section: _section,
+       page_revision: page_revision,
+       other_revision: other_revision} = project_section_revisions(%{})
+
+      assert project.slug
+             |> AuthoringResolver.get_by_purpose(page_revision.purpose)
+             |> length() == 1
+
+      assert project.slug
+             |> AuthoringResolver.get_by_purpose(other_revision.purpose)
+             |> length() == 1
+    end
+
+    test "get_by_purpose/2 returns empty list when receive a invalid project_slug",
+         %{} do
+      project = insert(:project)
+
+      assert AuthoringResolver.get_by_purpose(project.slug, :foundation) == []
+      assert AuthoringResolver.get_by_purpose(project.slug, :application) == []
+    end
+
+    test "targeted_via_related_to/2 returns all revisions when receive a valid project_slug and resource_id",
+         %{} do
+      {:ok,
+       project: project,
+       section: _section,
+       page_revision: page_revision,
+       other_revision: _other_revision} = project_section_revisions(%{})
+
+      assert project.slug
+             |> AuthoringResolver.targeted_via_related_to(page_revision.resource_id)
+             |> length() == 1
+    end
+
+    test "targeted_via_related_to/2 returns empty list when don't receive a valid project_slug and resource_id",
+         %{} do
+      project = insert(:project)
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Example test revision",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      assert AuthoringResolver.targeted_via_related_to(project.slug, page_revision.resource_id) ==
+               []
     end
   end
 end

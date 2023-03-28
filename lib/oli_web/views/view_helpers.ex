@@ -5,21 +5,21 @@ defmodule OliWeb.ViewHelpers do
   import Oli.Branding
   import Oli.Utils, only: [value_or: 2]
 
+  alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
   alias Oli.Branding.Brand
 
   def brand_logo(%{brand: %Brand{}} = assigns) do
     ~H"""
-      <img src={@brand.logo} height="40" class={[value_or(assigns[:class], ""), "d-dark-none"]} alt={@brand.name}>
-      <img src={value_or(@brand.logo_dark, @brand.logo)} height="40" class={[value_or(assigns[:class], ""), "d-light-none"]}  alt={@brand.name}>
+      <img src={@brand.logo} class={[value_or(assigns[:class], ""), "inline-block dark:hidden"]} alt={@brand.name}>
+      <img src={value_or(@brand.logo_dark, @brand.logo)} class={[value_or(assigns[:class], ""), "hidden dark:inline-block"]}  alt={@brand.name}>
     """
   end
 
   def brand_logo(assigns) do
     ~H"""
-      <img src={brand_logo_url(assigns[:section])} height="40" class={[value_or(assigns[:class], ""), "d-dark-none"]} alt={brand_name(assigns[:section])}>
-      <img src={brand_logo_url_dark(assigns[:section])} height="40" class={[value_or(assigns[:class], ""), "d-light-none"]}  alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url(assigns[:section])} class={[value_or(assigns[:class], ""), "inline-block dark:hidden"]} alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url_dark(assigns[:section])} class={[value_or(assigns[:class], ""), "hidden dark:inline-block"]}  alt={brand_name(assigns[:section])}>
     """
   end
 
@@ -32,37 +32,39 @@ defmodule OliWeb.ViewHelpers do
   """
   def external_link(text, opts \\ []) do
     link Keyword.merge([target: "_blank"], opts) do
-      [text, content_tag("i", "", class: "las la-external-link-alt ml-1")]
+      [text, content_tag("i", "", class: "fas fa-external-link-alt ml-1")]
     end
   end
 
-  def is_section_instructor_or_admin?(section_slug, user) do
-    Sections.is_instructor?(user, section_slug) || Sections.is_admin?(user, section_slug)
+  def is_section_instructor_or_admin?(section_slug, user_or_author) do
+    Sections.is_instructor?(user_or_author, section_slug) ||
+      Sections.is_admin?(user_or_author, section_slug) ||
+      Accounts.is_admin?(user_or_author)
   end
 
   def is_section_instructor?(section_slug, user) do
     Sections.is_instructor?(user, section_slug)
   end
 
+  def is_independent_instructor?(user), do: Sections.is_independent_instructor?(user)
+
   def is_admin?(section_slug, user) do
     Sections.is_admin?(user, section_slug)
   end
 
-  def maybe_section_slug(conn) do
-    case conn.assigns[:section] do
-      %Section{slug: slug} ->
-        slug
-
-      _ ->
-        ""
-    end
+  @doc """
+  Returns true if a user is signed in
+  """
+  def user_signed_in?(conn) do
+    conn.assigns[:current_user]
   end
 
-  def delivery_breadcrumbs?(%{assigns: assigns} = _conn),
-    do:
-      Map.has_key?(assigns, :delivery_breadcrumb) and
-        Map.get(assigns, :delivery_breadcrumb, false) and
-        (Map.has_key?(assigns, :breadcrumbs) and length(Map.get(assigns, :breadcrumbs, [])) > 0)
+  @doc """
+  Returns true if a author is signed in
+  """
+  def author_signed_in?(conn) do
+    conn.assigns[:current_author]
+  end
 
   def redirect_with_error(conn, error_url, error) do
     conn

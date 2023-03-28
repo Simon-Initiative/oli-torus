@@ -2,6 +2,7 @@ defmodule OliWeb.OpenAndFreeController do
   use OliWeb, :controller
 
   alias Oli.{Repo, Publishing, Branding}
+  alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course
@@ -75,6 +76,8 @@ defmodule OliWeb.OpenAndFreeController do
          blueprint <- Sections.get_section_by_slug(product_slug) do
       context = SessionContext.init(conn)
 
+      project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
+
       utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, context)
       utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, context)
 
@@ -84,6 +87,7 @@ defmodule OliWeb.OpenAndFreeController do
           blueprint_id: blueprint.id,
           type: :enrollable,
           open_and_free: true,
+          has_experiments: project.has_experiments,
           context_id: UUID.uuid4(),
           start_date: utc_start_date,
           end_date: utc_end_date
@@ -143,7 +147,7 @@ defmodule OliWeb.OpenAndFreeController do
            "end_date" => end_date
          } <-
            section_params,
-         %{id: project_id} <- Course.get_project_by_slug(project_slug),
+         %{id: project_id, has_experiments: has_experiments} <- Course.get_project_by_slug(project_slug),
          publication <- Publishing.get_latest_published_publication_by_slug(project_slug) |> Repo.preload(:project) do
 
       context = SessionContext.init(conn)
@@ -155,7 +159,7 @@ defmodule OliWeb.OpenAndFreeController do
         nil -> nil
         labels -> Map.from_struct(labels)
       end
-      
+
       section_params =
         section_params
         |> Map.put("type", :enrollable)
@@ -165,6 +169,7 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("start_date", utc_start_date)
         |> Map.put("end_date", utc_end_date)
         |> Map.put("customizations", customizations)
+        |> Map.put("has_experiments", has_experiments)
 
       case create_from_publication(conn, publication, section_params) do
         {:ok, section} ->
@@ -343,6 +348,7 @@ defmodule OliWeb.OpenAndFreeController do
   defp create_from_product(conn, blueprint, section_params) do
     Repo.transaction(fn ->
       with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _maybe_enrollment} <- enroll(conn, section) do
         section
       else
@@ -355,8 +361,10 @@ defmodule OliWeb.OpenAndFreeController do
     Repo.transaction(fn ->
       with {:ok, section} <- Sections.create_section(section_params),
            {:ok, section} <- Sections.create_section_resources(section, publication),
-           {:ok, _enrollment} <- enroll(conn, section) do
-        section
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
+           {:ok, _enrollment} <- enroll(conn, section),
+           {:ok, updated_section} <- Delivery.maybe_update_section_contains_explorations(section) do
+        updated_section
       else
         {:error, changeset} -> Repo.rollback(changeset)
       end

@@ -80,7 +80,7 @@ export const CiteEditor = (props: Props) => {
             <Toolbar.Group>
               <CommandButton
                 description={createButtonCommandDesc({
-                  icon: 'edit',
+                  icon: <i className="fa-solid fa-pencil"></i>,
                   description: 'Edit content',
                   execute,
                 })}

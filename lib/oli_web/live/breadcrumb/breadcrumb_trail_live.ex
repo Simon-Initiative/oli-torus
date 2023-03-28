@@ -25,6 +25,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
      )}
   end
 
+  @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
     <nav aria-label="breadcrumb overflow-hidden">

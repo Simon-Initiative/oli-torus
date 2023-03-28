@@ -5,7 +5,7 @@ defmodule OliWeb.Common.Properties.Groups do
 
   def render(assigns) do
     ~F"""
-    <div class="container">
+    <div class="container mx-auto">
       <#slot />
     </div>
     """

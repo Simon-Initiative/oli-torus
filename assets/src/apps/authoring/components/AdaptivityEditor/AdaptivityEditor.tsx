@@ -8,7 +8,7 @@ import { selectSequence } from 'apps/delivery/store/features/groups/selectors/de
 import debounce from 'lodash/debounce';
 import isEqual from 'lodash/isEqual';
 import React, { useCallback, useEffect, useState } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
@@ -96,7 +96,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   }, [isDirty]);
 
   const handleRuleChange = (rule: any) => {
-    const existing = currentActivity?.authoring.rules.find((r: any) => r.id === rule.id);
+    const existing = currentActivity?.authoring?.rules?.find((r: any) => r.id === rule.id);
     const diff = JSON.stringify(rule) !== JSON.stringify(existing);
     /*console.log('RULE CHANGE: ', {
       rule,
@@ -107,7 +107,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       console.warn("rule not found, shouldn't happen!!!");
       return;
     }
-    if (diff) {
+    if (diff && currentActivity?.authoring?.rules) {
       const activityClone = clone(currentActivity);
       const rulesClone = currentActivity ? [...currentActivity.authoring.rules] : [];
       rulesClone[currentActivity?.authoring.rules.indexOf(existing)] = rule;
@@ -337,48 +337,37 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             Perform the following actions:
           </p>
           <div className="aa-actions pt-3 mt-2 d-flex w-100">
-            <OverlayTrigger
-              placement="top"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  New Action
-                </Tooltip>
-              }
-            >
-              <button
-                className="dropdown-toggle aa-add-button btn btn-primary btn-sm mr-3"
-                type="button"
-                id={`adaptive-editor-add-context-trigger`}
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
-                onClick={() => {
-                  ($(`#adaptive-editor-add-context-trigger`) as any).dropdown('toggle');
-                }}
+            <Dropdown>
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="tooltip-top button-tooltip" style={{ fontSize: '12px' }}>
+                    New Action
+                  </Tooltip>
+                }
               >
-                <i className="fa fa-plus" />
-              </button>
-            </OverlayTrigger>
-            <div
-              id={`adaptive-editor-add-context-menu`}
-              className="dropdown-menu"
-              aria-labelledby={`adaptive-editor-add-context-trigger`}
-            >
-              {!hasFeedback && (
-                <button className="dropdown-item" onClick={() => handleAddAction('feedback')}>
-                  <i className="fa fa-comment mr-2" /> Show Feedback
-                </button>
-              )}
-              {!hasNavigation && (
-                <button className="dropdown-item" onClick={() => handleAddAction('navigation')}>
-                  <i className="fa fa-compass mr-2" /> Navigate To
-                </button>
-              )}
-              <button className="dropdown-item" onClick={() => handleAddAction('mutateState')}>
-                <i className="fa fa-crosshairs mr-2" /> Mutate State
-              </button>
-            </div>
+                <Dropdown.Toggle variant="link" id="adaptive-editor-add-context-trigger">
+                  <i className="fa fa-plus" />
+                </Dropdown.Toggle>
+              </OverlayTrigger>
+
+              <Dropdown.Menu>
+                {!hasFeedback && (
+                  <Dropdown.Item onClick={() => handleAddAction('feedback')}>
+                    <i className="fa fa-comment mr-2" /> Show Feedback
+                  </Dropdown.Item>
+                )}
+                {!hasNavigation && (
+                  <Dropdown.Item onClick={() => handleAddAction('navigation')}>
+                    <i className="fa fa-compass mr-2" /> Navigate To
+                  </Dropdown.Item>
+                )}
+                <Dropdown.Item onClick={() => handleAddAction('mutateState')}>
+                  <i className="fa fa-crosshairs mr-2" /> Mutate State
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
             <div className="d-flex flex-column w-100">
               {actions.length === 0 && (
                 <div className="text-danger">No actions. This rule will not do anything.</div>

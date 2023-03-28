@@ -74,19 +74,21 @@ interface ComponentProps {
 }
 
 const Component: React.FC<ComponentProps> = (props) => {
-  const scoreOrGraphic = props.graded
-    ? (props.score || props.outOf) && (
-        <div className="result">
-          <span aria-label="score" className="score">
-            {props.score}
-          </span>
-          <span className="result-divider">/</span>
-          <span aria-label="out of" className="out-of">
-            {props.outOf}
-          </span>
-        </div>
-      )
-    : graphicForResultClass(props.resultClass);
+  const scoreOrGraphic = props.graded ? (
+    (props.score || props.outOf) && (
+      <div className="result">
+        <span aria-label="score" className="score">
+          {props.score}
+        </span>
+        <span className="result-divider">/</span>
+        <span aria-label="out of" className="out-of">
+          {props.outOf}
+        </span>
+      </div>
+    )
+  ) : (
+    <div className="mr-2 mt-1">{graphicForResultClass(props.resultClass)}</div>
+  );
 
   return (
     <div aria-label="result" className={`evaluation feedback ${props.resultClass} my-1`}>
@@ -99,16 +101,16 @@ const Component: React.FC<ComponentProps> = (props) => {
 
 const graphicForResultClass = (resultClass: string) => {
   if (resultClass === 'correct') {
-    return <span className="icon_30H-hYww material-icons mr-2 graphic">check_circle</span>;
+    return <i className="fa-solid fa-circle-check"></i>;
   }
   if (resultClass === 'incorrect') {
-    return <span className="icon_30H-hYww material-icons mr-2 graphic">cancel</span>;
+    return <i className="fa-solid fa-circle-xmark"></i>;
   }
   if (resultClass === 'partially-correct') {
-    return <span className="icon_30H-hYww material-icons mr-2 graphic">check</span>;
+    return <i className="fa-regular fa-circle-check"></i>;
   }
 
-  return <span className="icon_30H-hYww material-icons mr-2 graphic">error</span>;
+  return <i className="fa-solid fa-circle-exclamation"></i>;
 };
 
 const resultClass = (score: number | null, outOf: number | null, error: string | undefined) => {

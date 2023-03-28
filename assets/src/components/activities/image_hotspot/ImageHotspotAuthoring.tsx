@@ -2,14 +2,14 @@ import { Hints } from 'components/activities/common/hints/authoring/HintsAuthori
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Choices } from 'data/activities/model/choices';
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import { ImageHotspotActions } from './actions';
-import { Hotspot, ImageHotspotModelSchema, makeHotspot } from './schema';
+import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot, shapeType } from './schema';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -21,11 +21,17 @@ import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import { MediaItemRequest } from '../types';
+import { makeChoice, makeContent, MediaItemRequest } from '../types';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { CATAActions } from '../check_all_that_apply/actions';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
-import { drawHotspotShape, HS_COLOR } from './utils';
+import { CircleEditor } from './Sections/CircleEditor';
+import { RectangleEditor } from './Sections/RectangleEditor';
+import { PolygonEditor } from './Sections/PolygonEditor';
+import { Maybe } from 'tsmonad';
+import * as Immutable from 'immutable';
+import { PolygonAdder } from './Sections/PolygonAdder';
+import { clone } from 'utils/common';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
   const { dispatch, model, editMode, projectSlug, onRequestMedia } =
@@ -35,6 +41,10 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
   });
+
+  const [selectedHotspot, setSelectedHotspot] = useState<string | null>(null);
+  const [addPolyMode, setAddPolyMode] = useState<boolean>(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   function selectImage(): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -60,25 +70,83 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     });
   };
 
-  const imgRef = useRef<HTMLImageElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const onImageLoad = () => {
     if (imgRef.current) {
       dispatch(ImageHotspotActions.setSize(imgRef.current.height, imgRef.current.width));
     }
   };
 
-  const showHotSpots = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (canvas && ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      model.choices.map((hs) => drawHotspotShape(ctx, hs, HS_COLOR));
+  const addHotspot = (hs: Hotspot) => {
+    model.multiple ? dispatch(CATAActions.addChoice(hs)) : dispatch(Choices.addOne(hs));
+  };
+
+  const addCircle = (_e: any) => {
+    if (model.width && model.height) {
+      const hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
+      addHotspot(hs);
+      setSelectedHotspot(hs.id);
     }
   };
 
-  useEffect(showHotSpots, [model.choices]);
+  const addRect = (_e: any) => {
+    if (model.width && model.height) {
+      const hs = makeHotspot([
+        Math.floor(model.width / 2) - 50,
+        Math.floor(model.height / 2) - 50,
+        Math.floor(model.width / 2) + 50,
+        Math.floor(model.height / 2) + 50,
+      ]);
+      addHotspot(hs);
+      setSelectedHotspot(hs.id);
+    }
+  };
+
+  const beginAddPolyMode = (e: any) => {
+    setAddPolyMode(true);
+    e.stopPropagation();
+  };
+
+  const addPolyMsg = 'Click to add points, Double-click last point to finish';
+
+  const onAddPoly = (coords: number[]) => {
+    // ignore incompletely defined polygons.
+    if (coords.length >= 6) {
+      addHotspot(makeHotspot(coords));
+    }
+    setAddPolyMode(false);
+  };
+
+  const onEditCoords = (id: string, coords: Immutable.List<number>) => {
+    dispatch(ImageHotspotActions.setCoords(id, coords.toArray()));
+  };
+
+  const removeHotspot = (id: string) => {
+    model.multiple
+      ? dispatch(CATAActions.removeChoiceAndUpdateRules(id))
+      : dispatch(MCActions.removeChoice(id, model.authoring.parts[0].id));
+  };
+
+  const hotspotNumeral = (model: ImageHotspotModelSchema, id: string) => {
+    const index = model.choices.findIndex((h) => h.id === id);
+    return index !== undefined ? (index + 1).toString() : '?';
+  };
+
+  // map hotspot to list of Choices with identifying label 'Hotspot N' as content
+  // for passing to Choice-based components that show content (Answer, TargetedFeedback)
+  const hotspotsToChoices = (hotspots: Hotspot[]) => {
+    return hotspots.map((hs, i) => makeChoice('Hotspot ' + (i + 1), hs.id));
+  };
+
+  const shapeEditors = {
+    rect: RectangleEditor,
+    circle: CircleEditor,
+    poly: PolygonEditor,
+  };
+
+  // list w/selected hotspot sorted to end so it renders at top of z-order
+  const zorderedHotspots = [...model.choices].sort((h1, h2) =>
+    h1.id === selectedHotspot ? 1 : h2.id === selectedHotspot ? -1 : 0,
+  );
 
   return (
     <React.Fragment>
@@ -88,27 +156,87 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
           <div>
             {model.imageURL && (
-              <div style={{ position: 'relative', width: model.width, height: model.height }}>
+              <div
+                style={{ position: 'relative', width: model.width, height: model.height }}
+                onMouseDown={(e: any) => setSelectedHotspot(null)}
+              >
                 <img
                   src={model.imageURL}
                   ref={imgRef}
                   onLoad={() => onImageLoad()}
                   style={{ position: 'absolute' }}
                 />
-                {/* semi-transparent canvas for overlaying area highlighting shapes */}
-                <canvas
-                  ref={canvasRef}
-                  height={model.height}
+                <svg
                   width={model.width}
-                  style={{ position: 'absolute', opacity: 0.6 }}
-                />
+                  height={model.height}
+                  style={{ position: 'relative' }}
+                  className={addPolyMode ? 'addPolyMode' : ''}
+                >
+                  {zorderedHotspots.map((hotspot) => {
+                    const shape: shapeType | undefined = getShape(hotspot);
+                    if (shape) {
+                      const ShapeEditor = shapeEditors[shape];
+                      return (
+                        <ShapeEditor
+                          key={hotspot.id}
+                          id={hotspot.id}
+                          label={hotspotNumeral(model, hotspot.id)}
+                          selected={hotspot.id === selectedHotspot}
+                          boundingClientRect={
+                            imgRef.current
+                              ? Maybe.just(imgRef.current.getBoundingClientRect())
+                              : Maybe.nothing()
+                          }
+                          coords={Immutable.List(hotspot.coords)}
+                          onSelect={setSelectedHotspot}
+                          onEdit={(coords) => onEditCoords(hotspot.id, coords)}
+                        />
+                      );
+                    }
+                  })}
+                  {addPolyMode && (
+                    <PolygonAdder
+                      onEdit={onAddPoly}
+                      boundingClientRect={imgRef.current!.getBoundingClientRect()}
+                    />
+                  )}
+                </svg>
+              </div>
+            )}
+            {addPolyMode && (
+              <div>
+                <p>{addPolyMsg}</p>
               </div>
             )}
             <button className="btn btn-primary mt-2" onClick={setImageURL}>
               Choose Image
             </button>
+            &nbsp; &nbsp;
+            <button className="btn btn-primary mt-2" disabled={!model.imageURL} onClick={addCircle}>
+              Add Circle
+            </button>
+            &nbsp;&nbsp;
+            <button className="btn btn-primary mt-2" disabled={!model.imageURL} onClick={addRect}>
+              Add Rectangle
+            </button>
+            &nbsp;&nbsp;
+            <button
+              className="btn btn-primary mt-2"
+              disabled={!model.imageURL || addPolyMode}
+              onClick={beginAddPolyMode}
+            >
+              Add Polygon
+            </button>
+            &nbsp;&nbsp;
+            <button
+              className="btn btn-primary mt-2"
+              onClick={(_e) => removeHotspot(selectedHotspot!)}
+              disabled={!selectedHotspot || model.choices.length <= 1}
+            >
+              Remove
+            </button>
           </div>
-
+          <br />
           <div className="form-check mb-2">
             <input
               className="form-check-input"
@@ -124,29 +252,12 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
               Multiple Selection
             </label>
           </div>
-          <ChoicesAuthoring
-            icon={model.multiple ? <Checkbox.Unchecked /> : <Radio.Unchecked />}
-            choices={model.choices}
-            simpleText={true}
-            setAll={(choices: Hotspot[]) => dispatch(Choices.setAll(choices))}
-            onEdit={(id, content) => dispatch(ImageHotspotActions.setContent(id, content))}
-            addOne={() =>
-              model.multiple
-                ? dispatch(CATAActions.addChoice(makeHotspot()))
-                : dispatch(Choices.addOne(makeHotspot()))
-            }
-            onRemove={(id) =>
-              model.multiple
-                ? dispatch(CATAActions.removeChoiceAndUpdateRules(id))
-                : dispatch(MCActions.removeChoice(id, model.authoring.parts[0].id))
-            }
-          />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
           <ChoicesDelivery
             unselectedIcon={model.multiple ? <Checkbox.Unchecked /> : <Radio.Unchecked />}
             selectedIcon={model.multiple ? <Checkbox.Checked /> : <Radio.Checked />}
-            choices={model.choices}
+            choices={hotspotsToChoices(model.choices)}
             selected={
               model.multiple
                 ? getCorrectChoiceIds(model)
@@ -165,6 +276,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
           />
           <SimpleFeedback partId={selectedPartId} />
           <TargetedFeedback
+            choices={hotspotsToChoices(model.choices)}
             toggleChoice={(choiceId, mapping) => {
               dispatch(MCActions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
             }}

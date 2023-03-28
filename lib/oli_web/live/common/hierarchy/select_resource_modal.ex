@@ -26,9 +26,7 @@ defmodule OliWeb.Common.Hierarchy.SelectResourceModal do
         <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Select Resource</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               {live_component HierarchyPicker,
@@ -40,7 +38,7 @@ defmodule OliWeb.Common.Hierarchy.SelectResourceModal do
                 filter_items_fn: @filter_items_fn}
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" :on-click={@on_cancel}>Cancel</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" :on-click={@on_cancel}>Cancel</button>
               <button type="submit"
                 class="btn btn-primary"
                 disabled={selection == nil}

@@ -34,7 +34,7 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
       className={classNames(styles.toolbarButton, styles.descriptive, active && styles.active)}
       onMouseDown={onMouseDown}
     >
-      {icon && <span className={classNames(styles.icon, 'material-icons')}>{icon}</span>}
+      {icon && <span className={classNames(styles.icon)}>{icon}</span>}
       <span className={styles.description}>{description}</span>
     </button>
   );

@@ -31,6 +31,8 @@ defmodule Oli.Application do
         # Start the Pow MnesiaCache to persist session across multiple servers
         Oli.MnesiaClusterSupervisor,
 
+        OliWeb.Presence,
+
         # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
         %{
           id: "cleanup_nonce_store_daily",
@@ -52,7 +54,11 @@ defmodule Oli.Application do
         },
 
         # Starts the publication diff agent store
-        Oli.Publishing.Publications.DiffAgent
+        Oli.Publishing.Publications.DiffAgent,
+
+        # Starts Cachex to store user/author info across requests
+        Oli.AccountLookupCache
+
       ] ++ maybe_node_js_config()
 
     # See https://hexdocs.pm/elixir/Supervisor.html

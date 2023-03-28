@@ -17,14 +17,14 @@ v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9
 M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 
   .node {
-    fill: $gray-200;
-    stroke: $secondary;
+    fill: var(--color-gray-200);
+    stroke: var(--color-secondary);
     stroke-width: 1;
     user-select: none;
   }
 
   .tree-node-text {
-    fill: $body-color;
+    fill: var(--color-body-color);
     font-size: 12px;
     pointer-events: none;
     font-family: 'Monaco';
@@ -33,14 +33,14 @@ M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 
   .current {
     &.node {
-      stroke: $primary;
+      stroke: var(--color-primary);
     }
   }
 
   .active {
     &.node {
-      fill: $primary;
-      stroke: $primary;
+      fill: var(--color-primary);
+      stroke: var(--color-primary);
     }
     &.tree-node-text {
       fill: white;
@@ -49,7 +49,7 @@ M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 
   .node:hover {
     cursor: pointer;
-    fill: $hover;
+    fill: var(--color-hover);
 
     & + .tree-node-text {
       fill: white;
@@ -58,7 +58,7 @@ M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 
   .active:hover {
     cursor: pointer;
-    fill: $hover;
+    fill: var(--color-hover);
 
     & + .tree-node-text {
       fill: white;
@@ -66,13 +66,13 @@ M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 
   .line {
-    stroke: $gray-500;
+    stroke: var(--color-gray-500);
     stroke-width: 2;
   }
 
   .arrowhead {
     stroke-width: 0;
-    fill: $gray-500;
+    fill: var(--color-gray-500);
   }
 
   .tree {

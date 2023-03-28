@@ -14,7 +14,9 @@ defmodule Oli.Delivery.Page.PageContext do
     :latest_attempts,
     :bib_revisions,
     :historical_attempts,
-    :collab_space_config
+    :collab_space_config,
+    :is_instructor,
+    :is_student
   ]
   defstruct [
     :user,
@@ -27,7 +29,9 @@ defmodule Oli.Delivery.Page.PageContext do
     :latest_attempts,
     :bib_revisions,
     :historical_attempts,
-    :collab_space_config
+    :collab_space_config,
+    :is_instructor,
+    :is_student
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -37,6 +41,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Resources.Collaboration
   alias Oli.Utils.BibUtils
@@ -50,9 +55,7 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) ::
-          %PageContext{}
-  def create_for_review(section_slug, attempt_guid, _) do
+  def create_for_review(section_slug, attempt_guid, user, is_admin?) do
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.review(attempt_guid) do
         {:ok,
@@ -88,6 +91,16 @@ defmodule Oli.Delivery.Page.PageContext do
     {:ok, collab_space_config} =
       Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
 
+    # Determine if the current user (not necessarily the user of this attempt) is instructor
+    # or is student
+    {is_instructor, is_student} = case is_admin? do
+      true ->
+        {true, false}
+      _ ->
+        user_roles = Sections.get_user_roles(user, section_slug)
+        {user_roles.is_instructor?, user_roles.is_student?}
+    end
+
     %PageContext{
       user: Attempts.get_user_from_attempt(resource_attempt),
       review_mode: true,
@@ -100,7 +113,9 @@ defmodule Oli.Delivery.Page.PageContext do
       latest_attempts: latest_attempts,
       bib_revisions: bib_revisions,
       historical_attempts: retrieve_historical_attempts(hd(resource_attempts)),
-      collab_space_config: collab_space_config
+      collab_space_config: collab_space_config,
+      is_instructor: is_instructor,
+      is_student: is_student
     }
   end
 
@@ -184,6 +199,8 @@ defmodule Oli.Delivery.Page.PageContext do
     {:ok, collab_space_config} =
       Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
 
+    user_roles = Sections.get_user_roles(user, section_slug)
+
     %PageContext{
       user: user,
       review_mode: false,
@@ -196,7 +213,9 @@ defmodule Oli.Delivery.Page.PageContext do
       latest_attempts: latest_attempts,
       bib_revisions: bib_revisions,
       historical_attempts: nil,
-      collab_space_config: collab_space_config
+      collab_space_config: collab_space_config,
+      is_instructor: user_roles.is_instructor?,
+      is_student: user_roles.is_student?
     }
   end
 

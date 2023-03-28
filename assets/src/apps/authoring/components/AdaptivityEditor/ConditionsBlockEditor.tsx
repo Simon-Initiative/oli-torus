@@ -1,7 +1,7 @@
 import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptivity/capi';
 import { isEqual } from 'lodash';
 import React, { useEffect, useState } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import ConditionItemEditor from './ConditionItemEditor';
@@ -210,66 +210,43 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
   };
 
   const AddConditionContextMenu = () => (
-    <>
-      <button
-        className="dropdown-item"
-        onClick={() => {
-          handleAddCondition();
-        }}
-      >
+    <Dropdown.Menu>
+      <Dropdown.Item onClick={() => handleAddCondition()}>
         <i className="fa fa-plus mr-2" /> Single Condition
-      </button>
-      <button
-        className="dropdown-item"
-        onClick={() => {
-          handleAddConditionBlock('any');
-        }}
-      >
+      </Dropdown.Item>
+      <Dropdown.Item onClick={() => handleAddConditionBlock('any')}>
         <i className="fa fa-plus mr-2" /> Any Block
-      </button>
-      <button
-        className="dropdown-item"
-        onClick={() => {
-          handleAddConditionBlock('all');
-        }}
-      >
+      </Dropdown.Item>
+      <Dropdown.Item onClick={() => handleAddConditionBlock('all')}>
         <i className="fa fa-plus mr-2" /> All Block
-      </button>
-    </>
+      </Dropdown.Item>
+    </Dropdown.Menu>
   );
 
   return (
     <div className="aa-conditions d-flex w-100">
-      <OverlayTrigger
-        placement="top"
-        delay={{ show: 150, hide: 150 }}
-        overlay={
-          <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-            New Condition
-          </Tooltip>
-        }
-      >
-        <button
-          className="dropdown-toggle aa-add-button btn btn-primary btn-sm mr-3"
-          type="button"
-          id={`rules-list-add-context-trigger`}
-          data-toggle="dropdown"
-          aria-haspopup="true"
-          aria-expanded="false"
-          onClick={() => {
-            ($(`#cb-editor-add-context-trigger`) as any).dropdown('toggle');
-          }}
+      <Dropdown>
+        <OverlayTrigger
+          placement="top"
+          delay={{ show: 150, hide: 150 }}
+          overlay={
+            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+              New Condition
+            </Tooltip>
+          }
         >
-          <i className="fa fa-plus" />
-        </button>
-      </OverlayTrigger>
-      <div
-        id={`cb-editor-add-context-menu`}
-        className="dropdown-menu"
-        aria-labelledby={`cb-editor-add-context-trigger`}
-      >
+          <Dropdown.Toggle
+            variant="link"
+            id="rules-list-add-context-trigger"
+            className="dropdown-toggle aa-add-button btn btn-primary btn-sm mr-3"
+          >
+            <i className="fa fa-plus" />
+          </Dropdown.Toggle>
+        </OverlayTrigger>
+
         <AddConditionContextMenu />
-      </div>
+      </Dropdown>
+
       <div className="d-flex flex-column w-100">
         <div className="aa-condition border rounded p-2 mt-4">
           <div className="aa-condition-header d-flex justify-content-between align-items-center">
@@ -322,36 +299,27 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                   </span>
                 </OverlayTrigger>
               )}
-              <OverlayTrigger
-                placement="top"
-                delay={{ show: 150, hide: 150 }}
-                overlay={
-                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                    New Condition
-                  </Tooltip>
-                }
-              >
-                <button
-                  className="dropdown-toggle btn btn-link p-0 ml-1"
-                  type="button"
-                  id={`add-condition-${id}-context-trigger-${index}`}
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                  onClick={() => {
-                    ($(`#add-condition-${id}-context-trigger-${index}`) as any).dropdown('toggle');
-                  }}
+              <Dropdown>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 150, hide: 150 }}
+                  overlay={
+                    <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                      New Condition
+                    </Tooltip>
+                  }
                 >
-                  <i className="fa fa-plus" />
-                </button>
-              </OverlayTrigger>
-              <div
-                id={`add-condition-${id}-context-menu`}
-                className="dropdown-menu"
-                aria-labelledby={`add-condition-${id}-context-trigger-${index}`}
-              >
+                  <Dropdown.Toggle
+                    variant="link"
+                    id={`add-condition-${id}-context-trigger-${index}`}
+                    className="dropdown-toggle btn btn-link p-0 ml-1"
+                  >
+                    <i className="fa fa-plus" />
+                  </Dropdown.Toggle>
+                </OverlayTrigger>
+
                 <AddConditionContextMenu />
-              </div>
+              </Dropdown>
             </div>
           </div>
           <div className="d-flex align-items-center flex-wrap">

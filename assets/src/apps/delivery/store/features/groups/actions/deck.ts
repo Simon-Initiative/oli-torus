@@ -22,7 +22,7 @@ import {
   getAssignScript,
   getEnvState,
 } from '../../../../../../adaptivity/scripting';
-import { RootState } from '../../../rootReducer';
+import { DeliveryRootState } from '../../../rootReducer';
 import {
   selectCurrentActivity,
   selectCurrentActivityId,
@@ -54,7 +54,7 @@ export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
   async (activityId: ResourceId, thunkApi) => {
     thunkApi.dispatch(setInitPhaseComplete(false));
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
@@ -75,8 +75,8 @@ export const initializeActivity = createAsyncThunk(
       const syncOps: ApplyStateOperation[] = [];
       for (let i = 0; i < currentActivityTree.length - 1; i++) {
         const ancestor = currentActivityTree[i];
-        for (let p = 0; p < ancestor.content.partsLayout.length; p++) {
-          const part = ancestor.content.partsLayout[p];
+        for (let p = 0; p < (ancestor.content?.partsLayout || []).length; p++) {
+          const part = ancestor.content!.partsLayout[p];
           // get the adaptivity variables for the part
           const Klass = customElements.get(part.type);
           if (Klass) {
@@ -197,10 +197,10 @@ export const initializeActivity = createAsyncThunk(
       }
       const [, targetPart] = s.target.split('.');
       const ownerActivity = currentActivityTree?.find(
-        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
+        (activity) => !!(activity.content?.partsLayout || []).find((p: any) => p.id === targetPart),
       );
       if (s.type === CapiVariableTypes.MATH_EXPR) {
-        return { ...s, target: `${ownerActivity.id}|${s.target}` };
+        return { ...s, target: `${ownerActivity!.id}|${s.target}` };
       }
 
       if (!ownerActivity) {
@@ -277,7 +277,7 @@ const getSessionVisitHistory = async (
 export const findNextSequenceId = createAsyncThunk(
   `${GroupsSlice}/deck/findNextSequenceId`,
   async (sequenceId: string, thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
@@ -324,7 +324,7 @@ export const findNextSequenceId = createAsyncThunk(
           if (!firstChild) {
             navError = 'Target Layer has no children!';
           }
-          nextSequenceEntry = firstChild;
+          nextSequenceEntry = firstChild || null;
         }
       }
       if (!nextSequenceEntry) {
@@ -357,7 +357,7 @@ export const navigateToNextActivity = createAsyncThunk(
 export const navigateToPrevActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToPrevActivity`,
   async (_, thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const sequence = selectSequence(rootState);
     const currentActivityId = selectCurrentActivityId(rootState);
     const currentIndex = sequence.findIndex(
@@ -389,7 +389,7 @@ export const navigateToPrevActivity = createAsyncThunk(
 export const navigateToFirstActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToFirstActivity`,
   async (_, thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const sequence = selectSequence(rootState);
     const navigationSequences = selectNavigationSequence(sequence);
     if (!navigationSequences?.length) {
@@ -430,7 +430,7 @@ export const loadActivities = createAsyncThunk(
   async (activityAttemptMapping: ActivityAttemptMapping[], thunkApi) => {
     //reset the screen Idle Time
     thunkApi.dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
     const isInstructor = selectIsInstructor(rootState);

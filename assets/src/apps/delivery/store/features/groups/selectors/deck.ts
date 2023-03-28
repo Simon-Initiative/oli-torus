@@ -1,7 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { RootState } from 'apps/delivery/store/rootReducer';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import { ActivityState } from 'components/activities/types';
-import { selectAllActivities, selectCurrentActivityId } from '../../activities/slice';
+import { IActivity, selectAllActivities, selectCurrentActivityId } from '../../activities/slice';
 import { selectActivityAttemptState } from '../../attempt/slice';
 import { getSequenceLineage } from '../actions/sequence';
 import { GroupsState, selectState } from '../slice';
@@ -21,9 +21,9 @@ export const selectCurrentSequenceId = createSelector(
     return sequence.find((entry) => {
       // temp hack for authoring
       // TODO: rewire delivery to use resourceId instead of sequenceId
-      let testId = entry.custom.sequenceId;
+      let testId: string | number = entry.custom.sequenceId;
       if (typeof currentActivityId === 'number') {
-        testId = entry.resourceId;
+        testId = entry.resourceId || 0;
       }
       return testId === currentActivityId;
     })?.custom.sequenceId;
@@ -32,7 +32,7 @@ export const selectCurrentSequenceId = createSelector(
 
 export const selectCurrentActivityTree = createSelector(
   [selectSequence, selectAllActivities, selectCurrentSequenceId],
-  (sequence, activities, currentSequenceId) => {
+  (sequence, activities, currentSequenceId): null | IActivity[] => {
     const currentSequenceEntry = (sequence as any[]).find(
       (entry) => entry.custom.sequenceId === currentSequenceId,
     );
@@ -58,7 +58,7 @@ export const selectCurrentActivityTree = createSelector(
 );
 
 export const selectCurrentActivityTreeAttemptState = createSelector(
-  (state: RootState) => {
+  (state: DeliveryRootState) => {
     const currentTree = selectCurrentActivityTree(state);
     const attempts = currentTree?.map((t) => selectActivityAttemptState(state, t.resourceId));
     return [currentTree, attempts];

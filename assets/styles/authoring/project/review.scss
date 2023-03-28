@@ -25,7 +25,7 @@
     list-style-type: none;
     border-bottom: 1px solid #ebecf0;
     border-radius: 3px;
-    font-size: .8em;
+    font-size: 0.8em;
   }
   .reviews .review-link:last-child {
     border-bottom: none;
@@ -33,13 +33,15 @@
 
   .reviews .review-links .review-link .review-link-header {
     font-weight: bold;
-    color: $gray-800;
     display: flex;
     align-items: center;
+
+    svg {
+      margin-right: 6px;
+    }
   }
 
   .reviews .review-links .review-link .review-link-subheader {
-    color: $secondary;
     display: flex;
     align-items: center;
   }
@@ -65,7 +67,8 @@
   }
 
   .reviews .review-links .review-link.active {
-    background-color: $gray-200;
+    background-color: var(--color-primary);
+    color: var(--color-white);
   }
 
   .reviews .review-cards {
@@ -90,12 +93,12 @@
     margin-top: 1.25rem;
     margin-bottom: 1.25rem;
     border: 1px solid #eee;
-    border-left-width: .25rem;
-    border-radius: .25rem;
+    border-left-width: 0.25rem;
+    border-radius: 0.25rem;
   }
 
   .bd-callout-info {
-    border-left-color: $cyan;
+    border-left-color: var(--color-cyan-400);
   }
 
   .review-dismiss {
@@ -108,7 +111,27 @@
   a.review-dismiss,
   a.review-dismiss:hover {
     text-decoration: none;
-    color: $gray-200;
+    color: var(--color-gray-200);
     cursor: pointer;
+  }
+}
+
+html.dark {
+  .review {
+    .reviews .review-links {
+      border-color: var(--color-gray-600);
+    }
+
+    .reviews .review-links .review-link {
+      border-color: var(--color-gray-600);
+    }
+
+    .bd-callout {
+      border-color: var(--color-gray-400);
+    }
+
+    .bd-callout-info {
+      border-left-color: var(--color-cyan-400);
+    }
   }
 }

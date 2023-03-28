@@ -8,7 +8,7 @@ import { useSlate } from 'slate-react';
 import { CommandButton } from '../../buttons/CommandButton';
 
 export const insertItemDropdown = createButtonCommandDesc({
-  icon: 'add',
+  icon: <i className="fa-solid fa-plus"></i>,
   description: 'Add item',
   execute: () => {},
   active: (_e) => false,

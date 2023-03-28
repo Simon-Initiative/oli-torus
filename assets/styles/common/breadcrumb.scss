@@ -1,13 +1,21 @@
 .hierarchy-picker .hierarchy-navigation,
-.curriculum-container .curriculum-navigation {
+.curriculum-container .curriculum-navigation,
+.breadcrumb-bar {
   .breadcrumb {
     min-height: 32px;
+    display: flex;
+    flex-direction: row;
 
     .breadcrumb-item {
       padding: 4px 0;
+      margin-left: 6px;
+
+      &:first-child() {
+        margin-left: 0px;
+      }
 
       .btn-link:disabled {
-        color: $body-color;
+        color: var(--color-body-color);
       }
     }
   }
@@ -31,7 +39,7 @@
     display: flex;
     align-items: flex-start;
 
-    input[type="search"] {
+    input[type='search'] {
       display: block;
       flex-grow: 2;
       min-width: 300px;

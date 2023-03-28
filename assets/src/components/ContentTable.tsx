@@ -1,4 +1,5 @@
 import React from 'react';
+import { classNames } from 'utils/classNames';
 import * as ContentTypes from '../data/content/model/elements/types';
 
 export const ContentTable: React.FC<{
@@ -13,5 +14,16 @@ export const ContentTable: React.FC<{
   if (model.rowstyle === 'alternating') {
     cssClasses.push('table-striped');
   }
-  return <table className={cssClasses.join(' ')}>{children}</table>;
+
+  return (
+    <table
+      className={classNames(
+        'min-w-full',
+        model.border === 'hidden' && 'table-borderless',
+        model.rowstyle === 'alternating' && 'table-striped',
+      )}
+    >
+      {children}
+    </table>
+  );
 };

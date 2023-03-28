@@ -53,7 +53,8 @@ defmodule OliWeb.DeliveryController do
           Institutions.get_institution_registration_deployment(
             lti_params["iss"],
             LtiParams.peek_client_id(lti_params),
-            lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"])
+            lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+          )
 
         if institution.research_consent != :no_form and is_nil(user.research_opt_out) do
           render_research_consent(conn)
@@ -86,7 +87,9 @@ defmodule OliWeb.DeliveryController do
   end
 
   defp redirect_to_page_delivery(conn, section) do
-    redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
+    redirect(conn,
+      to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+    )
   end
 
   def research_consent(conn, %{"consent" => consent}) do
@@ -317,7 +320,9 @@ defmodule OliWeb.DeliveryController do
         # redirect to course index if user is already signed in and enrolled
         with {:ok, user} <- conn.assigns.current_user |> trap_nil,
              true <- Sections.is_enrolled?(user.id, section.slug) do
-          redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
+          redirect(conn,
+            to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+          )
         else
           _ ->
             section = Oli.Repo.preload(section, [:base_project])
@@ -339,7 +344,9 @@ defmodule OliWeb.DeliveryController do
            {:ok, user} <- current_or_guest_user(conn),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
-          redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
+          redirect(conn,
+            to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+          )
         else
           Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
@@ -353,7 +360,7 @@ defmodule OliWeb.DeliveryController do
 
           conn
           |> create_pow_user(:user, user)
-          |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+          |> redirect(to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
         end
       else
         _error ->

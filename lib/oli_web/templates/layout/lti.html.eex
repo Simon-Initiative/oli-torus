@@ -11,8 +11,13 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
 
-    <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-    <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
+    <!-- CSS -->
+    <link id="styles" rel="stylesheet" href="/css/styles.css" />
+
+    <!-- Tailwind CSS -->
+    <link id="app" rel="stylesheet" href="/css/app.css" />
+
+    <!-- Vendor CSS -->
     <link id="vendor-css" rel="stylesheet" href="/css/vendor.css" />
 
     <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
@@ -42,7 +47,7 @@
   </head>
   <body>
 
-    <main role="main" class="container">
+    <main role="main" class="container mx-auto">
 
       <%= Map.get(assigns, :inner_layout) || @inner_content %>
 

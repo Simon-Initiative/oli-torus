@@ -57,7 +57,13 @@ export const screen: IActivity = {
       y: 0,
       z: 0,
     },
-    partsLayout: [{}],
+    partsLayout: [
+      {
+        custom: {},
+        id: '1',
+        type: 'other',
+      },
+    ],
   },
   title: 'Customize Avatar',
 };
@@ -104,7 +110,7 @@ export const screen1: IActivity = {
       y: 0,
       z: 0,
     },
-    partsLayout: [{}],
+    partsLayout: [{ custom: {}, id: '1', type: 'other' }],
   },
   title: 'Customize Avatar',
 };
@@ -150,7 +156,7 @@ export const screen2: IActivity = {
       y: 0,
       z: 0,
     },
-    partsLayout: [{}],
+    partsLayout: [{ custom: {}, id: '1', type: 'other' }],
   },
   title: 'Customize Avatar',
 };

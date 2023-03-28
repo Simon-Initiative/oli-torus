@@ -19,6 +19,7 @@ import {
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
 import { selectScreenIdleExpirationTime } from './store/features/page/slice';
+
 export interface DeliveryProps {
   resourceId: number;
   sectionSlug: string;
@@ -70,9 +71,10 @@ const Delivery: React.FC<DeliveryProps> = ({
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
-  console.log({ screenIdleTimeOutInSeconds });
 
+  //Need to start the warning 5 minutes before session expires
   const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 300000;
+
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode) {
@@ -146,10 +148,4 @@ const Delivery: React.FC<DeliveryProps> = ({
   );
 };
 
-const ReduxApp: React.FC<DeliveryProps> = (props) => (
-  <Provider store={store}>
-    <Delivery {...props} />
-  </Provider>
-);
-
-export default ReduxApp;
+export default Delivery;

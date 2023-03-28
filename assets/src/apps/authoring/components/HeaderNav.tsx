@@ -17,6 +17,8 @@ import { DiagnosticsTrigger } from '../components/Modal/DiagnosticsWindow';
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;
+  authoringContainer: React.RefObject<HTMLElement>;
+  onToggleExport?: () => void;
 }
 
 const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
@@ -63,8 +65,8 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
             <UndoRedoToolbar />
           </div>
           <div className="btn-group px-3 border-right align-items-center" role="group">
-            <AddComponentToolbar />
-            <ComponentSearchContextMenu />
+            <AddComponentToolbar authoringContainer={props.authoringContainer} />
+            <ComponentSearchContextMenu authoringContainer={props.authoringContainer} />
           </div>
           <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
             <OverlayTrigger
@@ -128,6 +130,28 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                 </span>
               </OverlayTrigger>
             )}
+
+            {isAdmin && props.onToggleExport && (
+              <OverlayTrigger
+                placement="bottom"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    Template Export
+                  </Tooltip>
+                }
+              >
+                <span>
+                  <button className="px-2 btn btn-link" onClick={props.onToggleExport}>
+                    <i
+                      className="fa fa-file-export"
+                      style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+                    />
+                  </button>
+                </span>
+              </OverlayTrigger>
+            )}
+
             {isReadOnly && (
               <OverlayTrigger
                 placement="bottom"

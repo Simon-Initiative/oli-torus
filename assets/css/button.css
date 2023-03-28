@@ -1,0 +1,22 @@
+a.torus-button,
+button.torus-button {
+  @apply btn inline-flex items-center gap-2 text-sm;
+}
+
+a.torus-button.primary,
+button.torus-button.primary {
+  @apply btn text-white hover:text-white bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700;
+}
+
+button.torus-button.secondary {
+  @apply btn bg-white text-delivery-primary hover:bg-delivery-primary-50 active:bg-delivery-primary-200 active:text-white;
+}
+
+button.torus-button.outline {
+  @apply btn bg-white text-delivery-primary outline-none border border-delivery-primary hover:bg-delivery-primary-50 active:bg-delivery-primary-200 active:text-white;
+}
+
+button.torus-button.primary:disabled,
+button.torus-button.secondary:disabled {
+  @apply bg-gray-200 text-white pointer-events-none cursor-not-allowed;
+}

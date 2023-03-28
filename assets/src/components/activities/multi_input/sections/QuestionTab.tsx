@@ -1,5 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Dropdown, MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
 import { partTitle } from 'components/activities/multi_input/utils';

@@ -4,6 +4,6 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<div id="editor" class="container">
+<div id="editor" class="container mx-auto">
   <%= react_component("Components.ActivityBank", @context) %>
 </div>

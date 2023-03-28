@@ -13,7 +13,7 @@ defmodule OliWeb.Common.TextSearch do
         <input id={"#{id}-input"} type="text" class="form-control" placeholder="Search..." value={@text} phx-hook="TextInputListener" phx-hook-target={@event_target} phx-target={@event_target} phx-value-change={@change}>
         {#if @text != ""}
           <div class="input-group-append">
-            <button class="btn btn-outline-secondary" :on-click={@reset} phx-value-id={@id}><i class="las la-times"></i></button>
+            <button class="btn btn-outline-secondary" :on-click={@reset} phx-value-id={@id}><i class="fas fa-times"></i></button>
           </div>
         {/if}
       </div>

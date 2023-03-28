@@ -25,7 +25,7 @@ describe('PageEditorContent', () => {
   const createDefaultPageEditorContent = () => {
     const exampleContent = createExampleContent();
     const nestedGroupContent = createNestedGroupContent();
-    const exampleGroup = createGroup(Immutable.List().push(nestedGroupContent));
+    const exampleGroup = createGroup('none', Immutable.List().push(nestedGroupContent));
     const doesntExist = createDefaultStructuredContent([
       Model.h1('wont be added to the content'),
       Model.p('This is some content that doesnt exist'),
@@ -284,7 +284,7 @@ describe('PageEditorContent', () => {
           ],
           id: expect.any(String),
           layout: 'vertical',
-          purpose: 'didigetthis',
+          purpose: 'none',
           type: 'group',
         },
       ],

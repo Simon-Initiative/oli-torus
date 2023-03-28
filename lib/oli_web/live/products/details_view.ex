@@ -72,47 +72,47 @@ defmodule OliWeb.Products.DetailsView do
   def render(assigns) do
     ~F"""
     <div class="overview container">
-      <div class="row py-5 border-bottom">
-        <div class="col-md-4">
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
           <h4>Details</h4>
           <div class="text-muted">
             The Product title and description will be shown
             to instructors when they create their course section.
           </div>
         </div>
-        <div class="col-md-8">
+        <div class="md:col-span-8">
           <Edit product={@product} changeset={@changeset} available_brands={@available_brands} publishers={@publishers} is_admin={@is_admin}/>
         </div>
       </div>
-      <div class="row py-5 border-bottom">
-        <div class="col-md-4">
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
           <h4>Content</h4>
           <div class="text-muted">
             Manage and customize the presentation of content in this product.
           </div>
         </div>
-        <div class="col-md-8">
+        <div class="md:col-span-8">
           <Content product={@product} changeset={@changeset} save="save" updates={@updates}/>
         </div>
       </div>
 
-      <div class="row py-5 border-bottom">
-        <div class="col-md-4">
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
           <h4>Cover Image</h4>
           <div class="text-muted">
             Manage the cover image for this product. Max file size is 5 MB.
           </div>
         </div>
-        <div class="col-md-8">
+        <div class="md:col-span-8">
           <ImageUpload product={@product} uploads={@uploads} changeset={@changeset} upload_event="update_image" change="change" cancel_upload="cancel_upload" updates={@updates}/>
         </div>
       </div>
 
-      <div class="row py-5">
-        <div class="col-md-4">
+      <div class="grid grid-cols-12 py-5">
+        <div class="md:col-span-4">
           <h4>Actions</h4>
         </div>
-        <div class="col-md-8">
+        <div class="md:col-span-8">
           <Actions product={@product} is_admin={@is_admin}/>
         </div>
       </div>

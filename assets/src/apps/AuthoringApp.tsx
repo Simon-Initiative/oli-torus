@@ -1,4 +1,4 @@
-import Authoring from './authoring/Authoring';
+import AuthoringContainer from './authoring/AuthoringContainer';
 import { registerApplication } from './app';
 
-registerApplication('Authoring', Authoring);
+registerApplication('Authoring', AuthoringContainer);

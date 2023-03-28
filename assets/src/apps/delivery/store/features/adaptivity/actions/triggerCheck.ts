@@ -1,9 +1,9 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
+import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
 import {
   checkIfFirstEventHasNavigation,
   processResults,
 } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
-import { RootState } from 'apps/delivery/store/rootReducer';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
 import { clone } from 'utils/common';
@@ -40,7 +40,7 @@ import { setLastCheckResults, setLastCheckTriggered } from '../slice';
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
-    const rootState = getState() as RootState;
+    const rootState = getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
@@ -101,7 +101,7 @@ export const triggerCheck = createAsyncThunk(
     // update redux first because we need to get the latest full extrnisic state to write to the server
     await dispatch(updateExtrinsicState({ state: extrinsicSnapshot }));
 
-    const extrnisicState = selectExtrinsicState(getState() as RootState);
+    const extrnisicState = selectExtrinsicState(getState() as DeliveryRootState);
     if (!isPreviewMode) {
       // update the server with the latest changes to extrinsic state
 
@@ -121,7 +121,7 @@ export const triggerCheck = createAsyncThunk(
     // prepare state to send to the rules engine
     {
       // these were previously declared, but after above async calls they might have been updated, lets get them again
-      const rootState = getState() as RootState;
+      const rootState = getState() as DeliveryRootState;
       const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
       const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
 
@@ -238,11 +238,11 @@ export const triggerCheck = createAsyncThunk(
 
         const scoringContext: ScoringContext = {
           currentAttemptNumber: currentAttempt?.attemptNumber || 1,
-          maxAttempt: currentActivity.content.custom.maxAttempt || 0,
-          maxScore: currentActivity.content.custom.maxScore || 0,
-          trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
-          negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
-          isManuallyGraded: currentActivity.authoring?.parts.some(
+          maxAttempt: currentActivity.content?.custom.maxAttempt || 0,
+          maxScore: currentActivity.content?.custom.maxScore || 0,
+          trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
+          negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,
+          isManuallyGraded: !!currentActivity.authoring?.parts?.some(
             (p: any) => p.gradingApproach === 'manual',
           ),
         };
@@ -328,8 +328,29 @@ export const triggerCheck = createAsyncThunk(
     attempt.dateEvaluated = Date.now();
 
     await dispatch(upsertActivityAttemptState({ attempt }));
+    let doesCheckResultContainsNavigationToDifferentScreen = false;
+    const actionsByType = processResults(checkResult);
+    const hasFeedback = actionsByType.feedback.length > 0;
+    const hasNavigation = actionsByType.navigation.length > 0;
+    let expectedResumeActivityId: EntityId = currentActivity.id;
+    //check if the check result have any navigation else don't do anything
+    if (checkResult.length && hasNavigation) {
+      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(checkResult[0]);
+      const [firstNavAction] = actionsByType.navigation;
+      const navTarget = firstNavAction.params.target;
+      if (
+        hasFeedback &&
+        hasNavigation &&
+        navTarget !== expectedResumeActivityId &&
+        doesFirstEventHasNavigation
+      ) {
+        doesCheckResultContainsNavigationToDifferentScreen = true;
+      }
+    }
 
-    if (!isCorrect) {
+    //Even If the check result contains a wrong trap state and has a navigation to different screen, we should not create a new attempt for that screen because
+    // the student will be navigated to different screen so it does not make sense to create a new attempt for the current screen
+    if (!isCorrect && !doesCheckResultContainsNavigationToDifferentScreen) {
       /* console.log('Incorrect, time for new attempt'); */
       const { payload: newAttempt } = await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
@@ -382,53 +403,46 @@ export const triggerCheck = createAsyncThunk(
     await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
 
     if (!isPreviewMode) {
-      const actionsByType = processResults(checkResult);
-      const hasFeedback = actionsByType.feedback.length > 0;
-      const hasNavigation = actionsByType.navigation.length > 0;
-      let expectedResumeActivityId = currentActivity.id;
-      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(checkResult[0]);
-      if (hasFeedback && hasNavigation) {
+      if (doesCheckResultContainsNavigationToDifferentScreen) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
-        if (navTarget !== expectedResumeActivityId && doesFirstEventHasNavigation) {
-          switch (navTarget) {
-            case 'next':
-              const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));
-              expectedResumeActivityId = nextActivityId;
-              break;
-            default:
-              const { payload: expectedNextActivityId } = await dispatch(
-                findNextSequenceId(navTarget),
-              );
-              expectedResumeActivityId = expectedNextActivityId;
-          }
-          if (expectedResumeActivityId) {
-            const resumeTarget: ApplyStateOperation = {
-              target: `session.resume`,
-              operator: '=',
-              value: expectedResumeActivityId,
-            };
-            await applyState(resumeTarget, defaultGlobalEnv);
-            const latestSnapshot = getEnvState(defaultGlobalEnv);
-
-            const latestExtrinsic = Object.keys(latestSnapshot).reduce(
-              (acc: Record<string, any>, key) => {
-                const isSessionVariable = key.startsWith('session.');
-                const isVarVariable = key.startsWith('variables.');
-                const isEverAppVariable = key.startsWith('app.');
-                if (isSessionVariable || isVarVariable || isEverAppVariable) {
-                  acc[key] = latestSnapshot[key];
-                }
-                return acc;
-              },
-              {},
+        switch (navTarget) {
+          case 'next':
+            const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));
+            expectedResumeActivityId = nextActivityId as EntityId;
+            break;
+          default:
+            const { payload: expectedNextActivityId } = await dispatch(
+              findNextSequenceId(navTarget),
             );
-            await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
-          }
+            expectedResumeActivityId = expectedNextActivityId as EntityId;
+        }
+        if (expectedResumeActivityId) {
+          const resumeTarget: ApplyStateOperation = {
+            target: `session.resume`,
+            operator: '=',
+            value: expectedResumeActivityId,
+          };
+          await applyState(resumeTarget, defaultGlobalEnv);
+          const latestSnapshot = getEnvState(defaultGlobalEnv);
+
+          const latestExtrinsic = Object.keys(latestSnapshot).reduce(
+            (acc: Record<string, any>, key) => {
+              const isSessionVariable = key.startsWith('session.');
+              const isVarVariable = key.startsWith('variables.');
+              const isEverAppVariable = key.startsWith('app.');
+              if (isSessionVariable || isVarVariable || isEverAppVariable) {
+                acc[key] = latestSnapshot[key];
+              }
+              return acc;
+            },
+            {},
+          );
+          await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
         }
       }
       // update the server with the latest changes
-      const extrnisicState = selectExtrinsicState(getState() as RootState);
+      const extrnisicState = selectExtrinsicState(getState() as DeliveryRootState);
       /* console.log('trigger check last min extrinsic state', {
         sectionSlug,
         resourceAttemptGuid,

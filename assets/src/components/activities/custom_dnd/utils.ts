@@ -25,9 +25,9 @@ export const defaultModel: () => CustomDnDSchema = () => {
     initiators: DEFAULT_INITIATORS,
     authoring: {
       parts: [
-        createNewPart('option1_area', 'input1'),
-        createNewPart('option2_area', 'input2'),
-        createNewPart('option3_area', 'input3'),
+        createNewPart('input1', 'input1_area1'),
+        createNewPart('input2', 'input2_area2'),
+        createNewPart('input3', 'input3_area3'),
       ],
       transformations: [],
       previewText: '',
@@ -82,9 +82,9 @@ const DEFAULT_TARGET_AREA = `
   <div id="middletitle" style="position:absolute;top:95px; left:5px" >Label 2</div>
   <div id="bottomtitle" style="position:absolute;top:160px; left:5px" >Label 3</div>
 
-  <div input_ref="option1_area" class="target" style="left:245px; top:25px; width:240px; height:40px;"> </div>
-  <div input_ref="option2_area" class="target" style="left:245px;top:85px; width:240px; height:40px;"> </div>
-  <div input_ref="option3_area" class="target" style="left:245px; top:145px; width:240px; height:40px;"> </div>
+  <div input_ref="area1" class="target" style="left:245px; top:25px; width:240px; height:40px;"> </div>
+  <div input_ref="area2" class="target" style="left:245px;top:85px; width:240px; height:40px;"> </div>
+  <div input_ref="area3" class="target" style="left:245px; top:145px; width:240px; height:40px;"> </div>
 
 </div>
 `;

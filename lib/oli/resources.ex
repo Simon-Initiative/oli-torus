@@ -315,7 +315,9 @@ defmodule Oli.Resources do
           legacy: previous_revision.legacy |> convert_legacy,
           tags: previous_revision.tags,
           explanation_strategy: previous_revision.explanation_strategy,
-          collab_space_config: previous_revision.collab_space_config
+          collab_space_config: previous_revision.collab_space_config,
+          purpose: previous_revision.purpose,
+          relates_to: previous_revision.relates_to
         },
         convert_strings_to_atoms(attrs)
       )
@@ -372,7 +374,8 @@ defmodule Oli.Resources do
            %{
              id: a.resource_id,
              title: a.title,
-             options: a.content["options"]
+             options: a.content["options"],
+             strategy: Map.get(a.content, "strategy", "user_section_preference")
            }
          end)}
 

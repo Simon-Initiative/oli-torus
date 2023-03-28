@@ -21,12 +21,12 @@ defmodule OliWeb.Resources.AlternativesEditor.PreventDeletionModal do
               </p>
               <ul>
                 <%= for %{slug: slug, title: title} <- @references do %>
-                  <li><a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, slug)} target="_blank"><%= title %> <i class="las la-external-link-alt"></i></a></li>
+                  <li><a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, slug)} target="_blank"><%= title %> <i class="fas fa-external-link-alt"></i></a></li>
                 <% end %>
               </ul>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
             </div>
           </div>
         </div>

@@ -1,13 +1,11 @@
-@import 'authoring/variables';
-
-& {
+html.preview {
   margin: 0;
   padding: 0;
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  font-family: $font-family-sans-serif;
-  font-size: $font-size-base;
+  font-family: var(--font-sans);
+  font-size: 1em;
   line-height: normal;
   font-feature-settings: 'kern', 'liga', 'pnum';
   -webkit-font-smoothing: antialiased;
@@ -20,10 +18,10 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     line-height: normal;
-    font-family: $font-family-sans-serif;
-    font-size: $font-size-base;
+    font-family: var(--font-sans);
+    font-size: 1em;
     font-weight: normal;
   }
 
-  @import './preview/preview-tools.scss';
+  @import 'preview/preview-tools.scss';
 }

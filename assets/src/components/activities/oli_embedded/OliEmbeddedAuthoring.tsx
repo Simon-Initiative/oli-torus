@@ -176,15 +176,15 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
           <div className="container">
             <div className="row mb-2 text-center">
-              <div className="col col-sm-2">&nbsp;</div>
-              <div className="col col-lg-2">Id</div>
-              <div className="col col-lg-2">Scoring</div>
+              <div className="col sm:col-span-2">&nbsp;</div>
+              <div className="col lg:col-span-2">Id</div>
+              <div className="col lg:col-span-2">Scoring</div>
             </div>
             {model.authoring.parts.map((part, i) => (
               <div className="row mb-2" key={i}>
-                <div className="col col-sm-2">Part {i + 1}</div>
-                <div className="col col-lg-3">{part.id}</div>
-                <div className="col col-lg-2">
+                <div className="col sm:col-span-2">Part {i + 1}</div>
+                <div className="col lg:col-span-3">{part.id}</div>
+                <div className="col lg:col-span-2">
                   <select
                     onChange={(e) => handleScoringChange(part.id, e.target.value)}
                     className="custom-select custom-select-sm"
@@ -208,7 +208,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                     data-dismiss="alert"
                     aria-label="Close"
                   >
-                    <span aria-hidden="true">&times;</span>
+                    <i className="fa-solid fa-xmark fa-xl"></i>
                   </button>
                 </div>
               </div>

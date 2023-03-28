@@ -1,17 +1,6 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
-  import OliWeb.DeliveryView,
-    only: [
-      user_role_is_student: 2,
-      user_name: 1,
-      user_role_text: 2,
-      user_role_color: 2,
-      user_icon: 1,
-      account_linked?: 1,
-      logo_link_path: 1
-    ]
-
   import OliWeb.AuthoringView,
     only: [
       author_role_text: 1,
@@ -25,7 +14,7 @@ defmodule OliWeb.LayoutView do
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias Oli.Delivery.Paywall.AccessSummary
-  alias Oli.Delivery.Sections
+  alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   def show_pay_early(%AccessSummary{reason: :within_grace_period}), do: true
   def show_pay_early(_), do: false
@@ -138,4 +127,8 @@ defmodule OliWeb.LayoutView do
   def dev_mode?() do
     Application.fetch_env!(:oli, :env) == :dev
   end
+
+  defp show_collab_space?(nil), do: false
+  defp show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
+  defp show_collab_space?(_), do: true
 end

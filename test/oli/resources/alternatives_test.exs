@@ -11,7 +11,7 @@ defmodule Oli.Resources.AlternativesTest do
   @select_all_el %{
     "type" => "alternatives",
     "id" => "12345",
-    "strategy" => "select_all",
+    "alternatives_id" => "1",
     "children" => [
       %{
         "type" => "alternative",
@@ -51,9 +51,8 @@ defmodule Oli.Resources.AlternativesTest do
   @user_section_preference_el %{
     "type" => "alternatives",
     "id" => "12345",
-    "strategy" => "user_section_preference",
+    "alternatives_id" => "1",
     "default" => "three",
-    "preference_name" => "statistics_flavor",
     "children" => [
       %{
         "type" => "alternative",
@@ -138,11 +137,25 @@ defmodule Oli.Resources.AlternativesTest do
       student1: student1,
       section: section
     } do
+
+      by_id = %{
+        "1" => %{
+          id: 1,
+          title: "group",
+          options: [
+            %{"name" => "one"},
+            %{"name" => "two"},
+          ],
+          strategy: "select_all"
+        }
+      }
+
       assert Alternatives.select(
                %AlternativesStrategyContext{
                  user: student1,
                  section_slug: section.slug,
-                 mode: :delivery
+                 mode: :delivery,
+                 alternative_groups_by_id: by_id
                },
                @select_all_el
              ) == [
@@ -184,14 +197,27 @@ defmodule Oli.Resources.AlternativesTest do
       section: section
     } do
       ExtrinsicState.upsert_section(student1.id, section.slug, %{
-        [ExtrinsicState.Key.alternatives_preference("statistics_flavor")] => "two"
+        [ExtrinsicState.Key.alternatives_preference("group")] => "one"
       })
+
+      by_id = %{
+        "1" => %{
+          id: 1,
+          title: "group",
+          options: [
+            %{"name" => "one"},
+            %{"name" => "two"},
+          ],
+          strategy: "user_section_preference"
+        }
+      }
 
       assert Alternatives.select(
                %AlternativesStrategyContext{
                  user: student1,
                  section_slug: section.slug,
-                 mode: :delivery
+                 mode: :delivery,
+                 alternative_groups_by_id: by_id
                },
                @user_section_preference_el
              ) == [
@@ -250,11 +276,25 @@ defmodule Oli.Resources.AlternativesTest do
            student1: student1,
            section: section
          } do
+
+      by_id = %{
+        "1" => %{
+          id: 1,
+          title: "group",
+          options: [
+            %{"name" => "one"},
+            %{"name" => "two"},
+          ],
+          strategy: "user_section_preference"
+        }
+      }
+
       assert Alternatives.select(
                %AlternativesStrategyContext{
                  user: student1,
                  section_slug: section.slug,
-                 mode: :delivery
+                 mode: :delivery,
+                 alternative_groups_by_id: by_id
                },
                @user_section_preference_el
              ) == [

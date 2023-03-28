@@ -1,0 +1,84 @@
+import { TorusBG } from '../TorusBG.tsx';
+import { ScreenNodeBody } from 'apps/authoring/components/Flowchart/chart-components/ScreenNode.tsx';
+import { ScreenButton } from 'apps/authoring/components/Flowchart/chart-components/ScreenButton.tsx';
+import { PlaceholderNodeBody } from 'apps/authoring/components/Flowchart/chart-components/PlaceholderNode.tsx';
+import { FlowchartTopToolbar } from 'apps/authoring/components/Flowchart/toolbar/FlowchartTopToolbar.tsx';
+import { FlowchartSidebar } from 'apps/authoring/components/Flowchart/sidebar/FlowchartSidebar.tsx';
+import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext.tsx';
+import { ToolbarItem } from 'apps/authoring/components/Flowchart/toolbar/ToolbarItem.tsx';
+import { Canvas, Meta, Story } from '@storybook/addon-docs';
+import '../../../styles/index.scss';
+
+<Meta title="Advanced Authoring/Flowchart Components" />
+
+# Top Toolbar
+
+<Canvas>
+  <Story name="Top Toolbar">
+    <AdvancedAuthorStorybookContext className="w-full">
+      <div className="w-full flex flex-row">
+        <div className="flowchart-right">
+          <FlowchartTopToolbar />
+        </div>
+      </div>
+    </AdvancedAuthorStorybookContext>
+  </Story>
+</Canvas>
+
+# Drag drop
+
+Drag from the toolbar above to a box here
+
+<AdvancedAuthorStorybookContext className="w-full">
+
+  <div className="w-full flex flex-row">
+    <PlaceholderNodeBody
+      data={{
+        id: '1',
+        type: 'screen',
+        custom: { sequenceName: 'Screen 1' },
+      }}
+    />
+  </div>
+</AdvancedAuthorStorybookContext>
+
+# Sidebar
+
+<AdvancedAuthorStorybookContext>
+  <div className="flex flex-row min-h-[300px]">
+    <FlowchartSidebar />
+    <div>Rest of content</div>
+  </div>
+</AdvancedAuthorStorybookContext>
+
+# Screen Node
+
+<AdvancedAuthorStorybookContext>
+  <ScreenNodeBody
+    data={{
+      id: '1',
+      resourceId: 1001,
+      title: 'Sample Screen',
+      type: 'screen',
+      custom: { sequenceName: 'Screen 1' },
+    }}
+  />
+</AdvancedAuthorStorybookContext>
+
+# Placeholder Node
+
+<AdvancedAuthorStorybookContext>
+  <PlaceholderNodeBody
+    data={{
+      id: '1',
+      type: 'screen',
+      custom: { sequenceName: 'Screen 1' },
+    }}
+  />
+</AdvancedAuthorStorybookContext>
+
+# Screen Button
+
+<AdvancedAuthorStorybookContext>
+  <ScreenButton>+</ScreenButton>
+</AdvancedAuthorStorybookContext>

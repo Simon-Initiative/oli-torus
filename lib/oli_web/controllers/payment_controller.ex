@@ -28,6 +28,9 @@ defmodule OliWeb.PaymentController do
         :stripe ->
           OliWeb.PaymentProviders.StripeController
 
+        :cashnet ->
+          OliWeb.PaymentProviders.CashnetController
+
         :none ->
           OliWeb.PaymentProviders.NoProviderController
 
@@ -74,7 +77,7 @@ defmodule OliWeb.PaymentController do
         case section.amount do
           nil ->
             conn
-            |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+            |> redirect(to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
 
           amount ->
             get_provider_module()
@@ -82,7 +85,7 @@ defmodule OliWeb.PaymentController do
         end
       else
         conn
-        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+        |> redirect(to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))
       end
     end
 

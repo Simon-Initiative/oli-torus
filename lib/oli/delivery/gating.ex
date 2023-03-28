@@ -106,20 +106,40 @@ defmodule Oli.Delivery.Gating do
     end)
   end
 
+
+
   @doc """
-  Returns the list of gating_conditions for a section
+  Returns the list of gating_conditions for a section, optionally restricted
+  to only top-level conditions (i.e., not ones that are student exceptions)
 
   ## Examples
 
-      iex> list_gating_conditions(123, [1,2,3])
+      iex> list_gating_conditions(123)
+      [%GatingCondition{}, ...]
+
+       iex> list_gating_conditions(123, true)
       [%GatingCondition{}, ...]
 
   """
-  def list_gating_conditions(section_id) do
-    from(gc in GatingCondition,
-      where: gc.section_id == ^section_id
-    )
-    |> Repo.all()
+  def list_gating_conditions(section_id, top_level_only \\ false) do
+
+    filter_by_top_level =
+      if is_nil(top_level_only) do
+        dynamic(
+          [gc],
+          is_nil(gc.parent_id)
+        )
+      else
+        true
+      end
+
+    query =
+      GatingCondition
+      |> where(^filter_by_top_level)
+      |> where([gc], gc.section_id == ^section_id)
+
+    Repo.all(query)
+
   end
 
   @doc """

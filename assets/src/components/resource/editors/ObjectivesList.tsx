@@ -15,7 +15,7 @@ export const ObjectivesList = (props: ObjectivesListProps) => {
       <div className={className}>
         {props.objectives.length === 0 ? (
           <div>
-            <i className="las la-exclamation-triangle mr-2 text-warning"></i>
+            <i className="fas fa-exclamation-triangle mr-2 text-warning"></i>
             This activity doesn&apos;t target any objectives.{' '}
             <a
               rel="noreferrer"
@@ -29,7 +29,7 @@ export const ObjectivesList = (props: ObjectivesListProps) => {
         ) : (
           <div className="d-flex flex-row">
             <div className="pr-2">
-              <i className="las la-graduation-cap text-info"></i>
+              <i className="fas fa-graduation-cap text-info"></i>
             </div>
 
             <div className="flex-grow-1 overflow-hidden">
@@ -37,8 +37,8 @@ export const ObjectivesList = (props: ObjectivesListProps) => {
                 <span
                   key={o}
                   className="objective-token rbt-token"
-                  data-toggle="popover"
-                  data-content={o}
+                  data-bs-toggle="popover"
+                  data-bs-content={o}
                 >
                   {o}
                 </span>

@@ -144,7 +144,7 @@ export const getSequenceInstance = () => {
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const sequence = useSelector(selectSequence);
-  return findInSequence(sequence, currentSequenceId);
+  return findInSequence(sequence, currentSequenceId || '');
 };
 export const getIsLayer = () => {
   const seq = getSequenceInstance();
