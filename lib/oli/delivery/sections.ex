@@ -2007,15 +2007,18 @@ defmodule Oli.Delivery.Sections do
   defp get_graded_pages_without_date(resources) do
     {root_container, graded_pages} = get_root_container_and_graded_pages(resources)
 
-    get_flatten_hierarchy(root_container.children, resources)
-    |> Enum.reduce([], fn id, acc ->
-      Enum.find(graded_pages, &(&1[:id] == id))
-      |> case do
-        nil -> acc
-        page -> [page | acc]
+    graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+    {pages, remaining} = get_flatten_hierarchy(root_container.children, resources)
+    |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
+
+      case Map.get(remaining, id) do
+        nil -> {acc, remaining}
+        page -> {[page | acc], Map.delete(remaining, id)}
       end
     end)
-    |> Enum.reverse()
+
+    Enum.reverse(pages) ++ Map.values(remaining)
   end
 
   defp get_root_container_and_graded_pages(resources) do
