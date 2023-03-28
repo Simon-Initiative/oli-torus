@@ -1,6 +1,8 @@
 import {
   IActivity,
   IDropdownPartLayout,
+  IInputNumberPartLayout,
+  IInputTextPartLayout,
   IMCQPartLayout,
   IPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
@@ -10,13 +12,20 @@ import {
   createCorrectPath,
   createUnknownPathWithDestination,
   createIncorrectPath,
+  createInputNumberCommonErrorPath,
 } from './path-factories';
 import { AllPaths } from './path-types';
-import { isDropdown, isMCQ } from './path-utils';
+import { isDropdown, isInputNumber, isInputText, isMCQ } from './path-utils';
 
 // Given a screen, return all the path types that are available for us.
 export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
   switch (getScreenQuestionType(screen)) {
+    case 'multi-line-text':
+      return [createAlwaysGoToPath()];
+    case 'input-text':
+      return createInputTextPathOptions(screen.content?.partsLayout.find(isInputText));
+    case 'input-number':
+      return createInputNumberPathOptions(screen.content?.partsLayout.find(isInputNumber));
     case 'check-all-that-apply':
       return createCATAChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
     case 'multiple-choice':
@@ -46,6 +55,31 @@ const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefin
   return [];
 };
 
+const createInputTextPathOptions = (inputText: IInputTextPartLayout | undefined) => {
+  if (inputText) {
+    return [
+      createCorrectPath(inputText.id),
+      createIncorrectPath(inputText.id),
+      ...createDefaultPathTypes(),
+    ];
+  }
+  return [];
+};
+
+const createInputNumberPathOptions = (inputNumber: IInputNumberPartLayout | undefined) => {
+  if (inputNumber) {
+    return [
+      ...(inputNumber.custom?.advancedFeedback || []).map((feedback, index) =>
+        createInputNumberCommonErrorPath(inputNumber, index),
+      ),
+      createCorrectPath(inputNumber.id),
+      createIncorrectPath(inputNumber.id),
+      ...createDefaultPathTypes(),
+    ];
+  }
+  return [];
+};
+
 const createCATAChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
   if (mcq) {
     // TODO: the per-option incorrect options.
@@ -67,6 +101,7 @@ export type QuestionType =
   | 'check-all-that-apply'
   | 'multi-line-text'
   | 'input-text'
+  | 'slider'
   | 'input-number'
   | 'dropdown'
   | 'none';
@@ -77,6 +112,7 @@ const questionMapping: Record<string, QuestionType> = {
   'janus-input-text': 'input-text',
   'janus-input-number': 'input-number',
   'janus-dropdown': 'dropdown',
+  'janus-slider': 'slider',
 };
 
 const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
@@ -88,6 +124,7 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   'input-text': 'Text Input',
   'input-number': 'Number Input',
   dropdown: 'Dropdown',
+  slider: 'Slider',
   none: 'No question',
 };
 

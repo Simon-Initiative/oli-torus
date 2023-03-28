@@ -8,6 +8,9 @@ import * as DropdownSchema from '../../components/parts/janus-dropdown/schema';
 import * as SliderSchema from '../../components/parts/janus-slider/schema';
 import * as NumberInputSchema from '../../components/parts/janus-input-number/schema';
 import * as MultipleChoiceSchema from '../../components/parts/janus-mcq/schema';
+import * as TextInputSchema from '../../components/parts/janus-input-text/schema';
+import * as MultiLineTextInputSchema from '../../components/parts/janus-multi-line-text/schema';
+
 import '../../../styles/index.scss';
 import PropertyEditor from '../../apps/authoring/components/PropertyEditor/PropertyEditor';
 import {
@@ -58,6 +61,18 @@ const panels: PanelDef[] = [
     uiSchema: updateUISchema(DropdownSchema.simpleUISchema),
     schema: updateSchema(DropdownSchema.simpleSchema),
     data: DropdownSchema.createSchema(),
+  },
+  {
+    title: 'Text Input - simple',
+    uiSchema: updateUISchema(TextInputSchema.simpleUiSchema),
+    schema: updateSchema(TextInputSchema.simpleSchema),
+    data: TextInputSchema.createSchema(),
+  },
+  {
+    title: 'Multi Line Text - simple',
+    uiSchema: updateUISchema(MultiLineTextInputSchema.simpleUiSchema),
+    schema: updateSchema(MultiLineTextInputSchema.simpleSchema),
+    data: MultiLineTextInputSchema.createSchema(),
   },
   {
     title: 'Multiple Choice - simple',

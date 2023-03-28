@@ -51,6 +51,7 @@ export const generateRule = (
   priority: number,
   feedback: string | null = null,
   additionalActions: IAction[] = [],
+  extra: Partial<IAdaptiveRule> = {},
 ): IAdaptiveRule => {
   const rule = createRuleTemplate(label);
   rule.correct = correct;
@@ -73,7 +74,10 @@ export const generateRule = (
     all: conditions,
   };
 
-  return rule;
+  return {
+    ...rule,
+    ...extra,
+  };
 };
 
 export const createRuleTemplate = (label: string): IAdaptiveRule => {

@@ -17,6 +17,7 @@ import { cloneT } from '../../../../../utils/common';
 import {
   IActivity,
   IDropdownPartLayout,
+  IInputNumberPartLayout,
   IMCQPartLayout,
   IPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
@@ -32,6 +33,7 @@ import {
   DestinationPaths,
   EndOfActivityPath,
   IncorrectPath,
+  NumericCommonErrorPath,
   OptionCommonErrorPath,
 } from './path-types';
 
@@ -55,7 +57,17 @@ const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
 export const isComponentPath = (path: AllPaths): path is ComponentPaths =>
   componentTypes.includes(path.type);
 
+export const isMultilineText = (screen: IPartLayout): screen is I =>
+  screen.type === 'janus-multi-line-text';
+
+export const isInputText = (screen: IPartLayout): screen is IInputTextPartLayout =>
+  screen.type === 'janus-input-text';
+
+export const isInputNumber = (screen: IPartLayout): screen is IInputNumberPartLayout =>
+  screen.type === 'janus-input-number';
+
 export const isMCQ = (screen: IPartLayout): screen is IMCQPartLayout => screen.type === 'janus-mcq';
+
 export const isDropdown = (screen: IPartLayout): screen is IDropdownPartLayout =>
   screen.type === 'janus-dropdown';
 
@@ -71,6 +83,9 @@ export const isAlwaysPath = (path: AllPaths): path is AlwaysGoToPath =>
 export const isCorrectPath = (path: AllPaths): path is CorrectPath => path.type === 'correct';
 
 export const isIncorrectPath = (path: AllPaths): path is IncorrectPath => path.type === 'incorrect';
+
+export const isNumericCommonErrorPath = (path: AllPaths): path is NumericCommonErrorPath =>
+  path.type === 'numeric-common-error';
 
 export const isOptionCommonErrorPath = (path: AllPaths): path is OptionCommonErrorPath =>
   path.type === 'option-common-error';

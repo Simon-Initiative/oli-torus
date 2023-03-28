@@ -7,6 +7,10 @@ import { getScreenQuestionType } from '../paths/path-options';
 import { isAlwaysPath } from '../paths/path-utils';
 import { generateDropdownRules } from './create-dropdown-rules';
 import { generateAlwaysGoTo } from './create-generic-rule';
+import { generateMultilineTextInputRules } from './create-multiline-text-rules';
+import { generteNumberInputRules as generateNumberInputRules } from './create-number-input-rules';
+import { generateSliderRules } from './create-slider-rules';
+import { generateTextInputRules } from './create-text-input-rules';
 
 export type RulesAndVariables = { rules: IAdaptiveRule[]; variables: string[] };
 
@@ -30,6 +34,14 @@ export const _generateRules = (
 ): RulesAndVariables => {
   const questionType = getScreenQuestionType(screen);
   switch (questionType) {
+    case 'multi-line-text':
+      return generateMultilineTextInputRules(screen, sequence);
+    case 'input-text':
+      return generateTextInputRules(screen, sequence);
+    case 'slider':
+      return generateSliderRules(screen, sequence);
+    case 'input-number':
+      return generateNumberInputRules(screen, sequence);
     case 'dropdown':
       return generateDropdownRules(screen, sequence);
     default:
