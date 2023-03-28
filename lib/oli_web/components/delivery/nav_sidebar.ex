@@ -5,6 +5,10 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   import Oli.Utils, only: [value_or: 2]
   import Oli.Branding
 
+  alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Resources.ResourceType
+  alias Oli.Resources.Revision
+  alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Branding.Brand
   alias OliWeb.Components.Delivery.UserAccountMenu
@@ -39,7 +43,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       |> assign(
         :links,
         if is_preview_mode?(assigns) do
-          get_preview_links(assigns[:section], path_info)
+          get_preview_links(assigns)
         else
           get_links(assigns, path_info)
         end
@@ -63,34 +67,67 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
-  defp get_preview_links(%Section{contains_explorations: true}, path_info) do
+  defp get_preview_links(%{section: %Section{} = section} = _assigns) do
+    hierarchy =
+      section
+      |> Oli.Repo.preload([:root_section_resource])
+      |> Sections.build_hierarchy()
+
     [
       %{
         name: "Home",
         href: "#",
-        active: is_active(path_info, :overview)
+        active: false
       },
-      %{name: "Course Content", href: "#", active: is_active(path_info, :content)},
-      %{name: "Discussion", href: "#", active: is_active(path_info, :discussion)},
-      %{name: "Assignments", href: "#", active: is_active(path_info, "")},
       %{
-        name: "Exploration",
-        href: "#",
-        active: is_active(path_info, :exploration)
-      }
+        name: "Course Content",
+        popout: %{
+          component: "Components.CourseContentOutline",
+          props: %{hierarchy: hierarchy, sectionSlug: section.slug}
+        },
+        active: true
+      },
+      %{name: "Discussion", href: "#", active: false},
+      %{name: "Assignments", href: "#", active: false},
+
     ]
+    |> then(fn links ->
+      case section do
+        %Section{contains_explorations: true} ->
+          links ++ [%{
+            name: "Exploration",
+            href: "#",
+            active: false
+          }]
+
+        _ ->
+          links
+      end
+    end)
   end
 
-  defp get_preview_links(_, path_info) do
+  defp get_preview_links(assigns) do
+    project = assigns[:project]
+
+    hierarchy = AuthoringResolver.full_hierarchy(project.slug)
+      |> translate_to_outline()
+
     [
       %{
         name: "Home",
         href: "#",
-        active: is_active(path_info, :overview)
+        active: false
       },
-      %{name: "Course Content", href: "#", active: is_active(path_info, :content)},
-      %{name: "Discussion", href: "#", active: is_active(path_info, :discussion)},
-      %{name: "Assignments", href: "#", active: is_active(path_info, "")}
+      %{
+        name: "Course Content",
+        popout: %{
+          component: "Components.CourseContentOutline",
+          props: %{hierarchy: hierarchy, sectionSlug: nil, projectSlug: project.slug}
+        },
+        active: true
+      },
+      %{name: "Discussion", href: "#", active: false},
+      %{name: "Assignments", href: "#", active: false}
     ]
   end
 
@@ -189,13 +226,16 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     }
   end
 
+  defp is_active(["sections", _, "page", _], :content), do: true
+  defp is_active(["sections", _, "container", _], :content), do: true
+  defp is_active(["sections", _, "preview", "page", _], :content), do: true
+  defp is_active(["sections", _, "preview", "container", _], :content), do: true
+
   defp is_active(path_info, path) do
     case {List.last(path_info), path} do
       {"overview", :overview} -> true
       {"exploration", :exploration} -> true
       {"discussion", :discussion} -> true
-      {"page", :content} -> true
-      {"container", :content} -> true
       {"my_assignments", :assignments} -> true
       _ -> false
     end
@@ -236,4 +276,42 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
       Routes.page_delivery_path(OliWeb.Endpoint, :assignments, assigns[:section_slug])
     end
   end
+
+  defp translate_to_outline(%HierarchyNode{} = node) do
+    container_id = ResourceType.get_id_by_type("container")
+
+    case node do
+      %{
+        uuid: id,
+        children: children,
+        revision: %Revision{
+          resource_type_id: ^container_id,
+          title: title,
+          slug: slug
+      }} ->
+        # container
+        %{
+          type: "container",
+          children: Enum.map(children, fn c -> translate_to_outline(c) end),
+          title: title,
+          id: id,
+          slug: slug,
+        }
+      %{
+        uuid: id,
+        revision: %Revision{
+          title: title,
+          slug: slug
+      }} ->
+        # page
+        %{
+          type: "page",
+          title: title,
+          id: id,
+          slug: slug,
+        }
+
+    end
+  end
+
 end
