@@ -90,6 +90,10 @@ $element-margin-bottom: 1.5em;
     padding: 1em;
     margin-bottom: $element-margin-bottom;
 
+    code {
+      color: inherit;
+    }
+
     code.hljs {
       background: inherit;
     }
