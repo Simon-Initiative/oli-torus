@@ -95,9 +95,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         datashop_session_id,
         seed_state_from_previous \\ false
       ) do
-    Repo.transaction(fn ->
-      activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-      resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
+
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
+
+    result = Repo.transaction(fn ->
 
       if is_nil(activity_attempt) do
         Repo.rollback({:not_found})
@@ -169,6 +171,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         end
       end
     end)
+
+    if !is_nil(resource_attempt) do
+      Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(resource_attempt.attempt_guid, activity_attempt.attempt_guid, :created)
+    end
+
+    result
+
   end
 
   defp create_raw_part_attempt(

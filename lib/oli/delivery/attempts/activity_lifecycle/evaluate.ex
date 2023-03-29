@@ -143,7 +143,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
           case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
             nil -> Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
-            activity_attempt -> update_activity_attempt(activity_attempt, %{lifecycle_state: :submitted, date_submitted: DateTime.utc_now()})
+            activity_attempt ->
+
+              # we need to mark the all manually scored part attempts still active to be "submitted", as
+              # as marking the entire activity attempt as being submitted.
+              submission_update = %{
+                lifecycle_state: :submitted,
+                date_submitted: DateTime.utc_now()
+              }
+
+              get_latest_part_attempts(activity_attempt.attempt_guid)
+              |> Enum.filter(fn pa -> pa.grading_approach == :manual and pa.lifecycle_state == :active end)
+              |> Enum.each(fn pa -> update_part_attempt(pa, submission_update) end)
+
+              update_activity_attempt(activity_attempt, submission_update)
           end
 
           {:ok, decodedResults}
@@ -154,13 +167,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  client_evaluations,
                  :do_not_normalize,
                  datashop_session_id,
-                 part_attempts
+                 part_attempts,
+                 {score, out_of}
                ) do
             {:ok, _} ->
+
+              Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(resource_attempt.attempt_guid, activity_attempt_guid, :updated)
+
               {:ok, decodedResults}
 
             {:error, err} ->
-              Logger.error("Error in apply client results! #{err}")
+              Logger.error("Error in apply client results from within rule evaluation! activity_guid: #{activity_attempt_guid}, evals: #{Kernel.to_string(client_evaluations)}, #{err}")
 
               {:error, err}
           end
@@ -168,7 +185,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
       {:error, err} ->
         Logger.error("Error in rule evaluation! #{err}")
-
         {:error, err}
     end
   end
@@ -482,15 +498,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   On failure returns `{:error, error}`
   """
-  @spec apply_client_evaluation(String.t(), String.t(), [map()], Atom.t(), String.t()) ::
-          {:ok, [map()]} | {:error, any}
   def apply_client_evaluation(
         section_slug,
         activity_attempt_guid,
         client_evaluations,
         normalize_mode \\ :normalize,
         datashop_session_id,
-        part_attempts_input \\ nil
+        part_attempts_input \\ nil,
+        use_fixed_score \\ nil
       ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
@@ -510,13 +525,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
           part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
-          roll_up_fn =
-            determine_activity_rollup_fn(
-              activity_attempt_guid,
-              part_inputs,
-              part_attempts,
-              normalize_mode
-            )
+          roll_up_fn = case use_fixed_score do
+            nil ->
+              determine_activity_rollup_fn(
+                activity_attempt_guid,
+                part_inputs,
+                part_attempts,
+                normalize_mode
+              )
+            {score, out_of} ->
+              fn result ->
+                evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of)
+                result
+              end
+          end
 
           result = persist_client_evaluations(
             part_inputs,
@@ -658,6 +680,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     })
   end
 
+  # Allows the adaptive page to mark an activity attempt as evaluated, using a given score and out_of
+  defp evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of) do
+    Logger.debug("rollup_part_attempt_evaluations: score: #{score}, out_of: #{out_of}")
+
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+
+    now = DateTime.utc_now()
+
+    update_activity_attempt(activity_attempt, %{
+      score: score,
+      out_of: out_of,
+      lifecycle_state: :evaluated,
+      date_evaluated: now,
+      date_submitted: now
+    })
+  end
+
+
   defp normalize_to_one(score, out_of) do
     case out_of do
       0 -> 0
@@ -746,6 +786,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          part_attempts,
          normalize_mode \\ :normalize
        ) do
+
     evaluated_fn = fn result ->
       rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode)
       result
@@ -815,11 +856,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         unless is_nil(pa) do
           if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-               pa.grading_approach == :automatic do
+              pa.grading_approach == :automatic do
             Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :evaluated})
           else
             if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-                 pa.grading_approach == :manual do
+                pa.grading_approach == :manual do
               Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :submitted})
             else
               map
@@ -841,6 +882,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {_, _, 0} -> :submitted
       {_, _, _} -> :no_op
     end
+
   end
 
   # Filters out part_inputs whose attempts have already been evaluated.  This step

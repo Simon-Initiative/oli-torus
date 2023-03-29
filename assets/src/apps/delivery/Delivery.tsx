@@ -71,6 +71,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
+
   //Need to start the warning 5 minutes before session expires
   const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 300000;
 
@@ -142,7 +143,7 @@ const Delivery: React.FC<DeliveryProps> = ({
       {isLessonEnded ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
-      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog /> : null}
+      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
     </div>
   );
 };
