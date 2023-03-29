@@ -36,9 +36,9 @@ defmodule OliWeb.Projects.VersioningDetails do
             {#case @version_change}
               {#match {change_type, _} when change_type == :major or change_type == :minor}
                 <div class="py-2">
-                  <ul class="bg-white rounded-lg border border-gray-200 text-gray-900">
+                  <ul class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white">
                     <Field name={:publish_type}>
-                      <li class="px-6 py-2 border-b border-gray-200 w-full rounded-t-lg">
+                      <li class="px-6 py-2 border-b border-gray-200 dark:border-gray-700 w-full rounded-t-lg">
                         <div class="flex flex-row p-2">
                           <div class="w-10 py-3 pr-2">
                             {#if change_type == :major}
@@ -62,7 +62,7 @@ defmodule OliWeb.Projects.VersioningDetails do
                         </div>
                       </li>
 
-                      <li class="px-6 py-2 border-b border-gray-200 w-full rounded-t-lg">
+                      <li class="px-6 py-2 w-full rounded-t-lg">
                         <div class="flex flex-row p-2">
                           <div class="w-10 py-3 pr-2">
                             {#if change_type == :minor}
@@ -91,7 +91,7 @@ defmodule OliWeb.Projects.VersioningDetails do
               {#match {:no_changes, _}}
             {/case}
             <Field name={:description} class="form-group">
-              <TextArea class="form-control" rows="3" opts={placeholder: "Enter a short description of these changes..."} />
+              <TextArea class="form-control" rows="3" opts={placeholder: "Enter a short description of these changes...", required: true} />
             </Field>
           {#else}
             {#if is_nil(@active_publication_changes)}

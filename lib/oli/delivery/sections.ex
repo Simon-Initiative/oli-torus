@@ -2028,12 +2028,13 @@ defmodule Oli.Delivery.Sections do
             gc2.user_id == ^user_id
       )
       |> where(
-        [sr, s],
-        s.slug == ^section_slug and sr.numbering_level >= 0
+        [sr, s, _, _, _, gc, gc2],
+        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and (is_nil(gc2) or gc2.type == :schedule)
       )
       |> select([sr, s, _, _, rev, gc, gc2], %{
         id: sr.id,
         title: rev.title,
+        slug: rev.slug,
         end_date:
           fragment(
             "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date) as end_date",
@@ -2041,6 +2042,12 @@ defmodule Oli.Delivery.Sections do
             gc.data["end_datetime"],
             sr.end_date
           ),
+        scheduled_type: sr.scheduling_type,
+        gate_type: fragment(
+          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
+          gc2.type,
+          gc.type
+        ),
         graded: rev.graded,
         resource_type_id: rev.resource_type_id,
         numbering_level: sr.numbering_level,
@@ -2063,15 +2070,18 @@ defmodule Oli.Delivery.Sections do
   defp get_graded_pages_without_date(resources) do
     {root_container, graded_pages} = get_root_container_and_graded_pages(resources)
 
-    get_flatten_hierarchy(root_container.children, resources)
-    |> Enum.reduce([], fn id, acc ->
-      Enum.find(graded_pages, &(&1[:id] == id))
-      |> case do
-        nil -> acc
-        page -> [page | acc]
+    graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+    {pages, remaining} = get_flatten_hierarchy(root_container.children, resources)
+    |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
+
+      case Map.get(remaining, id) do
+        nil -> {acc, remaining}
+        page -> {[page | acc], Map.delete(remaining, id)}
       end
     end)
-    |> Enum.reverse()
+
+    Enum.reverse(pages) ++ Map.values(remaining)
   end
 
   defp get_root_container_and_graded_pages(resources) do

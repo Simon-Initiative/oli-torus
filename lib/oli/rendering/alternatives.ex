@@ -33,7 +33,7 @@ defmodule Oli.Rendering.Alternatives do
         writer
       ) do
 
-    {:ok, groups} = groups_fn.(section_slug)
+    {:ok, groups} = groups_fn.()
     by_id = Enum.reduce(groups, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
     enrollment_id = case enrollment do

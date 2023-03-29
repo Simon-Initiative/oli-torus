@@ -19,6 +19,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   prop collab_space_table_model, :struct, required: true
   prop discussion_table_model, :struct, required: true
   prop parent_component_id, :string, required: true
+  prop section_slug, :string, required: true
 
   @default_params %{
     offset: 0,
@@ -45,8 +46,10 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   def render(assigns) do
     ~F"""
     <div class="p-10">
+
       {render_modal(assigns)}
-      <div class="bg-white w-full">
+
+      <div class="bg-white dark:bg-gray-900 w-full">
         <h4 class="px-10 py-6 border-b border-b-gray-200 torus-h4">Discussion Activity</h4>
 
         <div class="flex items-end gap-2 px-10 py-6 border-b border-b-gray-200">

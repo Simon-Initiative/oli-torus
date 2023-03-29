@@ -35,7 +35,7 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Section Overview",
+          full_title: "Manage Section",
           link:
             Routes.live_path(
               OliWeb.Endpoint,
@@ -101,11 +101,11 @@ defmodule OliWeb.Sections.OverviewView do
     ~F"""
     {render_modal(assigns)}
     <Groups>
-      <Group label="Overview" description="Overview of this course section">
+      <Group label="Details" description="Overview of course section details">
         <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
-        <ReadOnly label="URL" value={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}/>
+        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
         {#unless is_nil(deployment)}
           <ReadOnly
             label="Institution"
@@ -119,10 +119,10 @@ defmodule OliWeb.Sections.OverviewView do
           />
         {/unless}
       </Group>
-      <Group label="Instructors" description="Manage the users with instructor level access">
+      <Group label="Instructors" description="Manage users with instructor level access">
         <Instructors users={@instructors}/>
       </Group>
-      <Group label="Curriculum" description="Manage the content delivered to students">
+      <Group label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
         <li>
           <a target="_blank" href={Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, @section.slug, :content)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>
@@ -152,7 +152,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li><button type="button" class=" btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button></li>
         </ul>
       </Group>
-      <Group label="Collaboration Space" description="Allows to activate and configure a collaborative space for the root resource of a section">
+      <Group label="Collaborative Space" description="Activate and configure a collaborative space for this section">
         <div class="container mx-auto">
           {#if @collab_space_config && @collab_space_config.status != :disabled}
             {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView, id: "collab_space_config",
@@ -164,7 +164,7 @@ defmodule OliWeb.Sections.OverviewView do
                   "is_delivery" => true
                 })}
           {#else}
-            <p class="ml-8 mt-2">You are not allowed to have a collaboration space in this resource.<br>Please contact the admin to be granted with that permission.</p>
+            <p class="ml-8 mt-2">Collaborative spaces are not enabled by the course project.<br>Please contact a system administrator to enable.</p>
           {/if}
         </div>
       </Group>

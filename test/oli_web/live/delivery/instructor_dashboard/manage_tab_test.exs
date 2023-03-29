@@ -73,7 +73,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       assert has_element?(view, ~s{div[id="overview"]})
 
       # Collab Space Group gets rendered
-      assert render(view) =~ "Collaboration Space"
+      assert render(view) =~ "Collaborative Space"
     end
   end
 end

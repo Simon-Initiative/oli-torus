@@ -64,7 +64,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
          assign(socket,
            context: context,
            changeset: Sections.change_section(section),
-           delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(type, section),
            is_admin: type == :admin,
            section: section,
@@ -120,7 +119,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
 
   def render(assigns) do
     ~F"""
-    <div>
+    <div class="container mx-auto">
 
       <div class="d-flex justify-content-between">
         <TextSearch id="text-search"/>

@@ -121,7 +121,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
 
   def render(assigns) do
     ~F"""
-    <div>
+    <div class="container mx-auto">
 
       <TextSearch id="text-search"/>
 

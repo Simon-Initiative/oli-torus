@@ -688,6 +688,7 @@ defmodule Oli.Delivery.AttemptsTest do
                context_id,
                activity_attempt_guid,
                client_evaluations,
+               :normalize,
                datashop_session_id
              ) ==
                {:ok,
@@ -802,6 +803,7 @@ defmodule Oli.Delivery.AttemptsTest do
                context_id,
                activity_attempt_guid,
                client_evaluations,
+               :normalize,
                datashop_session_id
              ) == {:error, "Activity type does not allow client evaluation"}
     end

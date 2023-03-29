@@ -5,8 +5,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.Components.Delivery.UserAccountMenu
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Components.Header
 
   defmodule PriorityAction do
     @enforce_keys [:type, :title, :description, :action_link]
@@ -29,11 +30,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           }
   end
 
+  attr :current_user, User
+  attr :section, Section
+  attr :breadcrumbs, :list, required: true
+  attr :socket_or_conn, :any, required: true
+  attr :preview_mode, :boolean, default: false
+
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header context={@context} current_user={@current_user} section_slug={@section_slug} preview_mode={@preview_mode} />
-        <.section_details_header title={@title}/>
+        <.header current_user={@current_user} section={@section} preview_mode={@preview_mode} />
+        <.section_details_header section={@section}/>
+        <Header.delivery_breadcrumb {assigns} />
 
         <div class="flex-1 flex flex-col">
 
@@ -107,6 +115,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   py-3
                   m-2
                   text-body-color
+                  dark:text-body-color-dark
                   bg-transparent
                   hover:no-underline
                   hover:text-body-color
@@ -129,17 +138,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
-  defp logo_link(section_slug, preview_mode) do
+  defp logo_link(nil, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+
+  defp logo_link(section, preview_mode) do
     if preview_mode do
-      Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section_slug, :content)
+      Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)
     else
-      Routes.page_delivery_path(OliWeb.Endpoint, :index, section_slug)
+      Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
     end
   end
 
-  attr :section_slug, :string, required: true
-  attr :context, SessionContext
   attr :current_user, User
+  attr :section, Section
   attr :preview_mode, :boolean, default: false
 
   def header(assigns) do
@@ -147,14 +157,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <div class="w-full bg-delivery-header text-white border-b border-slate-600">
         <div class="container mx-auto py-2 flex flex-row justify-between">
           <div class="flex-1 flex items-center">
-            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section_slug, @preview_mode)}>
+            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section, @preview_mode)}>
               <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
             </a>
           </div>
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu is_liveview={true} context={@context} current_user={@current_user} />
+            <UserAccountMenu.menu current_user={@current_user} />
           <% end %>
           <div class="flex items-center border-l border-slate-300">
             <button
@@ -178,7 +188,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  attr :title, :string, required: true
+  attr :section, Section
+
+  def section_details_header(%{section: nil}), do: nil
 
   def section_details_header(assigns) do
     ~H"""
@@ -186,7 +198,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <div class="container mx-auto flex flex-row justify-between">
         <div class="flex-1 flex items-center text-[1.5em]">
           <div class="font-bold text-slate-300">
-            <%= @title %>
+            <%= @section.title %>
           </div>
           <%!-- <div class="border-l border-white ml-4 pl-4">
             Section 2360

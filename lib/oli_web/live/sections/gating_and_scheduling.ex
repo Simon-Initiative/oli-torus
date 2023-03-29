@@ -132,7 +132,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       title: title,
       context: context,
       section: section,
-      delivery_breadcrumb: true,
       breadcrumbs: set_breadcrumbs(section, parent_gate, user_type),
       table_model: table_model,
       total_count: total_count,

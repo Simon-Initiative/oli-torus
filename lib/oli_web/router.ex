@@ -772,8 +772,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
-      :delivery_protected,
+      :delivery_and_admin,
       :maybe_gated_resource,
       :pow_email_layout
     ])
@@ -784,7 +783,8 @@ defmodule OliWeb.Router do
     end
 
     live_session :instructor_dashboard_preview,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
       live(
         "/preview/:active_tab",
         Delivery.InstructorDashboard.InstructorDashboardLive,
@@ -877,6 +877,8 @@ defmodule OliWeb.Router do
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
+
+    live("/:section_slug/debugger/:attempt_guid", Attempt.AttemptLive)
 
     live(
       "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
