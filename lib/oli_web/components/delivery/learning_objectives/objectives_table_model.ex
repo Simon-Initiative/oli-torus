@@ -52,7 +52,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         name: :objective
       }) do
     ~F"""
-      <div class="flex items-center ml-8 gap-x-4">
+      <div class="flex items-center ml-8 gap-x-4" data-engagement-check={if student_engagement == "Low", do: "false", else: "true"}>
         <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if student_engagement == "Low", do: "bg-red-600", else: "bg-gray-500"}"}></span>
         <span>{objective}</span>
       </div>
