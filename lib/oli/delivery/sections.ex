@@ -2300,6 +2300,110 @@ defmodule Oli.Delivery.Sections do
       get_flatten_hierarchy(rest, resources)
   end
 
+  def get_objectives_and_subobjectives(section_slug, params) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    %{
+      offset: offset,
+      limit: limit,
+      sort_order: sort_order,
+      sort_by: sort_by,
+      text_search: text_search,
+      filter_by: filter_by
+    } = params
+
+    objectives = get_pages_with_objectives(section_slug, filter_by)
+
+    filter_by_text =
+      if text_search == "" or is_nil(text_search) do
+        true
+      else
+        dynamic([_, _, _, _sr, rev], ilike(rev.title, ^"%#{text_search}%"))
+      end
+
+    on_container_id_changed =
+      if filter_by == "all",
+        do: dynamic([_, _, _, _sr, _rev, _rev2, cp], is_nil(cp.container_id)),
+        else: dynamic([_, _, _, _sr, _rev, _rev2, cp], cp.container_id == ^filter_by)
+
+    query =
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        left_join: rev2 in Revision,
+        on: rev2.resource_id in rev.children,
+        join: cp in ContainedPage,
+        on: ^on_container_id_changed,
+        where: rev.deleted == false and rev.resource_type_id == ^page_id,
+        where: ^filter_by_text,
+        where: rev.resource_id in ^objectives,
+        limit: ^limit,
+        offset: ^offset,
+        group_by: [rev2.title, rev.resource_id, rev.title],
+        select: %{
+          resource_id: rev.resource_id,
+          objective: rev.title,
+          subobjective: rev2.title,
+          student_mastery_obj: fragment("('{High,Medium,Low}'::text[])[ceil(random()*3)]"),
+          student_mastery_subobj: fragment("('{High,Medium,Low}'::text[])[ceil(random()*3)]"),
+          student_engagement: fragment("('{High,Medium,Low}'::text[])[ceil(random()*3)]")
+        }
+      )
+
+    query =
+      case sort_by do
+        :objective -> order_by(query, [_, _, _, _sr, rev, _rev2], {^sort_order, rev.title})
+        :subobjective -> order_by(query, [_, _, _, _sr, _rev, rev2], {^sort_order, rev2.title})
+        _ -> order_by(query, [_, _, _, _sr, rev, _rev2], {^sort_order, rev.title})
+      end
+
+    {Repo.all(query), length(objectives)}
+  end
+
+  def get_units_and_modules_from_a_section(section_slug) do
+    Repo.all(
+      from([sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: cp in ContainedPage,
+        on: cp.container_id == rev.resource_id,
+        where: rev.deleted == false and s.slug == ^section_slug,
+        distinct: cp.container_id,
+        order_by: [asc: rev.title],
+        select: %{
+          container_id: cp.container_id,
+          title: rev.title
+        }
+      )
+    )
+  end
+
+  defp get_pages_with_objectives(section_slug, "all") do
+    Repo.all(
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: cp in ContainedPage,
+        on: cp.page_id == rev.resource_id,
+        where: rev.deleted == false and is_nil(cp.container_id),
+        select: %{
+          page_id: cp.page_id,
+          objectives: rev.objectives["attached"]
+        }
+      )
+    )
+    |> Enum.reduce([], fn elem, acc -> acc ++ elem.objectives end)
+  end
+
+  defp get_pages_with_objectives(section_slug, container_id) do
+    Repo.all(
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: cp in ContainedPage,
+        on: cp.page_id == rev.resource_id,
+        where: rev.deleted == false and cp.container_id == ^container_id,
+        select: %{
+          page_id: cp.page_id,
+          objectives: rev.objectives["attached"]
+        }
+      )
+    )
+    |> Enum.reduce([], fn elem, acc -> acc ++ elem.objectives end)
+  end
+
   def get_parent_project_survey(section_slug) do
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
