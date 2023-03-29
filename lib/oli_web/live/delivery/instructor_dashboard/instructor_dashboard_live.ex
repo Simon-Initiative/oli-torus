@@ -36,6 +36,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
+  defp render_tab(%{active_tab: :learning_objectives} = assigns) do
+    ~H"""
+      <.live_component
+        id="objectives_table"
+        module={OliWeb.Components.Delivery.LearningObjectives}
+        params={@params}
+        section_slug={@section.slug}
+      />
+    """
+  end
+
   defp render_tab(%{active_tab: :students} = assigns) do
     ~H"""
       <.live_component
