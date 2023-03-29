@@ -91,8 +91,9 @@ defmodule OliWeb.Components.Delivery.Students do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Delivery.InstructorDashboard.StudentsLive,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           :students,
            update_params(socket.assigns.params, %{text_search: student_name})
          )
      )}
@@ -104,8 +105,9 @@ defmodule OliWeb.Components.Delivery.Students do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Delivery.InstructorDashboard.StudentsLive,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           :students,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
@@ -117,8 +119,9 @@ defmodule OliWeb.Components.Delivery.Students do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Delivery.InstructorDashboard.StudentsLive,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           :students,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
      )}

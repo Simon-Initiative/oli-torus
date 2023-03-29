@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.StudentsLiveTest do
+defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -12,8 +12,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsLiveTest do
   defp live_view_students_route(section_slug, params \\ %{}) do
     Routes.live_path(
       OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.StudentsLive,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
+      :students,
       params
     )
   end
@@ -22,7 +23,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsLiveTest do
     test "can not access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
 
-      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fstudents"
+      redirect_path =
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fstudents"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_students_route(section.slug))
