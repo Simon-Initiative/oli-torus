@@ -2342,9 +2342,9 @@ defmodule Oli.Delivery.Sections do
           resource_id: rev.resource_id,
           objective: rev.title,
           subobjective: rev2.title,
-          student_mastery_obj: fragment("('{High,Medium,Low}'::text[])[ceil(random()*3)]"),
-          student_mastery_subobj: fragment("('{High,Medium,Low}'::text[])[ceil(random()*3)]"),
-          student_engagement: fragment("('{High,Medium,Low}'::text[])[ceil(random()*3)]")
+          student_mastery_obj: "Medium",
+          student_mastery_subobj: "High",
+          student_engagement: fragment("('{High,Medium,Low,Not enough data}'::text[])[ceil(random()*4)]")
         }
       )
 
