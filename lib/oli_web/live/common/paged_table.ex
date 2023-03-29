@@ -20,16 +20,21 @@ defmodule OliWeb.Common.PagedTable do
     ~F"""
       <div class="overflow-x-scroll">
         {#if @filter != "" and @render_top_info}
+      <div class="overflow-x-scroll">
+        {#if @filter != "" and @render_top_info}
           <strong>Results filtered on &quot;{@filter}&quot;</strong>
         {/if}
 
         {#if @total_count > 0 and @total_count > @limit}
-          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change} additional_class="bg-white"/>
           {render_table(assigns)}
           {#if @show_bottom_paging}
             <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
           {/if}
         {#elseif @total_count > 0}
+          {#if @render_top_info}
+            <div class="px-5 py-2">Showing all results ({@total_count} total)</div>
+          {/if}
           {#if @render_top_info}
             <div class="px-5 py-2">Showing all results ({@total_count} total)</div>
           {/if}
@@ -59,6 +64,7 @@ defmodule OliWeb.Common.PagedTable do
   end
 
   def delegate_handle_event("paged_table_page_change", %{"offset" => offset}, socket, patch_fn, _) do
+    IO.inspect(offset)
     patch_fn.(socket, %{offset: offset})
   end
 
