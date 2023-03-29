@@ -760,6 +760,15 @@ defmodule Oli.TestHelpers do
         resource: graded_page_6_resource
       )
 
+    graded_page_6_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 6 - Level 0 (w/o student gating condition)",
+        graded: true,
+        resource: graded_page_6_resource
+      )
+
     # Create a unit inside the project
     unit_one_resource = insert(:resource)
 
