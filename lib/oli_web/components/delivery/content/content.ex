@@ -61,9 +61,10 @@ defmodule OliWeb.Components.Delivery.Content do
         modules =
           containers
           |> Enum.filter(fn container -> container.numbering_level == 2 end)
-          |> Enum.take(params.limit)
+          |> Enum.sort_by(fn container -> container.title end, params.sort_order)
 
-        {length(modules), "MODULES", modules}
+        {length(modules), "MODULES",
+         modules |> Enum.drop(params.offset) |> Enum.take(params.limit)}
 
       :units ->
         units =
@@ -121,7 +122,7 @@ defmodule OliWeb.Components.Delivery.Content do
            socket,
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
-           :students,
+           :content,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
