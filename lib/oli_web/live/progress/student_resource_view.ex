@@ -77,7 +77,6 @@ defmodule OliWeb.Progress.StudentResourceView do
                context: context,
                changeset: changeset,
                breadcrumbs: set_breadcrumbs(type, section, user_id),
-               delivery_breadcrumb: true,
                section: section,
                resource_access: resource_access,
                revision: revision,

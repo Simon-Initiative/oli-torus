@@ -69,7 +69,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
              )
 
       # LearningObjectives tab content gets rendered
-      assert has_element?(view, ~s{p}, "Not available yet")
+      assert has_element?(view, ~s{div}, "Not available yet")
     end
   end
 end

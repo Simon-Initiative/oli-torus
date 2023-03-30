@@ -6,13 +6,15 @@ defmodule Oli.Features do
 
   @features [
     %Feature{label: "adaptivity", description: "Adaptive lesson authoring"},
-    %Feature{label: "equity", description: "Equity qa check"}
+    %Feature{label: "equity", description: "Equity qa check"},
+    %Feature{label: "live-debugging", description: "Live attempt debugging/observation support"}
   ]
 
   def features, do: @features
 
   def enabled?("adaptivity"), do: get_state("adaptivity") == :enabled
   def enabled?("equity"), do: get_state("equity") == :enabled
+  def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
 
   defp get_state(label) do
     Repo.get!(FeatureState, label).state

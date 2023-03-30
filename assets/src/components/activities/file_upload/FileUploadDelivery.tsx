@@ -51,7 +51,8 @@ function onUploadClick(id: string) {
 const getFilesFromState = (state: ActivityDeliveryState) => {
   const key = Object.keys(state.partState)[0];
 
-  return state.partState[key].studentInput === undefined
+  return state.partState[key].studentInput === undefined ||
+    state.partState[key].studentInput === null
     ? []
     : (state.partState[key].studentInput as any as FileMetaData[]);
 };

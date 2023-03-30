@@ -9,7 +9,7 @@
       <% end %>
 
       <%= if assigns.section.contains_explorations do%>
-        <Components.Delivery.ExplorationShade.exploration_shade exploration_pages={Map.get(@conn.assigns, :exploration_pages, nil)} />
+        <Components.Delivery.ExplorationShade.exploration_shade section_slug={assigns.section.slug} exploration_pages={Map.get(@conn.assigns, :exploration_pages, nil)} />
       <% end %>
 
       <div class="md:container md:mx-auto md:px-10 md:mt-3 md:mb-5">

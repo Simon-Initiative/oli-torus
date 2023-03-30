@@ -33,8 +33,8 @@
     </button>
     <div class="dropdown-menu">
       <a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>">Review</a>
-      <a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, @project.slug) %>">Products</a>
       <a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, @project.slug) %>">Publish</a>
+      <a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, @project.slug) %>">Products</a>
     </div>
   </div>
 

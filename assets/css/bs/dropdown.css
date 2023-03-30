@@ -13,3 +13,7 @@
 .dropdown .dropdown-menu a.dropdown-item {
   @apply hover:no-underline;
 }
+
+.dropdown .dropdown-menu button.dropdown-item {
+  @apply text-left;
+}

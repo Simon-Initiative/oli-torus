@@ -122,7 +122,6 @@ defmodule OliWeb.Delivery.SelectSource do
     {:ok,
      assign(socket,
        breadcrumbs: breadcrumbs(live_action),
-       delivery_breadcrumb: true,
        total_count: length(sources),
        table_model: table_model,
        sources: sources,

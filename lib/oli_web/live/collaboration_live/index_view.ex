@@ -76,7 +76,6 @@ defmodule OliWeb.CollaborationLive.IndexView do
 
       {:ok,
        assign(socket,
-         delivery_breadcrumb: true,
          breadcrumbs: breadcrumb(live_action, section_slug),
          section_slug: section_slug,
          collab_spaces: collab_spaces,

@@ -235,7 +235,7 @@ defmodule OliWeb.Resources.ActivitiesView do
 
   def render(assigns) do
     ~F"""
-    <div id="activity_review" phx-hook="ReviewActivity">
+    <div id="activity_review" class="container mx-auto" phx-hook="ReviewActivity">
 
       <FilterBox
         card_header_text="Browse All Activities"

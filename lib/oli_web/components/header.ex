@@ -77,11 +77,20 @@ defmodule OliWeb.Components.Header do
         <% end %>
       </div>
     </nav>
+    <.delivery_breadcrumb breadcrumbs={assigns[:breadcrumbs]} socket_or_conn={socket_or_conn(assigns)} />
+    """
+  end
+
+  attr :breadcrumbs, :list, required: true
+  attr :socket_or_conn, :any, required: true
+
+  def delivery_breadcrumb(assigns) do
+    ~H"""
     <%= if delivery_breadcrumbs?(assigns) do %>
-      <div class="container">
+      <div class="container mx-auto my-2">
         <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
           <div class="flex-1">
-            <%= live_render(@conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
+            <%= live_render(@socket_or_conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
           </div>
         </nav>
       </div>

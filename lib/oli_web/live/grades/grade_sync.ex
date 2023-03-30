@@ -31,9 +31,9 @@ defmodule OliWeb.Grades.GradeSync do
           were manually adjusted or overridden by the instructor.") %>
         </div>
 
-        <select class="custom-select custom-select-lg mb-3">
+        <select id="assignment_grade_sync_select" class="custom-select custom-select-lg mb-3" phx-hook="SelectListener" phx-value-change="select_page">
           <%= for page <- @graded_pages do %>
-            <option value={page.resource_id} phx-click="select_page" phx-value-page={page.resource_id}><%= page.title %></option>
+            <option value={page.resource_id}><%= page.title %></option>
           <% end %>
         </select>
 

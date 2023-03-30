@@ -68,7 +68,7 @@ export const AlternativesPreferenceSelector = ({
       </select>
       <InfoTip
         className="inline-flex items-center text-secondary"
-        title="Alternative versions are available, use this selector to switch"
+        title="Alternative materials are available. Use this dropdown to select your preference"
       />
     </div>
   );

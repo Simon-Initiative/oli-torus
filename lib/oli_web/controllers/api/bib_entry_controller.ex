@@ -6,7 +6,6 @@ defmodule OliWeb.Api.BibEntryController do
   alias Oli.Authoring.Editing.BibEntryEditor
   import OliWeb.Api.Helpers
   alias Oli.Repo.{Paging}
-  alias Oli.Repo
 
   use OliWeb, :controller
 
@@ -50,8 +49,8 @@ defmodule OliWeb.Api.BibEntryController do
     author = conn.assigns[:current_author]
 
     case BibEntryEditor.edit(project_slug, entry_id, author, %{"title" => title, "author_id" => author.id, "content" => %{data: Poison.decode!(content)}}) do
-      {:ok, resource} ->
-        json(conn, %{"result" => "success", "bibentry" => serialize_revision(Repo.preload(resource, :revision).revision)})
+      {:ok, revision} ->
+        json(conn, %{"result" => "success", "bibentry" => serialize_revision(revision)})
 
       {:error, {:not_found}} ->
         error(conn, 404, "not found")

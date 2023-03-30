@@ -287,9 +287,11 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def delivery_breadcrumbs?(assigns),
     do:
-      Map.has_key?(assigns, :delivery_breadcrumb) and
-        Map.get(assigns, :delivery_breadcrumb, false) and
-        (Map.has_key?(assigns, :breadcrumbs) and length(Map.get(assigns, :breadcrumbs, [])) > 0)
+      Map.has_key?(assigns, :breadcrumbs) and is_list(Map.get(assigns, :breadcrumbs)) and
+        length(Map.get(assigns, :breadcrumbs, [])) > 0
+
+  def socket_or_conn(%{socket: socket} = _assigns), do: socket
+  def socket_or_conn(%{conn: conn} = _assigns), do: conn
 
   attr :percent, :integer, required: true
   attr :width, :string, default: "100%"

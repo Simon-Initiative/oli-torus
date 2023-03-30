@@ -174,9 +174,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
       ) do
     ~F"""
       <div :if={user_id}>
-        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{user.name}</Link>
-
+        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{OliWeb.Common.Utils.name(user)}</Link>
       </div>
     """
   end
+
 end

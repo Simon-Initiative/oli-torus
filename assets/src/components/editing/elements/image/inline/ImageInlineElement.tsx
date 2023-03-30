@@ -30,6 +30,7 @@ export const ImageInlineEditor = (props: Props) => {
         </span>
         <img
           src={props.model.src}
+          className="img-fluid"
           style={{ maxWidth: props.model.width ?? '100%', ...elementBorderStyle(selected) }}
         />
       </span>

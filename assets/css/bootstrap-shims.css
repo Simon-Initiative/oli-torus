@@ -248,9 +248,18 @@ a.nav-link {
   @apply hover:no-underline;
 }
 
+.form-group {
+  @apply mb-4;
+}
+
+.form-control {
+  @apply block;
+}
+
 .form-group .form-control,
 .form-label-group .form-control,
 input.form-control,
+textarea.form-control,
 .input-group input.form-control,
 .input-group select,
 select.custom-select,
@@ -520,11 +529,7 @@ table td {
 }
 
 table.table-striped tbody tr:nth-child(even) {
-  @apply bg-gray-100 dark:bg-gray-600;
-}
-
-table.table-striped tbody tr:nth-child(odd) {
-  @apply bg-white dark:bg-delivery-body-dark;
+  @apply bg-gray-100 dark:bg-gray-700;
 }
 
 .d-none {

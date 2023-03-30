@@ -67,24 +67,26 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
         Mount.handle_error(socket, {:error, e})
 
       {type, user, section} ->
-        failed_resource_accesses = Core.get_failed_grade_sync_resource_accesses_for_section(section.slug)
+        failed_resource_accesses =
+          Core.get_failed_grade_sync_resource_accesses_for_section(section.slug)
 
         {:ok, table_model} = FailedGradeSyncTableModel.new(failed_resource_accesses)
 
         {:ok,
-          assign(socket,
-            breadcrumbs: set_breadcrumbs(type, section),
-            is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
-            failed_resource_accesses: failed_resource_accesses,
-            table_model: table_model,
-            total_count: length(failed_resource_accesses),
-            section: section
-          )}
+         assign(socket,
+           breadcrumbs: set_breadcrumbs(type, section),
+           is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
+           failed_resource_accesses: failed_resource_accesses,
+           table_model: table_model,
+           total_count: length(failed_resource_accesses),
+           section: section
+         )}
     end
   end
 
   def render(assigns) do
     ~F"""
+    <div class="container mx-auto">
       <div class="d-flex p-3 justify-content-between">
         <Filter
           change="change_search"
@@ -107,6 +109,7 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
           show_bottom_paging={@show_bottom_paging}
           additional_table_class={@additional_table_class} />
       </div>
+    </div>
     """
   end
 
@@ -115,10 +118,10 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
     section = socket.assigns.section
 
     with {:ok, resource_access} <-
-          resource_id
-          |> Core.get_resource_access(section.slug, user_id)
-          |> trap_nil("The resource access was not found."),
-        {:ok, %Oban.Job{}} <- GradeUpdateWorker.create(section.id, resource_access.id, :manual) do
+           resource_id
+           |> Core.get_resource_access(section.slug, user_id)
+           |> trap_nil("The resource access was not found."),
+         {:ok, %Oban.Job{}} <- GradeUpdateWorker.create(section.id, resource_access.id, :manual) do
       handle_success(socket, section.slug)
     else
       error ->
@@ -129,11 +132,13 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
 
   def handle_event("bulk-retry", _, socket) do
     socket = clear_flash(socket)
-    %{section: section, failed_resource_accesses: failed_resource_accesses}  = socket.assigns
+    %{section: section, failed_resource_accesses: failed_resource_accesses} = socket.assigns
 
     Enum.reduce_while(failed_resource_accesses, true, fn resource_access, acc ->
       case GradeUpdateWorker.create(section.id, resource_access.id, :manual_batch) do
-        {:ok, %Oban.Job{}} -> {:cont, acc}
+        {:ok, %Oban.Job{}} ->
+          {:cont, acc}
+
         error ->
           log_error(resource_access.resource_id, resource_access.user_id, error)
           {:halt, acc}
@@ -144,19 +149,27 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
   end
 
   defp log_error(resource_id, user_id, error),
-    do: Logger.error("Couldn't retry grade sync for resource_id: #{resource_id}, user_id: #{user_id}. Reason: #{inspect(error)}")
+    do:
+      Logger.error(
+        "Couldn't retry grade sync for resource_id: #{resource_id}, user_id: #{user_id}. Reason: #{inspect(error)}"
+      )
 
   defp handle_success(socket, section_slug) do
     if socket.assigns.is_lms_or_system_admin do
       {:noreply,
-        socket
-        |> put_flash(:info, "Retrying grade sync. See processing in real time below.")
-        |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.ObserveGradeUpdatesView, section_slug))}
+       socket
+       |> put_flash(:info, "Retrying grade sync. See processing in real time below.")
+       |> push_redirect(
+         to:
+           Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.ObserveGradeUpdatesView, section_slug)
+       )}
     else
       {:noreply,
-        socket
-        |> put_flash(:info, "Retrying grade sync. Please check the status again in a few minutes.")
-        |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_slug))}
+       socket
+       |> put_flash(:info, "Retrying grade sync. Please check the status again in a few minutes.")
+       |> push_redirect(
+         to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_slug)
+       )}
     end
   end
 end
