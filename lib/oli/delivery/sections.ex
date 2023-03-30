@@ -2006,6 +2006,52 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  # TODO add docs and maybe rename function, or split it.
+  def get_units_and_modules_containers(section_slug) do
+    query =
+      from pr in PublishedResource,
+        join: spp in SectionsProjectsPublications,
+        on: spp.publication_id == pr.publication_id,
+        join: s in Section,
+        on: spp.section_id == s.id,
+        join: sr in SectionResource,
+        on: sr.resource_id == pr.resource_id and sr.section_id == s.id,
+        join: r in Revision,
+        on: r.resource_id == pr.resource_id and pr.revision_id == r.id,
+        where:
+          s.slug == ^section_slug and sr.numbering_level in [1, 2] and r.resource_type_id == 2,
+        select: %{
+          container_id: r.resource_id,
+          title: r.title,
+          numbering_level: sr.numbering_level
+        }
+
+    case Repo.all(query) do
+      [] -> {0, get_pages(section_slug)}
+      containers -> {length(containers), containers}
+    end
+  end
+
+  def get_pages(section_slug) do
+    query =
+      from pr in PublishedResource,
+        join: spp in SectionsProjectsPublications,
+        on: spp.publication_id == pr.publication_id,
+        join: s in Section,
+        on: spp.section_id == s.id,
+        join: sr in SectionResource,
+        on: sr.resource_id == pr.resource_id and sr.section_id == s.id,
+        join: r in Revision,
+        on: r.resource_id == pr.resource_id and pr.revision_id == r.id,
+        where: s.slug == ^section_slug and r.resource_type_id == 1,
+        select: %{
+          page_id: r.resource_id,
+          title: r.title
+        }
+
+    Repo.all(query)
+  end
+
   def get_graded_pages(section_slug, user_id) do
     {graded_pages_with_date, other_resources} =
       SectionResource
