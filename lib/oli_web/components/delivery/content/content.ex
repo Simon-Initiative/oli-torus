@@ -33,6 +33,7 @@ defmodule OliWeb.Components.Delivery.Content do
         socket
       ) do
     params = decode_params(params)
+
     {total_count, container_column_name, containers} = apply_filters(containers, params)
 
     {:ok, table_model} = ContentTableModel.new(containers, container_column_name)
@@ -55,34 +56,13 @@ defmodule OliWeb.Components.Delivery.Content do
      )}
   end
 
-  defp apply_filters(containers, params) do
-    case params.container_filter_by do
-      :modules ->
-        modules =
-          containers
-          |> Enum.filter(fn container -> container.numbering_level == 2 end)
-          |> Enum.sort_by(fn container -> container.title end, params.sort_order)
-
-        {length(modules), "MODULES",
-         modules |> Enum.drop(params.offset) |> Enum.take(params.limit)}
-
-      :units ->
-        units =
-          containers
-          |> Enum.filter(fn container -> container.numbering_level == 1 end)
-          |> Enum.sort_by(fn container -> container.title end, params.sort_order)
-
-        {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
-    end
-  end
-
   def render(assigns) do
     ~F"""
     <div class="mx-10 mb-10 bg-white shadow-sm">
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
         <h4 class="pl-9 torus-h4 mr-auto">Content</h4>
-        <form for="search" phx-target={@myself} phx-change="search_student" class="pb-6 ml-9 sm:pb-0">
-          <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
+        <form for="search" phx-target={@myself} phx-change="search_container" class="pb-6 ml-9 sm:pb-0">
+          <SearchInput.render id="content_search_input" name="container_name" text={@params.text_search} />
         </form>
       </div>
 
@@ -100,7 +80,7 @@ defmodule OliWeb.Components.Delivery.Content do
     """
   end
 
-  def handle_event("search_student", %{"student_name" => student_name}, socket) do
+  def handle_event("search_container", %{"container_name" => container_name}, socket) do
     {:noreply,
      push_patch(socket,
        to:
@@ -108,8 +88,8 @@ defmodule OliWeb.Components.Delivery.Content do
            socket,
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
-           :students,
-           update_params(socket.assigns.params, %{text_search: student_name})
+           :content,
+           update_params(socket.assigns.params, %{text_search: container_name})
          )
      )}
   end
@@ -180,6 +160,39 @@ defmodule OliWeb.Components.Delivery.Content do
     # there is no need to add a param to the url if its value is equal to the default one
     Map.filter(params, fn {key, value} ->
       @default_params[key] != value
+    end)
+  end
+
+  defp apply_filters(containers, params) do
+    case params.container_filter_by do
+      :modules ->
+        modules =
+          containers
+          |> Enum.filter(fn container -> container.numbering_level == 2 end)
+          |> maybe_filter_by_text(params.text_search)
+          |> Enum.sort_by(fn container -> container.title end, params.sort_order)
+
+        {length(modules), "MODULES",
+         modules |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+
+      :units ->
+        units =
+          containers
+          |> Enum.filter(fn container -> container.numbering_level == 1 end)
+          |> maybe_filter_by_text(params.text_search)
+          |> Enum.sort_by(fn container -> container.title end, params.sort_order)
+
+        {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    end
+  end
+
+  defp maybe_filter_by_text(containers, nil), do: containers
+  defp maybe_filter_by_text(containers, ""), do: containers
+
+  defp maybe_filter_by_text(containers, text_search) do
+    containers
+    |> Enum.filter(fn container ->
+      String.contains?(String.downcase(container.title), String.downcase(text_search))
     end)
   end
 end
