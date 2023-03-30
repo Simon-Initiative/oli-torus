@@ -2,6 +2,8 @@ defmodule OliWeb.Components.Delivery.Content do
   use Surface.LiveComponent
 
   alias Phoenix.LiveView.JS
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Field, Select}
 
   alias OliWeb.Common.{PagedTable, SearchInput}
   alias OliWeb.Components.Delivery.ContentTableModel
@@ -11,6 +13,7 @@ defmodule OliWeb.Components.Delivery.Content do
   prop params, :map, required: true
   prop total_count, :number, required: true
   prop table_model, :struct, required: true
+  prop options_for_container_select, :list
 
   @default_params %{
     offset: 0,
@@ -34,13 +37,13 @@ defmodule OliWeb.Components.Delivery.Content do
       ) do
     params = decode_params(params)
 
-    {total_count, container_column_name, containers} = apply_filters(containers, params)
+    {total_count, container_column_name, container_rows} = apply_filters(containers, params)
 
-    {:ok, table_model} = ContentTableModel.new(containers, container_column_name)
+    {:ok, table_model} = ContentTableModel.new(container_rows, container_column_name)
 
     table_model =
       Map.merge(table_model, %{
-        rows: containers,
+        rows: container_rows,
         sort_order: params.sort_order,
         sort_by_spec:
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
@@ -52,15 +55,20 @@ defmodule OliWeb.Components.Delivery.Content do
        table_model: table_model,
        params: params,
        students_table_model: table_model,
-       section_slug: section_slug
+       section_slug: section_slug,
+       options_for_container_select: options_for_container_select(containers)
      )}
   end
 
   def render(assigns) do
     ~F"""
     <div class="mx-10 mb-10 bg-white shadow-sm">
-      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
-        <h4 class="pl-9 torus-h4 mr-auto">Content</h4>
+      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white h-16">
+        <Form for={:containers} id="container-select-form" change="filter_container" class="pl-9 torus-h4 mr-auto">
+          <Field name={:container_type}>
+            <Select options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 mt-6 mb-3 border-none focus:!border-none"/>
+          </Field>
+        </Form>
         <form for="search" phx-target={@myself} phx-change="search_container" class="pb-6 ml-9 sm:pb-0">
           <SearchInput.render id="content_search_input" name="container_name" text={@params.text_search} />
         </form>
@@ -78,6 +86,27 @@ defmodule OliWeb.Components.Delivery.Content do
       />
     </div>
     """
+  end
+
+  def handle_event(
+        "filter_container",
+        %{"containers" => %{"container_type" => container_type}},
+        socket
+      ) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           :content,
+           update_params(socket.assigns.params, %{
+             container_filter_by: container_type,
+             text_search: @default_params.text_search
+           })
+         )
+     )}
   end
 
   def handle_event("search_container", %{"container_name" => container_name}, socket) do
@@ -194,5 +223,20 @@ defmodule OliWeb.Components.Delivery.Content do
     |> Enum.filter(fn container ->
       String.contains?(String.downcase(container.title), String.downcase(text_search))
     end)
+  end
+
+  # TODO refactor this!!
+  defp options_for_container_select(containers) do
+    Enum.reduce(containers, %{units: false, modules: false}, fn container, acc ->
+      case container.numbering_level do
+        1 -> %{acc | units: true}
+        2 -> %{acc | modules: true}
+      end
+    end)
+    |> case do
+      %{units: true, modules: true} -> [Modules: :modules, Units: :units]
+      %{units: true, modules: false} -> [Units: :units]
+      %{units: false, modules: true} -> [Modules: :modules]
+    end
   end
 end
