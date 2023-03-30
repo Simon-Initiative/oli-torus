@@ -31,14 +31,18 @@ export const generateTextInputRules = (
   const incorrectPath = (screen.authoring?.flowchart?.paths || []).find(isIncorrectPath);
   const requiredTerms = (question.custom.correctAnswer.mustContain || '')
     .split(',')
-    .map((t) => t.trim());
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
 
   const forbiddenTerms = (question.custom.correctAnswer.mustNotContain || '')
     .split(',')
-    .map((t) => t.trim());
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+
+  const minLen = question.custom.correctAnswer.minimumLength || 0;
 
   const correct: Required<IConditionWithFeedback> = {
-    conditions: createTextInputCorrectCondition(question, requiredTerms, forbiddenTerms),
+    conditions: createTextInputCorrectCondition(question, requiredTerms, forbiddenTerms, minLen),
     feedback: question.custom.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
@@ -69,8 +73,6 @@ export const generateTextInputRules = (
   };
 
   const setCorrect: IAction[] = [disableAction];
-
-  const minLen = question.custom.correctAnswer.minimumLength || 1;
 
   const blankCondition: ICondition = createCondition(
     `stage.${question.id}.textLength`,
@@ -105,15 +107,28 @@ export const createTextInputCorrectCondition = (
   question: IInputTextPartLayout,
   requiredTerms: string[],
   forbiddenTerms: string[],
+  minLength: number,
 ): ICondition[] => {
-  const requriedConditions = requiredTerms.map((term) =>
-    createCondition(`stage.${question.id}.text`, term, 'contains', 2),
-  );
-  const forbiddenConditions = forbiddenTerms.map((term) =>
-    createCondition(`stage.${question.id}.text`, term, 'notContains', 2),
+  const requriedConditions =
+    requiredTerms.length > 0
+      ? requiredTerms.map((term) =>
+          createCondition(`stage.${question.id}.text`, term, 'contains', 2),
+        )
+      : [];
+  const forbiddenConditions =
+    forbiddenTerms.length > 0
+      ? forbiddenTerms.map((term) =>
+          createCondition(`stage.${question.id}.text`, term, 'notContains', 2),
+        )
+      : [];
+
+  const lengthCondition: ICondition = createCondition(
+    `stage.${question.id}.textLength`,
+    String(minLength),
+    'greaterThanInclusive',
   );
 
-  return [...requriedConditions, ...forbiddenConditions];
+  return [...requriedConditions, ...forbiddenConditions, lengthCondition];
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

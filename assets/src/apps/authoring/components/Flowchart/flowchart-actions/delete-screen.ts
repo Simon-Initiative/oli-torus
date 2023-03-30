@@ -7,6 +7,7 @@ import {
   deleteActivity,
   IActivity,
   selectActivityById,
+  selectAllActivities,
 } from '../../../../delivery/store/features/activities/slice';
 import {
   SequenceEntry,
@@ -39,7 +40,9 @@ export const deleteFlowchartScreen = createAsyncThunk(
     const { screenId } = payload;
     const rootState = getState() as AuthoringRootState;
     const screen = selectActivityById(rootState, screenId);
+    const allScreens = selectAllActivities(rootState);
     if (!screen) return;
+    if (allScreens.length <= 1) return; // Don't delete the last screen
 
     /* imagine:  [a] -> [b] -> [c]
       If we delete screen [b], we want [a] -> [c]
@@ -48,7 +51,6 @@ export const deleteFlowchartScreen = createAsyncThunk(
     dispatch(removePathsToScreen(screen, rootState));
     dispatch(deleteActivity({ activityId: screenId }));
     dispatch(removeScreenGromGroup(screenId, rootState));
-
     dispatch(savePage({ undoable: false, immiediate: true }));
   },
 );

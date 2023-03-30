@@ -5,6 +5,7 @@ import {
   IInputTextPartLayout,
   IMCQPartLayout,
   IPartLayout,
+  ISliderPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import {
   createAlwaysGoToPath,
@@ -16,7 +17,7 @@ import {
   createMCQCommonErrorPath,
 } from './path-factories';
 import { AllPaths } from './path-types';
-import { isDropdown, isInputNumber, isInputText, isMCQ } from './path-utils';
+import { isDropdown, isInputNumber, isInputText, isMCQ, isSlider } from './path-utils';
 
 // Given a screen, return all the path types that are available for us.
 export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
@@ -25,6 +26,8 @@ export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
       return [createAlwaysGoToPath()];
     case 'input-text':
       return createInputTextPathOptions(screen.content?.partsLayout.find(isInputText));
+    case 'slider':
+      return createSliderPathOptions(screen.content?.partsLayout.find(isSlider));
     case 'input-number':
       return createInputNumberPathOptions(screen.content?.partsLayout.find(isInputNumber));
     case 'check-all-that-apply':
@@ -66,6 +69,19 @@ const createInputTextPathOptions = (inputText: IInputTextPartLayout | undefined)
   return [];
 };
 
+const createSliderPathOptions = (slider: ISliderPartLayout | undefined) => {
+  if (slider) {
+    return [
+      ...(slider.custom?.advancedFeedback || []).map((feedback, index) =>
+        createInputNumberCommonErrorPath(slider, index),
+      ),
+      createCorrectPath(slider.id),
+      createIncorrectPath(slider.id),
+      ...createDefaultPathTypes(),
+    ];
+  }
+  return [];
+};
 const createInputNumberPathOptions = (inputNumber: IInputNumberPartLayout | undefined) => {
   if (inputNumber) {
     return [

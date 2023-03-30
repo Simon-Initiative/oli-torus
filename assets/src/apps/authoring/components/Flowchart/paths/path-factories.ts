@@ -4,6 +4,7 @@ import {
   IDropdownPartLayout,
   IInputNumberPartLayout,
   IMCQPartLayout,
+  ISliderPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import {
   AlwaysGoToPath,
@@ -35,7 +36,7 @@ const createDestinationPathTemplate = (id: string, destinationScreenId: number |
 });
 
 export const createInputNumberCommonErrorPath = (
-  ni: IInputNumberPartLayout,
+  ni: IInputNumberPartLayout | ISliderPartLayout,
   index: number,
 ): NumericCommonErrorPath => {
   const feedback = ni.custom!.advancedFeedback![index];

@@ -16,6 +16,8 @@ import { generateTextInputRules } from './create-text-input-rules';
 
 export type RulesAndVariables = { rules: IAdaptiveRule[]; variables: string[] };
 
+const notNull = <T>(t: T | null): t is T => t !== null;
+
 export const generateRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
@@ -23,7 +25,7 @@ export const generateRules = (
   try {
     const { rules, variables } = _generateRules(screen, sequence);
     console.info('Rules generated:', variables, rules);
-    return { rules, variables };
+    return { rules: rules.filter(notNull), variables: variables.filter(notNull) };
   } catch (e) {
     console.error('Error generating rules for screen', screen, e);
     return { rules: [], variables: [] };

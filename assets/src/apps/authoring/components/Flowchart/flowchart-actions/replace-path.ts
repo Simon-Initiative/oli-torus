@@ -25,7 +25,7 @@ export const replacePath = createAsyncThunk(
     const { oldPathId, newPath, screenId } = payload;
     if (isDestinationPath(newPath) && newPath.destinationScreenId === -1) {
       // This means the user wants to create a new screen that the path goes to.
-      const result = await dispatch(addFlowchartScreen({}));
+      const result = await dispatch(addFlowchartScreen({ skipPathToNewScreen: true }));
       const newScreen = result.payload as IActivity;
       if (newScreen && newScreen.resourceId) {
         newPath.destinationScreenId = newScreen.resourceId;

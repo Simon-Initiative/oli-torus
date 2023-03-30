@@ -121,7 +121,7 @@ export const generateCATAChoiceRules = (
         value: correctAnswer,
         target: `stage.${question.id}.selectedChoices`,
         operator: '=',
-        targetType: 1,
+        targetType: 3,
       },
     },
     disableAction,

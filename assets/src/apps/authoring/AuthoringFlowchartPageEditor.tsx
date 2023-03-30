@@ -36,7 +36,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
   }, [dispatch]);
   const activity = useSelector(selectCurrentActivity);
 
-  const requiresTemplateSelection = !activity?.authoring?.flowchart?.templateApplied;
+  const requiresTemplateSelection = activity && !activity?.authoring?.flowchart?.templateApplied;
   const onApplyTemplate = useCallback(
     (template: Template) => {
       if (!activity || !template) return;
