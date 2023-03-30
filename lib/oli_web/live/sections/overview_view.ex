@@ -178,6 +178,11 @@ defmodule OliWeb.Sections.OverviewView do
           </li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)} class={"btn btn-link"}>View all Grades</a></li>
           <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)} class={"btn btn-link"}>Download Gradebook as <code>.csv</code> file</a></li>
+
+          {#if @is_system_admin}
+            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Snapshots.SnapshotsView, @section.slug)} class={"btn btn-link"}>Manage Snapshot Records</a></li>
+          {/if}
+
           {#if !@section.open_and_free}
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)} class={"btn btn-link"}>Manage LMS Gradebook</a></li>
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)} class={"btn btn-link"}>View Grades that failed to sync</a></li>
