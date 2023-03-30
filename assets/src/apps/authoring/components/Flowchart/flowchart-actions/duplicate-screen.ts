@@ -27,22 +27,16 @@ import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/de
 import { savePage } from '../../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
-import { createAlwaysGoToPath, createEndOfActivityPath } from '../paths/path-factories';
-import { AuthoringFlowchartScreenData } from '../paths/path-types';
 import {
   hasDestinationPath,
-  removeDestinationPath,
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
 import { sortScreens } from '../screens/screen-utils';
+import { replaceIds } from '../template-utils';
 
-interface AddFlowchartScreenPayload {
-  fromScreenId?: number;
-  toScreenId?: number;
-  title?: string;
-  screenType?: string;
-  skipPathToNewScreen?: boolean;
+interface DuplicateFlowchartScreenPayload {
+  screenId: number;
 }
 
 /**
@@ -52,9 +46,9 @@ interface AddFlowchartScreenPayload {
  *      - Only a single group
  *      - No layers / parent screens
  */
-export const addFlowchartScreen = createAsyncThunk(
-  `${FlowchartSlice}/addFlowchartScreen`,
-  async (payload: AddFlowchartScreenPayload, { dispatch, getState }) => {
+export const duplicateFlowchartScreen = createAsyncThunk(
+  `${FlowchartSlice}/duplicateFlowchartScreen`,
+  async (payload: DuplicateFlowchartScreenPayload, { dispatch, getState }) => {
     try {
       const rootState = getState() as AuthoringRootState;
       const appMode = selectAppMode(rootState);
@@ -63,36 +57,39 @@ export const addFlowchartScreen = createAsyncThunk(
       }
       const projectSlug = selectProjectSlug(rootState);
       const activityTypes = selectActivityTypes(rootState);
-      const currentLesson = selectPageState(rootState);
       const sequence = selectSequence(rootState);
       const otherActivities = selectAllActivities(rootState);
       const otherActivityNames = otherActivities.map((a) => a.title || '');
 
       const group = selectAllGroups(rootState)[0];
 
-      const { title: requestedTitle = 'New Screen', screenType = 'blank_screen' } = payload;
+      const originalScreen = selectActivityById(rootState, payload.screenId);
 
-      const title = clearTitle(requestedTitle, otherActivityNames);
-
-      const activity: IActivityTemplate = {
-        ...createActivityTemplate(),
-        title,
-        width: currentLesson.custom.defaultScreenWidth,
-        height: currentLesson.custom.defaultScreenHeight,
-      };
-
-      const flowchartData: AuthoringFlowchartScreenData = {
-        paths: [],
-        screenType,
-        templateApplied: false,
-      };
-      activity.model.authoring.flowchart = flowchartData;
-
-      if (payload.toScreenId) {
-        flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));
-      } else {
-        flowchartData.paths.push(createEndOfActivityPath());
+      if (!originalScreen) {
+        console.warn('Could not find screen to duplicate');
+        return;
       }
+
+      const targetTitle = 'Copy of ' + (originalScreen.title || 'screen');
+      const title = clearTitle(targetTitle, otherActivityNames);
+
+      const activity: IActivityTemplate = createActivityTemplate();
+      //activity.model = cloneT(originalScreen);
+
+      const idMap: Record<string, string> = {};
+
+      const newParts = originalScreen.authoring?.parts?.map(replaceIds(idMap)) || [];
+      const newPartsLayout = originalScreen.content?.partsLayout?.map(replaceIds(idMap)) || [];
+
+      activity.model.partsLayout = newPartsLayout;
+      activity.model.authoring.parts = newParts;
+      activity.model.authoring.flowchart = {
+        paths: [],
+        screenType: originalScreen.authoring?.flowchart?.screenType,
+        templateApplied: originalScreen.authoring?.flowchart?.templateApplied,
+      };
+
+      activity.title = title;
 
       const createResults = await create(
         projectSlug,
@@ -115,21 +112,16 @@ export const addFlowchartScreen = createAsyncThunk(
       };
 
       // If a from-screen isn't specified, then tack it on to the very end of the lesson.
-      const fromScreenId = payload.fromScreenId || getLastScreenId();
+      const fromScreenId = getLastScreenId();
 
-      if (fromScreenId && !payload.skipPathToNewScreen) {
+      if (fromScreenId) {
         // In this case, we need to edit that other screen's paths so it goes here.
         const fromScreen = cloneT(selectActivityById(rootState, fromScreenId));
 
         if (fromScreen) {
-          if (payload.toScreenId) {
-            // If we're adding a screen in the middle of a path, we need to update the destination of the "to" screen
-            removeDestinationPath(fromScreen, payload.toScreenId);
-          }
-
           if (hasDestinationPath(fromScreen)) {
             // If the "from" doesn't have any other paths, we can use an always-path, but if it does, we default
-            // to an unknwon-path for the user to fill in later.
+            // to an unknown-path for the user to fill in later.
             setUnknownPathDestination(fromScreen, createResults.resourceId);
           } else {
             setGoToAlwaysPath(fromScreen, createResults.resourceId);

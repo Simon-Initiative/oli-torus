@@ -114,7 +114,12 @@ export const generateSliderRules = (
     disableAction,
   ];
 
-  const blankCondition: ICondition = createCondition(`stage.${question.id}.value`, '', 'equal', 2);
+  const blankCondition: ICondition = createCondition(
+    `stage.${question.id}.userModified`,
+    'false',
+    'equal',
+    4,
+  );
 
   return generateThreeTryWorkflow(
     correct,

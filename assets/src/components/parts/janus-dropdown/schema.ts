@@ -36,11 +36,24 @@ export const simpleUISchema = {
 export const simpleSchema: JSONSchema7Object = {
   label: {
     type: 'string',
-    title: 'Label',
+    title: 'Question Prompt',
     description: 'text label for the dropdown',
   },
+
+  prompt: {
+    title: 'Student action prompt',
+    type: 'string',
+    description: 'placeholder text for dropdown',
+  },
+
+  fontSize: {
+    title: 'Font Size',
+    type: 'number',
+    default: 12,
+  },
+
   optionLabels: {
-    title: 'Dropdown Options',
+    title: 'Option Labels',
     type: 'array',
     description: 'list of options',
     items: {

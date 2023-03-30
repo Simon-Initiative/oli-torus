@@ -51,11 +51,6 @@ export const schema: JSONSchema7Object = {
 };
 
 export const simpleSchema: JSONSchema7Object = {
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
   label: {
     title: 'Question Prompt',
     type: 'string',
@@ -66,6 +61,12 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     description: 'placeholder for the input field',
   },
+  fontSize: {
+    title: 'Font Size',
+    type: 'number',
+    default: 12,
+  },
+
   minimumLength: {
     title: 'Minimum Length',
     type: 'number',

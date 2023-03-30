@@ -18,8 +18,11 @@ import {
   IActivity,
   IDropdownPartLayout,
   IInputNumberPartLayout,
+  IInputTextPartLayout,
   IMCQPartLayout,
+  IMultiLineTextPartLayout,
   IPartLayout,
+  ISliderPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import { FlowchartEdge } from '../flowchart-utils';
 import { createAlwaysGoToPath, createUnknownPathWithDestination } from './path-factories';
@@ -57,7 +60,7 @@ const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
 export const isComponentPath = (path: AllPaths): path is ComponentPaths =>
   componentTypes.includes(path.type);
 
-export const isMultilineText = (screen: IPartLayout): screen is I =>
+export const isMultilineText = (screen: IPartLayout): screen is IMultiLineTextPartLayout =>
   screen.type === 'janus-multi-line-text';
 
 export const isInputText = (screen: IPartLayout): screen is IInputTextPartLayout =>
@@ -65,6 +68,9 @@ export const isInputText = (screen: IPartLayout): screen is IInputTextPartLayout
 
 export const isInputNumber = (screen: IPartLayout): screen is IInputNumberPartLayout =>
   screen.type === 'janus-input-number';
+
+export const isSlider = (screen: IPartLayout): screen is ISliderPartLayout =>
+  screen.type === 'janus-slider';
 
 export const isMCQ = (screen: IPartLayout): screen is IMCQPartLayout => screen.type === 'janus-mcq';
 

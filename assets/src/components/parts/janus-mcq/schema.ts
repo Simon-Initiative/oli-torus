@@ -131,6 +131,17 @@ export const simpleSchema: JSONSchema7Object = {
 };
 
 export const simpleUiSchema = {
+  'ui:order': [
+    'fontSize',
+    'layoutType',
+    'mcqItems',
+    'multipleSelection',
+    'correctAnswer',
+    'randomize',
+    'correctFeedback',
+    'incorrectFeedback',
+    'commonErrorFeedback',
+  ],
   correctAnswer: { 'ui:widget': 'MCQCorrectAnswerEditor' },
   mcqItems: { 'ui:widget': 'MCQOptionsEditor' },
   commonErrorFeedback: {
