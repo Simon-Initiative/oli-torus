@@ -14,7 +14,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   prop params, :map, required: true
   prop total_count, :number, required: true
-  prop students_table_model, :struct, required: true
+  prop table_model, :struct, required: true
 
   @default_params %{
     offset: 0,
@@ -56,7 +56,6 @@ defmodule OliWeb.Components.Delivery.Students do
        total_count: determine_total(enrollments),
        table_model: table_model,
        params: params,
-       students_table_model: table_model,
        section_slug: section.slug
      )}
   end
@@ -72,7 +71,7 @@ defmodule OliWeb.Components.Delivery.Students do
       </div>
 
       <PagedTable
-        table_model={@students_table_model}
+        table_model={@table_model}
         total_count={@total_count}
         offset={@params.offset}
         limit={@params.limit}
