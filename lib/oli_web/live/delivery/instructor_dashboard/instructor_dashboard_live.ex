@@ -1,7 +1,6 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   alias OliWeb.Components.Delivery.InstructorDashboard
-  alias OliWeb.Components.Delivery.CourseContentPanel
   alias alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
@@ -10,6 +9,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     {:ok, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(%{"active_tab" => "content"} = params, _, socket) do
+    socket =
+      socket
+      |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
+      |> assign_new(:containers, fn ->
+        {total_count, containers} =
+          Sections.get_units_and_modules_containers(socket.assigns.section.slug)
+
+        # TODO get real progress for each container
+        {total_count,
+         Enum.map(containers, fn container ->
+           Map.merge(container, %{progress: Enum.random([0.25, 0.45, 0.75, 1.0])})
+         end)}
+      end)
+
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -41,43 +59,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp render_tab(%{active_tab: :content} = assigns) do
-    page_link_url =
-      if assigns.preview_mode do
-        &Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :page_preview,
-          assigns.section_slug,
-          &1
-        )
-      else
-        &Routes.page_delivery_path(OliWeb.Endpoint, :page, assigns.section_slug, &1)
-      end
-
-    container_link_url =
-      if assigns.preview_mode do
-        &Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :container_preview,
-          assigns.section_slug,
-          &1
-        )
-      else
-        &Routes.page_delivery_path(OliWeb.Endpoint, :container, assigns.section_slug, &1)
-      end
-
-    assigns =
-      Map.merge(
-        assigns,
-        %{
-          hierarchy: Sections.build_hierarchy(assigns.section),
-          display_curriculum_item_numbering: assigns.section.display_curriculum_item_numbering,
-          page_link_url: page_link_url,
-          container_link_url: container_link_url
-        }
-      )
-
     ~H"""
-      <CourseContentPanel.course_content_panel {assigns} />
+      <.live_component
+      id="content_table"
+      module={OliWeb.Components.Delivery.Content}
+      params={@params}
+      section_slug={@section.slug}
+      containers={@containers}
+      />
     """
   end
 
