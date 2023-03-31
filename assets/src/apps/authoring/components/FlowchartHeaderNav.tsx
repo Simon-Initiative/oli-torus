@@ -30,7 +30,7 @@ const staticComponents: string[] = [
   'janus_text_flow',
   'janus_image',
   'janus_video',
-  'janus_image_carousel',
+  //'janus_image_carousel',
   'janus_popup',
   'janus_audio',
   'janus_capi_iframe',
@@ -91,6 +91,7 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
               frequentlyUsed={staticComponents}
               authoringContainer={props.authoringContainer}
               showMoreComponentsMenu={false}
+              showPasteComponentOption={false}
             />
 
             <AddComponentToolbar
