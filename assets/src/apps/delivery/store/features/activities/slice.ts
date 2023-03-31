@@ -26,9 +26,18 @@ interface IBasePartLayout {
   custom: Record<string, any>;
 }
 
+export enum AdvancedFeedbackAnswerType {
+  Equal = 0,
+  Between,
+  Greater,
+  GreatherEqual,
+  Less,
+  LessEqual,
+}
+
 export interface INumberAdvancedFeedback {
   answer?: {
-    range: boolean;
+    answerType: AdvancedFeedbackAnswerType;
     correctMax?: number;
     correctMin?: number;
     correctAnswer?: number;

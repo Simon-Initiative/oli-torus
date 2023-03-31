@@ -91,7 +91,7 @@ export const simpleSchema: JSONSchema7Object = {
     description: 'specifies whether multiple items can be selected',
   },
   randomize: {
-    title: 'Randomize',
+    title: 'Randomize Order',
     type: 'boolean',
     description: 'specifies whether to randomize the MCQ items',
     default: false,

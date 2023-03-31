@@ -1,7 +1,9 @@
 import {
+  AdvancedFeedbackAnswerType,
   IAction,
   IActivity,
   ICondition,
+  INumberAdvancedFeedback,
   INumericAnswer,
   ISliderPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
@@ -65,7 +67,10 @@ export const generateSliderRules = (
   };
 
   const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
-    conditions: createNumericCommonErrorCondition(path, question),
+    conditions: createNumericCommonErrorCondition(
+      question.id,
+      advancedFeedback[path.feedbackIndex],
+    ),
     feedback: advancedFeedback[path.feedbackIndex].feedback || DEFAULT_INCORRECT_FEEDBACK,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
@@ -78,7 +83,7 @@ export const generateSliderRules = (
         // so we only want to show the feedback, without moving to a new screen.
 
         commonErrorConditionsFeedback.push({
-          conditions: createNumericCondition(question.id, feedback.answer),
+          conditions: createNumericCommonErrorCondition(question.id, feedback),
           feedback: feedback.feedback,
         });
       }
@@ -176,14 +181,40 @@ export const createNumericIncorrectCondition = (question: ISliderPartLayout) => 
 };
 
 const createNumericCommonErrorCondition = (
-  path: NumericCommonErrorPath,
-  question: ISliderPartLayout,
+  questionId: string,
+  feedback: INumberAdvancedFeedback,
 ) => {
-  const feedback = (question.custom?.advancedFeedback || [])[path.feedbackIndex];
+  //const feedback = (question.custom?.advancedFeedback || [])[path.feedbackIndex];
   if (feedback && feedback.answer) {
-    return createNumericCondition(question.id, feedback.answer);
+    const answer = feedback.answer;
+    if (answer.answerType === AdvancedFeedbackAnswerType.Between) {
+      return [
+        createCondition(
+          `stage.${questionId}.value`,
+          `[${answer.correctMin},${answer.correctMax}]`,
+          'inRange',
+        ),
+      ];
+    }
+
+    const operators = [
+      'equal',
+      '',
+      'greaterThan',
+      'greaterThanInclusive',
+      'lessThan',
+      'lessThanInclusive',
+    ];
+
+    return [
+      createCondition(
+        `stage.${questionId}.value`,
+        String(answer.correctAnswer),
+        operators[answer.answerType],
+      ),
+    ];
   }
 
-  console.warn("Couldn't find correct answer for dropdown question", question);
+  console.warn("Couldn't find correct answer for dropdown question", questionId);
   return [createNeverCondition()];
 };
