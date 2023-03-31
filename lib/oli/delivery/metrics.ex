@@ -82,16 +82,16 @@ defmodule Oli.Delivery.Metrics do
       )
       |> where([cp, ra], cp.section_id == ^section_id and cp.container_id in ^container_ids)
       |> group_by([cp, ra], cp.container_id)
-      |> select([cp, ra], %{
-        container_id: cp.container_id,
-        progress:
-          fragment(
-            "SUM(?) / COUNT(*)",
-            ra.progress
-          )
+      |> select([cp, ra], {
+        cp.container_id,
+        fragment(
+          "SUM(?) / COUNT(*)",
+          ra.progress
+        )
       })
 
     Repo.all(query)
+    |> Enum.into(%{})
   end
 
   @doc """
@@ -122,18 +122,18 @@ defmodule Oli.Delivery.Metrics do
           ra.user_id not in ^user_ids_to_ignore
       )
       |> group_by([cp, ra, sr], [cp.container_id, sr.contained_page_count])
-      |> select([cp, ra, sr], %{
-        container_id: cp.container_id,
-        progress:
-          fragment(
-            "SUM(?) / (? * ?)",
-            ra.progress,
-            sr.contained_page_count,
-            ^user_count
-          )
+      |> select([cp, ra, sr], {
+        cp.container_id,
+        fragment(
+          "SUM(?) / (? * ?)",
+          ra.progress,
+          sr.contained_page_count,
+          ^user_count
+        )
       })
 
     Repo.all(query)
+    |> Enum.into(%{})
   end
 
   @doc """

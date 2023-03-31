@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Sections do
   """
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
@@ -325,6 +326,28 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns the count of enrollments for a given section.
+  By default it returns the students count, but we can get more roles by providing
+  a list of lt1_1p3_context_roles ids as a second argument
+  """
+  def count_enrollments(section_slug, role_ids \\ [4]) do
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: e_cr in EnrollmentContextRole,
+        on: e.id == e_cr.enrollment_id,
+        join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
+        on: e_cr.context_role_id == cr.id,
+        where: s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids,
+        select: count(e)
+      )
+
+    Repo.one(query)
   end
 
   @doc """

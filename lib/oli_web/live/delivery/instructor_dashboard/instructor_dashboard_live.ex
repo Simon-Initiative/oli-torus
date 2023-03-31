@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
+  alias Oli.Delivery.Metrics
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
@@ -20,10 +21,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         {total_count, containers} =
           Sections.get_units_and_modules_containers(socket.assigns.section.slug)
 
-        # TODO get real progress for each container
+        students_count = Sections.count_enrollments(socket.assigns.section.slug)
+
+        container_ids = Enum.map(containers, fn c -> c.id end)
+
+        student_progress =
+          Metrics.progress_across(socket.assigns.section.id, container_ids, [], students_count)
+
         {total_count,
          Enum.map(containers, fn container ->
-           Map.merge(container, %{progress: Enum.random([0.25, 0.45, 0.75, 1.0])})
+           Map.merge(container, %{progress: student_progress[container.id]})
          end)}
       end)
 

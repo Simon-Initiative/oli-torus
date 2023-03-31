@@ -115,7 +115,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
           [mod1_resource.id, mod2_resource.id, mod3_resource.id],
           this_user.id
         )
-        |> Enum.map(fn r -> r.progress end)
+        |> Enum.map(fn {_id, progress} -> progress end)
         |> Enum.sort()
 
       assert_in_delta 0.2, r1, 0.0001
@@ -129,7 +129,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
           [],
           1
         )
-        |> Enum.map(fn r -> r.progress end)
+        |> Enum.map(fn {_id, progress} -> progress end)
         |> Enum.sort()
 
       assert_in_delta 0.2, r1, 0.0001
@@ -138,7 +138,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
       [r1, r2] =
         Metrics.progress_across(section.id, [unit1_resource.id, unit2_resource.id], this_user.id)
-        |> Enum.map(fn r -> r.progress end)
+        |> Enum.map(fn {_id, progress} -> progress end)
         |> Enum.sort()
 
       assert_in_delta 0.25, r1, 0.0001
@@ -146,7 +146,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
       [r1, r2] =
         Metrics.progress_across(section.id, [unit1_resource.id, unit2_resource.id], [], 1)
-        |> Enum.map(fn r -> r.progress end)
+        |> Enum.map(fn {_id, progress} -> progress end)
         |> Enum.sort()
 
       assert_in_delta 0.25, r1, 0.0001
@@ -168,7 +168,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
           [],
           2
         )
-        |> Enum.map(fn r -> r.progress end)
+        |> Enum.map(fn {_id, progress} -> progress end)
         |> Enum.sort()
 
       assert_in_delta 0.1, r1, 0.0001
@@ -183,7 +183,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
           [user_id],
           1
         )
-        |> Enum.map(fn r -> r.progress end)
+        |> Enum.map(fn {_id, progress} -> progress end)
         |> Enum.sort()
 
       assert_in_delta 0.2, r1, 0.0001
