@@ -2,12 +2,13 @@
 import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 
 import {
+  selectAppMode,
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
@@ -42,12 +43,16 @@ import bankPropsSchema, {
 } from '../PropertyEditor/schemas/bankScreen';
 import lessonSchema, {
   lessonUiSchema,
+  simpleLessonSchema,
+  simpleLessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
 
 import screenSchema, {
   screenUiSchema,
+  simpleScreenSchema,
+  simpleScreenUiSchema,
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
@@ -66,6 +71,8 @@ const RightMenu: React.FC<any> = () => {
   const currentLesson = useSelector(selectPageState);
   const currentGroup = useSelector(selectCurrentGroup);
   const currentPartSelection = useSelector(selectCurrentSelection);
+  const appMode = useSelector(selectAppMode);
+  const flowchartMode = appMode === 'flowchart';
 
   // TODO: dynamically load schema from Part Component configuration
   const currentSequenceId = useSelector(selectCurrentSequenceId);
@@ -75,18 +82,28 @@ const RightMenu: React.FC<any> = () => {
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   const scrUiSchema = useMemo(
-    () => (currentSequence?.custom.isBank ? BankPropsUiSchema : screenUiSchema),
-    [currentSequence?.custom.isBank],
+    () =>
+      currentSequence?.custom.isBank
+        ? BankPropsUiSchema
+        : flowchartMode
+        ? simpleScreenUiSchema
+        : screenUiSchema,
+    [currentSequence?.custom.isBank, flowchartMode],
+  );
+
+  const scrSchema = useMemo(
+    () =>
+      currentSequence?.custom.isBank
+        ? bankPropsSchema
+        : flowchartMode
+        ? simpleScreenSchema
+        : screenSchema,
+    [currentSequence?.custom.isBank, flowchartMode],
   );
 
   const questionBankData = useMemo(
     () => transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>),
     [currentSequence],
-  );
-
-  const scrSchema = useMemo(
-    () => (currentSequence?.custom.isBank ? bankPropsSchema : screenSchema),
-    [currentSequence?.custom.isBank],
   );
 
   const scrData = useMemo(
@@ -227,8 +244,8 @@ const RightMenu: React.FC<any> = () => {
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
         <div className="lesson-tab overflow-hidden">
           <PropertyEditor
-            schema={lessonSchema as JSONSchema7}
-            uiSchema={lessonUiSchema}
+            schema={flowchartMode ? simpleLessonSchema : lessonSchema}
+            uiSchema={flowchartMode ? simpleLessonUiSchema : lessonUiSchema}
             value={lessonData}
             triggerOnChange={['CustomLogic']}
             onChangeHandler={lessonPropertyChangeHandler}

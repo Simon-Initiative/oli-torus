@@ -20,6 +20,65 @@ export interface ScreenModel {
   [key: string]: any; // TODO
 }
 
+export const simpleScreenSchema: JSONSchema7 = {
+  type: 'object',
+  properties: {
+    title: {
+      type: 'string',
+      title: 'Screen Title',
+    },
+    palette: {
+      type: 'object',
+      properties: {
+        backgroundColor: { type: 'string', title: 'Background Color' },
+        borderColor: { type: 'string', title: 'Border Color' },
+        borderRadius: { type: 'string', title: 'Border Radius' },
+        borderStyle: { type: 'string', title: 'Border Style' },
+        borderWidth: { type: 'string', title: 'Border Width' },
+      },
+    },
+
+    checkButton: {
+      type: 'object',
+      properties: {
+        showCheckBtn: {
+          title: 'Show Check Button',
+          type: 'boolean',
+          format: 'checkbox',
+        },
+        checkButtonLabel: {
+          title: 'Check Button Label',
+          type: 'string',
+        },
+      },
+    },
+    max: {
+      type: 'object',
+      title: 'Scoring',
+      properties: {
+        // maxAttempt: {
+        //   title: 'Max Attempts',
+        //   type: 'number',
+        //   default: 3,
+        // },
+        maxScore: {
+          title: 'Max Score',
+          type: 'number',
+          default: 4,
+        },
+      },
+    },
+
+    learningObjectives: {
+      title: 'Learning Objectives',
+      type: 'array',
+      items: {
+        type: 'number',
+      },
+    },
+  },
+};
+
 const screenSchema: JSONSchema7 = {
   type: 'object',
   properties: {
@@ -101,6 +160,42 @@ const screenSchema: JSONSchema7 = {
         type: 'number',
       },
     },
+  },
+};
+
+export const simpleScreenUiSchema: UiSchema = {
+  max: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    maxAttempt: {
+      classNames: 'col-6',
+    },
+    maxScore: {
+      classNames: 'col-6',
+    },
+  },
+  palette: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Palette',
+    backgroundColor: {
+      'ui:widget': ColorPickerWidget,
+    },
+    borderColor: {
+      'ui:widget': ColorPickerWidget,
+    },
+    borderStyle: { classNames: 'col-6' },
+    borderWidth: { classNames: 'col-6' },
+  },
+  checkButton: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    showCheckBtn: {
+      classNames: 'col-12',
+    },
+    checkButtonLabel: {
+      classNames: 'col-12',
+    },
+  },
+  learningObjectives: {
+    'ui:widget': LearningObjectivesEditor,
   },
 };
 
