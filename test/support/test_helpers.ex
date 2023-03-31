@@ -746,6 +746,223 @@ defmodule Oli.TestHelpers do
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
   end
 
+  def create_project_with_objectives(_conn) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Create objective 1
+    obj_resource_1 = insert(:resource)
+
+    obj_revision_1 =
+      insert(:revision, %{
+        resource: obj_resource_1,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        children: [],
+        content: %{},
+        deleted: false,
+        slug: "objective_1",
+        title: "Objective 1"
+      })
+
+    # Associate objective 1 to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: obj_resource_1.id})
+
+    # Create objective 2
+    obj_resource_2 = insert(:resource)
+
+    obj_revision_2 =
+      insert(:revision, %{
+        resource: obj_resource_2,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        children: [],
+        content: %{},
+        deleted: false,
+        slug: "objective_2",
+        title: "Objective 2"
+      })
+
+    # Associate objective 2 to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: obj_resource_2.id})
+
+    # Create page 1
+    page_resource_1 = insert(:resource)
+
+    page_revision_1 =
+      insert(:revision, %{
+        objectives: %{"attached" => [obj_resource_1.id]},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 1",
+        resource: page_resource_1,
+        slug: "page_1"
+      })
+
+    # Associate page 1 to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_1.id})
+
+    # Create page 2
+    page_resource_2 = insert(:resource)
+
+    page_revision_2 =
+      insert(:revision, %{
+        objectives: %{"attached" => [obj_resource_2.id]},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 2",
+        resource: page_resource_2,
+        slug: "page_2"
+      })
+
+    # Associate page 2 to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_2.id})
+
+    # module container
+    module_resource = insert(:resource)
+
+    module_revision =
+      insert(:revision, %{
+        resource: module_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_resource_2.id],
+        content: %{},
+        deleted: false,
+        slug: "module_container",
+        title: "Module Container"
+      })
+
+    # Associate module to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: module_resource.id})
+
+    # unit container
+    unit_resource = insert(:resource)
+
+    unit_revision =
+      insert(:revision, %{
+        resource: unit_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [module_resource.id],
+        content: %{},
+        deleted: false,
+        slug: "unit_container",
+        title: "Unit Container"
+      })
+
+    # Associate unit to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: unit_resource.id})
+
+    # root container
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [unit_resource.id, page_resource_1.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id
+      })
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    # Publish unit resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: unit_resource,
+      revision: unit_revision
+    })
+
+    # Publish module resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: module_resource,
+      revision: module_revision
+    })
+
+    # Publish page 1 resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: page_resource_1,
+      revision: page_revision_1
+    })
+
+    # Publish page 2 resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: page_resource_2,
+      revision: page_revision_2
+    })
+
+    # Publish objective 1 resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: obj_resource_1,
+      revision: obj_revision_1
+    })
+
+    # Publish objective 2 resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: obj_resource_2,
+      revision: obj_revision_2
+    })
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    Sections.rebuild_contained_pages(section)
+
+    [
+      project: project,
+      section: section,
+      publication: publication,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2,
+      module_revision: module_revision
+    ]
+  end
+
   def section_with_gating_conditions(_context) do
     author = insert(:author)
     project = insert(:project, authors: [author])
