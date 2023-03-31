@@ -11,6 +11,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
+  alias Oli.Delivery.Sections.{Section, SectionResource}
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -365,6 +366,26 @@ defmodule Oli.Authoring.Course do
     |> Repo.update()
   end
 
+  defp remove_survey_for_existing_project_sections(project_id, survey_id) do
+    # Set survey resource id to nil
+    project_sections_query =
+      Section
+      |> where([s], s.base_project_id == ^project_id)
+
+    Repo.update_all(project_sections_query,
+      set: [
+        required_survey_resource_id: nil
+      ]
+    )
+
+    # Remove section resources related to that survey
+    section_resource_surveys_query =
+      SectionResource
+      |> where([sr], sr.project_id == ^project_id and sr.resource_id == ^survey_id)
+
+    Repo.delete_all(section_resource_surveys_query)
+  end
+
   def create_project_survey(project_id, author_id) do
     case get_project_survey(project_id) do
       nil -> do_create_project_survey(project_id, author_id)
@@ -405,6 +426,7 @@ defmodule Oli.Authoring.Course do
     |> Revision.changeset(%{deleted: true})
     |> Repo.update()
 
+    remove_survey_for_existing_project_sections(project_id, project_survey.resource_id)
     update_project_required_survey_resource_id(project_id, nil)
   end
 end
