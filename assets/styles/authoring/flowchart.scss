@@ -331,5 +331,10 @@ $font-family-sans-serif: var(--font-sans);
       box-shadow: 0px 0px 40px 20px #0ff;
     }
   }
+
+  .configure-toolbar-button {
+    // We're going to expose all attributes in the right-hand panel for flowchart mode
+    display: none;
+  }
 }
 @import 'react-flow.scss';
