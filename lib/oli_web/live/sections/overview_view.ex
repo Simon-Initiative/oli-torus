@@ -59,7 +59,7 @@ defmodule OliWeb.Sections.OverviewView do
           |> Enum.count()
 
         show_required_section_config =
-          if Oli.Authoring.Course.get_project_survey(section.base_project_id) do
+          if section.required_survey_resource_id or Oli.Authoring.Course.get_project_survey(section.base_project_id) do
             true
           else
             false
