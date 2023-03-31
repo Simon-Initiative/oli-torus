@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from 'react-bootstrap';
 
 interface FeedbackItem {
   feedback: string;
@@ -60,6 +61,7 @@ export const AdvancedFeedbackNumberRange: React.FC<Props> = ({
           key={index}
           onBlur={onControlBlur}
           value={item}
+          onRemoveRule={() => onChange(value.filter((v, i) => i !== index))}
           onChange={(newItem) => onChange(value.map((v, i) => (i === index ? newItem : v)))}
         />
       ))}
@@ -75,7 +77,8 @@ const FeedbackEditor: React.FC<{
   value: FeedbackItem;
   onChange: (value: FeedbackItem) => void;
   onBlur: () => void;
-}> = ({ value, onBlur, onChange }) => {
+  onRemoveRule: () => void;
+}> = ({ value, onBlur, onChange, onRemoveRule }) => {
   const onFeedbackChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...value, feedback: e.target.value });
   };
@@ -121,9 +124,14 @@ const FeedbackEditor: React.FC<{
   };
 
   return (
-    <div>
+    <div className="advanced-number-feedback">
       <div>
-        <div>When value is:</div>
+        <div className="rule-top-label">
+          <span>When value is:</span>
+          <Button variant="link" onClick={onRemoveRule}>
+            Remove this rule
+          </Button>
+        </div>
 
         <select
           className="form-control"
@@ -132,6 +140,11 @@ const FeedbackEditor: React.FC<{
         >
           <option value="0">Equal to</option>
           <option value="1">Between two values</option>
+
+          {/* <option value="2">Greater Than or Equal</option>
+          <option value="3">Greater Than</option>
+          <option value="4">Less Than or Equal</option>
+          <option value="5">Less Than</option> */}
         </select>
 
         {/* <input type="checkbox" checked={value.answer.range} onChange={onRangeChange} /> */}
@@ -140,7 +153,6 @@ const FeedbackEditor: React.FC<{
         {value.answer.range && (
           <>
             <div className="col-6">
-              <label>Min</label>
               <input
                 className="form-control"
                 type="number"
@@ -150,7 +162,6 @@ const FeedbackEditor: React.FC<{
               />
             </div>
             <div className="col-6">
-              <label>Max</label>
               <input
                 className="form-control"
                 type="number"
