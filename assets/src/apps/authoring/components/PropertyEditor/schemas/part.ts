@@ -47,18 +47,7 @@ const partSchema: JSONSchema7 = {
 
 export const simplifiedPartSchema: JSONSchema7 = {
   type: 'object',
-  properties: {
-    Scoring: {
-      type: 'object',
-      title: 'Scoring',
-      properties: {
-        maxScore: {
-          title: 'Max Score',
-          type: 'number',
-        },
-      },
-    },
-  },
+  properties: {},
   required: [],
 };
 
