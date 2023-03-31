@@ -110,6 +110,48 @@ const lessonSchema: JSONSchema7 = {
   },
 };
 
+export const simpleLessonSchema: JSONSchema7 = {
+  type: 'object',
+  properties: {
+    Properties: {
+      type: 'object',
+      title: ' Properties',
+      properties: {
+        title: {
+          type: 'string',
+          title: 'Title',
+          readOnly: true,
+        },
+
+        FinishPanel: {
+          type: 'object',
+          properties: {
+            logoutMessage: {
+              title: 'Message',
+              type: 'string',
+              format: 'textarea',
+            },
+          },
+        },
+        enableHistory: {
+          title: 'Enable History',
+          type: 'boolean',
+        },
+      },
+    },
+  },
+};
+
+export const simpleLessonUiSchema: UiSchema = {
+  Properties: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    FinishPanel: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Finish Panel',
+    },
+  },
+};
+
 export const lessonUiSchema: UiSchema = {
   Properties: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
