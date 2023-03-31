@@ -81,7 +81,23 @@ export const numericAdvancedFeedback: SchemaDef = {
     items: {
       type: 'object',
       properties: {
-        answer: correctOrRange.schema,
+        answer: {
+          title: 'Answer',
+          type: 'object',
+          properties: {
+            answerType: {
+              title: 'Answer Type',
+              type: 'number',
+            },
+            correctMin: { title: 'Min allowed', type: 'number', default: 0 },
+            correctMax: { title: 'Max allowed', type: 'number', default: 0 },
+            correctAnswer: {
+              title: 'Correct value',
+              type: 'number',
+              default: 0,
+            },
+          },
+        },
         feedback: {
           type: 'string',
           default: '',

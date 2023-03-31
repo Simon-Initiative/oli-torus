@@ -4,10 +4,10 @@ import { Button } from 'react-bootstrap';
 interface FeedbackItem {
   feedback: string;
   answer: {
-    range: boolean;
-    correctAnswer?: number;
-    correctMin?: number;
-    correctMax?: number;
+    answerType: number;
+    correctAnswer?: number | string;
+    correctMin?: number | string;
+    correctMax?: number | string;
   };
 }
 
@@ -18,13 +18,7 @@ interface Props {
   onChange: (value: FeedbackItem[]) => void;
   onBlur: (id: string, value: FeedbackItem[]) => void;
 }
-export const AdvancedFeedbackNumberRange: React.FC<Props> = ({
-  label,
-  id,
-  value,
-  onChange,
-  onBlur,
-}) => {
+export const AdvancedFeedbackNumberRange: React.FC<Props> = ({ id, value, onChange, onBlur }) => {
   const onControlBlur = () => {
     onBlur(id, value);
   };
@@ -36,8 +30,10 @@ export const AdvancedFeedbackNumberRange: React.FC<Props> = ({
       {
         feedback: '',
         answer: {
-          range: false,
+          answerType: 0,
           correctAnswer: 0,
+          correctMax: 0,
+          correctMin: 0,
         },
       },
     ]);
@@ -83,12 +79,12 @@ const FeedbackEditor: React.FC<{
     onChange({ ...value, feedback: e.target.value });
   };
 
-  const onRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const onAnswerTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange({
       ...value,
       answer: {
         ...value.answer,
-        range: e.target.value === '1',
+        answerType: parseInt(e.target.value, 10),
       },
     });
   };
@@ -98,7 +94,7 @@ const FeedbackEditor: React.FC<{
       ...value,
       answer: {
         ...value.answer,
-        correctAnswer: parseInt(e.target.value, 10),
+        correctAnswer: e.target.value && parseInt(e.target.value, 10),
       },
     });
   };
@@ -108,7 +104,7 @@ const FeedbackEditor: React.FC<{
       ...value,
       answer: {
         ...value.answer,
-        correctMin: parseInt(e.target.value, 10),
+        correctMin: e.target.value && parseInt(e.target.value, 10),
       },
     });
   };
@@ -118,10 +114,12 @@ const FeedbackEditor: React.FC<{
       ...value,
       answer: {
         ...value.answer,
-        correctMax: parseInt(e.target.value, 10),
+        correctMax: e.target.value && parseInt(e.target.value, 10),
       },
     });
   };
+
+  const isRange = value.answer.answerType === 1;
 
   return (
     <div className="advanced-number-feedback">
@@ -135,22 +133,19 @@ const FeedbackEditor: React.FC<{
 
         <select
           className="form-control"
-          value={value.answer.range ? '1' : '0'}
-          onChange={onRangeChange}
+          value={value.answer.answerType || 0}
+          onChange={onAnswerTypeChange}
         >
           <option value="0">Equal to</option>
           <option value="1">Between two values</option>
-
-          {/* <option value="2">Greater Than or Equal</option>
-          <option value="3">Greater Than</option>
-          <option value="4">Less Than or Equal</option>
-          <option value="5">Less Than</option> */}
+          <option value="2">Greater Than</option>
+          <option value="3">Greather Than or Equal</option>
+          <option value="4">Less Than</option>
+          <option value="5">Less Than or Equal</option>
         </select>
-
-        {/* <input type="checkbox" checked={value.answer.range} onChange={onRangeChange} /> */}
       </div>
       <div className="row">
-        {value.answer.range && (
+        {isRange && (
           <>
             <div className="col-6">
               <input
@@ -173,7 +168,7 @@ const FeedbackEditor: React.FC<{
           </>
         )}
 
-        {value.answer.range || (
+        {isRange || (
           <>
             <div className="col-6">
               <input

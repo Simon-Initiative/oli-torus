@@ -1,8 +1,10 @@
 import {
+  AdvancedFeedbackAnswerType,
   IAction,
   IActivity,
   ICondition,
   IInputNumberPartLayout,
+  INumberAdvancedFeedback,
   INumericAnswer,
 } from '../../../../delivery/store/features/activities/slice';
 import {
@@ -65,7 +67,10 @@ export const generteNumberInputRules = (
   };
 
   const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
-    conditions: createNumericCommonErrorCondition(path, question),
+    conditions: createNumericCommonErrorCondition(
+      question.id,
+      advancedFeedback[path.feedbackIndex],
+    ),
     feedback: advancedFeedback[path.feedbackIndex].feedback || DEFAULT_INCORRECT_FEEDBACK,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
@@ -78,7 +83,7 @@ export const generteNumberInputRules = (
         // so we only want to show the feedback, without moving to a new screen.
 
         commonErrorConditionsFeedback.push({
-          conditions: createNumericCondition(question.id, feedback.answer),
+          conditions: createNumericCommonErrorCondition(question.id, feedback),
           feedback: feedback.feedback,
         });
       }
@@ -132,7 +137,7 @@ export const generteNumberInputRules = (
 };
 
 // These answers are specified as either a single correct answer or a range, so 2 options for conditions.
-const createNumericCondition = (
+const createNumericRangeCondition = (
   questionId: string,
   answer: INumericAnswer,
   invert = false,
@@ -162,7 +167,7 @@ export const createNumericCorrectCondition = (question: IInputNumberPartLayout):
     return [];
   }
 
-  return createNumericCondition(question.id, answer);
+  return createNumericRangeCondition(question.id, answer);
 };
 
 export const createNumericIncorrectCondition = (question: IInputNumberPartLayout) => {
@@ -172,18 +177,44 @@ export const createNumericIncorrectCondition = (question: IInputNumberPartLayout
     return [];
   }
 
-  return createNumericCondition(question.id, answer, true);
+  return createNumericRangeCondition(question.id, answer, true);
 };
 
 const createNumericCommonErrorCondition = (
-  path: NumericCommonErrorPath,
-  question: IInputNumberPartLayout,
+  questionId: string,
+  feedback: INumberAdvancedFeedback,
 ) => {
-  const feedback = (question.custom?.advancedFeedback || [])[path.feedbackIndex];
+  //const feedback = (question.custom?.advancedFeedback || [])[path.feedbackIndex];
   if (feedback && feedback.answer) {
-    return createNumericCondition(question.id, feedback.answer);
+    const answer = feedback.answer;
+    if (answer.answerType === AdvancedFeedbackAnswerType.Between) {
+      return [
+        createCondition(
+          `stage.${questionId}.value`,
+          `[${answer.correctMin},${answer.correctMax}]`,
+          'inRange',
+        ),
+      ];
+    }
+
+    const operators = [
+      'equal',
+      '',
+      'greaterThan',
+      'greaterThanInclusive',
+      'lessThan',
+      'lessThanInclusive',
+    ];
+
+    return [
+      createCondition(
+        `stage.${questionId}.value`,
+        String(answer.correctAnswer),
+        operators[answer.answerType],
+      ),
+    ];
   }
 
-  console.warn("Couldn't find correct answer for dropdown question", question);
+  console.warn("Couldn't find correct answer for dropdown question", questionId);
   return [createNeverCondition()];
 };
