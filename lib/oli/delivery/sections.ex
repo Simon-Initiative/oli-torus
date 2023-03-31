@@ -2359,19 +2359,44 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_units_and_modules_from_a_section(section_slug) do
-    Repo.all(
-      from([sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
-        join: cp in ContainedPage,
-        on: cp.container_id == rev.resource_id,
-        where: rev.deleted == false and s.slug == ^section_slug,
-        distinct: cp.container_id,
-        order_by: [asc: rev.title],
-        select: %{
-          container_id: cp.container_id,
-          title: rev.title
-        }
+    all =
+      Repo.all(
+        from(
+          [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+          join: cp in ContainedPage,
+          on: cp.container_id == rev.resource_id,
+          where: rev.deleted == false and s.slug == ^section_slug and rev.resource_type_id == 2,
+          group_by: [cp.container_id, rev.title, sr.numbering_level],
+          order_by: [asc: rev.title],
+          select: %{
+            container_id: cp.container_id,
+            title: rev.title,
+            level: sr.numbering_level
+          }
+        )
       )
-    )
+
+    Enum.map(all, fn elem ->
+      if elem.level == 2 do
+        Map.put(
+          elem,
+          :title,
+          Repo.one(
+            from(
+              [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(
+                section_slug
+              ),
+              where:
+                rev.deleted == false and s.slug == ^section_slug and
+                  ^elem.container_id in rev.children,
+              select: rev.title
+            )
+          ) <> " / " <> elem.title
+        )
+      else
+        elem
+      end
+    end) |> Enum.sort_by(&(&1.title))
   end
 
   defp get_pages_with_objectives(section_slug, "all") do
