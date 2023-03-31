@@ -474,6 +474,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.configure && (
             <button
               title="Edit"
+              className="configure-toolbar-button"
               onClick={() => handleToolbarPartConfigure(selectedPartAndCapabilities.id, true)}
             >
               <i className="fas fa-edit"></i>
