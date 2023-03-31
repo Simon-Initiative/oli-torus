@@ -39,14 +39,6 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     description: 'text label appended to the input',
   },
-  minValue: {
-    title: 'Lowest acceptable answser',
-    type: 'number',
-  },
-  maxValue: {
-    title: 'Maximum acceptable answser',
-    type: 'number',
-  },
   answer: correctOrRange.schema,
   correctFeedback: {
     title: 'Correct Feedback',
