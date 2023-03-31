@@ -32,10 +32,6 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'Show visual labels',
     type: 'boolean',
   },
-  showTicks: {
-    title: 'Show ticks',
-    type: 'boolean',
-  },
 
   minimum: {
     title: 'Min',
