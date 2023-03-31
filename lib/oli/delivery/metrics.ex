@@ -137,6 +137,36 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Calculate the progress for all students in a collection of pages.
+
+  The last two parameters gives flexibility into excluding specific users
+  from the calculation. This exists primarily to exclude instructors.
+  `user_ids_to_ignore` can be an empty list, but `user_count` should always be the total
+  number of enrolled students (excluding the count of those in the exlusion parameter).
+  """
+  def progress_across_for_pages(section_id, pages_ids, user_ids_to_ignore, user_count) do
+    user_count = max(user_count, 1)
+
+    query =
+      from ra in ResourceAccess,
+        where:
+          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+            ra.user_id not in ^user_ids_to_ignore,
+        group_by: ra.resource_id,
+        select: {
+          ra.resource_id,
+          fragment(
+            "SUM(?) / (?)",
+            ra.progress,
+            ^user_count
+          )
+        }
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Updates page progress to be 100% complete.
   """
   def mark_progress_completed(%ResourceAccess{} = ra) do

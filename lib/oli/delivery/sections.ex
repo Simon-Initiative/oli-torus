@@ -2068,7 +2068,7 @@ defmodule Oli.Delivery.Sections do
         on: r.resource_id == pr.resource_id and pr.revision_id == r.id,
         where: s.slug == ^section_slug and r.resource_type_id == 1,
         select: %{
-          page_id: r.resource_id,
+          id: r.resource_id,
           title: r.title
         }
 

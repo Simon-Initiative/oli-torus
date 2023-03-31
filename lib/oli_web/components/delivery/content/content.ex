@@ -25,26 +25,22 @@ defmodule OliWeb.Components.Delivery.Content do
     container_filter_by: :modules
   }
 
-  def update(%{containers: {0, pages}} = assigns, socket) do
-    # TODO handle pages case
-    IO.inspect(assigns)
-    {:ok, socket}
-  end
+  def update(%{containers: {container_count, containers}} = assigns, socket) do
+    params =
+      if container_count == 0 do
+        decode_params(assigns.params)
+        |> Map.merge(%{container_filter_by: :pages})
+      else
+        decode_params(assigns.params)
+      end
 
-  def update(
-        %{params: params, containers: {_, containers}, section_slug: section_slug} = _assigns,
-        socket
-      ) do
-    params = decode_params(params)
+    {total_count, column_name, rows} = apply_filters(containers, params)
 
-    {total_count, container_column_name, container_rows} = apply_filters(containers, params)
-
-    {:ok, table_model} =
-      ContentTableModel.new(container_rows, container_column_name, section_slug)
+    {:ok, table_model} = ContentTableModel.new(rows, column_name, assigns.section_slug)
 
     table_model =
       Map.merge(table_model, %{
-        rows: container_rows,
+        rows: rows,
         sort_order: params.sort_order,
         sort_by_spec:
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
@@ -55,8 +51,7 @@ defmodule OliWeb.Components.Delivery.Content do
        total_count: total_count,
        table_model: table_model,
        params: params,
-       students_table_model: table_model,
-       section_slug: section_slug,
+       section_slug: assigns.section_slug,
        options_for_container_select: options_for_container_select(containers)
      )}
   end
@@ -172,7 +167,7 @@ defmodule OliWeb.Components.Delivery.Content do
         Params.get_atom_param(
           params,
           "container_filter_by",
-          [:modules, :units],
+          [:modules, :units, :pages],
           @default_params.container_filter_by
         )
     }
@@ -218,6 +213,14 @@ defmodule OliWeb.Components.Delivery.Content do
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+
+      :pages ->
+        pages =
+          containers
+          |> maybe_filter_by_text(params.text_search)
+          |> sort_by(params.sort_by, params.sort_order)
+
+        {length(pages), "PAGES", pages |> Enum.drop(params.offset) |> Enum.take(params.limit)}
     end
   end
 
@@ -244,18 +247,19 @@ defmodule OliWeb.Components.Delivery.Content do
     end)
   end
 
-  # TODO refactor this!!
   defp options_for_container_select(containers) do
     Enum.reduce(containers, %{units: false, modules: false}, fn container, acc ->
-      case container.numbering_level do
+      case container[:numbering_level] do
         1 -> %{acc | units: true}
         2 -> %{acc | modules: true}
+        nil -> acc
       end
     end)
     |> case do
       %{units: true, modules: true} -> [Modules: :modules, Units: :units]
       %{units: true, modules: false} -> [Units: :units]
       %{units: false, modules: true} -> [Modules: :modules]
+      %{units: false, modules: false} -> [Pages: :pages]
     end
   end
 end

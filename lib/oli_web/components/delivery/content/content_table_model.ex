@@ -43,13 +43,19 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
   def render_name_column(
         assigns,
         container,
-        _column_spec
+        column_spec
       ) do
+    url_params =
+      case column_spec.label do
+        "PAGES" -> %{page_id: container.id}
+        _ -> %{container_id: container.id}
+      end
+
     assigns =
       Map.merge(assigns, %{
         progress: parse_progress(container.progress),
         title: container.title,
-        container_id: container.id,
+        url_params: url_params,
         section_slug: assigns.model.data.section_slug
       })
 
@@ -61,7 +67,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
         patch={Routes.live_path(OliWeb.Endpoint,
         OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
         @section_slug,
-        :students, %{container_id: @container_id})}
+        :students, @url_params)}
       >
         <%= @title %>
       </.link>
