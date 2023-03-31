@@ -387,5 +387,52 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "Preview Course as Instructor"
              )
     end
+
+    test "can enable required surveys", %{conn: conn, instructor: instructor, section: section} do
+      enroll_user_to_section(instructor, section, :context_instructor)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      refute has_element?(view, "input[name=\"survey\"][checked]")
+
+      element(view, "form[phx-change=\"set-required-survey\"]")
+      |> render_change(%{
+        survey: "on"
+      })
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      assert update_section.required_survey_resource_id != nil
+      assert has_element?(view, "input[name=\"survey\"][checked]")
+    end
+
+    test "can disable required surveys", %{conn: conn, instructor: instructor, section: section} do
+      enroll_user_to_section(instructor, section, :context_instructor)
+      Oli.Delivery.Sections.create_required_survey(section.id)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert has_element?(view, "input[name=\"survey\"][checked]")
+
+      element(view, "form[phx-change=\"set-required-survey\"]")
+      |> render_change(%{})
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      assert update_section.required_survey_resource_id == nil
+      refute has_element?(view, "input[name=\"survey\"][checked]")
+    end
+
+    test "can't enable surveys if the project doesn't allow it", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      enroll_user_to_section(instructor, section, :context_instructor)
+      Oli.Authoring.Course.delete_project_survey(section.base_project_id)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      refute has_element?(view, "form[phx-change=\"set-required-survey\"]")
+      assert has_element?(view, "p", "You are not allowed to have student surveys in this resource.")
+    end
   end
 end

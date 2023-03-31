@@ -2,10 +2,12 @@ defmodule OliWeb.Projects.RequiredSurvey do
   use Phoenix.LiveComponent
 
   alias Oli.Authoring.Course
+  alias Oli.Delivery.Sections
 
   attr :project_id, :integer, required: true
   attr :author_id, :integer, required: true
   attr :enabled, :boolean, required: true
+  attr :is_section, :boolean, default: false
 
   def render(assigns) do
     ~H"""
@@ -24,11 +26,24 @@ defmodule OliWeb.Projects.RequiredSurvey do
     """
   end
 
+  def handle_event("set-required-survey", _params, %{assigns: %{is_section: true}} = socket) do
+    socket =
+      if socket.assigns.enabled do
+        Sections.delete_required_survey(socket.assigns.project_id)
+        assign(socket, enabled: false)
+      else
+        Sections.create_required_survey(socket.assigns.project_id)
+        assign(socket, enabled: true)
+      end
+
+    {:noreply, socket}
+  end
+
   def handle_event("set-required-survey", params, socket) do
     %{project_id: project_id, author_id: author_id} = socket.assigns
     allow_survey = Map.has_key?(params, "survey")
 
-    if (allow_survey) do
+    if allow_survey do
       Course.create_project_survey(project_id, author_id)
     else
       Course.delete_project_survey(project_id)

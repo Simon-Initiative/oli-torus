@@ -580,7 +580,19 @@ defmodule Oli.TestHelpers do
 
   def section_with_assessment(_context, deployment \\ nil) do
     author = insert(:author)
-    project = insert(:project, authors: [author])
+
+    # Project survey
+    survey_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("survey"),
+        author_id: author.id,
+        title: "Course Survey"
+      )
+
+    project = insert(:project, required_survey_resource_id: survey_revision.resource.id, authors: [author])
+
+    # Associate survey to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: survey_revision.resource.id})
 
     # Graded page revision
     page_revision =

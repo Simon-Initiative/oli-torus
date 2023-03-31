@@ -340,7 +340,7 @@ defmodule Oli.Authoring.Course do
     }
   end
 
-  defp get_project_survey(project_id) do
+  def get_project_survey(project_id) do
     ProjectResource
     |> join(:inner, [pr], rev in Revision, on: pr.resource_id == rev.resource_id)
     |> join(:left, [_, rev], rev2 in Revision,
