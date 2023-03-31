@@ -6,7 +6,7 @@ defmodule OliWeb.Discussion.TableModel do
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(posts, target) do
+  def new(posts, section_slug, target) do
     column_specs = [
       %ColumnSpec{
         name: :id,
@@ -22,7 +22,7 @@ defmodule OliWeb.Discussion.TableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
-      data: %{target: target}
+      data: %{target: target, section_slug: section_slug}
     )
   end
 

@@ -33,9 +33,6 @@ defmodule OliWeb.Common.PagedTable do
           {#if @render_top_info}
             <div class="px-5 py-2">Showing all results ({@total_count} total)</div>
           {/if}
-          {#if @render_top_info}
-            <div class="px-5 py-2">Showing all results ({@total_count} total)</div>
-          {/if}
           {render_table(assigns)}
         {#else}
           <p class="px-5 py-2">None exist</p>

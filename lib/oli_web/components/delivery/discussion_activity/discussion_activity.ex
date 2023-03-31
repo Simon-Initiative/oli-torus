@@ -207,7 +207,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
         )
 
       _ ->
-        {:ok, discussion_table_model} = DiscussionTableModel.new([], socket.assigns.myself)
+        {:ok, discussion_table_model} = DiscussionTableModel.new([], section_slug, socket.assigns.myself)
 
         {count, rows} =
           Collaboration.list_posts_in_section_for_instructor(section_slug, filter,
