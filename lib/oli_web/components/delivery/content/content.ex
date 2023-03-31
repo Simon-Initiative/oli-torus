@@ -160,7 +160,12 @@ defmodule OliWeb.Components.Delivery.Content do
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
       # we currently only support sorting by container_name since the other metrics have not yet been created
       sort_by:
-        Params.get_atom_param(params, "sort_by", [:container_name], @default_params.sort_by),
+        Params.get_atom_param(
+          params,
+          "sort_by",
+          [:container_name, :student_completion],
+          @default_params.sort_by
+        ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       container_filter_by:
         Params.get_atom_param(
@@ -199,7 +204,7 @@ defmodule OliWeb.Components.Delivery.Content do
           containers
           |> Enum.filter(fn container -> container.numbering_level == 2 end)
           |> maybe_filter_by_text(params.text_search)
-          |> Enum.sort_by(fn container -> container.title end, params.sort_order)
+          |> sort_by(params.sort_by, params.sort_order)
 
         {length(modules), "MODULES",
          modules |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -209,9 +214,22 @@ defmodule OliWeb.Components.Delivery.Content do
           containers
           |> Enum.filter(fn container -> container.numbering_level == 1 end)
           |> maybe_filter_by_text(params.text_search)
-          |> Enum.sort_by(fn container -> container.title end, params.sort_order)
+          |> sort_by(params.sort_by, params.sort_order)
 
         {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    end
+  end
+
+  defp sort_by(containers, sort_by, sort_order) do
+    case sort_by do
+      :modules ->
+        Enum.sort_by(containers, fn container -> container.title end, sort_order)
+
+      :student_completion ->
+        Enum.sort_by(containers, fn container -> container.progress end, sort_order)
+
+      _ ->
+        Enum.sort_by(containers, fn container -> container.title end, sort_order)
     end
   end
 
