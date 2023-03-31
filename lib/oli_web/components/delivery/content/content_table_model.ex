@@ -1,10 +1,9 @@
 defmodule OliWeb.Components.Delivery.ContentTableModel do
   use Phoenix.Component
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  # TODO link container name to students tab filtered by container
-  # alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Router.Helpers, as: Routes
 
-  def new(containers, container_column_name) do
+  def new(containers, container_column_name, section_slug) do
     column_specs = [
       %ColumnSpec{
         name: :container_name,
@@ -37,29 +36,35 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
-      data: %{}
+      data: %{section_slug: section_slug}
     )
   end
 
   def render_name_column(
         assigns,
-        %{
-          progress: progress
-        } = container,
-        _
+        container,
+        _column_spec
       ) do
-    assigns = Map.merge(assigns, %{progress: parse_progress(progress), title: container.title})
-    # TODO link container name to students tab filtered by container
+    assigns =
+      Map.merge(assigns, %{
+        progress: parse_progress(container.progress),
+        title: container.title,
+        container_id: container.id,
+        section_slug: assigns.model.data.section_slug
+      })
 
     ~H"""
     <div class="flex items-center ml-8">
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
-      <a
+      <.link
         class="ml-6 text-gray-600 underline hover:text-gray-700"
-        href="#"
+        patch={Routes.live_path(OliWeb.Endpoint,
+        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+        @section_slug,
+        :students, %{container_id: @container_id})}
       >
         <%= @title %>
-      </a>
+      </.link>
     </div>
     """
   end

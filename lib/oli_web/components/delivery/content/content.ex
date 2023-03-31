@@ -39,7 +39,8 @@ defmodule OliWeb.Components.Delivery.Content do
 
     {total_count, container_column_name, container_rows} = apply_filters(containers, params)
 
-    {:ok, table_model} = ContentTableModel.new(container_rows, container_column_name)
+    {:ok, table_model} =
+      ContentTableModel.new(container_rows, container_column_name, section_slug)
 
     table_model =
       Map.merge(table_model, %{

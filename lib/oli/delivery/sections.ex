@@ -2021,7 +2021,7 @@ defmodule Oli.Delivery.Sections do
         where:
           s.slug == ^section_slug and sr.numbering_level in [1, 2] and r.resource_type_id == 2,
         select: %{
-          container_id: r.resource_id,
+          id: r.resource_id,
           title: r.title,
           numbering_level: sr.numbering_level
         }
