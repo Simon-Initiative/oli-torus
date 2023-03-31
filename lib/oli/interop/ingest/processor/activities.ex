@@ -54,6 +54,8 @@ defmodule Oli.Interop.Ingest.Processor.Activities do
         |> Enum.reduce(%{}, fn k, m ->
           mapped =
             Map.get(activity, "objectives")[k]
+            |> MapSet.new()
+            |> MapSet.to_list()
             |> Enum.map(fn id ->
               case Map.get(objective_map, id) do
                 nil ->
@@ -74,7 +76,9 @@ defmodule Oli.Interop.Ingest.Processor.Activities do
         |> Enum.map(fn %{"id" => id} -> id end)
         |> Enum.reduce(%{}, fn e, m ->
           objectives =
-            Enum.map(list, fn id ->
+            MapSet.new(list)
+            |> MapSet.to_list()
+            |> Enum.map(fn id ->
               case Map.get(objective_map, id) do
                 nil ->
                   IO.inspect("Missing objective #{id}")
