@@ -1,0 +1,18 @@
+.part-property-editor {
+  .advanced-number-feedback {
+    select.form-control {
+      margin-bottom: 2px;
+    }
+    .rule-top-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      flex-direction: row;
+      align-items: center;
+
+      button.btn {
+        font-size: 12px;
+      }
+    }
+  } // end .advanced-number-feedback
+}
