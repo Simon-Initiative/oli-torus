@@ -104,8 +104,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           :learning_objectives,
            update_params(socket.assigns.params, %{filter_by: filter, offset: 0})
          )
      )}
@@ -117,8 +118,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           :learning_objectives,
            update_params(socket.assigns.params, %{text_search: objective_name})
          )
      )}
@@ -130,8 +132,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           :learning_objectives,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
      )}
@@ -143,8 +146,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           :learning_objectives,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}

@@ -70,7 +70,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.AssignmentsTabTest do
              )
 
       # Assignments tab content gets rendered
-      assert String.contains?(html, "Not available yet")
+      assert has_element?(view, ~s{p}, "Not available yet")
     end
   end
 end

@@ -20,8 +20,6 @@ defmodule OliWeb.Common.PagedTable do
     ~F"""
       <div class="overflow-x-scroll">
         {#if @filter != "" and @render_top_info}
-      <div class="overflow-x-scroll">
-        {#if @filter != "" and @render_top_info}
           <strong>Results filtered on &quot;{@filter}&quot;</strong>
         {/if}
 
