@@ -31,7 +31,14 @@ const AddComponentToolbar: React.FC<{
   frequentlyUsed?: string[];
   showMoreComponentsMenu?: boolean;
   disabled?: boolean;
-}> = ({ authoringContainer, frequentlyUsed, showMoreComponentsMenu, disabled }) => {
+  showPasteComponentOption?: boolean;
+}> = ({
+  authoringContainer,
+  frequentlyUsed,
+  showMoreComponentsMenu,
+  disabled,
+  showPasteComponentOption,
+}) => {
   const dispatch = useDispatch();
   const paths = useSelector(selectPaths);
   const imgsPath = paths?.images || '';
@@ -143,7 +150,7 @@ const AddComponentToolbar: React.FC<{
           ))}
       </div>
       <div className="btn-group pl-3 ml-3 border-left align-items-center" role="group">
-        {copiedPart ? (
+        {showPasteComponentOption && copiedPart ? (
           <OverlayTrigger
             placement="bottom"
             delay={{ show: 150, hide: 150 }}
@@ -224,6 +231,7 @@ AddComponentToolbar.defaultProps = {
   frequentlyUsed: defaultFrequentlyUsed,
   showMoreComponentsMenu: true,
   disabled: false,
+  showPasteComponentOption: true,
 };
 
 export default AddComponentToolbar;
