@@ -56,11 +56,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   def render(assigns) do
     ~F"""
     <div class="px-10 pb-10">
-      <div class="flex flex-col sm:flex-row sm:items-center px-6 py-4 border instructor_dashboard_table">
-        <h4 class="pl-9 torus-h4 mr-auto">Learning Objectives</h4>
+      <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
+        <h4 class="pl-9 !py-2 torus-h4 mr-auto">Learning Objectives</h4>
         <div class="flex items-end gap-2">
           <form phx-change="filter_by" phx-target={@myself}>
-            <label class="cursor-pointer inline-flex flex-col gap-2">
+            <label class="cursor-pointer inline-flex flex-col gap-1">
               <small class="torus-small uppercase">Filter by</small>
               <select class="torus-select pr-32" name="filter">
                 <option selected={@params.filter_by == "all"} value={"all"}>All</option>
@@ -78,17 +78,19 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       </div>
 
       {#if @total_count > 0}
-      <PagedTable
-        table_model={@table_model}
-        page_change={JS.push("paged_table_page_change", target: @myself)}
-        sort={JS.push("paged_table_sort", target: @myself)}
-        total_count={@total_count}
-        offset={@params.offset}
-        limit={@params.limit}
-        additional_table_class="instructor_dashboard_table"
-        show_bottom_paging={false}
-        render_top_info={false}
-      />
+        <div id="objectives-table">
+          <PagedTable
+            table_model={@table_model}
+            page_change={JS.push("paged_table_page_change", target: @myself)}
+            sort={JS.push("paged_table_sort", target: @myself)}
+            total_count={@total_count}
+            offset={@params.offset}
+            limit={@params.limit}
+            additional_table_class="instructor_dashboard_table"
+            show_bottom_paging={false}
+            render_top_info={false}
+          />
+        </div>
       {#else}
         <h6 class="text-center mt-4">There are no objectives to show</h6>
       {/if}
