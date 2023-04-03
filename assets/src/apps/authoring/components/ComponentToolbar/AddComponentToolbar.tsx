@@ -51,7 +51,7 @@ const AddComponentToolbar: React.FC<{
   const currentSequence = useSelector(selectSequence);
   const copiedPart = useSelector(selectCopiedPart);
 
-  console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
+  // console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {

@@ -1,3 +1,4 @@
+import guid from '../../../../../utils/guid';
 import { IActivity, IAdaptiveRule } from '../../../../delivery/store/features/activities/slice';
 import {
   SequenceEntry,
@@ -7,7 +8,7 @@ import { getScreenQuestionType } from '../paths/path-options';
 import { isAlwaysPath } from '../paths/path-utils';
 import { generateCATAChoiceRules } from './create-cata-choice-rules';
 import { generateDropdownRules } from './create-dropdown-rules';
-import { generateAlwaysGoTo } from './create-generic-rule';
+import { defaultNextScreenRule, generateAlwaysGoTo } from './create-generic-rule';
 import { generateMultilineTextInputRules } from './create-multiline-text-rules';
 import { generateMultipleChoiceRules } from './create-multiple-choice-rules';
 import { generteNumberInputRules as generateNumberInputRules } from './create-number-input-rules';
@@ -64,11 +65,17 @@ const createBlankScreenRules = (
   const notBlank = screen.authoring?.flowchart?.screenType !== 'blank';
   notBlank && console.warn('Using generic blank screen rules for screen', screen);
   const paths = screen.authoring?.flowchart?.paths || [];
+  const rules = paths
+    .filter(isAlwaysPath)
+    .map((path) => generateAlwaysGoTo(path, sequence))
+    .flat();
+
+  if (rules.length === 0) {
+    rules.push(defaultNextScreenRule());
+  }
+
   return {
-    rules: paths
-      .filter(isAlwaysPath)
-      .map((path) => generateAlwaysGoTo(path, sequence))
-      .flat(),
+    rules: rules,
     variables: [],
   };
 };

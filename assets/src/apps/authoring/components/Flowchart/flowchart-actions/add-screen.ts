@@ -81,6 +81,8 @@ export const addFlowchartScreen = createAsyncThunk(
         height: currentLesson.custom.defaultScreenHeight,
       };
 
+      activity.model.custom.maxAttempt = 3;
+
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
         screenType,
