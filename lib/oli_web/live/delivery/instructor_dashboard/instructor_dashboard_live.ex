@@ -31,10 +31,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <InstructorDashboard.main_layout {assigns}>
       <InstructorDashboard.tabs active_tab={@active_tab} section_slug={@section_slug} preview_mode={@preview_mode} />
       <%= render_tab(assigns) %>
-    </InstructorDashboard.main_layout>
     """
   end
 
