@@ -44,6 +44,7 @@ export const FlowchartEditor = () => {
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
 
+  console.info('Rendering flowchart', activities, sequence);
   const activityEdges = buildEdges(activities);
   const activityNodes = activitiesToNodes(activities);
   const placeholders = buildPlaceholders(activities);

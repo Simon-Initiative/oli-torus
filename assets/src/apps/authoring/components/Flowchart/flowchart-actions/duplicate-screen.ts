@@ -34,6 +34,7 @@ import {
 } from '../paths/path-utils';
 import { sortScreens } from '../screens/screen-utils';
 import { replaceIds } from '../template-utils';
+import { createEndOfActivityPath } from '../paths/path-factories';
 
 interface DuplicateFlowchartScreenPayload {
   screenId: number;
@@ -70,7 +71,9 @@ export const duplicateFlowchartScreen = createAsyncThunk(
         return;
       }
 
-      const targetTitle = 'Copy of ' + (originalScreen.title || 'screen');
+      const targetTitle = originalScreen.title?.startsWith('Copy of ') // Don't want "Copy of Copy of...."
+        ? originalScreen.title || 'screen'
+        : 'Copy of ' + (originalScreen.title || 'screen');
       const title = clearTitle(targetTitle, otherActivityNames);
 
       const activity: IActivityTemplate = createActivityTemplate();
@@ -84,7 +87,7 @@ export const duplicateFlowchartScreen = createAsyncThunk(
       activity.model.partsLayout = newPartsLayout;
       activity.model.authoring.parts = newParts;
       activity.model.authoring.flowchart = {
-        paths: [],
+        paths: [createEndOfActivityPath()],
         screenType: originalScreen.authoring?.flowchart?.screenType,
         templateApplied: originalScreen.authoring?.flowchart?.templateApplied,
       };
@@ -191,8 +194,28 @@ export const duplicateFlowchartScreen = createAsyncThunk(
   },
 );
 
+const doubleNumbers = /^(.*) \(\d+\)\s\((\d+)\)$/;
+
+/*
+ * If the title is already in use, we need to add a number to the end of it.
+ * If there is already a number at the end, don't keep adding numbers.
+ *
+ * If existing titles starts as: ["Screen A", "Screen B"] and we try to add:
+ *
+ * Screen A -> Screen A (1)
+ * Screen B -> Screen B (1)
+ * Screen C -> Screen C
+ * Screen A -> Screen A (2)
+ * Screen A -> Screen A (3)
+ * Screen A (2) -> Screen A (4)
+ *
+ */
 const clearTitle = (title: string, otherActivityNames: string[], level = 0): string => {
-  const newTitle = level === 0 ? title : `${title} (${level})`;
+  let newTitle = level === 0 ? title : `${title} (${level})`;
+  const match = doubleNumbers.exec(newTitle);
+  if (match) {
+    newTitle = match[1] + ` (${level})`;
+  }
   if (otherActivityNames.includes(newTitle)) {
     return clearTitle(title, otherActivityNames, level + 1);
   }
