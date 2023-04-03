@@ -250,6 +250,22 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     });
   };
 
+  // Toggle popup open/close
+  const handleOnBlurToggleIcon = (toggleVal: boolean) => {
+    setShowPopup(toggleVal);
+    // optimistically write state
+    props.onSave({
+      id,
+      responses: [
+        {
+          key: 'isOpen',
+          type: CapiVariableTypes.BOOLEAN,
+          value: toggleVal,
+        },
+      ],
+    });
+  };
+
   const partComponents = popup?.partsLayout;
   const config = popup?.custom ? popup.custom : null;
 
@@ -299,7 +315,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
                 onMouseEnter: () => handleToggleIcon(true),
                 onMouseLeave: () => handleToggleIcon(false),
                 onFocus: () => handleToggleIcon(true),
-                onBlur: () => handleToggleIcon(false),
+                onBlur: () => handleOnBlurToggleIcon(false),
               })}
         />
       ) : null}
