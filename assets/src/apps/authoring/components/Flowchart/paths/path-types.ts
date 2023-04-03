@@ -53,8 +53,14 @@ export interface AlwaysGoToPath extends DestinationPath {
   type: 'always-go-to';
 }
 
+// End of activity goes to the end screen
 export interface EndOfActivityPath extends BasePath {
   type: 'end-of-activity';
+}
+
+// Exit activity goes from the end screen and exits.
+export interface ExitActivityPath extends BasePath {
+  type: 'exit-activity';
 }
 
 // All our path types representing a "correct" answer
@@ -73,7 +79,7 @@ export type ComponentPaths =
 
 export type DestinationPaths = ComponentPaths | AlwaysGoToPath | UnknownPathWithDestination;
 
-export type AllPaths = EndOfActivityPath | DestinationPaths;
+export type AllPaths = EndOfActivityPath | ExitActivityPath | DestinationPaths;
 
 export const ruleTypes = [
   'unknown-reason-path',
@@ -83,6 +89,7 @@ export const ruleTypes = [
   'numeric-common-error',
   'option-common-error',
   'end-of-activity',
+  'exit-activity',
   'unknown-reason-path',
 ] as const;
 

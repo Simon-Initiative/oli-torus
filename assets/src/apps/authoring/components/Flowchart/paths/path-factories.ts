@@ -10,6 +10,7 @@ import {
   AlwaysGoToPath,
   CorrectPath,
   EndOfActivityPath,
+  ExitActivityPath,
   IncorrectPath,
   NumericCommonErrorPath,
   OptionCommonErrorPath,
@@ -129,6 +130,15 @@ export const createEndOfActivityPath = (): EndOfActivityPath => ({
   id: 'end-of-activity',
   ruleId: null,
   completed: false,
-  label: 'Exit Activity',
+  label: 'Go To End Screen',
   priority: 16,
+});
+
+export const createExitPath = (): ExitActivityPath => ({
+  type: 'exit-activity',
+  id: 'exit-activity',
+  ruleId: null,
+  completed: true,
+  label: 'Exit Activity',
+  priority: 20,
 });

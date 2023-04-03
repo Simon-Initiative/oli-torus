@@ -130,9 +130,10 @@ export const validatePathSet = (
 // Make sure there is either exactly one always go to, or one exit activity path
 export const validatePathSetNone = (paths: AllPaths[]): ReactNode[] => {
   const alwaysGoTo = paths.filter((path) => path.type === 'always-go-to');
-  const exitActivity = paths.filter((path) => path.type === 'end-of-activity');
+  const endOfActivity = paths.filter((path) => path.type === 'end-of-activity');
+  const exitActivity = paths.filter((path) => path.type === 'exit-activity');
 
-  if (paths.length === 1 && alwaysGoTo.length + exitActivity.length === 1) {
+  if (paths.length === 1 && alwaysGoTo.length + endOfActivity.length + exitActivity.length === 1) {
     return [];
   } else {
     return [
