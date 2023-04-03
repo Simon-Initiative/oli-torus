@@ -73,6 +73,16 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
 
   const sortedActivities = useMemo(() => sortScreens(activities, sequence), [activities, sequence]);
 
+  const isEndScreen = useCallback(
+    (resourceId: EntityId) => {
+      return (
+        activities.find((s) => s.resourceId === resourceId)?.authoring?.flowchart?.screenType ===
+        'end_screen'
+      );
+    },
+    [activities],
+  );
+
   const onAddNewScreen = useCallback(() => {
     openNewScreenModal();
   }, [openNewScreenModal]);
@@ -112,12 +122,13 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
 
   const onScreenRightClick = useCallback(
     (screenId: number) => (e: any) => {
+      if (isEndScreen(screenId)) return;
       const { clientX, clientY } = e;
       e.preventDefault();
       setContextMenuScreenId(screenId);
       setContextMenuCoordinates([clientX, clientY]);
     },
-    [],
+    [isEndScreen],
   );
 
   return (

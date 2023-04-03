@@ -35,6 +35,7 @@ import {
   DestinationPath,
   DestinationPaths,
   EndOfActivityPath,
+  ExitActivityPath,
   IncorrectPath,
   NumericCommonErrorPath,
   OptionCommonErrorPath,
@@ -80,6 +81,9 @@ export const isDropdown = (screen: IPartLayout): screen is IDropdownPartLayout =
 export const isEndOfActivityPath = (path: AllPaths): path is EndOfActivityPath =>
   path.type === 'end-of-activity';
 
+export const isExitActivityPath = (path: AllPaths): path is ExitActivityPath =>
+  path.type === 'exit-activity';
+
 export const isDestinationPath = (path: AllPaths): path is DestinationPaths =>
   'destinationScreenId' in path;
 
@@ -116,13 +120,35 @@ const destinationPathToEdge = (activity: IActivity) => (path: DestinationPath) =
   },
 });
 
-export const buildEdgesForActivity = (activity: IActivity): FlowchartEdge[] => {
-  const paths = getPathsFromScreen(cloneT(activity));
-  return paths
-    .filter(isDestinationPath)
-    .filter(hasDestination)
-    .map(destinationPathToEdge(activity));
-};
+const endScreenPathToEdge =
+  (activity: IActivity, endScreenId: number) => (path: EndOfActivityPath) => ({
+    id: `${activity.id}-${path.id}`,
+    source: String(activity.id),
+    target: String(endScreenId),
+    type: 'floating',
+    data: {
+      completed: true,
+    },
+    markerEnd: {
+      type: MarkerType.Arrow,
+      color: '#22f',
+    },
+  });
+
+export const buildEdgesForActivity =
+  (endScreenId: number) =>
+  (activity: IActivity): FlowchartEdge[] => {
+    const paths = getPathsFromScreen(cloneT(activity));
+    const destinationEdges = paths
+      .filter(isDestinationPath)
+      .filter(hasDestination)
+      .map(destinationPathToEdge(activity));
+
+    const endScreenEdges = paths
+      .filter(isEndOfActivityPath)
+      .map(endScreenPathToEdge(activity, endScreenId));
+    return [...destinationEdges, ...endScreenEdges];
+  };
 
 export const removeEndOfActivityPath = (screen: IActivity) => {
   const paths = getPathsFromScreen(screen);

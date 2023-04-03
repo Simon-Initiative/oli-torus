@@ -9,6 +9,7 @@ import {
 export const validatePath = (path: AllPaths) => {
   switch (path.type) {
     case 'end-of-activity':
+    case 'exit-activity':
       return true;
 
     case 'correct':

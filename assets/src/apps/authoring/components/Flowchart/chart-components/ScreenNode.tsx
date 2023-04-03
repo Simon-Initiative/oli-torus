@@ -51,9 +51,16 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const sequence = useSelector(selectSequence);
 
   const isValid = validateScreen(data, activities, sequence).length === 0;
+  const isEndScreen =
+    activities.find((s) => s.resourceId === data.resourceId)?.authoring?.flowchart?.screenType ===
+    'end_screen';
 
   const onDrop = (item: any) => {
-    onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
+    if (isEndScreen) {
+      onAddScreen({ nextNodeId: data.resourceId, screenType: item.screenType });
+    } else {
+      onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
+    }
   };
 
   const onDuplicateScreen = useCallback(() => {
@@ -100,12 +107,16 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
           <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
             <Icon icon="edit" />
           </ScreenButton>
-          <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
-            <Icon icon="clone" />
-          </ScreenButton>
-          <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
-            <Icon icon="trash" />
-          </ScreenButton>
+          {isEndScreen || (
+            <>
+              <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
+                <Icon icon="clone" />
+              </ScreenButton>
+              <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
+                <Icon icon="trash" />
+              </ScreenButton>
+            </>
+          )}
         </div>
       </div>
       <small className="text-gray-400">{data.resourceId}</small>

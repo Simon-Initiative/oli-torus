@@ -138,15 +138,23 @@ $font-family-sans-serif: var(--font-sans);
       margin: 0.25rem;
     }
   }
-  .flowchart-start-node {
+  .flowchart-start-node,
+  .flowchart-end-node {
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background-color: #b9d7a1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+  }
+
+  .flowchart-start-node {
+    background-color: #b9d7a1;
+  }
+
+  .flowchart-end-node {
+    background-color: #36eaf6;
   }
 
   .flowchart-node {

@@ -23,6 +23,7 @@ interface CreateNewPayload {
     height?: number;
   };
   facts?: any[];
+  screenType?: string;
 }
 
 export const createNew = createAsyncThunk(
@@ -64,7 +65,7 @@ export const createNew = createAsyncThunk(
     if (appMode === 'flowchart') {
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [createEndOfActivityPath()],
-        screenType: 'blank_screen',
+        screenType: payload.screenType || 'blank_screen',
         templateApplied: false,
       };
       activity.model.authoring.flowchart = flowchartData;

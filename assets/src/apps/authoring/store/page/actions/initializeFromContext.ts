@@ -14,11 +14,15 @@ import { updateActivityRules } from '../../groups/layouts/deck/actions/updateAct
 import { loadPage, PageState } from '../slice';
 import PageSlice from '../name';
 import { savePage } from './savePage';
+import { selectAppMode } from '../../app/slice';
+import { AuthoringRootState } from '../../rootReducer';
+import { verifyFlowchartLesson } from '../../../components/Flowchart/flowchart-actions/verify-flowchart-lesson';
 
 export const initializeFromContext = createAsyncThunk(
   `${PageSlice}/initializeFromContext`,
   async (params: { context: PageContext; config: any }, thunkApi) => {
     const { dispatch, getState } = thunkApi;
+    const appMode = selectAppMode(getState() as AuthoringRootState);
 
     // load the page state properties
     const pageState: Partial<PageState> = {
@@ -52,10 +56,10 @@ export const initializeFromContext = createAsyncThunk(
       // if there are any activities defined that are not in a group they will be
       // assimilated into a new group
       if (!children.length) {
-        const { payload: newActivity } = await dispatch(
+        const { payload: welcomeScreen } = await dispatch(
           createNewActivity({ title: 'Welcome Screen' }),
         );
-        children.push(newActivity);
+        children.push(welcomeScreen);
       }
       // create sequence map of activities which is the group children
       const newSequence = children.map((childActivity) => {
@@ -131,6 +135,10 @@ export const initializeFromContext = createAsyncThunk(
     await Promise.all(ruleProcessing);
 
     await dispatch(setGroups({ groups }));
+
+    if (appMode === 'flowchart') {
+      await dispatch(verifyFlowchartLesson({}));
+    }
 
     console.log('INIT:', { params, children, groups, activities });
 
