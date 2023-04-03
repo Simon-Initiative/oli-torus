@@ -22,7 +22,7 @@ defmodule OliWeb.Components.Delivery.Content do
     sort_order: :asc,
     sort_by: :container_name,
     text_search: nil,
-    container_filter_by: :modules
+    container_filter_by: :units
   }
 
   def update(%{containers: {container_count, containers}} = assigns, socket) do
@@ -62,7 +62,7 @@ defmodule OliWeb.Components.Delivery.Content do
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white h-16">
         <Form for={:containers} id="container-select-form" change="filter_container" class="pl-9 torus-h4 mr-auto">
           <Field name={:container_type}>
-            <Select options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 mt-6 mb-3 border-none focus:!border-none"/>
+            <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 mt-6 mb-3 border-none focus:!border-none"/>
           </Field>
         </Form>
         <form for="search" phx-target={@myself} phx-change="search_container" class="pb-6 ml-9 sm:pb-0">
