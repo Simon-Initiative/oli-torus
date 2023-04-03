@@ -103,6 +103,34 @@ export const createRuleTemplate = (label: string): IAdaptiveRule => {
   };
 };
 
+export const defaultNextScreenRule = (): IAdaptiveRule => ({
+  id: `r:${guid()}.default`,
+  name: 'default',
+  priority: 1,
+  event: {
+    type: `r:${guid()}.default`,
+    params: {
+      actions: [
+        {
+          type: 'navigation',
+          params: {
+            target: 'next',
+          },
+        },
+      ],
+    },
+  },
+  correct: true,
+  default: true,
+  disabled: false,
+  conditions: {
+    id: `b:${guid()}`,
+    all: [],
+  },
+  forceProgress: false,
+  additionalScore: 0,
+});
+
 export const generateAlwaysGoTo = (
   path: AlwaysGoToPath,
   sequence: SequenceEntry<SequenceEntryChild>[],
