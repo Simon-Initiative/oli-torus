@@ -60,7 +60,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.AssignmentsTabTest do
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, live_view_assignments_route(section.slug))
+      {:ok, view, html} = live(conn, live_view_assignments_route(section.slug))
 
       # Assignments tab is the selected one
       assert has_element?(
@@ -70,7 +70,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.AssignmentsTabTest do
              )
 
       # Assignments tab content gets rendered
-      assert has_element?(view, ~s{div}, "Not available yet")
+      assert String.contains?(html, "Not available yet")
     end
   end
 end

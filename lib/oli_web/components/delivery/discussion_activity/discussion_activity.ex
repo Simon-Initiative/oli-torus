@@ -222,6 +222,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
           )
 
         discussion_table_model = Map.put(discussion_table_model, :rows, rows)
+        |> Map.put(:data, %{section_slug: section_slug, target: socket.assigns.myself})
 
         assign(socket,
           discussion_table_model: discussion_table_model,
