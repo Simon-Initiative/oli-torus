@@ -3,10 +3,10 @@ defmodule OliWeb.Discussion.TableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
-
+  alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(posts) do
+  def new(posts, target) do
     column_specs = [
       %ColumnSpec{
         name: :id,
@@ -21,7 +21,8 @@ defmodule OliWeb.Discussion.TableModel do
       rows: posts,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{target: target}
     )
   end
 
@@ -48,7 +49,7 @@ defmodule OliWeb.Discussion.TableModel do
               class="btn btn-sm btn-success flex items-center gap-2"
               data-toggle="tooltip"
               title="Accept"
-              :on-click="display_accept_modal"
+              :on-click={JS.push("display_accept_modal", target: @target)}
               phx-value-post_id={post.id}
               >
                 <span>Approve</span>
@@ -59,7 +60,7 @@ defmodule OliWeb.Discussion.TableModel do
                 class="btn btn-sm btn-danger flex items-center gap-2"
                 data-toggle="tooltip"
                 title="Reject"
-                :on-click="display_reject_modal"
+                :on-click={JS.push("display_reject_modal", target: @target)}
                 phx-value-post_id={post.id}
               >
                 <span>Reject</span>

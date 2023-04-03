@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.CourseDiscussionLiveTest do
+defmodule OliWeb.Delivery.InstructorDashboard.CourseDiscussionTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -11,8 +11,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.CourseDiscussionLiveTest do
   defp live_view_course_discussion_route(section_slug) do
     Routes.live_path(
       OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.CourseDiscussionLive,
-      section_slug
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      section_slug,
+      :course_discussion
     )
   end
 
@@ -20,7 +21,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.CourseDiscussionLiveTest do
     test "can not access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
 
-      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fcourse_discussion"
+      redirect_path =
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fcourse_discussion"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_course_discussion_route(section.slug))
@@ -53,7 +55,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.CourseDiscussionLiveTest do
 
     test "can access page if enrolled to section without a collab space configured", %{
       instructor: instructor,
-      conn: conn,
+      conn: conn
     } do
       {:ok, %{section: section}} = section_with_assessment_without_collab_space(%{})
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])

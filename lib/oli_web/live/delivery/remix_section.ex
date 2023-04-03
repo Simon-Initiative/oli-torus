@@ -31,8 +31,9 @@ defmodule OliWeb.Delivery.RemixSection do
     do:
       Routes.live_path(
         OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.ContentLive,
-        slug
+        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+        slug,
+        :content
       )
 
   defp redirect_after_save(:open_and_free, section),

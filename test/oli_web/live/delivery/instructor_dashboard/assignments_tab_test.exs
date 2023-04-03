@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
+defmodule OliWeb.Delivery.InstructorDashboard.AssignmentsTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -8,11 +8,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
 
-  defp live_view_learning_objectives_route(section_slug) do
+  defp live_view_assignments_route(section_slug) do
     Routes.live_path(
       OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
-      section_slug
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      section_slug,
+      :assignments
     )
   end
 
@@ -21,10 +22,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearning_objectives"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fassignments"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_learning_objectives_route(section.slug))
+               live(conn, live_view_assignments_route(section.slug))
     end
   end
 
@@ -38,7 +39,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
       redirect_path = "/unauthorized"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_learning_objectives_route(section.slug))
+               live(conn, live_view_assignments_route(section.slug))
     end
   end
 
@@ -49,7 +50,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
       redirect_path = "/unauthorized"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, live_view_learning_objectives_route(section.slug))
+               live(conn, live_view_assignments_route(section.slug))
     end
 
     test "can access page if enrolled to section", %{
@@ -58,17 +59,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesLiveTest do
       conn: conn
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
-      # LearningObjectives tab is the selected one
+      {:ok, view, html} = live(conn, live_view_assignments_route(section.slug))
+
+      # Assignments tab is the selected one
       assert has_element?(
                view,
-               ~s{a[href="#{live_view_learning_objectives_route(section.slug)}"].border-b-2},
-               "Learning Objectives"
+               ~s{a[href="#{live_view_assignments_route(section.slug)}"].border-b-2},
+               "Assignments"
              )
 
-      # LearningObjectives tab content gets rendered
-      assert has_element?(view, ~s{div}, "Not available yet")
+      # Assignments tab content gets rendered
+      assert String.contains?(html, "Not available yet")
     end
   end
 end

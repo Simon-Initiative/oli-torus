@@ -45,8 +45,9 @@ defmodule OliWeb.PageDeliveryController do
               to:
                 Routes.live_path(
                   OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.ManageLive,
-                  section_slug
+                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+                  section_slug,
+                  :manage
                 )
             )
           else
@@ -1086,5 +1087,4 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
-
 end

@@ -39,8 +39,9 @@ defmodule OliWeb.Sections.OverviewView do
           link:
             Routes.live_path(
               OliWeb.Endpoint,
-              OliWeb.Delivery.InstructorDashboard.ManageLive,
-              section.slug
+              OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+              section.slug,
+              :manage
             )
         })
       ]
@@ -124,7 +125,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
         <li>
-          <a target="_blank" href={Routes.content_path(OliWeb.Endpoint, :preview, @section.slug)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>
+          <a target="_blank" href={Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, @section.slug, :content)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>
         </li>
         <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)} class={"btn btn-link"} target="_blank"><span>Enter Course as a Student</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)} class={"btn btn-link"}>Customize Curriculum</a></li>

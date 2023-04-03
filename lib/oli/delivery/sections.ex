@@ -40,6 +40,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery
   alias Ecto.Multi
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
 
   require Logger
 
@@ -1946,6 +1947,65 @@ defmodule Oli.Delivery.Sections do
     }
   end
 
+  defp get_related_resources([], _, _), do: []
+
+  defp get_related_resources(resource_ids, section_id, user_id) do
+    SectionResource
+    |> join(:inner, [sr], spp in SectionsProjectsPublications,
+      on: spp.section_id == sr.section_id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> join(:left, [sr, _, _, rev], ra in ResourceAccess,
+      on:
+        ra.section_id == ^section_id and ra.resource_id == sr.resource_id and
+          ra.user_id == ^user_id
+    )
+    |> join(:left, [sr, _, _, rev, ra], ra2 in ResourceAccess,
+      on:
+        ra2.section_id == ra.section_id and ra2.resource_id == ra.resource_id and
+          ra2.user_id == ra.user_id and ra2.id > ra.id
+    )
+    |> where(
+      [sr, _, _, rev, _ra, ra2],
+      sr.section_id == ^section_id and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and
+        sr.resource_id in ^resource_ids
+    )
+    |> select([sr, _, _, rev, ra], %{
+      id: sr.resource_id,
+      title: rev.title,
+      progress: ra.progress,
+      slug: rev.slug,
+      graded: rev.graded,
+      purpose: rev.purpose
+    })
+    |> Repo.all()
+  end
+
+  defp append_related_resources(graded_pages, user_id) do
+    section_id = graded_pages |> List.first() |> Map.get(:section_id)
+
+    related_resources =
+      graded_pages
+      |> Enum.reduce([], fn page, related_pages -> page.relates_to ++ related_pages end)
+      |> get_related_resources(section_id, user_id)
+
+    Enum.map(graded_pages, fn page ->
+      Map.get_and_update(page, :relates_to, fn relates_to ->
+        {relates_to,
+         Enum.map(relates_to, fn resource_id ->
+           Enum.find(related_resources, &(&1.id == resource_id))
+         end)
+         |> Enum.filter(&(&1 != nil))}
+      end)
+      |> elem(1)
+      |> Map.delete(:children)
+    end)
+  end
+
   def get_graded_pages(section_slug, user_id) do
     {graded_pages_with_date, other_resources} =
       SectionResource
@@ -1991,7 +2051,9 @@ defmodule Oli.Delivery.Sections do
         graded: rev.graded,
         resource_type_id: rev.resource_type_id,
         numbering_level: sr.numbering_level,
-        children: sr.children
+        children: sr.children,
+        section_id: s.id,
+        relates_to: rev.relates_to
       })
       |> order_by([{:asc_nulls_last, fragment("end_date")}])
       |> Repo.all()
@@ -2001,7 +2063,8 @@ defmodule Oli.Delivery.Sections do
           page.resource_type_id == ResourceType.get_id_by_type("page")
       end)
 
-    graded_pages_with_date ++ get_graded_pages_without_date(other_resources)
+    (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
+    |> append_related_resources(user_id)
   end
 
   defp get_graded_pages_without_date(resources) do

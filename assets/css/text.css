@@ -1,5 +1,5 @@
 h4.torus-h4 {
-  @apply text-delivery-body-color dark:text-delivery-body-color-dark text-xl font-bold;
+  @apply text-delivery-body-color dark:text-delivery-body-color-dark text-xl font-bold tracking-wide pt-7 pb-4;
 }
 
 h6.torus-h6 {
