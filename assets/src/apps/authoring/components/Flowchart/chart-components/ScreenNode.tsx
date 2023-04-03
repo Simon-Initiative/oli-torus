@@ -1,5 +1,6 @@
-import React, { useContext } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useCallback, useContext } from 'react';
+import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 import { useDrop } from 'react-dnd';
 import { Handle, Position } from 'reactflow';
 import { Icon } from '../../../../../components/misc/Icon';
@@ -16,6 +17,7 @@ import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { validateScreen } from '../screens/screen-validation';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
+import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
 
 interface NodeProps {
   data: IActivity;
@@ -40,6 +42,7 @@ const dontDoNothing = () => {
 export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const { onAddScreen, onDeleteScreen, onSelectScreen, onEditScreen } =
     useContext(FlowchartEventContext);
+  const dispatch = useDispatch();
   const selectedId = useSelector(selectCurrentActivityId);
   const selected = selectedId === data.resourceId;
   const [showConfirmDelete, toggleConfirmDelete] = useToggle(false);
@@ -52,6 +55,11 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const onDrop = (item: any) => {
     onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
   };
+
+  const onDuplicateScreen = useCallback(() => {
+    if (!data.resourceId) return;
+    dispatch(duplicateFlowchartScreen({ screenId: data.resourceId }));
+  }, [data.resourceId, dispatch]);
 
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
     accept: screenTypes,
@@ -89,13 +97,13 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
             <Icon icon="plus" />
           </ScreenButton> */}
 
-          <ScreenButton onClick={() => onEditScreen(data.resourceId!)}>
+          <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
             <Icon icon="edit" />
           </ScreenButton>
-          {/* <ScreenButton onClick={dontDoNothing}>
+          <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
             <Icon icon="clone" />
-          </ScreenButton> */}
-          <ScreenButton onClick={toggleConfirmDelete}>
+          </ScreenButton>
+          <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
             <Icon icon="trash" />
           </ScreenButton>
         </div>
