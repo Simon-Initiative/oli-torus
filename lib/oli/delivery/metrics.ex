@@ -69,6 +69,27 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Calculate the progress for each student in a page.
+  """
+  def progress_for_page(section_id, user_ids, page_id) do
+    query =
+      from ra in ResourceAccess,
+        where:
+          ra.resource_id == ^page_id and ra.section_id == ^section_id and ra.user_id in ^user_ids,
+        group_by: ra.user_id,
+        select: {
+          ra.user_id,
+          fragment(
+            "SUM(?)",
+            ra.progress
+          )
+        }
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Calculate the progress for a specific student, in all pages of a
   collection of containers.
   """
