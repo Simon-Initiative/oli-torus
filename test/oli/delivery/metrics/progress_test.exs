@@ -1,10 +1,13 @@
 defmodule Oli.Delivery.Metrics.ProgressTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Lti_1p3.Tool.ContextRoles
 
   defp set_progress(section_id, resource_id, user_id, progress) do
     Core.track_access(resource_id, section_id, user_id)
@@ -245,6 +248,55 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
       ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
       assert_in_delta 0.75, ra.progress, 0.0001
+    end
+
+    test "progress_for_page/3 calculates correctly", %{
+      mod1_pages: mod1_pages,
+      this_user: this_user,
+      section: section
+    } do
+      [p1, _, _] = mod1_pages
+
+      another_user = insert(:user)
+      Sections.enroll(another_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      set_progress(section.id, p1.published_resource.resource_id, another_user.id, 0.75)
+
+      progress =
+        Metrics.progress_for_page(section.id, [this_user.id, another_user.id], p1.resource.id)
+
+      assert progress[this_user.id] == 0.5
+      assert progress[another_user.id] == 0.75
+    end
+
+    test "progress_across_for_pages/4 calculates correctly", %{
+      mod1_pages: mod1_pages,
+      this_user: this_user,
+      section: section
+    } do
+      [p1, p2, _] = mod1_pages
+
+      another_user = insert(:user)
+      Sections.enroll(another_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      set_progress(section.id, p1.published_resource.resource_id, another_user.id, 0.75)
+      set_progress(section.id, p2.published_resource.resource_id, another_user.id, 0.5)
+
+      progress =
+        Metrics.progress_across_for_pages(section.id, [p1.resource.id, p2.resource.id], [], 2)
+
+      assert progress[p1.resource.id] == (0.5 + 0.75) / 2
+      assert progress[p2.resource.id] == (1.0 + 0.5) / 2
+
+      # excluding one user...
+      progress_2 =
+        Metrics.progress_across_for_pages(
+          section.id,
+          [p1.resource.id, p2.resource.id],
+          [this_user.id],
+          1
+        )
+
+      assert progress_2[p1.resource.id] == 0.75
+      assert progress_2[p2.resource.id] == 0.5
     end
   end
 end
