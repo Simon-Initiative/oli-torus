@@ -3,6 +3,7 @@ janus-multi-line-text > div {
   background-color: $lightBackgroundGrey;
   color: $lightForeground;
   border-radius: 4px;
+  padding-top: 0px;
 }
 
 /*-- label --*/
@@ -17,7 +18,9 @@ janus-multi-line-text label {
   background-color: #fff;
   width: 100%;
   padding-bottom: 0.5rem;
+  min-height: 1rem;
 }
+
 /*-- input --*/
 janus-input-text input,
 janus-input-number input,
@@ -69,7 +72,7 @@ janus-multi-line-text:focus-within textarea {
 janus-input-text input:disabled,
 janus-input-number input:disabled,
 janus-multi-line-text textarea:disabled {
-  background-color: var(--grayLight20);
+  background-color: $lightBackgroundGrey;
   color: var(--grayDark40);
 }
 /*This may usable later on
