@@ -23,6 +23,7 @@ const AuthoringContainer: React.FC<AuthoringProps> = (props: AuthoringProps) => 
         crossOrigin="anonymous"
         referrerPolicy="no-referrer"
       />
+
       <Provider store={adaptiveStore}>
         <Authoring {...props} />
       </Provider>
