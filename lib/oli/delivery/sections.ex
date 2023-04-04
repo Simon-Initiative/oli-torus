@@ -2029,23 +2029,20 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  # TODO add docs and maybe rename function, or split it.
+  @doc """
+  Returns a tuple with the units and modules from a section.
+  In case there are no units or modules, it returns a zero count and the pages
+  of the curriculum.
+  {container_count, containers} or {0, pages}
+  """
   def get_units_and_modules_containers(section_slug) do
     query =
-      from pr in PublishedResource,
-        join: spp in SectionsProjectsPublications,
-        on: spp.publication_id == pr.publication_id,
-        join: s in Section,
-        on: spp.section_id == s.id,
-        join: sr in SectionResource,
-        on: sr.resource_id == pr.resource_id and sr.section_id == s.id,
-        join: r in Revision,
-        on: r.resource_id == pr.resource_id and pr.revision_id == r.id,
+      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where:
-          s.slug == ^section_slug and sr.numbering_level in [1, 2] and r.resource_type_id == 2,
+          s.slug == ^section_slug and sr.numbering_level in [1, 2] and rev.resource_type_id == 2,
         select: %{
-          id: r.resource_id,
-          title: r.title,
+          id: rev.resource_id,
+          title: rev.title,
           numbering_level: sr.numbering_level
         }
 
@@ -2055,21 +2052,13 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
-  def get_pages(section_slug) do
+  defp get_pages(section_slug) do
     query =
-      from pr in PublishedResource,
-        join: spp in SectionsProjectsPublications,
-        on: spp.publication_id == pr.publication_id,
-        join: s in Section,
-        on: spp.section_id == s.id,
-        join: sr in SectionResource,
-        on: sr.resource_id == pr.resource_id and sr.section_id == s.id,
-        join: r in Revision,
-        on: r.resource_id == pr.resource_id and pr.revision_id == r.id,
-        where: s.slug == ^section_slug and r.resource_type_id == 1,
+      from [_sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1,
         select: %{
-          id: r.resource_id,
-          title: r.title
+          id: rev.resource_id,
+          title: rev.title
         }
 
     Repo.all(query)
@@ -2098,7 +2087,8 @@ defmodule Oli.Delivery.Sections do
       )
       |> where(
         [sr, s, _, _, _, gc, gc2],
-        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and (is_nil(gc2) or gc2.type == :schedule)
+        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and
+          (is_nil(gc2) or gc2.type == :schedule)
       )
       |> select([sr, s, _, _, rev, gc, gc2], %{
         id: sr.id,
@@ -2112,11 +2102,12 @@ defmodule Oli.Delivery.Sections do
             sr.end_date
           ),
         scheduled_type: sr.scheduling_type,
-        gate_type: fragment(
-          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
-          gc2.type,
-          gc.type
-        ),
+        gate_type:
+          fragment(
+            "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
+            gc2.type,
+            gc.type
+          ),
         graded: rev.graded,
         resource_type_id: rev.resource_type_id,
         numbering_level: sr.numbering_level,
@@ -2141,14 +2132,14 @@ defmodule Oli.Delivery.Sections do
 
     graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
 
-    {pages, remaining} = get_flatten_hierarchy(root_container.children, resources)
-    |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
-
-      case Map.get(remaining, id) do
-        nil -> {acc, remaining}
-        page -> {[page | acc], Map.delete(remaining, id)}
-      end
-    end)
+    {pages, remaining} =
+      get_flatten_hierarchy(root_container.children, resources)
+      |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
+        case Map.get(remaining, id) do
+          nil -> {acc, remaining}
+          page -> {[page | acc], Map.delete(remaining, id)}
+        end
+      end)
 
     Enum.reverse(pages) ++ Map.values(remaining)
   end
