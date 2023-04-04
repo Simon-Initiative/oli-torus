@@ -17,11 +17,11 @@ janus-dropdown select {
   max-width: initial !important;
   width: 100% !important;
   border-radius: 4px;
-  background: #f3f5f8;
-  color: #696974;
+  background: $lightBackgroundGrey;
+  color: $lightForeground;
   font-weight: 600;
 
-  border: 1px solid #f3f5f8;
+  border: 1px solid $lightBackgroundGrey;
   min-height: 44px;
   padding: 5px 8px;
   appearance: none;
