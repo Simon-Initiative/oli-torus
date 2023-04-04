@@ -33,7 +33,10 @@ const lessonSchema: JSONSchema7 = {
                 {
                   type: 'string',
                   title: 'Default Theme',
-                  enum: ['/css/delivery_adaptive_themes_default_light.css'],
+                  enum: [
+                    '/css/delivery_adaptive_themes_default_light.css',
+                    '/css/delivery_adaptive_themes_flowchart.css',
+                  ],
                   default: '/css/delivery_adaptive_themes_default_light.css',
                 },
                 { type: 'string', title: 'Custom Theme' },

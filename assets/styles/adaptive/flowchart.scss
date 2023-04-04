@@ -1,4 +1,8 @@
-$headerColor: var(--blue80);
+$darkForeground: #373a44;
+$darkNavyBlue: #222439;
+$primary: #5b1eea;
+
+$headerColor: $darkForeground;
 
 /*-- Misc. --*/
 @import 'misc/normalize';
@@ -16,9 +20,9 @@ $headerColor: var(--blue80);
 @import 'activities/text-flow';
 @import 'activities/image';
 @import 'activities/navigation-button';
-@import 'activities/mcq';
+@import 'flowchart/mcq';
 @import 'activities/text-input';
-@import 'activities/dropdown';
+@import 'flowchart/dropdown';
 @import 'activities/slider';
 @import 'activities/popup';
 @import 'activities/image-carousel';
