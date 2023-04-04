@@ -55,8 +55,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       Map.merge(assigns, %{
         progress: parse_progress(container.progress),
         title: container.title,
-        url_params: url_params,
-        section_slug: assigns.model.data.section_slug
+        url_params: url_params
       })
 
     ~H"""
