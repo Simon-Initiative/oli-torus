@@ -953,14 +953,14 @@ defmodule Oli.TestHelpers do
     {:ok, section} = Sections.create_section_resources(section, publication)
     Sections.rebuild_contained_pages(section)
 
-    [
+    %{
       project: project,
       section: section,
       publication: publication,
       obj_revision_1: obj_revision_1,
       obj_revision_2: obj_revision_2,
       module_revision: module_revision
-    ]
+    }
   end
 
   def section_with_gating_conditions(_context) do

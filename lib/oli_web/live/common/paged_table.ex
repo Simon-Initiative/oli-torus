@@ -24,7 +24,7 @@ defmodule OliWeb.Common.PagedTable do
         {/if}
 
         {#if @total_count > 0 and @total_count > @limit}
-          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change} additional_class="bg-white"/>
+          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
           {render_table(assigns)}
           {#if @show_bottom_paging}
             <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
