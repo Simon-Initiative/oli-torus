@@ -8,9 +8,15 @@ import { getScreenQuestionType } from '../paths/path-options';
 import { isAlwaysPath } from '../paths/path-utils';
 import { generateCATAChoiceRules } from './create-cata-choice-rules';
 import { generateDropdownRules } from './create-dropdown-rules';
-import { defaultNextScreenRule, generateAlwaysGoTo } from './create-generic-rule';
+import {
+  createRuleTemplate,
+  defaultNextScreenRule,
+  generateAlwaysGoTo,
+  getSequenceIdFromScreenResourceId,
+} from './create-generic-rule';
 import { generateMultilineTextInputRules } from './create-multiline-text-rules';
 import { generateMultipleChoiceRules } from './create-multiple-choice-rules';
+import { createNavigationAction } from './create-navigation-action';
 import { generteNumberInputRules as generateNumberInputRules } from './create-number-input-rules';
 import { generateSliderRules } from './create-slider-rules';
 import { generateTextInputRules } from './create-text-input-rules';
@@ -63,6 +69,7 @@ export const _generateRules = (
 const createBlankScreenRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
+  defaultDestination: number,
 ): RulesAndVariables => {
   const notBlank = screen.authoring?.flowchart?.screenType !== 'blank';
   notBlank && console.warn('Using generic blank screen rules for screen', screen);
@@ -73,7 +80,14 @@ const createBlankScreenRules = (
     .flat();
 
   if (rules.length === 0) {
-    rules.push(defaultNextScreenRule());
+    const dest = getSequenceIdFromScreenResourceId(defaultDestination, sequence);
+    if (dest) {
+      const rule = createRuleTemplate('blank-screen-default');
+      rule.event.params.actions = [createNavigationAction(dest)];
+      rules.push(defaultNextScreenRule());
+    } else {
+      rules.push(defaultNextScreenRule());
+    }
   }
 
   return {
