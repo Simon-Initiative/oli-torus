@@ -13,7 +13,11 @@ import {
 import { getScreenPrimaryQuestion } from '../paths/path-options';
 import { isAlwaysPath, isDestinationPath } from '../paths/path-utils';
 import { createCondition } from './create-condition';
-import { DEFAULT_CORRECT_FEEDBACK, generateRule } from './create-generic-rule';
+import {
+  DEFAULT_CORRECT_FEEDBACK,
+  generateRule,
+  getSequenceIdFromScreenResourceId,
+} from './create-generic-rule';
 import { RulesAndVariables } from './rule-compilation';
 
 // This one doesn't follow the 3-tries model, it's just a straight up "did you type enough characters" check
@@ -21,6 +25,7 @@ import { RulesAndVariables } from './rule-compilation';
 export const generateMultilineTextInputRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
+  defaultDestination: number
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IMultiLineTextPartLayout;
   const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);
@@ -40,9 +45,10 @@ export const generateMultilineTextInputRules = (
   );
 
   const destination: string =
-    String(alwaysPath?.destinationScreenId) ||
-    String(destinationPath?.destinationScreenId) ||
-    sequence[0].custom.sequenceId;
+    getSequenceIdFromScreenResourceId(
+      alwaysPath?.destinationScreenId || destinationPath?.destinationScreenId || defaultDestination,
+      sequence,
+    ) || sequence[0].custom.sequenceId;
 
   const disableAction: IAction = {
     // Disables the dropdown so the correct answer can be unselected

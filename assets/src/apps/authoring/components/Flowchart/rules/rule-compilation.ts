@@ -22,9 +22,10 @@ const notNull = <T>(t: T | null): t is T => t !== null;
 export const generateRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
+  defaultDestination: number,
 ): RulesAndVariables => {
   try {
-    const { rules, variables } = _generateRules(screen, sequence);
+    const { rules, variables } = _generateRules(screen, sequence, defaultDestination);
     console.info('Rules generated:', variables, rules);
     return { rules: rules.filter(notNull), variables: variables.filter(notNull) };
   } catch (e) {
@@ -36,25 +37,26 @@ export const generateRules = (
 export const _generateRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
+  defaultDestination: number,
 ): RulesAndVariables => {
   const questionType = getScreenQuestionType(screen);
   switch (questionType) {
     case 'check-all-that-apply':
-      return generateCATAChoiceRules(screen, sequence);
+      return generateCATAChoiceRules(screen, sequence, defaultDestination);
     case 'multiple-choice':
-      return generateMultipleChoiceRules(screen, sequence);
+      return generateMultipleChoiceRules(screen, sequence, defaultDestination);
     case 'multi-line-text':
-      return generateMultilineTextInputRules(screen, sequence);
+      return generateMultilineTextInputRules(screen, sequence, defaultDestination);
     case 'input-text':
-      return generateTextInputRules(screen, sequence);
+      return generateTextInputRules(screen, sequence, defaultDestination);
     case 'slider':
-      return generateSliderRules(screen, sequence);
+      return generateSliderRules(screen, sequence, defaultDestination);
     case 'input-number':
-      return generateNumberInputRules(screen, sequence);
+      return generateNumberInputRules(screen, sequence, defaultDestination);
     case 'dropdown':
-      return generateDropdownRules(screen, sequence);
+      return generateDropdownRules(screen, sequence, defaultDestination);
     default:
-      return createBlankScreenRules(screen, sequence);
+      return createBlankScreenRules(screen, sequence, defaultDestination);
   }
 };
 

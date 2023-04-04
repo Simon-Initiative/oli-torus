@@ -42,6 +42,7 @@ export const saveActivity = createAsyncThunk(
       const group = selectCurrentGroup(rootState);
       const sequence = selectSequence(rootState);
       const appMode = selectAppMode(rootState);
+      const all = selectAllActivities(rootState);
 
       const isReadOnlyMode = selectReadOnly(rootState);
 
@@ -67,7 +68,8 @@ export const saveActivity = createAsyncThunk(
         // In flowchart mode, the rules are generated based off of the flowchart paths and
         // not directly edited by the user. So, we'll generate those rules every time we save
         // to make sure they are always in sync.
-        const { variables, rules } = generateRules(activity, sequence);
+        const endScreen = all.find((s) => s.authoring?.flowchart?.screenType === 'end_screen');
+        const { variables, rules } = generateRules(activity, sequence, endScreen?.resourceId || -1);
         activity.authoring.rules = rules;
         activity.authoring.variablesRequiredForEvaluation = variables;
       }

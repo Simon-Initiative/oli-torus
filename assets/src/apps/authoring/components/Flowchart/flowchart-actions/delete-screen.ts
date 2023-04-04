@@ -61,7 +61,12 @@ const isNotToDestination = (destinationId: number) => (path: AllPaths) =>
   !('destinationScreenId' in path) || path.destinationScreenId !== destinationId;
 
 const removeDestinationPaths =
-  (screenId: number, nextScreenIds: number[], sequence: SequenceEntry<SequenceEntryChild>[]) =>
+  (
+    screenId: number,
+    nextScreenIds: number[],
+    sequence: SequenceEntry<SequenceEntryChild>[],
+    defaultDestination: number,
+  ) =>
   (original: IActivity) => {
     const activity = cloneT(original);
     if (!activity?.authoring?.flowchart) return original;
@@ -94,7 +99,7 @@ const removeDestinationPaths =
       activity.authoring.flowchart.paths = [createEndOfActivityPath()];
     }
 
-    const { rules, variables } = generateRules(activity, sequence);
+    const { rules, variables } = generateRules(activity, sequence, defaultDestination);
     activity.authoring.rules = rules;
     activity.authoring.variablesRequiredForEvaluation = variables;
 
@@ -104,15 +109,22 @@ const removeDestinationPaths =
 const removePathsToScreen = (screen: IActivity, rootState: AuthoringRootState) => {
   const inputPaths = selectPathsToScreen(rootState, screen.resourceId!);
   const sequence = selectSequence(rootState);
+  const all = selectAllActivities(rootState);
   const screenIdsToModify = new Set(inputPaths.map((p) => p.sourceScreenId));
   const screensToModify = Array.from(screenIdsToModify)
     .map((id) => selectActivityById(rootState, id))
     .filter(isActivity);
 
   const nextScreenIds = getDownstreamScreenIds(screen);
+  const endScreen = all.find((s) => s.authoring?.flowchart?.screenType === 'end_screen');
 
   const modifiedScreens = screensToModify.map(
-    removeDestinationPaths(screen.resourceId!, nextScreenIds, sequence),
+    removeDestinationPaths(
+      screen.resourceId!,
+      nextScreenIds,
+      sequence,
+      endScreen?.resourceId || -1,
+    ),
   );
 
   return bulkSaveActivity({ activities: modifiedScreens });
