@@ -1,3 +1,5 @@
+$lightBackgroundGrey: #f3f5f8;
+$lightForeground: #696974;
 $darkForeground: #373a44;
 $darkNavyBlue: #222439;
 $primary: #5b1eea;
@@ -21,7 +23,7 @@ $headerColor: $darkForeground;
 @import 'activities/image';
 @import 'activities/navigation-button';
 @import 'flowchart/mcq';
-@import 'activities/text-input';
+@import 'flowchart/text-input';
 @import 'flowchart/dropdown';
 @import 'activities/slider';
 @import 'activities/popup';
