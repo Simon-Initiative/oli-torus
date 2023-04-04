@@ -9,7 +9,7 @@ defmodule OliWeb.Common.MathJaxScript do
         inlineMath: [ ["\\(","\\)"] ],
         displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
         processEscapes: true,
-        packages: ['base', 'ams', 'noerrors', 'noundefined', 'require'],
+        packages: ['base', 'ams', 'noerrors', 'noundefined', 'require', 'autoload'],
         require: {
           defaultAllow: false,
           allow: {
@@ -49,7 +49,7 @@ defmodule OliWeb.Common.MathJaxScript do
         processHtmlClass: 'tex2jax_process'
       },
       loader: {
-        load: ['[tex]/noerrors']
+        load: ['[tex]/noerrors', '[tex]/autoload']
       },
       renderMathML(math, doc) {
         math.typesetRoot = document.createElement('mjx-container');
