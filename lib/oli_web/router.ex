@@ -769,7 +769,7 @@ defmodule OliWeb.Router do
 
   ### Sections - Instructor Dashboard
 
-  scope "/sections/:section_slug", OliWeb do
+  scope "/sections/:section_slug/instructor_dashboard", OliWeb do
     pipe_through([
       :browser,
       :delivery_and_admin,
@@ -778,38 +778,18 @@ defmodule OliWeb.Router do
     ])
 
     live_session :instructor_dashboard,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
-      live("/learning_objectives", Delivery.InstructorDashboard.LearningObjectivesLive)
-      live("/students", Delivery.InstructorDashboard.StudentsLive)
-      live("/content", Delivery.InstructorDashboard.ContentLive)
-      live("/discussions", Delivery.InstructorDashboard.DiscussionsLive)
-      live("/course_discussion", Delivery.InstructorDashboard.CourseDiscussionLive)
-      live("/assignments", Delivery.InstructorDashboard.AssignmentsLive)
-      live("/manage", Delivery.InstructorDashboard.ManageLive)
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      live("/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
     end
 
     live_session :instructor_dashboard_preview,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
       live(
-        "/preview/learning_objectives",
-        Delivery.InstructorDashboard.LearningObjectivesLive,
+        "/preview/:active_tab",
+        Delivery.InstructorDashboard.InstructorDashboardLive,
         :preview
       )
-
-      live("/preview/students", Delivery.InstructorDashboard.StudentsLive, :preview)
-      live("/preview/content", Delivery.InstructorDashboard.ContentLive, :preview)
-      live("/preview/discussions", Delivery.InstructorDashboard.DiscussionsLive, :preview)
-
-      live(
-        "/preview/course_discussion",
-        Delivery.InstructorDashboard.CourseDiscussionLive,
-        :preview
-      )
-
-      live("/preview/assignments", Delivery.InstructorDashboard.AssignmentsLive, :preview)
-      live("/preview/manage", Delivery.InstructorDashboard.ManageLive, :preview)
     end
   end
 

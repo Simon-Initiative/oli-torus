@@ -82,7 +82,7 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~ "Torus Publisher"
 
       assert view
-             |> element("#publishers-table span")
+             |> element("#publishers-table span.badge")
              |> render() =~ "default"
     end
 

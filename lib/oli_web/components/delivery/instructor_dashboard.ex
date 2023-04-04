@@ -7,7 +7,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Components.Delivery.UserAccountMenu
-  alias OliWeb.Components.Delivery.CourseContentPanel
   alias OliWeb.Components.Header
 
   defmodule PriorityAction do
@@ -59,110 +58,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  defp path_for(name, section_slug, _preview_mode = true) do
-    case name do
-      :learning_objectives ->
-        Routes.learning_objectives_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :students ->
-        Routes.students_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :content ->
-        Routes.content_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :discussions ->
-        Routes.discussions_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :course_discussion ->
-        Routes.course_discussion_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :assignments ->
-        Routes.assignments_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :manage ->
-        Routes.manage_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-    end
+  defp path_for(active_tab, section_slug, _preview_mode = true) do
+    Routes.instructor_dashboard_path(
+      OliWeb.Endpoint,
+      :preview,
+      section_slug,
+      active_tab
+    )
   end
 
-  defp path_for(name, section_slug, _preview_mode = false) do
-    case name do
-      :learning_objectives ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
-          section_slug
-        )
-
-      :students ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.StudentsLive,
-          section_slug
-        )
-
-      :content ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.ContentLive,
-          section_slug
-        )
-
-      :discussions ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.DiscussionsLive,
-          section_slug
-        )
-
-      :course_discussion ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.CourseDiscussionLive,
-          section_slug
-        )
-
-      :assignments ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.AssignmentsLive,
-          section_slug
-        )
-
-      :manage ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.ManageLive,
-          section_slug
-        )
-    end
+  defp path_for(active_tab, section_slug, _preview_mode = false) do
+    Routes.live_path(
+      OliWeb.Endpoint,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      section_slug,
+      active_tab
+    )
   end
 
   attr :active_tab, :atom,
@@ -196,7 +107,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             {"Manage", path_for(:manage, @section_slug, @preview_mode), nil, is_active_tab?(:manage, @active_tab)},
           ] do %>
             <li class="nav-item" role="presentation">
-              <.link navigate={href}
+              <.link patch={href}
                 class={"
                   block
                   border-x-0 border-t-0 border-b-2
@@ -231,7 +142,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp logo_link(section, preview_mode) do
     if preview_mode do
-      Routes.content_path(OliWeb.Endpoint, :preview, section.slug)
+      Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
     end
@@ -367,88 +278,4 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   defp badge_bg_color(:grade), do: "bg-red-700"
   defp badge_bg_color(:review), do: "bg-fuchsia-700"
   defp badge_bg_color(_), do: "bg-gray-700"
-
-  def learning_objectives(assigns) do
-    ~H"""
-      <.tabs active_tab={:learning_objectives} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      <div class="container mx-auto">Not available yet</div>
-    """
-  end
-
-  def students(assigns) do
-    ~H"""
-      <.tabs active_tab={:students} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      <div class="container mx-auto">Not available yet</div>
-    """
-  end
-
-  def content(assigns) do
-    ~H"""
-      <.tabs active_tab={:content} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      <CourseContentPanel.course_content_panel {assigns} />
-    """
-  end
-
-  def discussions(assigns) do
-    ~H"""
-      <.tabs active_tab={:discussions} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      <.live_component
-        id="discussion_activity_table"
-        module={OliWeb.Components.Delivery.DiscussionActivity}
-        limit={@limit}
-        filter={@filter}
-        offset={@offset}
-        count={@count}
-        collab_space_table_model={@collab_space_table_model}
-        discussion_table_model={@discussion_table_model}
-        section_slug={@section_slug}
-        parent_component_id={@parent_component_id} />
-    """
-  end
-
-  def course_discussion(assigns) do
-    ~H"""
-      <.tabs active_tab={:course_discussion} section_slug={@section_slug} preview_mode={@preview_mode} />
-      <div class="container mx-auto mt-3 mb-5">
-        <div class="bg-white dark:bg-gray-800 p-8 shadow">
-         <%= if @collab_space_config do%>
-          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView, id: "course_discussion",
-            session: %{
-              "collab_space_config" => @collab_space_config,
-              "section_slug" => @section_slug,
-              "resource_slug" => @revision_slug,
-              "is_instructor" => true,
-              "title" => "Course Discussion"
-            })
-          %>
-          <% else %>
-              <h6>There is no collaboration space configured for this Course</h6>
-          <% end %>
-        </div>
-      </div>
-    """
-  end
-
-  def assignments(assigns) do
-    ~H"""
-      <.tabs active_tab={:assignments} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      <div class="container mx-auto">Not available yet</div>
-    """
-  end
-
-  def manage(assigns) do
-    ~H"""
-      <.tabs active_tab={:manage} section_slug={@section_slug} preview_mode={@preview_mode} />
-      <div class="container mx-auto mt-3 mb-5">
-        <div class="bg-white dark:bg-gray-800 p-8 shadow">
-          <%= live_render(@socket, OliWeb.Sections.OverviewView, id: "overview", session: %{"section_slug" => @section_slug}) %>
-        </div>
-      </div>
-    """
-  end
 end

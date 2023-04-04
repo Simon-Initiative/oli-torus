@@ -47,6 +47,9 @@ defmodule OliWeb.Common.SortableTable.Table do
       {column_spec.label}
       {#if @model.sort_by_spec == column_spec}
         <i class={"fas fa-sort-" <> sort_direction_cls} />
+        <span class={"data-sort-" <> sort_direction_cls} data-sort-column="true"></span>
+      {#else}
+        <span class="data-sort-up" data-sort-column="false"></span>
       {/if}
     </th>
     """

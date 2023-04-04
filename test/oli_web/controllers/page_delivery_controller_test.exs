@@ -1717,6 +1717,34 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "Due by 2023-06-05"
       assert html_response(conn, 200) =~ "Due by 2023-07-08"
     end
+
+    test "related activities get rendered", %{conn: conn, section: section} do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Course content"
+      assert html_response(conn, 200) =~ "Explorations"
+
+      assert html_response(conn, 200) =~
+               "<td class=\"w-1/3 border-none\">Graded page 1 - Level 1 (w/ no date)</td>"
+
+      assert html_response(conn, 200) =~
+               "<td class=\"w-1/3 border-none\">Graded page 2 - Level 0 (w/ date)</td>"
+
+      assert html_response(conn, 200) =~
+               "<td class=\"w-1/3 border-none\">Graded page 4 - Level 0 (w/ gating condition)</td>"
+    end
   end
 
   defp enroll_as_student(%{section: section, user: user}) do
