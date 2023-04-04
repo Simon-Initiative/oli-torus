@@ -31,6 +31,7 @@ import { RulesAndVariables } from './rule-compilation';
 export const generateDropdownRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
+  defaultDestination: number
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IDropdownPartLayout;
 
@@ -48,7 +49,7 @@ export const generateDropdownRules = (
     feedback: question.custom.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
-        correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
+        correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || defaultDestination,
         sequence,
       ) || 'unknown',
   };
@@ -58,7 +59,7 @@ export const generateDropdownRules = (
     feedback: question.custom.incorrectFeedback || DEFAULT_INCORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
-        incorrectPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
+        incorrectPath?.destinationScreenId || alwaysPath?.destinationScreenId || defaultDestination,
         sequence,
       ) || 'unknown',
   };

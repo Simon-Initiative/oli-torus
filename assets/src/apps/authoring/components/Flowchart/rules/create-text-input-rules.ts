@@ -9,7 +9,12 @@ import {
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
-import { isAlwaysPath, isCorrectPath, isIncorrectPath } from '../paths/path-utils';
+import {
+  isAlwaysPath,
+  isCorrectPath,
+  isEndOfActivityPath,
+  isIncorrectPath,
+} from '../paths/path-utils';
 import { createCondition } from './create-condition';
 import {
   DEFAULT_CORRECT_FEEDBACK,
@@ -23,30 +28,31 @@ import { RulesAndVariables } from './rule-compilation';
 export const generateTextInputRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
+  defaultDestination: number,
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IInputTextPartLayout;
 
   const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);
   const correctPath = (screen.authoring?.flowchart?.paths || []).find(isCorrectPath);
   const incorrectPath = (screen.authoring?.flowchart?.paths || []).find(isIncorrectPath);
-  const requiredTerms = (question.custom.correctAnswer.mustContain || '')
+  const requiredTerms = (question.custom?.correctAnswer?.mustContain || '')
     .split(',')
     .map((t) => t.trim())
     .filter((t) => t.length > 0);
 
-  const forbiddenTerms = (question.custom.correctAnswer.mustNotContain || '')
+  const forbiddenTerms = (question.custom?.correctAnswer?.mustNotContain || '')
     .split(',')
     .map((t) => t.trim())
     .filter((t) => t.length > 0);
 
-  const minLen = question.custom.correctAnswer.minimumLength || 0;
+  const minLen = question.custom.correctAnswer?.minimumLength || 0;
 
   const correct: Required<IConditionWithFeedback> = {
     conditions: createTextInputCorrectCondition(question, requiredTerms, forbiddenTerms, minLen),
     feedback: question.custom.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
-        correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
+        correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || defaultDestination,
         sequence,
       ) || 'unknown',
   };
@@ -56,7 +62,7 @@ export const generateTextInputRules = (
     feedback: question.custom.incorrectFeedback || DEFAULT_INCORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
-        incorrectPath?.destinationScreenId || alwaysPath?.destinationScreenId || undefined,
+        incorrectPath?.destinationScreenId || alwaysPath?.destinationScreenId || defaultDestination,
         sequence,
       ) || 'unknown',
   };
