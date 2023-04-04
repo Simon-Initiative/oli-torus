@@ -250,10 +250,8 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     });
   };
 
-  // Toggle popup open/close
   const handleOnBlurToggleIcon = (toggleVal: boolean) => {
     setShowPopup(toggleVal);
-    // optimistically write state
     props.onSave({
       id,
       responses: [
