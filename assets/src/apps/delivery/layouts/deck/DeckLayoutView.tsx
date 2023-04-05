@@ -335,7 +335,20 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // TODO: currently not used.
     return true;
   };
-
+  const getStatePrefix = (path: string, activityId: string | number) => {
+    const parts = path.split('.');
+    const partId = parts[0];
+    const ownerActivityId = currentActivityTree?.filter((activity: any) =>
+      activity?.authoring?.parts?.filter(
+        (part: { id: string; owner: string | number }) =>
+          part?.id === partId && part?.owner == activityId,
+      ),
+    );
+    if (ownerActivityId?.length) {
+      return `${ownerActivityId[0].id}|stage`;
+    }
+    return `${activityId}|stage`;
+  };
   const handleActivitySavePart = useCallback(
     async (
       activityId: string | number,
@@ -350,7 +363,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       response,
       currentActivityTree,
     }); */
-      const statePrefix = `${activityId}|stage`;
+      let statePrefix = `${activityId}|stage`;
+      if (response.input?.length) {
+        //Even though the current screen is a child screen, we always save the properties with there owner activity Id.
+        // The entire response is from one part, so the path (i.e. partId.properyName) will be same for all input response
+        // Hence we check the owner activity id once
+        statePrefix = getStatePrefix(response.input[0].path, activityId);
+      }
       const responseMap = response.input.reduce(
         (result: { [x: string]: any }, item: { key: string; path: string }) => {
           result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
