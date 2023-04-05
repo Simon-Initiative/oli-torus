@@ -20,7 +20,7 @@ defmodule OliWeb.Components.Delivery.Content do
     limit: 25,
     container_id: nil,
     sort_order: :asc,
-    sort_by: :container_name,
+    sort_by: :numbering_index,
     text_search: nil,
     container_filter_by: :units
   }
@@ -158,7 +158,13 @@ defmodule OliWeb.Components.Delivery.Content do
         Params.get_atom_param(
           params,
           "sort_by",
-          [:container_name, :student_completion, :student_mastery, :student_engagement],
+          [
+            :numbering_index,
+            :container_name,
+            :student_completion,
+            :student_mastery,
+            :student_engagement
+          ],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
@@ -225,6 +231,9 @@ defmodule OliWeb.Components.Delivery.Content do
 
   defp sort_by(containers, sort_by, sort_order) do
     case sort_by do
+      :numbering_index ->
+        Enum.sort_by(containers, fn container -> container.numbering_index end, sort_order)
+
       :container_name ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)
 

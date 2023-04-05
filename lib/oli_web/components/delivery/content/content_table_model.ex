@@ -6,10 +6,16 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
   def new(containers, container_column_name, section_slug) do
     column_specs = [
       %ColumnSpec{
+        name: :numbering_index,
+        label: "ORDER",
+        th_class: "pl-10 instructor_dashboard_th",
+        td_class: "pl-10"
+      },
+      %ColumnSpec{
         name: :container_name,
         label: container_column_name,
         render_fn: &__MODULE__.render_name_column/3,
-        th_class: "pl-10 instructor_dashboard_th"
+        th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
         name: :student_completion,
@@ -59,7 +65,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       })
 
     ~H"""
-    <div class="flex items-center ml-8">
+    <div class="flex items-center">
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
       <.link
         class="ml-6 text-gray-600 underline hover:text-gray-700"
@@ -100,7 +106,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
   defp parse_progress(progress) do
     {progress, _} =
-      ((progress && Float.round(progress * 100)) || 0.0)
+      Float.round(progress * 100)
       |> Float.to_string()
       |> Integer.parse()
 

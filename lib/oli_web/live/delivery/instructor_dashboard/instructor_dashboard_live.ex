@@ -140,7 +140,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     containers_with_metrics =
       Enum.map(containers, fn container ->
         Map.merge(container, %{
-          progress: student_progress[container.id],
+          progress: student_progress[container.id] || 0.0,
           student_engagement: Enum.random(["Low", "Medium", "High", "Not enough data"]),
           student_mastery: Enum.random(["Low", "Medium", "High", "Not enough data"])
         })

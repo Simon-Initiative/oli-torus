@@ -2043,7 +2043,8 @@ defmodule Oli.Delivery.Sections do
         select: %{
           id: rev.resource_id,
           title: rev.title,
-          numbering_level: sr.numbering_level
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index
         }
 
     case Repo.all(query) do
@@ -2054,11 +2055,12 @@ defmodule Oli.Delivery.Sections do
 
   defp get_pages(section_slug) do
     query =
-      from [_sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where: s.slug == ^section_slug and rev.resource_type_id == 1,
         select: %{
           id: rev.resource_id,
-          title: rev.title
+          title: rev.title,
+          numbering_index: sr.numbering_index
         }
 
     Repo.all(query)
