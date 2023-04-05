@@ -34,7 +34,7 @@ import { RulesAndVariables } from './rule-compilation';
 export const generteNumberInputRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
-  defaultDestination: number
+  defaultDestination: number,
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IInputNumberPartLayout;
 

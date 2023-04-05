@@ -25,7 +25,7 @@ import { RulesAndVariables } from './rule-compilation';
 export const generateMultilineTextInputRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
-  defaultDestination: number
+  defaultDestination: number,
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IMultiLineTextPartLayout;
   const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);

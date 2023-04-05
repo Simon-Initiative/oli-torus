@@ -27,7 +27,9 @@ export const updatePart = createAsyncThunk(
       throw new Error(`Activity: ${payload.activityId} not found!`);
     }
     const activityClone = clone(activity);
-    let partDef = activityClone.content.partsLayout.find((part: any) => part.id === payload.partId);
+    const partDef = activityClone.content.partsLayout.find(
+      (part: any) => part.id === payload.partId,
+    );
     if (!partDef) {
       throw new Error(`Part: ${payload.partId} not found in Activity: ${payload.activityId}`);
     }
