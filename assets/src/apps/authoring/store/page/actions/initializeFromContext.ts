@@ -22,7 +22,6 @@ export const initializeFromContext = createAsyncThunk(
   `${PageSlice}/initializeFromContext`,
   async (params: { context: PageContext; config: any }, thunkApi) => {
     const { dispatch, getState } = thunkApi;
-    const appMode = selectAppMode(getState() as AuthoringRootState);
 
     // load the page state properties
     const pageState: Partial<PageState> = {
@@ -136,6 +135,7 @@ export const initializeFromContext = createAsyncThunk(
 
     await dispatch(setGroups({ groups }));
 
+    const appMode = selectAppMode(getState() as AuthoringRootState);
     if (appMode === 'flowchart') {
       await dispatch(verifyFlowchartLesson({}));
     }
