@@ -27,7 +27,11 @@ import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/de
 import { savePage } from '../../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
-import { createAlwaysGoToPath, createEndOfActivityPath } from '../paths/path-factories';
+import {
+  createAlwaysGoToPath,
+  createEndOfActivityPath,
+  createExitPath,
+} from '../paths/path-factories';
 import { AuthoringFlowchartScreenData } from '../paths/path-types';
 import {
   hasDestinationPath,
@@ -43,7 +47,6 @@ interface AddFlowchartScreenPayload {
   title?: string;
   screenType?: string;
   skipPathToNewScreen?: boolean;
-  skipPathFromNewScreen?: boolean;
 }
 
 /**
@@ -91,9 +94,11 @@ export const addFlowchartScreen = createAsyncThunk(
       };
       activity.model.authoring.flowchart = flowchartData;
 
-      if (!payload.skipPathFromNewScreen) {
-        if (payload.toScreenId) {
-          flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));
+      if (payload.toScreenId) {
+        flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));
+      } else {
+        if (screenType === 'end_screen') {
+          flowchartData.paths.push(createExitPath());
         } else {
           flowchartData.paths.push(createEndOfActivityPath());
         }
