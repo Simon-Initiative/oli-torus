@@ -80,7 +80,6 @@ const verifyEndScreenExists = async (getState: () => unknown, dispatch: any) => 
         title: 'End of Lesson',
         screenType: 'end_screen',
         skipPathToNewScreen: true,
-        skipPathFromNewScreen: true,
       }),
     );
   }

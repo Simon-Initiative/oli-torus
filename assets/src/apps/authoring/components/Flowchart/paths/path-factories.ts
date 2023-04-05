@@ -1,6 +1,7 @@
 import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import guid from '../../../../../utils/guid';
 import {
+  AdvancedFeedbackAnswerType,
   IDropdownPartLayout,
   IInputNumberPartLayout,
   IMCQPartLayout,
@@ -41,9 +42,10 @@ export const createInputNumberCommonErrorPath = (
   index: number,
 ): NumericCommonErrorPath => {
   const feedback = ni.custom!.advancedFeedback![index];
-  const label = feedback.answer?.range
-    ? `Answer is ${feedback.answer.correctMin} to ${feedback.answer.correctMax}`
-    : `Answer is ${feedback.answer?.correctAnswer}`;
+  const label =
+    feedback.answer?.answerType === AdvancedFeedbackAnswerType.Between
+      ? `Answer is ${feedback.answer.correctMin} to ${feedback.answer.correctMax}`
+      : `Answer is ${feedback.answer?.correctAnswer}`;
 
   return {
     ...createDestinationPathTemplate(`input-number-common-error-${index}`),

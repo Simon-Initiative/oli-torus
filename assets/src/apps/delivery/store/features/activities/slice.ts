@@ -13,17 +13,21 @@ import { AuthoringFlowchartScreenData } from '../../../../authoring/components/F
 
 import ActivitiesSlice from './name';
 
-interface IBasePartLayout {
-  id: string;
-  type: string;
+interface IBasePartLayoutCustomProp {
   x: number;
   y: number;
   z: number;
   width: number;
   height: number;
-  enabled: boolean;
-  requiresManualGrading: boolean;
-  custom: Record<string, any>;
+  enabled?: boolean;
+  requiresManualGrading?: boolean;
+  [key: string]: any;
+}
+
+interface IBasePartLayout {
+  id: string;
+  type: string;
+  custom: IBasePartLayoutCustomProp;
 }
 
 export enum AdvancedFeedbackAnswerType {
@@ -70,7 +74,7 @@ export interface ISliderPartLayout extends IBasePartLayout {
     correctFeedback?: string;
     incorrectFeedback?: string;
     advancedFeedback?: INumberAdvancedFeedback[];
-  };
+  } & IBasePartLayoutCustomProp;
 }
 
 export interface IMultiLineTextPartLayout extends IBasePartLayout {
@@ -87,7 +91,7 @@ export interface IMultiLineTextPartLayout extends IBasePartLayout {
     minimumLength?: number;
     correctFeedback?: string;
     incorrectFeedback?: string;
-  };
+  } & IBasePartLayoutCustomProp;
 }
 export interface IInputTextPartLayout extends IBasePartLayout {
   type: 'janus-input-text';
@@ -106,7 +110,7 @@ export interface IInputTextPartLayout extends IBasePartLayout {
     incorrectFeedback: string;
     showOnAnswersReport: boolean;
     requireManualGrading: boolean;
-  };
+  } & IBasePartLayoutCustomProp;
 }
 
 export interface IInputNumberPartLayout extends IBasePartLayout {
@@ -128,7 +132,7 @@ export interface IInputNumberPartLayout extends IBasePartLayout {
     showIncrementArrows: boolean;
     requireManualGrading: boolean;
     requiresManualGrading: boolean;
-  };
+  } & IBasePartLayoutCustomProp;
 }
 
 export interface IDropdownPartLayout extends IBasePartLayout {
@@ -146,7 +150,7 @@ export interface IDropdownPartLayout extends IBasePartLayout {
     incorrectFeedback?: string;
     commonErrorFeedback?: string[];
     customCssClass: string;
-  };
+  } & IBasePartLayoutCustomProp;
 }
 
 export interface IMCQPartLayout extends IBasePartLayout {
@@ -171,7 +175,7 @@ export interface IMCQPartLayout extends IBasePartLayout {
     correctFeedback?: string;
     incorrectFeedback?: string;
     commonErrorFeedback?: string[];
-  };
+  } & IBasePartLayoutCustomProp;
 }
 
 type KnownPartLayouts =
