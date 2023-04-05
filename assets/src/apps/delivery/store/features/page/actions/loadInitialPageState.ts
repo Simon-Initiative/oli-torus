@@ -37,9 +37,9 @@ export const loadInitialPageState = createAsyncThunk(
     if (otherTypes.length) {
       groups.push({ type: 'group', layout: 'deck', children: [...otherTypes] });
     }
+    const isReviewMode = selectReviewMode;
     // wait for this to resolve so that state will be updated
     await dispatch(setGroups({ groups }));
-    const isReviewMode = selectReviewMode;
     const currentGroup = selectCurrentGroup(getState() as RootState);
     if (currentGroup?.layout === LayoutType.DECK) {
       // write initial session state (TODO: factor out elsewhere)
