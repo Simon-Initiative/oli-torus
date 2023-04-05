@@ -11,7 +11,7 @@ export const OnboardWizardStep1 = () => {
   return (
     <div className="advanced-authoring" id="advanced-authoring">
       <AdvancedAuthorStorybookContext className="">
-        <OnboardWizard startStep={0} />
+        <OnboardWizard onSetupComplete={() => true} startStep={0} />
       </AdvancedAuthorStorybookContext>
     </div>
   );
@@ -21,7 +21,7 @@ export const OnboardWizardStep2 = () => {
   return (
     <div className="advanced-authoring" id="advanced-authoring">
       <AdvancedAuthorStorybookContext className="">
-        <OnboardWizard startStep={1} />
+        <OnboardWizard onSetupComplete={() => true} startStep={1} />
       </AdvancedAuthorStorybookContext>
     </div>
   );
@@ -31,7 +31,7 @@ export const OnboardWizardStep3 = () => {
   return (
     <div className="advanced-authoring" id="advanced-authoring">
       <AdvancedAuthorStorybookContext className="">
-        <OnboardWizard startStep={2} />
+        <OnboardWizard onSetupComplete={() => true} startStep={2} />
       </AdvancedAuthorStorybookContext>
     </div>
   );
