@@ -19,11 +19,11 @@
         <% else %>
           <div class="flex flex-wrap">
             <%= for section <- @sections do %>
-              <a href={Routes.page_delivery_path(@conn, :index, section.slug)} class="rounded-lg shadow-lg bg-white max-w-xs mr-3 mb-3 border border-transparent hover:border-blue-500 hover:no-underline">
+              <a href={Routes.page_delivery_path(@conn, :index, section.slug)} class="rounded-lg shadow-lg bg-white dark:bg-gray-600 max-w-xs mr-3 mb-3 border-2 border-transparent hover:border-blue-500 hover:no-underline">
                 <img class="rounded-t-lg" src={cover_image(section)} alt="course image"/>
                 <div class="p-6">
-                  <h5 class="text-gray-900 text-xl font-medium mb-2"><%= section.title %></h5>
-                  <p class="text-gray-700 text-base mb-4">
+                  <h5 class="text-gray-900 dark:text-white text-xl font-medium mb-2"><%= section.title %></h5>
+                  <p class="text-gray-700 dark:text-white text-base mb-4">
                     <%= section.description %>
                   </p>
                 </div>

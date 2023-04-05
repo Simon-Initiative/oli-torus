@@ -19,7 +19,7 @@ defmodule OliWeb.Common.FilterBox do
 
   def render(assigns) do
     ~F"""
-    <div class="p-4 mb-3">
+    <div class="mb-3">
       <h3>{@card_header_text}</h3>
       <div>
         <p class="mt-1 mb-4">{@card_body_text}</p>

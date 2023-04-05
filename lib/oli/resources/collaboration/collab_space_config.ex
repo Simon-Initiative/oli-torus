@@ -17,11 +17,11 @@ defmodule Oli.Resources.Collaboration.CollabSpaceConfig do
     field :threaded, :boolean, default: true
     field :auto_accept, :boolean, default: true
     field :show_full_history, :boolean, default: true
+    field :anonymous_posting, :boolean, default: true
 
     field :participation_min_replies, :integer, default: 0
     field :participation_min_posts, :integer, default: 0
   end
-
 
   def changeset(collab_space_config, attrs \\ %{})
 
@@ -37,6 +37,7 @@ defmodule Oli.Resources.Collaboration.CollabSpaceConfig do
       :threaded,
       :auto_accept,
       :show_full_history,
+      :anonymous_posting,
       :participation_min_replies,
       :participation_min_posts
     ])

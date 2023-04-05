@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Header do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.UserAccountMenu
-  alias OliWeb.Components.Delivery.HelpButton
+  alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   def header(assigns) do
@@ -27,7 +27,7 @@ defmodule OliWeb.Components.Header do
 
         <%= if not is_preview_mode?(assigns) do %>
           <div class="nav-item my-2 my-lg-0 mr-2">
-            <HelpButton.help_button />
+            <Buttons.help_button />
           </div>
         <% end %>
 
@@ -77,11 +77,20 @@ defmodule OliWeb.Components.Header do
         <% end %>
       </div>
     </nav>
+    <.delivery_breadcrumb breadcrumbs={assigns[:breadcrumbs]} socket_or_conn={socket_or_conn(assigns)} />
+    """
+  end
+
+  attr :breadcrumbs, :list, required: true
+  attr :socket_or_conn, :any, required: true
+
+  def delivery_breadcrumb(assigns) do
+    ~H"""
     <%= if delivery_breadcrumbs?(assigns) do %>
-      <div class="container">
+      <div class="container mx-auto my-2">
         <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
           <div class="flex-1">
-            <%= live_render(@conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
+            <%= live_render(@socket_or_conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
           </div>
         </nav>
       </div>

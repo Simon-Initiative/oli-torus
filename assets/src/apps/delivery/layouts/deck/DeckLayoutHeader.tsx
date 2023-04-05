@@ -77,7 +77,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           }
           .back-button a {
             text-decoration: none;
-            padding: 0 0 0 4px;
+            padding: 4px 10px;
             font-size: 1.3rem;
             line-height: 1.5;
             border-radius: 0 0 4px 4px;

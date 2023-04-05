@@ -109,12 +109,23 @@ config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
   private_secret: System.get_env("STRIPE_PRIVATE_SECRET")
 
+config :oli, :cashnet_provider,
+  cashnet_store: System.get_env("CASHNET_STORE"),
+  cashnet_checkout_url: System.get_env("CASHNET_CHECKOUT_URL"),
+  cashnet_client: System.get_env("CASHNET_CLIENT"),
+  cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
+
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
 config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenLibrary
+
+config :oli, :upgrade_experiment_provider,
+  url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
+  user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
+  api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,

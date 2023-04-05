@@ -1,5 +1,5 @@
 defmodule OliWeb.ProductsLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -8,6 +8,11 @@ defmodule OliWeb.ProductsLiveTest do
 
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Utils.Seeder
+
+  defp live_view_products_route(project_slug) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, project_slug)
+  end
 
   defp live_view_details_route(product_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, product_slug)
@@ -188,6 +193,33 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert view
              |> render() =~ "<img id=\"current-product-img\" src=\"#{current_image}\""
+    end
+  end
+
+  describe "user cannot create product until after project is published" do
+    setup [:author_conn]
+
+    test "redirects to new session when accessing the section overview view", %{
+      conn: conn,
+      author: author
+    } do
+      seeds =
+        Seeder.Project.create_sample_project(%{}, author,
+          project_tag: :project,
+          publication_tag: :publication
+        )
+
+      %{project: project, publication: publication} = seeds
+
+      {:ok, view, _html} = live(conn, live_view_products_route(project.slug))
+
+      assert render(view) =~ "Products cannot be created until project is published"
+
+      Seeder.Project.ensure_published(seeds, publication)
+
+      {:ok, view, _html} = live(conn, live_view_products_route(project.slug))
+
+      assert render(view) =~ "Create a new product with title"
     end
   end
 end

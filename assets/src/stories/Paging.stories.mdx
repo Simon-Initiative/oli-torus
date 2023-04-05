@@ -1,4 +1,5 @@
 import { Paging } from 'components/misc/Paging';
+import { TorusBG } from './TorusBG';
 
 <Meta title="Torus/Paging" />
 
@@ -7,13 +8,15 @@ import { Paging } from 'components/misc/Paging';
 Control to allow the navigation between pages of content.
 
 <Story name="4 pages">
-  <Paging
-    totalResults={32}
-    page={{
-      offset: 0,
-      limit: 10,
-    }}
-  />
+  <TorusBG>
+    <Paging
+      totalResults={32}
+      page={{
+        offset: 0,
+        limit: 10,
+      }}
+    />
+  </TorusBG>
 </Story>
 
 ```tsx
@@ -27,13 +30,15 @@ Control to allow the navigation between pages of content.
 ```
 
 <Story name="Many pages">
-  <Paging
-    totalResults={1000}
-    page={{
-      offset: 0,
-      limit: 10,
-    }}
-  />
+  <TorusBG>
+    <Paging
+      totalResults={1000}
+      page={{
+        offset: 0,
+        limit: 10,
+      }}
+    />
+  </TorusBG>
 </Story>
 
 ```tsx

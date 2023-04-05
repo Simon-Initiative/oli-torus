@@ -27,7 +27,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         _params,
         %{
           "collab_space_config" => collab_space_config,
-          "page_slug" => page_slug
+          "resource_slug" => page_slug
         } = session,
         socket
       ) do
@@ -84,35 +84,40 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
        page_revision: page_revision,
        page_resource: page_resource,
        parent_entity: parent_entity,
-       topic: topic
+       topic: topic,
+       is_overview_render: Map.get(session, "is_overview_render")
      )}
   end
 
   def render(assigns) do
     ~F"""
-      <div class="card max-w-full">
-        <div class="card-body d-flex justify-content-between">
-          <div class="d-flex flex-1">
-            <h3 class="card-title">Collaborative Space Config</h3>
-            <h6 class="d-flex align-items-center">Current status <span class="badge badge-info ml-2">{humanize(@collab_space_status)}</span></h6>
+      <div class={"card max-w-full #{if @is_overview_render, do: "shadow-none"}"}>
+        <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
+          <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
+            {#unless @is_overview_render}
+              <h3 class="card-title">Collaborative Space Config</h3>
+            {/unless}
+            <div>
+              <span class="bg-delivery-primary-200 badge badge-info">{humanize(@collab_space_status)}</span>
+            </div>
           </div>
 
-          <div>
+          <div class="mt-4 md:mt-0">
             {#case @collab_space_status}
               {#match :disabled}
-                <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
+                <button class="torus-button primary" :on-click="enable">Enable</button>
               {#match :enabled}
-                <button class="btn btn-outline-primary" :on-click="archive">Archive</button>
-                <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
+                <button class="torus-button outline" :on-click="archive">Archive</button>
+                <button class="torus-button secondary" :on-click="disable">Disable</button>
               {#match _}
-                <button class="btn btn-outline-primary" :on-click="enable">Enable</button>
-                <button class="btn btn-outline-danger" :on-click="disable">Disable</button>
+                <button class="torus-button primary border outline" :on-click="enable">Enable</button>
+                <button class="torus-button secondary" :on-click="disable">Disable</button>
             {/case}
           </div>
         </div>
         {#if @collab_space_status == :enabled}
-          <div class="card-footer bg-transparent d-flex justify-content-center">
-            <Form for={@changeset} submit="save">
+          <div class="card-footer bg-transparent flex mt-8">
+            <Form class="w-full" for={@changeset} submit="save">
               <Inputs for={:collab_space_config}>
                 <HiddenInput field={:status}/>
 
@@ -131,22 +136,27 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
                   <Label class="form-check-label" />
                 </Field>
 
+                <Field name={:anonymous_posting} class="form-check mt-1">
+                  <Checkbox class="form-check-input"/>
+                  <Label class="form-check-label" text="Allow anonymous posts"/>
+                </Field>
+
                 <br>
                 Participation requirements
-                <div class="ml-4">
-                  <Field name={:participation_min_replies} class="form-group mt-1">
+                <div class="flex flex-col gap-4">
+                  <Field name={:participation_min_replies} class="form-group">
                     <Label text="Minimum replies"/>
                     <NumberInput class="form-control" opts={min: 0}/>
                   </Field>
 
-                  <Field name={:participation_min_posts} class="form-group mt-1">
+                  <Field name={:participation_min_posts} class="form-group">
                     <Label text="Minimum posts" />
                     <NumberInput class="form-control" opts={min: 0}/>
                   </Field>
                 </div>
               </Inputs>
 
-              <button class="form-button btn btn-md btn-primary mt-3" type="submit">Save</button>
+              <button class="torus-button primary !flex ml-auto mt-8" type="submit">Save</button>
             </Form>
           </div>
         {/if}

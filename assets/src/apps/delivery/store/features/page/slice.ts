@@ -1,6 +1,6 @@
 import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
-import { RootState } from '../../rootReducer';
+import { DeliveryRootState } from '../../rootReducer';
 import PageSlice from './name';
 
 export interface PageState {
@@ -114,7 +114,7 @@ export const {
   setScreenIdleExpirationTime,
 } = pageSlice.actions;
 
-export const selectState = (state: RootState): PageState => state[PageSlice];
+export const selectState = (state: DeliveryRootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageTitle = createSelector(selectState, (state) => state.pageTitle);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
@@ -123,6 +123,8 @@ export const selectPreviewMode = createSelector(selectState, (state) => state.pr
 export const selectReviewMode = createSelector(selectState, (state) => state.reviewMode);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
+
+export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectScreenIdleTimeOutInSeconds = createSelector(
   selectState,
   (state) => state.screenIdleTimeOutInSeconds,
@@ -131,7 +133,6 @@ export const selectScreenIdleExpirationTime = createSelector(
   selectState,
   (state) => state.screenIdleExpireTime,
 );
-export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,

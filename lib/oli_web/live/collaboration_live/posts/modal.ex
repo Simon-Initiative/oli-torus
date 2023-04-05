@@ -2,6 +2,7 @@ defmodule OliWeb.CollaborationLive.Posts.Modal do
   use Surface.Component
 
   alias Surface.Components.Form
+
   alias Surface.Components.Form.{
     Field,
     TextArea,
@@ -21,7 +22,7 @@ defmodule OliWeb.CollaborationLive.Posts.Modal do
           <div class="modal-content">
             <div class="modal-header pb-0">
               <h4 class="modal-title">{@title}</h4>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><i class="fa-solid fa-xmark fa-xl"></i></button>
             </div>
 
             <div class="modal-body col-12 mt-2">

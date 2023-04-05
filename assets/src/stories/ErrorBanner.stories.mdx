@@ -1,0 +1,68 @@
+import { ErrorBanner } from 'components/misc/ErrorBanner';
+
+<Meta title="Torus/ErrorBanner" />
+
+# Error Banner
+
+## Default usage
+
+Banner fixed at the top of the page suitable for displaying error messages.
+
+<Canvas>
+  <Story name="Banner without dismiss">
+    <div className="relative h-12">
+      <ErrorBanner className="absolute">Here is my error.</ErrorBanner>
+    </div>
+  </Story>
+</Canvas>
+
+```jsx
+import { ErrorBanner } from 'components/misc/ErrorBanner';
+
+<ErrorBanner>Here is my error.</ErrorBanner>;
+```
+
+## Dismiss button
+
+Specify a dismiss function to display the dismiss button.
+
+<Canvas>
+  <Story name="Banner with dismiss button">
+    <div className="relative h-12">
+      <ErrorBanner className="absolute" onDismissError={() => true}>
+        Here is my error.
+      </ErrorBanner>
+    </div>
+  </Story>
+</Canvas>
+
+```jsx
+import { ErrorBanner } from 'components/misc/ErrorBanner';
+
+<ErrorBanner onDismissError={() => true}>Here is my error.</ErrorBanner>;
+```
+
+**_Note:_** This doc page specifies className="absolute" to prevent the banner from covering the top of the page and overlapping with each other,
+this is not normally required as it's positioned fixed by default.
+
+## Customize styles
+
+Specify a classname to augment the built in styles
+
+<Canvas>
+  <Story name="Customize banner with className">
+    <div className="relative h-24">
+      <ErrorBanner className="absolute h-24 items-center" onDismissError={() => true}>
+        Here is my error.
+      </ErrorBanner>
+    </div>
+  </Story>
+</Canvas>
+
+```jsx
+import { ErrorBanner } from 'components/misc/ErrorBanner';
+
+<ErrorBanner className="h-24 items-center" onDismissError={() => true}>
+  Here is my error.
+</ErrorBanner>;
+```

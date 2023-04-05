@@ -1,0 +1,12 @@
+.torus-input {
+  @apply border border-gray-300 p-3 w-full rounded-sm text-sm;
+}
+
+textarea.torus-input {
+  @apply resize-none;
+}
+
+select.torus-select {
+  @apply p-0 border-0 border-b-2 border-b-delivery-primary text-delivery-primary pr-9;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}

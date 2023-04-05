@@ -3,6 +3,7 @@ import {
   selectOverviewURL,
   setScreenIdleExpirationTime,
 } from 'apps/delivery/store/features/page/slice';
+import TimeRemaining from 'components/common/TimeRemaining';
 import { readGlobal } from 'data/persistence/extrinsic';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -11,7 +12,7 @@ import { setScreenIdleTimeOutTriggered } from '../../store/features/adaptivity/s
 const ScreenIdleTimeOutDialog: React.FC<any> = () => {
   const [isOpen, setIsOpen] = useState(true);
   const overviewURL = useSelector(selectOverviewURL);
-
+  const remainingTimeInMinutes = 5;
   const handleKeepMySessionActiveClick = async () => {
     //lets make a server call to continue the user session
     await readGlobal([]);
@@ -28,7 +29,7 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       handleSessionExpire();
-    }, 60000);
+    }, remainingTimeInMinutes * 60 * 1000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -54,7 +55,11 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
             <div className="type"></div>
             <div className="message">
               <p>
-                Your session will timeout in <b>1 minutes</b>. You want to continue?
+                Your session will timeout in{' '}
+                <b>
+                  {<TimeRemaining remainingTimeInMinutes={remainingTimeInMinutes}></TimeRemaining>}
+                </b>
+                . Do you want to continue?
               </p>
             </div>
           </div>

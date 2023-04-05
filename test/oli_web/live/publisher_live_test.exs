@@ -1,5 +1,5 @@
 defmodule OliWeb.PublisherLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -82,7 +82,7 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~ "Torus Publisher"
 
       assert view
-             |> element("#publishers-table span")
+             |> element("#publishers-table span.badge")
              |> render() =~ "default"
     end
 

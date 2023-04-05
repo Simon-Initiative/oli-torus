@@ -14,7 +14,7 @@
   <%= case assigns do %>
     <% %{breadcrumbs: breadcrumbs, project: project}  when not is_nil(project) -> %>
       <%= if length(breadcrumbs) > 0 do %>
-        <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300">
+        <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300 dark:border-neutral-800">
           <%= live_render(@conn, BreadcrumbTrailLive, session: %{
           "container_slug" => container_slug(@conn.assigns),
           "project_slug" => project.slug,
@@ -24,7 +24,7 @@
 
     <% %{breadcrumbs: breadcrumbs}  when not is_nil(breadcrumbs) -> %>
       <%= if length(breadcrumbs) > 0 do %>
-        <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300">
+        <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300 dark:border-neutral-800">
           <%= live_render(@conn, BreadcrumbTrailLive, session: %{
           "container_slug" => container_slug(@conn.assigns),
           "breadcrumbs" => breadcrumbs }) %>

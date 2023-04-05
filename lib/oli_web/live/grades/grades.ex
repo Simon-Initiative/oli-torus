@@ -5,88 +5,66 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.AGS.LineItem
   alias Lti_1p3.Tool.Services.NRPS
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
-  alias Oli.Accounts
-  alias Oli.Repo
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias Oli.Lti.AccessTokenLibrary
+  alias OliWeb.Sections.Mount
+  alias OliWeb.Common.Breadcrumb
 
-  def mount(
-        _params,
-        %{"section_slug" => section_slug} = session,
-        socket
-      ) do
-    section = Sections.get_section_by_slug(section_slug)
-
-    if is_admin_author?(session) or is_instructor?(session, section) do
-      do_mount(section, socket)
-    else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-    end
+  def set_breadcrumbs(type, section) do
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
+    |> breadcrumb(section)
   end
 
-  defp do_mount(section, socket) do
-    {_d, registration} = Sections.get_deployment_registration_from_section(section)
-    line_items_url = section.line_items_service_url
-    graded_pages = Grading.fetch_graded_pages(section.slug)
-
-    selected_page =
-      if length(graded_pages) > 0 do
-        hd(graded_pages).resource_id
-      else
-        nil
-      end
-
-    {:ok,
-     assign(socket,
-       title: "LMS Grades",
-       breadcrumbs: [],
-       graded_pages: graded_pages,
-       selected_page: selected_page,
-       line_items_url: line_items_url,
-       access_token: nil,
-       task_queue: [],
-       progress_current: 0,
-       progress_max: 0,
-       section_slug: section.slug,
-       section: section,
-       registration: registration,
-       total_jobs: nil,
-       failed_jobs: nil,
-       succeeded_jobs: nil,
-       test_output: nil,
-       test_in_progress?: false
-     )}
+  def breadcrumb(previous, section) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Manage LMS Gradebook",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+        })
+      ]
   end
 
-  defp is_admin_author?(session) do
-    case session["current_author_id"] do
-      nil ->
-        false
+  def mount(%{"section_slug" => section_slug}, session, socket) do
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-      id ->
-        case Repo.get(Oli.Accounts.Author, id) do
-          nil -> false
-          author -> Accounts.is_admin?(author)
-        end
-    end
-  end
+      {type, _, section} ->
+        {_d, registration} = Sections.get_deployment_registration_from_section(section)
+        line_items_url = section.line_items_service_url
+        graded_pages = Grading.fetch_graded_pages(section.slug)
 
-  defp is_instructor?(session, section) do
-    case session["current_user_id"] do
-      nil ->
-        false
+        selected_page =
+          if length(graded_pages) > 0 do
+            hd(graded_pages).resource_id
+          else
+            nil
+          end
 
-      id ->
-        user = Accounts.get_user!(id) |> Repo.preload([:platform_roles, :author])
-
-        ContextRoles.has_role?(
-          user,
-          section.slug,
-          ContextRoles.get_role(:context_instructor)
-        )
+        {:ok,
+         assign(socket,
+           title: "LMS Grades",
+           breadcrumbs: set_breadcrumbs(type, section),
+           graded_pages: graded_pages,
+           selected_page: selected_page,
+           line_items_url: line_items_url,
+           access_token: nil,
+           task_queue: [],
+           progress_current: 0,
+           progress_max: 0,
+           section_slug: section.slug,
+           section: section,
+           registration: registration,
+           total_jobs: nil,
+           failed_jobs: nil,
+           succeeded_jobs: nil,
+           test_output: nil,
+           test_in_progress?: false
+         )}
     end
   end
 
@@ -112,32 +90,32 @@ defmodule OliWeb.Grades.GradesLive do
       )
 
     ~H"""
-    <div class="mb-2">
-      <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section.slug) do %>
-        <i class="fas fa-arrow-left"></i> Back
-      <% end %>
-    </div>
+    <div class="container mx-auto">
+      <h2><%= dgettext("grades", "Manage Grades") %></h2>
 
-    <h2><%= dgettext("grades", "Manage Grades") %></h2>
+      <p>
+        <%= dgettext("grades", "Grades for this section can be viewed by students and instructors using the LMS gradebook.") %>
+      </p>
 
-    <p>
-      <%= dgettext("grades", "Grades for this section can be viewed by students and instructors using the LMS gradebook.") %>
-    </p>
+      <div class="my-2">
+        <%= live_component OliWeb.Grades.TestConnection, assigns %>
+      </div>
+      <div class="my-2">
+        <%= live_component OliWeb.Grades.Export, assigns %>
+      </div>
 
-    <div class="card-group">
-      <%= live_component OliWeb.Grades.TestConnection, assigns %>
-      <%= live_component OliWeb.Grades.Export, assigns %>
-    </div>
+      <div class="my-2">
+        <%= live_component OliWeb.Grades.LineItems, assigns %>
+      </div>
+      <div class="my-2">
+        <%= live_component OliWeb.Grades.GradeSync, assigns %>
+      </div>
 
-    <div class="card-group">
-      <%= live_component OliWeb.Grades.LineItems, assigns %>
-      <%= live_component OliWeb.Grades.GradeSync, assigns %>
-    </div>
-
-    <div class={"mt-4 #{@progress_visible}"}>
-      <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
-      <div class="progress">
-        <div class="progress-bar" role="progressbar" style={"width: #{@percent_progress}%;"} aria-valuenow={"#{@percent_progress}"} aria-valuemin="0" aria-valuemax="100"></div>
+      <div class={"my-2 #{@progress_visible}"}>
+        <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
+        <div class="progress">
+          <div class="progress-bar" role="progressbar" style={"width: #{@percent_progress}%;"} aria-valuenow={"#{@percent_progress}"} aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
       </div>
     </div>
     """
@@ -258,7 +236,8 @@ defmodule OliWeb.Grades.GradesLive do
     end
   end
 
-  def handle_event("select_page", %{"page" => resource_id}, socket) do
+  def handle_event("select_page", %{"value" => resource_id}, socket) do
+    {resource_id, _} = Integer.parse(resource_id)
     {:noreply, assign(socket, selected_page: resource_id)}
   end
 

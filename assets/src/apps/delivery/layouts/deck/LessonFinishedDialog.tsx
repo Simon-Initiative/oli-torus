@@ -45,7 +45,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
     } else {
       window.location.href = overviewURL;
     }
-  }, [isFinalized, graded, isPreviewMode, overviewURL]);
+  }, [isFinalized, isPreviewMode, overviewURL]);
 
   const handleFinalization = useCallback(async () => {
     setFinalizationCalled(true);

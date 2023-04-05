@@ -13,11 +13,13 @@ defmodule OliWeb.Common.PagedTable do
   prop page_change, :event, default: "paged_table_page_change"
   prop selection_change, :event, default: "paged_table_selection_change"
   prop show_bottom_paging, :boolean, default: true
+  prop additional_table_class, :string, default: ""
+  prop render_top_info, :boolean, default: true
 
   def render(assigns) do
     ~F"""
-      <div>
-        {#if @filter != ""}
+      <div class="overflow-x-scroll">
+        {#if @filter != "" and @render_top_info}
           <strong>Results filtered on &quot;{@filter}&quot;</strong>
         {/if}
 
@@ -28,11 +30,12 @@ defmodule OliWeb.Common.PagedTable do
             <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
           {/if}
         {#elseif @total_count > 0}
-          <div>Showing all results ({@total_count} total)</div>
-          <br>
+          {#if @render_top_info}
+            <div class="px-5 py-2">Showing all results ({@total_count} total)</div>
+          {/if}
           {render_table(assigns)}
         {#else}
-          <p>None exist</p>
+          <p class="px-5 py-2">None exist</p>
         {/if}
       </div>
     """
@@ -41,11 +44,11 @@ defmodule OliWeb.Common.PagedTable do
   def render_table(assigns) do
     if assigns.allow_selection do
       ~F"""
-      <Table model={@table_model} sort={@sort} select={@selection_change}/>
+      <Table model={@table_model} sort={@sort} select={@selection_change} additional_table_class={@additional_table_class}/>
       """
     else
       ~F"""
-      <Table model={@table_model} sort={@sort}/>
+      <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class}/>
       """
     end
   end

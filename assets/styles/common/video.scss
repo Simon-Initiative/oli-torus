@@ -31,9 +31,11 @@
     background: none;
     border: none;
     opacity: 0.7;
-    .play-icon {
-      font-size: 128px;
-      color: #fff;
+    color: #fff;
+    font-size: 5em;
+
+    &:hover {
+      opacity: 0.9;
     }
   }
 

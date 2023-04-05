@@ -32,12 +32,12 @@
 
   <ul class="nav nav-tabs mb-3" id="institutions-tab" role="tablist">
     <li class="nav-item">
-      <a class="nav-link active" id="institutions-tab" data-toggle="tab" href="#institutions" role="tab" aria-controls="institutions" aria-selected="true">
+      <a class="nav-link active" id="institutions-tab" data-bs-toggle="tab" href="#institutions" role="tab" aria-controls="institutions" aria-selected="true">
         Institutions
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" id="pending-registrations-tab" data-toggle="tab" href="#pending-registrations" role="tab" aria-controls="pending-registrations" aria-selected="false">
+      <a class="nav-link" id="pending-registrations-tab" data-bs-toggle="tab" href="#pending-registrations" role="tab" aria-controls="pending-registrations" aria-selected="false">
         Pending Registrations
 
         <%= case Enum.count(@pending_registrations) do %>
@@ -115,7 +115,7 @@
               <td><%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @conn) %></td>
 
               <td class="text-nowrap">
-                <a href="#review-<%= pending_registration.id %>" class="btn btn-sm btn-outline-primary ml-2" data-toggle="modal" data-target="#review-<%= pending_registration.id %>">Review</button>
+                <a href="#review-<%= pending_registration.id %>" class="btn btn-sm btn-outline-primary ml-2" data-bs-toggle="modal" data-bs-target="#review-<%= pending_registration.id %>">Review</button>
                 <%= link "Decline", to: Routes.institution_path(@conn, :remove_registration, pending_registration), method: :delete, data: [confirm: "Are you sure you want to decline this request from \"#{pending_registration.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
               </td>
             </tr>
@@ -266,7 +266,7 @@
             </div>
           </div>
           <div class="modal-footer justify-end">
-            <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-secondary mr-2" data-bs-dismiss="modal">Cancel</button>
             <%= submit "Approve", class: "submit btn btn-success" %>
           </div>
         <% end %>

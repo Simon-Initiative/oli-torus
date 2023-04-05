@@ -59,14 +59,14 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
         </p>
       </div>
       <div className="accordion" id="preferenceAccordion">
-        <div className="accordion-item bg-white border border-gray-200">
+        <div className="accordion-item border border-gray-200 dark:border-gray-700">
           <div className="accordion-header mb-0 flex justify-content-between" id="headingOne">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseOne"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseOne"
                 aria-expanded="true"
                 aria-controls="collapseOne"
               >
@@ -78,7 +78,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
-                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top focus:outline-none cursor-pointer shadow-sm"
                 id="strictCookies"
                 checked
                 disabled
@@ -110,7 +110,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">
@@ -145,14 +145,14 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
             </div>
           </div>
         </div>
-        <div className="accordion-item bg-white border border-gray-200">
+        <div className="accordion-item border border-gray-200 dark:border-gray-700">
           <div className="accordion-header mb-0 flex justify-content-between" id="headingTwo">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link collapsed"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseTwo"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseTwo"
                 aria-expanded="false"
                 aria-controls="collapseTwo"
               >
@@ -164,7 +164,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
-                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
                 id="functionalCookies"
                 checked={functionalActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
@@ -192,7 +192,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">
@@ -219,14 +219,14 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
             </div>
           </div>
         </div>
-        <div className="accordion-item bg-white border border-gray-200">
+        <div className="accordion-item border border-gray-200 dark:border-gray-700">
           <div className="accordion-header mb-0 flex justify-content-between" id="headingThree">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link collapsed"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseThree"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseThree"
                 aria-expanded="false"
                 aria-controls="collapseThree"
               >
@@ -238,7 +238,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
-                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
                 id="analyticsCookies"
                 checked={analyticsActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
@@ -271,7 +271,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">
@@ -302,14 +302,14 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
             </div>
           </div>
         </div>
-        <div className="accordion-item bg-white border border-gray-200">
+        <div className="accordion-item border border-gray-200 dark:border-gray-700">
           <div className="accordion-header mb-0 flex justify-content-between" id="headingFour">
             <div className="mb-0 d-inline-block">
               <button
                 className="btn btn-link collapsed"
                 type="button"
-                data-toggle="collapse"
-                data-target="#collapseFour"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseFour"
                 aria-expanded="false"
                 aria-controls="collapseFour"
               >
@@ -321,7 +321,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
-                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain bg-gray-300 focus:outline-none cursor-pointer shadow-sm"
+                className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
                 id="targetingCookies"
                 checked={targetingActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
@@ -355,7 +355,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 </p>
               </div>
               <div className="small">
-                <a href="#demo" data-toggle="collapse">
+                <a href="#demo" data-bs-toggle="collapse">
                   View Cookies
                 </a>
                 <div id="demo" className="collapse">

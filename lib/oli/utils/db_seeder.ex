@@ -364,6 +364,91 @@ defmodule Oli.Seeder do
     })
   end
 
+  defp n_pages_for(n, pub, project, author, container_resource, container_revision) do
+
+    pages = 1..n
+    |> Enum.map(fn n ->
+      create_page("Page #{n}", pub, project, author)
+    end)
+
+    resources = Enum.map(pages, fn %{resource: r} -> r end)
+
+    attach_pages_to(resources, container_resource, container_revision, pub)
+
+    pages
+  end
+
+
+  def base_project_with_larger_hierarchy() do
+    mappings = base_project_with_resource2()
+    |> add_activity(%{title: "title 1"}, :publication, :project, :author, :activity_a)
+    |> add_activity(%{title: "title 2"}, :publication, :project, :author, :activity_b)
+    |> add_activity(%{title: "title 3"}, :publication, :project, :author, :activity_c)
+    |> add_activity(%{title: "title 4"}, :publication, :project, :author, :activity_d)
+    |> add_activity(%{title: "title 5"}, :publication, :project, :author, :activity_e)
+
+    %{
+      container: %{resource: container_resource, revision: container_revision},
+      publication: publication,
+      project: project,
+      author: author
+    } = mappings
+
+    %{resource: unit1_resource, revision: unit1_revision} =
+      create_container("Unit 1", publication, project, author)
+
+    %{resource: unit2_resource, revision: unit2_revision} =
+      create_container("Unit 2", publication, project, author)
+
+    %{resource: mod1_resource, revision: mod1_revision} =
+      create_container("Module 1", publication, project, author)
+
+    %{resource: mod2_resource, revision: mod2_revision} =
+      create_container("Module 2", publication, project, author)
+
+    %{resource: mod3_resource, revision: mod3_revision} =
+      create_container("Module 3", publication, project, author)
+
+    mod1_pages = n_pages_for(3, publication, project, author, mod1_resource, mod1_revision)
+    mod2_pages = n_pages_for(3, publication, project, author, mod2_resource, mod2_revision)
+    mod3_pages = n_pages_for(4, publication, project, author, mod3_resource, mod3_revision)
+
+    attach_pages_to([mod1_resource, mod2_resource], unit1_resource, unit1_revision, publication)
+    attach_pages_to([mod3_resource], unit2_resource, unit2_revision, publication)
+
+    container_revision =
+      attach_pages_to([unit1_resource, unit2_resource], container_resource, container_revision, publication)
+
+    {:ok, pub1} = Publishing.publish_project(project, "some changes")
+
+
+    {:ok, section} =
+      Sections.create_section(%{
+        title: "3",
+        registration_open: true,
+        open_and_free: true,
+        context_id: UUID.uuid4(),
+        institution_id: mappings.institution.id,
+        base_project_id: project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub1)
+
+    Map.merge(mappings, %{
+      container: %{resource: container_resource, revision: container_revision},
+      unit1_container: %{resource: unit1_resource, revision: unit1_revision},
+      mod1_pages: mod1_pages,
+      mod2_pages: mod2_pages,
+      mod3_pages: mod3_pages,
+      mod1_resource: mod1_resource,
+      mod2_resource: mod2_resource,
+      mod3_resource: mod3_resource,
+      unit1_resource: unit1_resource,
+      unit2_resource: unit2_resource,
+      section: section
+    })
+  end
+
   def base_project_with_resource4() do
     map =
       base_project_with_resource3()
@@ -495,7 +580,8 @@ defmodule Oli.Seeder do
       title: "some title",
       context_id: UUID.uuid4(),
       base_project_id: map.project.id,
-      institution_id: map.institution.id
+      institution_id: map.institution.id,
+      contains_explorations: map[:contains_explorations] || false
     }
 
     {:ok, section} =

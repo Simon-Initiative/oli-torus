@@ -363,7 +363,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         const lstVar = key.split('.');
         if (lstVar?.length > 1) {
           const ownerActivity = currentActivityTree?.find(
-            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+            (activity) =>
+              !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
           );
           key = ownerActivity ? `${ownerActivity.id}|${key}` : `${key}`;
         }

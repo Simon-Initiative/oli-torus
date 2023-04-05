@@ -1,6 +1,6 @@
 defmodule OliWeb.Plugs.RedirectTest do
   # use ExUnit.Case, async: true
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias OliWeb.Plugs.Redirect
 

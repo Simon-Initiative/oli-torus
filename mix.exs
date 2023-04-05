@@ -77,6 +77,7 @@ defmodule Oli.MixProject do
       "guides/lti/config.md",
       "guides/ingest/overview.md",
       "guides/ingest/media.md",
+      "guides/upgrade/dev-env.md",
       "assets/typedocs/modules.md"
     ] ++ list_typedoc_files()
   end
@@ -96,6 +97,7 @@ defmodule Oli.MixProject do
       "Activity SDK": ~r/guides\/activities\/.?/,
       "LTI 1.3": ~r/guides\/lti\/.?/,
       "Content ingestion": ~r/guides\/ingest\/.?/,
+      "Upgrade integration": ~r/guides\/upgrade\/.?/,
       "Client Side API": ~r/assets\/typedocs\/modules.md/,
       Interfaces: ~r/assets\/typedocs\/interfaces\/.?/,
       Enums: ~r/assets\/typedocs\/enums\/.?/,
@@ -178,6 +180,7 @@ defmodule Oli.MixProject do
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_dashboard, "~> 0.7.0"},
+      {:phoenix_live_react, "~> 0.4"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_live_view, "~> 0.18"},
       {:phoenix_pubsub, "~> 2.0"},

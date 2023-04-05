@@ -1,6 +1,7 @@
-import { createStore, applyMiddleware, Reducer } from 'redux';
+import { createStore, applyMiddleware, Reducer, Store, AnyAction } from 'redux';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import { createLogger } from 'redux-logger';
+
 import thunk from 'redux-thunk';
 import rootReducer, { initState } from 'state';
 import nextReducer from './index';
@@ -45,3 +46,5 @@ export function configureStore(initialState?: any, reducer?: Reducer) {
 
   return store;
 }
+
+export const globalStore = configureStore();

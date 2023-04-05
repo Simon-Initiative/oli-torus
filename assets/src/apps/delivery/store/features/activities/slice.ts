@@ -9,18 +9,136 @@ import {
   Slice,
 } from '@reduxjs/toolkit';
 import { ObjectiveMap } from 'data/content/activity';
-import { RootState } from '../../rootReducer';
+import { AuthoringFlowchartScreenData } from '../../../../authoring/components/Flowchart/paths/path-types';
+
 import ActivitiesSlice from './name';
-export interface ActivityContent {
-  custom?: any;
-  partsLayout: any[];
+
+interface IBasePartLayout {
+  id: string;
+  type: string;
+  custom: Record<string, any>;
+}
+
+export interface IDropdownPartLayout extends IBasePartLayout {
+  type: 'janus-dropdown';
+  custom: {
+    x: number;
+    y: number;
+    z: number;
+    label: string;
+    width: number;
+    height: number;
+    prompt: string;
+    enabled: boolean;
+    fontSize: number;
+    maxScore: number;
+    showLabel: boolean;
+    optionLabels: string[];
+    customCssClass: string;
+    requiresManualGrading: boolean;
+  };
+}
+
+export interface IMCQPartLayout extends IBasePartLayout {
+  type: 'janus-mcq';
+  custom: {
+    x: number;
+    y: number;
+    z: number;
+    width: number;
+    height: number;
+    fontSize: number;
+    maxScore: number;
+    verticalGap: number;
+    maxManualGrade: number;
+    mcqItems: any[]; // TODO
+    customCssClass: '';
+    layoutType: 'verticalLayout' | 'horizontalLayout';
+    enabled: boolean;
+    randomize: boolean;
+    showLabel: boolean;
+    showNumbering: boolean;
+    overrideHeight: boolean;
+    multipleSelection: boolean;
+    showOnAnswersReport: boolean;
+    requireManualGrading: boolean;
+    requiresManualGrading: boolean;
+  };
+}
+
+type KnownPartLayouts = IMCQPartLayout | IDropdownPartLayout;
+
+interface OtherPartLayout extends IBasePartLayout {
   [key: string]: any;
 }
+
+export type IPartLayout = KnownPartLayouts | OtherPartLayout;
+
+export interface ActivityContent {
+  custom?: any;
+  partsLayout: IPartLayout[];
+  [key: string]: any;
+}
+
+interface ICondition {
+  fact: string; // ex: stage.dropdown.selectedItem,
+  id: string; // ex: c:3723326255,
+  operator: string; // ex: equal,
+  type: number; // ex: 2,
+  value: string; // ex: Correct
+}
+
+export interface IAction {
+  params: {
+    target: string;
+  };
+  type: string; // might be: "navigation" | "feedback" | "score" | "stage";
+}
+
+export interface IEvent {
+  params: {
+    actions: IAction[];
+  };
+  type: string;
+}
+
+export interface InitState {
+  facts: any[];
+}
+export interface IAdaptiveRule {
+  additionalScore?: number;
+  conditions: {
+    any?: ICondition[];
+    all?: ICondition[];
+    id: string;
+  };
+  correct: boolean;
+  default: boolean;
+  disabled: boolean;
+  event: IEvent;
+  forceProgress?: boolean;
+  id: string;
+  name: string;
+  priority: number;
+}
+
+export interface AuthoringParts {
+  id: string; // ex: "janus_multi_line_text-1635445943",
+  type: string; // ex: "janus-multi-line-text",
+  owner: string; // ex: "adaptive_activity_5tcap_4078503139",
+  inherited: boolean;
+}
+
 export interface IActivity {
   id: EntityId;
   resourceId?: number;
   activitySlug?: string;
-  authoring?: any;
+  authoring?: {
+    rules?: IAdaptiveRule[];
+    flowchart?: AuthoringFlowchartScreenData;
+    parts?: AuthoringParts[];
+    [key: string]: any;
+  };
   content?: ActivityContent;
   activityType?: any;
   title?: string;
@@ -72,8 +190,9 @@ export const {
 } = slice.actions;
 
 // SELECTORS
-export const selectState = (state: RootState): ActivitiesState =>
+export const selectState = (state: { [ActivitiesSlice]: ActivitiesState }): ActivitiesState =>
   state[ActivitiesSlice] as ActivitiesState;
+
 export const selectCurrentActivityId = createSelector(
   selectState,
   (state) => state.currentActivityId,

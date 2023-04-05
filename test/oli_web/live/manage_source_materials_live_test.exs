@@ -1,5 +1,5 @@
 defmodule OliWeb.ManageSourceMaterialsLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Oli.Factory

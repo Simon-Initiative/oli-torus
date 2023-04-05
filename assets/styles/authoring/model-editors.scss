@@ -97,3 +97,15 @@
     color: var(--color-body-color);
   }
 }
+
+html.dark {
+  .editors .structured-content,
+  .rich-text-editor {
+    color: var(--color-body-color-dark);
+    background-color: var(--color-body-dark);
+
+    .captions-input {
+      color: var(--color-body-color-dark);
+    }
+  }
+}

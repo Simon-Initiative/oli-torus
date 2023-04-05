@@ -12,6 +12,8 @@ import { uploadFiles } from './upload';
 
 import './MediaManager.scss';
 import { VideoUploadWarning } from './VideoUploadWarning';
+import { Dropdown } from 'react-bootstrap';
+import { classNames } from 'utils/classNames';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;
@@ -675,10 +677,15 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
           <div className="flex-grow-1"></div>
 
-          <div className="media-toolbar-item sort-control dropdown">
+          <Dropdown className="media-toolbar-item sort-control dropdown">
             Sort by:&nbsp;
-            <span className="dropdown-toggle sort-btn" id="dropdownMenu2" data-toggle="dropdown">
-              <i className={SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon} />
+            <Dropdown.Toggle className="sort-btn" variant="none">
+              <i
+                className={classNames(
+                  SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon,
+                  'mr-2',
+                )}
+              />
               {` ${getSortMappingKey(orderBy, order)}`}
               <svg
                 aria-hidden="true"
@@ -695,10 +702,10 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                   d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
                 ></path>
               </svg>
-            </span>
-            <div className="dropdown-menu">
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
               {Object.keys(SORT_MAPPINGS).map((sortKey) => (
-                <button
+                <Dropdown.Item
                   disabled={disabled}
                   key={sortKey}
                   type="button"
@@ -706,10 +713,10 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                   onClick={() => this.onSortChange(sortKey)}
                 >
                   {sortKey}
-                </button>
+                </Dropdown.Item>
               ))}
-            </div>
-          </div>
+            </Dropdown.Menu>
+          </Dropdown>
           <div className="media-toolbar-item search">
             <div className="input-group">
               <input

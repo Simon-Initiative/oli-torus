@@ -9,6 +9,8 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.Collaboration
 
   prop(user, :any)
   data(modal, :any, default: nil)
@@ -33,13 +35,19 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Section Overview",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+          full_title: "Manage Section",
+          link:
+            Routes.live_path(
+              OliWeb.Endpoint,
+              OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+              section.slug,
+              :manage
+            )
         })
       ]
   end
 
-  def mount(%{"section_slug" => section_slug}, session, socket) do
+  def mount(_params, %{"section_slug" => section_slug} = session, socket) do
     case Mount.for(section_slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
@@ -48,6 +56,14 @@ defmodule OliWeb.Sections.OverviewView do
         updates_count =
           Sections.check_for_available_publication_updates(section)
           |> Enum.count()
+
+        %{slug: revision_slug} = DeliveryResolver.root_container(section.slug)
+
+        {:ok, collab_space_config} =
+          Collaboration.get_collab_space_config_for_page_in_section(
+            revision_slug,
+            section.slug
+          )
 
         {:ok,
          assign(socket,
@@ -58,7 +74,10 @@ defmodule OliWeb.Sections.OverviewView do
            user: user,
            section: section,
            updates_count: updates_count,
-           submission_count: Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section)
+           submission_count:
+             Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section),
+           collab_space_config: collab_space_config,
+           resource_slug: revision_slug
          )}
     end
   end
@@ -82,11 +101,11 @@ defmodule OliWeb.Sections.OverviewView do
     ~F"""
     {render_modal(assigns)}
     <Groups>
-      <Group label="Overview" description="Overview of this course section">
+      <Group label="Details" description="Overview of course section details">
         <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
-        <ReadOnly label="URL" value={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}/>
+        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
         {#unless is_nil(deployment)}
           <ReadOnly
             label="Institution"
@@ -100,17 +119,18 @@ defmodule OliWeb.Sections.OverviewView do
           />
         {/unless}
       </Group>
-      <Group label="Instructors" description="Manage the users with instructor level access">
+      <Group label="Instructors" description="Manage users with instructor level access">
         <Instructors users={@instructors}/>
       </Group>
-      <Group label="Curriculum" description="Manage the content delivered to students">
+      <Group label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
         <li>
-          <a target="_blank" href={Routes.content_path(OliWeb.Endpoint, :preview, @section.slug)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>
+          <a target="_blank" href={Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, @section.slug, :content)} class={"btn btn-link"}><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a>
         </li>
         <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)} class={"btn btn-link"} target="_blank"><span>Enter Course as a Student</span> <i class="fas fa-external-link-alt self-center ml-1"></i></a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)} class={"btn btn-link"}>Customize Curriculum</a></li>
-        <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)} class={"btn btn-link"}>Gating and Scheduling</a></li>
+        <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView , @section.slug)} class={"btn btn-link"}>Scheduling</a></li>
+        <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)} class={"btn btn-link"}>Advanced Gating and Scheduling</a></li>
           <li>
             <a disabled={@updates_count == 0} href={Routes.source_materials_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @section.slug)} class={"btn btn-link"}>
               Manage Source Materials
@@ -131,6 +151,22 @@ defmodule OliWeb.Sections.OverviewView do
           <li><a href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)} class={"btn btn-link"}>Browse Collaborative Spaces</a></li>
           <li><button type="button" class=" btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button></li>
         </ul>
+      </Group>
+      <Group label="Collaborative Space" description="Activate and configure a collaborative space for this section">
+        <div class="container mx-auto">
+          {#if @collab_space_config && @collab_space_config.status != :disabled}
+            {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView, id: "collab_space_config",
+                session: %{
+                  "collab_space_config" => @collab_space_config,
+                  "section_slug" => @section.slug,
+                  "resource_slug" => @resource_slug,
+                  "is_overview_render" => true,
+                  "is_delivery" => true
+                })}
+          {#else}
+            <p class="ml-8 mt-2">Collaborative spaces are not enabled by the course project.<br>Please contact a system administrator to enable.</p>
+          {/if}
+        </div>
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">
         <ul class="link-list">

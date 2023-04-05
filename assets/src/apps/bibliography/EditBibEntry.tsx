@@ -1,3 +1,4 @@
+import { Tooltip } from 'components/common/Tooltip';
 import React from 'react';
 
 export type EditBibEntryProps = {
@@ -8,16 +9,15 @@ export type EditBibEntryProps = {
 export const EditBibEntry = (props: EditBibEntryProps) => {
   const { onEdit } = props;
   return (
-    <button
-      onClick={() => onEdit()}
-      type="button"
-      className="btn btn-outline-secondary btn-sm"
-      data-toggle="tooltip"
-      data-placement="top"
-      title="Edit this entry"
-      aria-pressed="false"
-    >
-      <i className={props.icon}></i>
-    </button>
+    <Tooltip title="Edit this entry">
+      <button
+        onClick={() => onEdit()}
+        type="button"
+        className="btn btn-outline-secondary btn-sm"
+        aria-pressed="false"
+      >
+        <i className={props.icon}></i>
+      </button>
+    </Tooltip>
   );
 };

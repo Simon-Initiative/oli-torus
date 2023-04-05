@@ -17,7 +17,7 @@
       session: %{
         "collab_space_config" => @collab_space_config,
         "project_slug" => @project_slug,
-        "page_slug" => @revision_slug
+        "resource_slug" => @revision_slug
       })
   %>
 </div>

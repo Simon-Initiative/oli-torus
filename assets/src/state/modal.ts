@@ -1,23 +1,23 @@
 import { modalActions } from '../actions/modal';
-import * as Immutable from 'immutable';
 import { OtherAction } from './other';
+import { Maybe } from 'tsmonad';
 
 export type ModalActions = modalActions.dismissAction | modalActions.displayAction | OtherAction;
 
-export type ModalState = Immutable.Stack<any>;
+export type ModalState = Maybe<any>;
 
-const defaultState = Immutable.Stack<any>();
+const defaultState = Maybe.nothing();
 
 export function initModalState(json: any) {
-  return Immutable.Stack<any>();
+  return Maybe.nothing();
 }
 
 export function modal(state: ModalState = defaultState, action: ModalActions): ModalState {
   switch (action.type) {
     case modalActions.DISMISS_MODAL:
-      return state.pop();
+      return Maybe.nothing();
     case modalActions.DISPLAY_MODAL:
-      return state.push(action.component);
+      return Maybe.just(action.component);
     default:
       return state;
   }

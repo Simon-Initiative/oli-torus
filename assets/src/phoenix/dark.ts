@@ -15,3 +15,11 @@ addDarkModeListener((mode) => {
     }
   }
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (isDarkMode()) {
+    [].slice
+      .call(document.querySelectorAll('.g-recaptcha'))
+      .map((recaptcha: HTMLElement) => recaptcha.setAttribute('data-theme', 'dark'));
+  }
+});

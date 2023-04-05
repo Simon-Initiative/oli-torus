@@ -1,5 +1,5 @@
 defmodule OliWeb.GradebookViewLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -56,7 +56,7 @@ defmodule OliWeb.GradebookViewLiveTest do
       90.10 => 90.10,
       120 => 120.0,
       0.0 => 0.0,
-      0 => 0.0,
+      0 => 0.0
     }
 
     for {score, expected_score} <- scores_expected_format do
@@ -86,8 +86,10 @@ defmodule OliWeb.GradebookViewLiveTest do
         {:ok, view, _html} = live(conn, live_view_gradebook_view_route(section.slug))
 
         assert view
-          |> element("tr[phx-value-id=\"#{user.id}\"] a[href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\"]")
-          |> render =~ "#{@expected_score}/#{@out_of}"
+               |> element(
+                 "tr[phx-value-id=\"#{user.id}\"] a[href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\"]"
+               )
+               |> render =~ "#{@expected_score}/#{@out_of}"
       end
     end
   end

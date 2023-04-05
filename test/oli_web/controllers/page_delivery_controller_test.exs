@@ -7,6 +7,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
+  alias Oli.Resources.Collaboration
   alias Lti_1p3.Tool.ContextRoles
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
@@ -194,7 +195,39 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
-      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
+      assert html_response(conn, 200) =~ "Page one"
+    end
+
+    test "shows the related exploration pages for a given page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_revision: page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "exploration page 1"
+      assert html_response(conn, 200) =~ "exploration page 2"
+    end
+
+    test "shows a 'no exploration pages' message when the page doesn't have any related exploration pages",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           ungraded_page_revision: ungraded_page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, ungraded_page_revision.slug))
+
+      assert html_response(conn, 200) =~ "There are no explorations related to this page"
     end
 
     test "handles student adaptive page access by an enrolled student", %{
@@ -685,45 +718,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = get(conn, redir_path)
-      assert html_response(conn, 200) =~ ~s|<div class="paginated"><div class="elements">|
+      assert html_response(conn, 200) =~ ~s|<div class="paginated"><div class="elements content">|
       assert html_response(conn, 200) =~ "part one"
       assert html_response(conn, 200) =~ ~s|<div class="content-break"></div>|
       assert html_response(conn, 200) =~ "part two"
       assert html_response(conn, 200) =~ "part three"
       assert html_response(conn, 200) =~ ~s|<div data-react-class="Components.PaginationControls"|
-    end
-
-    test "index show manage section button when accessing as instructor", %{
-      conn: conn,
-      user: user,
-      section: section
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      conn =
-        conn
-        |> get(Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 302) =~
-               Routes.live_path(
-                 conn,
-                 OliWeb.Delivery.InstructorDashboard.ContentLive,
-                 section.slug
-               )
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(
-          Routes.live_path(
-            conn,
-            OliWeb.Delivery.InstructorDashboard.ContentLive,
-            section.slug
-          )
-        )
-
-      assert html_response(conn, 200) =~ "Course Overview"
-      assert html_response(conn, 200) =~ "Manage Section"
     end
 
     test "page renders learning objectives in ungraded pages but not graded, except for review mode",
@@ -772,6 +772,48 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "Learning Objectives"
       assert html_response(conn, 200) =~ "objective one"
+    end
+
+    test "page renders the collab space if configured",
+         %{
+           user: user,
+           conn: conn,
+           section: section,
+           collab_space_page_revision: page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Page Discussion</h3>"
+    end
+
+    test "page does not render the collab space if it's not configured",
+         %{
+           user: user,
+           conn: conn,
+           section: section,
+           page_revision: page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      refute html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
+    end
+
+    test "page does not render the collab space if it's disabled",
+         %{
+           user: user,
+           conn: conn,
+           section: section,
+           disabled_collab_space_page_revision: page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      refute html_response(conn, 200) =~ "<h3 class=\"text-xl font-bold\">Discussion</h3>"
     end
   end
 
@@ -1387,6 +1429,324 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
+  describe "exploration" do
+    setup [:project_section_revisions]
+
+    test "student can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "user must be enrolled in the section even if is a system admin", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
+    end
+
+    test "redirects to enroll page if not is enrolled in the section", %{
+      conn: conn,
+      section: section
+    } do
+      user = insert(:user)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
+    end
+
+    test "page renders a list of exploration pages", %{
+      conn: conn,
+      section: section,
+      other_revision: other_revision
+    } do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200) =~ other_revision.title
+    end
+
+    test "page renders a message when there are no exploration pages available", %{
+      conn: conn
+    } do
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
+
+      assert html_response(conn, 200) =~ "<h6>There are no exploration pages available</h6>"
+    end
+
+    test "do not show the 'exploration' access in the left navbar when the section has no explorations to show",
+         %{conn: conn} do
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      refute html_response(conn, 200) =~ "<a>Exploration</a>"
+    end
+
+    test "do not show the 'exploration' access in the Windowshade when the section does not have explorations to show",
+         %{conn: conn} do
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      refute html_response(conn, 200) =~ "<h4>Your Exploration Activities</h4>"
+    end
+  end
+
+  describe "discussion" do
+    setup [:create_section_with_posts]
+
+    test "student can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "page renders a list of posts of current user", %{
+      conn: conn,
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200) =~ "Your Latest Discussion Activity"
+      posts = Collaboration.list_lasts_posts_for_user(user.id, section.id, 5)
+
+      for post <- posts do
+        assert html_response(conn, 200) =~ post.title
+        assert html_response(conn, 200) =~ post.content.message
+        assert html_response(conn, 200) =~ post.user_name
+      end
+    end
+
+    test "page renders a list of posts of all users", %{
+      conn: conn,
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200) =~ "All Discussion Activity"
+      posts = Collaboration.list_lasts_posts_for_section(user.id, section.id, 5)
+
+      for post <- posts do
+        assert html_response(conn, 200) =~ post.title
+        assert html_response(conn, 200) =~ post.content.message
+        assert html_response(conn, 200) =~ post.user_name
+      end
+    end
+
+    test "page renders a message when there are no posts to show", %{
+      conn: conn
+    } do
+      {:ok,
+       section: section, unit_one_revision: _unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
+
+      assert html_response(conn, 200) =~ "<h6>There are no posts to show</h6>"
+    end
+  end
+
+  describe "assignments" do
+    setup [:section_with_gating_conditions]
+
+    test "student can access if is enrolled in the section", %{conn: conn, section: section} do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Assignments"
+
+      assert html_response(conn, 200) =~
+               "Find all your assignments, quizzes and activities associated with graded material."
+    end
+
+    test "renders the list of assignments", %{conn: conn, section: section} do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Graded page 1 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 2 - Level 0 (w/ date)"
+      assert html_response(conn, 200) =~ "Graded page 3 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 4 - Level 0 (w/ gating condition)"
+      assert html_response(conn, 200) =~ "Due by 2023-01-12"
+      assert html_response(conn, 200) =~ "Graded page 5 - Level 0 (w/ student gating condition)"
+      assert html_response(conn, 200) =~ "Due by 2023-06-05"
+    end
+
+    test "when a student has a gating condition, it overrides the default gating condition", %{
+      conn: conn,
+      section: section,
+      student_with_gating_condition: student
+    } do
+      enroll_user_to_section(student, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(student, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Graded page 1 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 2 - Level 0 (w/ date)"
+      assert html_response(conn, 200) =~ "Graded page 3 - Level 1 (w/ no date)"
+      assert html_response(conn, 200) =~ "Graded page 4 - Level 0 (w/ gating condition)"
+      assert html_response(conn, 200) =~ "Due by 2023-01-12"
+      assert html_response(conn, 200) =~ "Graded page 5 - Level 0 (w/ student gating condition)"
+      refute html_response(conn, 200) =~ "Due by 2023-06-05"
+      assert html_response(conn, 200) =~ "Due by 2023-07-08"
+    end
+
+    test "related activities get rendered", %{conn: conn, section: section} do
+      user = insert(:user)
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :assignments,
+            section.slug
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Course content"
+      assert html_response(conn, 200) =~ "Explorations"
+
+      assert html_response(conn, 200) =~
+               "<td class=\"w-1/3 border-none\">Graded page 1 - Level 1 (w/ no date)</td>"
+
+      assert html_response(conn, 200) =~
+               "<td class=\"w-1/3 border-none\">Graded page 2 - Level 0 (w/ date)</td>"
+
+      assert html_response(conn, 200) =~
+               "<td class=\"w-1/3 border-none\">Graded page 4 - Level 0 (w/ gating condition)</td>"
+    end
+  end
+
   defp enroll_as_student(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_learner)
     []
@@ -1476,12 +1836,71 @@ defmodule OliWeb.PageDeliveryControllerTest do
       objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
     }
 
+    collab_space_config = build(:collab_space_config, status: :enabled)
+
+    collab_space_attrs = %{
+      title: "collab space page",
+      slug: "collab_space_revision",
+      content: %{
+        "model" => []
+      },
+      collab_space_config: collab_space_config
+    }
+
+    collab_space_config = build(:collab_space_config, status: :disabled)
+
+    disabled_collab_space_attrs = %{
+      title: "collab space page",
+      slug: "collab_space_revision",
+      content: %{
+        "model" => []
+      },
+      collab_space_config: collab_space_config
+    }
+
     map = Seeder.add_page(map, graded_attrs, :page)
     map = Seeder.add_page(map, ungraded_attrs, :ungraded_page)
+    map = Seeder.add_page(map, collab_space_attrs, :collab_space_page)
+    map = Seeder.add_page(map, disabled_collab_space_attrs, :disabled_collab_space_page)
+
+    exploration_page_1 = %{
+      graded: false,
+      title: "exploration page 1",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :activity).resource.id
+          }
+        ]
+      },
+      purpose: :application,
+      relates_to: [map.page.resource.id]
+    }
+
+    exploration_page_2 = %{
+      graded: false,
+      title: "exploration page 2",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :activity).resource.id
+          }
+        ]
+      },
+      purpose: :application,
+      relates_to: [map.page.resource.id]
+    }
+
+    map = Seeder.add_page(map, exploration_page_1, :exploration_page_1)
+    map = Seeder.add_page(map, exploration_page_2, :exploration_page_2)
 
     {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes")
 
-    map = Map.put(map, :publication, publication)
+    map = Map.merge(map, %{publication: publication, contains_explorations: true})
 
     map =
       map
@@ -1513,7 +1932,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
      section: map.section,
      revision: map.revision1,
      page_revision: map.page.revision,
-     ungraded_page_revision: map.ungraded_page.revision}
+     ungraded_page_revision: map.ungraded_page.revision,
+     collab_space_page_revision: map.collab_space_page.revision,
+     disabled_collab_space_page_revision: map.disabled_collab_space_page.revision}
   end
 
   defp setup_independent_learner_section(_) do

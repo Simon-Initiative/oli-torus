@@ -1,10 +1,9 @@
-<%= render OliWeb.SharedView, "_help.html", conn: @conn %>
 <%
   privacy_policies_url = Application.fetch_env!(:oli, :privacy_policies)[:url]
   footer =  Application.fetch_env!(:oli, :footer)
 %>
 
-<footer class="flex flex-row h-[60px] overflow-hidden absolute bottom-0 left-0 right-0 bg-gray-100">
+<footer class="flex flex-row h-[60px] overflow-hidden absolute bottom-0 left-0 right-0 bg-workspace-footer-bg dark:bg-workspace-footer-bg-dark">
   <div class="container mx-auto flex flex-row px-10 items-center text-sm">
     <div class="text-left">
       <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>

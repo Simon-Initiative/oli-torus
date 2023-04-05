@@ -11,7 +11,7 @@ defmodule OliWeb.Common.Paging do
     params = PagingParams.calculate(assigns.total_count, assigns.offset, assigns.limit, 5)
 
     ~F"""
-    <div id={@id} class="d-flex justify-content-between items-center">
+    <div id={@id} class="d-flex justify-content-between items-center px-5 py-2">
       <div>{params.label}</div>
       <div class="flex-1"></div>
       <nav aria-label="Paging">

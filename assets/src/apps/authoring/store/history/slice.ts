@@ -1,5 +1,5 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
-import { RootState } from '../rootReducer';
+import { AuthoringRootState } from '../rootReducer';
 import { undo } from './actions/undo';
 import { redo } from './actions/redo';
 import guid from 'utils/guid';
@@ -61,7 +61,7 @@ const slice: Slice<AuthoringHistoryState> = createSlice({
 
 export const { createUndoAction } = slice.actions;
 
-export const selectState = (state: RootState): AuthoringHistoryState =>
+export const selectState = (state: AuthoringRootState): AuthoringHistoryState =>
   state[HistorySlice] as AuthoringHistoryState;
 
 export const selectHasUndo = createSelector(

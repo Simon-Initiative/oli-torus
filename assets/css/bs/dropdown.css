@@ -1,0 +1,19 @@
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown .dropdown-menu .dropdown-header {
+  @apply text-sm font-bold;
+}
+
+.dropdown .dropdown-menu .dropdown-divider {
+  @apply border-b border-gray-200 my-2;
+}
+
+.dropdown .dropdown-menu a.dropdown-item {
+  @apply hover:no-underline;
+}
+
+.dropdown .dropdown-menu button.dropdown-item {
+  @apply text-left;
+}

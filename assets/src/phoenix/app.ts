@@ -17,6 +17,34 @@ import 'react-phoenix';
 import { finalize } from './finalize';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 
+import {
+  Button,
+  Dropdown,
+  Collapse,
+  Offcanvas,
+  Alert,
+  Carousel,
+  Modal,
+  Popover,
+  ScrollSpy,
+  Tab,
+  Tooltip,
+  Toast,
+} from 'bootstrap';
+
+(window as any).Alert = Alert;
+(window as any).Button = Button;
+(window as any).Dropdown = Dropdown;
+(window as any).Carousel = Carousel;
+(window as any).Collapse = Collapse;
+(window as any).Offcanvas = Offcanvas;
+(window as any).Modal = Modal;
+(window as any).Popover = Popover;
+(window as any).ScrollSpy = ScrollSpy;
+(window as any).Tab = Tab;
+(window as any).Toast = Toast;
+(window as any).Tooltip = Tooltip;
+
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
   .getAttribute('content');
@@ -35,8 +63,18 @@ const liveSocket = new LiveSocket('/live', Socket, {
 });
 
 // Show progress bar on live navigation and form submits
-window.addEventListener('phx:page-loading-start', (_info) => NProgress.start());
-window.addEventListener('phx:page-loading-stop', (_info) => NProgress.done());
+// this only shows the topbar if it's taking longer than 200 msec to receive the phx:page-loading-stop event
+let topBarScheduled: NodeJS.Timeout | undefined;
+window.addEventListener('phx:page-loading-start', () => {
+  if (!topBarScheduled) {
+    topBarScheduled = setTimeout(() => NProgress.start(), 200);
+  }
+});
+window.addEventListener('phx:page-loading-stop', () => {
+  topBarScheduled && clearTimeout(topBarScheduled);
+  topBarScheduled = undefined;
+  NProgress.done();
+});
 
 // Expose React/Redux APIs to server-side rendered templates
 function mount(Component: any, element: HTMLElement, context: any = {}) {
@@ -65,57 +103,34 @@ liveSocket.connect();
 // >> liveSocket.enableLatencySim(1000)
 window.liveSocket = liveSocket;
 
-$(() => {
-  // ($('[data-toggle="popover"]') as any).popover();
-  // ($('[data-toggle="tooltip"]') as any).tooltip();
-  // ($('.ui.dropdown') as any).dropdown();
-  // ($('.ui.dropdown.item') as any).dropdown();
+document.addEventListener('DOMContentLoaded', () => {
+  // initialize popover elements
+  [].slice
+    .call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    .map((el: HTMLElement) => new Popover(el));
 
+  // initialize tooltip elements
+  [].slice
+    .call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    .map((el: HTMLElement) => new Tooltip(el));
+
+  // initialize command button elements
   $('[data-action="command-button"]').on('click', commandButtonClicked);
 
-  $('[data-toggle="popover"]').on('show.bs.popover', function () {
-    const audioAttribute = this.attributes.getNamedItem('data-audio');
-    if (audioAttribute && audioAttribute.value !== '') {
-      const audio = ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0];
-      window.toggleAudio(audio);
-    }
-  });
+  // handle direct tab routing via url hash
+  if (location.hash !== '') {
+    // make tabs navigable by their link's href
+    [].slice
+      .call(document.querySelectorAll('a[data-bs-toggle="tab"][href="' + location.hash + '"]'))
+      .map((el: HTMLElement) => new Tab(el).show());
+  }
 
-  $('[data-toggle="popover"]').on('hide.bs.popover', function () {
-    const audioAttribute = this.attributes.getNamedItem('data-audio');
-    if (audioAttribute && audioAttribute.value !== '') {
-      ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0].pause();
-    }
-  });
-
-  $('[data-toggle="popover"]').on('focus', (e) => {
-    ($('[data-toggle="popover"]:not(.popup__click)') as any).popover('hide');
-    ($(e.target) as any).popover('show');
-  });
-
-  $('[data-toggle="popover"]').on('blur', (e) => {
-    if (!$(e.target).hasClass('popup__click')) {
-      ($(e.target) as any).popover('hide');
-    }
-  });
-
-  $('body').on('mousedown', (e) => {
-    const isPopover = (e: JQuery.UIEventBase<HTMLElement>) =>
-      $(e.target).data('toggle') === 'popover';
-    const isClickable = (e: JQuery.UIEventBase<HTMLElement>) =>
-      $(e.target).hasClass('popup__click');
-    const isPopupContent = (e: JQuery.UIEventBase<HTMLElement>) =>
-      $(e.target).parents('.popup__content').length > 0;
-    const isFocused = (e: JQuery.UIEventBase<HTMLElement>) =>
-      document.activeElement && $(document.activeElement).is($(e.target));
-
-    if (!isPopover(e) && !isClickable(e) && !isPopupContent(e)) {
-      return ($('[data-toggle="popover"]') as any).popover('hide');
-    }
-    if (isPopover(e) && isClickable(e) && isFocused(e)) {
-      return ($(e.target) as any).popover('toggle');
-    }
-  });
+  // change the url hash when a new tab is selected
+  [].slice.call(document.querySelectorAll('a[data-bs-toggle="tab"]')).map((el: HTMLElement) =>
+    el.addEventListener('show.bs.tab', (e: any) => {
+      return (location.hash = e.target?.getAttribute('href').substr(1));
+    }),
+  );
 
   (window as any).hljs.highlightAll();
 });

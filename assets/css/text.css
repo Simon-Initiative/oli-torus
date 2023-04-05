@@ -1,0 +1,19 @@
+h4.torus-h4 {
+  @apply text-delivery-body-color dark:text-delivery-body-color-dark text-xl font-bold tracking-wide pt-7 pb-4;
+}
+
+h6.torus-h6 {
+  @apply text-delivery-body-color dark:text-delivery-body-color-dark text-sm font-semibold;
+}
+
+span.torus-span {
+  @apply text-gray-400 dark:text-gray-600 text-sm font-normal;
+}
+
+small.torus-small {
+  @apply text-gray-400 dark:text-gray-600 text-xs font-normal;
+}
+
+p.torus-p {
+  @apply text-delivery-body-color dark:text-delivery-body-color-dark font-normal m-0;
+}

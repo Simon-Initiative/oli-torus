@@ -5,9 +5,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.Components.Delivery.UserAccountMenu
-  alias OliWeb.Components.Delivery.CourseContentPanel
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Components.Header
 
   defmodule PriorityAction do
     @enforce_keys [:type, :title, :description, :action_link]
@@ -30,21 +30,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           }
   end
 
+  attr :current_user, User
+  attr :section, Section
+  attr :breadcrumbs, :list, required: true
+  attr :socket_or_conn, :any, required: true
+  attr :preview_mode, :boolean, default: false
+
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header context={@context} current_user={@current_user} section_slug={@section_slug} preview_mode={@preview_mode} />
-        <.section_details_header title={@title}/>
+        <.header current_user={@current_user} section={@section} preview_mode={@preview_mode} />
+        <.section_details_header section={@section}/>
+        <Header.delivery_breadcrumb {assigns} />
 
         <div class="flex-1 flex flex-col">
 
-          <.actions actions={[
-            %PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} },
-            %PriorityAction{ type: :grade, title: "Grade assignment 3.2 Quiz", description: "There are answers that could not be automatically graded. Grade these answers before your in-person class on 10/2/2022", action_link: {"Grade", "#"} },
-            %PriorityAction{ type: :review, title: "Review possible in-class activities to supplement Learning Objective 1", description: "Review suggested activities before your in-person class on 10/2/2022", action_link: {"Review", "#"} },
-            %PriorityAction{ type: :review, title: "Review 3.3 Determining Empirical and Molecular Formulas", description: "Review content before it opens to your class on 10/3/2022", action_link: {"Review", "#"} },
-            %PriorityAction{ type: :review, title: "Review 3.3 Determining Empirical and Molecular Formulas", description: "Review content before it opens to your class on 10/3/2022", action_link: {"Review", "#"} }
-          ]} />
+          <.actions />
 
           <div class="relative flex-1 flex flex-col pb-[60px]">
 
@@ -57,73 +58,35 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  defp path_for(name, section_slug, _preview_mode = true) do
-    case name do
-      :learning_objectives ->
-        Routes.learning_objectives_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :students ->
-        Routes.students_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :content ->
-        Routes.content_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-
-      :discussion ->
-        Routes.discussion_path(
-          OliWeb.Endpoint,
-          :preview,
-          section_slug
-        )
-    end
+  defp path_for(active_tab, section_slug, _preview_mode = true) do
+    Routes.instructor_dashboard_path(
+      OliWeb.Endpoint,
+      :preview,
+      section_slug,
+      active_tab
+    )
   end
 
-  defp path_for(name, section_slug, _preview_mode = false) do
-    case name do
-      :learning_objectives ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.LearningObjectivesLive,
-          section_slug
-        )
-
-      :students ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.StudentsLive,
-          section_slug
-        )
-
-      :content ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.ContentLive,
-          section_slug
-        )
-
-      :discussion ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.DiscussionLive,
-          section_slug
-        )
-    end
+  defp path_for(active_tab, section_slug, _preview_mode = false) do
+    Routes.live_path(
+      OliWeb.Endpoint,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      section_slug,
+      active_tab
+    )
   end
 
   attr :active_tab, :atom,
     required: true,
-    values: [:learning_objectives, :students, :content, :discussion]
+    values: [
+      :learning_objectives,
+      :students,
+      :content,
+      :discussions,
+      :course_discussion,
+      :assignments,
+      :manage
+    ]
 
   attr :section_slug, :string, required: true
   attr :preview_mode, :boolean, required: true
@@ -136,29 +99,35 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
           <%= for {label, href, badge, active} <- [
             {"Learning Objectives", path_for(:learning_objectives, @section_slug, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
-            {"Students", path_for(:students, @section_slug, @preview_mode), 3, is_active_tab?(:students, @active_tab)},
-            {"Modules", path_for(:content, @section_slug, @preview_mode), 2, is_active_tab?(:content, @active_tab)},
-            {"Discussion Activity", path_for(:discussion, @section_slug, @preview_mode), 7, is_active_tab?(:discussion, @active_tab)},
+            {"Students", path_for(:students, @section_slug, @preview_mode), nil, is_active_tab?(:students, @active_tab)},
+            {"Modules", path_for(:content, @section_slug, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
+            {"Discussion Activity", path_for(:discussions, @section_slug, @preview_mode), nil, is_active_tab?(:discussions, @active_tab)},
+            {"Course Discussion", path_for(:course_discussion, @section_slug, @preview_mode), nil, is_active_tab?(:course_discussion, @active_tab)},
+            {"Assignments", path_for(:assignments, @section_slug, @preview_mode), nil, is_active_tab?(:assignments, @active_tab)},
+            {"Manage", path_for(:manage, @section_slug, @preview_mode), nil, is_active_tab?(:manage, @active_tab)},
           ] do %>
             <li class="nav-item" role="presentation">
-              <a href={href}
+              <.link patch={href}
                 class={"
-                  nav-link
                   block
-                  border-x-0 border-t-0 border-b-2 border-transparent
-                  px-6
+                  border-x-0 border-t-0 border-b-2
+                  px-1
                   py-3
-                  my-2
-                  hover:border-transparent hover:bg-gray-100
-                  focus:border-transparent
-                  normal-case
-                  #{active && "active font-bold"}
+                  m-2
+                  text-body-color
+                  dark:text-body-color-dark
+                  bg-transparent
+                  hover:no-underline
+                  hover:text-body-color
+                  hover:border-delivery-primary-200
+                  focus:border-delivery-primary-200
+                  #{if active, do: "border-delivery-primary", else: "border-transparent"}
                 "}>
                   <%= label %>
                   <%= if badge do %>
                   <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
                   <% end %>
-              </a>
+              </.link>
             </li>
           <% end %>
 
@@ -169,17 +138,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
-  defp logo_link(section_slug, preview_mode) do
+  defp logo_link(nil, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+
+  defp logo_link(section, preview_mode) do
     if preview_mode do
-      Routes.content_path(OliWeb.Endpoint, :preview, section_slug)
+      Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)
     else
-      Routes.page_delivery_path(OliWeb.Endpoint, :index, section_slug)
+      Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
     end
   end
 
-  attr :section_slug, :string, required: true
-  attr :context, SessionContext
   attr :current_user, User
+  attr :section, Section
   attr :preview_mode, :boolean, default: false
 
   def header(assigns) do
@@ -187,14 +157,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <div class="w-full bg-delivery-header text-white border-b border-slate-600">
         <div class="container mx-auto py-2 flex flex-row justify-between">
           <div class="flex-1 flex items-center">
-            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section_slug, @preview_mode)}>
+            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section, @preview_mode)}>
               <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
             </a>
           </div>
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu context={@context} current_user={@current_user} />
+            <UserAccountMenu.menu current_user={@current_user} />
           <% end %>
           <div class="flex items-center border-l border-slate-300">
             <button
@@ -218,7 +188,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  attr :title, :string, required: true
+  attr :section, Section
+
+  def section_details_header(%{section: nil}), do: nil
 
   def section_details_header(assigns) do
     ~H"""
@@ -226,20 +198,28 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <div class="container mx-auto flex flex-row justify-between">
         <div class="flex-1 flex items-center text-[1.5em]">
           <div class="font-bold text-slate-300">
-            <%= @title %>
+            <%= @section.title %>
           </div>
-          <div class="border-l border-white ml-4 pl-4">
+          <%!-- <div class="border-l border-white ml-4 pl-4">
             Section 2360
-          </div>
-          <div class="font-thin border-l border-white ml-4 pl-4">
+          </div> --%>
+          <%!-- <div class="font-thin border-l border-white ml-4 pl-4">
             Mon/Wed 12:00 PM
-          </div>
+          </div> --%>
         </div>
       </div>
     </div>
     """
   end
 
+  @doc """
+  Takes a list of actions and renders a set of action cards
+
+  E.g.
+    ```
+    <.actions actions=[%PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }] />
+    ```
+  """
   attr :actions, :list, default: []
 
   def actions(assigns) do
@@ -265,7 +245,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def action_card(assigns) do
     ~H"""
-      <div class="flex flex-col bg-white shadow p-4 mr-4 max-w-[300px] shrink-0">
+      <div class="flex flex-col bg-white dark:bg-gray-800 shadow p-4 mr-4 max-w-[300px] shrink-0">
         <div class="flex my-2">
           <span class={"rounded-full py-1 px-6 #{badge_bg_color(@action.type)} text-white"}>
             <%= badge_title(@action.type) %>
@@ -298,36 +278,4 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   defp badge_bg_color(:grade), do: "bg-red-700"
   defp badge_bg_color(:review), do: "bg-fuchsia-700"
   defp badge_bg_color(_), do: "bg-gray-700"
-
-  def learning_objectives(assigns) do
-    ~H"""
-      <.tabs active_tab={:learning_objectives} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      TODO: Learning Objectives
-    """
-  end
-
-  def students(assigns) do
-    ~H"""
-      <.tabs active_tab={:students} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      TODO: Students
-    """
-  end
-
-  def content(assigns) do
-    ~H"""
-      <.tabs active_tab={:content} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      <CourseContentPanel.course_content_panel {assigns} />
-    """
-  end
-
-  def discussion(assigns) do
-    ~H"""
-      <.tabs active_tab={:discussion} section_slug={@section_slug} preview_mode={@preview_mode} />
-
-      TODO: Discussion
-    """
-  end
 end

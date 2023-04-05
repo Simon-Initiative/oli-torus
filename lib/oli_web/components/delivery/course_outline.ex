@@ -15,7 +15,7 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
         <%= cond do %>
           <% container?(node) -> %>
             <.link_container {link_props(assigns, node)} />
-          <% from_node(node, :graded) -> %>
+          <% graded?(node) -> %>
             <.link_assessment {link_props(assigns, node)} />
           <% true -> %>
             <.link_page {link_props(assigns, node)} />
@@ -28,7 +28,7 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
   def link_container(assigns) do
     ~H"""
       <div class="border-b mb-2" style="border-color: #dee2e6;">
-        <h5 class="text-primary border-primary mb-2">
+        <h5 class="text-delivery-primary border-delivery-primary mb-2">
           <%= link to: @container_link_url.(from_node(@node, :slug)),
             class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
             <span class="container-title my-2">
@@ -108,12 +108,16 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
     })
   end
 
-  defp base_resource_link_class(), do: ""
+  defp base_resource_link_class(), do: "text-delivery-primary hover:text-delivery-primary"
   defp resource_link_class(_active = true), do: base_resource_link_class() <> " active"
   defp resource_link_class(_active = false), do: base_resource_link_class()
 
   defp from_node(%HierarchyNode{revision: revision}, field), do: Map.get(revision, field)
   defp from_node(map, field), do: Map.get(map, Atom.to_string(field))
+
+  defp graded?(node) do
+    from_node(node, :graded) == "true"
+  end
 
   defp node_index(%HierarchyNode{numbering: %Numbering{index: index}}), do: index
   defp node_index(%{"index" => index}), do: index

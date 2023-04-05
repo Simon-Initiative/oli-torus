@@ -1,14 +1,16 @@
 .content-purpose {
-  border-radius: 4px;
   margin-bottom: 1rem;
 
-  .content-purpose-label {
+  & > .content-purpose-label {
     text-transform: uppercase;
-    padding: 4px;
+    background: var(--color-delivery-purpose-label-bg);
+    padding: 4px 0;
+    color: var(--color-white);
+    margin-bottom: 1rem;
   }
 
-  .content-purpose-content {
-    padding: 20px;
+  & > .content-purpose-content {
+    padding: 0 2em;
   }
 
   &.none {
@@ -21,35 +23,8 @@
     }
   }
 
-  &.objectives {
-    border: 1px solid rgba(#0984e3, 0.75);
-
-    & > .content-purpose-label {
-      background-color: rgba(#0984e3, 0.75);
-      color: var(--color-white);
-
-      /** icon */
-      &::before {
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
-        content: '\f11e';
-      }
-    }
-
-    .content-purpose-content {
-      font-size: 1.3em;
-    }
-  }
-
   &.checkpoint {
-    border: 1px solid rgba(#0984e3, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#0984e3, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -62,12 +37,7 @@
   }
 
   &.didigetthis {
-    border: 1px solid rgba(#8e44ad, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#8e44ad, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -85,6 +55,8 @@
     & > .content-purpose-label {
       border-bottom: 1px dashed rgba(#74b9ff, 0.75);
       font-weight: 700;
+      background: transparent;
+      color: var(--body-color);
 
       /** icon */
       &::before {
@@ -98,12 +70,7 @@
   }
 
   &.labactivity {
-    border: 1px solid rgba(#fdcb6e, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#fdcb6e, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -116,12 +83,7 @@
   }
 
   &.learnbydoing {
-    border: 1px solid rgba(#00b894, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#00b894, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -134,12 +96,7 @@
   }
 
   &.learnmore {
-    border: 1px solid rgba(#27ae60, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#27ae60, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -152,12 +109,7 @@
   }
 
   &.manystudentswonder {
-    border: 1px solid rgba(#42729b, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#42729b, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -170,12 +122,7 @@
   }
 
   &.quiz {
-    border: 1px solid rgba(#3498db, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#3498db, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -188,12 +135,7 @@
   }
 
   &.myresponse {
-    border: 1px solid rgba(#3498db, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#3498db, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -206,12 +148,7 @@
   }
 
   &.simulation {
-    border: 1px solid rgba(#ff7675, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#ff7675, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -224,12 +161,7 @@
   }
 
   &.walkthrough {
-    border: 1px solid rgba(#536d86, 0.75);
-
     & > .content-purpose-label {
-      background-color: rgba(#536d86, 0.75);
-      color: var(--color-white);
-
       /** icon */
       &::before {
         font-family: 'Font Awesome 6 Free';
@@ -242,10 +174,25 @@
   }
 }
 
-@mixin page_link_style($color, $bg: $color) {
+.content-page-link {
+  $color: #3d81f6;
+  $bg: rgba(#64748b, 0.2);
+
+  border: 1px solid #64748b;
+
+  .content-purpose-label {
+    margin-bottom: 0;
+  }
+
   .content-purpose-content {
     background-color: rgba($bg, 0.2);
     padding: 1em;
+  }
+
+  &.content-purpose.none {
+    .content-purpose-content {
+      padding: 1em;
+    }
   }
 
   a.internal-link,
@@ -274,57 +221,6 @@
         color: darken($color, 25%);
       }
     }
-  }
-}
-
-.content-page-link {
-  &.none {
-    border: 1px solid #64748b;
-    @include page_link_style(#3d81f6, rgba(#64748b, 0.2));
-  }
-
-  &.checkpoint {
-    @include page_link_style(rgba(#0984e3, 0.75));
-  }
-
-  &.didigetthis {
-    @include page_link_style(rgba(#8e44ad, 0.75));
-  }
-
-  &.example {
-    @include page_link_style(#3d81f6, #ffffff);
-  }
-
-  &.labactivity {
-    @include page_link_style(darken(rgba(#fdcb6e, 0.75), 10%));
-  }
-
-  &.learnbydoing {
-    @include page_link_style(rgba(#00b894, 0.75));
-  }
-
-  &.learnmore {
-    @include page_link_style(rgba(#27ae60, 0.75));
-  }
-
-  &.manystudentswonder {
-    @include page_link_style(rgba(#42729b, 0.75));
-  }
-
-  &.quiz {
-    @include page_link_style(rgba(#3498db, 0.75));
-  }
-
-  &.myresponse {
-    @include page_link_style(rgba(#3498db, 0.75));
-  }
-
-  &.simulation {
-    @include page_link_style(rgba(#ff7675, 0.75));
-  }
-
-  &.walkthrough {
-    @include page_link_style(rgba(#536d86, 0.75));
   }
 }
 
@@ -381,6 +277,20 @@
       font-weight: 900;
       margin-right: 8px;
       content: '\f51c';
+    }
+  }
+}
+
+html.dark {
+  .content-purpose {
+    & > .content-purpose-label {
+      background: var(--color-delivery-purpose-label-bg-dark);
+    }
+
+    &.example {
+      & > .content-purpose-label {
+        background: transparent;
+      }
     }
   }
 }

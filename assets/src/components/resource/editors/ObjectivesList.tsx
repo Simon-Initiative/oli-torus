@@ -37,8 +37,8 @@ export const ObjectivesList = (props: ObjectivesListProps) => {
                 <span
                   key={o}
                   className="objective-token rbt-token"
-                  data-toggle="popover"
-                  data-content={o}
+                  data-bs-toggle="popover"
+                  data-bs-content={o}
                 >
                   {o}
                 </span>

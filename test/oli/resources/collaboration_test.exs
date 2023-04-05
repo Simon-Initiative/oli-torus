@@ -3,135 +3,9 @@ defmodule Oli.Resources.CollaborationTest do
 
   import Oli.Factory
 
-  alias Oli.Delivery.Sections
   alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
-  alias Oli.Resources.ResourceType
-
-  defp create_project_with_collab_space_and_posts() do
-    user = insert(:user)
-    author = insert(:author)
-    project = insert(:project, authors: [author])
-
-    # Create collab space
-    collab_space_config = build(:collab_space_config)
-
-    # Create page with collab space
-    page_resource_cs = insert(:resource)
-
-    page_revision_cs =
-      insert(:revision, %{
-        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
-        collab_space_config: collab_space_config,
-        children: [],
-        content: %{"model" => []},
-        deleted: false,
-        title: "Page with collab",
-        resource: page_resource_cs,
-        slug: "page_collab"
-      })
-
-    # Associate page to the project
-    insert(:project_resource, %{project_id: project.id, resource_id: page_resource_cs.id})
-
-    # Create page
-    page_resource = insert(:resource)
-
-    page_revision =
-      insert(:revision, %{
-        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        resource_type_id: ResourceType.get_id_by_type("page"),
-        children: [],
-        content: %{"model" => []},
-        deleted: false,
-        title: "Page 1",
-        resource: page_resource,
-        slug: "page_one",
-        collab_space_config: nil
-      })
-
-    # Associate page to the project
-    insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
-
-    # root container
-    container_resource = insert(:resource)
-
-    container_revision =
-      insert(:revision, %{
-        resource: container_resource,
-        objectives: %{},
-        resource_type_id: ResourceType.get_id_by_type("container"),
-        children: [page_resource.id],
-        content: %{},
-        deleted: false,
-        slug: "root_container",
-        title: "Root Container"
-      })
-
-    # Associate root container to the project
-    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
-
-    # Publication of project with root container
-    publication =
-      insert(:publication, %{
-        project: project,
-        published: nil,
-        root_resource_id: container_resource.id
-      })
-
-    # Publish root container resource
-    insert(:published_resource, %{
-      publication: publication,
-      resource: container_resource,
-      revision: container_revision,
-      author: author
-    })
-
-    # Publish page resource
-    insert(:published_resource, %{
-      author: hd(project.authors),
-      publication: publication,
-      resource: page_resource,
-      revision: page_revision
-    })
-
-    # Publish page with collab space resource
-    insert(:published_resource, %{
-      author: hd(project.authors),
-      publication: publication,
-      resource: page_resource_cs,
-      revision: page_revision_cs
-    })
-
-    section = insert(:section, base_project: project)
-    {:ok, _root_section_resource} = Sections.create_section_resources(section, publication)
-
-    first_post = insert(:post, section: section, resource: page_resource_cs, user: user)
-
-    second_post =
-      insert(:post,
-        status: :submitted,
-        content: %{message: "Other post"},
-        section: section,
-        resource: page_resource_cs,
-        user: user
-      )
-
-    {:ok,
-     %{
-       project: project,
-       publication: publication,
-       page_revision: page_revision,
-       page_revision_cs: page_revision_cs,
-       page_resource_cs: page_resource_cs,
-       collab_space_config: collab_space_config,
-       author: author,
-       section: section,
-       posts: [first_post, second_post]
-     }}
-  end
 
   describe "collaborative spaces" do
     test "upsert_collaborative_space/4 with valid data creates a collaborative space" do
@@ -160,7 +34,8 @@ defmodule Oli.Resources.CollaborationTest do
                participation_min_replies: participation_min_replies,
                status: status,
                threaded: threaded,
-               show_full_history: show_full_history
+               show_full_history: show_full_history,
+               anonymous_posting: anonymous_posting
              } = next_page_revision.collab_space_config
 
       assert auto_accept == attrs.auto_accept
@@ -169,6 +44,7 @@ defmodule Oli.Resources.CollaborationTest do
       assert status == attrs.status
       assert threaded == attrs.threaded
       assert show_full_history == attrs.show_full_history
+      assert anonymous_posting == attrs.anonymous_posting
     end
 
     test "upsert_collaborative_space/4 with valid data updates a collaborative space" do
@@ -185,7 +61,8 @@ defmodule Oli.Resources.CollaborationTest do
         participation_min_replies: 10,
         status: :enabled,
         threaded: false,
-        show_full_history: false
+        show_full_history: false,
+        anonymous_posting: false
       }
 
       assert {:ok,
@@ -208,7 +85,8 @@ defmodule Oli.Resources.CollaborationTest do
                participation_min_replies: participation_min_replies,
                status: status,
                threaded: threaded,
-               show_full_history: show_full_history
+               show_full_history: show_full_history,
+               anonymous_posting: anonymous_posting
              } = next_page_revision.collab_space_config
 
       assert auto_accept == new_attrs.auto_accept
@@ -217,6 +95,7 @@ defmodule Oli.Resources.CollaborationTest do
       assert status == new_attrs.status
       assert threaded == new_attrs.threaded
       assert show_full_history == new_attrs.show_full_history
+      assert anonymous_posting == new_attrs.anonymous_posting
     end
 
     test "upsert_collaborative_space/4 with invalid data rollback changes correctly" do
@@ -238,7 +117,7 @@ defmodule Oli.Resources.CollaborationTest do
     test "list_collaborative_spaces_in_section/1 returns correctly when no collab spaces present" do
       section = insert(:section)
 
-      assert [] == Collaboration.list_collaborative_spaces_in_section(section.slug)
+      assert {0, []} == Collaboration.list_collaborative_spaces_in_section(section.slug)
     end
 
     test "list_collaborative_spaces_in_section/1 returns collab spaces correctly with posts configured in pages" do
@@ -249,16 +128,17 @@ defmodule Oli.Resources.CollaborationTest do
          section: section
        }} = create_project_with_collab_space_and_posts()
 
-      assert [
-               %{
-                 collab_space_config: returned_collab_space_config,
-                 page: page,
-                 number_of_posts: 2,
-                 number_of_posts_pending_approval: 1,
-                 most_recent_post: _most_recent_post,
-                 section: returned_section
-               }
-             ] = Collaboration.list_collaborative_spaces_in_section(section.slug)
+      assert {1,
+              [
+                %{
+                  collab_space_config: returned_collab_space_config,
+                  page: page,
+                  number_of_posts: 2,
+                  number_of_posts_pending_approval: 1,
+                  most_recent_post: _most_recent_post,
+                  section: returned_section
+                }
+              ]} = Collaboration.list_collaborative_spaces_in_section(section.slug)
 
       assert returned_collab_space_config["status"] |> String.to_atom() ==
                collab_space_config.status
@@ -284,16 +164,17 @@ defmodule Oli.Resources.CollaborationTest do
         collab_space_config: collab_space_config
       )
 
-      assert [
-               %{
-                 collab_space_config: returned_collab_space_config,
-                 page: page,
-                 number_of_posts: 2,
-                 number_of_posts_pending_approval: 1,
-                 most_recent_post: _most_recent_post,
-                 section: returned_section
-               }
-             ] = Collaboration.list_collaborative_spaces_in_section(section.slug)
+      assert {1,
+              [
+                %{
+                  collab_space_config: returned_collab_space_config,
+                  page: page,
+                  number_of_posts: 2,
+                  number_of_posts_pending_approval: 1,
+                  most_recent_post: _most_recent_post,
+                  section: returned_section
+                }
+              ]} = Collaboration.list_collaborative_spaces_in_section(section.slug)
 
       assert returned_collab_space_config["status"] |> String.to_atom() == :archived
       assert returned_collab_space_config["threaded"] == collab_space_config.threaded
@@ -446,6 +327,7 @@ defmodule Oli.Resources.CollaborationTest do
       assert post.user_id == params.user_id
       assert post.section_id == params.section_id
       assert post.resource_id == params.resource_id
+      assert post.anonymous == params.anonymous
     end
 
     test "create_post/1 with existing name returns error changeset" do

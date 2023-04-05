@@ -10,14 +10,15 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
     ~F"""
       <div class="modal fade fixed top-0 left-0 hidden w-full h-full outline-none overflow-x-hidden overflow-y-auto" id={@id} tabindex="-1" aria-labelledby="exampleModalLgLabel" aria-modal="true" role="dialog" phx-hook="ModalLaunch">
         <div class="modal-dialog modal-lg relative w-auto pointer-events-none">
-          <div class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current">
+          <div class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none">
             <div class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
-              <h5 class="text-xl font-medium leading-normal text-gray-800" id="exampleModalLgLabel">
+              <h5 class="text-xl font-medium leading-normal" id="exampleModalLgLabel">
                 Connect to LMS
               </h5>
               <button type="button"
-                class="btn-close box-content w-4 h-4 p-1 text-black border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:text-black hover:opacity-75 hover:no-underline"
+                class="btn-close box-content p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
                 data-bs-dismiss="modal" aria-label="Close">
+                <i class="fa-solid fa-xmark fa-xl"></i>
               </button>
             </div>
 
@@ -34,15 +35,15 @@ defmodule OliWeb.Projects.LtiConnectInstructions do
                   </p>
                   <ul class="nav nav-pills justify-content-center mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item">
-                      <a class="nav-link active" id="pills-canvas-tab" data-toggle="pill" href="#pills-canvas" role="tab" aria-controls="pills-canvas" aria-selected="true">Canvas</a>
+                      <a class="nav-link active" id="pills-canvas-tab" data-bs-toggle="pill" href="#pills-canvas" role="tab" aria-controls="pills-canvas" aria-selected="true">Canvas</a>
                     </li>
                     {#if @lti_connect_info.blackboard_application_client_id}
                       <li class="nav-item">
-                        <a class="nav-link" id="pills-blackboard-tab" data-toggle="pill" href="#pills-blackboard" role="tab" aria-controls="pills-blackboard" aria-selected="false">Blackboard</a>
+                        <a class="nav-link" id="pills-blackboard-tab" data-bs-toggle="pill" href="#pills-blackboard" role="tab" aria-controls="pills-blackboard" aria-selected="false">Blackboard</a>
                       </li>
                     {/if}
                     <li class="nav-item">
-                      <a class="nav-link" id="pills-other-tab" data-toggle="pill" href="#pills-other" role="tab" aria-controls="pills-other" aria-selected="false">Other LMS</a>
+                      <a class="nav-link" id="pills-other-tab" data-bs-toggle="pill" href="#pills-other" role="tab" aria-controls="pills-other" aria-selected="false">Other LMS</a>
                     </li>
                   </ul>
 

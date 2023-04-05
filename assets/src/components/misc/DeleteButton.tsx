@@ -21,7 +21,7 @@ export const DeleteButton = ({
     className={classNames(
       className,
       styles.deleteButton,
-      'p-0 d-flex align-items-center justify-content-center btn btn-sm btn-delete',
+      'p-0 d-flex self-center align-items-center justify-content-center btn btn-sm btn-delete',
     )}
     aria-label="delete"
     onClick={onClick}

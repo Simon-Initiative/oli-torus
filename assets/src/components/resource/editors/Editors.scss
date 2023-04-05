@@ -11,6 +11,11 @@
     .content-block {
       .slate-editor {
         border: none;
+
+        .popup-anchor {
+          cursor: inherit;
+          padding-right: 2px;
+        }
       }
 
       // handle the special case when purpose type is none, apply the
@@ -78,6 +83,6 @@
 
 html.dark {
   .editors {
-    border-color: var(--color-gray-800);
+    border-color: #3e3f44;
   }
 }

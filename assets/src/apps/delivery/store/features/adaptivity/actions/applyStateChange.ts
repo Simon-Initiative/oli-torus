@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { RootState } from 'apps/delivery/store/rootReducer';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -16,7 +16,7 @@ export const applyStateChange = createAsyncThunk(
     bulkApplyState(payload.operations, defaultGlobalEnv);
 
     // TODO: this should only be a DECK LAYOUT concern, think of a cleaner way
-    const currentActivityTree = selectCurrentActivityTree(getState() as RootState);
+    const currentActivityTree = selectCurrentActivityTree(getState() as DeliveryRootState);
 
     const latestSnapshot = getLocalizedStateSnapshot((currentActivityTree || []).map((a) => a.id));
     // instead of sending the entire enapshot, taking latest values from store and sending that as mutate state in all the components
@@ -25,7 +25,9 @@ export const applyStateChange = createAsyncThunk(
         const localized = target.replace(`${activity.id}|`, '');
         return localized;
       }, op.target);
-      collect[localizedTarget] = latestSnapshot[op.target];
+      if (localizedTarget) {
+        collect[localizedTarget] = latestSnapshot[op.target];
+      }
       return collect;
     }, {});
 

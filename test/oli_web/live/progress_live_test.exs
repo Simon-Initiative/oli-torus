@@ -1,5 +1,5 @@
 defmodule OliWeb.ProgressLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -80,7 +80,7 @@ defmodule OliWeb.ProgressLiveTest do
       6.10 => 6.10,
       4 => 4.0,
       0.0 => 0.0,
-      0 => 0.0,
+      0 => 0.0
     }
 
     for {score, expected_score} <- scores_expected_format do
@@ -93,15 +93,20 @@ defmodule OliWeb.ProgressLiveTest do
         resource: resource,
         student: student
       } do
-
-        insert(:resource_access, user: student, resource: resource, section: section, score: @score, out_of: 10.0)
+        insert(:resource_access,
+          user: student,
+          resource: resource,
+          section: section,
+          score: @score,
+          out_of: 10.0
+        )
 
         {:ok, view, _html} =
           live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
         assert view
-          |> element("input[name=\"resource_access[score]\"]")
-          |> render =~ "value=\"#{@expected_score}\""
+               |> element("input[name=\"resource_access[score]\"]")
+               |> render =~ "value=\"#{@expected_score}\""
       end
     end
 
@@ -114,34 +119,64 @@ defmodule OliWeb.ProgressLiveTest do
     } do
       first_attempt = %{score: 5.2222, formatted: 5.22}
       second_attempt = %{score: 4.876, formatted: 4.88}
-      third_attempt =  %{score: 7.239, formatted: 7.24}
+      third_attempt = %{score: 7.239, formatted: 7.24}
       out_of = 10.0
 
-      resource_access = insert(:resource_access, user: student, resource: resource, section: section, score: third_attempt.score, out_of: out_of)
+      resource_access =
+        insert(:resource_access,
+          user: student,
+          resource: resource,
+          section: section,
+          score: third_attempt.score,
+          out_of: out_of
+        )
 
       date_now = DateTime.utc_now()
 
-      insert(:resource_attempt, revision: revision, resource_access: resource_access, score: first_attempt.score, out_of: out_of, lifecycle_state: "evaluated",
-        date_submitted: date_now, date_evaluated: date_now)
-      insert(:resource_attempt, revision: revision, resource_access: resource_access, score: second_attempt.score, out_of: out_of, lifecycle_state: "evaluated",
-        date_submitted: date_now, date_evaluated: date_now)
-      insert(:resource_attempt, revision: revision, resource_access: resource_access, score: third_attempt.score, out_of: out_of, lifecycle_state: "evaluated",
-        date_submitted: date_now, date_evaluated: date_now)
+      insert(:resource_attempt,
+        revision: revision,
+        resource_access: resource_access,
+        score: first_attempt.score,
+        out_of: out_of,
+        lifecycle_state: "evaluated",
+        date_submitted: date_now,
+        date_evaluated: date_now
+      )
+
+      insert(:resource_attempt,
+        revision: revision,
+        resource_access: resource_access,
+        score: second_attempt.score,
+        out_of: out_of,
+        lifecycle_state: "evaluated",
+        date_submitted: date_now,
+        date_evaluated: date_now
+      )
+
+      insert(:resource_attempt,
+        revision: revision,
+        resource_access: resource_access,
+        score: third_attempt.score,
+        out_of: out_of,
+        lifecycle_state: "evaluated",
+        date_submitted: date_now,
+        date_evaluated: date_now
+      )
 
       {:ok, view, _html} =
         live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
       assert view
-        |> element("li[data-phx-component=\"1\"]")
-        |> render =~ "#{first_attempt.formatted} / #{out_of}"
+             |> element("div[data-phx-component=\"1\"]")
+             |> render =~ "#{first_attempt.formatted} / #{out_of}"
 
       assert view
-        |> element("li[data-phx-component=\"2\"]")
-        |> render =~ "#{second_attempt.formatted} / #{out_of}"
+             |> element("div[data-phx-component=\"2\"]")
+             |> render =~ "#{second_attempt.formatted} / #{out_of}"
 
       assert view
-        |> element("li[data-phx-component=\"3\"]")
-        |> render =~ "#{third_attempt.formatted} / #{out_of}"
+             |> element("div[data-phx-component=\"3\"]")
+             |> render =~ "#{third_attempt.formatted} / #{out_of}"
 
       assert true
     end
@@ -155,7 +190,10 @@ defmodule OliWeb.ProgressLiveTest do
       section: section
     } do
       conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, section.slug))
+        get(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, section.slug)
+        )
 
       {:ok, _view, html} = live(conn)
 
@@ -170,7 +208,10 @@ defmodule OliWeb.ProgressLiveTest do
       student: student
     } do
       {:ok, _view, html} =
-        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id))
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)
+        )
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
@@ -188,7 +229,10 @@ defmodule OliWeb.ProgressLiveTest do
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
-      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""
+
+      assert html =~
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""
+
       assert html =~ "View Resource Progress"
     end
   end
@@ -201,13 +245,19 @@ defmodule OliWeb.ProgressLiveTest do
       section: section
     } do
       conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, section.slug))
+        get(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, section.slug)
+        )
 
       {:ok, _view, html} = live(conn)
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
-      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}\""
+
+      assert html =~
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+
       assert html =~ "Manual Scoring"
     end
 
@@ -217,11 +267,17 @@ defmodule OliWeb.ProgressLiveTest do
       student: student
     } do
       {:ok, _view, html} =
-        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id))
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)
+        )
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
-      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}\""
+
+      assert html =~
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+
       assert html =~ "Student Progress"
     end
 
@@ -236,8 +292,13 @@ defmodule OliWeb.ProgressLiveTest do
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
-      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}\""
-      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""
+
+      assert html =~
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+
+      assert html =~
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""
+
       assert html =~ "View Resource Progress"
     end
   end
@@ -250,13 +311,18 @@ defmodule OliWeb.ProgressLiveTest do
     section_project_publication =
       insert(:section_project_publication, %{section: section, project: project})
 
-    revision = insert(:revision, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), graded: true)
+    revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        graded: true
+      )
 
-    section_resource = insert(:section_resource, %{
-      section: section,
-      project: project,
-      resource_id: revision.resource.id
-    })
+    section_resource =
+      insert(:section_resource, %{
+        section: section,
+        project: project,
+        resource_id: revision.resource.id
+      })
 
     Sections.update_section(section, %{root_section_resource_id: section_resource.id})
 
@@ -268,12 +334,19 @@ defmodule OliWeb.ProgressLiveTest do
     })
 
     student = insert(:user)
-    {:ok, section: section, resource: revision.resource, revision: revision, instructor: instructor, student: student}
+
+    {:ok,
+     section: section,
+     resource: revision.resource,
+     revision: revision,
+     instructor: instructor,
+     student: student}
   end
 
   defp setup_instructor_session(%{conn: conn, instructor: user, section: section}) do
     {:ok, user} =
       Accounts.update_user(user, %{can_create_sections: true, independent_learner: true})
+
     {:ok, instructor} =
       Accounts.update_user_platform_roles(user, [PlatformRoles.get_role(:institution_instructor)])
 

@@ -1,4 +1,4 @@
-<% prologue_class = "jumbotron prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
+<% prologue_class = "prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
 <div class="<%= prologue_class %>">
   <h3 class="display-4"><%= @title %></h3>
   <p class="lead" style="color: #c0392b;">This is a <strong>scored</strong> page</p>
@@ -23,25 +23,25 @@
       <% end %>
     </h5>
     <div class="grid grid-cols-12 justify-content-start">
-      <div class="sm:col-span-3">Status:</div>
-      <div><%= if resource_attempt.lifecycle_state == :evaluated do "Scored" else "Awaiting Instructor Scoring" end %></div>
+      <div class="col-span-3">Status:</div>
+      <div class="col-span-9"><%= if resource_attempt.lifecycle_state == :evaluated do "Scored" else "Awaiting Instructor Scoring" end %></div>
     </div>
     <div class="grid grid-cols-12 justify-content-start">
-      <div class="sm:col-span-3">Started:</div>
-      <div><%= OliWeb.Common.Utils.render_date(resource_attempt, :inserted_at, @conn) %></div>
+      <div class="col-span-3">Started:</div>
+      <div class="col-span-9"><%= OliWeb.Common.Utils.render_date(resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="grid grid-cols-12">
-      <div class="sm:col-span-3">Submitted:</div>
-      <div><%= OliWeb.Common.Utils.render_date(resource_attempt, :date_submitted, @conn) %></div>
+      <div class="col-span-3">Submitted:</div>
+      <div class="col-span-9"><%= OliWeb.Common.Utils.render_date(resource_attempt, :date_submitted, @conn) %></div>
     </div>
     <div class="grid grid-cols-12">
-      <div class="sm:col-span-3">Score:</div>
-      <div><%= show_score(resource_attempt.score, resource_attempt.out_of) %>%</div>
+      <div class="col-span-3">Score:</div>
+      <div class="col-span-9" class="col-span-9"><%= show_score(resource_attempt.score, resource_attempt.out_of) %>%</div>
     </div>
     <%= if !is_nil(resource_attempt.score) do %>
     <div class="grid grid-cols-12">
-      <div class="sm:col-span-3">Points:</div>
-      <div><%= :erlang.float_to_binary(resource_attempt.score, [:compact, {:decimals, 2}]) %> out of <%= :erlang.float_to_binary(resource_attempt.out_of, [:compact, {:decimals, 2}]) %> </div>
+      <div class="col-span-3">Points:</div>
+      <div class="col-span-9"><%= :erlang.float_to_binary(resource_attempt.score, [:compact, {:decimals, 2}]) %> out of <%= :erlang.float_to_binary(resource_attempt.out_of, [:compact, {:decimals, 2}]) %> </div>
     </div>
     <% end %>
   </div>

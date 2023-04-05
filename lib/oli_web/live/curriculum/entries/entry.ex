@@ -91,16 +91,16 @@ defmodule OliWeb.Curriculum.EntryLive do
   def icon(%{child: child} = assigns) do
     if is_container?(child) do
       ~H"""
-      <i class="fa fa-archive fa-lg mx-2 text-gray-700"></i>
+      <i class="fa fa-archive fa-lg mx-2 text-gray-700 dark:text-gray-100"></i>
       """
     else
       if child.graded do
         ~H"""
-        <i class="fa-solid fa-file-pen fa-lg mx-2 text-gray-700"></i>
+        <i class="fa-solid fa-file-pen fa-lg mx-2 text-gray-700 dark:text-gray-100"></i>
         """
       else
         ~H"""
-        <i class="fa-solid fa-file-lines fa-lg mx-2 text-gray-700"></i>
+        <i class="fa-solid fa-file-lines fa-lg mx-2 text-gray-700 dark:text-gray-100"></i>
         """
       end
     end

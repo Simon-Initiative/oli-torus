@@ -73,7 +73,10 @@ const Delivery: React.FC<DeliveryProps> = ({
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
-  const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 60000;
+
+  //Need to start the warning 5 minutes before session expires
+  const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 300000;
+
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
     if (!screenIdleExpirationTime || previewMode || reviewMode) {
@@ -150,10 +153,4 @@ const Delivery: React.FC<DeliveryProps> = ({
   );
 };
 
-const ReduxApp: React.FC<DeliveryProps> = (props) => (
-  <Provider store={store}>
-    <Delivery {...props} />
-  </Provider>
-);
-
-export default ReduxApp;
+export default Delivery;

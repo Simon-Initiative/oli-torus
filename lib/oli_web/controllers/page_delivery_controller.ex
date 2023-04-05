@@ -10,6 +10,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Publishing.DeliveryResolver, as: Resolver
@@ -20,6 +21,8 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
   alias Oli.Resources.{Collaboration, PageContent, Revision}
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Metrics
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -34,17 +37,28 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          if Sections.is_instructor?(user, section_slug) do
+          is_instructor = Sections.is_instructor?(user, section_slug)
+
+          if is_instructor do
             conn
             |> redirect(
               to:
                 Routes.live_path(
                   OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.ContentLive,
-                  section_slug
+                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+                  section_slug,
+                  :manage
                 )
             )
           else
+            %{slug: revision_slug} = DeliveryResolver.root_container(section_slug)
+
+            {:ok, collab_space_config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                revision_slug,
+                section_slug
+              )
+
             render(conn, "index.html",
               title: section.title,
               description: section.description,
@@ -53,9 +67,124 @@ defmodule OliWeb.PageDeliveryController do
               display_curriculum_item_numbering: section.display_curriculum_item_numbering,
               preview_mode: false,
               page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-              container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+              container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+              collab_space_config: collab_space_config,
+              revision_slug: revision_slug,
+              is_instructor: is_instructor,
+              progress: learner_progress(section.id, user.id)
             )
           end
+      end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  defp learner_progress(section_id, user_id) do
+    case Metrics.progress_for(section_id, user_id) do
+      progress when is_float(progress) ->
+        (progress * 100)
+        |> round()
+        # if there is any progress at all, we want to represent that by at least showing 1% min
+        |> max(1)
+        # ensure we never show progress above 100%
+        |> min(100)
+
+      _ ->
+        # if there is no progress (nil) then return 0%
+        0
+    end
+  end
+
+  def exploration(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case section
+           |> Oli.Repo.preload([:base_project, :root_section_resource]) do
+        nil ->
+          render(conn, "error.html")
+
+        section ->
+          render(conn, "exploration.html",
+            title: section.title,
+            description: section.description,
+            section_slug: section_slug,
+            hierarchy: Sections.build_hierarchy(section),
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+            preview_mode: false,
+            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+          )
+      end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  def assignments(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      assignments = Sections.get_graded_pages(section_slug, user.id)
+
+      render(
+        conn,
+        "assignments.html",
+        assignments: assignments,
+        section_slug: section_slug,
+        preview_mode: false
+      )
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  def discussion(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case section
+           |> Oli.Repo.preload([:base_project, :root_section_resource]) do
+        nil ->
+          render(conn, "error.html")
+
+        section ->
+          render(conn, "discussion.html",
+            title: section.title,
+            description: section.description,
+            section_id: section.id,
+            section_slug: section_slug,
+            hierarchy: Sections.build_hierarchy(section),
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+            preview_mode: false,
+            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+          )
       end
     else
       case section do
@@ -299,7 +428,8 @@ defmodule OliWeb.PageDeliveryController do
             conn,
             :transition
           ),
-        screenIdleTimeOutInSeconds: Application.fetch_env!(:oli, :screen_idle_timeout_in_seconds)
+        screenIdleTimeOutInSeconds:
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -360,8 +490,24 @@ defmodule OliWeb.PageDeliveryController do
         Map.put(acc, survey_id, survey_state)
       end)
 
+    base_project_slug =
+      case section.has_experiments do
+        true ->
+          Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
+
+        _ ->
+          nil
+      end
+
+    enrollment =
+      case section.has_experiments do
+        true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
+        _ -> nil
+      end
+
     render_context = %Context{
       # Allow admin authors to review student work
+      enrollment: enrollment,
       user:
         if is_nil(user) do
           conn.assigns.current_author
@@ -369,6 +515,7 @@ defmodule OliWeb.PageDeliveryController do
           user
         end,
       section_slug: section_slug,
+      project_slug: base_project_slug,
       resource_attempt: hd(context.resource_attempts),
       mode:
         if context.review_mode do
@@ -378,7 +525,7 @@ defmodule OliWeb.PageDeliveryController do
         end,
       activity_map: context.activities,
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
-      alternatives_groups_fn: &Resources.alternatives_groups(&1, Resolver),
+      alternatives_groups_fn: fn -> Resources.alternatives_groups(section_slug, Resolver) end,
       alternatives_selector_fn: &Resources.Alternatives.select/2,
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       bib_app_params: context.bib_revisions,
@@ -432,13 +579,71 @@ defmodule OliWeb.PageDeliveryController do
         bib_app_params: %{
           bibReferences: context.bib_revisions
         },
-        collab_space_config: context.collab_space_config
+        collab_space_config: context.collab_space_config,
+        is_instructor: context.is_instructor,
+        is_student: context.is_student,
+        scheduling_type: section_resource.scheduling_type,
+        end_date: section_resource.end_date,
+        # TODO: implement reading time estimation
+        est_reading_time: nil
       }
     )
   end
 
   # ----------------------------------------------------------
   # PREVIEW
+
+  def index_preview(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "index.html",
+      title: section.title,
+      description: section.description,
+      section_slug: section_slug,
+      hierarchy: Sections.build_hierarchy(section),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
+    )
+  end
+
+  def exploration_preview(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "exploration.html",
+      title: section.title,
+      description: section.description,
+      section_slug: section_slug,
+      hierarchy: Sections.build_hierarchy(section),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+    )
+  end
+
+  def discussion_preview(conn, %{"section_slug" => section_slug}) do
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    render(conn, "discussion.html",
+      title: section.title,
+      description: section.description,
+      section_id: section.id,
+      section_slug: section_slug,
+      hierarchy: Sections.build_hierarchy(section),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+    )
+  end
 
   def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     conn
@@ -497,7 +702,9 @@ defmodule OliWeb.PageDeliveryController do
                 bib_app_params: %{
                   bibReferences: []
                 },
-                collab_space_config: collab_space_config
+                collab_space_config: collab_space_config,
+                is_instructor: true,
+                is_student: false
               }
             )
 
@@ -645,7 +852,9 @@ defmodule OliWeb.PageDeliveryController do
         bib_app_params: %{
           bibReferences: bib_entrys
         },
-        collab_space_config: collab_space_config
+        collab_space_config: collab_space_config,
+        is_instructor: true,
+        is_student: false
       }
     )
   end
@@ -716,9 +925,11 @@ defmodule OliWeb.PageDeliveryController do
 
     section = conn.assigns.section
 
+    is_admin? = Oli.Accounts.is_admin?(author)
+
     if Oli.Accounts.is_admin?(author) or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
-      PageContext.create_for_review(section_slug, attempt_guid, user)
+      PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
       |> render_page(conn, section_slug, false)
     else
       render(conn, "not_authorized.html")
