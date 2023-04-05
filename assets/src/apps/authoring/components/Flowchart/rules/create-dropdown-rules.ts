@@ -31,7 +31,7 @@ import { RulesAndVariables } from './rule-compilation';
 export const generateDropdownRules = (
   screen: IActivity,
   sequence: SequenceEntry<SequenceEntryChild>[],
-  defaultDestination: number
+  defaultDestination: number,
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IDropdownPartLayout;
 
