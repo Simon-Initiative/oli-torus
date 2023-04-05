@@ -49,7 +49,7 @@ defmodule OliWeb.Common.MathJaxScript do
         processHtmlClass: 'tex2jax_process'
       },
       loader: {
-        load: ['[tex]/noerrors', '[tex]/autoload']
+        load: ['[tex]/noerrors']
       },
       renderMathML(math, doc) {
         math.typesetRoot = document.createElement('mjx-container');
