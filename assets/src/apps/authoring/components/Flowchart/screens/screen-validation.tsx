@@ -65,6 +65,8 @@ export const validateScreen = (
   const question = getScreenPrimaryQuestion(screen);
   const questionType = getScreenQuestionType(screen);
 
+  if (screen.authoring?.flowchart?.screenType === 'end_screen') return [];
+
   if (
     sequence.length > 0 &&
     !hasPathTo(screen.resourceId!, allActivities, sequence[0].resourceId || -1)

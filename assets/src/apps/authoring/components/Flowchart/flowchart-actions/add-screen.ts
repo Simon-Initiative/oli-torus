@@ -43,6 +43,7 @@ interface AddFlowchartScreenPayload {
   title?: string;
   screenType?: string;
   skipPathToNewScreen?: boolean;
+  skipPathFromNewScreen?: boolean;
 }
 
 /**
@@ -90,10 +91,12 @@ export const addFlowchartScreen = createAsyncThunk(
       };
       activity.model.authoring.flowchart = flowchartData;
 
-      if (payload.toScreenId) {
-        flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));
-      } else {
-        flowchartData.paths.push(createEndOfActivityPath());
+      if (!payload.skipPathFromNewScreen) {
+        if (payload.toScreenId) {
+          flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));
+        } else {
+          flowchartData.paths.push(createEndOfActivityPath());
+        }
       }
 
       const createResults = await create(
