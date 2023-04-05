@@ -134,12 +134,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Sections.count_enrollments(section.slug)
       )
 
-    containers_with_progress =
+    # TODO get real student engagement and student mastery values
+    # when those metrics are ready (see Oli.Delivery.Metrics)
+
+    containers_with_metrics =
       Enum.map(containers, fn container ->
-        Map.merge(container, %{progress: student_progress[container.id]})
+        Map.merge(container, %{
+          progress: student_progress[container.id],
+          student_engagement: Enum.random(["Low", "Medium", "High", "Not enough data"]),
+          student_mastery: Enum.random(["Low", "Medium", "High", "Not enough data"])
+        })
       end)
 
-    {total_count, containers_with_progress}
+    {total_count, containers_with_metrics}
   end
 
   defp get_students_progress(0, pages, section_id, students_count) do

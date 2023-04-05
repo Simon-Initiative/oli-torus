@@ -154,12 +154,11 @@ defmodule OliWeb.Components.Delivery.Content do
       container_id: Params.get_int_param(params, "container_id", @default_params.container_id),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
-      # we currently only support sorting by container_name since the other metrics have not yet been created
       sort_by:
         Params.get_atom_param(
           params,
           "sort_by",
-          [:container_name, :student_completion],
+          [:container_name, :student_completion, :student_mastery, :student_engagement],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
@@ -226,11 +225,17 @@ defmodule OliWeb.Components.Delivery.Content do
 
   defp sort_by(containers, sort_by, sort_order) do
     case sort_by do
-      :modules ->
+      :container_name ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)
 
       :student_completion ->
         Enum.sort_by(containers, fn container -> container.progress end, sort_order)
+
+      :student_mastery ->
+        Enum.sort_by(containers, fn container -> container.student_mastery end, sort_order)
+
+      :student_engagement ->
+        Enum.sort_by(containers, fn container -> container.student_engagement end, sort_order)
 
       _ ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)

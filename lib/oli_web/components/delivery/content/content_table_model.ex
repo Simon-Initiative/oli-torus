@@ -82,23 +82,21 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     """
   end
 
-  def stub_student_mastery(assigns, _user, _) do
-    assigns = Map.merge(assigns, %{overall_mastery: random_value()})
+  def stub_student_mastery(assigns, container, _) do
+    assigns = Map.merge(assigns, %{container: container})
 
     ~H"""
-      <div class={if @overall_mastery == "Low", do: "text-red-600 font-bold"}><%= @overall_mastery%></div>
+      <div class={if @container.student_mastery == "Low", do: "text-red-600 font-bold"}><%= @container.student_mastery %></div>
     """
   end
 
-  def stub_student_engagement(assigns, _user, _) do
-    assigns = Map.merge(assigns, %{engagement: random_value()})
+  def stub_student_engagement(assigns, container, _) do
+    assigns = Map.merge(assigns, %{container: container})
 
     ~H"""
-      <div class={if @engagement == "Low", do: "text-red-600 font-bold"}><%= @engagement %></div>
+      <div class={if @container.student_engagement == "Low", do: "text-red-600 font-bold"}><%= @container.student_engagement %></div>
     """
   end
-
-  defp random_value(), do: Enum.random(["Low", "Medium", "High", "Not enough data"])
 
   defp parse_progress(progress) do
     {progress, _} =
