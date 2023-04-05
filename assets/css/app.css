@@ -51,3 +51,7 @@ p {
 .text-muted {
   @apply text-gray-500;
 }
+
+#delivery_container a:hover {
+  text-decoration: none;
+}

@@ -110,7 +110,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         </div>
         <input
           type="text"
-          className="form-control form-control-sm mr-2 flex-grow-1"
+          className="form-control form-control-sm mr-2 flex-grow-1 w-8"
           id={`action-mutate-target-${uuid}`}
           value={target}
           onChange={(e) => setTarget(e.target.value)}
@@ -168,7 +168,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         </div>
         <input
           type="text"
-          className="form-control form-control-sm"
+          className="form-control"
           id={`action-mutate-value-${uuid}`}
           value={value}
           onChange={(e) => handleValueChange(e)}

@@ -336,7 +336,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
           <p className={`${currentRule.default && !currentRule.correct ? '' : 'mt-3'} mb-0`}>
             Perform the following actions:
           </p>
-          <div className="aa-actions pt-3 mt-2 d-flex w-100">
+          <div className="aa-actions pt-3 mt-2 d-flex flex-1">
             <Dropdown>
               <OverlayTrigger
                 placement="top"
@@ -368,7 +368,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-            <div className="d-flex flex-column w-100">
+            <div className="d-flex flex-column">
               {actions.length === 0 && (
                 <div className="text-danger">No actions. This rule will not do anything.</div>
               )}
