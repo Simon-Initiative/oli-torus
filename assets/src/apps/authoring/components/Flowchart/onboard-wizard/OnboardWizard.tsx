@@ -147,7 +147,7 @@ const Step3: React.FC<{
       <div className="wizard-footer">
         <div className="wizard-step">Step 3/3</div>
         <div className="wizard-buttons">
-          <Button disabled={selected === 0} onClick={onBack} variant="link">
+          <Button onClick={onBack} variant="link">
             <LeftArrow />
             Back
           </Button>

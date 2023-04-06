@@ -13,6 +13,7 @@ $panel-section-title-bar-height: 39px;
 $panel-section-title-bar-color: #e8ebed;
 $workspace-bg: var(--color-body);
 $font-family-sans-serif: var(--font-sans);
+$primary: #275caf;
 
 .flowchart-editor {
   position: fixed;
@@ -35,7 +36,7 @@ $font-family-sans-serif: var(--font-sans);
 
   .flowchart-button {
     border: none;
-    background-color: #5b1eea;
+    background-color: $primary;
     color: #fff;
     border-radius: 8px;
     padding: 4px 8px 4px 8px;
@@ -209,7 +210,7 @@ $font-family-sans-serif: var(--font-sans);
       }
 
       &.node-selected {
-        border: 2px solid #5b1eea;
+        border: 2px solid $primary;
       }
       .button-bar {
         // flex flex-row justify-center gap-1
@@ -220,17 +221,14 @@ $font-family-sans-serif: var(--font-sans);
       }
       .screen-button {
         // bg-delivery-primary-50 hover:bg-delivery-primary text-delivery-body active:bg-delivery-primary-600 px-2 rounded-md
-        background-color: #eee8fd;
+        //background-color: #eee8fd;
         border: none;
         color: #fff;
         border-radius: 8px;
         padding: 0px 8px;
         box-shadow: none;
         &:hover {
-          background-color: #5b1eea;
-        }
-        &:active {
-          background-color: #4d14d2;
+          background-color: $primary;
         }
       }
     }
