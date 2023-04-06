@@ -8,6 +8,7 @@ import { Landscape } from './Landscape';
 import { Portrait } from './Portrait';
 import { RightArrow } from './RightArrow';
 import { ApplicationMode } from '../../../store/app/slice';
+import { LeftArrow } from './LeftArrow';
 
 interface Props {
   onSetupComplete: (mode: ApplicationMode, title: string) => void;
@@ -35,13 +36,21 @@ export const OnboardWizard: React.FC<Props> = ({ startStep, onSetupComplete, ini
             selected={builderVersion}
             setSelected={setBuilderVersion}
             onNext={() => setStep(2)}
+            onBack={() => setStep(0)}
           />
         )}
 
-        {step === 2 && builderVersion === 2 && <Step3Advanced onNext={commitChanges} />}
+        {step === 2 && builderVersion === 2 && (
+          <Step3Advanced onNext={commitChanges} onBack={() => setStep(1)} />
+        )}
 
         {step === 2 && builderVersion === 1 && (
-          <Step3 selected={lessonType} setSelected={setLessonType} onNext={commitChanges} />
+          <Step3
+            selected={lessonType}
+            setSelected={setLessonType}
+            onNext={commitChanges}
+            onBack={() => setStep(1)}
+          />
         )}
 
         {step === 3 && <Working />}
@@ -69,7 +78,8 @@ const Working: React.FC = () => {
 
 const Step3Advanced: React.FC<{
   onNext: () => void;
-}> = ({ onNext }) => {
+  onBack: () => void;
+}> = ({ onNext, onBack }) => {
   return (
     <div className="wizard-content">
       <h1 className="wizard-header">3. Advanced Authoring</h1>
@@ -87,10 +97,16 @@ const Step3Advanced: React.FC<{
       </div>
       <div className="wizard-footer">
         <div className="wizard-step">Step 3/3</div>
-        <Button onClick={onNext} variant="link">
-          Next
-          <RightArrow />
-        </Button>
+        <div className="wizard-buttons">
+          <Button onClick={onBack} variant="link">
+            <LeftArrow />
+            Back
+          </Button>
+          <Button onClick={onNext} variant="link">
+            Next
+            <RightArrow />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -98,9 +114,10 @@ const Step3Advanced: React.FC<{
 
 const Step3: React.FC<{
   onNext: () => void;
+  onBack: () => void;
   selected: number;
   setSelected: (value: number) => void;
-}> = ({ onNext, selected, setSelected }) => {
+}> = ({ onNext, selected, onBack, setSelected }) => {
   return (
     <div className="wizard-content">
       <h1 className="wizard-header">3. Select lesson type</h1>
@@ -129,10 +146,16 @@ const Step3: React.FC<{
       </div>
       <div className="wizard-footer">
         <div className="wizard-step">Step 3/3</div>
-        <Button disabled={selected === 0} onClick={onNext} variant="link">
-          Next
-          <RightArrow />
-        </Button>
+        <div className="wizard-buttons">
+          <Button disabled={selected === 0} onClick={onBack} variant="link">
+            <LeftArrow />
+            Back
+          </Button>
+          <Button disabled={selected === 0} onClick={onNext} variant="link">
+            Next
+            <RightArrow />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -140,9 +163,10 @@ const Step3: React.FC<{
 
 const Step2: React.FC<{
   onNext: () => void;
+  onBack: () => void;
   selected: number;
   setSelected: (value: number) => void;
-}> = ({ onNext, selected, setSelected }) => {
+}> = ({ onNext, selected, onBack, setSelected }) => {
   return (
     <div className="wizard-content">
       <h1 className="wizard-header">2. Select Builder Version</h1>
@@ -172,10 +196,16 @@ const Step2: React.FC<{
       </div>
       <div className="wizard-footer">
         <div className="wizard-step">Step 2/3</div>
-        <Button disabled={selected === 0} onClick={onNext} variant="link">
-          Next
-          <RightArrow />
-        </Button>
+        <div className="wizard-buttons">
+          <Button onClick={onBack} variant="link">
+            <LeftArrow />
+            Back
+          </Button>
+          <Button disabled={selected === 0} onClick={onNext} variant="link">
+            Next
+            <RightArrow />
+          </Button>
+        </div>
       </div>
     </div>
   );
