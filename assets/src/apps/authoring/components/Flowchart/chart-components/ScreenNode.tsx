@@ -54,6 +54,11 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const isEndScreen =
     activities.find((s) => s.resourceId === data.resourceId)?.authoring?.flowchart?.screenType ===
     'end_screen';
+  const isWelcomeScreen =
+    activities.find((s) => s.resourceId === data.resourceId)?.authoring?.flowchart?.screenType ===
+    'welcome_screen';
+
+  const isRequiredScreen = isEndScreen || isWelcomeScreen;
 
   const onDrop = (item: any) => {
     if (isEndScreen) {
@@ -107,7 +112,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
           <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
             <Icon icon="edit" />
           </ScreenButton>
-          {isEndScreen || (
+          {isRequiredScreen || (
             <>
               <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
                 <Icon icon="clone" />
