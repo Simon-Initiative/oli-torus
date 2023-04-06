@@ -4417,6 +4417,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 16rem;
 }
 
+.w-8 {
+  width: 2rem;
+}
+
 .w-9 {
   width: 2.25rem;
 }
@@ -6614,6 +6618,10 @@ p {
 .text-muted {
   --tw-text-opacity: 1;
   color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
+#delivery_container a:hover {
+  text-decoration: none;
 }
 
 @media (min-width: 768px) {
