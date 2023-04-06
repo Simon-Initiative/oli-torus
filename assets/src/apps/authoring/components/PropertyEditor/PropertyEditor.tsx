@@ -74,7 +74,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
             : Object.keys(changedProp).some((v) => triggerOnChange.indexOf(v) > -1);
         setFormData(updatedData);
 
-        console.info('ONCHANGE', { shouldTriggerChange, changedPropType, changedProp });
+        //console.info('ONCHANGE', { shouldTriggerChange, changedPropType, changedProp });
 
         if (shouldTriggerChange || changedPropType === 'boolean') {
           // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen

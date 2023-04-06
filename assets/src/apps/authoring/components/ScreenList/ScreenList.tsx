@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { EntityId } from '@reduxjs/toolkit';
-import React, { forwardRef, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { Position } from 'reactflow';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { useOnClickOutside } from '../../../../hooks/click_outside';
 import {
