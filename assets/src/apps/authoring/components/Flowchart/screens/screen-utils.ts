@@ -18,8 +18,36 @@ export const sortScreens = (
   const sortedScreens = [firstScreen, ...getOrderedPath(firstScreen, screensLeft)];
 
   const unlinkedScreens = screens.filter((s) => !sortedScreens.includes(s));
-  return [...sortedScreens, ...unlinkedScreens];
+  const pathSorted = [...sortedScreens, ...unlinkedScreens];
+
+  // Make sure the welcome screen is first and the end screen is last.
+  // Because we're sorting depth-first, the end screen is often before some alternate branches.
+  const welcomeScreen = pathSorted.find(isWelcomeScreen);
+  if (welcomeScreen) {
+    const welcomeScreenIndex = pathSorted.indexOf(welcomeScreen);
+    if (welcomeScreenIndex > 0) {
+      pathSorted.splice(welcomeScreenIndex, 1);
+      pathSorted.unshift(welcomeScreen);
+    }
+  }
+
+  const endScreen = pathSorted.find(isEndScreen);
+  if (endScreen) {
+    const endScreenIndex = pathSorted.indexOf(endScreen);
+    if (endScreenIndex < pathSorted.length - 1) {
+      pathSorted.splice(endScreenIndex, 1);
+      pathSorted.push(endScreen);
+    }
+  }
+
+  return pathSorted;
 };
+
+const isWelcomeScreen = (screen: IActivity): boolean =>
+  screen.authoring?.flowchart?.screenType === 'welcome_screen';
+
+const isEndScreen = (screen: IActivity): boolean =>
+  screen.authoring?.flowchart?.screenType === 'end_screen';
 
 const isScreen = (screen: IActivity | undefined): screen is IActivity => !!screen;
 
