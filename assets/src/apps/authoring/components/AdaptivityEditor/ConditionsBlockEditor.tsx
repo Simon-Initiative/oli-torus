@@ -224,7 +224,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
   );
 
   return (
-    <div className="aa-conditions d-flex w-100">
+    <div className="aa-conditions d-flex">
       <Dropdown>
         <OverlayTrigger
           placement="top"
@@ -247,7 +247,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         <AddConditionContextMenu />
       </Dropdown>
 
-      <div className="d-flex flex-column w-100">
+      <div className="d-flex flex-column flex-1">
         <div className="aa-condition border rounded p-2 mt-4">
           <div className="aa-condition-header d-flex justify-content-between align-items-center">
             <div>CONDITIONS</div>

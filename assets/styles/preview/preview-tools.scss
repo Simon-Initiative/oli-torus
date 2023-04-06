@@ -66,6 +66,10 @@
           position: relative;
           padding: 8px 8px;
           text-decoration: none;
+
+          &.selected {
+            background-color: var(--color-primary);
+          }
         }
         a::before {
           content: '.' counter(li);

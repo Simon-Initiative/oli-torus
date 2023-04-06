@@ -76,7 +76,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({
       key={state.id}
       className="aa-action aa-mutate d-flex mb-2 form-inline align-items-center flex-nowrap"
     >
-      <div className="input-group input-group-sm flex-grow-1">
+      <div className="input-group input-group-sm flex-grow-1 flex-shrink-0">
         <div className="input-group-prepend" title="Target">
           <VariablePicker
             onTargetChange={(value) => handleTargetChange(value)}
@@ -91,7 +91,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({
         <input
           key={`target-${state.id}`}
           id={`target-${state.id}`}
-          className="form-control form-control-sm flex-grow-1 mr-2"
+          className="form-control form-control-sm flex-grow-1 mr-2 w-40"
           type="text"
           placeholder="Target"
           value={target}
@@ -157,7 +157,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({
         </label>
         <input
           type="text"
-          className="form-control form-control-sm flex-grow-1"
+          className="form-control flex-grow-1"
           key={`value-${state.id}`}
           id={`value-${state.id}`}
           value={value}
@@ -284,7 +284,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = ({ authoringConta
         </div>
       )}
       {!isLayer && !isBank && (
-        <div className="d-flex w-100">
+        <div className="d-flex">
           <OverlayTrigger
             placement="top"
             delay={{ show: 150, hide: 150 }}
@@ -303,12 +303,12 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = ({ authoringConta
             </button>
           </OverlayTrigger>
           {initState.length === 0 && (
-            <div className="d-flex flex-column w-100 border rounded p-2">
+            <div className="d-flex flex-column border rounded p-2 flex-1">
               <div className="text-center">Initial State is currently empty.</div>
             </div>
           )}
           {initState.length > 0 && (
-            <div className="w-100">
+            <div className="flex-1">
               {initState.map((state: InitialState, index: number) => (
                 <InitStateItem
                   key={index}
