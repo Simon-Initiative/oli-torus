@@ -17,7 +17,7 @@ export const LeftArrow: React.FC = (props) => {
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
-        transform="rotate(180 14 14) translate(4 4)"
+        transform="rotate(180 14 14) translate(4 5)"
       />
     </svg>
   );
