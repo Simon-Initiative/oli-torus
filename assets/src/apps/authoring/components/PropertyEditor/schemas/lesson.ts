@@ -117,10 +117,10 @@ export const lessonUiSchema: UiSchema = {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Screen Size',
       width: {
-        classNames: 'col-6',
+        classNames: 'col-span-6',
       },
       height: {
-        classNames: 'col-6',
+        classNames: 'col-span-6',
       },
     },
     Appearance: {
