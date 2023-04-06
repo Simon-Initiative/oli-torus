@@ -3256,10 +3256,6 @@ input.form-control-sm,
   list-style: none;
 }
 
-li.page-item {
-  list-style: none;
-}
-
 .page-item .page-link {
   position: relative;
   display: block;
