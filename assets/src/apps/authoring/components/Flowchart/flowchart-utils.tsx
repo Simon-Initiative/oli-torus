@@ -123,32 +123,34 @@ export const buildStartingNode = (
   };
 };
 
-export const buildPlaceholders = (
-  children: IActivity[],
-): { nodes: FlowchartPlaceholderNode[]; edges: FlowchartEdge[] } => {
-  const placeholders: PlaceholderNodeAndEdge[] = children
-    .filter((c) => !!c.resourceId)
-    .map((item) => {
-      const paths = item.authoring?.flowchart?.paths || [];
-      const nodeId = guid();
-      return paths.filter(isExitActivityPath).map((_path: AllPaths) => {
-        return {
-          node: createPlaceholderNode(nodeId, item.resourceId!),
-          edge: createPlaceholderEdge(String(item.resourceId!), nodeId),
-        };
-      });
-    })
-    .flat();
+// This was to support the placeholder exit-lesson node, but we got rid of that.
+// export const buildPlaceholders = (
+//   children: IActivity[],
+// ): { nodes: FlowchartPlaceholderNode[]; edges: FlowchartEdge[] } => {
+//   const placeholders: PlaceholderNodeAndEdge[] = [];
+// children
+//   .filter((c) => !!c.resourceId)
+//   .map((item) => {
+//     const paths = item.authoring?.flowchart?.paths || [];
+//     const nodeId = guid();
+//     return paths.filter(isExitActivityPath).map((_path: AllPaths) => {
+//       return {
+//         node: createPlaceholderNode(nodeId, item.resourceId!),
+//         edge: createPlaceholderEdge(String(item.resourceId!), nodeId),
+//       };
+//     });
+//   })
+//   .flat();
 
-  // Go from an array of { node, edge } to { nodes: [], edges: [] }
-  return placeholders.reduce(
-    (acc, item) => ({ nodes: [...acc.nodes, item.node], edges: [...acc.edges, item.edge] }),
-    {
-      nodes: [],
-      edges: [],
-    },
-  );
-};
+//   // Go from an array of { node, edge } to { nodes: [], edges: [] }
+//   return placeholders.reduce(
+//     (acc, item) => ({ nodes: [...acc.nodes, item.node], edges: [...acc.edges, item.edge] }),
+//     {
+//       nodes: [],
+//       edges: [],
+//     },
+//   );
+// };
 
 export const buildEdges = (activities: IActivity[]): FlowchartEdge[] => {
   const endScreenId =

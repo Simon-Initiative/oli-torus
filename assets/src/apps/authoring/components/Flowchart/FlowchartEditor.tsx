@@ -47,11 +47,11 @@ export const FlowchartEditor = () => {
   console.info('Rendering flowchart', activities, sequence);
   const activityEdges = buildEdges(activities);
   const activityNodes = activitiesToNodes(activities);
-  const placeholders = buildPlaceholders(activities);
+  //const placeholders = buildPlaceholders(activities);
   const starting = buildStartingNode(activities, sequence);
 
-  const nodes = [starting.node, ...activityNodes, ...placeholders.nodes];
-  const edges = [starting.edge, ...activityEdges, ...placeholders.edges];
+  const nodes = [starting.node, ...activityNodes];
+  const edges = [starting.edge, ...activityEdges];
 
   useEffect(() => {
     // A cheat-code for going to advanced editor

@@ -30,9 +30,9 @@ export const layoutFlowchart = (nodes: FlowchartNode[], edges: FlowchartEdge[]) 
     // marginx: 50,
     // marginy: 50,
     ranker: 'tight-tree',
-    nodesep: BOX_HEIGHT,
+    nodesep: BOX_WIDTH / 4,
     // acyclicer: 'greedy',
-    ranksep: BOX_HEIGHT,
+    ranksep: BOX_HEIGHT / 2,
   });
 
   // Default to assigning a new object as a label for each new edge.
