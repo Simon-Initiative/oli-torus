@@ -339,9 +339,11 @@ $primary: #3b76d3;
     }
   }
 
-  .configure-toolbar-button {
-    // We're going to expose all attributes in the right-hand panel for flowchart mode
-    display: none;
+  .janus-mcq {
+    .configure-toolbar-button {
+      // We're going to expose all attributes in the right-hand panel for flowchart mode
+      display: none;
+    }
   }
 }
 @import 'react-flow.scss';

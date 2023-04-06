@@ -464,7 +464,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         </div>
         <div
           id={`active-selection-toolbar-${props.id}`}
-          className="active-selection-toolbar"
+          className={`active-selection-toolbar ${selectedPartAndCapabilities?.type}`}
           style={{
             display: selectedPartAndCapabilities && !isDragging ? 'block' : 'none',
             top: toolbarPosition.y,

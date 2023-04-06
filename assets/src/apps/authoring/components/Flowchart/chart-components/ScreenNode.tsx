@@ -1,5 +1,4 @@
 import React, { useCallback, useContext } from 'react';
-import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useDrop } from 'react-dnd';
 import { Handle, Position } from 'reactflow';
@@ -34,10 +33,6 @@ export const ScreenNode: React.FC<NodeProps> = ({ data }) => {
   );
 };
 
-const dontDoNothing = () => {
-  console.warn("This don't do nuthin yet");
-};
-
 // Just the interior of the node, useful to have separate for storybook
 export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const { onAddScreen, onDeleteScreen, onSelectScreen, onEditScreen } =
@@ -62,7 +57,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
 
   const onDrop = (item: any) => {
     if (isEndScreen) {
-      onAddScreen({ nextNodeId: data.resourceId, screenType: item.screenType });
+      console.warn("Can't add a screen after the end screen");
     } else {
       onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
     }
@@ -75,6 +70,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
 
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
     accept: screenTypes,
+    canDrop: () => !isEndScreen,
     drop: onDrop,
     collect: (monitor) => ({
       isOver: monitor.isOver(),
