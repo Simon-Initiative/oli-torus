@@ -35,6 +35,10 @@ import {
 import { sortScreens } from '../screens/screen-utils';
 import { replaceIds } from '../template-utils';
 import { createEndOfActivityPath } from '../paths/path-factories';
+import {
+  getActivitySlugFromScreenResourceId,
+  getSequenceIdFromScreenResourceId,
+} from '../rules/create-generic-rule';
 
 interface DuplicateFlowchartScreenPayload {
   screenId: number;
@@ -106,8 +110,11 @@ export const duplicateFlowchartScreen = createAsyncThunk(
         return;
       }
 
+      // Get the last non-end screen
       const getLastScreenId = (): number | undefined => {
-        const orderedScreens = sortScreens(otherActivities, sequence);
+        const orderedScreens = sortScreens(otherActivities, sequence).filter(
+          (s) => s.authoring?.flowchart?.screenType !== 'end_screen',
+        );
         if (orderedScreens.length === 0) {
           return undefined;
         }
@@ -176,6 +183,7 @@ export const duplicateFlowchartScreen = createAsyncThunk(
 
       await dispatch(
         addSequenceItem({
+          siblingId: getActivitySlugFromScreenResourceId(fromScreenId, sequence),
           sequence: sequence,
           item: sequenceEntry,
           group,

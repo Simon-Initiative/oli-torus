@@ -40,6 +40,7 @@ import {
   setUnknownPathDestination,
 } from '../paths/path-utils';
 import { sortScreens } from '../screens/screen-utils';
+import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;
@@ -191,6 +192,7 @@ export const addFlowchartScreen = createAsyncThunk(
 
       await dispatch(
         addSequenceItem({
+          siblingId: getActivitySlugFromScreenResourceId(fromScreenId, sequence),
           sequence: sequence,
           item: sequenceEntry,
           group,
