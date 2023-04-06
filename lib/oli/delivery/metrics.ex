@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Metrics do
   Calculate the progress for a specific student (or a list of students),
   in all pages of a specific container.
 
-  Ommitting the container_id (or specifying nil) calculates progress
+  Omitting the container_id (or specifying nil) calculates progress
   across the entire course section.
 
   This query leverages the `contained_pages` relation, which is always an

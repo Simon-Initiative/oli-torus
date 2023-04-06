@@ -330,6 +330,10 @@ input.form-control-sm,
   @apply flex list-style-none gap-1;
 }
 
+li.page-item {
+  list-style: none;
+}
+
 .page-item .page-link {
   @apply relative block py-1.5 px-3 rounded border-0 bg-transparent outline-none transition-all duration-300 text-body-color dark:text-body-color-dark no-underline cursor-pointer;
 }
