@@ -56,7 +56,7 @@ export const initializeFromContext = createAsyncThunk(
       // assimilated into a new group
       if (!children.length) {
         const { payload: welcomeScreen } = await dispatch(
-          createNewActivity({ title: 'Welcome Screen' }),
+          createNewActivity({ title: 'Welcome Screen', screenType: 'welcome_screen' }),
         );
         children.push(welcomeScreen);
       }
