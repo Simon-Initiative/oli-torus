@@ -166,7 +166,6 @@ const coversAllOptions = (paths: AllPaths[], optionCount: number): boolean => {
   // At this point, we have a correct path, but no incorrect path, so need to make sure we cover all the incorrect options with specific rules.
   const options = paths.filter(isOptionCommonErrorPath).map((path) => path.selectedOption);
   const uniqueOptions = [...new Set(options)];
-  //debugger;
   return uniqueOptions.length >= optionCount - 1;
 };
 

@@ -174,6 +174,15 @@ export const getSequenceIdFromScreenResourceId = (
   return sequenceEntry?.custom.sequenceId;
 };
 
+export const getActivitySlugFromScreenResourceId = (
+  id: number | undefined,
+  sequence: SequenceEntry<SequenceEntryChild>[],
+) => {
+  if (!id) return undefined;
+  const sequenceEntry = sequence.find((s) => s.resourceId === id);
+  return sequenceEntry?.activitySlug;
+};
+
 export const createNeverCondition = (): ICondition => ({
   fact: '0',
   operator: 'equal',
