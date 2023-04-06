@@ -62,7 +62,7 @@ export const AdvancedFeedbackNumberRange: React.FC<Props> = ({ id, value, onChan
         />
       ))}
 
-      <button className="btn btn-primary" type="button" onClick={onAddClick}>
+      <button className="btn btn-primary mt-3" type="button" onClick={onAddClick}>
         + Add new feedback
       </button>
     </div>
@@ -144,10 +144,10 @@ const FeedbackEditor: React.FC<{
           <option value="5">Less Than or Equal</option>
         </select>
       </div>
-      <div className="row">
+      <div className="grid grid-cols-12 gap-4">
         {isRange && (
           <>
-            <div className="col-6">
+            <div className="col-span-6">
               <input
                 className="form-control"
                 type="number"
@@ -156,7 +156,7 @@ const FeedbackEditor: React.FC<{
                 onBlur={onBlur}
               />
             </div>
-            <div className="col-6">
+            <div className="col-span-6">
               <input
                 className="form-control"
                 type="number"
@@ -170,7 +170,7 @@ const FeedbackEditor: React.FC<{
 
         {isRange || (
           <>
-            <div className="col-6">
+            <div className="col-span-6">
               <input
                 className="form-control"
                 type="number"
@@ -182,7 +182,7 @@ const FeedbackEditor: React.FC<{
           </>
         )}
 
-        <div className="col-12">
+        <div className="col-span-12">
           <label>Feedback</label>
           <input
             className="form-control"
