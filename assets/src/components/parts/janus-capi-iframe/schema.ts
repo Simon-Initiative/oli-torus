@@ -9,6 +9,17 @@ export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss
   allowScrolling: boolean;
 }
 
+export const simpleSchema: JSONSchema7Object = {
+  src: {
+    title: 'Source',
+    type: 'string',
+  },
+  allowScrolling: {
+    title: 'Allow Scrolling',
+    type: 'boolean',
+  },
+};
+
 export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS class',
@@ -98,6 +109,7 @@ export const adaptivitySchema = ({
 };
 
 export const uiSchema = {};
+export const simpleUISchema = {};
 
 export const createSchema = (): Partial<CapiIframeModel> => ({
   customCssClass: '',

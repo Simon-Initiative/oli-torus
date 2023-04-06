@@ -36,6 +36,18 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const simpleSchema: JSONSchema7Object = {
+  src: {
+    title: 'Source',
+    type: 'string',
+  },
+  alt: {
+    title: 'Alternate text',
+    type: 'string',
+    description: 'image description text for SEO/accessibility',
+  },
+};
+
 export const uiSchema = {
   src: {
     'ui:widget': 'TorusImageBrowser',

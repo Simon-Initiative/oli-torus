@@ -30,10 +30,6 @@ const EdgeTypes = {
 export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => {
   const { nodes, edges } = props;
 
-  // if (nodes.length > 1) {
-  //   debugger;
-  // }
-
   const layout = layoutFlowchart(nodes, edges);
   // TODO - we're currently ignoring the dagre edges from layout. I think we could avoid some overlaps by using them.
 

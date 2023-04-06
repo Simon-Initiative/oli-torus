@@ -2,6 +2,7 @@
 const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
 import {
+  PartAuthoringMode,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
@@ -9,6 +10,7 @@ import ImageAuthor from './ImageAuthor';
 import {
   createSchema,
   schema,
+  simpleSchema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
@@ -26,7 +28,7 @@ register(ImageAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => schema,
+    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
     getUiSchema: () => uiSchema,
     transformModelToSchema,
     transformSchemaToModel,

@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
+import { simpleUISchema } from '../janus-audio/schema';
 import {
   authoringObservedAttributes,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
+  PartAuthoringMode,
 } from '../partsApi';
 import PopupAuthor from './PopupAuthor';
 import {
@@ -12,6 +14,7 @@ import {
   createSchema,
   getCapabilities,
   schema,
+  simpleSchema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
@@ -34,8 +37,8 @@ register(PopupAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => schema,
-    getUiSchema: () => uiSchema,
+    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUISchema : uiSchema),
     getAdaptivitySchema: async () => adaptivitySchema,
     transformModelToSchema,
     transformSchemaToModel,

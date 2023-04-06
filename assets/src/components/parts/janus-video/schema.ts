@@ -69,6 +69,64 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const simpleSchema: JSONSchema7Object = {
+  src: {
+    title: 'Source',
+    type: 'string',
+  },
+  alt: {
+    title: 'Alternate Text',
+    type: 'string',
+  },
+  autoPlay: {
+    title: 'Autoplay',
+    type: 'boolean',
+    description: 'if set to true then video player will play automatically',
+    default: false,
+  },
+  startTime: {
+    title: 'Start time(secs)',
+    type: 'number',
+    description: 'specifies the start time of the video',
+    default: 0,
+  },
+  endTime: {
+    title: 'End time(secs)',
+    type: 'number',
+    description: 'specifies the end time of the video',
+    default: 0,
+  },
+  enableReplay: {
+    title: 'Enable Replay',
+    type: 'boolean',
+    description: 'specifies whether user can replay the video once its played',
+    default: true,
+  },
+  subtitles: {
+    title: 'Subtitles',
+    type: 'object',
+    properties: {
+      default: { type: 'boolean', title: 'Default' },
+      language: { type: 'string', title: 'Language' },
+      src: { type: 'string', title: 'Source' },
+    },
+    required: ['src', 'language'],
+  },
+};
+
+export const simpleUISchema = {
+  'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  subtitles: {
+    'ui:title': 'Subtitles',
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  },
+  src: {
+    'ui:widget': 'TorusVideoBrowser',
+  },
+  startTime: { classNames: 'col-6' },
+  endTime: { classNames: 'col-6' },
+};
+
 export const uiSchema = {
   subtitles: {
     'ui:title': 'Subtitles',

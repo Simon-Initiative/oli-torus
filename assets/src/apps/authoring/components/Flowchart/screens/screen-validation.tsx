@@ -28,9 +28,6 @@ const hasPathTo = (
   startAt: number,
   visited: number[] = [],
 ): boolean => {
-  // if (screenId === 24273 && visited.length === 0) {
-  //   debugger;
-  // }
   if (startAt === screenId) {
     return true;
   }

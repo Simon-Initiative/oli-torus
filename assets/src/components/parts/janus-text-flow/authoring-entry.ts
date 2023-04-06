@@ -3,6 +3,7 @@ import {
   authoringObservedAttributes,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
+  PartAuthoringMode,
 } from '../partsApi';
 import {
   createSchema,
@@ -13,6 +14,8 @@ import {
   uiSchema,
   adaptivitySchema,
   validateUserConfig,
+  simpleSchema,
+  simpleUISchema,
 } from './schema';
 import TextFlowAuthor from './TextFlowAuthor';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -35,8 +38,8 @@ register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => schema,
-    getUiSchema: () => uiSchema,
+    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUISchema : uiSchema),
     transformModelToSchema,
     transformSchemaToModel,
     createSchema,
