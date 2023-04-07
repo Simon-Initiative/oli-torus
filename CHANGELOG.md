@@ -1,5 +1,12 @@
 # Changelog
 
+
+## 0.23.1 (2023-4-5)
+
+### Enhancements
+
+- Fix a bug in displaying the All Products view
+
 ## 0.23.0 (2023-3-30)
 
 ### Enhancements
