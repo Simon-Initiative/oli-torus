@@ -112,8 +112,12 @@ const PathEditor: React.FC<EditParams> = ({
     if (id === workingPath.id) return;
     const target = availablePaths.find((p) => p.id === id);
     if (!target) return;
-    const { destinationScreenId } = workingPath as DestinationPath;
-    onEdit(addDestinationId(target, destinationScreenId));
+    if (isDestinationPath(target)) {
+      const { destinationScreenId } = workingPath as DestinationPath;
+      setWorkingPath(addDestinationId(target, destinationScreenId));
+    } else {
+      setWorkingPath(target);
+    }
   };
   const onSave = () => {
     onChange(workingPath);
