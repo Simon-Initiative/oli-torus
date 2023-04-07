@@ -14,7 +14,7 @@ import {
   selectCurrentGroup,
   upsertGroup,
 } from '../../../../delivery/store/features/groups/slice';
-
+import { compareRules, generateRules } from '../rules/rule-compilation';
 import { savePage } from '../../../store/page/actions/savePage';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { createExitPath } from '../paths/path-factories';
@@ -31,23 +31,49 @@ export const verifyFlowchartLesson = createAsyncThunk(
       if (appMode !== 'flowchart') {
         throw new Error('verifyFlowchartLesson can only be called when appMode is flowchart');
       }
+      console.info('Verifying flowchart lesson data');
 
       // Some things a flowchart lesson requires:
       // 1. A starting screen
       // 2. An end of lesson screen
       // 3. The end screen must be the last screen in the sequence
       // 4. The end screen must only have an exit-lesson path.
+      // 5. Make sure our rules are up to date
       await verifyStartScreenExists(getState, dispatch);
       await verifyEndScreenExists(getState, dispatch);
       await verifyEndScreenIsLastScreen(getState, dispatch);
       await verifyEndScreenHasOnlyExitLessonPath(getState, dispatch);
       await verifyFinishMessageExists(getState, dispatch);
+      await verifyAllRules(getState, dispatch);
     } catch (e) {
       console.error(e);
       throw e;
     }
   },
 );
+
+const verifyAllRules = async (getState: () => unknown, dispatch: any) => {
+  const allActivities = selectAllActivities(getState() as AuthoringRootState);
+  const sequence = selectSequence(getState() as AuthoringRootState);
+  const defaultDestination =
+    allActivities.find((s) => s.authoring?.flowchart?.screenType === 'end_screen')?.resourceId ||
+    -1;
+
+  for (const activity of allActivities) {
+    if (!activity.authoring?.flowchart) {
+      continue;
+    }
+    const calculatedRules = generateRules(activity, sequence, defaultDestination);
+    if (!compareRules(calculatedRules.rules, activity.authoring?.rules || [])) {
+      console.info("Rules didn't match for activity", activity.resourceId);
+      const modifiedActivity = clone(activity);
+      modifiedActivity.authoring.rules = calculatedRules.rules;
+      modifiedActivity.authoring.variablesRequiredForEvaluation = calculatedRules.variables;
+      dispatch(saveActivity({ activity: modifiedActivity, undoable: false, immediate: true }));
+      await dispatch(upsertActivity({ activity: modifiedActivity }));
+    }
+  }
+};
 
 const verifyFinishMessageExists = async (getState: () => unknown, dispatch: any) => {
   const rootState = getState() as AuthoringRootState;

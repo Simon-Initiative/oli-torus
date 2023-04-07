@@ -177,7 +177,6 @@ export const duplicateFlowchartScreen = createAsyncThunk(
         tags: [],
       };
 
-      // TODO - figure out initial rules generation here.
       dispatch(saveActivity({ activity: reduxActivity, undoable: false, immediate: true }));
       await dispatch(upsertActivity({ activity: reduxActivity }));
 

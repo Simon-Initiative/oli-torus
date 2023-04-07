@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../delivery/store/features/activities/slice';
@@ -16,6 +16,7 @@ import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContex
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
 import { getScreenQuestionType } from './Flowchart/paths/path-options';
 import { DiagnosticsTrigger } from './Modal/DiagnosticsWindow';
+import { verifyFlowchartLesson } from './Flowchart/flowchart-actions/verify-flowchart-lesson';
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;
@@ -60,6 +61,11 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
+
+  const previewLesson = useCallback(async () => {
+    await dispatch(verifyFlowchartLesson({}));
+    window.open(url, windowName);
+  }, [dispatch, url, windowName]);
 
   const handleReadOnlyClick = () => {
     // TODO: show a modal offering to confirm if you want to disable read only
@@ -115,7 +121,7 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
               }
             >
               <span>
-                <button className="px-2 btn btn-link" onClick={() => window.open(url, windowName)}>
+                <button className="px-2 btn btn-link" onClick={previewLesson}>
                   <img src={`${paths.images}/icons/icon-preview.svg`}></img>
                 </button>
               </span>

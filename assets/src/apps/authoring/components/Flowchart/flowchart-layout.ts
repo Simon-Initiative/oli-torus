@@ -19,7 +19,7 @@ const dagreEdgeToFlowchartEdge = (edge: FlowchartEdge & dagre.GraphEdge): Flowch
 export const layoutFlowchart = (nodes: FlowchartNode[], edges: FlowchartEdge[]) => {
   const g = new dagre.graphlib.Graph<FlowchartNode>();
 
-  console.info('layoutFlowchart', nodes.length, edges.length, edges);
+  //console.info('layoutFlowchart', nodes.length, edges.length, edges);
 
   // const nonCycleEdges = weightCycles(edges);
 
