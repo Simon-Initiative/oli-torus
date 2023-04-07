@@ -25,7 +25,7 @@ const ReviewModeNavigation: React.FC = () => {
 
   const snapshot = getEnvState(defaultGlobalEnv);
 
-  // Get the activities student visited
+  // Get the activities students visited
   const globalSnapshot = Object.keys(snapshot)
     .filter((key: string) => key.indexOf('session.visitTimestamps.') === 0)
     ?.reverse()
