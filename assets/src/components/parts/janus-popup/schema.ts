@@ -130,23 +130,23 @@ export const uiSchema = {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Position',
       x: {
-        classNames: 'col-4',
+        classNames: 'col-span-4',
       },
       y: {
-        classNames: 'col-4',
+        classNames: 'col-span-4',
       },
       z: {
-        classNames: 'col-4',
+        classNames: 'col-span-4',
       },
     },
     Size: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Dimensions',
       width: {
-        classNames: 'col-6',
+        classNames: 'col-span-6',
       },
       height: {
-        classNames: 'col-6',
+        classNames: 'col-span-6',
       },
     },
     palette: {
@@ -158,8 +158,8 @@ export const uiSchema = {
       borderColor: {
         'ui:widget': 'ColorPicker',
       },
-      borderStyle: { classNames: 'col-6' },
-      borderWidth: { classNames: 'col-6' },
+      borderStyle: { classNames: 'col-span-6' },
+      borderWidth: { classNames: 'col-span-6' },
     },
   },
 };

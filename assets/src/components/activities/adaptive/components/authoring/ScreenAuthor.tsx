@@ -77,23 +77,23 @@ const screenUiSchema = {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Position',
     x: {
-      classNames: 'col-4',
+      classNames: 'col-span-4',
     },
     y: {
-      classNames: 'col-4',
+      classNames: 'col-span-4',
     },
     z: {
-      classNames: 'col-4',
+      classNames: 'col-span-4',
     },
   },
   Size: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',
     width: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
     height: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
   },
   palette: {
@@ -105,14 +105,14 @@ const screenUiSchema = {
     borderColor: {
       'ui:widget': 'ColorPicker',
     },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
   },
   ButtonLabels: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Button Labels',
-    mainBtnLabel: { classNames: 'col-6' },
-    applyBtnLabel: { classNames: 'col-6' },
+    mainBtnLabel: { classNames: 'col-span-6' },
+    applyBtnLabel: { classNames: 'col-span-6' },
     applyBtnFlag: {},
   },
 };

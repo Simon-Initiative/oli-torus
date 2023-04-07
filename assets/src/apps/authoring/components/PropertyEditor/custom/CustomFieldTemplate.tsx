@@ -8,12 +8,12 @@ const CustomFieldTemplate: React.FC<CustomFieldProps> = (props) => {
   return (
     <Fragment>
       {props.uiSchema['ui:title'] ? <h6>{props.uiSchema['ui:title']}</h6> : null}
-      <div className="row">
+      <div className="grid grid-cols-12 gap-4">
         {props.description}
         {props.properties.map((element: any) => (
           <div
             key={element.content.key}
-            className={`${element.content.props.uiSchema.classNames || 'col-12'} inner`}
+            className={`${element.content.props.uiSchema.classNames || 'col-span-12'} inner`}
           >
             {element.content}
           </div>
