@@ -29,7 +29,6 @@ const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
-
   const isHistoryMode = useSelector(selectHistoryNavigationActivity);
 
   const sequences = useSelector(selectSequence);
@@ -83,13 +82,14 @@ const HistoryNavigation: React.FC = () => {
   const isFirst = currentHistoryActivityIndex === historyItems.length - 1;
   const isLast = currentHistoryActivityIndex === 0;
 
-  /* console.log('HISTORY ITEMS', {
+  /*  console.log('HISTORY ITEMS', {
     historyItems,
     globalSnapshot,
     currentActivityId,
     isFirst,
     isLast,
     isHistoryMode,
+    currentHistoryActivityIndex,
   }); */
 
   const nextHandler = () => {
