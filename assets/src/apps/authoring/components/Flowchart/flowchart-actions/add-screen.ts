@@ -118,7 +118,9 @@ export const addFlowchartScreen = createAsyncThunk(
       }
 
       const getLastScreenId = (): number | undefined => {
-        const orderedScreens = sortScreens(otherActivities, sequence);
+        const orderedScreens = sortScreens(otherActivities, sequence).filter(
+          (s) => s.authoring?.flowchart?.screenType !== 'end_screen',
+        );
         if (orderedScreens.length === 0) {
           return undefined;
         }

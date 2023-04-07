@@ -6,7 +6,7 @@ import { edit, Edited, ResourceUpdate } from 'data/persistence/resource';
 import { clone } from 'utils/common';
 import cloneDeep from 'lodash/cloneDeep';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
-import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
+import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { AuthoringRootState } from '../../rootReducer';
 import { PageState, selectRevisionSlug, selectState, setRevisionSlug, updatePage } from '../slice';
 import PageSlice from '../name';

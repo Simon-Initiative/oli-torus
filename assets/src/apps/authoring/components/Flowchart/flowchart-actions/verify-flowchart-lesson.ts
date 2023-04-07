@@ -8,8 +8,7 @@ import {
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { addFlowchartScreen } from './add-screen';
-import { flattenHierarchy } from '../../../../delivery/store/features/groups/actions/sequence';
-import { clone } from '../../../../../utils/common';
+import { clone, cloneT } from '../../../../../utils/common';
 import {
   IGroup,
   selectCurrentGroup,
@@ -19,6 +18,7 @@ import {
 import { savePage } from '../../../store/page/actions/savePage';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { createExitPath } from '../paths/path-factories';
+import { selectState as selectPageState } from '../../../store/page/slice';
 
 interface VerifyFlowchartLessonPayload {}
 
@@ -37,16 +37,30 @@ export const verifyFlowchartLesson = createAsyncThunk(
       // 2. An end of lesson screen
       // 3. The end screen must be the last screen in the sequence
       // 4. The end screen must only have an exit-lesson path.
-      verifyStartScreenExists(getState, dispatch);
-      verifyEndScreenExists(getState, dispatch);
-      verifyEndScreenIsLastScreen(getState, dispatch);
-      verifyEndScreenHasOnlyExitLessonPath(getState, dispatch);
+      await verifyStartScreenExists(getState, dispatch);
+      await verifyEndScreenExists(getState, dispatch);
+      await verifyEndScreenIsLastScreen(getState, dispatch);
+      await verifyEndScreenHasOnlyExitLessonPath(getState, dispatch);
+      await verifyFinishMessageExists(getState, dispatch);
     } catch (e) {
       console.error(e);
       throw e;
     }
   },
 );
+
+const verifyFinishMessageExists = async (getState: () => unknown, dispatch: any) => {
+  const rootState = getState() as AuthoringRootState;
+  const page = selectPageState(rootState);
+  const customPropExists = !!page.custom;
+  const logoutMessage = (page.custom?.logoutMessage || '').trim();
+
+  if (customPropExists && logoutMessage.length === 0) {
+    const newPage = cloneT(page);
+    newPage.custom.logoutMessage = 'Thank you for completing this exercise.';
+    await dispatch(savePage({ ...newPage, undoable: true }));
+  }
+};
 
 const verifyStartScreenExists = async (getState: () => unknown, dispatch: any) => {
   const rootState = getState() as AuthoringRootState;

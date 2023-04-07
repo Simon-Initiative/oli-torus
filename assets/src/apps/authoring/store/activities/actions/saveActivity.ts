@@ -78,7 +78,7 @@ export const saveActivity = createAsyncThunk(
         title: activity.title as string,
         objectives: activity.objectives as ObjectiveMap,
         content: { ...activity.content, authoring: activity.authoring },
-        tags: activity.tags,
+        tags: activity.tags || [],
       };
 
       if (!isReadOnlyMode) {

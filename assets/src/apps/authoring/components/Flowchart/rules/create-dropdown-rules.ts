@@ -102,7 +102,7 @@ export const generateDropdownRules = (
       // Sets the correct answer in the dropdown
       type: 'mutateState',
       params: {
-        value: String(question.custom.correctAnswer),
+        value: String(question.custom.correctAnswer || 1),
         target: `stage.${question.id}.selectedIndex`,
         operator: '=',
         targetType: 1,
@@ -133,7 +133,7 @@ export const createDropdownCorrectCondition = (question: IDropdownPartLayout): I
     return [
       createCondition(
         `stage.${question.id}.selectedIndex`,
-        String(question.custom.correctAnswer),
+        String(question.custom.correctAnswer || 1),
         'equal',
       ),
     ];
@@ -147,7 +147,7 @@ export const createDropdownIncorrectCondition = (question: IDropdownPartLayout) 
     return [
       createCondition(
         `stage.${question.id}.selectedIndex`,
-        String(question.custom.correctAnswer),
+        String(question.custom.correctAnswer || 1),
         'notEqual',
       ),
     ];
