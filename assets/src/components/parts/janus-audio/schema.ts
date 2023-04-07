@@ -123,8 +123,8 @@ export const simpleUISchema = {
   src: {
     'ui:widget': 'TorusAudioBrowser',
   },
-  startTime: { classNames: 'col-6' },
-  endTime: { classNames: 'col-6' },
+  startTime: { classNames: 'col-span-6' },
+  endTime: { classNames: 'col-span-6' },
 };
 
 export const adaptivitySchema = {

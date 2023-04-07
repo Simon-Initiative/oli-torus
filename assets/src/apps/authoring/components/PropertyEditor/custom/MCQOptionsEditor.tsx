@@ -91,14 +91,16 @@ const OptionsEditor: React.FC<{
   }, [openEditor, value.nodes]);
 
   return (
-    <div className="d-flex">
-      <div className="col">{getNodeText(value.nodes)}</div>
-      <button className="btn btn-secondary" onClick={onEdit}>
-        e
-      </button>
-      <button className="btn btn-secondary" onClick={onDelete}>
-        -
-      </button>
+    <div className="flex">
+      <div className="flex-1">{getNodeText(value.nodes)}</div>
+      <div className="flex-none">
+        <button className="btn btn-secondary" onClick={onEdit}>
+          e
+        </button>
+        <button className="btn btn-secondary" onClick={onDelete}>
+          -
+        </button>
+      </div>
       {editorOpen && (
         <AdvancedAuthoringModal show={true}>
           <Modal.Body>

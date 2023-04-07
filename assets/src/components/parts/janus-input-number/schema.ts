@@ -19,10 +19,10 @@ export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCs
 export const simpleUiSchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
   minValue: {
-    classNames: 'col-6',
+    classNames: 'col-span-6',
   },
   maxValue: {
-    classNames: 'col-6',
+    classNames: 'col-span-6',
   },
   answer: correctOrRange.uiSchema,
   advancedFeedback: numericAdvancedFeedback.uiSchema,

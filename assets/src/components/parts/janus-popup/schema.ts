@@ -255,6 +255,8 @@ export const uiSchema = {
   },
 };
 
+export const simpleUISchema = uiSchema;
+
 export const createSchema = (): Partial<PopupModel> => ({
   width: 32,
   height: 32,

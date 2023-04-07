@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
-import { simpleUISchema } from '../janus-audio/schema';
+
 import {
   authoringObservedAttributes,
   customEvents as apiCustomEvents,
@@ -15,6 +15,7 @@ import {
   getCapabilities,
   schema,
   simpleSchema,
+  simpleUISchema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,

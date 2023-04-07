@@ -15,10 +15,10 @@ export const correctOrRange: SchemaDef = {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Correct Answer',
     correctMin: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
     correctMax: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
   },
   schema: {

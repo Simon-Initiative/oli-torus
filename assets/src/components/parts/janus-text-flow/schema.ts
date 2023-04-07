@@ -77,8 +77,8 @@ export const uiSchema = {
     borderColor: {
       'ui:widget': 'ColorPicker',
     },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
   },
 };
 
@@ -92,9 +92,9 @@ export const simpleUISchema = {
     borderColor: {
       'ui:widget': 'ColorPicker',
     },
-    borderRadius: { classNames: 'col-6' },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
+    borderRadius: { classNames: 'col-span-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
   },
 };
 
