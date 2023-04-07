@@ -369,7 +369,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       if (response.input?.length) {
         // Even if the current screen is a child screen, we always save the part component properties with their owner activity Id i.e. ownerActivityId|stage.iframe.visible = true.
         // The entire response is from one part, so the path (i.e. partId.properyName) will be same for all input response
-        // Hence we check the owner activity id once.
+        // Hence we check the owner activity id once
         statePrefix = getStatePrefix(response.input[0].path, activityId);
       }
       const responseMap = response.input.reduce(
