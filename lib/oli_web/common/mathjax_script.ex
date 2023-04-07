@@ -9,7 +9,7 @@ defmodule OliWeb.Common.MathJaxScript do
         inlineMath: [ ["\\(","\\)"] ],
         displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
         processEscapes: true,
-        packages: ['base', 'ams', 'noerrors', 'noundefined', 'require'],
+        packages: ['base', 'ams', 'noerrors', 'noundefined', 'require', 'autoload'],
         require: {
           defaultAllow: false,
           allow: {

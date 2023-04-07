@@ -414,13 +414,12 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     id="target-select"
                     size="sm"
                     split
-                    className="variable-picker-dropdown d-flex align-items-center w-100 flex-grow-1"
+                    className="variable-picker-dropdown d-flex align-items-center flex-grow-1"
                     onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
                   >
-                    <span className="w-100 d-flex">{activeFilter}</span>
+                    <span className="d-flex">{activeFilter}</span>
                   </Dropdown.Toggle>
                   <Dropdown.Menu
-                    className="w-100"
                     onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
                     show={isFilterMenuOpen}
                     rootCloseEvent="click"

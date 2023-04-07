@@ -41,6 +41,17 @@ export const useTargetedFeedback = () => {
   };
 };
 
+// get subset of response mappings for given choice set only, for use w/multipart items
+export const getFeedbackForChoices = (
+  partChoices: Choice[],
+  allTargetedMappings: ResponseMapping[],
+): ResponseMapping[] => {
+  const partChoiceIds = partChoices.map((choice) => choice.id);
+  return allTargetedMappings.filter((assoc) =>
+    assoc.choiceIds.every((id) => partChoiceIds.includes(id)),
+  );
+};
+
 export const TargetedFeedback: React.FC<Props> = (props) => {
   const hook = useTargetedFeedback();
   const { model, authoringContext, editMode, projectSlug } = useAuthoringElementContext<
@@ -54,9 +65,11 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
     return props.children(hook);
   }
 
+  // only show feedbacks for relevant choice set, presumably current part's on multipart
+  const partMappings = getFeedbackForChoices(props.choices || model.choices, hook.targetedMappings);
   return (
     <>
-      {hook.targetedMappings.map((mapping) => (
+      {partMappings.map((mapping) => (
         <ResponseCard
           key={mapping.response.id}
           title="Targeted feedback"
