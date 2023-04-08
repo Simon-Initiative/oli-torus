@@ -1,7 +1,7 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
+  alias Oli.Delivery.Metrics
   alias OliWeb.Components.Delivery.InstructorDashboard
-  alias OliWeb.Components.Delivery.CourseContentPanel
   alias alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
@@ -13,6 +13,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(%{"active_tab" => "content"} = params, _, socket) do
+    socket =
+      socket
+      |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
+      |> assign_new(:containers, fn -> get_containers(socket.assigns.section) end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     {:noreply,
      assign(socket, params: params, active_tab: String.to_existing_atom(params["active_tab"]))}
@@ -21,8 +31,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <InstructorDashboard.tabs active_tab={@active_tab} section_slug={@section_slug} preview_mode={@preview_mode} />
-    <%= render_tab(assigns) %>
+      <InstructorDashboard.tabs active_tab={@active_tab} section_slug={@section_slug} preview_mode={@preview_mode} />
+      <%= render_tab(assigns) %>
     """
   end
 
@@ -39,43 +49,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp render_tab(%{active_tab: :content} = assigns) do
-    page_link_url =
-      if assigns.preview_mode do
-        &Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :page_preview,
-          assigns.section_slug,
-          &1
-        )
-      else
-        &Routes.page_delivery_path(OliWeb.Endpoint, :page, assigns.section_slug, &1)
-      end
-
-    container_link_url =
-      if assigns.preview_mode do
-        &Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :container_preview,
-          assigns.section_slug,
-          &1
-        )
-      else
-        &Routes.page_delivery_path(OliWeb.Endpoint, :container, assigns.section_slug, &1)
-      end
-
-    assigns =
-      Map.merge(
-        assigns,
-        %{
-          hierarchy: Sections.build_hierarchy(assigns.section),
-          display_curriculum_item_numbering: assigns.section.display_curriculum_item_numbering,
-          page_link_url: page_link_url,
-          container_link_url: container_link_url
-        }
-      )
-
     ~H"""
-      <CourseContentPanel.course_content_panel {assigns} />
+      <.live_component
+      id="content_table"
+      module={OliWeb.Components.Delivery.Content}
+      params={@params}
+      section_slug={@section.slug}
+      containers={@containers}
+      />
     """
   end
 
@@ -140,5 +121,53 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <p class="container mx-auto">Not available yet</p>
     """
+  end
+
+  defp get_containers(section) do
+    {total_count, containers} = Sections.get_units_and_modules_containers(section.slug)
+
+    student_progress =
+      get_students_progress(
+        total_count,
+        containers,
+        section.id,
+        Sections.count_enrollments(section.slug)
+      )
+
+    # TODO get real student engagement and student mastery values
+    # when those metrics are ready (see Oli.Delivery.Metrics)
+
+    containers_with_metrics =
+      Enum.map(containers, fn container ->
+        Map.merge(container, %{
+          progress: student_progress[container.id] || 0.0,
+          student_engagement: Enum.random(["Low", "Medium", "High", "Not enough data"]),
+          student_mastery: Enum.random(["Low", "Medium", "High", "Not enough data"])
+        })
+      end)
+
+    {total_count, containers_with_metrics}
+  end
+
+  defp get_students_progress(0, pages, section_id, students_count) do
+    page_ids = Enum.map(pages, fn p -> p.id end)
+
+    Metrics.progress_across_for_pages(
+      section_id,
+      page_ids,
+      [],
+      students_count
+    )
+  end
+
+  defp get_students_progress(_total_count, containers, section_id, students_count) do
+    container_ids = Enum.map(containers, fn c -> c.id end)
+
+    Metrics.progress_across(
+      section_id,
+      container_ids,
+      [],
+      students_count
+    )
   end
 end

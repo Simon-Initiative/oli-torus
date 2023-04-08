@@ -98,9 +98,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           role="tablist">
 
           <%= for {label, href, badge, active} <- [
-            {"Learning Objectives", path_for(:learning_objectives, @section_slug, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
+            {"Content", path_for(:content, @section_slug, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
             {"Students", path_for(:students, @section_slug, @preview_mode), nil, is_active_tab?(:students, @active_tab)},
-            {"Modules", path_for(:content, @section_slug, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
+            {"Learning Objectives", path_for(:learning_objectives, @section_slug, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
             {"Discussion Activity", path_for(:discussions, @section_slug, @preview_mode), nil, is_active_tab?(:discussions, @active_tab)},
             {"Course Discussion", path_for(:course_discussion, @section_slug, @preview_mode), nil, is_active_tab?(:course_discussion, @active_tab)},
             {"Assignments", path_for(:assignments, @section_slug, @preview_mode), nil, is_active_tab?(:assignments, @active_tab)},
