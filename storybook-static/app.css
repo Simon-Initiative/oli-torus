@@ -4285,6 +4285,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 3rem;
 }
 
+.h-16 {
+  height: 4rem;
+}
+
 .h-2 {
   height: 0.5rem;
 }
@@ -5747,6 +5751,10 @@ table.table-striped tbody tr:nth-child(even) {
           text-decoration-line: none;
 }
 
+.underline-offset-4 {
+  text-underline-offset: 4px;
+}
+
 .antialiased {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -6803,6 +6811,10 @@ p {
 .hover\:checked\:bg-blue-600:checked:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
+}
+
+.focus\:\!border-none:focus {
+  border-style: none !important;
 }
 
 .focus\:border-delivery-primary-200:focus {
