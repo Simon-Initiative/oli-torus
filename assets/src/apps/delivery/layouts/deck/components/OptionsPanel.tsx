@@ -17,7 +17,6 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
   const isPreviewMode = useSelector(selectPreviewMode);
-
   const handleToggleHistory = (show: boolean) => {
     dispatch(setShowHistory({ show }));
   };
@@ -50,24 +49,6 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
           </div>
         </div>
 
-        {/* <div className={`option notepadOption${config.notepad?.enabled ? '' : ' displayNone'}`}>
-          Notepad
-          <div className="state notepadBtn">
-            <button
-              className={`on btn${config.notepad?.set ? '' : ' displayNone'}`}
-              aria-label="Close notepad"
-            >
-              <div className="left">ON</div>
-            </button>
-            <button
-              className={`off btn${!config.notepad?.set ? '' : ' displayNone'}`}
-              aria-label="Open notepad"
-            >
-              <div className="right">OFF</div>
-            </button>
-          </div>
-        </div> */}
-
         <div className="rule"></div>
 
         <div className="option updateDetailsOption displayNone">
@@ -75,7 +56,6 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
             Update Details
           </button>
         </div>
-
         <div className={`option restartOption${enableHistory ? '' : ' displayNone'}`}>
           <button
             className="restartBtn btn"
@@ -85,7 +65,6 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
             Restart Lesson
           </button>
         </div>
-
         <div className="option logoutOption displayNone">
           <button className="logoutBtn btn" aria-label="Open logout window">
             Log Out

@@ -204,19 +204,19 @@ export const screenUiSchema: UiSchema = {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',
     width: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
     height: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
   },
   max: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     maxAttempt: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
     maxScore: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
   },
   palette: {
@@ -228,16 +228,16 @@ export const screenUiSchema: UiSchema = {
     borderColor: {
       'ui:widget': ColorPickerWidget,
     },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
   },
   checkButton: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     showCheckBtn: {
-      classNames: 'col-12',
+      classNames: 'col-span-12',
     },
     checkButtonLabel: {
-      classNames: 'col-12',
+      classNames: 'col-span-12',
     },
   },
   learningObjectives: {

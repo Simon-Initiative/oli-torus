@@ -1,12 +1,23 @@
 # Changelog
 
-## Unreleased
+
+## 0.23.1 (2023-4-5)
+
+### Enhancements
+
+- Fix a bug in displaying the All Products view
+
+## 0.23.0 (2023-3-30)
 
 ### Enhancements
 
 - Add ability to author polygonal image hotspots with mouse
+- Soft scheduling
+- New UX
+- Improved collaborative space management capabilities
+- Exploration pages
 
-## 0.22.1 (2022-1-5)
+## 0.22.1 (2023-1-5)
 
 ### Bug Fixes
 

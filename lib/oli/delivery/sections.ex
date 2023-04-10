@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Sections do
   """
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
@@ -40,6 +41,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery
   alias Ecto.Multi
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
 
   require Logger
 
@@ -324,6 +326,28 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns the count of enrollments for a given section.
+  By default it returns the students count, but we can get more roles by providing
+  a list of lt1_1p3_context_roles ids as a second argument
+  """
+  def count_enrollments(section_slug, role_ids \\ [4]) do
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: e_cr in EnrollmentContextRole,
+        on: e.id == e_cr.enrollment_id,
+        join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
+        on: e_cr.context_role_id == cr.id,
+        where: s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids,
+        select: count(e)
+      )
+
+    Repo.one(query)
   end
 
   @doc """
@@ -1946,6 +1970,102 @@ defmodule Oli.Delivery.Sections do
     }
   end
 
+  defp get_related_resources([], _, _), do: []
+
+  defp get_related_resources(resource_ids, section_id, user_id) do
+    SectionResource
+    |> join(:inner, [sr], spp in SectionsProjectsPublications,
+      on: spp.section_id == sr.section_id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> join(:left, [sr, _, _, rev], ra in ResourceAccess,
+      on:
+        ra.section_id == ^section_id and ra.resource_id == sr.resource_id and
+          ra.user_id == ^user_id
+    )
+    |> join(:left, [sr, _, _, rev, ra], ra2 in ResourceAccess,
+      on:
+        ra2.section_id == ra.section_id and ra2.resource_id == ra.resource_id and
+          ra2.user_id == ra.user_id and ra2.id > ra.id
+    )
+    |> where(
+      [sr, _, _, rev, _ra, ra2],
+      sr.section_id == ^section_id and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and
+        sr.resource_id in ^resource_ids
+    )
+    |> select([sr, _, _, rev, ra], %{
+      id: sr.resource_id,
+      title: rev.title,
+      progress: ra.progress,
+      slug: rev.slug,
+      graded: rev.graded,
+      purpose: rev.purpose
+    })
+    |> Repo.all()
+  end
+
+  defp append_related_resources(graded_pages, user_id) do
+    section_id = graded_pages |> List.first() |> Map.get(:section_id)
+
+    related_resources =
+      graded_pages
+      |> Enum.reduce([], fn page, related_pages -> page.relates_to ++ related_pages end)
+      |> get_related_resources(section_id, user_id)
+
+    Enum.map(graded_pages, fn page ->
+      Map.get_and_update(page, :relates_to, fn relates_to ->
+        {relates_to,
+         Enum.map(relates_to, fn resource_id ->
+           Enum.find(related_resources, &(&1.id == resource_id))
+         end)
+         |> Enum.filter(&(&1 != nil))}
+      end)
+      |> elem(1)
+      |> Map.delete(:children)
+    end)
+  end
+
+  @doc """
+  Returns a tuple with the units and modules from a section.
+  In case there are no units or modules, it returns a zero count and the pages
+  of the curriculum.
+  {container_count, containers} or {0, pages}
+  """
+  def get_units_and_modules_containers(section_slug) do
+    query =
+      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where:
+          s.slug == ^section_slug and sr.numbering_level in [1, 2] and rev.resource_type_id == 2,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index
+        }
+
+    case Repo.all(query) do
+      [] -> {0, get_pages(section_slug)}
+      containers -> {length(containers), containers}
+    end
+  end
+
+  defp get_pages(section_slug) do
+    query =
+      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_index: sr.numbering_index
+        }
+
+    Repo.all(query)
+  end
+
   def get_graded_pages(section_slug, user_id) do
     {graded_pages_with_date, other_resources} =
       SectionResource
@@ -1968,12 +2088,14 @@ defmodule Oli.Delivery.Sections do
             gc2.user_id == ^user_id
       )
       |> where(
-        [sr, s],
-        s.slug == ^section_slug and sr.numbering_level >= 0
+        [sr, s, _, _, _, gc, gc2],
+        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and
+          (is_nil(gc2) or gc2.type == :schedule)
       )
       |> select([sr, s, _, _, rev, gc, gc2], %{
         id: sr.id,
         title: rev.title,
+        slug: rev.slug,
         end_date:
           fragment(
             "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date) as end_date",
@@ -1981,10 +2103,19 @@ defmodule Oli.Delivery.Sections do
             gc.data["end_datetime"],
             sr.end_date
           ),
+        scheduled_type: sr.scheduling_type,
+        gate_type:
+          fragment(
+            "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
+            gc2.type,
+            gc.type
+          ),
         graded: rev.graded,
         resource_type_id: rev.resource_type_id,
         numbering_level: sr.numbering_level,
-        children: sr.children
+        children: sr.children,
+        section_id: s.id,
+        relates_to: rev.relates_to
       })
       |> order_by([{:asc_nulls_last, fragment("end_date")}])
       |> Repo.all()
@@ -1994,21 +2125,25 @@ defmodule Oli.Delivery.Sections do
           page.resource_type_id == ResourceType.get_id_by_type("page")
       end)
 
-    graded_pages_with_date ++ get_graded_pages_without_date(other_resources)
+    (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
+    |> append_related_resources(user_id)
   end
 
   defp get_graded_pages_without_date(resources) do
     {root_container, graded_pages} = get_root_container_and_graded_pages(resources)
 
-    get_flatten_hierarchy(root_container.children, resources)
-    |> Enum.reduce([], fn id, acc ->
-      Enum.find(graded_pages, &(&1[:id] == id))
-      |> case do
-        nil -> acc
-        page -> [page | acc]
-      end
-    end)
-    |> Enum.reverse()
+    graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+    {pages, remaining} =
+      get_flatten_hierarchy(root_container.children, resources)
+      |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
+        case Map.get(remaining, id) do
+          nil -> {acc, remaining}
+          page -> {[page | acc], Map.delete(remaining, id)}
+        end
+      end)
+
+    Enum.reverse(pages) ++ Map.values(remaining)
   end
 
   defp get_root_container_and_graded_pages(resources) do

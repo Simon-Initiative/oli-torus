@@ -45,8 +45,9 @@ defmodule OliWeb.PageDeliveryController do
               to:
                 Routes.live_path(
                   OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.ManageLive,
-                  section_slug
+                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+                  section_slug,
+                  :manage
                 )
             )
           else
@@ -87,18 +88,18 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp learner_progress(section_id, user_id) do
-    case Metrics.progress_for(section_id, user_id) do
-      progress when is_float(progress) ->
+    case Map.get(Metrics.progress_for(section_id, user_id), user_id) do
+      nil ->
+        # if there is no progress (nil) then return 0%
+        0
+
+      progress ->
         (progress * 100)
         |> round()
         # if there is any progress at all, we want to represent that by at least showing 1% min
         |> max(1)
         # ensure we never show progress above 100%
         |> min(100)
-
-      _ ->
-        # if there is no progress (nil) then return 0%
-        0
     end
   end
 
@@ -924,9 +925,11 @@ defmodule OliWeb.PageDeliveryController do
 
     section = conn.assigns.section
 
+    is_admin? = Oli.Accounts.is_admin?(author)
+
     if Oli.Accounts.is_admin?(author) or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
-      PageContext.create_for_review(section_slug, attempt_guid, user)
+      PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
       |> render_page(conn, section_slug, false)
     else
       render(conn, "not_authorized.html")
@@ -1084,5 +1087,4 @@ defmodule OliWeb.PageDeliveryController do
 
   defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
-
 end

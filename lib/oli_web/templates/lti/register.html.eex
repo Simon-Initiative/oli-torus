@@ -203,5 +203,7 @@
     </div>
   </div>
 
+  <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
+
   <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
 </div>

@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLiveTest do
+defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -13,8 +13,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLiveTest do
   defp live_view_discussions_route(section_slug) do
     Routes.live_path(
       OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.DiscussionsLive,
-      section_slug
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      section_slug,
+      :discussions
     )
   end
 
@@ -163,7 +164,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsLiveTest do
     test "can not access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
 
-      redirect_path = "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fdiscussions"
+      redirect_path =
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fdiscussions"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_discussions_route(section.slug))

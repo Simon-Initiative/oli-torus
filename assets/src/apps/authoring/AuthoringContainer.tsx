@@ -1,6 +1,5 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-import ReactShadowDOM from 'react-shadow';
 import Authoring, { AuthoringProps } from './Authoring';
 import adaptiveStore from './store';
 

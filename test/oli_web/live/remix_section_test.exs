@@ -145,8 +145,9 @@ defmodule OliWeb.RemixSectionLiveTest do
         view,
         Routes.live_path(
           OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.ContentLive,
-          section.slug
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :content
         )
       )
     end
@@ -220,8 +221,9 @@ defmodule OliWeb.RemixSectionLiveTest do
         view,
         Routes.live_path(
           OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.ContentLive,
-          section.slug
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :content
         )
       )
     end
@@ -256,8 +258,9 @@ defmodule OliWeb.RemixSectionLiveTest do
         view,
         Routes.live_path(
           OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.ContentLive,
-          section.slug
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :content
         )
       )
     end

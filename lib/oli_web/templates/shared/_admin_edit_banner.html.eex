@@ -11,7 +11,7 @@
     <% end %>
   </div>
 
-  <button type="button" class="close ml-4" data-dismiss="alert" aria-label="Close">
+  <button type="button" class="close ml-4" data-bs-dismiss="alert" aria-label="Close">
     <i class="fa-solid fa-xmark fa-lg"></i>
   </button>
 

@@ -225,7 +225,10 @@ defmodule OliWeb.Admin.IngestV2 do
       end
     end)
 
-    {:noreply, socket}
+    {:noreply,
+     assign(socket,
+       ingestion_step: :processing
+     )}
   end
 
   def handle_event(event, params, socket) do

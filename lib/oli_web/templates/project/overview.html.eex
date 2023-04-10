@@ -143,8 +143,8 @@
 
 <div class="grid grid-cols-12 py-5 border-b">
   <div class="col-span-4 mr-4">
-    <h4>Collaboration Space</h4>
-    <div class="text-muted">Allows to activate and configure a collaborative space for the root resource of a project.</div>
+    <h4>Collaborative Spaces</h4>
+    <div class="text-muted">Enable and configure collaborative spaces that can be created for course sections.</div>
   </div>
   <div class="col-span-8">
     <div class="container mx-auto">

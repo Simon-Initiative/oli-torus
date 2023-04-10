@@ -368,8 +368,7 @@ defmodule Oli.Resources.Collaboration do
         post in Post,
         join: sr in SectionResource,
         on:
-          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
-            sr.numbering_level > 0,
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
         join: pr in PublishedResource,
@@ -387,6 +386,7 @@ defmodule Oli.Resources.Collaboration do
           content: post.content,
           user_name: user.name,
           title: rev.title,
+          slug: rev.slug,
           updated_at: post.updated_at
         },
         order_by: [desc: :updated_at],
@@ -413,8 +413,7 @@ defmodule Oli.Resources.Collaboration do
         post in Post,
         join: sr in SectionResource,
         on:
-          sr.resource_id == post.resource_id and sr.section_id == post.section_id and
-            sr.numbering_level > 0,
+          sr.resource_id == post.resource_id and sr.section_id == post.section_id,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == post.section_id and spp.project_id == sr.project_id,
         join: pr in PublishedResource,
@@ -431,6 +430,7 @@ defmodule Oli.Resources.Collaboration do
           content: post.content,
           user_name: user.name,
           title: rev.title,
+          slug: rev.slug,
           updated_at: post.updated_at
         },
         order_by: [desc: :updated_at],
@@ -502,8 +502,7 @@ defmodule Oli.Resources.Collaboration do
     |> join(:inner, [p], s in Section, on: s.slug == ^section_slug)
     |> join(:inner, [p], sr in SectionResource,
       on:
-        sr.resource_id == p.resource_id and sr.section_id == p.section_id and
-          sr.numbering_level > 0
+        sr.resource_id == p.resource_id and sr.section_id == p.section_id
     )
     |> join(:inner, [p, s, sr], spp in SectionsProjectsPublications,
       on: spp.section_id == p.section_id and spp.project_id == sr.project_id
@@ -519,6 +518,7 @@ defmodule Oli.Resources.Collaboration do
       id: p.id,
       content: p.content,
       user_name: u.name,
+      slug: r.slug,
       title: r.title,
       inserted_at: p.inserted_at,
       status: p.status,

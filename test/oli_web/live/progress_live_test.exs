@@ -167,15 +167,15 @@ defmodule OliWeb.ProgressLiveTest do
         live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
       assert view
-             |> element("li[data-phx-component=\"1\"]")
+             |> element("div[data-phx-component=\"1\"]")
              |> render =~ "#{first_attempt.formatted} / #{out_of}"
 
       assert view
-             |> element("li[data-phx-component=\"2\"]")
+             |> element("div[data-phx-component=\"2\"]")
              |> render =~ "#{second_attempt.formatted} / #{out_of}"
 
       assert view
-             |> element("li[data-phx-component=\"3\"]")
+             |> element("div[data-phx-component=\"3\"]")
              |> render =~ "#{third_attempt.formatted} / #{out_of}"
 
       assert true
@@ -256,7 +256,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.ManageLive, section.slug)}\""
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
 
       assert html =~ "Manual Scoring"
     end
@@ -276,7 +276,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.ManageLive, section.slug)}\""
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
 
       assert html =~ "Student Progress"
     end
@@ -294,7 +294,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.ManageLive, section.slug)}\""
+               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
 
       assert html =~
                "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""

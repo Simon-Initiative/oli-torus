@@ -694,12 +694,14 @@ defmodule Oli.TestHelpers do
     graded_page_3_resource = insert(:resource)
     graded_page_4_resource = insert(:resource)
     graded_page_5_resource = insert(:resource)
+    graded_page_6_resource = insert(:resource)
 
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_1_resource.id})
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_2_resource.id})
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_3_resource.id})
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_4_resource.id})
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_5_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_6_resource.id})
 
     graded_page_1_revision =
       insert(
@@ -716,6 +718,7 @@ defmodule Oli.TestHelpers do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Graded page 2 - Level 0 (w/ date)",
         graded: true,
+        purpose: :application,
         resource: graded_page_2_resource
       )
 
@@ -725,7 +728,8 @@ defmodule Oli.TestHelpers do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Graded page 3 - Level 1 (w/ no date)",
         graded: true,
-        resource: graded_page_3_resource
+        resource: graded_page_3_resource,
+        relates_to: [graded_page_1_resource.id, graded_page_2_resource.id]
       )
 
     graded_page_4_revision =
@@ -743,7 +747,17 @@ defmodule Oli.TestHelpers do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Graded page 5 - Level 0 (w/ student gating condition)",
         graded: true,
-        resource: graded_page_5_resource
+        resource: graded_page_5_resource,
+        relates_to: [graded_page_4_resource.id]
+      )
+
+    graded_page_6_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 6 - Level 0 (w/o student gating condition)",
+        graded: true,
+        resource: graded_page_6_resource
       )
 
     # Create a unit inside the project
@@ -779,7 +793,8 @@ defmodule Oli.TestHelpers do
           unit_one_resource.id,
           graded_page_3_resource.id,
           graded_page_4_resource.id,
-          graded_page_5_resource.id
+          graded_page_5_resource.id,
+          graded_page_6_resource.id,
         ],
         content: %{},
         deleted: false,
@@ -829,6 +844,12 @@ defmodule Oli.TestHelpers do
 
     insert(:published_resource, %{
       publication: publication,
+      resource: graded_page_6_resource,
+      revision: graded_page_6_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
       resource: unit_one_resource,
       revision: unit_one_revision
     })
@@ -849,6 +870,7 @@ defmodule Oli.TestHelpers do
     insert(:gating_condition, %{
       section: section,
       resource: graded_page_4_resource,
+      type: :schedule,
       user: nil,
       data: %GatingConditionData{end_datetime: ~U[2023-01-12 13:30:00Z]}
     })
@@ -856,6 +878,7 @@ defmodule Oli.TestHelpers do
     insert(:gating_condition, %{
       section: section,
       resource: graded_page_5_resource,
+      type: :schedule,
       user: nil,
       data: %GatingConditionData{end_datetime: ~U[2023-06-05 14:00:00Z]}
     })
@@ -863,9 +886,19 @@ defmodule Oli.TestHelpers do
     insert(:gating_condition, %{
       section: section,
       resource: graded_page_5_resource,
+      type: :schedule,
       user: student,
       data: %GatingConditionData{end_datetime: ~U[2023-07-08 14:00:00Z]}
     })
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_6_resource,
+      type: :always_open,
+      user: student,
+      data: %GatingConditionData{end_datetime: nil}
+    })
+
 
     %{
       section: section,
@@ -874,6 +907,7 @@ defmodule Oli.TestHelpers do
       graded_page_3: graded_page_3_revision,
       graded_page_4: graded_page_4_revision,
       graded_page_5: graded_page_5_revision,
+      graded_page_6: graded_page_6_revision,
       student_with_gating_condition: student
     }
   end

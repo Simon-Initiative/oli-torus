@@ -107,7 +107,10 @@ defmodule OliWeb.Products.ProductsView do
     context = SessionContext.init(session)
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, context)
 
-    published? = Publishing.project_published?(project.slug)
+    published? = case project do
+      nil -> true
+      _ -> Publishing.project_published?(project.slug)
+    end
 
     {:ok,
      assign(socket,

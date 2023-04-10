@@ -174,28 +174,30 @@ defmodule OliWeb.Curriculum.OptionsModal do
                   <small id="retakeMode" class="form-text text-muted">The retake mode determines how subsequent attempts are presented to students.</small>
                 </div>
 
-                <div class="form-group">
-                  <Label>Purpose</Label>
-                  <Field name={:purpose}>
-                    <Select
-                      options={[
-                        {"Foundation", :foundation},
-                        {"Exploration", :application}
-                      ]}
-                      opts={
-                        aria_describedby: "purpose",
-                        placeholder: "Purpose",
-                        class: "form-control custom-select"
-                      }
-                    />
-                  </Field>
-                </div>
+                {#if !@revision.graded}
+                  <div class="form-group">
+                    <Label>Purpose</Label>
+                    <Field name={:purpose}>
+                      <Select
+                        options={[
+                          {"Foundation", :foundation},
+                          {"Exploration", :application}
+                        ]}
+                        opts={
+                          aria_describedby: "purpose",
+                          placeholder: "Purpose",
+                          class: "form-control custom-select"
+                        }
+                      />
+                    </Field>
+                  </div>
+                {/if}
 
                 <div class="form-group">
                   <Label>Related Resources</Label>
                   <Field name={:relates_to}>
                     <HierarchySelector
-                      disabled={is_foundation(@changeset, @revision)}
+                      disabled={!@revision.graded && is_foundation(@changeset, @revision)}
                       id="related-resources-selector"
                       items={@project_hierarchy.children}
                       initial_values={@selected_resources}

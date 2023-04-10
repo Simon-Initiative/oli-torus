@@ -6,6 +6,7 @@
 @import 'input';
 @import 'text';
 @import 'button';
+@import 'table';
 
 /**
  * Automatically style all links with blue text and underline on hover.
@@ -47,11 +48,10 @@ p {
   @apply mb-0;
 }
 
-.structured-content code {
-  color: #e83e8c;
+.text-muted {
+  @apply text-gray-500;
 }
 
-#button-tooltip.tooltip {
-  background-color: #fff;
-  padding: 4px;
+#delivery_container a:hover {
+  text-decoration: none;
 }

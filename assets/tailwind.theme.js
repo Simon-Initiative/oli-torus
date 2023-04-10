@@ -109,7 +109,7 @@ module.exports = {
       },
       footer: {
         bg: {
-          DEFAULT: colors.gray['100'],
+          DEFAULT: 'transparent',
           dark: {
             DEFAULT: 'transparent',
           },

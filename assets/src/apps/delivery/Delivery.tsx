@@ -40,6 +40,7 @@ export interface DeliveryProps {
   overviewURL: string;
   finalizeGradedURL: string;
   screenIdleTimeOutInSeconds?: number;
+  reviewMode?: boolean;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -61,6 +62,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   overviewURL = '',
   finalizeGradedURL = '',
   screenIdleTimeOutInSeconds = 1800,
+  reviewMode = false,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -71,12 +73,13 @@ const Delivery: React.FC<DeliveryProps> = ({
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
+
   //Need to start the warning 5 minutes before session expires
   const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 300000;
 
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
-    if (!screenIdleExpirationTime || previewMode) {
+    if (!screenIdleExpirationTime || previewMode || reviewMode) {
       return;
     }
     const timer = setTimeout(() => {
@@ -120,6 +123,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         overviewURL,
         finalizeGradedURL,
         screenIdleTimeOutInSeconds,
+        reviewMode,
       }),
     );
   };
@@ -138,11 +142,13 @@ const Delivery: React.FC<DeliveryProps> = ({
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
-      {restartLesson ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
-      {isLessonEnded ? (
+      {restartLesson && !reviewMode ? (
+        <RestartLessonDialog onRestart={setInitialPageState} />
+      ) : null}
+      {isLessonEnded && !reviewMode ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
-      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog /> : null}
+      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
     </div>
   );
 };
