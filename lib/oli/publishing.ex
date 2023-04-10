@@ -28,41 +28,29 @@ defmodule Oli.Publishing do
   alias Oli.Publishing.Publications.{Publication, PublicationDiff, PublicationDiffKey}
   alias Oli.Delivery.Updates
 
-  def find_linked_pages(page_resource_ids, publication_ids) do
+  def distinct_slugs(publication_ids) do
+    (from pr in PublishedResource,
+        join: rev in Revision,
+        on: pr.revision_id == rev.id,
+        where:
+          pr.publication_id in ^publication_ids and
+          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+        select: {rev.resource_id, rev.slug},
+        distinct: true)
+      |> Repo.all()
 
-    joined_resource_ids = Enum.join(page_resource_ids, ",")
-    joined_publication_ids = Enum.join(publication_ids, ",")
+  end
 
-    item_types =
-      ["page_link", "a"]
-      |> Enum.map(&~s|@.type == "#{&1}"|)
-      |> Enum.join(" || ")
-
-    sql = """
-    select
-      rev.resource_id,
-      jsonb_path_query(content, '$.** ? (#{item_types})')
-    from published_resources as mapping
-    join revisions as rev
-    on mapping.revision_id = rev.id
-    where mapping.publication_id IN (#{joined_publication_ids})
-      and mapping.resource_id IN (#{joined_resource_ids})
-    """
-
-    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
-
-    Enum.map(results, fn [_, content] ->
-      case content["type"] do
-        "a" -> case content["href"] do
-          "/course/link/" <> slug -> %{slug: slug}
-          _ -> nil
-        end
-        "page_link" -> %{resource_id: content["idref"]}
-      end
-    end)
-    |> Enum.filter(fn item -> !is_nil(item) end)
-    |> MapSet.new()
-
+  def all_page_resource_ids(publication_ids) do
+    (from pr in PublishedResource,
+        join: rev in Revision,
+        on: pr.revision_id == rev.id,
+        where:
+          pr.publication_id in ^publication_ids and
+          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+        select: rev.resource_id,
+        distinct: true)
+      |> Repo.all()
   end
 
   @doc """
