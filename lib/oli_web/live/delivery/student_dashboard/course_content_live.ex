@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
        current_level_nodes: hierarchy["children"],
        current_position: current_position,
        current_level: current_level,
+       scheduled_dates: Sections.get_resources_scheduled_dates(section.slug),
        section: section,
        breadcrumbs_tree: [{current_level, current_position, "Curriculum"}],
        current_user_id: current_user_id
@@ -63,7 +64,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
               <h4 class={"text-base font-semibold #{if resource["type"] == "container", do: "underline cursor-pointer"}"} phx-click="go_down" phx-value-resource_id={resource["id"]} phx-value-selected_resource_index={index} phx-value-resource_type={resource["type"]}><%= resource["title"] %></h4>
               <span class="text-xs">Estimated completion time: 20 mins</span>
             </div>
-            <span class="w-80 text-center text-xs bg-gray-200 px-3 py-2 rounded-sm ml-auto mr-4">Due by 10-03-2023</span>
+            <span class="w-80 text-center text-xs bg-gray-200 px-3 py-2 rounded-sm ml-auto mr-4"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
             <button class="torus-button primary h-10" phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]}>Open</button>
           </section>
         <% end %>
@@ -283,4 +284,18 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
         0.0
     end
   end
+
+  defp get_resource_scheduled_date(resource_id, scheduled_dates) do
+    case scheduled_dates[String.to_integer(resource_id)] do
+      %{end_date: nil} ->
+        "No due date"
+
+      data ->
+        "#{scheduled_date_type(data.scheduled_type)} #{Timex.format!(data.end_date, "{YYYY}-{0M}-{0D}")}"
+    end
+  end
+
+  defp scheduled_date_type(:read_by), do: "Read by"
+  defp scheduled_date_type(:inclass_activity), do: "In class on"
+  defp scheduled_date_type(_), do: "Due by"
 end

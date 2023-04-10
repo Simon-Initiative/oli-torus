@@ -2053,6 +2053,18 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  def get_resources_scheduled_dates(section_slug) do
+    query =
+      from [sr, _s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        select: {
+          sr.resource_id,
+          %{end_date: sr.end_date, scheduled_type: sr.scheduling_type}
+        }
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
   defp get_pages(section_slug) do
     query =
       from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
