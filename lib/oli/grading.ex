@@ -10,7 +10,7 @@ defmodule Oli.Grading do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{SectionResource, Section}
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
@@ -22,6 +22,7 @@ defmodule Oli.Grading do
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
+
   alias Oli.Repo
   alias Oli.Delivery.Sections.SectionsProjectsPublications
 

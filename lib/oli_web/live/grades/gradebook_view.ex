@@ -54,10 +54,7 @@ defmodule OliWeb.Grades.GradebookView do
         hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
 
         graded_pages =
-          hierarchy
-          |> Oli.Delivery.Hierarchy.flatten()
-          |> Enum.filter(fn node -> node.revision.graded end)
-          |> Enum.map(fn node -> node.revision end)
+          Oli.Grading.fetch_graded_pages(section.slug)
 
         enrollments =
           Sections.browse_enrollments(
@@ -81,14 +78,14 @@ defmodule OliWeb.Grades.GradebookView do
           )
 
         {:ok,
-         assign(socket,
-           breadcrumbs: set_breadcrumbs(type, section),
-           section: section,
-           total_count: total_count,
-           table_model: table_model,
-           graded_pages: graded_pages,
-           options: @default_options
-         )}
+          assign(socket,
+            breadcrumbs: set_breadcrumbs(type, section),
+            section: section,
+            total_count: total_count,
+            table_model: table_model,
+            graded_pages: graded_pages,
+            options: @default_options
+          )}
     end
   end
 
