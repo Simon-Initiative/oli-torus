@@ -28,7 +28,7 @@ janus-mcq {
       max-width: none;
     }
 
-    input {
+    input[type='radio'] {
       /* Style the radio buttons */
 
       appearance: none;
@@ -58,6 +58,7 @@ janus-mcq {
 
       &:checked {
         background-color: $primary;
+        background-image: none !important;
       }
     }
 

@@ -6,7 +6,7 @@ export const BlankScreenIcon: React.FC<{
 }> = ({ fill = '#87CD9B', stroke = '#222439' }) => {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="24" height="24" rx="4" fill="#F3F5F8" />
+      <rect width="24" height="24" rx="4" fill={fill} />
       <path
         d="M7.59961 6.09961H16.3996C17.228 6.09961 17.8996 6.77118 17.8996 7.59961V14.3712C17.8996 14.769 17.7416 15.1505 17.4603 15.4318L15.4318 17.4603C15.1505 17.7416 14.769 17.8996 14.3712 17.8996H7.59961C6.77118 17.8996 6.09961 17.228 6.09961 16.3996V7.59961C6.09961 6.77118 6.77118 6.09961 7.59961 6.09961Z"
         stroke={stroke}
