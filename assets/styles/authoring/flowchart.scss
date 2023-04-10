@@ -63,28 +63,30 @@ $primary: #3b76d3;
 
   .top-toolbar {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     grid-template-rows: 0.2fr repeat(2, 1fr);
     grid-column-gap: 0px;
     grid-row-gap: 0px;
 
     .left-header {
-      grid-area: 1 / 1 / 2 / 3;
+      grid-area: 1 / 1 / 2 / 2;
       padding-left: 15px;
       padding-bottom: 0.5rem;
       padding-top: 0.5rem;
     }
     .right-header {
-      grid-area: 1 / 3 / 2 / 6;
+      grid-area: 1 / 2 / 2 / 5;
       padding-left: 15px;
       padding-bottom: 0.5rem;
       padding-top: 0.5rem;
     }
 
     .toolbar-option {
+      display: flex;
       // border: 1px solid #fff;
       cursor: grab;
       user-select: none;
+      vertical-align: middle;
       &:hover {
         background-color: #eee;
       }
@@ -93,11 +95,7 @@ $primary: #3b76d3;
       }
       .toolbar-icon {
         margin-right: 0.5rem;
-        width: 25px;
         text-align: center;
-        height: 25px;
-        background-color: #b9d7a1;
-        border-radius: 5px;
         display: inline-block;
       }
       padding: 1rem;
@@ -165,23 +163,20 @@ $primary: #3b76d3;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    width: 180px;
     height: 156px;
-
-    &.node-valid {
-      .title-icon {
-        background-color: #b9d7a1;
-      }
-    }
-
-    &.node-invalid {
-      .title-icon {
-        background-color: #fed2d2;
-      }
-    }
 
     .title-bar {
       display: flex;
       flex-direction: row;
+      width: 180px;
+      .title-text {
+        display: inline-block;
+        width: 150px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
     }
 
     .title-icon {
@@ -196,9 +191,10 @@ $primary: #3b76d3;
     .node-box {
       // p-4 text-center border-2 w-32 h-28 bg-white text-delivery-body-dark flex justify-center align-middle flex-col
       padding: 8px;
-      border: 2px solid #bcbfc3;
-      width: 128px;
-      height: 112px;
+      border: 1px solid #acbbc9;
+      border-radius: 4px;
+      width: 180px;
+      height: 120px;
       background-color: #fff;
       display: flex;
       flex-direction: column;

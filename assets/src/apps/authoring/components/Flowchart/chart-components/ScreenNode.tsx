@@ -2,7 +2,7 @@ import React, { useCallback, useContext } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useDrop } from 'react-dnd';
 import { Handle, Position } from 'reactflow';
-import { Icon } from '../../../../../components/misc/Icon';
+
 import {
   IActivity,
   selectAllActivities,
@@ -17,6 +17,8 @@ import { useToggle } from '../../../../../components/hooks/useToggle';
 import { validateScreen } from '../screens/screen-validation';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
+import { WelcomeScreenIcon } from '../screen-icons/WelcomeScreenIcon';
+import { screenTypeToIcon } from '../screen-icons/screen-icons';
 
 interface NodeProps {
   data: IActivity;
@@ -31,6 +33,11 @@ export const ScreenNode: React.FC<NodeProps> = ({ data }) => {
       <Handle type="source" position={Position.Right} id="a" style={{ display: 'none' }} />
     </>
   );
+};
+
+const colors = {
+  VALIDATED: '#87CD9B',
+  NOT_VALIDATED: '#FFE05E',
 };
 
 // Just the interior of the node, useful to have separate for storybook
@@ -84,15 +91,20 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   if (selected) classNames.push('node-selected');
   if (hover) classNames.push('drop-over');
 
-  const validity = isValid ? 'node-valid' : 'node-invalid';
+  const Icon =
+    screenTypeToIcon[data.authoring?.flowchart?.screenType || 'blank_screen'] || WelcomeScreenIcon;
+
+  const iconBG = isValid ? colors.VALIDATED : colors.NOT_VALIDATED;
 
   return (
-    <div className={`flowchart-node ${validity}`}>
+    <div className={`flowchart-node`}>
       <div className="title-bar">
         <div className="title-icon">
-          <Icon icon="page" />
+          <Icon fill={iconBG} />
         </div>
-        <div className="inline text-center">{data.title}</div>
+        <div className="title-text" title={data.title}>
+          {data.title}
+        </div>
       </div>
 
       <div
@@ -106,15 +118,15 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
           </ScreenButton> */}
 
           <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
-            <Icon icon="edit" />
+            <Icon />
           </ScreenButton>
           {isRequiredScreen || (
             <>
               <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
-                <Icon icon="clone" />
+                <Icon />
               </ScreenButton>
               <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
-                <Icon icon="trash" />
+                <Icon />
               </ScreenButton>
             </>
           )}

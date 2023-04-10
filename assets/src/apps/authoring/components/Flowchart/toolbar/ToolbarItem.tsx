@@ -1,14 +1,14 @@
 import React from 'react';
-import { Icon } from '../../../../../components/misc/Icon';
+
 import { useDrag } from 'react-dnd';
+import { screenTypeToIcon } from '../screen-icons/screen-icons';
 
 interface Props {
   label: string;
   screenType: string;
-  icon: string;
   border?: boolean;
 }
-export const ToolbarItem: React.FC<Props> = ({ label, icon, border, screenType }) => {
+export const ToolbarItem: React.FC<Props> = ({ label, border, screenType }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: screenType,
     item: { label, screenType },
@@ -21,10 +21,12 @@ export const ToolbarItem: React.FC<Props> = ({ label, icon, border, screenType }
   const className = border ? 'toolbar-option right-border' : 'toolbar-option';
   const opacity = isDragging ? 0.4 : 1;
 
+  const Icon = screenTypeToIcon[screenType];
+
   return (
     <div className={className} ref={drag} style={{ opacity }}>
       <div className="toolbar-icon">
-        <Icon icon={icon} />
+        <Icon fill="#F3F5F8" />
       </div>
       {label}
     </div>
