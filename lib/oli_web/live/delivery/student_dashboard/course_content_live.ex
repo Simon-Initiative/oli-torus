@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
             <i class="fa-regular fa-circle-left text-primary"></i>
           </button>
           <div class="flex flex-col">
-            <h4 class="text-base font-semibold mx-auto"><%= get_current_node(@current_level_nodes, @current_position)["title"] || "Curriculum" %> </h4>
+            <h4 class="text-base font-semibold mx-auto"><%= get_resource_name(@current_level_nodes, @current_position) %> </h4>
             <div class="flex items-center justify-center space-x-3">
               <span class="uppercase text-xs">overall progress</span>
               <div class="w-40 rounded-full bg-gray-200 h-2">
@@ -61,8 +61,14 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
         <%= for {resource, index} <- get_current_node(@current_level_nodes, @current_position)["children"] |> Enum.with_index() do %>
           <section class="flex flex-row w-full p-9">
             <div class="flex flex-col mr-4">
-              <h4 class={"text-base font-semibold #{if resource["type"] == "container", do: "underline cursor-pointer"}"} phx-click="go_down" phx-value-resource_id={resource["id"]} phx-value-selected_resource_index={index} phx-value-resource_type={resource["type"]}><%= resource["title"] %></h4>
-              <span class="text-xs">Estimated completion time: 20 mins</span>
+              <h4
+                class={"text-base font-semibold #{if resource["type"] == "container", do: "underline cursor-pointer"}"}
+                phx-click="go_down"
+                phx-value-resource_id={resource["id"]}
+                phx-value-selected_resource_index={index}
+                phx-value-resource_type={resource["type"]}>
+                <%= if resource["type"] == "container", do: "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}", else: resource["title"] %>
+              </h4>
             </div>
             <span class="w-80 text-center text-xs bg-gray-200 px-3 py-2 rounded-sm ml-auto mr-4"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
             <button class="torus-button primary h-10" phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]}>Open</button>
@@ -78,7 +84,16 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   def render_breadcrumbs(assigns) do
     ~H"""
     <div class="flex flex-row space-x-2 divide-x divide-gray-100 dark:divide-gray-700">
-      <%= for {target_level, target_position, text} <- @breadcrumbs_tree do %>
+      <%= for {target_level, target_position, text} <- Enum.take(@breadcrumbs_tree, 1) do %>
+        <button
+          phx-click="breadcrumb-navigate"
+          phx-value-target_level={target_level}
+          phx-value-target_position={target_position}>
+          <%= text %>
+        </button>
+      <% end %>
+      <%= for {target_level, target_position, text} <- Enum.drop(@breadcrumbs_tree, 1) do %>
+        <span> > </span>
         <button
           phx-click="breadcrumb-navigate"
           phx-value-target_level={target_level}
@@ -157,7 +172,10 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
 
     breadcrumbs_tree =
       socket.assigns.breadcrumbs_tree ++
-        [{socket.assigns.current_level + 1, selected_resource_index, current_node["title"]}]
+        [
+          {socket.assigns.current_level + 1, selected_resource_index,
+           get_resource_prefix(current_node)}
+        ]
 
     socket =
       socket
@@ -298,4 +316,20 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   defp scheduled_date_type(:read_by), do: "Read by"
   defp scheduled_date_type(:inclass_activity), do: "In class on"
   defp scheduled_date_type(_), do: "Due by"
+
+  defp get_resource_name(current_level_nodes, current_position) do
+    current_node = get_current_node(current_level_nodes, current_position)
+    "#{get_resource_prefix(current_node)}: #{current_node["title"]}"
+  end
+
+  defp get_resource_prefix(%{"type" => "page"} = page), do: "Page #{page["index"]}"
+
+  defp get_resource_prefix(%{"type" => "container", "level" => "1"} = unit),
+    do: "Unit #{unit["index"]}"
+
+  defp get_resource_prefix(%{"type" => "container", "level" => "2"} = module),
+    do: "Module #{module["index"]}"
+
+  defp get_resource_prefix(%{"type" => "container", "level" => _} = section),
+    do: "Section #{section["index"]}"
 end
