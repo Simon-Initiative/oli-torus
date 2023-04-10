@@ -1,4 +1,4 @@
-<div class="workspace-sidebar pt-2">
+<div class="workspace-sidebar pt-2 dark:bg-gray-700">
 
   <a class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>">
     <img src="/images/icons/icon-projects-light.svg" height="30px" width="32px"/>

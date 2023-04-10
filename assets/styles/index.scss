@@ -1,0 +1,10 @@
+/**
+ * SASS stylesheets compilation entry point (DEPRECATED)
+ *
+ * Do not add styles here unless absolutely necessary
+ */
+
+@import 'common/index.scss';
+@import 'authoring/index.scss';
+@import 'delivery/index.scss';
+@import 'components/index.scss';

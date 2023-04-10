@@ -14,3 +14,5 @@ fetch('/timezone', {
     console.log('local timezone information updated', local_tz);
   })
   .catch((_res) => console.error('failed to update local timezone information', local_tz));
+
+export {};

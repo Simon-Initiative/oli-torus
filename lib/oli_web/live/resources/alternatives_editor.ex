@@ -30,6 +30,9 @@ defmodule OliWeb.Resources.AlternativesEditor do
         @alternatives_type_id
       )
 
+    can_add_decision_point = Enum.filter(alternatives, fn a -> a.content["strategy"] == "upgrade_decision_point" end)
+    |> Enum.count() == 0
+
     subscriptions = subscribe(alternatives, project.slug)
 
     {:ok,
@@ -37,6 +40,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
        context: context,
        project: project,
        author: context.author,
+       can_add_decision_point: can_add_decision_point,
        title: "Alternatives | " <> project.title,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives"})],
        alternatives: Enum.reverse(alternatives),
@@ -60,6 +64,9 @@ defmodule OliWeb.Resources.AlternativesEditor do
         <h2>Alternatives</h2>
         <div class="d-flex flex-row">
           <div class="flex-grow-1"></div>
+          <%= if @project.has_experiments do %>
+          <button disabled={!@can_add_decision_point} class="btn btn-primary mr-3" phx-click="show_create_experiment"><i class="fa fa-plus"></i> New Decision Point</button>
+          <% end %>
           <button class="btn btn-primary" phx-click="show_create_modal"><i class="fa fa-plus"></i> New Alternative</button>
         </div>
         <div class="d-flex flex-column my-4">
@@ -77,11 +84,15 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   def group(assigns) do
     ~H"""
-      <div class="alternatives-group border p-3 my-2">
+      <div class="alternatives-group bg-gray-100 border p-3 my-2">
         <div class="d-flex flex-row align-items-center">
-          <div><b><%= @group.title %></b></div>
+          <div><b><%= @group.title %></b>
+            <%= if @group.content["strategy"] == "upgrade_decision_point" do %>
+              <i>Upgrade Decision Point</i>
+            <% end %>
+          </div>
           <div class="flex-grow-1"></div>
-          <.materials_icon_button class="mr-1" icon="edit" on_click="show_edit_group_modal" values={["phx-value-resource-id": @group.resource_id]} />
+          <.icon_button class="mr-1" icon="fa-solid fa-pencil" on_click="show_edit_group_modal" values={["phx-value-resource-id": @group.resource_id]} />
           <button class="btn btn-danger btn-sm mr-2" phx-click="show_delete_group_modal" phx-value-resource_id={@group.resource_id}>Delete</button>
         </div>
         <div class="mt-3">
@@ -123,6 +134,44 @@ defmodule OliWeb.Resources.AlternativesEditor do
     )
 
     Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
+  end
+
+
+  def handle_event("show_create_experiment", _, socket) do
+    changeset =
+      {%{}, %{name: :string}}
+      |> Ecto.Changeset.cast(%{}, [:name])
+
+    form_body_fn = fn assigns ->
+      ~H"""
+        <div class="form-group">
+          <%= text_input @form,
+            :name,
+            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+            placeholder: "Enter the name of the experiment decision point from Upgrade",
+            phx_hook: "InputAutoSelect",
+            required: true %>
+        </div>
+      """
+    end
+
+    modal_assigns = %{
+      id: "create_modal",
+      title: "Create Experiment Decision Point",
+      submit_label: "Create",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_group",
+      on_submit: "create_experiment"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+        <FormModal.modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("show_create_modal", _, socket) do
@@ -174,10 +223,24 @@ defmodule OliWeb.Resources.AlternativesEditor do
         project.slug,
         author,
         @alternatives_type_id,
-        %{title: name, content: %{"options" => []}}
+        %{title: name, content: %{"options" => [], "strategy" => "user_section_preference"}}
       )
 
     {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
+  end
+
+  def handle_event("create_experiment", %{"params" => %{"name" => name}}, socket) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+
+    {:ok, group} =
+      ResourceEditor.create(
+        project.slug,
+        author,
+        @alternatives_type_id,
+        %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
+      )
+
+    {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives], can_add_decision_point: false)}
   end
 
   def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
@@ -311,11 +374,18 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     {:ok, deleted} = ResourceEditor.delete(project.slug, resource_id, author)
 
+    alternatives = Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
+
+    can_add_decision_point = Enum.filter(alternatives, fn a -> a.content["strategy"] == "upgrade_decision_point" end)
+    |> Enum.count() == 0
+
+
     {:noreply,
      socket
      |> hide_modal()
      |> assign(
-       alternatives: Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
+       alternatives: alternatives,
+       can_add_decision_point: can_add_decision_point
      )}
   end
 

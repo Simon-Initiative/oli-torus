@@ -2,8 +2,6 @@
   &.no-hover {
     &:hover,
     &:focus {
-      color: unset;
-      text-decoration: unset;
       background-color: unset;
     }
   }
@@ -22,7 +20,7 @@
 .dragHandle {
   cursor: 'move';
   width: 24px;
-  color: rgba(0, 0, 0, 0.26);
+  color: var(--color-gray-500);
 }
 
 .list-group .list-group-item {
@@ -30,21 +28,21 @@
 }
 
 .list-group .list-group-item:last-child {
-  border-bottom: $list-group-border-width solid $list-group-border-color;
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 a.form-control {
-  color: $blue;
+  color: var(--color-blue-400);
 }
 
 button.icon-button {
   &:hover {
-    color: var(--authoring-primary);
+    color: var(--color-primary);
   }
 }
 
 button.danger-icon-button {
   &:hover {
-    color: var(--authoring-danger);
+    color: var(--color-danger);
   }
 }

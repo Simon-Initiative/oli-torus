@@ -9,6 +9,7 @@ import {
 } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
 
 export type FocusedHintsProps = {
   focusedPart: string | null;
@@ -16,9 +17,9 @@ export type FocusedHintsProps = {
 
 export const FocusedHints: React.FC<FocusedHintsProps> = (props: FocusedHintsProps) => {
   const { focusedPart } = props;
-  const { graded, writerContext, onRequestHint } = useDeliveryElementContext();
+  const { context } = useDeliveryElementContext();
+  const { graded } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
-  const dispatch = useDispatch();
 
   // If not item is selected, or this is within a survey, or if it is graded but not in review mode, do not show feedback
   if (focusedPart === null || graded) {
@@ -26,15 +27,19 @@ export const FocusedHints: React.FC<FocusedHintsProps> = (props: FocusedHintsPro
   }
 
   const part = uiState.attemptState.parts.find((ps) => ps.partId === focusedPart);
+
   return part !== undefined ? (
-    <HintsDelivery
-      shouldShow={true}
-      onClick={() => dispatch(requestHint(focusedPart, onRequestHint))}
-      hints={uiState.partState[focusedPart]?.hintsShown || []}
-      hasMoreHints={uiState.partState[focusedPart]?.hasMoreHints || false}
-      isEvaluated={isEvaluated(uiState)}
-      isSubmitted={isSubmitted(uiState)}
-      context={writerContext}
+    <HintsDeliveryConnected
+      partId={String(part.partId)}
+
+      // shouldShow={true}
+      // onClick={() => dispatch(requestHint(focusedPart, onRequestHint))}
+      // hints={uiState.partState[focusedPart]?.hintsShown || []}
+      // hasMoreHints={uiState.partState[focusedPart]?.hasMoreHints || false}
+      // // @ts-ignore
+      // isEvaluated={isEvaluated(uiState)}
+      // isSubmitted={isSubmitted(uiState)}
+      // context={writerContext}
     />
   ) : null;
 };

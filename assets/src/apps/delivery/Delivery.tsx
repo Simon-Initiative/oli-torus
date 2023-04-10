@@ -5,13 +5,20 @@ import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import PreviewTools from './components/PreviewTools';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
+import ScreenIdleTimeOutDialog from './layouts/deck/IdleTimeOutDialog';
 import LessonFinishedDialog from './layouts/deck/LessonFinishedDialog';
 import RestartLessonDialog from './layouts/deck/RestartLessonDialog';
 import { LayoutProps } from './layouts/layouts';
 import store from './store';
-import { selectLessonEnd, selectRestartLesson } from './store/features/adaptivity/slice';
+import {
+  selectLessonEnd,
+  selectRestartLesson,
+  selectScreenIdleTimeOutTriggered,
+  setScreenIdleTimeOutTriggered,
+} from './store/features/adaptivity/slice';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
+import { selectScreenIdleExpirationTime } from './store/features/page/slice';
 
 export interface DeliveryProps {
   resourceId: number;
@@ -32,6 +39,8 @@ export interface DeliveryProps {
   graded: boolean;
   overviewURL: string;
   finalizeGradedURL: string;
+  screenIdleTimeOutInSeconds?: number;
+  reviewMode?: boolean;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -52,14 +61,32 @@ const Delivery: React.FC<DeliveryProps> = ({
   graded = false,
   overviewURL = '',
   finalizeGradedURL = '',
+  screenIdleTimeOutInSeconds = 1800,
+  reviewMode = false,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
   const restartLesson = useSelector(selectRestartLesson);
+  const screenIdleExpirationTime = useSelector(selectScreenIdleExpirationTime);
+  const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
   let LayoutView: React.FC<LayoutProps> = () => <div>Unknown Layout</div>;
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
+
+  //Need to start the warning 5 minutes before session expires
+  const screenIdleWarningTime = screenIdleTimeOutInSeconds * 1000 - 300000;
+
+  useEffect(() => {
+    //if it's preview mode, we don't need to do anything
+    if (!screenIdleExpirationTime || previewMode || reviewMode) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOutTriggered: true }));
+    }, screenIdleWarningTime);
+    return () => clearTimeout(timer);
+  }, [screenIdleExpirationTime]);
 
   useEffect(() => {
     setInitialPageState();
@@ -95,6 +122,8 @@ const Delivery: React.FC<DeliveryProps> = ({
         activeEverapp: 'none',
         overviewURL,
         finalizeGradedURL,
+        screenIdleTimeOutInSeconds,
+        reviewMode,
       }),
     );
   };
@@ -113,18 +142,15 @@ const Delivery: React.FC<DeliveryProps> = ({
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
-      {restartLesson ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
-      {isLessonEnded ? (
+      {restartLesson && !reviewMode ? (
+        <RestartLessonDialog onRestart={setInitialPageState} />
+      ) : null}
+      {isLessonEnded && !reviewMode ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
+      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
     </div>
   );
 };
 
-const ReduxApp: React.FC<DeliveryProps> = (props) => (
-  <Provider store={store}>
-    <Delivery {...props} />
-  </Provider>
-);
-
-export default ReduxApp;
+export default Delivery;

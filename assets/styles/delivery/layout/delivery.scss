@@ -1,81 +1,56 @@
-body {
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
+html.delivery {
+  .select-sources {
+    .custom-select {
+      width: 13em;
+    }
 
-  // padding for footer
-  padding-bottom: 40px;
-}
-
-.select-sources {
-  .custom-select {
-    width: 13em;
-  }
-
-  .card-title {
-    text-overflow: ellipsis;
-    overflow: auto;
-    white-space: nowrap;
-  }
-
-  .fade-text {
-    overflow: auto;
-    max-height: 10vh;
-    text-overflow: ellipsis;
-    color: $body-color;
-    .card-text {
+    .card-title {
+      text-overflow: ellipsis;
       overflow: auto;
+      white-space: nowrap;
+    }
+
+    .fade-text {
+      overflow: auto;
+      max-height: 10vh;
+      text-overflow: ellipsis;
+      color: var(--color-body-color);
+      .card-text {
+        overflow: auto;
+      }
+    }
+
+    .small-date {
+      font-size: 0.8em;
     }
   }
 
-  .small-date {
-    font-size: 0.8em;
-  }
-}
+  .configure-section {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 
-.configure-section {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  .card-img {
-    width: 4em;
-  }
-}
-
-.configure-section,
-.select-sources {
-  .btn-card,
-  .card {
-    cursor: pointer;
-    color: inherit;
-    user-select: none;
-    width: 16.8em;
-    height: 23em;
+    .card-img {
+      width: 4em;
+    }
   }
 
-  .btn-card:hover,
-  .card:hover {
-    border: 1px solid #007bff;
-    text-decoration: none;
-    color: inherit;
-    -webkit-box-shadow: 0px 0px 4px 0px rgba(0, 123, 255, 1);
-    -moz-box-shadow: 0px 0px 4px 0px rgba(0, 123, 255, 1);
-    box-shadow: 0px 0px 4px 0px rgba(0, 123, 255, 1);
-  }
-}
+  .select-sources {
+    .btn-card,
+    .card {
+      cursor: pointer;
+      color: inherit;
+      user-select: none;
+      width: 16.8em;
+      height: 23em;
+      text-decoration: none;
+      border: 1px solid transparent;
+    }
 
-main.container {
-  @include clearfix;
-  padding-right: 0;
-  padding-left: 0;
-  display: block;
-}
-
-@media (min-width: 0) {
-  main.container {
-    padding-left: 1em;
-    padding-right: 1em;
+    .btn-card:hover,
+    .card:hover {
+      border: 1px solid #007bff;
+    }
   }
 }

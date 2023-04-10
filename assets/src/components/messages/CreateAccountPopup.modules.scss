@@ -1,20 +1,18 @@
-@use 'authoring/theme' as authoring;
-
 :global(#create-account-popup) {
   position: absolute;
   top: 60px;
   right: 30px;
-  z-index: authoring.$z-overlay-1;
+  z-index: var(--z-50);
 }
 
 .createAccountPopup {
   position: relative;
   border-radius: 4px;
-  border: 1px solid authoring.$gray-400;
+  border: 1px solid var(--color-gray-400);
   padding: 20px;
   width: 500px;
-  background-color: authoring.$body-bg;
-  box-shadow: 1px 1px 8px 1px rgba($color: authoring.$gray-400, $alpha: 0.33);
+  background-color: var(--color-body);
+  box-shadow: 1px 1px 8px 1px rgba($color: var(--color-gray-400), $alpha: 0.33);
 
   & > .arrow,
   & > .arrow::before {
@@ -32,8 +30,8 @@
     visibility: visible;
     content: '';
     transform: rotate(45deg);
-    border-left: 1px solid authoring.$gray-400;
-    border-top: 1px solid authoring.$gray-400;
+    border-left: 1px solid var(--color-gray-400);
+    border-top: 1px solid var(--color-gray-400);
   }
 
   & > .arrow {

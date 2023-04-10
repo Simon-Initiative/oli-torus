@@ -7,14 +7,14 @@ defmodule OliWeb.Common.Properties.Group do
 
   def render(assigns) do
     ~F"""
-    <div class="row py-5 border-bottom">
-      <div class="col-md-4">
+    <div class="grid grid-cols-12 py-5 border-b">
+      <div class="md:col-span-4">
         <h4>{@label}</h4>
         <div class="text-muted">
           {@description}
         </div>
       </div>
-      <div class="col-md-8">
+      <div class="md:col-span-8">
       <#slot />
       </div>
     </div>

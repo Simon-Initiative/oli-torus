@@ -5,7 +5,7 @@ import {
   evalScript,
   getAssignScript,
 } from '../../../../../../adaptivity/scripting';
-import { RootState } from '../../../rootReducer';
+import { DeliveryRootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { selectById, upsertActivityAttemptState } from '../slice';
 import AttemptSlice from '../name';
@@ -14,7 +14,7 @@ export const submitActivityState = createAsyncThunk(
   `${AttemptSlice}/submitActivityState`,
   async (payload: any, { dispatch, getState }) => {
     const { attemptGuid, partResponses } = payload;
-    const rootState = getState() as RootState;
+    const rootState = getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
 

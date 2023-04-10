@@ -11,10 +11,6 @@
       margin-right: 10px;
       white-space: nowrap;
 
-      &.add {
-        border-radius: 50%;
-      }
-
       &.warn {
         font-size: 20px;
         font-weight: 600;
@@ -22,27 +18,45 @@
       }
 
       &.active {
-        color: var(--authoring-white);
-        background-color: var(--authoring-primary);
+        color: var(--color-white);
+        background-color: var(--color-primary);
 
         &:hover {
-          background-color: var(--authoring-primary);
+          background-color: var(--color-primary);
         }
       }
 
       &:hover {
-        background-color: var(--authoring-gray-200);
+        background-color: var(--color-gray-200);
       }
 
       .edit {
-        color: var(--authoring-white);
+        color: var(--color-white);
         border-radius: 4px;
         padding: 0 4px;
         margin-left: 10px;
         vertical-align: baseline;
 
         &:hover {
-          background-color: var(--authoring-hover);
+          background-color: var(--color-hover);
+        }
+      }
+    }
+  }
+}
+
+:global(html.dark) {
+  .groupBlockHeader {
+    .options {
+      .option {
+        &.active {
+          &:hover {
+            background-color: var(--color-primary);
+          }
+        }
+
+        &:hover {
+          background-color: var(--color-gray-700);
         }
       }
     }

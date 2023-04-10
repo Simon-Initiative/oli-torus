@@ -1,6 +1,7 @@
 defmodule Oli.BibEntryEditorTest do
   use Oli.DataCase
 
+  alias Oli.Resources.Revision
   alias Oli.Authoring.Editing.BibEntryEditor
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Repo.{Paging}
@@ -127,7 +128,7 @@ defmodule Oli.BibEntryEditorTest do
     end
 
     test "edit/4 allows title editing", %{author: author, project: project, first: first} do
-      {:ok, _} =
+      {:ok, %Revision{} = _revision} =
         BibEntryEditor.edit(project.slug, first.revision.resource_id, author, %{
           "title" => "updated title"
         })
@@ -149,7 +150,7 @@ defmodule Oli.BibEntryEditorTest do
       first: first,
       second: second
     } do
-      {:ok, _} =
+      {:ok, %Revision{} = _revision} =
         BibEntryEditor.edit(project.slug, first.revision.resource_id, author, %{
           "deleted" => true
         })

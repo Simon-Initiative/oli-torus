@@ -107,6 +107,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
+  pipeline :require_exploration_pages do
+    plug(Oli.Plugs.RequireExplorationPages)
+  end
+
   pipeline :enforce_enroll_and_paywall do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
@@ -117,7 +121,7 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
-    plug :delivery
+    plug(:delivery)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -131,12 +135,12 @@ defmodule OliWeb.Router do
 
     plug(Oli.Plugs.RemoveXFrameOptions)
 
-    plug :delivery_layout
+    plug(:delivery_layout)
   end
 
   pipeline :delivery_and_admin do
-    plug :delivery
-    plug :authoring
+    plug(:delivery)
+    plug(:authoring)
     plug(Oli.Plugs.GiveAdminPriority)
 
     plug(PowAssent.Plug.Reauthorization,
@@ -155,7 +159,7 @@ defmodule OliWeb.Router do
   end
 
   pipeline :authoring_protected do
-    plug :authoring
+    plug(:authoring)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -292,10 +296,10 @@ defmodule OliWeb.Router do
     post("/timezone", StaticPageController, :timezone)
 
     # update limited session information
-    post "/set_session", StaticPageController, :set_session
+    post("/set_session", StaticPageController, :set_session)
 
     # general health check for application & db
-    get "/healthz", HealthController, :index
+    get("/healthz", HealthController, :index)
   end
 
   scope "/.well-known", OliWeb do
@@ -314,7 +318,7 @@ defmodule OliWeb.Router do
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
-    live("/products/:section_slug/updates", Delivery.ManageUpdates)
+    live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
     live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
 
     get(
@@ -359,8 +363,7 @@ defmodule OliWeb.Router do
     # Project display pages
     get("/:project_id", ProjectController, :overview)
     get("/:project_id/overview", ProjectController, :overview)
-    get("/:project_id/publish", ProjectController, :publish)
-    post("/:project_id/publish", ProjectController, :publish_active)
+    live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/insights", ProjectController, :download_analytics)
@@ -381,6 +384,11 @@ defmodule OliWeb.Router do
 
     # Objectives
     live("/:project_id/objectives", ObjectivesLive.Objectives)
+
+    # Experiment management
+    live("/:project_id/experiments", Experiments.ExperimentsView)
+    get("/:project_id/experiments/segment.json", ExperimentController, :segment_download)
+    get("/:project_id/experiments/experiment.json", ExperimentController, :experiment_download)
 
     # Curriculum
     live(
@@ -572,7 +580,7 @@ defmodule OliWeb.Router do
   scope "/api/v1", OliWeb do
     pipe_through([:api])
     # These endpoints are secured via an API token
-    resources "/registration/", Api.ActivityRegistrationController, only: [:create]
+    resources("/registration/", Api.ActivityRegistrationController, only: [:create])
 
     post("/automation_setup", Api.AutomationSetupController, :setup)
     post("/automation_teardown", Api.AutomationSetupController, :teardown)
@@ -590,6 +598,23 @@ defmodule OliWeb.Router do
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
     post("/s/success", PaymentProviders.StripeController, :success)
     post("/s/failure", PaymentProviders.StripeController, :failure)
+
+    post("/c/create-payment-form", PaymentProviders.CashnetController, :init_form)
+  end
+
+  scope "/api/v1/payments", OliWeb do
+    pipe_through([:skip_csrf_protection, :delivery])
+
+    post("/c/success", PaymentProviders.CashnetController, :success)
+    post("/c/failure", PaymentProviders.CashnetController, :failure)
+  end
+
+  # Endpoints for client-side scheduling UI
+  scope "/api/v1/scheduling/:section_slug", OliWeb.Api do
+    pipe_through([:api, :delivery_and_admin, :require_section])
+
+    put("/", SchedulingController, :update)
+    get("/", SchedulingController, :index)
   end
 
   # User State Service, instrinsic state
@@ -742,41 +767,80 @@ defmodule OliWeb.Router do
     post("/:section_slug/payment/code", PaymentController, :apply_code)
   end
 
+  ### Sections - Instructor Dashboard
+
+  scope "/sections/:section_slug/instructor_dashboard", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery_and_admin,
+      :maybe_gated_resource,
+      :pow_email_layout
+    ])
+
+    live_session :instructor_dashboard,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      live("/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
+    end
+
+    live_session :instructor_dashboard_preview,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
+      live(
+        "/preview/:active_tab",
+        Delivery.InstructorDashboard.InstructorDashboardLive,
+        :preview
+      )
+    end
+  end
+
   ### Sections - Student Course Delivery
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
       :require_section,
+      :delivery,
+      :require_exploration_pages,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :pow_email_layout
     ])
 
-    get("/:section_slug/overview", PageDeliveryController, :index)
-    get("/:section_slug/container/:revision_slug", PageDeliveryController, :container)
-    get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
-    get("/:section_slug/page/:revision_slug/page/:page", PageDeliveryController, :page)
-    get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
+    get("/overview", PageDeliveryController, :index)
+
+    get("/exploration", PageDeliveryController, :exploration)
+    get("/discussion", PageDeliveryController, :discussion)
+    get("/my_assignments", PageDeliveryController, :assignments)
+    get("/container/:revision_slug", PageDeliveryController, :container)
+    get("/page/:revision_slug", PageDeliveryController, :page)
+    get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
+    get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
     get(
-      "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review",
+      "/page/:revision_slug/attempt/:attempt_guid/review",
       PageDeliveryController,
       :review_attempt
     )
   end
 
   ### Sections - Preview
-  scope "/sections/:section_slug/preview/", OliWeb do
+  scope "/sections/:section_slug/preview", OliWeb do
     pipe_through([
       :browser,
       :require_section,
+      :require_exploration_pages,
       :authorize_section_preview,
       :delivery_and_admin,
+      :delivery_layout,
       :pow_email_layout
     ])
 
-    get("/overview", PageDeliveryController, :index_preview)
+    # Redirect deprecated routes
+    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
+    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
+
+    get("/exploration", PageDeliveryController, :exploration_preview)
+    get("/discussion", PageDeliveryController, :discussion_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
@@ -800,18 +864,22 @@ defmodule OliWeb.Router do
     live("/:section_slug/grades/observe", Grades.ObserveGradeUpdatesView)
     live("/:section_slug/grades/gradebook", Grades.GradebookView)
     live("/:section_slug/scoring", ManualGrading.ManualGradingView)
+    live("/:section_slug/snapshots", Snapshots.SnapshotsView)
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-    live("/:section_slug/updates", Delivery.ManageUpdates, as: :section_updates)
+    live("/:section_slug/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
     post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)
+    live("/:section_slug/schedule", Sections.ScheduleView)
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
+
+    live("/:section_slug/debugger/:attempt_guid", Attempt.AttemptLive)
 
     live(
       "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
@@ -832,7 +900,9 @@ defmodule OliWeb.Router do
       as: :instructor_review
     )
 
-    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor, as: :collab_spaces_index)
+    live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor,
+      as: :collab_spaces_index
+    )
   end
 
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do

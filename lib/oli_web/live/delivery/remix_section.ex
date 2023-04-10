@@ -28,7 +28,13 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Delivery.Sections.Section
 
   defp redirect_after_save(:instructor, %Section{slug: slug}),
-    do: Routes.page_delivery_path(OliWeb.Endpoint, :index, slug)
+    do:
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+        slug,
+        :content
+      )
 
   defp redirect_after_save(:open_and_free, section),
     do: Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, section)
@@ -191,7 +197,6 @@ defmodule OliWeb.Delivery.RemixSection do
        dragging: nil,
        selected: nil,
        has_unsaved_changes: false,
-       delivery_breadcrumb: true,
        breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
        available_publications: available_publications
@@ -618,10 +623,11 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp render_breadcrumb(%{hierarchy: hierarchy, active: active} = assigns) do
     assigns = assign(assigns, :breadcrumbs, Breadcrumb.breadcrumb_trail_to(hierarchy, active))
+    assigns = assign(assigns, :arrow_disabled, Enum.count(assigns.breadcrumbs) == 1)
 
     ~H"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="las la-arrow-left"></i></button>
+        <button disabled={@arrow_disabled} id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="fas fa-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{

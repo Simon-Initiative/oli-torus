@@ -34,7 +34,12 @@ import {
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
-import { selectPageSlug, selectPreviewMode, selectUserId } from '../store/features/page/slice';
+import {
+  selectPageSlug,
+  selectPreviewMode,
+  selectReviewMode,
+  selectUserId,
+} from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
@@ -86,16 +91,28 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   isEverApp = false,
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
+  const isReviewMode = useSelector(selectReviewMode);
   const currentUserId = useSelector(selectUserId);
   const currentLessonId = useSelector(selectPageSlug);
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    if (isReviewMode) {
+      return;
+    }
     const { simId, key, value } = payload;
     await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const { simId, key } = payload;
+    if (isReviewMode) {
+      const { snapshot } = await onRequestLatestState();
+      const keyData = snapshot[`app.${simId}.${key}`];
+      if (keyData) {
+        return keyData;
+      }
+      return undefined;
+    }
     const data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
     if (data) {
       const value = data[simId]?.[key];
@@ -220,7 +237,18 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     return result;
   };
 
-  const onReady = async (attemptGuid: string) => {
+  const onReady = async (attemptGuid: string, partAttemptGuid: string, response: any) => {
+    const isResumeMode = getValue('session.isResumeMode', defaultGlobalEnv) || false;
+    if (Array.isArray(response) && !isResumeMode) {
+      await Promise.all(
+        await response.map(async (partResponse) => {
+          const partAttemptGuid = partResponse[0];
+          const partAttemptResponses = partResponse[1];
+          await onActivitySavePart(activity.id, attemptGuid, partAttemptGuid, partAttemptResponses);
+        }),
+      );
+    }
+
     const results = await onActivityReady(activity.id, attemptGuid);
     const result: Success = {
       type: 'success',
@@ -316,6 +344,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const reviewMode = useSelector(selectReviewMode);
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
       return;
@@ -334,7 +363,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         const lstVar = key.split('.');
         if (lstVar?.length > 1) {
           const ownerActivity = currentActivityTree?.find(
-            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+            (activity) =>
+              !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
           );
           key = ownerActivity ? `${ownerActivity.id}|${key}` : `${key}`;
         }
@@ -453,7 +483,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
 
       const hasNavigationToDifferentActivity = hasNavigation(lastCheckResults);
-      if ((!hasNavigationToDifferentActivity || isEverApp) && !historyModeNavigation) {
+      if (
+        (!hasNavigationToDifferentActivity || isEverApp) &&
+        !historyModeNavigation &&
+        !reviewMode
+      ) {
         notifyCheckComplete(lastCheckResults);
       }
     }
@@ -463,6 +497,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     lastCheckTriggered,
     lastCheckHandledTimestamp,
     historyModeNavigation,
+    reviewMode,
   ]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
@@ -513,7 +548,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
       currentLessonId,
-      mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
+      mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot || {},
       domain: adaptivityDomain,
@@ -522,7 +557,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (lastCheckResults.timestamp > 0) {
       notifyCheckComplete(lastCheckResults);
     }
-  }, [historyModeNavigation, lastCheckResults, currentActivityId, currentLessonId]);
+  }, [historyModeNavigation, reviewMode, lastCheckResults, currentActivityId, currentLessonId]);
 
   const [lastInitPhaseHandledTimestamp, setLastInitPhaseHandledTimestamp] = useState(Date.now());
 
@@ -537,7 +572,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     setLastInitPhaseHandledTimestamp(initPhaseComplete);
     // context change should only be needed for things loaded by parents that are still around
     /* console.log('AR notifyContextChanged', currentActivityId !== activity.id); */
-    if (!historyModeNavigation && currentActivityId !== activity.id) {
+    if (!historyModeNavigation && !reviewMode && currentActivityId !== activity.id) {
       notifyContextChanged();
     }
   }, [
@@ -546,6 +581,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     notifyContextChanged,
     historyModeNavigation,
     currentActivityId,
+    reviewMode,
   ]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);

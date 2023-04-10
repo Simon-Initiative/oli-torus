@@ -476,30 +476,30 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
               title="Edit"
               onClick={() => handleToolbarPartConfigure(selectedPartAndCapabilities.id, true)}
             >
-              <i className="las la-edit"></i>
+              <i className="fas fa-edit"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.copy && (
             <button title="Copy" onClick={handleCopyComponent}>
-              <i className="las la-copy"></i>
+              <i className="fas fa-copy"></i>
             </button>
           )}
           {/* <button title="Configure" onClick={handlePartConfigure}>
-            <i className="las la-cog"></i>
+            <i className="fas fa-cog"></i>
           </button> */}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
             <button title="Move Forward" onClick={handlePartMoveForward}>
-              <i className="las la-plus"></i>
+              <i className="fas fa-plus"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
             <button title="Move Back" onClick={handlePartMoveBack}>
-              <i className="las la-minus"></i>
+              <i className="fas fa-minus"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.delete && (
             <button title="Delete" onClick={() => setShowConfirmDelete(true)}>
-              <i className="las la-trash"></i>
+              <i className="fas fa-trash"></i>
             </button>
           )}
           <ConfirmDelete

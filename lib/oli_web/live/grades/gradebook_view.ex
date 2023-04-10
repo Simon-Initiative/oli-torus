@@ -82,7 +82,6 @@ defmodule OliWeb.Grades.GradebookView do
 
         {:ok,
          assign(socket,
-           delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,
@@ -162,9 +161,9 @@ defmodule OliWeb.Grades.GradebookView do
 
   def render(assigns) do
     ~F"""
-    <div>
+    <div class="container mx-auto">
 
-      <div class="d-flex justify-content-between">
+      <div>
         <TextSearch id="text-search"/>
         <div class="form-check mt-2">
           <input type="checkbox" id="toggle_show_all_links" class="form-check-input" checked={@show_all_links} phx-hook="CheckboxListener" />

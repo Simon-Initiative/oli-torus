@@ -1,11 +1,13 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import React, { useEffect, useState } from 'react';
-import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Accordion, ListGroup, OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
+  selectAppMode,
   selectIsAdmin,
   selectProjectSlug,
   setCurrentRule,
@@ -38,28 +40,26 @@ import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const SequenceEditor: React.FC<any> = () => {
+const SequenceEditor: React.FC = () => {
   const dispatch = useDispatch();
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
   const currentGroup = useSelector(selectCurrentGroup);
   const currentActivity = useSelector(selectCurrentActivity);
   const allActivities = useSelector(selectAllActivities);
-  const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
+  const hierarchy = useMemo(() => getHierarchy(sequence), [sequence]);
+  const [open, toggleOpen] = useToggle(true);
+
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
+
   const isAdmin = useSelector(selectIsAdmin);
   const projectSlug = useSelector(selectProjectSlug);
 
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
-
-  useEffect(() => {
-    const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
-    return setHierarchy(newHierarchy);
-  }, [sequence]);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
@@ -358,10 +358,11 @@ const SequenceEditor: React.FC<any> = () => {
     setItemToRename(undefined);
   };
 
+  const inputToFocus = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!itemToRename) return;
-    const inputToFocus = document.getElementById('input-sequence-item-name');
-    if (inputToFocus) inputToFocus.focus();
+    inputToFocus.current?.focus();
   }, [itemToRename]);
 
   const SequenceItemContextMenu = (props: any) => {
@@ -369,234 +370,128 @@ const SequenceEditor: React.FC<any> = () => {
     const isBank = item.custom.isBank;
     const isLayer = item.custom.isLayer;
     const seqType = isLayer ? layerLabel : isBank ? bankLabel : screenLabel;
+
     return (
-      <div className="dropdown aa-sequence-item-context-menu">
+      <>
         {currentGroup && (
-          <>
-            <button
-              className="dropdown-toggle aa-context-menu-trigger btn btn-link p-0 px-1"
-              type="button"
+          <Dropdown
+            onClick={(e: React.MouseEvent) => {
+              (e as any).isContextButtonClick = true;
+            }}
+          >
+            <Dropdown.Toggle
               id={`sequence-item-${id}-context-trigger`}
-              data-toggle="dropdown"
-              aria-haspopup="true"
-              aria-expanded="false"
-              onClick={(e) => {
-                e.stopPropagation();
-                ($(`#sequence-item-${id}-context-trigger`) as any).dropdown('toggle');
-              }}
+              className="dropdown-toggle aa-context-menu-trigger btn btn-link p-0 px-1"
+              variant="link"
             >
               <i className="fas fa-ellipsis-v" />
-            </button>
-            <div
-              id={`sequence-item-${id}-context-menu`}
-              className="dropdown-menu"
-              aria-labelledby={`sequence-item-${id}-context-trigger`}
-            >
-              {!isParentQB ? (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemAdd(item);
-                  }}
-                >
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              {!isParentQB && (
+                <Dropdown.Item onClick={() => handleItemAdd(item)}>
                   <i className="fas fa-desktop mr-2" /> Add Subscreen
-                </button>
-              ) : null}
-              {!isBank && !isParentQB ? (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemAdd(item, true);
-                  }}
-                >
-                  <i className="fas fa-layer-group mr-2" /> Add Layer
-                </button>
-              ) : null}
-              {!isBank && !isParentQB ? (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemAdd(item, false, true);
-                  }}
-                >
-                  <i className="fas fa-cubes mr-2" /> Add Question Bank
-                </button>
-              ) : null}
-              {isLayer ? (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemConvert(item);
-                  }}
-                >
-                  <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
-                </button>
-              ) : !isBank && !isParentQB ? (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemConvert(item);
-                  }}
-                >
-                  <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
-                </button>
-              ) : null}
-              <button
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                  setItemToRename(item);
-                }}
-              >
-                <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
-              </button>
-              {!isLayer && !isBank && (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemClone(item);
-                  }}
-                >
-                  <i className="fas fa-clone align-text-top mr-2" /> {'Clone Screen'}
-                </button>
+                </Dropdown.Item>
               )}
-              <button
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                  navigator.clipboard.writeText(item.custom.sequenceId);
-                }}
-              >
+
+              {!isBank && !isParentQB && (
+                <Dropdown.Item onClick={() => handleItemAdd(item, true)}>
+                  <i className="fas fa-layer-group mr-2" /> Add Layer
+                </Dropdown.Item>
+              )}
+              {!isBank && !isParentQB && (
+                <Dropdown.Item onClick={() => handleItemAdd(item, false, true)}>
+                  <i className="fas fa-cubes mr-2" /> Add Question Bank
+                </Dropdown.Item>
+              )}
+
+              {isLayer ? (
+                <Dropdown.Item onClick={() => handleItemConvert(item)}>
+                  <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
+                </Dropdown.Item>
+              ) : !isBank && !isParentQB ? (
+                <Dropdown.Item onClick={() => handleItemConvert(item)}>
+                  <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
+                </Dropdown.Item>
+              ) : null}
+
+              <Dropdown.Item onClick={() => setItemToRename(item)}>
+                <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
+              </Dropdown.Item>
+
+              {!isLayer && !isBank && (
+                <Dropdown.Item onClick={() => handleItemClone(item)}>
+                  <i className="fas fa-clone align-text-top mr-2" /> Clone Screen
+                </Dropdown.Item>
+              )}
+
+              <Dropdown.Item onClick={() => navigator.clipboard.writeText(item.custom.sequenceId)}>
                 <i className="fas fa-clipboard align-text-top mr-2" /> {`Copy ${seqType} ID`}
-              </button>
+              </Dropdown.Item>
+
               {currentGroup?.children?.length > 1 && (
                 <>
                   <div className="dropdown-divider" />
-                  <button
-                    className="dropdown-item text-danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                  <Dropdown.Item
+                    onClick={() => {
                       setShowConfirmDelete(true);
                       setItemToDelete(item);
                     }}
                   >
                     <i className="fas fa-trash mr-2" /> Delete
-                  </button>
+                  </Dropdown.Item>
                   <div className="dropdown-divider"></div>
                 </>
               )}
               {index > 0 && (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemReorder(e, item, ReorderDirection.UP);
-                  }}
-                >
+                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.UP)}>
                   <i className="fas fa-arrow-up mr-2" /> Move Up
-                </button>
+                </Dropdown.Item>
               )}
               {index < arr.length - 1 && (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemReorder(e, item, ReorderDirection.DOWN);
-                  }}
-                >
+                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.DOWN)}>
                   <i className="fas fa-arrow-down mr-2" /> Move Down
-                </button>
+                </Dropdown.Item>
               )}
               {item.custom.layerRef && (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemReorder(e, item, ReorderDirection.OUT);
-                  }}
-                >
+                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.OUT)}>
                   <i className="fas fa-arrow-left mr-2" /> Move Out
-                </button>
+                </Dropdown.Item>
               )}
               {index > 0 && arr.length > 1 && (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemReorder(e, item, ReorderDirection.IN);
-                  }}
-                >
+                <Dropdown.Item onClick={(e) => handleItemReorder(e, item, ReorderDirection.IN)}>
                   <i className="fas fa-arrow-right mr-2" /> Move In
-                </button>
+                </Dropdown.Item>
               )}
               {isAdmin && (
                 <>
                   <div className="dropdown-divider" />
-                  <button
-                    className="dropdown-item text-info"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                      // open revistion history in new tab
+                  <Dropdown.Item
+                    onClick={() => {
+                      // open revision history in new tab
                       window.open(`/project/${projectSlug}/history/resource_id/${item.resourceId}`);
                     }}
                   >
                     <i className="fas fa-history mr-2" /> Revision History (Admin)
-                  </button>
+                  </Dropdown.Item>
                   <div className="dropdown-divider"></div>
                 </>
               )}
+
               {/* <div className="dropdown-divider"></div>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-copy mr-2" /> Copy
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-paste mr-2" /> Paste as Child
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-paste mr-2" /> Paste as Sibling
-          </button> */}
-            </div>
-          </>
+              <Dropdown.Item onClick={() => {}}>
+                <i className="fas fa-copy mr-2" /> Copy
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => {}}>
+                <i className="fas fa-paste mr-2" /> Paste as Child
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => {}}>
+                <i className="fas fa-paste mr-2" /> Paste as Sibling
+              </Dropdown.Item> */}
+            </Dropdown.Menu>
+          </Dropdown>
         )}
-      </div>
+      </>
     );
   };
 
@@ -630,7 +525,7 @@ const SequenceEditor: React.FC<any> = () => {
               className={`aa-sequence-item${item.children.length ? ' is-parent' : ''}`}
               key={`${item.custom.sequenceId}`}
               active={item.custom.sequenceId === currentSequenceId}
-              onClick={(e) => handleItemClick(e, item)}
+              onClick={(e) => !(e as any).isContextButtonClick && handleItemClick(e, item)}
               tabIndex={0}
             >
               <div className="aa-sequence-details-wrapper">
@@ -650,7 +545,7 @@ const SequenceEditor: React.FC<any> = () => {
                   ) : null}
                   {itemToRename && itemToRename?.custom.sequenceId === item.custom.sequenceId && (
                     <input
-                      id="input-sequence-item-name"
+                      ref={inputToFocus}
                       className="form-control form-control-sm"
                       type="text"
                       placeholder={item.custom.isLayer ? 'Layer name' : 'Screen name'}
@@ -699,10 +594,10 @@ const SequenceEditor: React.FC<any> = () => {
     );
 
   return (
-    <Accordion className="aa-sequence-editor" defaultActiveKey="0">
+    <Accordion className="aa-sequence-editor" defaultActiveKey="0" activeKey={open ? '0' : '-1'}>
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
-          <ContextAwareToggle eventKey="0" />
+          <ContextAwareToggle eventKey="0" onClick={toggleOpen} />
           <span className="title">Sequence Editor</span>
         </div>
         <OverlayTrigger
@@ -714,48 +609,35 @@ const SequenceEditor: React.FC<any> = () => {
             </Tooltip>
           }
         >
-          <div className="dropdown">
-            <button
-              className="dropdown-toggle btn btn-link p-0"
-              type="button"
-              id="sequence-add"
-              data-toggle="dropdown"
-              aria-haspopup="true"
-              aria-expanded="false"
-            >
+          <Dropdown>
+            <Dropdown.Toggle variant="link" id="sequence-add">
               <i className="fa fa-plus" />
-            </button>
-            <div
-              id="sequence-add-contextMenu"
-              className="dropdown-menu"
-              aria-labelledby="sequence-add-contextMenu"
-            >
-              <button
-                className="dropdown-item"
-                onClick={() => {
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              <Dropdown.Item
+                onClick={(event) => {
                   handleItemAdd(undefined);
                 }}
               >
                 <i className="fas fa-desktop mr-2" /> Screen
-              </button>
-              <button
-                className="dropdown-item"
+              </Dropdown.Item>
+              <Dropdown.Item
                 onClick={() => {
                   handleItemAdd(undefined, true);
                 }}
               >
                 <i className="fas fa-layer-group mr-2" /> Layer
-              </button>
-              <button
-                className="dropdown-item"
+              </Dropdown.Item>
+              <Dropdown.Item
                 onClick={() => {
                   handleItemAdd(undefined, false, true);
                 }}
               >
                 <i className="fas fa-cubes mr-2" /> Question Bank
-              </button>
-            </div>
-          </div>
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </OverlayTrigger>
       </div>
       <Accordion.Collapse eventKey="0">

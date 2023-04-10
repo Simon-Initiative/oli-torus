@@ -9,7 +9,7 @@ const CardComponent: React.FC<Props> = ({ children, className = '' }) => {
   return (
     <div className={`${className} card`}>
       <div className="card-body">
-        <div className="card-title d-flex align-items-center">
+        <div className="card-title d-flex align-items-center mb-1">
           {React.Children.toArray(children).find(
             (child) => isValidElement(child) && child.type === Title,
           )}

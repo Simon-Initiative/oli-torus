@@ -1,5 +1,5 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
-import { RootState } from '../rootReducer';
+import { AuthoringRootState } from '../rootReducer';
 import ClipboardSlice from './name';
 
 export type CopyableItemTypes = 'rule' | 'initState';
@@ -33,7 +33,7 @@ const slice: Slice<ClipboardState> = createSlice({
 
 export const { copyItem, pasteItem } = slice.actions;
 
-export const selectState = (state: RootState): ClipboardState =>
+export const selectState = (state: AuthoringRootState): ClipboardState =>
   state[ClipboardSlice] as ClipboardState;
 
 export const selectCopiedItem = createSelector(selectState, (state: ClipboardState) => state.item);

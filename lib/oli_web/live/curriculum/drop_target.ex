@@ -3,13 +3,16 @@ defmodule OliWeb.Curriculum.DropTarget do
   Drop target component.
   """
 
-  use Phoenix.LiveComponent
+  use Surface.LiveComponent
+
+  prop index, :integer, required: true
 
   def render(assigns) do
-    ~H"""
-    <div phx-hook="DropTarget"
-      id={"drop-target-#{assigns.index}"}
-      data-drop-index={assigns.index}
+    ~F"""
+    <div
+      phx-hook="DropTarget"
+      id={"drop-target-#{@index}"}
+      data-drop-index={@index}
       class="drop-target"
     >
     </div>

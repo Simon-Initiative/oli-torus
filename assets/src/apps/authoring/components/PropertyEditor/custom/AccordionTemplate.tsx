@@ -17,7 +17,16 @@ const AccordionTemplate: React.FC<AccordionProps> = (props) => {
         </div>
       </div>
       <Accordion.Collapse eventKey="0">
-        <div className="col-12">{props.properties.map((element: any) => element.content)}</div>
+        <div className="grid grid-cols-12 mx-4">
+          {props.properties.map((element: any) => (
+            <div
+              key={element.content.key}
+              className={`${element.content.props.uiSchema.classNames || 'col-span-12'} inner`}
+            >
+              {element.content}
+            </div>
+          ))}
+        </div>
       </Accordion.Collapse>
     </Accordion>
   );

@@ -1,7 +1,10 @@
 defmodule Oli.Publishing.DeliveryResolverTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.ResourceType
 
   describe "delivery resolution" do
     setup do
@@ -192,6 +195,79 @@ defmodule Oli.Publishing.DeliveryResolverTest do
              |> Enum.at(0)
              |> Map.get(:numbering)
              |> Map.get(:level) == 2
+    end
+
+    test "revisions_of_type/2 returns all revisions of a specified type", %{
+      section_1: section
+    } do
+      revisions =
+        DeliveryResolver.revisions_of_type(
+          section.slug,
+          ResourceType.get_id_by_type("page")
+        )
+
+      assert Enum.count(revisions) == 4
+
+      assert revisions |> Enum.map(& &1.title) |> Enum.sort() == [
+               "Nested Page One",
+               "Nested Page Two",
+               "Page one",
+               "Page two"
+             ]
+    end
+
+    test "get_by_purpose/2 returns all revisions when receive a valid section_slug and purpose",
+         %{} do
+      {:ok,
+       project: _project,
+       section: section,
+       page_revision: page_revision,
+       other_revision: other_revision} = project_section_revisions(%{})
+
+      assert section.slug
+             |> DeliveryResolver.get_by_purpose(page_revision.purpose)
+             |> length() == 1
+
+      assert section.slug
+             |> DeliveryResolver.get_by_purpose(other_revision.purpose)
+             |> length() == 1
+    end
+
+    test "get_by_purpose/2 returns empty list when receive a invalid section_slug",
+         %{} do
+      section = insert(:section)
+
+      assert DeliveryResolver.get_by_purpose(section.slug, :foundation) == []
+      assert DeliveryResolver.get_by_purpose(section.slug, :application) == []
+    end
+
+    test "targeted_via_related_to/2 returns all revisions when receive a valid section_slug and resource_id",
+         %{} do
+      {:ok,
+       project: _project,
+       section: section,
+       page_revision: page_revision,
+       other_revision: _other_revision} = project_section_revisions(%{})
+
+      assert section.slug
+             |> DeliveryResolver.targeted_via_related_to(page_revision.resource_id)
+             |> length() == 1
+    end
+
+    test "targeted_via_related_to/2 returns empty list when don't receive a valid section_slug and resource_id",
+         %{} do
+      section = insert(:section)
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          title: "Example test revision",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+
+      assert DeliveryResolver.targeted_via_related_to(section.slug, page_revision.resource_id) ==
+               []
     end
   end
 end

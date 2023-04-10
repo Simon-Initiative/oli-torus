@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { PopupContentEditor } from 'components/editing/elements/popup/PopupContentEditor';
@@ -8,12 +7,9 @@ import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import * as ContentModel from 'data/content/model/elements/types';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
-
 import { useCollapsedSelection } from 'data/content/utils';
 import { useSlate } from 'slate-react';
 import { useToggle } from '../../../hooks/useToggle';
-
-import './PopupElement.scss';
 
 interface Props extends EditorProps<ContentModel.Popup> {}
 export const PopupEditor = (props: Props) => {
@@ -46,7 +42,7 @@ export const PopupEditor = (props: Props) => {
           <Toolbar.Group>
             <CommandButton
               description={createButtonCommandDesc({
-                icon: 'edit',
+                icon: <i className="fa-solid fa-window-restore"></i>,
                 description: 'Edit Popup Content',
                 execute: openEditor,
               })}
@@ -56,7 +52,7 @@ export const PopupEditor = (props: Props) => {
       }
     >
       <span>
-        <span {...props.attributes} className="popup__anchorText">
+        <span {...props.attributes} className="popup-anchor">
           <InlineChromiumBugfix />
           {props.children}
           <InlineChromiumBugfix />

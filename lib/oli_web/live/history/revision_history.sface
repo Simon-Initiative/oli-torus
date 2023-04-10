@@ -23,12 +23,12 @@
   <div class="row" style="margin-bottom: 30px;">
     <div class="col-12">
       <div class="card">
-        <div class="card-header">
+        <div class="card-header flex flex-row justify-between mb-2">
           Selected Revision Details
-          <div style="float: right;">
+          <div>
             {#if @edited_json}
               <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="save_edits">
-                <i class="las la-save"></i> Save as New Revision
+                <i class="fas fa-save"></i> Save as New Revision
               </button>
               <button type="button" class="btn btn-outline-primary btn-sm" phx-click="cancel_edits">
                 Cancel
@@ -50,7 +50,7 @@
             {#for error <- @edit_errors}
               <div class="alert alert-warning d-flex" role="alert">
                 <div class="flex-grow-1">{error}</div>
-                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="las la-external-link-alt"></i></a></div>
+                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="fas fa-external-link-alt"></i></a></div>
               </div>
             {/for}
           {/if}
@@ -65,9 +65,9 @@
     <div class="row">
       <div class="col-12">
         <div class="card">
-          <div class="card-header">
+          <div class="card-header flex flex-row justify-between mb-2">
             Upload JSON
-            <div style="float: right;">
+            <div>
               {#if @uploads.json.entries |> Enum.count() > 0}
                 <button type="submit" class="btn btn-outline-danger btn-sm" phx-disable-with="Uploading">
                   Set Content

@@ -224,9 +224,9 @@ export const MultiInputComponent: React.FC = () => {
 
   const hasActualInput = (id: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    const partState = uiState.partState[input.partId];
+    const studentInput = uiState.partState[input.partId].studentInput[0];
 
-    return partState.studentInput[0].trim() !== '';
+    return studentInput !== undefined && studentInput.trim() !== '';
   };
 
   // When inputs of type other than dropdown lose their focus:
@@ -272,7 +272,7 @@ export const MultiInputComponent: React.FC = () => {
   });
 
   return (
-    <div className="activity mc-activity">
+    <div className="activity multi-input-activity">
       <div className="activity-content">
         <StemDelivery
           className="form-inline"

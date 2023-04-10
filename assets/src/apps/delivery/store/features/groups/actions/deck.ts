@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { templatizeText } from 'adaptivity/scripting';
+import { applyState, templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import {
@@ -22,7 +22,7 @@ import {
   getAssignScript,
   getEnvState,
 } from '../../../../../../adaptivity/scripting';
-import { RootState } from '../../../rootReducer';
+import { DeliveryRootState } from '../../../rootReducer';
 import {
   selectCurrentActivity,
   selectCurrentActivityId,
@@ -41,8 +41,10 @@ import {
   selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
+  selectReviewMode,
   selectSectionSlug,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../page/slice';
 import { GroupsSlice } from '../name';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
@@ -53,11 +55,12 @@ export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
   async (activityId: ResourceId, thunkApi) => {
     thunkApi.dispatch(setInitPhaseComplete(false));
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
+    const isReviewMode = selectReviewMode(rootState);
     const currentSequenceId = sequence.find((entry) => entry.activity_id === activityId)?.custom
       .sequenceId;
     if (!currentSequenceId) {
@@ -74,8 +77,8 @@ export const initializeActivity = createAsyncThunk(
       const syncOps: ApplyStateOperation[] = [];
       for (let i = 0; i < currentActivityTree.length - 1; i++) {
         const ancestor = currentActivityTree[i];
-        for (let p = 0; p < ancestor.content.partsLayout.length; p++) {
-          const part = ancestor.content.partsLayout[p];
+        for (let p = 0; p < (ancestor.content?.partsLayout || []).length; p++) {
+          const part = ancestor.content!.partsLayout[p];
           // get the adaptivity variables for the part
           const Klass = customElements.get(part.type);
           if (Klass) {
@@ -150,6 +153,14 @@ export const initializeActivity = createAsyncThunk(
       value: 0,
     };
 
+    if (isHistoryMode) {
+      const targetIsResumeModeOp: ApplyStateOperation = {
+        target: 'session.isResumeMode',
+        operator: '=',
+        value: false,
+      };
+      applyState(targetIsResumeModeOp, defaultGlobalEnv);
+    }
     const sessionOps = [
       resumeTarget,
       timeStartOp,
@@ -161,20 +172,16 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
-
-    const globalSnapshot = getEnvState(defaultGlobalEnv);
     const trackingStampKey = `session.visitTimestamps.${currentSequenceId}`;
-    const isActivityAlreadyVisited = globalSnapshot[trackingStampKey];
-    // don't reset the time if student is revisiting that page
-    if (!isActivityAlreadyVisited) {
-      // looks like SS captures the date when we leave the page but it should
-      // show in the history as soon as we visit but it does not show the timestamp
-      // so we will capture the time on trigger check
-      const targetVisitTimeStampOp: ApplyStateOperation = {
-        target: trackingStampKey,
-        operator: '=',
-        value: 0,
-      };
+    // looks like SS captures the date when we leave the page but it should
+    // show in the history as soon as we visit but it does not show the timestamp
+    // so we will capture the time on trigger check
+    const targetVisitTimeStampOp: ApplyStateOperation = {
+      target: trackingStampKey,
+      operator: '=',
+      value: 0,
+    };
+    if (!isReviewMode && !isHistoryMode) {
       sessionOps.push(targetVisitTimeStampOp);
     }
     // init state is always "local" but the parts may come from parent layers
@@ -193,10 +200,10 @@ export const initializeActivity = createAsyncThunk(
       }
       const [, targetPart] = s.target.split('.');
       const ownerActivity = currentActivityTree?.find(
-        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
+        (activity) => !!(activity.content?.partsLayout || []).find((p: any) => p.id === targetPart),
       );
       if (s.type === CapiVariableTypes.MATH_EXPR) {
-        return { ...s, target: `${ownerActivity.id}|${s.target}` };
+        return { ...s, target: `${ownerActivity!.id}|${s.target}` };
       }
 
       if (!ownerActivity) {
@@ -273,7 +280,7 @@ const getSessionVisitHistory = async (
 export const findNextSequenceId = createAsyncThunk(
   `${GroupsSlice}/deck/findNextSequenceId`,
   async (sequenceId: string, thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
@@ -320,7 +327,7 @@ export const findNextSequenceId = createAsyncThunk(
           if (!firstChild) {
             navError = 'Target Layer has no children!';
           }
-          nextSequenceEntry = firstChild;
+          nextSequenceEntry = firstChild || null;
         }
       }
       if (!nextSequenceEntry) {
@@ -353,7 +360,7 @@ export const navigateToNextActivity = createAsyncThunk(
 export const navigateToPrevActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToPrevActivity`,
   async (_, thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const sequence = selectSequence(rootState);
     const currentActivityId = selectCurrentActivityId(rootState);
     const currentIndex = sequence.findIndex(
@@ -385,7 +392,7 @@ export const navigateToPrevActivity = createAsyncThunk(
 export const navigateToFirstActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToFirstActivity`,
   async (_, thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const sequence = selectSequence(rootState);
     const navigationSequences = selectNavigationSequence(sequence);
     if (!navigationSequences?.length) {
@@ -424,7 +431,9 @@ interface ActivityAttemptMapping {
 export const loadActivities = createAsyncThunk(
   `${GroupsSlice}/deck/loadActivities`,
   async (activityAttemptMapping: ActivityAttemptMapping[], thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
+    //reset the screen Idle Time
+    thunkApi.dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
+    const rootState = thunkApi.getState() as DeliveryRootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
     const isInstructor = selectIsInstructor(rootState);
@@ -498,13 +507,29 @@ export const loadActivities = createAsyncThunk(
     // when resuming a session, we want to reset the current part attempt values
     const shouldResume = states.some((attempt: any) => attempt.dateEvaluated !== null);
     if (shouldResume) {
+      const targetIsResumeModeOp: ApplyStateOperation = {
+        target: 'session.isResumeMode',
+        operator: '=',
+        value: true,
+      };
+      applyState(targetIsResumeModeOp, defaultGlobalEnv);
       const snapshot = getEnvState(defaultGlobalEnv);
       const resumeId = snapshot['session.resume'];
       const currentResumeActivityAttempt = models.filter((model: any) => model.id === resumeId);
       if (currentResumeActivityAttempt?.length) {
+        const currentActivityAttempt = currentResumeActivityAttempt[0];
         states.forEach((state) => {
           if (state.attemptGuid === currentResumeActivityAttempt[0]?.attemptGuid) {
-            state.parts.forEach((part) => (part.response = []));
+            state.parts.forEach((part) => {
+              const isIFramePartComponent = currentActivityAttempt?.content?.partsLayout?.filter(
+                (customPart: any) =>
+                  customPart.id === part.partId && customPart.type === 'janus-capi-iframe',
+              );
+              //Reset the attempt for iFrame parts only
+              if (isIFramePartComponent?.length) {
+                part.response = [];
+              }
+            });
           }
         });
       }

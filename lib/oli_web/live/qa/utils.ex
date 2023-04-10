@@ -3,17 +3,17 @@ defmodule OliWeb.Qa.Utils do
 
   def warning_icon(type) do
     case type do
-      "accessibility" -> {"not_accessible", "#ffd868"}
-      "content" -> {"image_not_supported", "#ffa351ff"}
-      "pedagogy" -> {"batch_prediction", "#ffbe7bff"}
-      _ -> {"warning", "#eed971ff"}
+      "accessibility" -> {"fa-brands fa-accessible-icon", "#ffd868"}
+      "content" -> {"fa-regular fa-image", "#ffa351ff"}
+      "pedagogy" -> {"fa-solid fa-person-chalkboard", "#ffbe7bff"}
+      _ -> {"fa-solid fa-triangle-exclamation", "#eed971ff"}
     end
     |> icon()
     |> raw()
   end
 
   def icon({name, color}) do
-    ~s|<i style="color: #{color}" class="material-icons-outlined icon">#{name}</i>|
+    ~s|<i style="color: #{color}" class="#{name}"></i>|
   end
 
   def warning_selected?(selected, warning) do
@@ -68,7 +68,7 @@ defmodule OliWeb.Qa.Utils do
         </p>
         <p>
           For more information on the importance of attaching learning objectives to pages and activities, see the
-          <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">guide on learning objectives</a> from the CMU Eberly Center.
+          <a class="external" href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">guide on learning objectives</a> from the CMU Eberly Center.
         </p>
         """
 
@@ -89,7 +89,7 @@ defmodule OliWeb.Qa.Utils do
             </p>
             <p>
               For more information on the importance of providing practice opportunities in pages, see the
-              <a href="https://www.cmu.edu/teaching/designteach/design/assessments.html" target="_blank">guide on assessments</a> from the CMU Eberly Center.
+              <a class="external" href="https://www.cmu.edu/teaching/designteach/design/assessments.html" target="_blank">guide on assessments</a> from the CMU Eberly Center.
             </p>
             """
         end

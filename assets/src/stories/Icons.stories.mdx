@@ -1,0 +1,71 @@
+import { Icon } from 'components/misc/Icon';
+import { TorusBG } from './TorusBG';
+
+<Meta title="Torus/Icons" />
+
+# Simple wrapper for font-awesome icons
+
+Note: This has an extra `span` built in to support our current method of embedding these that doesn't interfere with react.
+
+Full list of icons here https://fontawesome.com/icons
+
+<TorusBG>
+  <div className="flex flex-row gap-1">
+    <Icon icon="music" onClick={() => console.info('Clicked music')} />
+    <Icon icon="search" />
+    <Icon icon="envelope" />
+    <Icon icon="star" />
+    <Icon icon="user" />
+    <Icon icon="film" />
+    <Icon icon="th-large" />
+    <Icon icon="th" />
+    <Icon icon="th-list" />
+    <Icon icon="check" />
+    <Icon icon="check" className="text-success" />
+    <Icon icon="times" />
+    <Icon icon="times" className="text-red-700" />
+    <Icon icon="search-plus" />
+    <Icon icon="search-minus" />
+    <Icon icon="power-off" />
+    <Icon icon="signal" />
+    <Icon icon="cog" />
+    <Icon icon="trash" />
+  </div>
+  <div className="inline-block">
+    <div className="flex flex-row gap-1 bg-slate-200 px-2 rounded-md dark:bg-slate-700">
+      <Icon icon="heart" className="text-red-600" />
+      <Icon icon="heart" className="text-red-600" />
+      <Icon icon="heart" />
+    </div>
+
+  </div>
+</TorusBG>
+
+```jsx
+<Icon icon="music" onClick={() => console.info("Clicked music")}/>
+<Icon icon="search" />
+<Icon icon="envelope" />
+<Icon icon="star" />
+<Icon icon="user" />
+<Icon icon="film" />
+<Icon icon="th-large" />
+<Icon icon="th" />
+<Icon icon="th-list" />
+<Icon icon="check" />
+<Icon icon="check" className="text-success" />
+<Icon icon="times" />
+<Icon icon="times" className="text-red-700" />
+<Icon icon="search-plus" />
+<Icon icon="search-minus" />
+<Icon icon="power-off" />
+<Icon icon="signal" />
+<Icon icon="cog" />
+<Icon icon="trash" />
+<div className="inline-block">
+  <div className="flex flex-row gap-1 bg-slate-200 px-3 rounded-md dark:bg-slate-700">
+    <Icon icon="heart" className="text-red-600" />
+    <Icon icon="heart" className="text-red-600" />
+    <Icon icon="heart" />
+  </div>
+</div>
+```

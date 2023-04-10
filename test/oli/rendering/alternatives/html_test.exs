@@ -109,7 +109,7 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
         "type" => "alternatives"
       }
 
-      mock_alternatives_groups_fn = fn _slug ->
+      mock_alternatives_groups_fn = fn ->
         {:ok,
          [
            %{

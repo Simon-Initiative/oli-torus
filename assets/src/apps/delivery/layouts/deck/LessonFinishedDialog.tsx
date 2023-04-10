@@ -1,4 +1,4 @@
-import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
+import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -35,15 +35,17 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
 
   const handleCloseModalClick = useCallback(() => {
     if (!isFinalized) {
+      // try again in a sec
+      setTimeout(handleCloseModalClick, 1000);
       return;
     }
     setIsOpen(false);
-    if (graded || isPreviewMode) {
+    if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
       window.location.href = overviewURL;
     }
-  }, [isFinalized, graded, isPreviewMode, overviewURL]);
+  }, [isFinalized, isPreviewMode, overviewURL]);
 
   const handleFinalization = useCallback(async () => {
     setFinalizationCalled(true);
@@ -55,7 +57,16 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
           revisionSlug,
           resourceAttemptGuid,
         );
-        /* console.log('finalizeResult', finalizeResult); */
+        console.log('finalize attempt result: ', finalizeResult);
+        if (finalizeResult.result === 'success') {
+          if ((finalizeResult as ActionResult).commandResult === 'failure') {
+            console.error('failed to finalize attempt', finalizeResult);
+            return;
+          }
+        } else {
+          console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);
+          return;
+        }
       } catch (e) {
         console.error('finalization error: ', e);
         /* setFinalizationCalled(false); // so can try again */

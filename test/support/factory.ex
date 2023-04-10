@@ -36,7 +36,7 @@ defmodule Oli.Factory do
   alias Oli.Publishing.{PublishedResource}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.{Resource, Revision}
-  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
+  alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent}
 
   def author_factory() do
     %Author{
@@ -325,13 +325,20 @@ defmodule Oli.Factory do
     %CollabSpaceConfig{}
   end
 
+  def post_content_factory() do
+    %PostContent{}
+  end
+
   def post_factory() do
     %Post{
       content: %{message: "Example Post"},
       status: :approved,
       user: anonymous_build(:user),
       section: anonymous_build(:section),
-      resource: anonymous_build(:resource)
+      resource: anonymous_build(:resource),
+      updated_at: DateTime.utc_now(),
+      inserted_at: DateTime.utc_now(),
+      anonymous: false
     }
   end
 

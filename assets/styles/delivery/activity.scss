@@ -1,5 +1,3 @@
-@import 'delivery/variables';
-
 .activity {
   margin-top: 1em;
   margin-bottom: 4em;
@@ -26,71 +24,71 @@
     border-radius: 4px;
 
     &.correct {
-      background-color: $feedback-correct-bg;
-      color: $feedback-correct-color;
+      background-color: var(--color-feedback-correct-bg);
+      color: var(--color-feedback-correct-color);
 
       .graphic {
-        color: $feedback-correct-graphic-color;
+        color: var(--color-feedback-correct-graphic-color);
       }
 
       .result {
-        border-color: $feedback-correct-color;
-        color: $feedback-correct-color;
+        border-color: var(--color-feedback-correct-color);
+        color: var(--color-feedback-correct-color);
 
         .score {
-          color: $feedback-correct-color;
+          color: var(--color-feedback-correct-color);
         }
       }
     }
 
     &.partially-correct {
-      background-color: $feedback-partially-correct-bg;
-      color: $feedback-partially-correct-color;
+      background-color: var(--color-feedback-partially-correct-bg);
+      color: var(--color-feedback-partially-correct-color);
 
       .graphic {
-        color: $feedback-partially-correct-graphic-color;
+        color: var(--color-feedback-partially-correct-graphic-color);
       }
 
       .result {
-        border-color: $feedback-partially-correct-color;
-        color: $feedback-partially-correct-color;
+        border-color: var(--color-feedback-partially-correct-color);
+        color: var(--color-feedback-partially-correct-color);
 
         .score {
-          color: $feedback-partially-correct-color;
+          color: var(--color-feedback-partially-correct-color);
         }
       }
     }
 
     &.incorrect {
-      background-color: $feedback-incorrect-bg;
-      color: $feedback-incorrect-color;
+      background-color: var(--color-feedback-incorrect-bg);
+      color: var(--color-feedback-incorrect-color);
 
       .graphic {
-        color: $feedback-incorrect-graphic-color;
+        color: var(--color-feedback-incorrect-graphic-color);
       }
 
       .result {
-        border-color: $feedback-incorrect-color;
-        color: $feedback-incorrect-color;
+        border-color: var(--color-feedback-incorrect-color);
+        color: var(--color-feedback-incorrect-color);
 
         .score {
-          color: $feedback-incorrect-color;
+          color: var(--color-feedback-incorrect-color);
         }
       }
     }
 
     &.explanation {
-      background-color: $feedback-explanation-bg;
-      color: $feedback-explanation-color;
+      background-color: var(--color-feedback-explanation-bg);
+      color: var(--color-feedback-explanation-color);
 
       .graphic {
-        color: $feedback-explanation-graphic-color;
+        color: var(--color-feedback-explanation-graphic-color);
       }
     }
 
     &.error {
-      background-color: $feedback-error-bg;
-      color: $feedback-error-color;
+      background-color: var(--color-feedback-error-bg);
+      color: var(--color-feedback-error-color);
     }
 
     .result {
@@ -98,9 +96,9 @@
       flex-shrink: 0;
       align-items: center;
       justify-content: center;
-      border: 1px solid $gray-500;
+      border: 1px solid var(--color-gray-500);
       border-radius: 2px;
-      color: $gray-600;
+      color: var(--color-gray-600);
       height: 24px;
       flex-basis: 50px;
       margin-right: 16px;
@@ -125,7 +123,7 @@
         background-color: initial;
 
         &.selected {
-          background-color: $choice-selected-bg;
+          background-color: var(--color-choice-selected-bg);
         }
       }
     }
@@ -146,23 +144,30 @@
     cursor: pointer;
 
     &:hover {
-      background-color: $choice-selected-bg-hover;
+      background-color: var(--color-choice-selected-bg-hover);
     }
 
     &.selected {
-      color: $choice-selected-color;
-      background-color: $choice-selected-bg;
-      border-color: $choice-selected-border-color;
+      color: var(--color-choice-selected-color);
+      background-color: var(--color-choice-selected-bg);
+      border-color: var(--color-choice-selected-border-color);
     }
   }
 
   .hints.card {
-    color: $hints-color;
-    background-color: $hints-bg;
-    border: $hints-border;
+    background-color: var(--color-delivery-hints-bg);
+    border: 2px solid var(--color-delivery-hints-border);
+    border-radius: 0;
   }
 
   p:last-of-type {
     margin-bottom: 0;
+  }
+}
+
+html.dark {
+  .hints.card {
+    background-color: var(--color-delivery-hints-bg-dark);
+    border: 2px solid var(--color-delivery-hints-border-dark);
   }
 }

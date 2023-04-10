@@ -164,7 +164,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   /**
    * @ignore
    */
-  onReady?: (attemptGuid: string) => Promise<Success>;
+  onReady?: (attemptGuid: string, responses?: any[]) => Promise<Success>;
 
   /**
    * @ignore
@@ -234,7 +234,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     attemptGuid: string,
     clientEvaluations: ClientEvaluation[],
   ) => Promise<EvaluationResponse>;
-  onReady: (attemptGuid: string) => Promise<Success>;
+  onReady: (attemptGuid: string, response?: any[]) => Promise<Success>;
   onResize: (attemptGuid: string) => Promise<Success>;
 
   constructor() {
@@ -271,7 +271,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     this.onSubmitEvaluations = (attemptGuid: string, clientEvaluations: ClientEvaluation[]) =>
       this.dispatch('submitEvaluations', attemptGuid, undefined, clientEvaluations);
 
-    this.onReady = (attemptGuid: string) => this.dispatch('activityReady', attemptGuid, undefined);
+    this.onReady = (attemptGuid: string, response?: any[]) =>
+      this.dispatch('activityReady', attemptGuid, undefined, response);
     this.onResize = (attemptGuid: string) => this.dispatch('resizePart', attemptGuid, undefined);
   }
 

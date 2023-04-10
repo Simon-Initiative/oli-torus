@@ -14,11 +14,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   alias Oli.Delivery.Attempts.Scoring
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.ActivityLifecycle.{Evaluate, Persistence}
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
+
   import Oli.Delivery.Attempts.Core
+  import Ecto.Query, warn: false
 
   @moduledoc """
   Implementation of a page Lifecycle behaviour for graded pages.
@@ -105,65 +107,71 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   @impl Lifecycle
-
   def finalize(%FinalizationContext{
         resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
         section_slug: section_slug,
         datashop_session_id: datashop_session_id
       }) do
-    # Collect all of the part attempt guids for all of the activities that
-    # get finalized
+    # Collect all of the part attempt guids for all of the activities that get finalized
+    with {:ok, part_attempt_guids} <- finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
+         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt) do
+      case resource_attempt do
+        %ResourceAttempt{lifecycle_state: :evaluated} ->
+          case roll_up_resource_attempts_to_access(
+                 section_slug,
+                 resource_attempt.resource_access_id
+               ) do
+            {:ok, resource_access} ->
 
-    part_attempt_guids = finalize_activities(resource_attempt, datashop_session_id)
+              {:ok, _} = Oli.Delivery.Metrics.mark_progress_completed(resource_access)
 
-    case roll_up_activities_to_resource_attempt(resource_attempt) do
-      {:ok, %ResourceAttempt{lifecycle_state: :evaluated}} ->
-        case roll_up_resource_attempts_to_access(
-               section_slug,
-               resource_attempt.resource_access_id
-             ) do
-          {:ok, resource_access} ->
-            {:ok,
-             %FinalizationSummary{
-               lifecycle_state: :evaluated,
-               resource_access: resource_access,
-               part_attempt_guids: part_attempt_guids
-             }}
+              {:ok,
+               %FinalizationSummary{
+                 lifecycle_state: :evaluated,
+                 resource_access: resource_access,
+                 part_attempt_guids: part_attempt_guids
+               }}
 
-          e ->
-            e
-        end
+            error -> error
+          end
 
-      {:ok, %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id}} ->
-        {:ok,
-         %FinalizationSummary{
-           lifecycle_state: :submitted,
-           resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
-           part_attempt_guids: part_attempt_guids
-         }}
-
-      e ->
-        e
+        %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->
+          {:ok,
+           %FinalizationSummary{
+             lifecycle_state: :submitted,
+             resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
+             part_attempt_guids: part_attempt_guids
+           }}
+      end
+    else
+      error -> error
     end
   end
 
   def finalize(_), do: {:error, {:already_submitted}}
 
-  defp finalize_activities(resource_attempt, datashop_session_id) do
-    activity_attempts = get_latest_activity_attempts(resource_attempt.id)
+  defp finalize_activity_and_part_attempts(resource_attempt, datashop_session_id) do
 
-    Enum.map(activity_attempts, fn a ->
-      # some activities will finalize themselves ahead of a graded page
-      # submission.  so we only submit those that are still yet to be finalized, and
-      # that are scoreable
-      if a.lifecycle_state != :evaluated and a.scoreable do
-        Evaluate.evaluate_from_stored_input(a.attempt_guid, datashop_session_id)
-      else
-        []
-      end
-    end)
-    |> List.flatten()
-    |> Enum.map(fn part_attempt -> part_attempt.attempt_guid end)
+    case resource_attempt.revision do
+       # For adaptive pages, we never want to evaluate anything at finalization time
+       %{content: %{"advancedDelivery" => true}} ->
+         {:ok, []}
+       _ ->
+         with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
+               Evaluate.update_part_attempts_and_get_activity_attempts(
+                 resource_attempt,
+                 datashop_session_id
+               ),
+             {:ok, _} <-
+               Persistence.bulk_update_activity_attempts(
+                 Enum.join(activity_attempt_values, ", "),
+                 activity_attempt_params
+               ) do
+           {:ok, part_attempt_guids}
+         else
+           error -> error
+         end
+    end
   end
 
   def roll_up_activities_to_resource_attempt(resource_attempt_guid)
@@ -177,8 +185,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # It is necessary to refetch the resource attempt so that we have the latest view
     # of its state, and to separately fetch the list of most recent attempts for each
     # activity.
-
-    activity_attempts = get_latest_activity_attempts(resource_attempt.id)
+    activity_attempts = case resource_attempt.revision do
+      # For adaptive pages, since we are rolling up to the resource attempt, we must consider
+      # both submitted and evaluated attempts
+      %{content: %{"advancedDelivery" => true}} -> get_latest_non_active_activity_attempts(resource_attempt.id)
+      _ -> get_latest_activity_attempts(resource_attempt.id)
+    end
 
     if is_evaluated?(activity_attempts) do
       apply_evaluation(resource_attempt, activity_attempts)

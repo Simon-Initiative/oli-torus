@@ -7,6 +7,7 @@ import {
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import React, { Fragment, useEffect, useState } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { SequenceDropdown } from './SequenceDropdown';
 
@@ -55,27 +56,25 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
   return (
     <Fragment>
       {label && <span className="form-label">{label}</span>}
-      <div className={`dropdown ${dropDownCSSClass || 'screenDropdown'}`}>
-        <button
-          className={`${buttonCSSClass} form-control dropdown-toggle d-flex justify-content-between`}
-          type="button"
+      <Dropdown>
+        <Dropdown.Toggle
+          variant="link"
           id={id}
-          data-toggle="dropdown"
-          aria-haspopup="true"
-          aria-expanded="false"
+          className={`${buttonCSSClass} form-control dropdown-toggle d-flex justify-content-between`}
         >
           {buttonLabel}
           <i className="fas fa-caret-down my-auto" />
-        </button>
-        <div className="dropdown-menu" aria-labelledby={id}>
+        </Dropdown.Toggle>
+
+        <Dropdown.Menu>
           <SequenceDropdown
             items={hierarchy}
             onChange={onChangeHandler}
             value={props.value}
             showNextBtn={true}
           />
-        </div>
-      </div>
+        </Dropdown.Menu>
+      </Dropdown>
     </Fragment>
   );
 };

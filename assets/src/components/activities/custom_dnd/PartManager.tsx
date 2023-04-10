@@ -1,7 +1,7 @@
 import React from 'react';
 import { CustomDnDSchema } from './schema';
 import { TextInput } from 'components/common/TextInput';
-import { RemoveButton } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { RemoveButton } from 'components/activities/common/authoring/RemoveButton';
 
 export type PartManagerProps = {
   model: CustomDnDSchema;
@@ -24,7 +24,7 @@ export const PartManager: React.FC<PartManagerProps> = (props: PartManagerProps)
           <button
             className="btn btn-primary btn-sm dropdown-toggle"
             type="button"
-            data-toggle="dropdown"
+            data-bs-toggle="dropdown"
             aria-haspopup="true"
             aria-expanded="false"
           >

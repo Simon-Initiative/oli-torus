@@ -63,7 +63,7 @@ defmodule OliWeb.PageDeliveryView do
           <div>
             <i class="fas fa-arrow-left nav-icon"></i>
           </div>
-          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-right">
+          <div class="d-flex flex-column flex-1 flex-ellipsis-fix text-right">
             <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>
@@ -76,7 +76,7 @@ defmodule OliWeb.PageDeliveryView do
     ~H"""
       <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
         <div class="d-flex flex-row">
-          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-left">
+          <div class="d-flex flex-column flex-1 flex-ellipsis-fix text-left">
             <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>
@@ -108,9 +108,15 @@ defmodule OliWeb.PageDeliveryView do
     end
   end
 
-  def container?(rev) do
-    ResourceType.get_type_by_id(rev.resource_type_id) == "container"
-  end
+  def container?(%HierarchyNode{revision: %{resource_type_id: resource_type_id}}),
+    do: ResourceType.get_type_by_id(resource_type_id) == "container"
+
+  def container?(%{resource_type_id: resource_type_id}),
+    do: ResourceType.get_type_by_id(resource_type_id) == "container"
+
+  def container?(%{"type" => type}), do: type == "container"
+
+  def container_title(_node, display_curriculum_item_numbering \\ true)
 
   def container_title(
         %HierarchyNode{
@@ -119,11 +125,30 @@ defmodule OliWeb.PageDeliveryView do
           },
           revision: revision
         } = h,
-        display_curriculum_item_numbering \\ true
+        display_curriculum_item_numbering
       ) do
     if display_curriculum_item_numbering,
       do: "#{Numbering.container_type_label(h.numbering)} #{index}: #{revision.title}",
       else: "#{Numbering.container_type_label(h.numbering)}: #{revision.title}"
+  end
+
+  def container_title(
+        %{
+          "index" => index,
+          "title" => title,
+          "level" => level
+        },
+        display_curriculum_item_numbering
+      ) do
+    numbering = %Numbering{
+      level: String.to_integer(level),
+      index: String.to_integer(index),
+      labels: Oli.Branding.CustomLabels.default()
+    }
+
+    if display_curriculum_item_numbering,
+      do: "#{Numbering.container_type_label(numbering)} #{index}: #{title}",
+      else: "#{Numbering.container_type_label(numbering)}: #{title}"
   end
 
   def has_submitted_attempt?(resource_access) do
@@ -221,8 +246,4 @@ defmodule OliWeb.PageDeliveryView do
         end
     end
   end
-
-  def base_resource_link_class(), do: ""
-  def resource_link_class(_active = true), do: base_resource_link_class() <> " active"
-  def resource_link_class(_active = false), do: base_resource_link_class()
 end

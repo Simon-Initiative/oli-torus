@@ -1,4 +1,4 @@
-import { HasParts } from '../types';
+import { HasParts, makeContent } from '../types';
 import * as ActivityTypes from '../types';
 import { PostUndoable } from 'components/activities/types';
 import { Operations } from 'utils/pathOperations';
@@ -8,16 +8,11 @@ import { matchListRule } from 'data/activities/model/rules';
 import { Responses } from 'data/activities/model/responses';
 
 export const ImageHotspotActions = {
-  setContent(id: string, content: Descendant[]) {
+  setCoords(id: string, coords: number[]) {
     return (model: any, _post: PostUndoable) => {
-      // sync coords w/content text as comma-separated list. Result filtered to all numbers,
-      // but may still have bad size for an area definition.
-      const coords: number[] = toSimpleText(content)
-        .split(',')
-        .map(Number)
-        .filter((x) => !isNaN(x));
+      const content = makeContent(coords.join(',')).content;
       Operations.applyAll(model, [
-        Operations.replace(`$..choices[?(@.id=='${id}')].content`, content),
+        // Operations.replace(`$..choices[?(@.id=='${id}')].content`, content),
         Operations.replace(`$..choices[?(@.id=='${id}')].coords`, coords),
       ]);
     };
@@ -54,6 +49,8 @@ export const ImageHotspotActions = {
       } else {
         model.authoring.parts[0].responses = Responses.forMultipleChoice(correctChoice.id);
       }
+      // also clear any targeted feedback as it may reference now-replaced responses.
+      model.authoring.targeted = [];
     };
   },
 };

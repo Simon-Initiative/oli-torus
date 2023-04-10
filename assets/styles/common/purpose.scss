@@ -1,14 +1,16 @@
 .content-purpose {
-  border-radius: 4px;
   margin-bottom: 1rem;
 
-  .content-purpose-label {
+  & > .content-purpose-label {
     text-transform: uppercase;
-    padding: 4px;
+    background: var(--color-delivery-purpose-label-bg);
+    padding: 4px 0;
+    color: var(--color-white);
+    margin-bottom: 1rem;
   }
 
-  .content-purpose-content {
-    padding: 20px;
+  & > .content-purpose-content {
+    padding: 0 2em;
   }
 
   &.none {
@@ -21,38 +23,11 @@
     }
   }
 
-  &.objectives {
-    border: 1px solid $content-purpose-objectives-color;
-
-    & > .content-purpose-label {
-      background-color: $content-purpose-objectives-color;
-      color: $white;
-
-      /** icon */
-      &::before {
-        font-family: 'Line Awesome Free';
-        font-weight: 900;
-        margin-left: 8px;
-        margin-right: 8px;
-        content: '\f11e';
-      }
-    }
-
-    .content-purpose-content {
-      font-size: 1.3em;
-    }
-  }
-
   &.checkpoint {
-    border: 1px solid $content-purpose-checkpoint-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-checkpoint-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -62,15 +37,10 @@
   }
 
   &.didigetthis {
-    border: 1px solid $content-purpose-didigetthis-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-didigetthis-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -80,15 +50,17 @@
   }
 
   &.example {
-    border-bottom: 1px dashed $content-purpose-example-color;
+    border-bottom: 1px dashed rgba(#74b9ff, 0.75);
 
     & > .content-purpose-label {
-      border-bottom: 1px dashed $content-purpose-example-color;
+      border-bottom: 1px dashed rgba(#74b9ff, 0.75);
       font-weight: 700;
+      background: transparent;
+      color: var(--body-color);
 
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -98,15 +70,10 @@
   }
 
   &.labactivity {
-    border: 1px solid $content-purpose-labactivity-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-labactivity-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -116,15 +83,10 @@
   }
 
   &.learnbydoing {
-    border: 1px solid $content-purpose-learnbydoing-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-learnbydoing-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -134,15 +96,10 @@
   }
 
   &.learnmore {
-    border: 1px solid $content-purpose-learnmore-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-learnmore-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -152,15 +109,10 @@
   }
 
   &.manystudentswonder {
-    border: 1px solid $content-purpose-manystudentswonder-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-manystudentswonder-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -170,15 +122,10 @@
   }
 
   &.quiz {
-    border: 1px solid $content-purpose-quiz-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-quiz-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -188,15 +135,10 @@
   }
 
   &.myresponse {
-    border: 1px solid $content-purpose-myresponse-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-myresponse-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -206,15 +148,10 @@
   }
 
   &.simulation {
-    border: 1px solid $content-purpose-simulation-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-simulation-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -224,15 +161,10 @@
   }
 
   &.walkthrough {
-    border: 1px solid $content-purpose-walkthrough-color;
-
     & > .content-purpose-label {
-      background-color: $content-purpose-walkthrough-color;
-      color: $white;
-
       /** icon */
       &::before {
-        font-family: 'Line Awesome Free';
+        font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-left: 8px;
         margin-right: 8px;
@@ -242,10 +174,25 @@
   }
 }
 
-@mixin page_link_style($color, $bg: $color) {
+.content-page-link {
+  $color: #3d81f6;
+  $bg: rgba(#64748b, 0.2);
+
+  border: 1px solid #64748b;
+
+  .content-purpose-label {
+    margin-bottom: 0;
+  }
+
   .content-purpose-content {
     background-color: rgba($bg, 0.2);
     padding: 1em;
+  }
+
+  &.content-purpose.none {
+    .content-purpose-content {
+      padding: 1em;
+    }
   }
 
   a.internal-link,
@@ -256,7 +203,7 @@
     .content-purpose-content {
       .title {
         font-size: 1.3em;
-        color: $body-color;
+        color: var(--color-body-color);
       }
 
       i {
@@ -277,58 +224,7 @@
   }
 }
 
-.content-page-link {
-  &.none {
-    border: 1px solid $gray-500;
-    @include page_link_style($link-color, rgba($gray-500, 0.2));
-  }
-
-  &.checkpoint {
-    @include page_link_style($content-purpose-checkpoint-color);
-  }
-
-  &.didigetthis {
-    @include page_link_style($content-purpose-didigetthis-color);
-  }
-
-  &.example {
-    @include page_link_style($link-color, $body-bg);
-  }
-
-  &.labactivity {
-    @include page_link_style(darken($content-purpose-labactivity-color, 10%));
-  }
-
-  &.learnbydoing {
-    @include page_link_style($content-purpose-learnbydoing-color);
-  }
-
-  &.learnmore {
-    @include page_link_style($content-purpose-learnmore-color);
-  }
-
-  &.manystudentswonder {
-    @include page_link_style($content-purpose-manystudentswonder-color);
-  }
-
-  &.quiz {
-    @include page_link_style($content-purpose-quiz-color);
-  }
-
-  &.myresponse {
-    @include page_link_style($content-purpose-myresponse-color);
-  }
-
-  &.simulation {
-    @include page_link_style($content-purpose-simulation-color);
-  }
-
-  &.walkthrough {
-    @include page_link_style($content-purpose-walkthrough-color);
-  }
-}
-
-// activity-purpose is deprecated but is left here to support existing content
+// NOTICE: activity-purpose class is deprecated but is left here to support existing content
 .activity-purpose {
   padding: 4px 8px;
   font-weight: 200;
@@ -352,10 +248,10 @@
   }
 
   &.checkpoint {
-    background-color: $content-purpose-checkpoint-color;
+    background-color: rgba(#0984e3, 0.75);
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: 'Font Awesome 6 Free';
       font-weight: 900;
       margin-right: 8px;
       content: '\f46c';
@@ -363,10 +259,10 @@
   }
 
   &.didigetthis {
-    background-color: $content-purpose-didigetthis-color;
+    background-color: rgba(#8e44ad, 0.75);
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: 'Font Awesome 6 Free';
       font-weight: 900;
       margin-right: 8px;
       content: '\f256';
@@ -374,13 +270,27 @@
   }
 
   &.learnbydoing {
-    background-color: $content-purpose-learnbydoing-color;
+    background-color: rgba(#00b894, 0.75);
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: 'Font Awesome 6 Free';
       font-weight: 900;
       margin-right: 8px;
       content: '\f51c';
+    }
+  }
+}
+
+html.dark {
+  .content-purpose {
+    & > .content-purpose-label {
+      background: var(--color-delivery-purpose-label-bg-dark);
+    }
+
+    &.example {
+      & > .content-purpose-label {
+        background: transparent;
+      }
     }
   }
 }

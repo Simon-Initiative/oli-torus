@@ -17,7 +17,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const AddComponentToolbar: React.FC = () => {
+const AddComponentToolbar: React.FC<{ authoringContainer: React.RefObject<HTMLElement> }> = ({
+  authoringContainer,
+}) => {
   const dispatch = useDispatch();
   const paths = useSelector(selectPaths);
   const imgsPath = paths?.images || '';
@@ -173,7 +175,7 @@ const AddComponentToolbar: React.FC = () => {
           show={showPartsMenu}
           target={partsMenuTarget}
           placement="bottom"
-          container={document.getElementById('advanced-authoring')}
+          container={authoringContainer}
           containerPadding={20}
           rootClose={true}
           onHide={() => setShowPartsMenu(false)}

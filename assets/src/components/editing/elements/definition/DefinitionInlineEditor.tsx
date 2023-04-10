@@ -124,7 +124,7 @@ export const DefinitionInlineEditor: React.FC<{
               type="button"
               onClick={onDeleteMeaning(index)}
             >
-              <span className="material-icons">delete</span>
+              <i className="fa-solid fa-trash"></i>
             </button>
           </div>
         ))}
@@ -155,7 +155,7 @@ export const DefinitionInlineEditor: React.FC<{
                 type="button"
                 onClick={onDeleteTranslation(index)}
               >
-                <span className="material-icons">delete</span>
+                <i className="fa-solid fa-trash"></i>
               </button>
             </div>
           ),

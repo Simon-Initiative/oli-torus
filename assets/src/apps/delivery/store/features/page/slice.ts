@@ -1,6 +1,6 @@
 import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
-import { RootState } from '../../rootReducer';
+import { DeliveryRootState } from '../../rootReducer';
 import PageSlice from './name';
 
 export interface PageState {
@@ -24,6 +24,9 @@ export interface PageState {
   activeEverapp: string;
   overviewURL: string;
   finalizeGradedURL: string;
+  screenIdleTimeOutInSeconds: number;
+  screenIdleExpireTime?: number;
+  reviewMode?: boolean;
 }
 
 const initialState: PageState = {
@@ -47,6 +50,8 @@ const initialState: PageState = {
   activeEverapp: '',
   overviewURL: '',
   finalizeGradedURL: '',
+  screenIdleTimeOutInSeconds: 1800,
+  reviewMode: false,
 };
 
 const pageSlice = createSlice({
@@ -74,13 +79,23 @@ const pageSlice = createSlice({
       state.graded = !!action.payload.graded;
       state.overviewURL = action.payload.overviewURL;
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
-
+      state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
+      state.reviewMode = action.payload.reviewMode;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
+      }
+      if (action.payload.screenIdleTimeOutInSeconds) {
+        state.screenIdleExpireTime = Date.now() + action.payload.screenIdleTimeOutInSeconds * 1000;
       }
     },
     setScore(state, action: PayloadAction<{ score: number }>) {
       state.score = action.payload.score;
+    },
+    setScreenIdleExpirationTime(state, action: PayloadAction<{ screenIdleExpireTime: number }>) {
+      if (state.screenIdleTimeOutInSeconds) {
+        state.screenIdleExpireTime =
+          action.payload.screenIdleExpireTime + state.screenIdleTimeOutInSeconds * 1000;
+      }
     },
     setActiveEverapp(state, action: PayloadAction<{ id: string }>) {
       state.activeEverapp = action.payload.id;
@@ -91,17 +106,33 @@ const pageSlice = createSlice({
   },
 });
 
-export const { loadPageState, setActiveEverapp, setScore, setShowHistory } = pageSlice.actions;
+export const {
+  loadPageState,
+  setActiveEverapp,
+  setScore,
+  setShowHistory,
+  setScreenIdleExpirationTime,
+} = pageSlice.actions;
 
-export const selectState = (state: RootState): PageState => state[PageSlice];
+export const selectState = (state: DeliveryRootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageTitle = createSelector(selectState, (state) => state.pageTitle);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
+export const selectReviewMode = createSelector(selectState, (state) => state.reviewMode);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
+
 export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
+export const selectScreenIdleTimeOutInSeconds = createSelector(
+  selectState,
+  (state) => state.screenIdleTimeOutInSeconds,
+);
+export const selectScreenIdleExpirationTime = createSelector(
+  selectState,
+  (state) => state.screenIdleExpireTime,
+);
 export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,

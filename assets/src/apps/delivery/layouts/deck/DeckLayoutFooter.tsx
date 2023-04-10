@@ -1,4 +1,5 @@
-import { templatizeText } from 'adaptivity/scripting';
+import { applyState, templatizeText } from 'adaptivity/scripting';
+import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -36,13 +37,18 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentActivityTreeAttemptState,
+} from '../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
+  selectReviewMode,
   setScore,
+  setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
@@ -141,15 +147,18 @@ const NextButton: React.FC<NextButton> = ({
 }) => {
   const isEnd = useSelector(selectLessonEnd);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const reviewMode = useSelector(selectReviewMode);
   const styles: CSSProperties = {};
-  if (historyModeNavigation) {
+  if (historyModeNavigation || reviewMode) {
     styles.opacity = 0.5;
     styles.cursor = 'not-allowed';
   }
-  const showDisabled = historyModeNavigation ? true : isLoading;
-  const showHideCheckButton =
+  const showDisabled = historyModeNavigation || reviewMode ? true : isLoading;
+  let showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
+  showHideCheckButton =
+    showHideCheckButton === 'hideCheckBtn' && reviewMode ? '' : showHideCheckButton;
   return (
     <div
       className={`buttonContainer ${showHideCheckButton} ${
@@ -196,9 +205,20 @@ export const processResults = (events: any) => {
   return actionsByType;
 };
 
+export const checkIfFirstEventHasNavigation = (event: any) => {
+  let isDifferentNavigationExist = false;
+  const { actions } = event.params;
+  actions.forEach((action: any) => {
+    if (action.type === 'navigation') {
+      isDifferentNavigationExist = true;
+    }
+  });
+  return isDifferentNavigationExist;
+};
+
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
-
+  const reviewMode = useSelector(selectReviewMode);
   const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
@@ -210,9 +230,8 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
-
+  const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const isPreviewMode = useSelector(selectPreviewMode);
-
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -229,17 +248,6 @@ const DeckLayoutFooter: React.FC = () => {
     }
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
-
-  const checkIfFirstEventHasNavigation = (event: any) => {
-    let isDifferentNavigationExist = false;
-    const { actions } = event.params;
-    actions.forEach((action: any) => {
-      if (action.type === 'navigation') {
-        isDifferentNavigationExist = true;
-      }
-    });
-    return isDifferentNavigationExist;
-  };
 
   const checkIfAllEventsHaveSameNavigation = (results: any) => {
     const navigationTargets: string[] = [];
@@ -259,7 +267,71 @@ const DeckLayoutFooter: React.FC = () => {
     return resultHavingNavigation.length === results.length && navigationTargets.length === 1;
   };
 
+  const saveMutateStateValuesToServer = (mutations: any) => {
+    const activityAttemptTree = currentActivityAttemptTree;
+    const currentAttempt: any = activityAttemptTree
+      ? activityAttemptTree[activityAttemptTree.length - 1]
+      : null;
+
+    const currentActivity: any = currentActivityTree
+      ? currentActivityTree[currentActivityTree?.length - 1]
+      : null;
+    const currentActivityAttemptGuid = currentActivity?.attemptGuid;
+    if (!currentAttempt || !currentActivityAttemptGuid) {
+      return;
+    }
+    mutations.forEach((op: any) => {
+      let scopedTarget = op.params.target;
+      if (scopedTarget.indexOf('stage') === 0) {
+        const lstVar = scopedTarget.split('.');
+        if (lstVar?.length > 1) {
+          const partId = lstVar[1];
+          const partKey = lstVar[2];
+          let partAttemptGuid = '';
+          const partAttempt = currentAttempt?.parts.filter(
+            (attempt: any) => attempt.partId == partId,
+          );
+          if (partAttempt?.length) {
+            const ownerActivity = currentActivityTree?.find(
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
+            );
+            scopedTarget = ownerActivity
+              ? `${ownerActivity.id}|${op.params.target}`
+              : `${currentActivityId}|${op.params.target}`;
+
+            partAttemptGuid = partAttempt[0].attemptGuid;
+            const response: any = [
+              {
+                id: op.params.target,
+                key: partKey,
+                type: op.params.targetType || op.params.type,
+                value: getValue(`${scopedTarget}`, defaultGlobalEnv),
+                path: scopedTarget,
+              },
+            ];
+            const responseMap = response.reduce(
+              (result: { [x: string]: any }, item: { key: string; path: string }) => {
+                result[item.key] = { ...item };
+                return result;
+              },
+              {},
+            );
+            dispatch(
+              savePartState({
+                attemptGuid: currentActivityAttemptGuid,
+                partAttemptGuid,
+                response: responseMap,
+              }),
+            );
+          }
+        }
+      }
+    });
+  };
+
   useEffect(() => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
     }
@@ -308,7 +380,8 @@ const DeckLayoutFooter: React.FC = () => {
 
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             scopedTarget = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -325,12 +398,15 @@ const DeckLayoutFooter: React.FC = () => {
       });
 
       const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      if (!isPreviewMode) {
+        saveMutateStateValuesToServer(mutations);
+      }
       // should respond to scripting errors?
-      console.log('MUTATE ACTIONS', {
+      /* console.log('MUTATE ACTIONS', {
         mutateResults,
         mutationsModified,
         score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
-      });
+      }); */
 
       const everAppUpdates = mutationsModified.filter((op: ApplyStateOperation) => {
         return op.target.indexOf('app') === 0;
@@ -356,7 +432,8 @@ const DeckLayoutFooter: React.FC = () => {
           const lstVar = op.params.target.split('.');
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             target = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -444,7 +521,23 @@ const DeckLayoutFooter: React.FC = () => {
     }
   }, [lastCheckResults, isPreviewMode]);
 
+  const updateActivityHistoryTimeStamp = () => {
+    //If we get correct Feedback on current screen, on 'Next' button click, we would navigated to next screen
+    // however, instead if we navigate back using the 'History' button and then come back to current screen (i.e. where we got the good feedback earlier).
+    //At this point, session.visitTimestamps.${currentActivity?.id} get set to 0 because we are revisting the screen.
+    //We update the timestamp on Trigger Check however Since clicking the 'Next' button takes user to next screen, the timestamp of current screen
+    //never gets  updated and is always set to 0 hence it's always visible on top of the history list.
+    // Here we are checking, when we user leaves the screen, if the visit timestamp is zero then lets update the timestamp
+    const targetVisitTimeStampOp: ApplyStateOperation = {
+      target: `session.visitTimestamps.${currentActivityId}`,
+      operator: '=',
+      value: Date.now(),
+    };
+    applyState(targetVisitTimeStampOp, defaultGlobalEnv);
+  };
+
   const checkHandler = () => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     setIsLoading(true);
     /* console.log('CHECK BUTTON CLICKED', {
       isGoodFeedback,
@@ -454,10 +547,24 @@ const DeckLayoutFooter: React.FC = () => {
       currentActivity,
       displayFeedbackIcon,
     }); */
+    const activityHistoryTimeStamp = getValue(
+      `session.visitTimestamps.${currentActivityId}`,
+      defaultGlobalEnv,
+    );
+    const targetIsResumeModeOp: ApplyStateOperation = {
+      target: 'session.isResumeMode',
+      operator: '=',
+      value: false,
+    };
+    applyState(targetIsResumeModeOp, defaultGlobalEnv);
+
     if (displayFeedback) setDisplayFeedback(false);
 
     // if (isGoodFeedback && canProceed) {
     if (isGoodFeedback) {
+      if (activityHistoryTimeStamp === 0) {
+        updateActivityHistoryTimeStamp();
+      }
       if (nextActivityId && nextActivityId.trim()) {
         dispatch(
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
@@ -480,6 +587,9 @@ const DeckLayoutFooter: React.FC = () => {
         nextActivityId?.trim().length &&
         nextActivityId !== currentActivityId
       ) {
+        if (activityHistoryTimeStamp === 0) {
+          updateActivityHistoryTimeStamp();
+        }
         //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
         //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
         dispatch(
@@ -500,6 +610,9 @@ const DeckLayoutFooter: React.FC = () => {
       nextActivityId?.trim().length &&
       nextActivityId !== currentActivityId
     ) {
+      if (activityHistoryTimeStamp === 0) {
+        updateActivityHistoryTimeStamp();
+      }
       //** DT - there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
       //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
       dispatch(
@@ -584,37 +697,39 @@ const DeckLayoutFooter: React.FC = () => {
 
   return (
     <>
-      <div
-        className={`checkContainer rowRestriction columnRestriction`}
-        style={{ width: containerWidth }}
-      >
-        <NextButton
-          isLoading={isLoading || !initPhaseComplete}
-          text={nextButtonText}
-          handler={checkHandler}
-          isGoodFeedbackPresent={isGoodFeedback}
-          currentFeedbacksCount={currentFeedbacks.length}
-          isFeedbackIconDisplayed={displayFeedbackIcon}
-          showCheckBtn={currentActivity?.custom?.showCheckBtn}
-        />
-        {displaySolutionButton && (
-          <button className="showSolnBtn showSolution">
-            <div className="ellipsis">{solutionButtonText}</div>
-          </button>
-        )}
-        {!isLegacyTheme && (
-          <FeedbackContainer
-            minimized={!displayFeedback}
-            showIcon={displayFeedbackIcon}
-            showHeader={displayFeedbackHeader}
-            onMinimize={() => setDisplayFeedback(false)}
-            onMaximize={() => setDisplayFeedback(true)}
-            feedbacks={currentFeedbacks}
+      {!reviewMode && (
+        <div
+          className={`checkContainer rowRestriction columnRestriction`}
+          style={{ width: containerWidth, display: reviewMode ? 'block' : '' }}
+        >
+          <NextButton
+            isLoading={isLoading || !initPhaseComplete}
+            text={nextButtonText}
+            handler={checkHandler}
+            isGoodFeedbackPresent={isGoodFeedback}
+            currentFeedbacksCount={currentFeedbacks.length}
+            isFeedbackIconDisplayed={displayFeedbackIcon}
+            showCheckBtn={currentActivity?.custom?.showCheckBtn}
           />
-        )}
-        <HistoryNavigation />
-      </div>
-      {isLegacyTheme && (
+          {displaySolutionButton && (
+            <button className="showSolnBtn showSolution">
+              <div className="ellipsis">{solutionButtonText}</div>
+            </button>
+          )}
+          {!isLegacyTheme && (
+            <FeedbackContainer
+              minimized={!displayFeedback}
+              showIcon={displayFeedbackIcon}
+              showHeader={displayFeedbackHeader}
+              onMinimize={() => setDisplayFeedback(false)}
+              onMaximize={() => setDisplayFeedback(true)}
+              feedbacks={currentFeedbacks}
+            />
+          )}
+          <HistoryNavigation />
+        </div>
+      )}
+      {!reviewMode && isLegacyTheme && (
         <>
           <FeedbackContainer
             minimized={!displayFeedback}

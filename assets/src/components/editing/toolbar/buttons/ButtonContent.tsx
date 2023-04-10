@@ -10,13 +10,11 @@ export const ButtonContent = (props: Props) => {
   const editor = useSlate();
   const { icon, description } = props.description;
 
+  const maybeIcon = icon(editor);
+
   return (
     <div className={styles.toolbarButtonContent}>
-      {icon(editor) ? (
-        <span className="material-icons">{icon(editor)}</span>
-      ) : (
-        <span className={styles.buttonText}>{description(editor)}</span>
-      )}
+      {maybeIcon ? maybeIcon : <span className={styles.buttonText}>{description(editor)}</span>}
     </div>
   );
 };

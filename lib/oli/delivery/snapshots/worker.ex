@@ -88,9 +88,12 @@ defmodule Oli.Delivery.Snapshots.Worker do
           # If there are no attached objectives, create one record recoring nils for the objectives
           [] -> [to_attrs(result, nil, nil, project_id)]
 
-          # Otherwise create one record for each objective
+          # Otherwise create one record for each objective, careful to dedupe in the event that
+          # somehow a part has objectives duplicated
           objective_ids ->
-            Enum.map(objective_ids, fn id ->
+            MapSet.new(objective_ids)
+            |> MapSet.to_list()
+            |> Enum.map(fn id ->
               to_attrs(result, id, Map.get(objective_revisions_by_id, id), project_id)
             end)
         end

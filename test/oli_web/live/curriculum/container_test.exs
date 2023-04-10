@@ -15,7 +15,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     test "redirect to new session when accessing the container view", %{conn: conn} do
       project = insert(:project)
 
-      redirect_path = "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fcurriculum"
+      redirect_path =
+        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fcurriculum"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, Routes.container_path(@endpoint, :index, project.slug))
@@ -28,7 +29,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     test "redirect to new session when accessing the container view", %{conn: conn} do
       project = insert(:project)
 
-      redirect_path = "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fcurriculum"
+      redirect_path =
+        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fcurriculum"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, Routes.container_path(@endpoint, :index, project.slug))
@@ -139,6 +141,139 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
              |> has_element?(
                "div[phx-value-slug=\"#{adaptive_page_revision.slug}\"] button[phx-click=\"duplicate_page\"]"
              )
+    end
+
+    test "show the correct fields for the page option modal", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision1: revision_page_one
+    } do
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get("/authoring/project/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element(
+        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"show_options_modal\"]"
+      )
+      |> render_click() =~ "Page Options"
+
+      assert has_element?(
+               view,
+               "input#revision-settings-form_title"
+             )
+
+      assert has_element?(
+               view,
+               "select#revision-settings-form_graded"
+             )
+
+      assert has_element?(
+               view,
+               "select#revision-settings-form_explanation_strategy_type"
+             )
+
+      assert has_element?(
+               view,
+               "select#revision-settings-form_max_attempts"
+             )
+
+      assert has_element?(
+               view,
+               "select#revision-settings-form_scoring_strategy_id"
+             )
+
+      assert has_element?(
+               view,
+               "select#revision-settings-form_retake_mode"
+             )
+
+      assert has_element?(
+               view,
+               "select#revision-settings-form_purpose"
+             )
+
+      assert has_element?(
+               view,
+               "div#related-resources-selector"
+             )
+    end
+
+    test "when the page is of type 'foundation', the related resources selector is disabled", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision1: revision_page_one
+    } do
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get("/authoring/project/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element(
+        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"show_options_modal\"]"
+      )
+      |> render_click()
+
+      view
+      |> form("form#revision-settings-form", %{
+        "revision" => %{
+          "purpose" => "foundation"
+        }
+      })
+
+      assert view
+             |> element("div#related-resources-selector")
+             |> render() =~ "disabled"
+    end
+
+    test "the related resources get updated in the database", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision1: revision_page_one,
+      revision2: revision_page_two
+    } do
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get("/authoring/project/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element(
+        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"show_options_modal\"]"
+      )
+      |> render_click()
+
+      view
+      |> form("form#revision-settings-form", %{
+        "revision" => %{
+          "purpose" => "foundation"
+        }
+      })
+
+      view
+      |> element("input#hierarchy-selector__checkbox-#{revision_page_two.resource_id}")
+      |> render_click()
+
+      view
+      |> element("form#revision-settings-form")
+      |> render_submit()
+
+      assert Oli.Publishing.AuthoringResolver.from_revision_slug(
+               project.slug,
+               revision_page_one.slug
+             )
+             |> Map.get(:relates_to) == [revision_page_two.resource_id]
     end
   end
 

@@ -15,7 +15,8 @@ defmodule OliWeb.CommunityLive.ShowView do
     Form,
     IndexView,
     Invitation,
-    MembersIndexView
+    MembersIndexView,
+    SelectMemberModal
   }
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -87,6 +88,7 @@ defmodule OliWeb.CommunityLive.ShowView do
           section_description="Add other authors by email to administrate the community."
         >
           <Invitation
+            to_invite={:admin}
             list_id="admin_matches"
             invite="add_admin"
             remove="remove_admin"
@@ -100,7 +102,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
         <ShowSection
           section_title="Community Members"
-          section_description="Add users by email as members of the community. Only showing the last 3 additions here."
+          section_description="Add users by email as members of the community (one at a time). Only showing the last 3 additions here."
         >
           <Invitation
             list_id="member_matches"
@@ -231,28 +233,15 @@ defmodule OliWeb.CommunityLive.ShowView do
       """
     end
 
-    # modal = fn assigns ->
-    #   ~F"""
-    #     <DeleteModal
-    #       id={@modal_assigns.id}
-    #       description={@modal_assigns.description}
-    #       entity_name={@modal_assigns.entity_name}
-    #       entity_type={@modal_assigns.entity_type}
-    #       delete_enabled={@modal_assigns.delete_enabled}
-    #       validate={@modal_assigns.validate}
-    #       delete={@modal_assigns.delete} />
-    #   """
-    # end
-
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  def handle_event("add_" <> user_type, %{"collaborator" => %{"email" => email}}, socket) do
+  def handle_event("add_admin", %{"admin" => %{"email" => email}}, socket) do
     socket = clear_flash(socket)
 
     attrs = %{
       community_id: socket.assigns.community.id,
-      is_admin: user_type == "admin"
+      is_admin: true
     }
 
     emails =
@@ -261,20 +250,90 @@ defmodule OliWeb.CommunityLive.ShowView do
       |> Enum.map(&String.trim(&1))
 
     socket =
-      case Groups.create_community_accounts_from_emails(user_type, emails, attrs) do
+      case Groups.create_community_accounts_from_emails("admin", emails, attrs) do
         {:ok, _community_accounts} ->
-          put_flash(socket, :info, "Community #{user_type}(s) successfully added.")
+          updated_assigns = community_accounts_assigns("admin", attrs.community_id)
+
+          socket
+          |> put_flash(:info, "Community admin(s) successfully added.")
+          |> assign(updated_assigns)
 
         {:error, _error} ->
           message =
-            "Some of the community #{user_type}s couldn't be added because the users don't exist in the system or are already associated."
+            "Some of the community admin(s) couldn't be added because the author(s) don't exist in the system or are already associated."
 
           put_flash(socket, :error, message)
       end
 
-    updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
+    {:noreply, socket}
+  end
 
-    {:noreply, assign(socket, updated_assigns)}
+  def handle_event("add_member", %{"collaborator-id" => collaborator_id}, socket) do
+    socket = clear_flash(socket)
+
+    attrs = %{community_id: socket.assigns.community.id}
+
+    socket =
+      case Groups.create_community_account_from_user_id(collaborator_id, attrs) do
+        {:ok, _community_account} ->
+          updated_assigns = community_accounts_assigns("member", attrs.community_id)
+
+          socket
+          |> put_flash(:info, "Community member successfully added.")
+          |> assign(updated_assigns)
+          |> hide_modal(modal_assigns: nil)
+
+        {:error, _error} ->
+          message =
+            "Member couldn't be added because the user don't exist in the system or is already associated."
+
+          socket
+          |> put_flash(:error, message)
+          |> hide_modal(modal_assigns: nil)
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("add_member", %{"collaborator" => %{"email" => email}}, socket) do
+    socket = clear_flash(socket)
+
+    attrs = %{community_id: socket.assigns.community.id}
+    matches = Map.get(socket.assigns.matches, "member")
+
+    socket =
+      if length(matches) > 1 do
+        modal_assigns = %{
+          id: "select_member_community_modal",
+          members: matches,
+          select: "add_member"
+        }
+
+        modal = fn assigns ->
+          ~F"""
+            <SelectMemberModal {...@modal_assigns} />
+          """
+        end
+
+        show_modal(socket, modal, modal_assigns: modal_assigns)
+      else
+        case Groups.create_community_account_from_email("member", String.trim(email), attrs) do
+          {:ok, _community_account} ->
+            updated_assigns = community_accounts_assigns("member", attrs.community_id)
+
+            socket
+            |> put_flash(:info, "Community member successfully added.")
+            |> assign(updated_assigns)
+
+          {:error, _error} ->
+            message =
+              "Member couldn't be added because the user don't exist in the system or is already associated."
+
+            put_flash(socket, :error, message)
+        end
+      end
+
+    {:noreply, socket}
   end
 
   def handle_event("add_institution", %{"institution" => %{"name" => name}}, socket) do
@@ -351,9 +410,12 @@ defmodule OliWeb.CommunityLive.ShowView do
     end
   end
 
-  def handle_event("suggest_" <> user_type, %{"collaborator" => %{"email" => query}}, socket) do
-    matches = Map.put(socket.assigns.matches, user_type, browse_accounts(user_type, query))
-    {:noreply, assign(socket, matches: matches)}
+  def handle_event("suggest_admin", %{"admin" => %{"email" => query}}, socket) do
+    do_suggest("admin", query, socket)
+  end
+
+  def handle_event("suggest_member", %{"collaborator" => %{"email" => query}}, socket) do
+    do_suggest("member", query, socket)
   end
 
   def handle_event("suggest_institution", %{"institution" => %{"name" => query}}, socket) do
@@ -364,6 +426,11 @@ defmodule OliWeb.CommunityLive.ShowView do
         Institutions.search_institutions_matching(query)
       )
 
+    {:noreply, assign(socket, matches: matches)}
+  end
+
+  defp do_suggest(user_type, query, socket) do
+    matches = Map.put(socket.assigns.matches, user_type, browse_accounts(user_type, query))
     {:noreply, assign(socket, matches: matches)}
   end
 

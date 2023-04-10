@@ -5,12 +5,14 @@ import {
   selectPageContent,
   selectPageSlug,
   selectPreviewMode,
+  selectReviewMode,
   selectScore,
   selectSectionSlug,
 } from '../../store/features/page/slice';
 import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
 import OptionsPanel from './components/OptionsPanel';
+import ReviewModeNavigation from './components/ReviewModeNavigation';
 
 interface DeckLayoutHeaderProps {
   pageName?: string;
@@ -41,7 +43,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   const isPreviewMode = useSelector(selectPreviewMode);
   const isInstructor = useSelector(selectIsInstructor);
-
+  const isReviewMode = useSelector(selectReviewMode);
   const [backButtonUrl, setBackButtonUrl] = useState('');
   const [backButtonText, setBackButtonText] = useState('Back to Overview');
 
@@ -61,9 +63,10 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   return (
     <div className="headerContainer">
-      <div className="back-button">
-        <style>
-          {`
+      {!isReviewMode && (
+        <div className="back-button">
+          <style>
+            {`
           .back-button {
             z-index: 1;
             display: flex;
@@ -74,7 +77,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           }
           .back-button a {
             text-decoration: none;
-            padding: 0 0 0 4px;
+            padding: 4px 10px;
             font-size: 1.3rem;
             line-height: 1.5;
             border-radius: 0 0 4px 4px;
@@ -89,11 +92,13 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
             box-shadow: 0 1px 2px #00000079;
           }
           `}
-        </style>
-        <a href={backButtonUrl} title={backButtonText}>
-          <span className="fa fa-arrow-left">&nbsp;</span>
-        </a>
-      </div>
+          </style>
+          <a href={backButtonUrl} title={backButtonText}>
+            <span className="fa fa-arrow-left">&nbsp;</span>
+          </a>
+        </div>
+      )}
+      {isReviewMode && <ReviewModeNavigation></ReviewModeNavigation>}
       <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
@@ -107,16 +112,18 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
               <div className="name">{userName}</div>
               <div className={`score ${!showScore ? 'displayNone' : ''}`}>{scoreText}</div>
-              <button
-                className="optionsToggle"
-                title="Toggle menu visibility"
-                aria-label="Toggle menu visibility"
-                onClick={() => {
-                  setShowOptions(!showOptions);
-                }}
-              >
-                <div className="icon-reorder"></div>
-              </button>
+              {!isReviewMode && (
+                <button
+                  className="optionsToggle"
+                  title="Toggle menu visibility"
+                  aria-label="Toggle menu visibility"
+                  onClick={() => {
+                    setShowOptions(!showOptions);
+                  }}
+                >
+                  <div className="icon-reorder"></div>
+                </button>
+              )}
             </div>
             <OptionsPanel open={showOptions} />
           </div>

@@ -30,6 +30,7 @@ import {
 import {
   selectEnableHistory,
   selectPageSlug,
+  selectReviewMode,
   selectUserName,
   setScore,
 } from '../../store/features/page/slice';
@@ -57,6 +58,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentLesson = useSelector(selectPageSlug);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const reviewMode = useSelector(selectReviewMode);
   const isEnd = useSelector(selectLessonEnd);
   const defaultClasses: any[] = useMemo(
     () => ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'],
@@ -243,8 +245,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return () => {
       clearTimeout(timeout);
       sharedActivityPromise = null;
-      if (historyModeNavigation) {
-        console.log('[AllActivitiesInit] historyModeNavigation is ON, clearing sharedActivityInit');
+      if (historyModeNavigation || reviewMode) {
+        console.log(
+          '[AllActivitiesInit] historyModeNavigation or reviewMode is ON, clearing sharedActivityInit',
+        );
         sharedActivityInit.clear();
       }
     };
@@ -253,6 +257,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     defaultClasses,
     getCustomClassAncestry,
     historyModeNavigation,
+    reviewMode,
     pageClasses,
   ]);
 
@@ -274,7 +279,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       console.error('[initCurrentActivity] bad tree??', currentActivityTree);
       return;
     }
-    await dispatch(initializeActivity(currentActivity.resourceId));
+    await dispatch(initializeActivity(currentActivity.resourceId!));
   }, [currentActivityTree, dispatch]);
 
   const handleActivityReady = useCallback(
@@ -292,7 +297,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }); */
 
       if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
-        if (!historyModeNavigation) {
+        if (!historyModeNavigation || reviewMode) {
           await initCurrentActivity();
         }
         const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
@@ -302,7 +307,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           context: {
             currentLesson,
             currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
-            mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
+            mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
           },
         };
 
@@ -313,7 +318,14 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
       return sharedActivityPromise.promise;
     },
-    [currentActivityTree, currentLesson, dispatch, historyModeNavigation, initCurrentActivity],
+    [
+      currentActivityTree,
+      currentLesson,
+      dispatch,
+      historyModeNavigation,
+      reviewMode,
+      initCurrentActivity,
+    ],
   );
 
   const handleActivitySave = async (
@@ -336,6 +348,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return true;
   };
 
+  const getStatePrefix = (path: string, activityId: string | number) => {
+    const parts = path.split('.');
+    const partId = parts[0];
+    const ownerActivityId = currentActivityTree?.filter((activity: any) =>
+      activity?.authoring?.parts?.filter(
+        (part: { id: string; owner: string | number }) =>
+          part?.id === partId && part?.owner == activityId,
+      ),
+    );
+    if (ownerActivityId?.length) {
+      return `${ownerActivityId[0].id}|stage`;
+    }
+    return `${activityId}|stage`;
+  };
+
   const handleActivitySavePart = useCallback(
     async (
       activityId: string | number,
@@ -350,7 +377,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       response,
       currentActivityTree,
     }); */
-      const statePrefix = `${activityId}|stage`;
+      let statePrefix = `${activityId}|stage`;
+      if (response.input?.length) {
+        // Even if the current screen is a child screen, we always save the part component properties with their owner activity Id i.e. ownerActivityId|stage.iframe.visible = true.
+        // The entire response is from one part, so the path (i.e. partId.properyName) will be same for all input response
+        // Hence we check the owner activity id once.
+        statePrefix = getStatePrefix(response.input[0].path, activityId);
+      }
       const responseMap = response.input.reduce(
         (result: { [x: string]: any }, item: { key: string; path: string }) => {
           result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
@@ -366,7 +399,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
 
       //if user navigated from history, don't save anything and just return the saved state
-      if (historyModeNavigation) {
+      if (historyModeNavigation || reviewMode) {
         return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
       }
 
@@ -396,7 +429,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
       }
     },
-    [currentActivityTree, dispatch, historyModeNavigation],
+    [currentActivityTree, dispatch, historyModeNavigation, reviewMode],
   );
 
   const handleActivitySubmitPart = useCallback(
@@ -445,9 +478,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         return currentActivityTree
           ? currentActivityTree.map((activity) => ({
               ...activity,
-              activityKey: historyModeNavigation
-                ? `${activity.id}_${currentActivity.id}_history`
-                : activity.id,
+              activityKey:
+                historyModeNavigation || reviewMode
+                  ? `${activity.id}_${currentActivity.id}_history`
+                  : activity.id,
             }))
           : null;
       }
@@ -464,7 +498,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           : activity.id,
       }));
     });
-  }, [currentActivityTree, historyModeNavigation]);
+  }, [currentActivityTree, historyModeNavigation, reviewMode]);
 
   const renderActivities = useCallback(() => {
     if (!localActivityTree || !localActivityTree.length) {

@@ -4,16 +4,9 @@ import { useSelector } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
+import { MediaBrowserComponent, TorusMediaBrowserWrapper } from './TorusMediaBrowserWrapper';
 
-interface Props {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (url: string) => void;
-  onBlur: (id: string, url: string) => void;
-}
-
-export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange, onBlur }) => {
+const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange, onBlur }) => {
   const [pickerOpen, , openPicker, closePicker] = useToggle();
   const projectSlug: string = useSelector(selectProjectSlug);
 
@@ -46,7 +39,7 @@ export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange,
         size="sm"
         aria-label="Select Image"
       >
-        <span className="material-icons-outlined">image</span>
+        <i className="fa-solid fa-image"></i>
       </Button>
 
       {pickerOpen && (
@@ -61,3 +54,5 @@ export const TorusImageBrowser: React.FC<Props> = ({ id, label, value, onChange,
     </span>
   );
 };
+
+export const TorusImageBrowser = TorusMediaBrowserWrapper(_TorusImageBrowser);

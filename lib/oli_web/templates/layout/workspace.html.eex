@@ -3,16 +3,11 @@
     <a id='skip-nav' tabindex="1" class='screenreader-text' href='#main-content'>
       Skip Navigation
     </a>
-    <div class="workspace-top d-flex flex-row">
-      <div class="logo d-flex justify-content-center align-items-center">
-        <img src="<%= Oli.VendorProperties.workspace_logo() %>" height="50px" width="50px"/>
+    <div class="workspace-top d-flex flex-row shadow">
+      <div class="logo justify-content-center align-items-center">
+        <img class="self-center mx-auto" src="<%= Oli.VendorProperties.workspace_logo() %>" />
       </div>
-      <%= render OliWeb.LayoutView,
-        "_#{cond do
-          @conn.params["project_id"] -> "project" #_project_header.html.eex   (template)
-          Map.get(@conn.assigns, :title, "") == "Projects" -> "workspace"     #_workspace_header.html.eex (template)
-          true -> "account"       #_account_header.html.eex   (template)
-      end}_header.html", assigns %>
+      <%= render OliWeb.LayoutView, "_workspace_header.html", assigns %>
     </div>
     <div class="d-flex flex-grow-1">
       <div class="workspace-left">

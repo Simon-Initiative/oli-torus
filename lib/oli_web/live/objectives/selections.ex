@@ -26,7 +26,7 @@ defmodule OliWeb.ObjectivesLive.SelectionsModal do
               </ul>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Done</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Done</button>
             </div>
           </div>
         </div>

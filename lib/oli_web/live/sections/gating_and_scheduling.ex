@@ -132,7 +132,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       title: title,
       context: context,
       section: section,
-      delivery_breadcrumb: true,
       breadcrumbs: set_breadcrumbs(section, parent_gate, user_type),
       table_model: table_model,
       total_count: total_count,
@@ -193,7 +192,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         <TextSearch id="text-search"/>
         <div class="flex-grow-1"></div>
         <Link class="btn btn-primary ml-2" to={link_new(assigns)}>
-          <i class="las la-plus"></i> New {render_type(assigns)}
+          <i class="fas fa-plus"></i> New {render_type(assigns)}
         </Link>
       </div>
 

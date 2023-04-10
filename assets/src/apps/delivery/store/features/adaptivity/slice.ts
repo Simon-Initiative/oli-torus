@@ -1,5 +1,5 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
-import { RootState } from '../../rootReducer';
+import { DeliveryRootState } from '../../rootReducer';
 import AdaptivitySlice from './name';
 
 export interface CheckResults {
@@ -23,6 +23,7 @@ export interface AdaptivityState {
   lastMutateChanges: any;
   initPhaseComplete: any; // timestamp
   historyModeNavigation: boolean;
+  screenIdleTimeOutTriggered: boolean;
 }
 
 const initialState: AdaptivityState = {
@@ -45,6 +46,7 @@ const initialState: AdaptivityState = {
   lastMutateChanges: null,
   initPhaseComplete: null,
   historyModeNavigation: false,
+  screenIdleTimeOutTriggered: false,
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -69,6 +71,12 @@ const slice: Slice<AdaptivityState> = createSlice({
     },
     setRestartLesson(state, action: PayloadAction<{ restartLesson: boolean }>) {
       state.restartLesson = action.payload.restartLesson;
+    },
+    setScreenIdleTimeOutTriggered(
+      state,
+      action: PayloadAction<{ screenIdleTimeOutTriggered: boolean }>,
+    ) {
+      state.screenIdleTimeOutTriggered = action.payload.screenIdleTimeOutTriggered;
     },
     setLessonEnd(state, action: PayloadAction<{ lessonEnded: boolean }>) {
       state.lessonEnded = action.payload.lessonEnded;
@@ -105,10 +113,11 @@ export const {
   setInitPhaseComplete,
   setHistoryNavigationTriggered,
   setInitStateFacts,
+  setScreenIdleTimeOutTriggered,
 } = slice.actions;
 
 // selectors
-export const selectState = (state: RootState): AdaptivityState =>
+export const selectState = (state: DeliveryRootState): AdaptivityState =>
   state[AdaptivitySlice] as AdaptivityState;
 export const selectIsGoodFeedback = createSelector(
   selectState,
@@ -125,6 +134,10 @@ export const selectNextActivityId = createSelector(
 export const selectRestartLesson = createSelector(
   selectState,
   (state: AdaptivityState) => state.restartLesson,
+);
+export const selectScreenIdleTimeOutTriggered = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.screenIdleTimeOutTriggered,
 );
 export const selectLessonEnd = createSelector(
   selectState,
