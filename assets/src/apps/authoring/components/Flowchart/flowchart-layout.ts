@@ -1,8 +1,8 @@
 import { FlowchartEdge, FlowchartNode } from './flowchart-utils';
 import dagre from 'dagre';
 
-export const BOX_WIDTH = 150;
-export const BOX_HEIGHT = 155;
+export const BOX_WIDTH = 180;
+export const BOX_HEIGHT = 175;
 
 const dagreEdgeToFlowchartEdge = (edge: FlowchartEdge & dagre.GraphEdge): FlowchartEdge => {
   const { points, ...rest } = edge;

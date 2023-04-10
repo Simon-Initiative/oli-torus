@@ -18,7 +18,7 @@ import { validateScreen } from '../screens/screen-validation';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
 import { WelcomeScreenIcon } from '../screen-icons/WelcomeScreenIcon';
-import { screenTypeToIcon } from '../screen-icons/screen-icons';
+import { ScreenValidationColors, screenTypeToIcon } from '../screen-icons/screen-icons';
 
 interface NodeProps {
   data: IActivity;
@@ -33,11 +33,6 @@ export const ScreenNode: React.FC<NodeProps> = ({ data }) => {
       <Handle type="source" position={Position.Right} id="a" style={{ display: 'none' }} />
     </>
   );
-};
-
-const colors = {
-  VALIDATED: '#87CD9B',
-  NOT_VALIDATED: '#FFE05E',
 };
 
 // Just the interior of the node, useful to have separate for storybook
@@ -94,7 +89,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const Icon =
     screenTypeToIcon[data.authoring?.flowchart?.screenType || 'blank_screen'] || WelcomeScreenIcon;
 
-  const iconBG = isValid ? colors.VALIDATED : colors.NOT_VALIDATED;
+  const iconBG = isValid ? ScreenValidationColors.VALIDATED : ScreenValidationColors.NOT_VALIDATED;
 
   return (
     <div className={`flowchart-node`}>
@@ -132,7 +127,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
           )}
         </div>
       </div>
-      <small className="text-gray-400">{data.resourceId}</small>
+      {isValid || <small className="text-gray-400">This screen is not validated.</small>}
 
       {showConfirmDelete && (
         <ConfirmDelete

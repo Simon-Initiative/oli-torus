@@ -22,3 +22,8 @@ export const screenTypeToIcon: Record<ScreenTypes, React.FC<{ fill?: string }>> 
   text_input: TextInputScreenIcon,
   dropdown: DropdownScreenIcon,
 };
+
+export const ScreenValidationColors = {
+  VALIDATED: '#87CD9B',
+  NOT_VALIDATED: '#FFE05E',
+};

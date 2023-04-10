@@ -19,6 +19,8 @@ import { FlowchartModeOptions } from '../Flowchart/FlowchartModeOptions';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
 import { sortScreens } from '../Flowchart/screens/screen-utils';
 import { AddScreenModal } from './AddScreenModal';
+import { ScreenValidationColors, screenTypeToIcon } from '../Flowchart/screen-icons/screen-icons';
+import { BlankScreenIcon } from '../Flowchart/screen-icons/BlankScreenIcon';
 
 /*
   The ScreenList is a simplified view of activities within a lesson similar to the SequenceEditor, but with a reduced feature set
@@ -153,13 +155,19 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
             onClick={() => onSelectScreen(activity.resourceId!)}
             onContextMenu={onScreenRightClick(activity.resourceId!)}
           >
-            <div className="page-icon">
-              <span>?</span>
-            </div>
+            <ScreenIcon
+              fill={ScreenValidationColors.VALIDATED}
+              screenType={activity.authoring?.flowchart?.screenType || 'blank_screen'}
+            />
             {activity.title || 'untitled screen'}
           </li>
         ))}
       </ul>
     </div>
   );
+};
+
+const ScreenIcon: React.FC<{ screenType: string; fill: string }> = ({ screenType, fill }) => {
+  const Icon = screenTypeToIcon[screenType] || BlankScreenIcon;
+  return <Icon fill={fill} />;
 };

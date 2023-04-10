@@ -241,14 +241,8 @@ $primary: #3b76d3;
       display: flex;
       flex-direction: row;
       align-items: center;
-      .page-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 20px;
-        height: 20px;
-        background-color: #b9d7a1;
-        border-radius: 4px;
+      padding: 0.25rem;
+      svg {
         margin-right: 0.5rem;
       }
       &:hover {
