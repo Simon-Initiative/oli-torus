@@ -39,6 +39,7 @@ export const verifyFlowchartLesson = createAsyncThunk(
       // 3. The end screen must be the last screen in the sequence
       // 4. The end screen must only have an exit-lesson path.
       // 5. Make sure our rules are up to date
+      await verifyMaxAttempts(getState, dispatch);
       await verifyStartScreenExists(getState, dispatch);
       await verifyEndScreenExists(getState, dispatch);
       await verifyEndScreenIsLastScreen(getState, dispatch);
@@ -51,6 +52,23 @@ export const verifyFlowchartLesson = createAsyncThunk(
     }
   },
 );
+
+// Our rules logic is set up for 3-tries and you're done, so we want the maxAttempt capped at 2 for scoring.
+const verifyMaxAttempts = async (getState: () => unknown, dispatch: any) => {
+  const allActivities = selectAllActivities(getState() as AuthoringRootState);
+  for (const activity of allActivities) {
+    if (!activity.content?.custom) {
+      continue;
+    }
+
+    if (activity.content.custom.maxScore > 0 && activity.content.custom.maxAttempt !== 2) {
+      const modifiedActivity = clone(activity);
+      modifiedActivity.content.custom.maxAttempt = 2;
+      dispatch(saveActivity({ activity: modifiedActivity, undoable: false, immediate: true }));
+      await dispatch(upsertActivity({ activity: modifiedActivity }));
+    }
+  }
+};
 
 const verifyAllRules = async (getState: () => unknown, dispatch: any) => {
   const allActivities = selectAllActivities(getState() as AuthoringRootState);
