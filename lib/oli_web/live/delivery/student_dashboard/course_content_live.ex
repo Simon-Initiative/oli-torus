@@ -36,41 +36,39 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
     ~H"""
     <div class="bg-white dark:bg-gray-800 shadow-sm">
       <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
-        <section class="flex flex-col p-9">
-          <h4 class="text-base font-semibold mr-auto">Course Content</h4>
-          <span class="text-xs">Find all your course content, material, assignments and class activities here.</span>
+        <section class="flex flex-col p-8">
+          <h4 class="text-base font-semibold mr-auto tracking-wide text-gray-800 h-8">Course Content</h4>
+          <span class="text-sm font-normal tracking-wide text-gray-800 mt-2">Find all your course content, material, assignments and class activities here.</span>
         </section>
-        <section class="flex flex-row justify-between p-9">
-          <div class="text-xs absolute -mt-7"><%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree}) %></div>
+        <section class="flex flex-row justify-between p-8">
+          <div class="text-xs absolute -mt-5"><%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree}) %></div>
           <button phx-click="previous_node" class={if @current_position == 0, do: "grayscale pointer-events-none"}>
-            <i class="fa-regular fa-circle-left text-primary"></i>
+            <i class="fa-regular fa-circle-left text-primary text-xl"></i>
           </button>
           <div class="flex flex-col">
-            <h4 class="text-base font-semibold mx-auto"><%= get_resource_name(@current_level_nodes, @current_position) %> </h4>
-            <div class="flex items-center justify-center space-x-3">
-              <span class="uppercase text-xs">overall progress</span>
-              <div class="w-40 rounded-full bg-gray-200 h-2">
+            <h4 class="text-lg font-semibold tracking-wide text-gray-800 mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position) %> </h4>
+            <div class="flex items-center justify-center space-x-3 mt-1">
+              <span class="uppercase text-[10px] tracking-wide text-gray-800"><%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position))} overall progress" %></span>
+              <div class="w-52 rounded-full bg-gray-200 h-2">
                 <div class="rounded-full bg-primary h-2" style={"width: #{get_current_node_progress(@current_level_nodes, @current_position, @current_user_id, @section.id)}%"}></div>
               </div>
             </div>
           </div>
           <button phx-click="next_node" class={if @current_position + 1 == length(@current_level_nodes), do: "grayscale pointer-events-none"}>
-            <i class="fa-regular fa-circle-right text-primary"></i>
+            <i class="fa-regular fa-circle-right text-primary text-xl"></i>
           </button>
         </section>
         <%= for {resource, index} <- get_current_node(@current_level_nodes, @current_position)["children"] |> Enum.with_index() do %>
-          <section class="flex flex-row w-full p-9">
-            <div class="flex flex-col mr-4">
-              <h4
-                class={"text-base font-semibold #{if resource["type"] == "container", do: "underline cursor-pointer"}"}
-                phx-click="go_down"
-                phx-value-resource_id={resource["id"]}
-                phx-value-selected_resource_index={index}
-                phx-value-resource_type={resource["type"]}>
-                <%= if resource["type"] == "container", do: "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}", else: resource["title"] %>
-              </h4>
-            </div>
-            <span class="w-80 text-center text-xs bg-gray-200 px-3 py-2 rounded-sm ml-auto mr-4"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
+          <section class="flex flex-row items-center w-full p-8">
+            <h4
+              class={"text-sm font-bold tracking-wide text-gray-800 #{if resource["type"] == "container", do: "underline cursor-pointer"}"}
+              phx-click="go_down"
+              phx-value-resource_id={resource["id"]}
+              phx-value-selected_resource_index={index}
+              phx-value-resource_type={resource["type"]}>
+              <%= if resource["type"] == "container", do: "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}", else: resource["title"] %>
+            </h4>
+            <span class="w-64 h-10 text-sm tracking-wide text-gray-800 bg-gray-100 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
             <button class="torus-button primary h-10" phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]}>Open</button>
           </section>
         <% end %>
