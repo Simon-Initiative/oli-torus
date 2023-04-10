@@ -182,7 +182,7 @@ const createBlankScreenRules = (
     if (dest) {
       const rule = createRuleTemplate('blank-screen-default');
       rule.event.params.actions = [createNavigationAction(dest)];
-      rules.push(defaultNextScreenRule());
+      rules.push(rule);
     } else {
       rules.push(defaultNextScreenRule());
     }
