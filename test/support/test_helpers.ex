@@ -584,7 +584,7 @@ defmodule Oli.TestHelpers do
     # Project survey
     survey_revision =
       insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("survey"),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         author_id: author.id,
         title: "Course Survey"
       )

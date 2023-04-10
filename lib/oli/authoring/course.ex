@@ -347,10 +347,12 @@ defmodule Oli.Authoring.Course do
     |> join(:left, [_, rev], rev2 in Revision,
       on: rev.resource_id == rev2.resource_id and rev2.id > rev.id
     )
+    |> join(:inner, [pr], p in Project, on: pr.project_id == p.id)
     |> where(
-      [pr, rev, rev2],
+      [pr, rev, rev2, p],
       pr.project_id == ^project_id and
-        rev.resource_type_id == ^ResourceType.get_id_by_type("survey") and rev.deleted == false and
+        rev.resource_id == p.required_survey_resource_id and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and rev.deleted == false and
         is_nil(rev2)
     )
     |> select([_, rev], rev)
@@ -403,7 +405,7 @@ defmodule Oli.Authoring.Course do
           max_attempts: 1,
           scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent")
         },
-        ResourceType.get_id_by_type("survey")
+        ResourceType.get_id_by_type("page")
       )
 
     create_project_resource(%{

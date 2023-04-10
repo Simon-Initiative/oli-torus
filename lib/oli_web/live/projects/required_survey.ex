@@ -41,7 +41,7 @@ defmodule OliWeb.Projects.RequiredSurvey do
 
   def handle_event("set-required-survey", params, socket) do
     %{project_id: project_id, author_id: author_id} = socket.assigns
-    allow_survey = Map.has_key?(params, "survey")
+    allow_survey = Map.has_key?(params, "survey") and String.length(params["survey"]) > 0
 
     if allow_survey do
       Course.create_project_survey(project_id, author_id)

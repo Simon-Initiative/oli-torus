@@ -2186,7 +2186,7 @@ defmodule Oli.Delivery.Sections do
     |> where(
       [s, p, pr, rev, rev2],
       s.id == ^section_id and pr.resource_id == p.required_survey_resource_id and
-        rev.resource_type_id == ^ResourceType.get_id_by_type("survey") and rev.deleted == false and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and rev.deleted == false and
         is_nil(rev2)
     )
     |> select([_, p, _, rev], {p, rev})
@@ -2206,7 +2206,7 @@ defmodule Oli.Delivery.Sections do
     |> where(
       [s, sr, rev, rev2],
       s.id == ^section_id and sr.resource_id == s.required_survey_resource_id and
-        rev.resource_type_id == ^ResourceType.get_id_by_type("survey") and rev.deleted == false and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and rev.deleted == false and
         is_nil(rev2)
     )
     |> select([s, _, rev], {s, rev})

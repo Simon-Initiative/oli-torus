@@ -96,7 +96,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       |> render_change(%{})
 
       updated_project = Oli.Authoring.Course.get_project!(project.id)
-      assert updated_project.required_survey_resource_id != nil
+      assert updated_project.required_survey_resource_id == nil
       refute has_element?(view, "input[name=\"survey\"][checked]")
     end
 
