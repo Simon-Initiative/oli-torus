@@ -1,4 +1,4 @@
-defmodule OliWeb.Projects.ProjectsLiveTest do
+defmodule OliWeb.Projects.OverviewLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
