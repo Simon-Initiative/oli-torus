@@ -851,9 +851,15 @@ defmodule Oli.Delivery.Sections do
       0 -> []
       _ ->
 
-        # create a map of page resource ids to a list of target resource ids that they link to
-        link_map = get_all_page_links(publication_ids)
-        |> Enum.reduce(%{}, fn {source, target}, map ->
+        # create a map of page resource ids to a list of target resource ids that they link to. We
+        # do this both for resource-to-page links and for page to activity links (aka activity-references).
+        # We do this because we want to treat these links the same way when we traverse the graph, and
+        # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
+        # links to a page outside the hierarchy.
+        all_links = MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
+        |> MapSet.to_list()
+
+        link_map = Enum.reduce(all_links, %{}, fn {source, target}, map ->
           case Map.get(map, source) do
             nil -> Map.put(map, source, [target])
             targets -> Map.put(map, source, [target | targets])
@@ -928,6 +934,29 @@ defmodule Oli.Delivery.Sections do
     end)
 
   end
+
+  # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
+  # representing the links of pages to activities
+  defp get_activity_references(publication_ids) do
+    joined_publication_ids = Enum.join(publication_ids, ",")
+
+    sql = """
+    select
+      rev.resource_id,
+      jsonb_path_query(content, '$.** ? (@.type == "activity-reference")')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id IN (#{joined_publication_ids})
+    """
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
+      MapSet.put(links, {source_id, content["activity_id"]})
+    end)
+
+  end
+
 
 
   @doc """
