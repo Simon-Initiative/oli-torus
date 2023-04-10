@@ -2,9 +2,14 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Metrics
 
   @impl Phoenix.LiveView
-  def mount(_params, %{"section_slug" => section_slug} = _session, socket) do
+  def mount(
+        _params,
+        %{"section_slug" => section_slug, "current_user_id" => current_user_id} = _session,
+        socket
+      ) do
     section =
       Sections.get_section_by_slug(section_slug)
       |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -19,8 +24,9 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
        current_level_nodes: hierarchy["children"],
        current_position: current_position,
        current_level: current_level,
-       section_slug: section_slug,
-       breadcrumbs_tree: [{current_level, current_position, "Curriculum"}]
+       section: section,
+       breadcrumbs_tree: [{current_level, current_position, "Curriculum"}],
+       current_user_id: current_user_id
      )}
   end
 
@@ -43,7 +49,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
             <div class="flex items-center justify-center space-x-3">
               <span class="uppercase text-xs">overall progress</span>
               <div class="w-40 rounded-full bg-gray-200 h-2">
-                <div class="rounded-full bg-primary h-2" style={"width: #{Enum.random(0..100)}%"}></div>
+                <div class="rounded-full bg-primary h-2" style={"width: #{get_current_node_progress(@current_level_nodes, @current_position, @current_user_id, @section.id)}%"}></div>
               </div>
             </div>
           </div>
@@ -201,7 +207,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
          Routes.page_delivery_path(
            socket,
            String.to_existing_atom(resource_type),
-           socket.assigns[:section_slug],
+           socket.assigns.section.slug,
            resource_slug
          )
      )}
@@ -249,4 +255,32 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
 
   defp get_current_node(current_level_nodes, current_position),
     do: Enum.fetch!(current_level_nodes, current_position)
+
+  defp get_current_node_progress(
+         current_level_nodes,
+         current_position,
+         current_user_id,
+         section_id
+       ) do
+    case get_current_node(current_level_nodes, current_position) do
+      %{"type" => "container", "id" => container_id} ->
+        Metrics.progress_for(section_id, current_user_id, container_id)
+        |> Map.get(current_user_id)
+        |> case do
+          nil -> 0.0
+          progress -> progress * 100
+        end
+
+      %{"type" => "page", "id" => page_id} ->
+        Metrics.progress_for_page(section_id, [current_user_id], page_id)
+        |> Map.get(current_user_id)
+        |> case do
+          nil -> 0.0
+          progress -> progress * 100
+        end
+
+      _ ->
+        0.0
+    end
+  end
 end
