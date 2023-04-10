@@ -143,7 +143,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
 
       assert student_for_tr_1 =~ "Messi, Lionel"
-      assert element(view, "#students_search_input-input", "Messi")
+
+      assert element(view, "#students_search_input-input") |> render() =~ ~s'value="Messi"'
+
       refute render(view) =~ "Jr, Neymar"
       refute render(view) =~ "Suarez, Luis"
       refute render(view) =~ "Di Maria, Angelito"
@@ -165,7 +167,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       assert student_for_tr_1 =~ "Jr, Neymar"
       assert student_for_tr_2 =~ "Di Maria, Angelito"
-      assert element(view, "#header_paging div", "Showing result 2 - 2 of 2 total")
+
+      assert element(view, "#header_paging div:first-child") |> render() =~
+               "Showing result 3 - 4 of 4 total"
+
       assert element(view, "li.page-item.active a", "2")
       refute render(view) =~ "Suarez, Luis"
       refute render(view) =~ "Messi, Lionel"
@@ -212,6 +217,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
 
       assert progress == ["0%", "0%", "0%", "0%"]
+
+      ### filtering by page
+      params = %{page_id: page_1.published_resource.resource_id}
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
+
+      assert progress == ["90%", "60%", "0%", "30%"]
     end
   end
 
