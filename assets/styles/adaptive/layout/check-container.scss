@@ -16,13 +16,15 @@
   flex-direction: row-reverse;
   align-items: center;
 }
-.pullLeftInCheckContainer,
-.checkContainer .pullLeftInCheckContainer {
-  margin-right: auto;
-}
+
+// .pullLeftInCheckContainer,
+// .checkContainer .pullLeftInCheckContainer {
+//   margin-right: auto;
+// }
 
 .checkContainer {
   .buttonContainer {
+    order: 5;
     display: flex;
     transition: opacity 0.3s ease;
     position: relative;
@@ -109,8 +111,10 @@
 
 //Navigation Container
 .navigationContainer {
+  order: 1;
   position: relative;
   top: -186px !important;
+  width: 240px;
   bottom: 61px;
   display: flex;
   min-height: 61px;
@@ -128,6 +132,7 @@
     justify-content: center;
   }
   .theme-no-history-restart__icon {
+    /* TODO: Probably shouldn't rely on externally hosted hard-coded urls */
     background: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx-resource/images/icon-restart-dark.svg);
     background-position: center;
     background-repeat: no-repeat;
@@ -143,6 +148,10 @@
 /*-----------------------------------------
     Restart Lesson Button
 -----------------------------------------*/
+.navigationContainer .theme-no-history-restart {
+  position: relative;
+  left: 100px;
+}
 
 .navigationContainer .theme-no-history-restart,
 .navigationContainer .navigationToggle,
@@ -292,7 +301,10 @@
 
 //History Step Buttons
 .checkContainer {
+  display: flex;
+  flex-direction: row;
   .historyStepContainer {
+    order: 2;
     display: flex !important;
     align-items: center;
     width: 100px;
@@ -340,6 +352,7 @@
   //Button Toggle
   .navigationToggle {
     height: 40px;
+    margin-left: 20px;
     padding: 0 20px;
     font-size: 12px;
     font-weight: 600;
@@ -547,10 +560,12 @@
     Feedback
 -----------------------------------------*/
 .feedbackContainer {
+  min-width: 240px;
+  margin-left: auto;
+  order: 4;
   //Toggle Button
   .toggleFeedbackBtn {
     position: relative;
-    top: 20px;
     margin: 0;
   }
   .toggleFeedbackBtn .icon {
@@ -579,7 +594,7 @@
     box-shadow: 0 0 6px rgb(0 0 0 / 20%);
     border-radius: 4px;
     bottom: 70px;
-    right: 80px;
+    right: 35px;
     opacity: 1;
     transform: scale(1) translate3d(0, 0, 0);
     transform-origin: bottom center;
