@@ -1,4 +1,3 @@
-import guid from '../../../../../utils/guid';
 import {
   IActivity,
   IAdaptiveRule,

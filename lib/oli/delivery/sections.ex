@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Sections do
   """
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
@@ -325,6 +326,28 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns the count of enrollments for a given section.
+  By default it returns the students count, but we can get more roles by providing
+  a list of lt1_1p3_context_roles ids as a second argument
+  """
+  def count_enrollments(section_slug, role_ids \\ [4]) do
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: e_cr in EnrollmentContextRole,
+        on: e.id == e_cr.enrollment_id,
+        join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
+        on: e_cr.context_role_id == cr.id,
+        where: s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids,
+        select: count(e)
+      )
+
+    Repo.one(query)
   end
 
   @doc """
@@ -2006,6 +2029,43 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  @doc """
+  Returns a tuple with the units and modules from a section.
+  In case there are no units or modules, it returns a zero count and the pages
+  of the curriculum.
+  {container_count, containers} or {0, pages}
+  """
+  def get_units_and_modules_containers(section_slug) do
+    query =
+      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where:
+          s.slug == ^section_slug and sr.numbering_level in [1, 2] and rev.resource_type_id == 2,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index
+        }
+
+    case Repo.all(query) do
+      [] -> {0, get_pages(section_slug)}
+      containers -> {length(containers), containers}
+    end
+  end
+
+  defp get_pages(section_slug) do
+    query =
+      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_index: sr.numbering_index
+        }
+
+    Repo.all(query)
+  end
+
   def get_graded_pages(section_slug, user_id) do
     {graded_pages_with_date, other_resources} =
       SectionResource
@@ -2029,7 +2089,8 @@ defmodule Oli.Delivery.Sections do
       )
       |> where(
         [sr, s, _, _, _, gc, gc2],
-        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and (is_nil(gc2) or gc2.type == :schedule)
+        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and
+          (is_nil(gc2) or gc2.type == :schedule)
       )
       |> select([sr, s, _, _, rev, gc, gc2], %{
         id: sr.id,
@@ -2043,11 +2104,12 @@ defmodule Oli.Delivery.Sections do
             sr.end_date
           ),
         scheduled_type: sr.scheduling_type,
-        gate_type: fragment(
-          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
-          gc2.type,
-          gc.type
-        ),
+        gate_type:
+          fragment(
+            "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
+            gc2.type,
+            gc.type
+          ),
         graded: rev.graded,
         resource_type_id: rev.resource_type_id,
         numbering_level: sr.numbering_level,
@@ -2072,14 +2134,14 @@ defmodule Oli.Delivery.Sections do
 
     graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
 
-    {pages, remaining} = get_flatten_hierarchy(root_container.children, resources)
-    |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
-
-      case Map.get(remaining, id) do
-        nil -> {acc, remaining}
-        page -> {[page | acc], Map.delete(remaining, id)}
-      end
-    end)
+    {pages, remaining} =
+      get_flatten_hierarchy(root_container.children, resources)
+      |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
+        case Map.get(remaining, id) do
+          nil -> {acc, remaining}
+          page -> {[page | acc], Map.delete(remaining, id)}
+        end
+      end)
 
     Enum.reverse(pages) ++ Map.values(remaining)
   end

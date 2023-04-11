@@ -65,6 +65,18 @@ export const FlowchartEditor = () => {
     return () => window.removeEventListener('keydown', cheat);
   }, [dispatch]);
 
+  useEffect(() => {
+    // A cheat-code for going to advanced editor
+    const cheat = (e: KeyboardEvent) => {
+      console.info(e.key);
+      if (e.ctrlKey && e.key === 'F2') {
+        dispatch(changeAppMode({ mode: 'expert' }));
+      }
+    };
+    window.addEventListener('keydown', cheat);
+    return () => window.removeEventListener('keydown', cheat);
+  }, [dispatch]);
+
   const onAddScreen = useCallback(
     (params: FlowchartAddScreenParams) => {
       const { prevNodeId, nextNodeId, screenType } = params;

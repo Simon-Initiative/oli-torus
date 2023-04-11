@@ -91,7 +91,6 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
   const onCreate = useCallback(
     (title: string, screenType: ScreenTypes) => {
       closeNewScreenModal();
-
       dispatch(
         addFlowchartScreen({
           title,

@@ -2,8 +2,7 @@
 import { MarkerType } from 'reactflow';
 import guid from '../../../../utils/guid';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
-import { AllPaths } from './paths/path-types';
-import { buildEdgesForActivity, isEndOfActivityPath, isExitActivityPath } from './paths/path-utils';
+import { buildEdgesForActivity } from './paths/path-utils';
 
 export interface FlowchartPlaceholderNodeData {
   fromScreenId: number;
@@ -77,25 +76,12 @@ export const activitiesToNodes = (children: IActivity[]): FlowchartNode[] =>
       },
     }));
 
-interface PlaceholderNodeAndEdge {
-  node: FlowchartPlaceholderNode;
-  edge: FlowchartEdge;
-}
-
 const createStartNode = (id: string, toScreenId: number): FlowchartStartNode => ({
   id,
   position: { x: 0, y: 0 },
   data: { toScreenId },
   draggable: false,
   type: 'start',
-});
-
-const createPlaceholderNode = (id: string, fromScreenId: number): FlowchartPlaceholderNode => ({
-  id,
-  position: { x: 0, y: 0 },
-  data: { fromScreenId },
-  draggable: false,
-  type: 'placeholder',
 });
 
 const createPlaceholderEdge = (fromScreenId: string, toScreenId: string): FlowchartEdge => ({

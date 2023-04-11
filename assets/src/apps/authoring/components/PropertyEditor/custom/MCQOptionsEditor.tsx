@@ -72,7 +72,7 @@ const OptionsEditor: React.FC<{
   onChange: (v: OptionsType) => void;
   onDelete: () => void;
 }> = ({ value, onChange, onDelete }) => {
-  const [editorOpen, _, openEditor, closeEditor] = useToggle(false);
+  const [editorOpen, , openEditor, closeEditor] = useToggle(false);
   const [tempValue, setTempValue] = useState<{ value: OptionsNodes }>({ value: [] });
 
   const onSave = useCallback(() => {
