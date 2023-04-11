@@ -29,7 +29,6 @@ defmodule Oli.Resources.ResourceType do
   def get_type_by_id(6), do: Map.get(@by_id, 6)
   def get_type_by_id(7), do: Map.get(@by_id, 7)
   def get_type_by_id(8), do: Map.get(@by_id, 8)
-  def get_type_by_id(9), do: Map.get(@by_id, 9)
 
   def get_id_by_type("page"), do: Map.get(@by_type, "page")
   def get_id_by_type("container"), do: Map.get(@by_type, "container")
