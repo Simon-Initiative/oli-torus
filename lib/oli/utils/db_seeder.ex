@@ -580,9 +580,10 @@ defmodule Oli.Seeder do
         create_sample_adaptive_page_content(activity_revision.resource_id)
       )
 
-    attach_pages_to([page_resource], container.resource, container.revision, publication)
+    container_revision = attach_pages_to([page_resource], container.resource, container.revision, publication)
 
     seed
+    |> Map.put(:container, %{resource: container.resource, revision: container_revision})
     |> Map.put(page_resource_tag, page_resource)
     |> Map.put(page_revision_tag, page_revision)
     |> Map.put(activity_resource_tag, activity_resource)

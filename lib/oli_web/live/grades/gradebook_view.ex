@@ -51,8 +51,6 @@ defmodule OliWeb.Grades.GradebookView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-
         graded_pages =
           Oli.Grading.fetch_graded_pages(section.slug)
 

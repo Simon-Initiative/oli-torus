@@ -323,6 +323,7 @@ defmodule Oli.Grading do
           rev.graded == true and
           rev.resource_type_id == ^ResourceType.get_id_by_type("page")
       )
+      |> order_by([_, _, _, _, rev], asc: rev.resource_id)
       |> select([_, _, _, _, rev], rev)
       |> Repo.all()
   end
