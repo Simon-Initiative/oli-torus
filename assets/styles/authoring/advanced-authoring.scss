@@ -72,7 +72,8 @@ $font-family-sans-serif: var(--font-sans);
       transition-property: left, visibility;
       border-left: 1px solid $ui-border-color;
       border-right: 1px solid $ui-border-color;
-
+      height: 100vh;
+      overflow: hidden;
       &.open {
         left: 65px;
         visibility: visible;
@@ -425,8 +426,20 @@ $font-family-sans-serif: var(--font-sans);
       position: relative;
     }
   }
+  .aa-sequence-editor {
+    max-height: 60vh;
+  }
+  .aa-adaptivity-rules {
+    max-height: 30vh;
+  }
   .aa-sequence-editor,
   .aa-adaptivity-rules {
+    overflow-y: auto;
+    .aa-panel-section-title-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
     .aa-sequence,
     .aa-rules-list {
       border-radius: inherit;
