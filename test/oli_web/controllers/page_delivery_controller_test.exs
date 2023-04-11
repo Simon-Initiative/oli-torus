@@ -180,7 +180,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "handles student page access by an enrolled student", %{
@@ -332,7 +332,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "shows the prologue page on an assessment", %{
@@ -862,7 +862,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         recycle(conn)
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
       assert user.sub != nil
 
       # access again, verify the same user is used that was created before
@@ -874,7 +874,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       same_user = Pow.Plug.current_user(conn)
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
       assert user.id == same_user.id
       assert user.sub == same_user.sub
     end
@@ -915,7 +915,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "redirects to enroll page if no user is logged in", %{conn: conn, section: section} do
@@ -960,7 +960,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "handles student access who has not paid when section not requires enrollment", %{
@@ -1311,7 +1311,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "index preview redirects ok when section slug ends with 'preview'", %{
@@ -1326,7 +1326,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, updated_section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "container preview redirects ok", %{
