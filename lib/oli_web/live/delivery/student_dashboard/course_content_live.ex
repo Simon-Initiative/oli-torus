@@ -46,9 +46,9 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
             <i class="fa-regular fa-circle-left text-primary text-xl"></i>
           </button>
           <div class="flex flex-col">
-            <h4 id="course_browser_node_title" class="text-lg font-semibold tracking-wide text-gray-800 mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position) %> </h4>
+            <h4 id="course_browser_node_title" class="text-lg font-semibold tracking-wide text-gray-800 mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position, @section.display_curriculum_item_numbering) %> </h4>
             <div class="flex items-center justify-center space-x-3 mt-1">
-              <span class="uppercase text-[10px] tracking-wide text-gray-800"><%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position))} overall progress" %></span>
+              <span class="uppercase text-[10px] tracking-wide text-gray-800"><%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering)} overall progress" %></span>
               <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
                 <div class="rounded-full bg-primary h-2" style={"width: #{get_current_node_progress(@current_level_nodes, @current_position, @current_user_id, @section.id)}%"}></div>
               </div>
@@ -172,7 +172,10 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
       socket.assigns.breadcrumbs_tree ++
         [
           {socket.assigns.current_level + 1, selected_resource_index,
-           get_resource_prefix(current_node)}
+           get_resource_prefix(
+             current_node,
+             socket.assigns.section.display_curriculum_item_numbering
+           )}
         ]
 
     socket =
@@ -315,19 +318,31 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   defp scheduled_date_type(:inclass_activity), do: "In class on"
   defp scheduled_date_type(_), do: "Due by"
 
-  defp get_resource_name(current_level_nodes, current_position) do
+  defp get_resource_name(current_level_nodes, current_position, display_curriculum_item_numbering) do
     current_node = get_current_node(current_level_nodes, current_position)
-    "#{get_resource_prefix(current_node)}: #{current_node["title"]}"
+
+    "#{get_resource_prefix(current_node, display_curriculum_item_numbering)}: #{current_node["title"]}"
   end
 
-  defp get_resource_prefix(%{"type" => "page"} = page), do: "Page #{page["index"]}"
+  defp get_resource_prefix(%{"type" => "page"} = page, display_curriculum_item_numbering),
+    do: if(display_curriculum_item_numbering, do: "Page #{page["index"]}", else: "Page")
 
-  defp get_resource_prefix(%{"type" => "container", "level" => "1"} = unit),
-    do: "Unit #{unit["index"]}"
+  defp get_resource_prefix(
+         %{"type" => "container", "level" => "1"} = unit,
+         display_curriculum_item_numbering
+       ),
+       do: if(display_curriculum_item_numbering, do: "Unit #{unit["index"]}", else: "Unit")
 
-  defp get_resource_prefix(%{"type" => "container", "level" => "2"} = module),
-    do: "Module #{module["index"]}"
+  defp get_resource_prefix(
+         %{"type" => "container", "level" => "2"} = module,
+         display_curriculum_item_numbering
+       ),
+       do: if(display_curriculum_item_numbering, do: "Module #{module["index"]}", else: "Module")
 
-  defp get_resource_prefix(%{"type" => "container", "level" => _} = section),
-    do: "Section #{section["index"]}"
+  defp get_resource_prefix(
+         %{"type" => "container", "level" => _} = section,
+         display_curriculum_item_numbering
+       ),
+       do:
+         if(display_curriculum_item_numbering, do: "Section #{section["index"]}", else: "Section")
 end
