@@ -4,8 +4,8 @@ defmodule OliWeb.Projects.RequiredSurvey do
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
 
-  attr :project_id, :integer, required: true
-  attr :author_id, :integer, required: true
+  attr :project, :map, required: true
+  attr :author_id, :integer, required: false
   attr :enabled, :boolean, required: true
   attr :is_section, :boolean, default: false
 
@@ -29,10 +29,10 @@ defmodule OliWeb.Projects.RequiredSurvey do
   def handle_event("set-required-survey", _params, %{assigns: %{is_section: true}} = socket) do
     socket =
       if socket.assigns.enabled do
-        Sections.delete_required_survey(socket.assigns.project_id)
+        Sections.delete_required_survey(socket.assigns.project)
         assign(socket, enabled: false)
       else
-        Sections.create_required_survey(socket.assigns.project_id)
+        Sections.create_required_survey(socket.assigns.project)
         assign(socket, enabled: true)
       end
 
@@ -40,13 +40,13 @@ defmodule OliWeb.Projects.RequiredSurvey do
   end
 
   def handle_event("set-required-survey", params, socket) do
-    %{project_id: project_id, author_id: author_id} = socket.assigns
+    %{project: project, author_id: author_id} = socket.assigns
     allow_survey = Map.has_key?(params, "survey") and String.length(params["survey"]) > 0
 
     if allow_survey do
-      Course.create_project_survey(project_id, author_id)
+      Course.create_project_survey(project, author_id)
     else
-      Course.delete_project_survey(project_id)
+      Course.delete_project_survey(project)
     end
 
     {:noreply, assign(socket, enabled: allow_survey)}

@@ -60,7 +60,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         show_required_section_config =
           if section.required_survey_resource_id != nil or
-               Oli.Authoring.Course.get_project_survey(section.base_project_id) do
+               Sections.get_parent_project_survey(section.slug) do
             true
           else
             false
@@ -182,8 +182,7 @@ defmodule OliWeb.Sections.OverviewView do
       >
         {#if @show_required_section_config}
           {live_component(RequiredSurvey, %{
-            project_id: @section.id,
-            author_id: 3,
+            project: @section,
             enabled: @section.required_survey_resource_id,
             is_section: true,
             id: "section-required-survey-section"

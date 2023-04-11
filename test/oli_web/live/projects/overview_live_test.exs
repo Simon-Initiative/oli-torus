@@ -86,7 +86,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
 
     test "project can disable required surveys", %{conn: conn, author: author} do
       project = create_project_with_author(author)
-      Oli.Authoring.Course.create_project_survey(project.id, author.id)
+      Oli.Authoring.Course.create_project_survey(project, author.id)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
 

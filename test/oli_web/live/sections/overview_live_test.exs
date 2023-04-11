@@ -407,7 +407,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
     test "can disable required surveys", %{conn: conn, instructor: instructor, section: section} do
       enroll_user_to_section(instructor, section, :context_instructor)
-      Oli.Delivery.Sections.create_required_survey(section.id)
+      Oli.Delivery.Sections.create_required_survey(section)
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
@@ -427,12 +427,17 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section: section
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
-      Oli.Authoring.Course.delete_project_survey(section.base_project_id)
+      Oli.Authoring.Course.delete_project_survey(section)
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       refute has_element?(view, "form[phx-change=\"set-required-survey\"]")
-      assert has_element?(view, "p", "You are not allowed to have student surveys in this resource.")
+
+      assert has_element?(
+               view,
+               "p",
+               "You are not allowed to have student surveys in this resource."
+             )
     end
   end
 end

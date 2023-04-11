@@ -549,7 +549,11 @@ defmodule Oli.TestHelpers do
 
     # Publication of project with root container
     publication =
-      insert(:publication, %{project: project, published: nil, root_resource_id: container_resource.id})
+      insert(:publication, %{
+        project: project,
+        published: nil,
+        root_resource_id: container_resource.id
+      })
 
     # Publish root container resource
     insert(:published_resource, %{
@@ -582,14 +586,18 @@ defmodule Oli.TestHelpers do
     author = insert(:author)
 
     # Project survey
+    survey_resource = insert(:resource)
+
     survey_revision =
       insert(:revision,
+        resource: survey_resource,
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         author_id: author.id,
         title: "Course Survey"
       )
 
-    project = insert(:project, required_survey_resource_id: survey_revision.resource.id, authors: [author])
+    project =
+      insert(:project, required_survey_resource_id: survey_revision.resource.id, authors: [author])
 
     # Associate survey to the project
     insert(:project_resource, %{project_id: project.id, resource_id: survey_revision.resource.id})
@@ -646,6 +654,14 @@ defmodule Oli.TestHelpers do
     # Publication of project with root container
     publication =
       insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish project survey
+    insert(:published_resource, %{
+      publication: publication,
+      resource: survey_resource,
+      revision: survey_revision,
+      author: author
+    })
 
     # Publish root container resource
     insert(:published_resource, %{
@@ -806,7 +822,7 @@ defmodule Oli.TestHelpers do
           graded_page_3_resource.id,
           graded_page_4_resource.id,
           graded_page_5_resource.id,
-          graded_page_6_resource.id,
+          graded_page_6_resource.id
         ],
         content: %{},
         deleted: false,
@@ -910,7 +926,6 @@ defmodule Oli.TestHelpers do
       user: student,
       data: %GatingConditionData{end_datetime: nil}
     })
-
 
     %{
       section: section,

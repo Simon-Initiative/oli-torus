@@ -8,10 +8,11 @@ defmodule Oli.Authoring.Course do
   alias Oli.Groups.CommunityVisibility
   alias Oli.Inventories
   alias Oli.Publishing
+  alias Oli.Publishing.Publications.Publication
+  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
-  alias Oli.Delivery.Sections.{Section, SectionResource}
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -341,22 +342,27 @@ defmodule Oli.Authoring.Course do
     }
   end
 
-  def get_project_survey(project_id) do
-    ProjectResource
-    |> join(:inner, [pr], rev in Revision, on: pr.resource_id == rev.resource_id)
-    |> join(:left, [_, rev], rev2 in Revision,
-      on: rev.resource_id == rev2.resource_id and rev2.id > rev.id
-    )
-    |> join(:inner, [pr], p in Project, on: pr.project_id == p.id)
+  defp project_has_survey?(project_id) do
+    Project
+    |> where([p], p.id == ^project_id and not is_nil(p.required_survey_resource_id))
+    |> select([p], p.required_survey_resource_id)
+    |> Repo.one()
+    |> Kernel.!=(nil)
+  end
+
+  defp get_project_survey(project_id) do
+    PublishedResource
+    |> join(:inner, [pr], rev in Revision, on: pr.revision_id == rev.id)
+    |> join(:inner, [_, _, proj], proj in Project, on: proj.id == ^project_id)
     |> where(
-      [pr, rev, rev2, p],
-      pr.project_id == ^project_id and
-        rev.resource_id == p.required_survey_resource_id and
-        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and rev.deleted == false and
-        is_nil(rev2)
+      [pr, rev, proj],
+      pr.publication_id in subquery(
+        Publication
+        |> where([p], is_nil(p.published) and p.project_id == ^project_id)
+        |> select([p], p.id)
+      ) and pr.resource_id == proj.required_survey_resource_id
     )
     |> select([_, rev], rev)
-    |> limit(1)
     |> Repo.one()
   end
 
@@ -368,67 +374,40 @@ defmodule Oli.Authoring.Course do
     |> Repo.update()
   end
 
-  defp remove_survey_for_existing_project_sections(project_id, survey_id) do
-    # Set survey resource id to nil
-    project_sections_query =
-      Section
-      |> where([s], s.base_project_id == ^project_id)
-
-    Repo.update_all(project_sections_query,
-      set: [
-        required_survey_resource_id: nil
-      ]
-    )
-
-    # Remove section resources related to that survey
-    section_resource_surveys_query =
-      SectionResource
-      |> where([sr], sr.project_id == ^project_id and sr.resource_id == ^survey_id)
-
-    Repo.delete_all(section_resource_surveys_query)
-  end
-
-  def create_project_survey(project_id, author_id) do
-    case get_project_survey(project_id) do
-      nil -> do_create_project_survey(project_id, author_id)
+  def create_project_survey(project, author_id) do
+    case project_has_survey?(project.id) do
+      false -> do_create_project_survey(project, author_id)
       _ -> {:error, "The project already has a survey"}
     end
   end
 
-  defp do_create_project_survey(project_id, author_id) do
-    {:ok, revision} =
-      Oli.Resources.create_new(
-        %{
-          title: "Course Survey",
-          project_id: project_id,
-          author_id: author_id,
-          max_attempts: 1,
-          scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent")
-        },
-        ResourceType.get_id_by_type("page")
-      )
+  defp do_create_project_survey(project, author_id) do
+    {:ok, %{revision: revision}} =
+      create_and_attach_resource(project, %{
+        title: "Course Survey",
+        author_id: author_id,
+        max_attempts: 1,
+        scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent"),
+        resource_type_id: ResourceType.get_id_by_type("page")
+      })
 
-    create_project_resource(%{
-      project_id: project_id,
-      resource_id: revision.resource_id
-    })
+    update_project_required_survey_resource_id(project.id, revision.resource_id)
 
-    update_project_required_survey_resource_id(project_id, revision.resource_id)
+    Oli.Publishing.ChangeTracker.track_revision(project.slug, revision)
   end
 
-  def delete_project_survey(project_id) do
-    case get_project_survey(project_id) do
-      nil -> {:error, "The project doesn't have a survey"}
-      project_survey -> do_delete_project_survey(project_id, project_survey)
+  def delete_project_survey(project) do
+    case project_has_survey?(project.id) do
+      false -> {:error, "The project doesn't have a survey"}
+      _ -> do_delete_project_survey(project)
     end
   end
 
-  defp do_delete_project_survey(project_id, project_survey) do
-    project_survey
-    |> Revision.changeset(%{deleted: true})
-    |> Repo.update()
-
-    remove_survey_for_existing_project_sections(project_id, project_survey.resource_id)
-    update_project_required_survey_resource_id(project_id, nil)
+  defp do_delete_project_survey(project) do
+    case get_project_survey(project.id) do
+      revision ->
+        update_project_required_survey_resource_id(project.id, nil)
+        Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
+    end
   end
 end
