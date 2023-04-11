@@ -2,6 +2,8 @@ import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import { formatExpression } from 'adaptivity/scripting';
+import { MCQOptionsEditor } from '../../../apps/authoring/components/PropertyEditor/custom/MCQOptionsEditor';
+import { MCQCorrectAnswerEditor } from '../../../apps/authoring/components/PropertyEditor/custom/MCQCorrectAnswerEditor';
 
 export interface McqItem {
   scoreValue: number;
@@ -66,6 +68,84 @@ export const schema: JSONSchema7Object = {
     type: 'boolean',
     description: 'specifies whether MCQ is enabled',
     default: true,
+  },
+};
+
+export const simpleSchema: JSONSchema7Object = {
+  fontSize: {
+    title: 'Font Size',
+    type: 'number',
+    default: 12,
+  },
+  layoutType: {
+    title: 'Layout',
+    type: 'string',
+    description: 'specifies the layout type for options',
+    enum: ['horizontalLayout', 'verticalLayout'],
+    default: 'verticalLayout',
+  },
+  multipleSelection: {
+    title: 'Multiple Selection',
+    type: 'boolean',
+    default: false,
+    description: 'specifies whether multiple items can be selected',
+  },
+  randomize: {
+    title: 'Randomize Order',
+    type: 'boolean',
+    description: 'specifies whether to randomize the MCQ items',
+    default: false,
+  },
+  mcqItems: {
+    title: 'MCQ Items',
+    type: 'array',
+    items: {},
+  },
+  correctAnswer: {
+    // To support multiple selection, this is an array of whether each option is correct
+    title: 'Correct Answer',
+    type: 'array',
+    items: {
+      type: 'boolean',
+    },
+    default: [true],
+  },
+  correctFeedback: {
+    title: 'Correct Feedback',
+    type: 'string',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incorrect Feedback',
+    type: 'string',
+    default: '',
+  },
+  commonErrorFeedback: {
+    title: 'Advanced Feedback',
+    type: 'array',
+    default: [],
+    items: {
+      type: 'string',
+    },
+  },
+};
+
+export const simpleUiSchema = {
+  'ui:order': [
+    'fontSize',
+    'layoutType',
+    'mcqItems',
+    'multipleSelection',
+    'correctAnswer',
+    'randomize',
+    'correctFeedback',
+    'incorrectFeedback',
+    'commonErrorFeedback',
+  ],
+  correctAnswer: { 'ui:widget': 'MCQCorrectAnswerEditor' },
+  mcqItems: { 'ui:widget': 'MCQOptionsEditor' },
+  commonErrorFeedback: {
+    'ui:widget': 'MCQCustomErrorFeedbackAuthoring',
   },
 };
 
@@ -140,5 +220,9 @@ export const createSchema = (): Partial<McqModel> => {
     showNumbering: false,
     enabled: true,
     mcqItems: [1, 2, 3].map(createSimpleOption),
+    correctAnswer: [true, false, false],
+    correctFeedback: '',
+    incorrectFeedback: '',
+    commonErrorFeedback: [],
   };
 };

@@ -37,7 +37,7 @@
     "@popperjs/core": "^2.11.6",
     "@reduxjs/toolkit": "^1.5.1",
     "@restart/hooks": "^0.3.26",
-    "@rjsf/bootstrap-4": "^3.0.0",
+    "@rjsf/bootstrap-4": "^3.2.1",
     "@rjsf/core": "^4.2.0",
     "@stripe/stripe-js": "^1.18.0",
     "@tailwindcss/container-queries": "^0.1.0",

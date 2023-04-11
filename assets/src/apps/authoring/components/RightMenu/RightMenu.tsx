@@ -2,12 +2,13 @@
 import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 
 import {
+  selectAppMode,
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
@@ -42,12 +43,16 @@ import bankPropsSchema, {
 } from '../PropertyEditor/schemas/bankScreen';
 import lessonSchema, {
   lessonUiSchema,
+  simpleLessonSchema,
+  simpleLessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
 
 import screenSchema, {
   screenUiSchema,
+  simpleScreenSchema,
+  simpleScreenUiSchema,
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
@@ -66,6 +71,8 @@ const RightMenu: React.FC<any> = () => {
   const currentLesson = useSelector(selectPageState);
   const currentGroup = useSelector(selectCurrentGroup);
   const currentPartSelection = useSelector(selectCurrentSelection);
+  const appMode = useSelector(selectAppMode);
+  const flowchartMode = appMode === 'flowchart';
 
   // TODO: dynamically load schema from Part Component configuration
   const currentSequenceId = useSelector(selectCurrentSequenceId);
@@ -74,36 +81,51 @@ const RightMenu: React.FC<any> = () => {
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
-  const [scrData, setScreenData] = useState();
-  const [scrSchema, setScreenSchema] = useState<JSONSchema7>();
-  const [scrUiSchema, setScreenUiSchema] = useState<UiSchema>();
-  const [questionBankData, setBankData] = useState<any>();
-  const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
-
-  useEffect(() => {
-    if (!currentActivity) {
-      return;
-    }
-    /* console.log('CURRENT', { currentActivity, currentLesson }); */
-    setScreenData(
+  const scrUiSchema = useMemo(
+    () =>
       currentSequence?.custom.isBank
+        ? BankPropsUiSchema
+        : flowchartMode
+        ? simpleScreenUiSchema
+        : screenUiSchema,
+    [currentSequence?.custom.isBank, flowchartMode],
+  );
+
+  const scrSchema = useMemo(
+    () =>
+      currentSequence?.custom.isBank
+        ? bankPropsSchema
+        : flowchartMode
+        ? simpleScreenSchema
+        : screenSchema,
+    [currentSequence?.custom.isBank, flowchartMode],
+  );
+
+  const questionBankData = useMemo(
+    () => transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>),
+    [currentSequence],
+  );
+
+  const scrData = useMemo(
+    () =>
+      !currentActivity
+        ? null
+        : currentSequence?.custom.isBank
         ? transformBankPropsModeltoSchema(currentActivity)
         : transformScreenModeltoSchema(currentActivity),
-    );
-    setScreenSchema(currentSequence?.custom.isBank ? bankPropsSchema : screenSchema);
-    setScreenUiSchema(currentSequence?.custom.isBank ? BankPropsUiSchema : screenUiSchema);
+    [currentActivity, currentSequence],
+  );
 
-    setBankData(transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>));
-    setBankSchema(bankSchema);
-    const currentIds: string[] =
+  const existingIds = useMemo(
+    () =>
       currentActivityTree?.reduce((acc, activity) => {
         const ids: string[] = (activity.content?.partsLayout || []).map(
           (p: IPartLayout): string => p.id,
         );
         return acc.concat(ids);
-      }, [] as string[]) || [];
-    setExistingIds(currentIds);
-  }, [currentActivity, currentSequence]);
+      }, [] as string[]) || [],
+    [currentActivityTree],
+  );
 
   // should probably wrap this in state too, but it doesn't change really
   const lessonData = transformLessonModel(currentLesson);
@@ -213,8 +235,6 @@ const RightMenu: React.FC<any> = () => {
     [currentLesson, dispatch],
   );
 
-  const [existingIds, setExistingIds] = useState<string[]>([]);
-
   return (
     <Tabs
       className="aa-panel-section-title-bar aa-panel-tabs"
@@ -224,8 +244,8 @@ const RightMenu: React.FC<any> = () => {
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
         <div className="lesson-tab overflow-hidden">
           <PropertyEditor
-            schema={lessonSchema as JSONSchema7}
-            uiSchema={lessonUiSchema}
+            schema={flowchartMode ? simpleLessonSchema : lessonSchema}
+            uiSchema={flowchartMode ? simpleLessonUiSchema : lessonUiSchema}
             value={lessonData}
             triggerOnChange={['CustomLogic']}
             onChangeHandler={lessonPropertyChangeHandler}
@@ -237,7 +257,7 @@ const RightMenu: React.FC<any> = () => {
           <div className="bank-tab p-3">
             <PropertyEditor
               key={currentActivity.id}
-              schema={questionBankSchema as JSONSchema7}
+              schema={bankSchema}
               uiSchema={bankUiSchema}
               value={questionBankData}
               onChangeHandler={bankPropertyChangeHandler}

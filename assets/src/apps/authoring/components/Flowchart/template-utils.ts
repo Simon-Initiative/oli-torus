@@ -10,7 +10,7 @@ interface HasIdAndChildren {
 
 // The template has id's for all the parts & elements in it, but we need to make sure they're unique, so replace
 // them with new ones.
-const replaceIds =
+export const replaceIds =
   (idMap: Record<string, string>) =>
   <T extends HasIdAndChildren>(originalPart: T): T => {
     const part = clone(originalPart);

@@ -39,6 +39,11 @@ export interface IncorrectPath extends ComponentPath {
   type: 'incorrect';
 }
 
+export interface NumericCommonErrorPath extends ComponentPath {
+  type: 'numeric-common-error';
+  feedbackIndex: number;
+}
+
 export interface OptionCommonErrorPath extends ComponentPath {
   type: 'option-common-error';
   selectedOption: number;
@@ -48,8 +53,14 @@ export interface AlwaysGoToPath extends DestinationPath {
   type: 'always-go-to';
 }
 
+// End of activity goes to the end screen
 export interface EndOfActivityPath extends BasePath {
   type: 'end-of-activity';
+}
+
+// Exit activity goes from the end screen and exits.
+export interface ExitActivityPath extends BasePath {
+  type: 'exit-activity';
 }
 
 // All our path types representing a "correct" answer
@@ -60,23 +71,31 @@ export interface UnknownPathWithDestination extends DestinationPath {
   type: 'unknown-reason-path';
 }
 
-export type ComponentPaths = CorrectPath | IncorrectPath | OptionCommonErrorPath;
+export type ComponentPaths =
+  | CorrectPath
+  | IncorrectPath
+  | OptionCommonErrorPath
+  | NumericCommonErrorPath;
 
 export type DestinationPaths = ComponentPaths | AlwaysGoToPath | UnknownPathWithDestination;
 
-export type AllPaths = EndOfActivityPath | DestinationPaths;
+export type AllPaths = EndOfActivityPath | ExitActivityPath | DestinationPaths;
 
 export const ruleTypes = [
   'unknown-reason-path',
   'always-go-to',
   'correct',
   'incorrect',
+  'numeric-common-error',
   'option-common-error',
   'end-of-activity',
+  'exit-activity',
   'unknown-reason-path',
 ] as const;
 
 export const componentTypes = [
+  'numeric-common-error',
+  'option-common-error',
   'multiple-choice-correct',
   'multiple-choice-incorrect',
   'multiple-choice-common-error',

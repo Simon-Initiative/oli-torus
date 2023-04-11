@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { create } from 'data/persistence/activity';
 import { cloneT } from '../../../../../utils/common';
 import guid from '../../../../../utils/guid';
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
   selectActivityById,
   selectAllActivities,
@@ -28,7 +27,11 @@ import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/de
 import { savePage } from '../../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
-import { createAlwaysGoToPath, createEndOfActivityPath } from '../paths/path-factories';
+import {
+  createAlwaysGoToPath,
+  createEndOfActivityPath,
+  createExitPath,
+} from '../paths/path-factories';
 import { AuthoringFlowchartScreenData } from '../paths/path-types';
 import {
   hasDestinationPath,
@@ -36,12 +39,15 @@ import {
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
+import { sortScreens } from '../screens/screen-utils';
+import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;
   toScreenId?: number;
   title?: string;
   screenType?: string;
+  skipPathToNewScreen?: boolean;
 }
 
 /**
@@ -64,7 +70,8 @@ export const addFlowchartScreen = createAsyncThunk(
       const activityTypes = selectActivityTypes(rootState);
       const currentLesson = selectPageState(rootState);
       const sequence = selectSequence(rootState);
-      const otherActivityNames = selectAllActivities(rootState).map((a) => a.title || '');
+      const otherActivities = selectAllActivities(rootState);
+      const otherActivityNames = otherActivities.map((a) => a.title || '');
 
       const group = selectAllGroups(rootState)[0];
 
@@ -79,6 +86,8 @@ export const addFlowchartScreen = createAsyncThunk(
         height: currentLesson.custom.defaultScreenHeight,
       };
 
+      activity.model.custom.maxAttempt = 3;
+
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
         screenType,
@@ -89,7 +98,11 @@ export const addFlowchartScreen = createAsyncThunk(
       if (payload.toScreenId) {
         flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));
       } else {
-        flowchartData.paths.push(createEndOfActivityPath());
+        if (screenType === 'end_screen') {
+          flowchartData.paths.push(createExitPath());
+        } else {
+          flowchartData.paths.push(createEndOfActivityPath());
+        }
       }
 
       const createResults = await create(
@@ -104,10 +117,20 @@ export const addFlowchartScreen = createAsyncThunk(
         return;
       }
 
-      if (payload.fromScreenId) {
-        // In this case, we need to edit that other screen's paths so it goes here.
+      const getLastScreenId = (): number | undefined => {
+        const orderedScreens = sortScreens(otherActivities, sequence);
+        if (orderedScreens.length === 0) {
+          return undefined;
+        }
+        return orderedScreens[orderedScreens.length - 1].resourceId;
+      };
 
-        const fromScreen = cloneT(selectActivityById(rootState, payload.fromScreenId));
+      // If a from-screen isn't specified, then tack it on to the very end of the lesson.
+      const fromScreenId = payload.fromScreenId || getLastScreenId();
+
+      if (fromScreenId && !payload.skipPathToNewScreen) {
+        // In this case, we need to edit that other screen's paths so it goes here.
+        const fromScreen = cloneT(selectActivityById(rootState, fromScreenId));
 
         if (fromScreen) {
           if (payload.toScreenId) {
@@ -162,11 +185,14 @@ export const addFlowchartScreen = createAsyncThunk(
         title,
         tags: [],
       };
+
+      // TODO - figure out initial rules generation here.
       dispatch(saveActivity({ activity: reduxActivity, undoable: false, immediate: true }));
       await dispatch(upsertActivity({ activity: reduxActivity }));
 
       await dispatch(
         addSequenceItem({
+          siblingId: getActivitySlugFromScreenResourceId(fromScreenId, sequence),
           sequence: sequence,
           item: sequenceEntry,
           group,

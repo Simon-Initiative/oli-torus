@@ -1,0 +1,17 @@
+import { TorusBG } from '../TorusBG.tsx';
+import { ScreenNodeBody } from 'apps/authoring/components/Flowchart/chart-components/ScreenNode.tsx';
+import { AddScreenModal } from 'apps/authoring/components/ScreenList/AddScreenModal.tsx';
+import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext.tsx';
+import { sample1 } from './sequence-samples';
+
+import '../../../styles/index.scss';
+
+<Meta title="Advanced Authoring/Add flowchart screen modal" />
+
+# Add screen modal
+
+<TorusBG className="h-[500px]" dark={false}>
+  <AdvancedAuthorStorybookContext>
+    <AddScreenModal />
+  </AdvancedAuthorStorybookContext>
+</TorusBG>

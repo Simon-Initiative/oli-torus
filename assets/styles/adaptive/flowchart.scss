@@ -1,0 +1,98 @@
+$lightBackgroundGrey: #f3f5f8;
+$lightForeground: #696974;
+$darkForeground: #373a44;
+$darkNavyBlue: #222439;
+
+//$primary: #5b1eea; // The previous purple color
+$primary: #3b76d3;
+// $primary: var(--color-delivery-primary);
+
+$headerColor: $darkForeground;
+
+/*-- Misc. --*/
+@import 'misc/normalize';
+@import 'misc/font-families';
+@import 'misc/color-palette';
+@import 'misc/animate';
+
+/*-- Layout --*/
+@import 'layout/header-container';
+@import 'layout/content-container';
+@import 'layout/check-container';
+@import 'layout/background';
+
+/*-- Activity Types --*/
+@import 'activities/text-flow';
+@import 'activities/image';
+@import 'activities/navigation-button';
+@import 'flowchart/mcq';
+@import 'flowchart/text-input';
+@import 'flowchart/dropdown';
+@import 'flowchart/slider';
+@import 'activities/popup';
+@import 'activities/image-carousel';
+@import 'activities/fill-blanks';
+
+/*------------------------------------------
+    General UI
+-----------------------------------------*/
+button,
+html [type='button'],
+[type='reset'],
+[type='submit'] {
+  -webkit-appearance: button;
+}
+
+.displayNone {
+  display: none !important;
+}
+.opacity95 {
+  opacity: 0.95;
+}
+.opacity90 {
+  opacity: 0.9;
+}
+.opacity80 {
+  opacity: 0.8;
+}
+.opacity60 {
+  opacity: 0.6;
+}
+.opacity40 {
+  opacity: 0.4;
+}
+.opacity20 {
+  opacity: 0.2;
+}
+.opacity15 {
+  opacity: 0.15;
+}
+.opacity10 {
+  opacity: 0.1;
+}
+.opacity05 {
+  opacity: 0.05;
+}
+.opacity0 {
+  opacity: 0;
+}
+
+.width100 {
+  width: 100% !important;
+}
+.width75 {
+  width: 75% !important;
+}
+.width50 {
+  width: 50% !important;
+}
+.width25 {
+  width: 25% !important;
+}
+
+.pointer-events-none {
+  pointer-events: none !important;
+}
+.pointer-events-initial {
+  pointer-events: initial !important;
+}

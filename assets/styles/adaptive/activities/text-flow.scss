@@ -16,7 +16,7 @@ janus-text-flow div * {
 janus-text-flow h1 {
   font-size: 2rem;
   font-family: MontserratBold;
-  color: var(--blue80);
+  color: $headerColor;
   margin: 0 0 1.66rem 0;
 }
 janus-text-flow h2,

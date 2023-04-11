@@ -49,6 +49,62 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const simpleSchema: JSONSchema7Object = {
+  label: {
+    title: 'Question Prompt',
+    type: 'string',
+    description: 'text label for the textbox',
+  },
+  prompt: {
+    title: 'Student Action Prompt',
+    type: 'string',
+    description: 'placeholder for the input field',
+  },
+  fontSize: {
+    title: 'Font Size',
+    type: 'number',
+    default: 12,
+  },
+
+  correctAnswer: {
+    type: 'object',
+    title: 'Correct Answer',
+    properties: {
+      minimumLength: {
+        title: 'Minimum Length',
+        type: 'number',
+        description: 'minimum number of characters required',
+        default: 0,
+      },
+      mustContain: {
+        title: 'Must Contain',
+        type: 'string',
+        description: 'text that must be present in the answer',
+        default: '',
+      },
+      mustNotContain: {
+        title: 'Must Not Contain',
+        type: 'string',
+        description: 'text that must not be present in the answer',
+        default: '',
+      },
+    },
+  },
+  correctFeedback: {
+    title: 'Correct Feedback',
+    type: 'string',
+    description: 'feedback to display when the answer is correct',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incorrect Feedback',
+    type: 'string',
+    description: 'feedback to display when the answer is incorrect',
+    default: '',
+  },
+};
+export const simpleUiSchema = {};
+
 export const uiSchema = {};
 
 export const adaptivitySchema = {
@@ -66,4 +122,11 @@ export const createSchema = (): Partial<InputTextModel> => ({
   maxManualGrade: 0,
   showOnAnswersReport: false,
   requireManualGrading: false,
+  correctAnswer: {
+    minimumLength: 0,
+    mustContain: '',
+    mustNotContain: '',
+  },
+  correctFeedback: '',
+  incorrectFeedback: '',
 });

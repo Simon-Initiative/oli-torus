@@ -1,0 +1,103 @@
+/*-- slider thumb --*/
+
+janus-slider .slider input {
+  -webkit-appearance: none;
+}
+
+janus-slider .slider input {
+  outline: none;
+}
+
+janus-slider label {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+janus-slider .slider input::-webkit-slider-runnable-track {
+  position: relative;
+  top: -10px;
+  background: $primary;
+  height: 5px;
+}
+
+janus-slider .slider input::-moz-range-track {
+  position: relative;
+  top: -10px;
+  background: $primary;
+  height: 5px;
+}
+janus-slider .slider input::-webkit-slider-thumb {
+  background-color: $primary;
+}
+
+/*-- readout --*/
+janus-slider .slider .rangeValue span {
+  color: $darkForeground;
+  font-size: 12px;
+  background: #e8e8e8;
+  border-radius: 2px;
+  min-width: 2rem;
+  padding: 1px 0px;
+}
+janus-slider .slider .rangeValue span:before {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid #e8e8e8;
+  //left: calc(50% - 6px);
+}
+
+janus-slider input[type='range'] {
+  &::-moz-range-progress {
+    background-color: $primary !important;
+  }
+  &::-moz-range-thumb {
+    background-color: $primary;
+  }
+  &::-moz-range-track {
+    background-color: $lightForeground !important;
+  }
+
+  &::-webkit-slider-thumb {
+    background-color: $primary !important;
+  }
+  &::-webkit-slider-runnable-track {
+    background-color: $primary;
+  }
+
+  &::-webkit-slider-runnable-track {
+    background-color: $primary;
+  }
+
+  &:hover {
+    &::-moz-range-thumb {
+      background-color: $primary;
+    }
+    &::-webkit-slider-thumb {
+      background-color: $primary;
+    }
+    &::-moz-range-track {
+      background-color: $primary;
+    }
+    &::-webkit-slider-runnable-track {
+      background-color: $primary;
+    }
+  }
+
+  &:focus {
+    &::-moz-range-thumb {
+      background-color: $primary;
+    }
+    &::-webkit-slider-thumb {
+      background-color: $primary;
+    }
+    &::-moz-range-track {
+      background-color: $primary;
+    }
+    &::-webkit-slider-runnable-track {
+      background-color: $primary;
+    }
+  }
+}

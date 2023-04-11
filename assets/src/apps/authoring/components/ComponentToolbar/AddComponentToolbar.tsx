@@ -17,8 +17,27 @@ import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const AddComponentToolbar: React.FC<{ authoringContainer: React.RefObject<HTMLElement> }> = ({
+const defaultFrequentlyUsed = [
+  'janus_text_flow',
+  'janus_image',
+  'janus_mcq',
+  'janus_video',
+  'janus_input_text',
+  'janus_capi_iframe',
+];
+
+const AddComponentToolbar: React.FC<{
+  authoringContainer: React.RefObject<HTMLElement>;
+  frequentlyUsed?: string[];
+  showMoreComponentsMenu?: boolean;
+  disabled?: boolean;
+  showPasteComponentOption?: boolean;
+}> = ({
   authoringContainer,
+  frequentlyUsed,
+  showMoreComponentsMenu,
+  disabled,
+  showPasteComponentOption,
 }) => {
   const dispatch = useDispatch();
   const paths = useSelector(selectPaths);
@@ -80,18 +99,6 @@ const AddComponentToolbar: React.FC<{ authoringContainer: React.RefObject<HTMLEl
     [availablePartComponents, currentActivityTree, currentSequence],
   );
 
-  // TODO: allow dynamic altering of "frequently used" per user?
-  // and/or split based on media query available size?
-  // and/or split by other groups?
-  const frequentlyUsed = [
-    'janus_text_flow',
-    'janus_image',
-    'janus_mcq',
-    'janus_video',
-    'janus_input_text',
-    'janus_capi_iframe',
-  ];
-
   const handlePartMenuButtonClick = (event: any) => {
     setShowPartsMenu(!showPartsMenu);
     setPartsMenuTarget(event.target);
@@ -111,10 +118,10 @@ const AddComponentToolbar: React.FC<{ authoringContainer: React.RefObject<HTMLEl
     <Fragment>
       <div className="btn-group align-items-center" role="group">
         {availablePartComponents
-          .filter((part) => frequentlyUsed.includes(part.slug))
+          .filter((part) => frequentlyUsed!.includes(part.slug))
           .sort((a, b) => {
-            const aIndex = frequentlyUsed.indexOf(a.slug);
-            const bIndex = frequentlyUsed.indexOf(b.slug);
+            const aIndex = frequentlyUsed!.indexOf(a.slug);
+            const bIndex = frequentlyUsed!.indexOf(b.slug);
             return aIndex - bIndex;
           })
           .map((part) => (
@@ -131,7 +138,11 @@ const AddComponentToolbar: React.FC<{ authoringContainer: React.RefObject<HTMLEl
               }
             >
               <span>
-                <button className="px-2 btn btn-link" onClick={() => handleAddComponent(part.slug)}>
+                <button
+                  disabled={disabled}
+                  className="px-2 btn btn-link"
+                  onClick={() => handleAddComponent(part.slug)}
+                >
                   <img src={`${imgsPath}/icons/${part.icon}`}></img>
                 </button>
               </span>
@@ -139,7 +150,7 @@ const AddComponentToolbar: React.FC<{ authoringContainer: React.RefObject<HTMLEl
           ))}
       </div>
       <div className="btn-group pl-3 ml-3 border-left align-items-center" role="group">
-        {copiedPart ? (
+        {showPasteComponentOption && copiedPart ? (
           <OverlayTrigger
             placement="bottom"
             delay={{ show: 150, hide: 150 }}
@@ -156,56 +167,71 @@ const AddComponentToolbar: React.FC<{ authoringContainer: React.RefObject<HTMLEl
             </span>
           </OverlayTrigger>
         ) : null}
-        <OverlayTrigger
-          placement="bottom"
-          delay={{ show: 150, hide: 150 }}
-          overlay={
-            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-              More Components
-            </Tooltip>
-          }
-        >
-          <span>
-            <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
-              <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
-            </button>
-          </span>
-        </OverlayTrigger>
-        <Overlay
-          show={showPartsMenu}
-          target={partsMenuTarget}
-          placement="bottom"
-          container={authoringContainer}
-          containerPadding={20}
-          rootClose={true}
-          onHide={() => setShowPartsMenu(false)}
-        >
-          <Popover id="moreComponents-popover">
-            <Popover.Title as="h3">More Components</Popover.Title>
-            <Popover.Content>
-              <ListGroup className="aa-parts-list">
-                {availablePartComponents
-                  .filter((part) => !frequentlyUsed.includes(part.slug))
-                  .map((part) => (
-                    <ListGroup.Item
-                      action
-                      onClick={() => handleAddComponent(part.slug)}
-                      key={part.slug}
-                      className="d-flex align-items-center"
-                    >
-                      <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>
-                        <img title={part.description} src={`${imgsPath}/icons/${part.icon}`} />
-                      </div>
-                      <span className="mr-3">{part.title}</span>
-                    </ListGroup.Item>
-                  ))}
-              </ListGroup>
-            </Popover.Content>
-          </Popover>
-        </Overlay>
+        {showMoreComponentsMenu && (
+          <>
+            <OverlayTrigger
+              placement="bottom"
+              delay={{ show: 150, hide: 150 }}
+              overlay={
+                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  More Components
+                </Tooltip>
+              }
+            >
+              <span>
+                <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
+                  <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
+                </button>
+              </span>
+            </OverlayTrigger>
+
+            <Overlay
+              show={showPartsMenu}
+              target={partsMenuTarget}
+              placement="bottom"
+              container={authoringContainer}
+              containerPadding={20}
+              rootClose={true}
+              onHide={() => setShowPartsMenu(false)}
+            >
+              <Popover id="moreComponents-popover">
+                <Popover.Title as="h3">More Components</Popover.Title>
+                <Popover.Content>
+                  <ListGroup className="aa-parts-list">
+                    {availablePartComponents
+                      .filter((part) => !frequentlyUsed!.includes(part.slug))
+                      .map((part) => (
+                        <ListGroup.Item
+                          action
+                          onClick={() => handleAddComponent(part.slug)}
+                          key={part.slug}
+                          className="d-flex align-items-center"
+                        >
+                          <div
+                            className="text-center mr-1 d-inline-block"
+                            style={{ minWidth: '36px' }}
+                          >
+                            <img title={part.description} src={`${imgsPath}/icons/${part.icon}`} />
+                          </div>
+                          <span className="mr-3">{part.title}</span>
+                        </ListGroup.Item>
+                      ))}
+                  </ListGroup>
+                </Popover.Content>
+              </Popover>
+            </Overlay>
+          </>
+        )}
       </div>
     </Fragment>
   );
+};
+
+AddComponentToolbar.defaultProps = {
+  frequentlyUsed: defaultFrequentlyUsed,
+  showMoreComponentsMenu: true,
+  disabled: false,
+  showPasteComponentOption: true,
 };
 
 export default AddComponentToolbar;
