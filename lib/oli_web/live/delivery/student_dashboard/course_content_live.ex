@@ -46,10 +46,10 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
             <i class="fa-regular fa-circle-left text-primary text-xl"></i>
           </button>
           <div class="flex flex-col">
-            <h4 class="text-lg font-semibold tracking-wide text-gray-800 mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position) %> </h4>
+            <h4 id="course_browser_node_title" class="text-lg font-semibold tracking-wide text-gray-800 mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position) %> </h4>
             <div class="flex items-center justify-center space-x-3 mt-1">
               <span class="uppercase text-[10px] tracking-wide text-gray-800"><%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position))} overall progress" %></span>
-              <div class="w-52 rounded-full bg-gray-200 h-2">
+              <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
                 <div class="rounded-full bg-primary h-2" style={"width: #{get_current_node_progress(@current_level_nodes, @current_position, @current_user_id, @section.id)}%"}></div>
               </div>
             </div>
