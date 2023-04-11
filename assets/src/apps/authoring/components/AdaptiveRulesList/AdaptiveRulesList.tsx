@@ -350,7 +350,18 @@ const IRulesList: React.FC = () => {
     <Accordion className="aa-adaptivity-rules" defaultActiveKey="0" activeKey={open ? '0' : '-1'}>
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
-          <ContextAwareToggle eventKey="0" onClick={toggleOpen} />
+          <button className="btn btn-link p-0 ml-1" onClick={toggleOpen}>
+            {open && (
+              <span>
+                <i className="fa fa-angle-down" />
+              </span>
+            )}
+            {!open && (
+              <span>
+                <i className="fa fa-angle-up" />
+              </span>
+            )}
+          </button>
           <span className="title">Adaptivity</span>
         </div>
         {currentRule && !isLayer && !isBank && (
