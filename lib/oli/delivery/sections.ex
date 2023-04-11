@@ -842,36 +842,30 @@ defmodule Oli.Delivery.Sections do
   # hierarchy and linked pages.
   defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
 
-    # Determine the set of page resource ids that are not in the hierarchy
+    # Start with all pages
     unreachable = Oli.Publishing.all_page_resource_ids(publication_ids)
     |> MapSet.new()
 
-    case MapSet.size(unreachable) do
-      # We have no pages outside the curriculum, so we can short-circuit and stop here
-      0 -> []
-      _ ->
+    # create a map of page resource ids to a list of target resource ids that they link to. We
+    # do this both for resource-to-page links and for page to activity links (aka activity-references).
+    # We do this because we want to treat these links the same way when we traverse the graph, and
+    # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
+    # links to a page outside the hierarchy.
+    all_links = MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
+    |> MapSet.to_list()
 
-        # create a map of page resource ids to a list of target resource ids that they link to. We
-        # do this both for resource-to-page links and for page to activity links (aka activity-references).
-        # We do this because we want to treat these links the same way when we traverse the graph, and
-        # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
-        # links to a page outside the hierarchy.
-        all_links = MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
-        |> MapSet.to_list()
+    link_map = Enum.reduce(all_links, %{}, fn {source, target}, map ->
+      case Map.get(map, source) do
+        nil -> Map.put(map, source, [target])
+        targets -> Map.put(map, source, [target | targets])
+      end
+    end)
 
-        link_map = Enum.reduce(all_links, %{}, fn {source, target}, map ->
-          case Map.get(map, source) do
-            nil -> Map.put(map, source, [target])
-            targets -> Map.put(map, source, [target | targets])
-          end
-        end)
+    # Now traverse the pages in the hiearchy, and follow (recursively) the links that
+    # they have to other pages.
+    {unreachable, _ } = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
 
-        # Now traverse the pages in the hiearchy, and follow (recursively) the links that
-        # they have to other pages.
-        {unreachable, _ } = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
-
-        MapSet.to_list(unreachable)
-    end
+    MapSet.to_list(unreachable)
 
   end
 
