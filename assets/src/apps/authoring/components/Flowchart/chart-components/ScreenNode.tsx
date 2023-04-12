@@ -97,7 +97,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
     <div className={`flowchart-node`}>
       <div className="title-bar">
         <div className="title-icon">
-          <ScreenIcon screenType={data.authoring?.flowchart?.screenType} fill={iconBG} />
+          <ScreenIcon screenType={data.authoring?.flowchart?.screenType} bgColor={iconBG} />
         </div>
         <div className="title-text" title={data.title}>
           {data.title}

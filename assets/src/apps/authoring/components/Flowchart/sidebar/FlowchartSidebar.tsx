@@ -21,6 +21,7 @@ import ScreenTitle from './ScreenTitle';
 import { changeTitle } from '../flowchart-actions/change-title';
 import { CloseIcon } from './CloseIcon';
 import { InfoIcon } from './InfoIcon';
+import { addPath } from '../flowchart-actions/add-path';
 
 interface FlowchartSidebarProps {}
 
@@ -69,8 +70,12 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
     }, {} as Record<string, string>);
   }, [activities]);
 
+  const addRule = () => {
+    dispatch(addPath({ screenId: screen.id }));
+  };
+
   return (
-    <div>
+    <>
       <h2 className="edit-logic-header">
         Edit logic for
         <ScreenButton onClick={onDeselectScreen} tooltip="Deselect screen">
@@ -79,30 +84,31 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
       </h2>
 
       <ScreenTitle
+        key={screen.id}
         screenType={screen.authoring?.flowchart?.screenType}
         title={screen.title || 'Untitled'}
         validated={validations.length === 0}
         onChange={onChangeTitle}
       />
 
-      {validations.map((err, index) => (
-        <ValidationError key={index}>{err}</ValidationError>
-      ))}
+      <div className="sidebar-scroller">
+        {validations}
 
-      {screen.authoring?.flowchart?.screenType !== 'end_screen' && (
-        <PathsEditor
-          screens={screens}
-          questionId={primaryQuestion?.id || ''}
-          screenId={screen.id}
-          questionType={questionType}
-          availablePaths={getAvailablePaths(screen)}
-          paths={screen.authoring?.flowchart?.paths || []}
-        />
-      )}
-    </div>
+        {screen.authoring?.flowchart?.screenType !== 'end_screen' && (
+          <PathsEditor
+            screens={screens}
+            questionId={primaryQuestion?.id || ''}
+            screenId={screen.id}
+            questionType={questionType}
+            availablePaths={getAvailablePaths(screen)}
+            paths={screen.authoring?.flowchart?.paths || []}
+          />
+        )}
+      </div>
+
+      <button onClick={addRule} className="btn btn-primary add-rule-button">
+        Add Rule
+      </button>
+    </>
   );
-};
-
-const ValidationError: React.FC = ({ children }) => {
-  return <div className="validation-error">{children}</div>;
 };

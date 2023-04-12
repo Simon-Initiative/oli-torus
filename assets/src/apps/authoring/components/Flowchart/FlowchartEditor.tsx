@@ -109,7 +109,7 @@ export const FlowchartEditor = () => {
     <FlowchartEventContext.Provider value={events}>
       <div className="flowchart-editor">
         <DndProvider backend={HTML5Backend}>
-          <div className="panel-inner">
+          <div className="flowchart-left">
             <FlowchartModeOptions activeMode="flowchart" />
             <FlowchartSidebar />
           </div>

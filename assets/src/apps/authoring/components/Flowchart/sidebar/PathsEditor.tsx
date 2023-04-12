@@ -24,9 +24,7 @@ export const PathsEditor: React.FC<Props> = ({
   screens,
 }) => {
   const dispatch = useDispatch();
-  const addRule = () => {
-    dispatch(addPath({ screenId }));
-  };
+
   const sortedPath = [...paths].sort(sortByPriority);
   const usedPathIds = paths.map((p) => p.id);
   return (
@@ -43,9 +41,6 @@ export const PathsEditor: React.FC<Props> = ({
           path={path}
         />
       ))}
-      <button onClick={addRule} className="btn btn-primary w-full">
-        Add Rule
-      </button>
     </div>
   );
 };
