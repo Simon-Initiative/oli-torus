@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { MarkerType } from 'reactflow';
 import guid from '../../../../utils/guid';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
 import { AllPaths } from './paths/path-types';
 import { buildEdgesForActivity, isEndOfActivityPath, isExitActivityPath } from './paths/path-utils';
+import { MarkerType } from 'reactflow';
 
 export interface FlowchartPlaceholderNodeData {
   fromScreenId: number;

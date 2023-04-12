@@ -1,6 +1,5 @@
-import * as React from 'react';
-
 import './TestResults.scss';
+import * as React from 'react';
 
 interface TestResultsProps {
   percentTestsPassed: number;

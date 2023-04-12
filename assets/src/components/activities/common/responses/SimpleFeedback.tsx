@@ -1,10 +1,9 @@
+import { ShowPage } from './ShowPage';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { FeedbackCard } from 'components/activities/common/responses/FeedbackCard';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { HasParts, RichText } from 'components/activities/types';
 import { getCorrectResponse, getIncorrectResponse } from 'data/activities/model/responses';
-import { ShowPage } from './ShowPage';
-
 import React from 'react';
 
 interface Props {

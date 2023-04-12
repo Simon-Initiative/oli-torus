@@ -1,11 +1,11 @@
-import * as Immutable from 'immutable';
 import {
+  ResourceContent,
+  ResourceGroup,
   createDefaultStructuredContent,
   createGroup,
-  ResourceContent,
   isResourceGroup,
-  ResourceGroup,
 } from 'data/content/resource';
+import * as Immutable from 'immutable';
 import guid from 'utils/guid';
 
 type PageEditorContentParams = {

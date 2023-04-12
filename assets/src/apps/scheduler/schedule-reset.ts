@@ -1,5 +1,5 @@
+import { HierarchyItem, ScheduleItemType, getScheduleItem } from './scheduler-slice';
 import { DateWithoutTime } from 'epoq';
-import { getScheduleItem, HierarchyItem, ScheduleItemType } from './scheduler-slice';
 
 export const countWorkingDays = (
   start: DateWithoutTime,

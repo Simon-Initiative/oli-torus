@@ -1,7 +1,7 @@
-import { BibEntry } from 'data/content/bibentry';
-import React, { useState } from 'react';
-import * as Immutable from 'immutable';
 import { BibEntryView } from './BibEntryView';
+import { BibEntry } from 'data/content/bibentry';
+import * as Immutable from 'immutable';
+import React, { useState } from 'react';
 
 export interface ReferencesProps {
   bibReferences: BibEntry[];

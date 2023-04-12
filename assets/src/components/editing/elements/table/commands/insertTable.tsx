@@ -1,8 +1,8 @@
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { isTopLevel } from 'components/editing/slateUtils';
+import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Editor, Transforms } from 'slate';
-import { Model } from 'data/content/model/elements/factories';
-import { isTopLevel } from 'components/editing/slateUtils';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 
 export const insertTable = createButtonCommandDesc({
   icon: <i className="fa-solid fa-table-cells"></i>,

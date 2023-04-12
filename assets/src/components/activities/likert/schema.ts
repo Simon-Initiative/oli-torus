@@ -1,13 +1,13 @@
 import {
   ActivityModelSchema,
-  Stem,
-  Part,
   Choice,
   ChoiceIdsToResponseId,
+  Part,
   RichText,
+  Stem,
+  Transformation,
   makeChoice,
   makeStem,
-  Transformation,
 } from '../types';
 import { ID } from 'data/content/model/other';
 import { Maybe } from 'tsmonad';

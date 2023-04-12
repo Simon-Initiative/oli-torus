@@ -1,8 +1,8 @@
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import React, { Fragment } from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 interface ConfirmDeleteProps {
   show: boolean;

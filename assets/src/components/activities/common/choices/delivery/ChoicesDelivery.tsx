@@ -1,9 +1,9 @@
+import styles from './ChoicesDelivery.modules.scss';
 import { Choice, ChoiceId } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React, { useCallback } from 'react';
 import { classNames } from 'utils/classNames';
-import styles from './ChoicesDelivery.modules.scss';
 
 interface Props {
   choices: Choice[];

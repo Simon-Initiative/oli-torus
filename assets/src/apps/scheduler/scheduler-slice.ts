@@ -1,9 +1,8 @@
+import { resetScheduleItem } from './schedule-reset';
+import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
-
-import { resetScheduleItem } from './schedule-reset';
-import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
 
 export enum ScheduleItemType {
   Page = 1,

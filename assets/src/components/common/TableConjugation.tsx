@@ -1,9 +1,9 @@
 // A special <td> used in the table inside conjugations
-import React from 'react';
-import { ReactNode } from 'react';
 import * as ContentModel from '../../data/content/model/elements/types';
 import { cellAttributes } from '../editing/elements/table/table-util';
 import { useAudio } from '../hooks/useAudio';
+import React from 'react';
+import { ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;

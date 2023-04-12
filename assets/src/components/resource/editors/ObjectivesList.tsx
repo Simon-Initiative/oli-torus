@@ -1,6 +1,5 @@
-import * as React from 'react';
-
 import './ObjectivesList.scss';
+import * as React from 'react';
 
 export interface ObjectivesListProps {
   objectives: string[];

@@ -1,7 +1,6 @@
-import * as React from 'react';
-
-import { ActivityModelSchema } from 'components/activities/types';
 import { VariablesEditorFacade } from './VariableEditorFacade';
+import { ActivityModelSchema } from 'components/activities/types';
+import * as React from 'react';
 import guid from 'utils/guid';
 
 const defaultExpresssion = '\n\n\nmodule.exports = {};\n';

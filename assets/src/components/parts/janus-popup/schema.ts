@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { ColorPalette, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
 import { parseNumString } from 'utils/common';
-import { ColorPalette, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface PopupModel extends JanusAbsolutePositioned, JanusCustomCss {
   description: string;

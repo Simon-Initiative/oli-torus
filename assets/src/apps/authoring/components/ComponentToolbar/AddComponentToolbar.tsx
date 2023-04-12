@@ -1,10 +1,10 @@
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 import {
   selectCopiedPart,
   selectPartComponentTypes,
   selectPaths,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
-
 import { addPart } from 'apps/authoring/store/parts/actions/addPart';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import {
@@ -15,7 +15,6 @@ import React, { Fragment, useCallback, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 const defaultFrequentlyUsed = [
   'janus_text_flow',

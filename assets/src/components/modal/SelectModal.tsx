@@ -1,7 +1,7 @@
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { lockScroll, unlockScroll } from 'components/modal/utils';
 import React, { useEffect, useRef, useState } from 'react';
 import { Maybe } from 'tsmonad';
-import { lockScroll, unlockScroll } from 'components/modal/utils';
-import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 
 export interface Option {
   value: string | number;

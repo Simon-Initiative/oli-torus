@@ -1,5 +1,5 @@
-import * as React from 'react';
 import * as Messages from 'data/messages/messages';
+import * as React from 'react';
 import { classNames } from 'utils/classNames';
 
 export interface MessageProps {

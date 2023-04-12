@@ -1,5 +1,5 @@
-import React from 'react';
 import { TextInput } from 'components/common/TextInput';
+import React from 'react';
 
 export const ShowPage: React.FC<{
   editMode: boolean;

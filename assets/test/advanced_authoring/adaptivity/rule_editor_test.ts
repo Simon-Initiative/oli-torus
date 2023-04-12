@@ -1,10 +1,10 @@
+import { mockDefaultRule, mockRuleNestedConditions, mockRuleWithConditions1 } from './rule_mocks';
 import { JanusConditionProperties } from 'adaptivity/capi';
 import {
   deleteConditionById,
   findConditionById,
   forEachCondition,
 } from 'apps/authoring/components/AdaptivityEditor/ConditionsBlockEditor';
-import { mockDefaultRule, mockRuleNestedConditions, mockRuleWithConditions1 } from './rule_mocks';
 
 describe('Rule Editor', () => {
   describe('findConditionById', () => {

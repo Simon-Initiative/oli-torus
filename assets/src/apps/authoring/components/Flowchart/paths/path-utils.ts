@@ -11,8 +11,6 @@
     Do we want to just re-generate all the rules every save, or try to update & delete them?
 
 */
-
-import { MarkerType } from 'reactflow';
 import { cloneT } from '../../../../../utils/common';
 import {
   IActivity,
@@ -30,7 +28,6 @@ import {
   AllPaths,
   AlwaysGoToPath,
   ComponentPaths,
-  componentTypes,
   CorrectPath,
   DestinationPath,
   DestinationPaths,
@@ -39,7 +36,9 @@ import {
   IncorrectPath,
   NumericCommonErrorPath,
   OptionCommonErrorPath,
+  componentTypes,
 } from './path-types';
+import { MarkerType } from 'reactflow';
 
 const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
   if (!screen.authoring) {

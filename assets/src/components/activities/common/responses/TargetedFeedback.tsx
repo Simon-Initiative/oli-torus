@@ -1,9 +1,9 @@
+import { ShowPage } from './ShowPage';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
-import { ShowPage } from './ShowPage';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import {
   Choice,
   ChoiceId,
@@ -12,7 +12,7 @@ import {
   HasParts,
   RichText,
 } from 'components/activities/types';
-import { getTargetedResponseMappings, ResponseMapping } from 'data/activities/model/responses';
+import { ResponseMapping, getTargetedResponseMappings } from 'data/activities/model/responses';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 

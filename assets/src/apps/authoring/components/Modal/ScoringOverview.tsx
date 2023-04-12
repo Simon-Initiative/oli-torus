@@ -1,3 +1,5 @@
+import { Objective } from '../../../../data/content/objective';
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import { selectAllObjectivesMap, setShowScoringOverview } from 'apps/authoring/store/app/slice';
 import { savePage } from 'apps/authoring/store/page/actions/savePage';
 import { selectState, updatePage } from 'apps/authoring/store/page/slice';
@@ -8,8 +10,6 @@ import React, { Fragment, useCallback, useEffect } from 'react';
 import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
-import { Objective } from '../../../../data/content/objective';
-import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 interface ScoredActivity {
   sequenceId: number;

@@ -1,8 +1,8 @@
+import { componentData, transformedSchema } from './component_mocks';
 import {
   transformModelToSchema,
   transformSchemaToModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/part';
-import { componentData, transformedSchema } from './component_mocks';
 
 describe('transforming component data structure to schema and back to data structure', () => {
   it('should transform component data structure to schema and back to structure after changes', () => {

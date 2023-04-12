@@ -1,24 +1,23 @@
+import { useToggle } from '../../components/hooks/useToggle';
+import { DragBar } from './DragBar';
+import { PageDragBar } from './PageDragBar';
+import { ScheduleHeader } from './ScheduleHeader';
+import { DayGeometry, dateWithoutTimeLabel, stringToDateWithoutTime } from './date-utils';
+import { getSchedule, getSelectedId } from './schedule-selectors';
+// import { SchedulePlaceholder } from './SchedulePlaceholder';
+import {
+  HierarchyItem,
+  ScheduleItemType,
+  SchedulingType,
+  changeScheduleType,
+  getScheduleItem,
+  moveScheduleItem,
+  selectItem,
+  unlockScheduleItem,
+} from './scheduler-slice';
 import { DateWithoutTime } from 'epoq';
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useToggle } from '../../components/hooks/useToggle';
-import { dateWithoutTimeLabel, DayGeometry, stringToDateWithoutTime } from './date-utils';
-import { DragBar } from './DragBar';
-import { PageDragBar } from './PageDragBar';
-import { getSchedule, getSelectedId } from './schedule-selectors';
-import { ScheduleHeader } from './ScheduleHeader';
-
-// import { SchedulePlaceholder } from './SchedulePlaceholder';
-import {
-  getScheduleItem,
-  HierarchyItem,
-  moveScheduleItem,
-  ScheduleItemType,
-  selectItem,
-  unlockScheduleItem,
-  SchedulingType,
-  changeScheduleType,
-} from './scheduler-slice';
 
 interface ScheduleLineProps {
   item: HierarchyItem;

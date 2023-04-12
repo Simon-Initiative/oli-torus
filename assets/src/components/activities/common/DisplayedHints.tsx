@@ -1,7 +1,7 @@
-import React from 'react';
 import * as ActivityTypes from '../types';
-import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { WriterContext } from 'data/content/writers/context';
+import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import React from 'react';
 
 interface DisplayedHintProps {
   hint: ActivityTypes.Hint;

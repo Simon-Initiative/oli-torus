@@ -1,6 +1,6 @@
-import React, { PropsWithChildren, ReactNode, useCallback, useEffect, useState } from 'react';
 import { useMousedown } from 'components/misc/resizable/useMousedown';
 import { positionRect } from 'data/content/utils';
+import React, { PropsWithChildren, ReactNode, useCallback, useEffect, useState } from 'react';
 import { Popover, PopoverAlign, PopoverPosition } from 'react-tiny-popover';
 import { Editor } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';

@@ -1,8 +1,8 @@
-import React from 'react';
-import { Objective } from 'data/content/objective';
+import { Objectives } from 'components/resource/objectives/Objectives';
 import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
 import { ObjectiveMap } from 'data/content/activity';
-import { Objectives } from 'components/resource/objectives/Objectives';
+import { Objective } from 'data/content/objective';
+import React from 'react';
 import { classNames } from 'utils/classNames';
 
 type Props = {

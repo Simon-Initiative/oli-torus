@@ -1,27 +1,25 @@
-import { DateWithoutTime } from 'epoq';
-
-import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useToggle } from '../../components/hooks/useToggle';
-import { DayGeometry } from './date-utils';
 import { DragBar } from './DragBar';
 import { PageScheduleLine } from './PageScheduleLine';
+import { ScheduleHeader } from './ScheduleHeader';
+import { DayGeometry } from './date-utils';
 import {
   getSchedule,
   getSelectedId,
   shouldDisplayCurriculumItemNumbering,
 } from './schedule-selectors';
-import { ScheduleHeader } from './ScheduleHeader';
-
 // import { SchedulePlaceholder } from './SchedulePlaceholder';
 import {
-  getScheduleItem,
   HierarchyItem,
-  moveScheduleItem,
   ScheduleItemType,
+  getScheduleItem,
+  moveScheduleItem,
   selectItem,
   unlockScheduleItem,
 } from './scheduler-slice';
+import { DateWithoutTime } from 'epoq';
+import React, { useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 interface ScheduleLineProps {
   item: HierarchyItem;

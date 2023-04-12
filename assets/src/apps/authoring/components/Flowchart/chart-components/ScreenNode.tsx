@@ -1,23 +1,22 @@
-import React, { useCallback, useContext } from 'react';
-import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { useDrop } from 'react-dnd';
-import { Handle, Position } from 'reactflow';
+import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
 import {
   IActivity,
   selectAllActivities,
   selectCurrentActivityId,
 } from '../../../../delivery/store/features/activities/slice';
-
-import { FlowchartEventContext } from '../FlowchartEventContext';
-import { screenTypes } from '../screens/screen-factories';
-import { ScreenButton } from './ScreenButton';
-import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
-import { useToggle } from '../../../../../components/hooks/useToggle';
-import { validateScreen } from '../screens/screen-validation';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
+import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
+import { FlowchartEventContext } from '../FlowchartEventContext';
 import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
+import { screenTypes } from '../screens/screen-factories';
+import { validateScreen } from '../screens/screen-validation';
+import { ScreenButton } from './ScreenButton';
+import React, { useCallback, useContext } from 'react';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDrop } from 'react-dnd';
+import { useDispatch, useSelector } from 'react-redux';
+import { Handle, Position } from 'reactflow';
 
 interface NodeProps {
   data: IActivity;

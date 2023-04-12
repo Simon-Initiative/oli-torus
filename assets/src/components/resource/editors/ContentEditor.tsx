@@ -1,12 +1,12 @@
-import React from 'react';
-import { StructuredContent } from 'data/content/resource';
-import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ContentBlock } from './ContentBlock';
-import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
+import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
 import { EditorProps } from './createEditor';
-import { Icon, Description, OutlineItemProps, OutlineItem } from './OutlineItem';
-import { getContentDescription } from 'data/content/utils';
 import { useBlueprintCommandDescriptions } from './useBlueprints';
+import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
+import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
+import { StructuredContent } from 'data/content/resource';
+import { getContentDescription } from 'data/content/utils';
+import React from 'react';
 
 interface ContentEditorProps extends EditorProps {
   contentItem: StructuredContent;

@@ -1,4 +1,4 @@
-import React, { createRef, PropsWithChildren, useEffect } from 'react';
+import React, { PropsWithChildren, createRef, useEffect } from 'react';
 import { classNames } from 'utils/classNames';
 
 interface TooltipProps {

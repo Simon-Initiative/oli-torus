@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { Editor, Transforms } from 'slate';
-import * as ContentModel from 'data/content/model/elements/types';
-import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import { Modal } from 'components/modal/Modal';
-import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
-import { MediaItem } from 'types/media';
-import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { configureStore } from 'state/store';
+import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
+import { MediaManager } from 'components/media/manager/MediaManager.controller';
+import { Modal } from 'components/modal/Modal';
+import { Model } from 'data/content/model/elements/factories';
+import * as ContentModel from 'data/content/model/elements/types';
+import React, { useState } from 'react';
 import { Provider } from 'react-redux';
+import { Editor, Transforms } from 'slate';
+import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
+import { MediaItem } from 'types/media';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));

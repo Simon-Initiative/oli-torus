@@ -1,3 +1,23 @@
+import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
+import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
+import { finalize } from './finalize';
+import { showModal } from './modal';
+import { enableSubmitWhenTitleMatches } from './package_delete';
+import { onReady } from './ready';
+import {
+  Alert,
+  Button,
+  Carousel,
+  Collapse,
+  Dropdown,
+  Modal,
+  Offcanvas,
+  Popover,
+  ScrollSpy,
+  Tab,
+  Toast,
+  Tooltip,
+} from 'bootstrap';
 import { selectCookieConsent } from 'components/cookies/CookieConsent';
 import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
 import { retrieveCookies } from 'components/cookies/utils';
@@ -9,28 +29,7 @@ import 'phoenix_html';
 import { LiveSocket } from 'phoenix_live_view';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
-import { showModal } from './modal';
-import { enableSubmitWhenTitleMatches } from './package_delete';
-import { onReady } from './ready';
 import 'react-phoenix';
-import { finalize } from './finalize';
-import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
-
-import {
-  Button,
-  Dropdown,
-  Collapse,
-  Offcanvas,
-  Alert,
-  Carousel,
-  Modal,
-  Popover,
-  ScrollSpy,
-  Tab,
-  Tooltip,
-  Toast,
-} from 'bootstrap';
 
 (window as any).Alert = Alert;
 (window as any).Button = Button;

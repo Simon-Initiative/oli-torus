@@ -1,11 +1,10 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
-
-import { SchedulerAppState } from './scheduler-reducer';
-import { getScheduleItem, StringDate } from './scheduler-slice';
-import { loadSchedule, ScheduleUpdate, updateSchedule } from './scheduling-service';
-
-import uniq from 'lodash/uniq';
 import { dateTimeInTorusFormat, dateWithoutTimeLabel } from './date-utils';
+import { SchedulerAppState } from './scheduler-reducer';
+import { StringDate, getScheduleItem } from './scheduler-slice';
+import { ScheduleUpdate, loadSchedule, updateSchedule } from './scheduling-service';
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import uniq from 'lodash/uniq';
+
 interface Payload {
   start_date: StringDate;
   end_date: StringDate;

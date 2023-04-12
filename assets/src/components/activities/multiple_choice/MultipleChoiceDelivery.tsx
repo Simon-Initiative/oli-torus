@@ -1,32 +1,32 @@
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { MCSchema } from './schema';
+import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { configureStore } from 'state/store';
+import { MCSchema } from './schema';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { ActivityModelSchema, HasChoices } from 'components/activities/types';
+import { Radio } from 'components/misc/icons/radio/Radio';
 import {
   ActivityDeliveryState,
-  initializeState,
-  setSelection,
   activityDeliverySlice,
+  initializeState,
   isEvaluated,
-  resetAndSubmitActivity,
-  submit,
-  listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForParentSurveySubmit,
   listenForReviewAttemptChange,
+  resetAndSubmitActivity,
+  setSelection,
+  submit,
 } from 'data/activities/DeliveryState';
-import { Radio } from 'components/misc/icons/radio/Radio';
-import { ActivityModelSchema, HasChoices } from 'components/activities/types';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
-import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import { castPartId } from '../common/utils';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from 'state/store';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
 // about to submit that state with a submission. This saves a network call that isn't necessary and avoids

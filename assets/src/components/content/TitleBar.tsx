@@ -1,5 +1,5 @@
-import React from 'react';
 import { TextEditor } from '../TextEditor';
+import React from 'react';
 import { classNames } from 'utils/classNames';
 
 export type TitleBarProps = {

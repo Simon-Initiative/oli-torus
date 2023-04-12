@@ -1,6 +1,6 @@
+import styles from './LoadingSpinner.modules.scss';
 import * as React from 'react';
 import { classNames } from 'utils/classNames';
-import styles from './LoadingSpinner.modules.scss';
 
 export enum LoadingSpinnerSize {
   Small,

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { Registry } from '../../../../data/events';
+import { useEffect } from 'react';
 
 /**
  * Hook for display-components to handle commands from command-buttons.

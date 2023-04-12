@@ -1,6 +1,6 @@
-import guid from 'utils/guid';
+import { ScoringStrategy, makeStem } from '../types';
 import { OliEmbeddedModelSchema } from './schema';
-import { makeStem, ScoringStrategy } from '../types';
+import guid from 'utils/guid';
 
 export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
   return {

@@ -1,24 +1,12 @@
-import {
-  copyItem,
-  pasteItem,
-  selectCopiedItem,
-  selectCopiedType,
-  CopyableItemTypes,
-} from 'apps/authoring/store/clipboard/slice';
-import { usePrevious } from 'components/hooks/usePrevious';
-import { debounce } from 'lodash';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Accordion, ListGroup, OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import guid from 'utils/guid';
+import { useToggle } from '../../../../components/hooks/useToggle';
 import { clone } from '../../../../utils/common';
 import {
   IActivity,
-  InitState,
   IAdaptiveRule,
+  InitState,
   selectCurrentActivity,
 } from '../../../delivery/store/features/activities/slice';
-import { getIsLayer, getIsBank } from '../../../delivery/store/features/groups/actions/sequence';
+import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import {
   createCorrectRule,
   createIncorrectRule,
@@ -28,8 +16,20 @@ import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import {
+  CopyableItemTypes,
+  copyItem,
+  pasteItem,
+  selectCopiedItem,
+  selectCopiedType,
+} from 'apps/authoring/store/clipboard/slice';
+import { usePrevious } from 'components/hooks/usePrevious';
+import { debounce } from 'lodash';
 import set from 'lodash/set';
-import { useToggle } from '../../../../components/hooks/useToggle';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import guid from 'utils/guid';
 
 const IRulesList: React.FC = () => {
   const dispatch = useDispatch();

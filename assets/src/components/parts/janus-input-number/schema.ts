@@ -1,8 +1,8 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { JSONSchema7Object } from 'json-schema';
-import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import { JSONSchema7Object } from 'json-schema';
 
 export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
   fontSize?: number;

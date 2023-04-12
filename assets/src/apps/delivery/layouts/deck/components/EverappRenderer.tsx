@@ -1,3 +1,4 @@
+import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
 import {
   defaultGlobalEnv,
   evalAssignScript,
@@ -13,7 +14,6 @@ import { ActivityState, StudentResponse } from 'components/activities/types';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
 
 export interface Everapp {
   id: string;

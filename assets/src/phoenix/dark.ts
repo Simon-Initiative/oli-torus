@@ -1,4 +1,4 @@
-import { isDarkMode, addDarkModeListener } from 'utils/browser';
+import { addDarkModeListener, isDarkMode } from 'utils/browser';
 
 if ((!('theme' in localStorage) && isDarkMode()) || localStorage.theme === 'dark') {
   document.documentElement.classList.add('dark');

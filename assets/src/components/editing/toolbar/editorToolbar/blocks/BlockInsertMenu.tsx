@@ -1,11 +1,11 @@
+import { CommandButton } from '../../buttons/CommandButton';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import React from 'react';
 import { useSlate } from 'slate-react';
-import { CommandButton } from '../../buttons/CommandButton';
 
 export const insertItemDropdown = createButtonCommandDesc({
   icon: <i className="fa-solid fa-plus"></i>,

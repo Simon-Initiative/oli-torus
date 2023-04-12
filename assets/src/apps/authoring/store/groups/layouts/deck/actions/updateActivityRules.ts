@@ -1,3 +1,11 @@
+import {
+  IActivity,
+  selectActivityById,
+  upsertActivities,
+} from '../../../../../../delivery/store/features/activities/slice';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
+import { selectProjectSlug, selectReadOnly } from '../../../../app/slice';
+import { selectResourceId } from '../../../../page/slice';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
@@ -15,19 +23,11 @@ import {
   getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
-import isEqual from 'lodash/isEqual';
 import flatten from 'lodash/flatten';
+import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
-import {
-  IActivity,
-  selectActivityById,
-  upsertActivities,
-} from '../../../../../../delivery/store/features/activities/slice';
-import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
-import { selectProjectSlug, selectReadOnly } from '../../../../app/slice';
-import { selectResourceId } from '../../../../page/slice';
 
 const updateNestedConditions = async (conditions: any, activityTree: IActivity[]) => {
   await Promise.all(

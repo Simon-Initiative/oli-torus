@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
 import { ControlButtonProps } from './ControlBar';
+import React, { useCallback } from 'react';
 
 export const PlayButton: React.FC<ControlButtonProps> = ({ actions, player }) => {
   const toggle = useCallback(() => {

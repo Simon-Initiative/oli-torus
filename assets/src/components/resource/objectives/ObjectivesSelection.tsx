@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import * as Immutable from 'immutable';
-import {
-  Typeahead,
-  TypeaheadResult,
-  TypeaheadMenuProps,
-  AllTypeaheadOwnAndInjectedProps,
-} from 'react-bootstrap-typeahead';
-import { Objective, ResourceId } from 'data/content/objective';
-import { ProjectSlug } from 'data/types';
-import { create } from 'data/persistence/objective';
-import guid from 'utils/guid';
-import { classNames } from 'utils/classNames';
-
 import styles from './ObjectivesSelection.modules.scss';
+import { Objective, ResourceId } from 'data/content/objective';
+import { create } from 'data/persistence/objective';
+import { ProjectSlug } from 'data/types';
+import * as Immutable from 'immutable';
+import React, { useEffect, useState } from 'react';
+import {
+  AllTypeaheadOwnAndInjectedProps,
+  Typeahead,
+  TypeaheadMenuProps,
+  TypeaheadResult,
+} from 'react-bootstrap-typeahead';
+import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 
 export type ObjectivesProps = {
   objectives: Objective[];

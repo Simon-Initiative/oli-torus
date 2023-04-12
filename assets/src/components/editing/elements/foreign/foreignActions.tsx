@@ -1,8 +1,8 @@
-import React from 'react';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Element, Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { isActive } from '../../slateUtils';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import React from 'react';
+import { Element, Transforms } from 'slate';
 
 export const insertForeign = createButtonCommandDesc({
   icon: <i className="fa-solid fa-language"></i>,

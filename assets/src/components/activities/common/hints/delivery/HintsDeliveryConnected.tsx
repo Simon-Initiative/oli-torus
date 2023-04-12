@@ -1,18 +1,18 @@
-import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
+import { isCorrect } from '../../../../../data/activities/utils';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
+import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
 import { HasHints, PartId } from 'components/activities/types';
 import {
   ActivityDeliveryState,
+  PartInputs,
   isEvaluated,
   isSubmitted,
-  PartInputs,
   requestHint,
   resetAction,
   resetAndRequestHintAction,
 } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { isCorrect } from '../../../../../data/activities/utils';
 
 interface Props {
   partId: PartId;

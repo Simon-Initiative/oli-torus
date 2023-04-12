@@ -1,5 +1,3 @@
-import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import {
   IActivity,
   selectAllActivities,
@@ -13,8 +11,9 @@ import {
   questionTypeLabels,
 } from '../paths/path-options';
 import { validateScreen } from '../screens/screen-validation';
-
 import { PathsEditor } from './PathsEditor';
+import React, { useMemo } from 'react';
+import { useSelector } from 'react-redux';
 
 interface FlowchartSidebarProps {}
 

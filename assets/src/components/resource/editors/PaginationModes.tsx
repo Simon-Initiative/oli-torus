@@ -1,5 +1,5 @@
-import React from 'react';
 import { PaginationMode } from 'data/content/resource';
+import React from 'react';
 import { Dropdown } from 'react-bootstrap';
 
 export type PaginationModesProps = {

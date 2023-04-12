@@ -3,11 +3,10 @@
  * This is useful in sub-editors that should edit one specific type of content, such as the table sub editor in the
  * conjugation editor.
  */
-
-import { Editor, Path, Transforms, Node } from 'slate';
 import { AllModelElements, ModelElement } from '../../../../data/content/model/elements/types';
 import { SlateEditor } from '../../../../data/content/model/slate';
 import { FormattedText } from '../../../../data/content/model/text';
+import { Editor, Node, Path, Transforms } from 'slate';
 
 export const normalize = (
   editor: Editor,

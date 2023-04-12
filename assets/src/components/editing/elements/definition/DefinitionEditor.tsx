@@ -1,15 +1,15 @@
-import React, { useCallback } from 'react';
+import { useElementSelected } from '../../../../data/content/utils';
+import { WriterContext, defaultWriterContext } from '../../../../data/content/writers/context';
+import { HtmlParser } from '../../../../data/content/writers/html';
+import { ContentWriter } from '../../../../data/content/writers/writer';
+import { Definition } from '../../../common/Definition';
+import { HoverContainer } from '../../toolbar/HoverContainer';
+import { DefinitionInlineEditor } from './DefinitionInlineEditor';
+import { DefinitionSettings } from './DefinitionToolbar';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { Definition } from '../../../common/Definition';
-import { ContentWriter } from '../../../../data/content/writers/writer';
-import { HtmlParser } from '../../../../data/content/writers/html';
-import { defaultWriterContext, WriterContext } from '../../../../data/content/writers/context';
-import { DefinitionInlineEditor } from './DefinitionInlineEditor';
-import { useElementSelected } from '../../../../data/content/utils';
-import { HoverContainer } from '../../toolbar/HoverContainer';
-import { DefinitionSettings } from './DefinitionToolbar';
+import React, { useCallback } from 'react';
 
 interface Props extends EditorProps<ContentModel.Definition> {}
 export const DefinitionEditor: React.FC<Props> = ({

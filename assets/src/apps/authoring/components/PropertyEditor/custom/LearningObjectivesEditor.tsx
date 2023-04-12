@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Objective } from '../../../../../data/content/objective';
 import { selectAllObjectivesMap } from '../../../store/app/slice';
 import { LearningObjectivesModal } from './LearningObjectivesModal';
+import React, { useCallback, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 interface SingleObjectiveProps {
   objective: Objective;

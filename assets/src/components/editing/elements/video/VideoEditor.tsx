@@ -1,15 +1,14 @@
-import React from 'react';
+import { useElementSelected } from '../../../../data/content/utils';
+import { VideoPlayer } from '../../../video_player/VideoPlayer';
+import { HoverContainer } from '../../toolbar/HoverContainer';
+import { useCommandTargetable } from '../command_button/useCommandTargetable';
+import { VideoCommandEditor } from './VideoCommandEditor';
+import { VideoPlaceholder } from './VideoPlaceholder';
+import { VideoSettings } from './VideoSettings';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import { Video } from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
-
-import { VideoPlayer } from '../../../video_player/VideoPlayer';
-import { VideoPlaceholder } from './VideoPlaceholder';
-import { HoverContainer } from '../../toolbar/HoverContainer';
-import { useElementSelected } from '../../../../data/content/utils';
-import { VideoSettings } from './VideoSettings';
-import { VideoCommandEditor } from './VideoCommandEditor';
-import { useCommandTargetable } from '../command_button/useCommandTargetable';
+import React from 'react';
 
 interface Props extends EditorProps<Video> {}
 

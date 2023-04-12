@@ -1,6 +1,5 @@
-import React, { Fragment } from 'react';
-
 import { DiagnosticTypes } from './DiagnosticTypes';
+import React, { Fragment } from 'react';
 
 export interface Message {
   problem: any;

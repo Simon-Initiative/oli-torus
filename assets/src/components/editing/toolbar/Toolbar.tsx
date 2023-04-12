@@ -1,7 +1,7 @@
-import React, { PropsWithChildren } from 'react';
 import { CommandContext } from '../elements/commands/interfaces';
-import { ToolbarContext, ToolbarContextT } from 'components/editing/toolbar/hooks/useToolbar';
 import styles from './Toolbar.modules.scss';
+import { ToolbarContext, ToolbarContextT } from 'components/editing/toolbar/hooks/useToolbar';
+import React, { PropsWithChildren } from 'react';
 
 interface Props {
   context: CommandContext;

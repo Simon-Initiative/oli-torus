@@ -1,8 +1,8 @@
+import { ContextProps, InitResultProps } from './types';
 import chroma from 'chroma-js';
 import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { Environment } from 'janus-script';
 import React, { CSSProperties, useEffect, useRef } from 'react';
-import { ContextProps, InitResultProps } from './types';
 
 interface PopupWindowProps {
   config: any;

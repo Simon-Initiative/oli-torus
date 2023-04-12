@@ -1,5 +1,5 @@
-import React from 'react';
 import { MathLive } from 'components/common/MathLive';
+import React from 'react';
 
 interface InputProps {
   value: string;

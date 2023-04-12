@@ -1,16 +1,16 @@
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import {
+  ActionOperatorOption,
+  TypeOption,
+  actionOperatorOptions,
+  typeOptions,
+} from './AdaptiveItemOptions';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
 import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
-import { VariablePicker, OverlayPlacements } from './VariablePicker';
-import {
-  ActionOperatorOption,
-  actionOperatorOptions,
-  TypeOption,
-  typeOptions,
-} from './AdaptiveItemOptions';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ActionMutateEditorProps {
   action: MutateStateAction;

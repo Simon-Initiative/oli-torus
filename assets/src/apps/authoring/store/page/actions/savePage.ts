@@ -1,18 +1,18 @@
+import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
+import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
+import { createUndoAction } from '../../history/slice';
+import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
+import { AuthoringRootState } from '../../rootReducer';
+import PageSlice from '../name';
+import { PageState, selectRevisionSlug, selectState, setRevisionSlug, updatePage } from '../slice';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { ResourceContent } from 'data/content/resource';
-import { edit, Edited, ResourceUpdate } from 'data/persistence/resource';
-import { clone } from 'utils/common';
-import cloneDeep from 'lodash/cloneDeep';
-import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
-import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
-import { AuthoringRootState } from '../../rootReducer';
-import { PageState, selectRevisionSlug, selectState, setRevisionSlug, updatePage } from '../slice';
-import PageSlice from '../name';
-import { createUndoAction } from '../../history/slice';
+import { Edited, ResourceUpdate, edit } from 'data/persistence/resource';
 import { debounce } from 'lodash';
-import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
+import cloneDeep from 'lodash/cloneDeep';
+import { clone } from 'utils/common';
 
 export interface PagePayload extends Partial<PageState> {
   undoable?: boolean;

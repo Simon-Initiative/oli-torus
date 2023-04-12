@@ -6,12 +6,12 @@ import {
   MultiInputType,
 } from 'components/activities/multi_input/schema';
 import {
+  Part,
+  Transform,
   makeChoice,
   makeHint,
   makePart,
   makeTransformation,
-  Part,
-  Transform,
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';

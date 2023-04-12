@@ -1,3 +1,11 @@
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
+import * as ActivityTypes from '../types';
+import { Actions } from './actions';
+import { OrderingSchema } from './schema';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
@@ -5,26 +13,18 @@ import { Hints } from 'components/activities/common/hints/authoring/HintsAuthori
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { defaultWriterContext } from 'data/content/writers/context';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
 import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Choices } from 'data/activities/model/choices';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
+import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
-import * as ActivityTypes from '../types';
-import { Actions } from './actions';
-import { OrderingSchema } from './schema';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const store = configureStore();
 

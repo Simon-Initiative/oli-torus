@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
-import * as Persistence from 'data/persistence/resource';
+import { Modal, ModalSize } from 'components/modal/Modal';
+import * as ContentModel from 'data/content/model/elements/types';
 import {
+  LinkablePages,
   isInternalLink,
   normalizeHref,
   toInternalLink,
-  LinkablePages,
 } from 'data/content/model/elements/utils';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import * as Persistence from 'data/persistence/resource';
+import React, { useState } from 'react';
 import { Maybe } from 'tsmonad';
-import { Modal, ModalSize } from 'components/modal/Modal';
 
 interface ModalProps {
   onDone: (x: any) => void;

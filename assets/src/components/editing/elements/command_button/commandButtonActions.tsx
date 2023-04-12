@@ -1,8 +1,8 @@
-import React from 'react';
-import { Transforms, Element } from 'slate';
 import { isActive } from '../../slateUtils';
-import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from '../commands/commandFactories';
+import { Model } from 'data/content/model/elements/factories';
+import React from 'react';
+import { Element, Transforms } from 'slate';
 
 export const insertCommandButton = createButtonCommandDesc({
   icon: <i className="fa-solid fa-wand-magic-sparkles"></i>,

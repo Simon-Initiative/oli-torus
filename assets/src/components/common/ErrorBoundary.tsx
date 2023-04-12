@@ -1,7 +1,7 @@
+import Appsignal from '@appsignal/javascript';
+import { Collapse } from 'components/common/Collapse';
 import React, { ErrorInfo } from 'react';
 import guid from 'utils/guid';
-import { Collapse } from 'components/common/Collapse';
-import Appsignal from '@appsignal/javascript';
 
 export const AppsignalContext = React.createContext<Appsignal | null>(null);
 AppsignalContext.displayName = 'Appsignal';

@@ -1,5 +1,6 @@
-import { codeLanguageDesc } from 'components/editing/elements/blockcode/codeblockActions';
+import { ListStyleToggle } from '../ListStyleToggle';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
+import { codeLanguageDesc } from 'components/editing/elements/blockcode/codeblockActions';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import {
   headingLevelDesc,
@@ -10,16 +11,15 @@ import {
   orderedListStyleCommands,
   unorderedListStyleCommands,
 } from 'components/editing/elements/list/listActions';
+import { getHighestTopLevel, isActive } from 'components/editing/slateUtils';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { getHighestTopLevel, isActive } from 'components/editing/slateUtils';
+import { activeBlockType } from 'components/editing/toolbar/toolbarUtils';
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { useSlate } from 'slate-react';
-import { activeBlockType } from 'components/editing/toolbar/toolbarUtils';
-import { ListStyleToggle } from '../ListStyleToggle';
 
 interface BlockSettingProps {}
 export const BlockSettings = (_props: BlockSettingProps) => {

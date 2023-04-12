@@ -1,6 +1,4 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import YouTube, { Options } from 'react-youtube';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -8,6 +6,8 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { PartComponentProps } from '../types/parts';
 import { VideoModel } from './schema';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import YouTube, { Options } from 'react-youtube';
 
 const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

@@ -1,6 +1,6 @@
-import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { PersistenceStrategy, PersistenceState } from 'data/persistence/PersistenceStrategy';
 import { LockResult } from 'data/persistence//lock';
+import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import { PersistenceState, PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 
 export function initializePersistence(): PersistenceStrategy {
   const p = new DeferredPersistenceStrategy();

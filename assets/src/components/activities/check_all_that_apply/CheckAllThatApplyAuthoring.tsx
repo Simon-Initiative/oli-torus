@@ -1,3 +1,10 @@
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
+import * as ActivityTypes from '../types';
+import { CATAActions } from './actions';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 import { cataV1toV2 } from 'components/activities/check_all_that_apply/transformations/v2';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
@@ -19,13 +26,6 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
-import * as ActivityTypes from '../types';
-import { CATAActions } from './actions';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const store = configureStore();
 

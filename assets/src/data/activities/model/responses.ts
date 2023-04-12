@@ -2,8 +2,8 @@ import {
   ChoiceId,
   ChoiceIdsToResponseId,
   HasParts,
-  makeResponse,
   Response,
+  makeResponse,
 } from 'components/activities/types';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';

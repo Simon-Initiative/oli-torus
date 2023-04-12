@@ -1,7 +1,6 @@
-import React from 'react';
-import { ConnectionLineComponent, getBezierPath, Node } from 'reactflow';
-
 import { getEdgeParams } from './utils';
+import React from 'react';
+import { ConnectionLineComponent, Node, getBezierPath } from 'reactflow';
 
 const FloatingConnectionLine: ConnectionLineComponent = ({
   fromNode,

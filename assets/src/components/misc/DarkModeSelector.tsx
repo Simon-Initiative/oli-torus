@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { ThreeStateToggle, ToggleOption } from 'components/common/ThreeStateToggle';
+import React, { useState } from 'react';
 import { isDarkMode } from 'utils/browser';
 
 type Mode = 'auto' | 'light' | 'dark';

@@ -1,10 +1,9 @@
-import React, { Fragment } from 'react';
-
 import { DiagnosticTypes } from './DiagnosticTypes';
-import { FixIdButton } from './FixIdButton';
 import { FixBrokenPathButton } from './FixBrokenPathButton';
+import { FixIdButton } from './FixIdButton';
 import { FixTargetButton } from './FixTargetButton';
 import { SolutionProps } from './SolutionProps';
+import React, { Fragment } from 'react';
 
 export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps): JSX.Element => {
   const { type = DiagnosticTypes.DEFAULT } = props;

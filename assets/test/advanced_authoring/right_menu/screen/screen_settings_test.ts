@@ -1,8 +1,8 @@
+import { screen, screen1, screen2, transformedSchema } from './screen_mocks';
 import {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/screen';
-import { screen, screen1, screen2, transformedSchema } from './screen_mocks';
 
 describe('transforming screen structure to screen schema and back to structure', () => {
   it('should transform activity structure to screen schema(with useHTMLProps false)', () => {

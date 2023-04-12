@@ -1,7 +1,7 @@
-import * as React from 'react';
+import './ShapeEditor.scss';
 import { Point } from './common';
 import { throttle } from './timing';
-import './ShapeEditor.scss';
+import * as React from 'react';
 
 const coordsToList = (coords: number[]) => {
   return {

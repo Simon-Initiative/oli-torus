@@ -1,11 +1,11 @@
+import { modalActions } from 'actions/modal';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
+import { Modal } from 'components/modal/Modal';
+import { Model } from 'data/content/model/elements/factories';
+import React, { useState } from 'react';
 import { Transforms } from 'slate';
 import { getQueryVariableFromString } from 'utils/params';
-import { Model } from 'data/content/model/elements/factories';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import React, { useState } from 'react';
-import { modalActions } from 'actions/modal';
-import { Modal } from 'components/modal/Modal';
-import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 
 export const youtubeUrlToId = (src?: string | null) => {
   if (!src) return null;

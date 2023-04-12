@@ -1,3 +1,13 @@
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import * as ActivityTypes from '../types';
+import { MediaItemRequest } from '../types';
+import { ICActions } from './actions';
+import { ImageCodingModelSchema } from './schema';
+import { Feedback } from './sections/Feedback';
+import { ImageCodeEditor } from './sections/ImageCodeEditor';
+import { lastPart } from './utils';
 import { Hints as HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
@@ -11,16 +21,6 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import guid from 'utils/guid';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
-import * as ActivityTypes from '../types';
-import { MediaItemRequest } from '../types';
-import { ICActions } from './actions';
-import { ImageCodingModelSchema } from './schema';
-import { Feedback } from './sections/Feedback';
-import { ImageCodeEditor } from './sections/ImageCodeEditor';
-import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();

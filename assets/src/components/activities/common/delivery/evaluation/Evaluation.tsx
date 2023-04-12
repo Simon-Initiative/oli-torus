@@ -1,4 +1,4 @@
-import { ActivityState, makeContent, makeFeedback, PartState } from 'components/activities/types';
+import { ActivityState, PartState, makeContent, makeFeedback } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';

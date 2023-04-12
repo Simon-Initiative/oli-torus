@@ -1,6 +1,6 @@
-import React, { PropsWithChildren } from 'react';
 import { AddResource } from './AddResource';
-import { EditorProps, createEditor } from './createEditor';
+import styles from './ContentBlock.modules.scss';
+import { GroupEditor } from './GroupEditor';
 import {
   Description,
   ExpandToggle,
@@ -8,19 +8,19 @@ import {
   OutlineGroupProps,
   resourceGroupTitle,
 } from './OutlineItem';
+import { PaginationModes } from './PaginationModes';
+import { EditorProps, createEditor } from './createEditor';
+import { Purpose } from 'components/content/Purpose';
+import { DeleteButton } from 'components/misc/DeleteButton';
 import {
+  PurposeGroupContent,
   PurposeTypes,
   ResourceContent,
-  isGroupWithPurpose,
   groupOrDescendantHasPurpose,
-  PurposeGroupContent,
+  isGroupWithPurpose,
 } from 'data/content/resource';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import { Purpose } from 'components/content/Purpose';
+import React, { PropsWithChildren } from 'react';
 import { classNames } from 'utils/classNames';
-import styles from './ContentBlock.modules.scss';
-import { PaginationModes } from './PaginationModes';
-import { GroupEditor } from './GroupEditor';
 
 interface PurposeGroupEditorProps extends EditorProps {
   contentItem: PurposeGroupContent;

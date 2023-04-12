@@ -1,11 +1,11 @@
-import React from 'react';
-import { Choice, ChoiceId, makeContent, PartId } from 'components/activities/types';
+import { LikertItem, LikertModelSchema } from '../schema';
+import { getChoiceValue } from '../utils';
+import './LikertTable.scss';
+import { Choice, ChoiceId, PartId, makeContent } from 'components/activities/types';
+import { toSimpleText } from 'components/editing/slateUtils';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { LikertItem, LikertModelSchema } from '../schema';
-import './LikertTable.scss';
-import { toSimpleText } from 'components/editing/slateUtils';
-import { getChoiceValue } from '../utils';
+import React from 'react';
 
 interface Props {
   model: LikertModelSchema;

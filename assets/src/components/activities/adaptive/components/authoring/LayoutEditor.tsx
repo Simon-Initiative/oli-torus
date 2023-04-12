@@ -1,3 +1,6 @@
+import { contexts } from '../../../../../types/applicationContext';
+import PartComponent from '../common/PartComponent';
+import { ResizeContainer } from './ResizeContainer';
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import {
   NotificationContext,
@@ -7,16 +10,12 @@ import {
 import {
   AnyPartComponent,
   AnyPartModel,
-  defaultCapabilities,
   PartCapabilities,
+  defaultCapabilities,
 } from 'components/parts/types/parts';
 import EventEmitter from 'events';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-
 import { clone } from 'utils/common';
-import { contexts } from '../../../../../types/applicationContext';
-import PartComponent from '../common/PartComponent';
-import { ResizeContainer } from './ResizeContainer';
 
 interface LayoutEditorProps {
   id: string;

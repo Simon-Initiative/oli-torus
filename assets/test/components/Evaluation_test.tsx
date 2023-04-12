@@ -1,7 +1,7 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { Evaluation } from '../../src/components/activities/common/delivery/evaluation/Evaluation';
 import { ActivityState } from '../../src/components/activities';
+import { Evaluation } from '../../src/components/activities/common/delivery/evaluation/Evaluation';
+import { render, screen } from '@testing-library/react';
+import React from 'react';
 
 describe('<Evaluation/>', () => {
   it('Should show explanation on incorrect', () => {

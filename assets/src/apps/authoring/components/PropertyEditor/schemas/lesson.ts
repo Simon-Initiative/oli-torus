@@ -1,8 +1,8 @@
-import { UiSchema } from '@rjsf/core';
-import { JSONSchema7 } from 'json-schema';
 import AccordionTemplate from '../custom/AccordionTemplate';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 import VariableEditor, { FieldTemplate, ObjectFieldTemplate } from '../custom/VariableEditor';
+import { UiSchema } from '@rjsf/core';
+import { JSONSchema7 } from 'json-schema';
 
 const lessonSchema: JSONSchema7 = {
   type: 'object',

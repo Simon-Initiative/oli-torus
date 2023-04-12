@@ -1,6 +1,6 @@
-import { Editor } from 'slate';
-import { CommandDescription, Command } from './interfaces';
+import { Command, CommandDescription } from './interfaces';
 import { Mark } from 'data/content/model/text';
+import { Editor } from 'slate';
 
 interface CommandWrapperProps {
   icon?: JSX.Element;

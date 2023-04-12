@@ -1,16 +1,3 @@
-import {
-  findReferencedActivitiesInActions,
-  findReferencedActivitiesInConditions,
-  getReferencedKeysInActions,
-  getReferencedKeysInConditions,
-} from 'adaptivity/rules-engine';
-import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import debounce from 'lodash/debounce';
-import isEqual from 'lodash/isEqual';
-import React, { useCallback, useEffect, useState } from 'react';
-import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
@@ -25,8 +12,22 @@ import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
-import uniq from 'lodash/uniq';
+import {
+  findReferencedActivitiesInActions,
+  findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
+  getReferencedKeysInConditions,
+} from 'adaptivity/rules-engine';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import debounce from 'lodash/debounce';
 import flatten from 'lodash/flatten';
+import isEqual from 'lodash/isEqual';
+import uniq from 'lodash/uniq';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { clone } from 'utils/common';
+
 export interface AdaptivityEditorProps {
   content?: any;
 }

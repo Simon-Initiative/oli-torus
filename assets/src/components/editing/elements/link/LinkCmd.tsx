@@ -1,8 +1,8 @@
-import React from 'react';
-import { Transforms, Editor, Element } from 'slate';
 import { isActive } from '../../slateUtils';
-import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from '../commands/commandFactories';
+import { Model } from 'data/content/model/elements/factories';
+import React from 'react';
+import { Editor, Element, Transforms } from 'slate';
 
 export const commandDesc = createButtonCommandDesc({
   icon: <i className="fa-solid fa-link"></i>,

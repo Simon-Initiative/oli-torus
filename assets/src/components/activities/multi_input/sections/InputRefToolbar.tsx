@@ -3,6 +3,7 @@ import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
+
 interface InputRefToolbar {
   setEditor: React.Dispatch<React.SetStateAction<ReactEditor & Editor>>;
 }

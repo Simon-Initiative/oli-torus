@@ -1,3 +1,4 @@
+import { selectState as selectPageState } from '../../../../page/slice';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { JanusConditionProperties } from 'adaptivity/capi';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
@@ -8,12 +9,12 @@ import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/Dia
 import { AppSlice } from 'apps/authoring/store/app/name';
 import { IActivity, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import {
+  SequenceEntry,
+  SequenceEntryType,
   findInHierarchy,
   flattenHierarchy,
   getHierarchy,
   getSequenceLineage,
-  SequenceEntry,
-  SequenceEntryType,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { Part } from 'components/activities';
@@ -21,7 +22,6 @@ import { Environment } from 'janus-script';
 import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
 import { clone } from 'utils/common';
-import { selectState as selectPageState } from '../../../../page/slice';
 
 export interface DiagnosticProblem {
   owner: SequenceEntry<SequenceEntryType>; // note DiagnosticsWindow *requires* this

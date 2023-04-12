@@ -1,16 +1,16 @@
-import React from 'react';
+import { modalActions } from '../../../../actions/modal';
 import * as ContentModel from '../../../../data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
 import { CommandButton } from '../../../common/CommandButton';
 import { HoverContainer } from '../../toolbar/HoverContainer';
-import { useSelected } from 'slate-react';
-import { CommandButtonSettingsModal } from './CommandButtonSettingsModal';
-import { InlineChromiumBugfix, useEditModelCallback } from '../utils';
-import { CommandContext } from '../commands/interfaces';
 import { Toolbar } from '../../toolbar/Toolbar';
 import { DescriptiveButton } from '../../toolbar/buttons/DescriptiveButton';
 import { createButtonCommandDesc } from '../commands/commandFactories';
-import { modalActions } from '../../../../actions/modal';
+import { CommandContext } from '../commands/interfaces';
+import { InlineChromiumBugfix, useEditModelCallback } from '../utils';
+import { CommandButtonSettingsModal } from './CommandButtonSettingsModal';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import React from 'react';
+import { useSelected } from 'slate-react';
 
 interface Props extends EditorProps<ContentModel.CommandButton> {}
 

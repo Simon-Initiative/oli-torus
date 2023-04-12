@@ -1,8 +1,3 @@
-import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
-import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
-import useWindowSize from 'components/hooks/useWindowSize';
-import React, { useEffect } from 'react';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import PreviewTools from './components/PreviewTools';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
 import ScreenIdleTimeOutDialog from './layouts/deck/IdleTimeOutDialog';
@@ -19,6 +14,11 @@ import {
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
 import { selectScreenIdleExpirationTime } from './store/features/page/slice';
+import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
+import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
+import useWindowSize from 'components/hooks/useWindowSize';
+import React, { useEffect } from 'react';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 
 export interface DeliveryProps {
   resourceId: number;

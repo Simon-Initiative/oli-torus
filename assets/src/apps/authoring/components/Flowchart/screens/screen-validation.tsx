@@ -1,6 +1,3 @@
-import React from 'react';
-
-import { ReactNode } from 'react';
 import {
   IActivity,
   IDropdownPartLayout,
@@ -9,13 +6,15 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { IActivityReference } from '../../../../delivery/store/features/groups/slice';
 import {
+  QuestionType,
   getScreenPrimaryQuestion,
   getScreenQuestionType,
-  QuestionType,
 } from '../paths/path-options';
 import { AllPaths } from '../paths/path-types';
 import { isDestinationPath, isOptionCommonErrorPath } from '../paths/path-utils';
 import { validatePath } from '../paths/path-validation';
+import React from 'react';
+import { ReactNode } from 'react';
 
 const validateQuestion = (question: any) => {
   // TODO!

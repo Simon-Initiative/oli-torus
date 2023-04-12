@@ -1,6 +1,12 @@
-import React, { useCallback } from 'react';
-import { ReactEditor } from 'slate-react';
-import { Transforms, Editor, Path, Element } from 'slate';
+import {
+  canExpandCellRight,
+  canExpandDown,
+  canSplitCell,
+  expandCellDown,
+  expandCellRight,
+  splitCell,
+} from './table-cell-merge-operations';
+import { Model } from 'data/content/model/elements/factories';
 import {
   Table,
   TableBorderStyle,
@@ -10,16 +16,10 @@ import {
   TableRow,
   TableRowStyle,
 } from 'data/content/model/elements/types';
-import { Model } from 'data/content/model/elements/factories';
-import {
-  canExpandCellRight,
-  canExpandDown,
-  canSplitCell,
-  expandCellDown,
-  expandCellRight,
-  splitCell,
-} from './table-cell-merge-operations';
+import React, { useCallback } from 'react';
 import { Dropdown } from 'react-bootstrap';
+import { Editor, Element, Path, Transforms } from 'slate';
+import { ReactEditor } from 'slate-react';
 
 // Dropdown menu that appears in each table cell.
 interface Props {

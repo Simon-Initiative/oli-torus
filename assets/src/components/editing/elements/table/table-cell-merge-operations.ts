@@ -1,11 +1,10 @@
 /*
   Functions relating to the merging and splitting of cells in tables in the slateJS editor.
 */
-
-import { Transforms, Editor, Element, Path } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { Table, TableCell, TableRow } from '../../../../data/content/model/elements/types';
 import { getColspan, getRowspan, getVisualGrid } from './table-util';
+import { Editor, Element, Path, Transforms } from 'slate';
 
 /**
  * This function will return a list of TableCell entries that are visually next to each other

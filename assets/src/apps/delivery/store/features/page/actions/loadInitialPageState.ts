@@ -1,8 +1,3 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { readGlobalUserState } from 'data/persistence/extrinsic';
-import { writePageAttemptState } from 'data/persistence/state/intrinsic';
-import { clone } from 'utils/common';
-import guid from 'utils/guid';
 import {
   defaultGlobalEnv,
   evalAssignScript,
@@ -21,7 +16,12 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { loadPageState, PageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
+import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { readGlobalUserState } from 'data/persistence/extrinsic';
+import { writePageAttemptState } from 'data/persistence/state/intrinsic';
+import { clone } from 'utils/common';
+import guid from 'utils/guid';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,

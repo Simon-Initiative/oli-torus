@@ -1,8 +1,6 @@
 /* eslint-disable no-prototype-builtins */
+
 /* eslint-disable react/prop-types */
-import debounce from 'lodash/debounce';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { CapiVariable } from '../../../../adaptivity/capi';
 import {
   ApplyStateOperation,
@@ -13,6 +11,9 @@ import { applyStateChange } from '../../store/features/adaptivity/actions/applyS
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import StateDisplay from './inspector/StateDisplay';
 import { unflatten } from './inspector/utils';
+import debounce from 'lodash/debounce';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 interface InspectorProps {
   currentActivity: any;

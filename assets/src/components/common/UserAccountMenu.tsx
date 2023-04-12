@@ -1,9 +1,9 @@
+import { SelectTimezone } from './SelectTimezone';
 import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
 import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import React, { PropsWithChildren, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { classNames } from 'utils/classNames';
-import { SelectTimezone } from './SelectTimezone';
 
 enum Roles {
   Independent = 'open_and_free',

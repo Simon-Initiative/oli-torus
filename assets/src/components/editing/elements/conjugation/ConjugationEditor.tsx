@@ -1,16 +1,15 @@
-import React, { useCallback } from 'react';
+import { useElementSelected } from '../../../../data/content/utils';
+import { WriterContext, defaultWriterContext } from '../../../../data/content/writers/context';
+import { HtmlParser } from '../../../../data/content/writers/html';
+import { ContentWriter } from '../../../../data/content/writers/writer';
+import { Conjugation } from '../../../common/Conjugation';
+import { HoverContainer } from '../../toolbar/HoverContainer';
+import { ConjugationInlineEditor } from './ConjugationInlineEditor';
+import { ConjugationSettings } from './ConjugationToolbar';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { ContentWriter } from '../../../../data/content/writers/writer';
-import { HtmlParser } from '../../../../data/content/writers/html';
-import { defaultWriterContext, WriterContext } from '../../../../data/content/writers/context';
-
-import { useElementSelected } from '../../../../data/content/utils';
-import { HoverContainer } from '../../toolbar/HoverContainer';
-import { ConjugationSettings } from './ConjugationToolbar';
-import { Conjugation } from '../../../common/Conjugation';
-import { ConjugationInlineEditor } from './ConjugationInlineEditor';
+import React, { useCallback } from 'react';
 
 interface Props extends EditorProps<ContentModel.Conjugation> {}
 export const ConjugationEditor: React.FC<Props> = ({

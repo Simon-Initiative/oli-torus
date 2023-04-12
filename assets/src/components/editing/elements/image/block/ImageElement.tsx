@@ -1,13 +1,13 @@
-import React from 'react';
-import { useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
+import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
+import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
+import { ImagePlaceholder } from 'components/editing/elements/image/block/ImagePlaceholder';
 import { EditorProps } from 'components/editing/elements/interfaces';
+import { useEditModelCallback } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Resizable } from 'components/misc/resizable/Resizable';
-import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
+import * as ContentModel from 'data/content/model/elements/types';
 import { useElementSelected } from 'data/content/utils';
-import { ImagePlaceholder } from 'components/editing/elements/image/block/ImagePlaceholder';
-import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
+import React from 'react';
 
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
 

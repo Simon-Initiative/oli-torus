@@ -1,6 +1,6 @@
+import PartComponent from '../common/PartComponent';
 import { ActivityState, PartComponentDefinition } from 'components/activities/types';
 import React from 'react';
-import PartComponent from '../common/PartComponent';
 
 interface PartsLayoutRendererProps {
   parts: PartComponentDefinition[];

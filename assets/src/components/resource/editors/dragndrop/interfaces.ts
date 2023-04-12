@@ -1,6 +1,6 @@
+import { ActivityEditContext } from 'data/content/activity';
 import { ActivityReference, ResourceContent } from 'data/content/resource';
 import { ProjectSlug } from 'data/types';
-import { ActivityEditContext } from 'data/content/activity';
 
 export interface ActivityPayload {
   type: 'ActivityPayload';

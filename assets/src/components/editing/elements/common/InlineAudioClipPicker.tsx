@@ -1,12 +1,12 @@
-import { Tooltip } from 'components/common/Tooltip';
-import React, { useCallback, useRef, useState } from 'react';
 import { AudioSource } from '../../../../data/content/model/elements/types';
 import { MediaItem } from '../../../../types/media';
 import { useAudio } from '../../../hooks/useAudio';
-import { MIMETYPE_FILTERS, SELECTION_TYPES } from '../../../media/manager/MediaManager';
 import { UrlOrUpload } from '../../../media/UrlOrUpload';
+import { MIMETYPE_FILTERS, SELECTION_TYPES } from '../../../media/manager/MediaManager';
 import { CommandContext } from '../commands/interfaces';
 import { AudioClipProvider } from './settings/AudioClipPickerSettings';
+import { Tooltip } from 'components/common/Tooltip';
+import React, { useCallback, useRef, useState } from 'react';
 
 interface Props {
   clipSrc?: string;

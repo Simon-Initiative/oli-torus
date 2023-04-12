@@ -1,6 +1,10 @@
+import { convertPalette } from '../common/util';
+import AddPartToolbar from './AddPartToolbar';
+import LayoutEditor from './LayoutEditor';
+import styles from './ScreenAuthor.modules.scss';
 import ConfigurationModal from 'apps/authoring/components/EditingCanvas/ConfigurationModal';
-import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import partSchema, {
   partUiSchema,
   transformModelToSchema as transformPartModelToSchema,
@@ -19,10 +23,6 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from 'rea
 import { Col, Container, Row } from 'react-bootstrap';
 import { classNames } from 'utils/classNames';
 import { clone } from 'utils/common';
-import { convertPalette } from '../common/util';
-import AddPartToolbar from './AddPartToolbar';
-import LayoutEditor from './LayoutEditor';
-import styles from './ScreenAuthor.modules.scss';
 
 interface ScreenAuthorProps {
   screen: any;

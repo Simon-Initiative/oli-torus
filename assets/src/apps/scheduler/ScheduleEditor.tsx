@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
 import { Alert } from '../../components/misc/Alert';
 import { usePromptModal } from '../../components/misc/PromptModal';
 import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
-import { resetSchedule, StringDate } from './scheduler-slice';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
-import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
 import { WeekDayPicker } from './WeekdayPicker';
+import { StringDate, resetSchedule } from './scheduler-slice';
+import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
+import React, { useCallback, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 
 export interface SchedulerProps {
   start_date: StringDate;

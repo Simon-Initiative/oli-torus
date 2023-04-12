@@ -1,15 +1,15 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { clone, parseBoolean } from 'utils/common';
-import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
-import { CapiIframeModel } from './schema';
 import { CapiVariable } from '../../../adaptivity/capi';
 import CapiVariablePicker from './CapiVariablePicker';
+import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
+import { CapiIframeModel } from './schema';
 import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { clone, parseBoolean } from 'utils/common';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
   const { model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;

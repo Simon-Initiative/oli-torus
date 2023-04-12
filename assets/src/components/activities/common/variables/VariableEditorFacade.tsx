@@ -1,8 +1,7 @@
-import * as React from 'react';
-import { Variable } from 'data/persistence/variables';
-
-import { ModuleEditor } from './secondgen/ModuleEditor';
 import { VariablesEditor } from './firstgen/VariablesEditor';
+import { ModuleEditor } from './secondgen/ModuleEditor';
+import { Variable } from 'data/persistence/variables';
+import * as React from 'react';
 
 export interface VariablesEditorFacadeProps {
   editMode: boolean;

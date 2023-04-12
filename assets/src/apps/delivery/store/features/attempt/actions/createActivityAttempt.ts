@@ -1,11 +1,11 @@
+import { DeliveryRootState } from '../../../../store/rootReducer';
+import { selectPreviewMode } from '../../page/slice';
+import AttemptSlice from '../name';
+import { selectById, upsertActivityAttemptState } from '../slice';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
 import { createNewActivityAttempt } from 'data/persistence/state/intrinsic';
 import guid from 'utils/guid';
-import { DeliveryRootState } from '../../../../store/rootReducer';
-import { selectPreviewMode } from '../../page/slice';
-import { selectById, upsertActivityAttemptState } from '../slice';
-import AttemptSlice from '../name';
 
 export const createActivityAttempt = createAsyncThunk(
   `${AttemptSlice}/createActivityAttempt`,

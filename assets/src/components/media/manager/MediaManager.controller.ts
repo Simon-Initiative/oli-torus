@@ -1,10 +1,10 @@
-import { connect } from 'react-redux';
-import { Maybe } from 'tsmonad';
-import { State, Dispatch } from 'state';
-import { fetchCourseMediaNextPage, resetMedia, fetchMediaItemByPath } from 'actions/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
-import { MediaLibraryOption, MediaItem } from 'types/media';
 import { MediaManager, SELECTION_TYPES } from './MediaManager';
+import { fetchCourseMediaNextPage, fetchMediaItemByPath, resetMedia } from 'actions/media';
+import { connect } from 'react-redux';
+import { Dispatch, State } from 'state';
+import { Maybe } from 'tsmonad';
+import { MediaItem, MediaLibraryOption } from 'types/media';
 
 export { MIMETYPE_FILTERS, SELECTION_TYPES } from './MediaManager';
 

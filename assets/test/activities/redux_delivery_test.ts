@@ -1,10 +1,9 @@
-import { defaultCATAModel } from 'components/activities/check_all_that_apply/utils';
 import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import '@testing-library/jest-dom';
-import { configureStore } from 'state/store';
-import { activityDeliverySlice, setSelection } from 'data/activities/DeliveryState';
+import { ActivityContext } from 'components/activities';
+import { defaultCATAModel } from 'components/activities/check_all_that_apply/utils';
 import { makeHint } from 'components/activities/types';
-import { Dispatch, Store } from 'redux';
+import { activityDeliverySlice, setSelection } from 'data/activities/DeliveryState';
 import { ActivityDeliveryState, initializeState } from 'data/activities/DeliveryState';
 import {
   defaultActivityState,
@@ -12,7 +11,8 @@ import {
   stringToStudentInput,
   studentInputToString,
 } from 'data/activities/utils';
-import { ActivityContext } from 'components/activities';
+import { Dispatch, Store } from 'redux';
+import { configureStore } from 'state/store';
 
 describe('activity delivery state management', () => {
   const model = defaultCATAModel();

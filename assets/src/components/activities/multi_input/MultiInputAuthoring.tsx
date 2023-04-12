@@ -1,7 +1,12 @@
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
+import { ExplanationTab } from './sections/ExplanationTab';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import {
-  shuffleAnswerChoiceSetting,
   changePerPartSubmission,
+  shuffleAnswerChoiceSetting,
 } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
@@ -18,11 +23,6 @@ import { Provider } from 'react-redux';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { configureStore } from 'state/store';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { ExplanationTab } from './sections/ExplanationTab';
 
 const store = configureStore();
 

@@ -1,6 +1,6 @@
+import * as ContentTypes from '../data/content/model/elements/types';
 import React from 'react';
 import { classNames } from 'utils/classNames';
-import * as ContentTypes from '../data/content/model/elements/types';
 
 export const ContentTable: React.FC<{
   model: ContentTypes.Table;

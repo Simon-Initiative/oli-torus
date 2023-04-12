@@ -1,17 +1,17 @@
-import { EventEmitter } from 'events';
-import { valueOr } from 'utils/common';
 import {
   Action,
   ActivityModelSchema,
   ActivityState,
   ClientEvaluation,
+  DeliveryMode,
   Hint,
   PartResponse,
   PartState,
   StudentResponse,
   Success,
-  DeliveryMode,
 } from './types';
+import { EventEmitter } from 'events';
+import { valueOr } from 'utils/common';
 
 /**
  * Response to a submitted activity evaluation.

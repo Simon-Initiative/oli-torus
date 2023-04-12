@@ -1,6 +1,3 @@
-import React from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   selectIsAdmin,
   selectPaths,
@@ -14,6 +11,10 @@ import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
 import { DiagnosticsTrigger } from './Modal/DiagnosticsWindow';
+import React from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;

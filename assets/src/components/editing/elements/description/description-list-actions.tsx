@@ -1,8 +1,8 @@
-import React from 'react';
-import { Editor, Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { SlateEditor } from '../../../../data/content/model/slate';
 import { createButtonCommandDesc } from '../commands/commandFactories';
+import React from 'react';
+import { Editor, Transforms } from 'slate';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const insertDescriptionListCommand = createButtonCommandDesc({

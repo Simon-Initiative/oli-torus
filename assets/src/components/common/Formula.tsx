@@ -1,5 +1,5 @@
-import React from 'react';
 import { MathJaxLatexFormula, MathJaxMathMLFormula } from './MathJaxFormula';
+import React from 'react';
 
 export const Formula: React.FC<{
   type?: string;

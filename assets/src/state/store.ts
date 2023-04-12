@@ -1,10 +1,9 @@
-import { createStore, applyMiddleware, Reducer, Store, AnyAction } from 'redux';
+import nextReducer from './index';
+import { AnyAction, Reducer, Store, applyMiddleware, createStore } from 'redux';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import { createLogger } from 'redux-logger';
-
 import thunk from 'redux-thunk';
 import rootReducer, { initState } from 'state';
-import nextReducer from './index';
 
 export function configureStore(initialState?: any, reducer?: Reducer) {
   const logger = createLogger({

@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
-import { useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentSelection } from '../../../store/parts/slice';
+import React, { useCallback } from 'react';
+import { useSelector } from 'react-redux';
 
 /*
  This component handles editing advanced feedback for a question type that has a fixed set of options.

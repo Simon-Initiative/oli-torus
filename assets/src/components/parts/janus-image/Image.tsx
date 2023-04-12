@@ -1,11 +1,11 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { PartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 
 const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

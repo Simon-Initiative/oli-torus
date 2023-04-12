@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { normalizeHref } from 'data/content/model/elements/utils';
 import { Model } from 'data/content/model/elements/factories';
 import { Hyperlink, ModelElement } from 'data/content/model/elements/types';
+import { normalizeHref } from 'data/content/model/elements/utils';
 import { Editor, Node } from 'slate';
 import { jsx } from 'slate-hyperscript';
 

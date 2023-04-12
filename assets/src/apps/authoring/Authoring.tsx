@@ -1,7 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { isFirefox } from 'utils/browser';
+import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
+import { initAppSignal } from '../../utils/appsignal';
+import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
+import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
+import { ReadOnlyWarning } from './ReadOnlyWarning';
+import { ModalContainer } from './components/AdvancedAuthoringModal';
+import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
+import { onboardWizardComplete } from './components/Flowchart/flowchart-actions/onboard-wizard-complete';
+import { OnboardWizard } from './components/Flowchart/onboard-wizard/OnboardWizard';
 import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import ScoringOverview from './components/Modal/ScoringOverview';
 import { releaseEditingLock } from './store/app/actions/locking';
@@ -28,16 +33,11 @@ import {
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import { PageContext } from './types';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
-import { initAppSignal } from '../../utils/appsignal';
-import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
-import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
-import { ReadOnlyWarning } from './ReadOnlyWarning';
-import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
-import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
-import { ModalContainer } from './components/AdvancedAuthoringModal';
-import { OnboardWizard } from './components/Flowchart/onboard-wizard/OnboardWizard';
-import { onboardWizardComplete } from './components/Flowchart/flowchart-actions/onboard-wizard-complete';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Button } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { isFirefox } from 'utils/browser';
 
 export interface AuthoringProps {
   isAdmin: boolean;

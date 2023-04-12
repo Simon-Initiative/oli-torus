@@ -1,8 +1,7 @@
-import { ThunkDispatch } from 'redux-thunk';
-
+import { SchedulerState, initSchedulerState, schedulerSliceReducer } from './scheduler-slice';
 import { combineReducers } from 'redux';
-import { ModalActions, ModalState, modal, initModalState } from 'state/modal';
-import { initSchedulerState, schedulerSliceReducer, SchedulerState } from './scheduler-slice';
+import { ThunkDispatch } from 'redux-thunk';
+import { ModalActions, ModalState, initModalState, modal } from 'state/modal';
 
 export interface SchedulerAppState {
   scheduler: SchedulerState;

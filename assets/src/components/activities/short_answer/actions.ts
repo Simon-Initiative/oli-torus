@@ -1,7 +1,7 @@
-import { Responses } from 'data/activities/model/responses';
-import { getPartById } from 'data/activities/model/utils';
 import { GradingApproach } from '../types';
 import { InputType, ShortAnswerModelSchema } from './schema';
+import { Responses } from 'data/activities/model/responses';
+import { getPartById } from 'data/activities/model/utils';
 
 export const ShortAnswerActions = {
   setInputType(inputType: InputType, partId: string) {

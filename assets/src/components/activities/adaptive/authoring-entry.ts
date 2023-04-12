@@ -1,3 +1,9 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { AdaptiveModelSchema } from './schema';
+import { defaultModel } from './utils';
+
 // This is the entry point for the multiple choice authoring
 // component, as specified in the manifest.json
 
@@ -16,12 +22,6 @@
 // Fulfills 1. and 2. from above by exporting these components:
 export { AdaptiveDelivery } from './AdaptiveDelivery';
 export { AdaptiveAuthoring } from './AdaptiveAuthoring';
-
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { AdaptiveModelSchema } from './schema';
-import { defaultModel } from './utils';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');

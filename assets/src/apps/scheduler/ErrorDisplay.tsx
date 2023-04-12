@@ -1,9 +1,8 @@
-import React, { useCallback } from 'react';
-
-import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '../../components/misc/Button';
 import { getError } from './schedule-selectors';
 import { dismissError } from './scheduler-slice';
+import React, { useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 export const ErrorDisplay: React.FC = () => {
   const error = useSelector(getError);

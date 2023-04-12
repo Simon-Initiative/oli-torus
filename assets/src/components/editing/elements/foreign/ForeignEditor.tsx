@@ -1,14 +1,14 @@
-import React, { useCallback } from 'react';
-import { useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
+import { modalActions } from '../../../../actions/modal';
 import { useElementSelected } from '../../../../data/content/utils';
-import { EditorProps } from 'components/editing/elements/interfaces';
 import { HoverContainer } from '../../toolbar/HoverContainer';
 import { Toolbar } from '../../toolbar/Toolbar';
 import { CommandButton } from '../../toolbar/buttons/CommandButton';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 import { ForeignModal } from './ForeignModal';
-import { modalActions } from '../../../../actions/modal';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import { useEditModelCallback } from 'components/editing/elements/utils';
+import * as ContentModel from 'data/content/model/elements/types';
+import React, { useCallback } from 'react';
 
 interface Props extends EditorProps<ContentModel.Foreign> {}
 

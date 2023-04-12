@@ -1,11 +1,11 @@
-import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
-import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import TimeAgo from '../../../../../components/common/TimeAgo';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { HistoryEntry } from './HistoryNavigation';
+import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 interface HistoryPanelProps {
   items: HistoryEntry[];

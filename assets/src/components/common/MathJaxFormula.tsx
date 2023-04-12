@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
 import { sanitizeMathML } from '../../utils/mathmlSanitizer';
+import React, { useCallback, useEffect } from 'react';
 
 /**
  * Two components to render some markup for MathJax and then call MathJax to actually typeset it.

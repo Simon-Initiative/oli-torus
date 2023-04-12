@@ -1,16 +1,7 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
+import { CheckResult, ScoringContext, check } from '../../../../../../adaptivity/rules-engine';
 import {
-  checkIfFirstEventHasNavigation,
-  processResults,
-} from 'apps/delivery/layouts/deck/DeckLayoutFooter';
-import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
-import { PartResponse } from 'components/activities/types';
-import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
-import { clone } from 'utils/common';
-import { check, CheckResult, ScoringContext } from '../../../../../../adaptivity/rules-engine';
-import {
-  applyState,
   ApplyStateOperation,
+  applyState,
   bulkApplyState,
   defaultGlobalEnv,
   getEnvState,
@@ -36,6 +27,15 @@ import {
 import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
 import AdaptivitySlice from '../name';
 import { setLastCheckResults, setLastCheckTriggered } from '../slice';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
+import {
+  checkIfFirstEventHasNavigation,
+  processResults,
+} from 'apps/delivery/layouts/deck/DeckLayoutFooter';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
+import { PartResponse } from 'components/activities/types';
+import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
+import { clone } from 'utils/common';
 
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,

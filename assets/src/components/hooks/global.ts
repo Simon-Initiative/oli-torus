@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { initSocket } from '../../phoenix/socket';
+import { useEffect, useState } from 'react';
 
 export function useGlobalState(userId: number, active: boolean) {
   const [init, setInit] = useState(false);

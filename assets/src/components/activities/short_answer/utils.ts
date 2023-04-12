@@ -1,12 +1,12 @@
+import { HasParts, ScoringStrategy, makeHint, makeStem } from '../types';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import {
+  Responses,
   getCorrectResponse,
   getIncorrectResponse,
   getResponsesByPartId,
-  Responses,
 } from 'data/activities/model/responses';
-import { HasParts, makeHint, makeStem, ScoringStrategy } from '../types';
 
 export const defaultModel: () => ShortAnswerModelSchema = () => {
   return {

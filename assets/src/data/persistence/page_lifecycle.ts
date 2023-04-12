@@ -1,5 +1,5 @@
+import { ServerError, makeRequest } from './common';
 import { SectionSlug } from 'data/types';
-import { makeRequest, ServerError } from './common';
 
 export type ActionSuccess = {
   result: 'success';

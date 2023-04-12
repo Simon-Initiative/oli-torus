@@ -1,16 +1,15 @@
+import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
+import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
+import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
+import AuthoringActivityRenderer from './AuthoringActivityRenderer';
+import ConfigurationModal from './ConfigurationModal';
+import StagePan from './StagePan';
 import { EntityId } from '@reduxjs/toolkit';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
-import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
-
-import AuthoringActivityRenderer from './AuthoringActivityRenderer';
-import ConfigurationModal from './ConfigurationModal';
-import StagePan from './StagePan';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();

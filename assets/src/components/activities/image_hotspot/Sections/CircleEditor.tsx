@@ -1,9 +1,9 @@
-import * as React from 'react';
 import './ShapeEditor.scss';
-import * as Immutable from 'immutable';
-import { Maybe } from 'tsmonad';
 import { Point } from './common';
 import { throttle } from './timing';
+import * as Immutable from 'immutable';
+import * as React from 'react';
+import { Maybe } from 'tsmonad';
 
 const mapCoordsToCircleProps = (coords: Immutable.List<number>) => {
   return {

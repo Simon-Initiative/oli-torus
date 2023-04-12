@@ -1,6 +1,6 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import { JSONSchema7Object } from 'json-schema';
 
 export interface InputTextModel extends JanusAbsolutePositioned, JanusCustomCss {
   enabled: boolean;

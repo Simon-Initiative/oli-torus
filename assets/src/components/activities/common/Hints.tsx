@@ -1,10 +1,10 @@
-import React from 'react';
-import { Heading } from 'components/misc/Heading';
-import { RichTextEditor } from 'components/content/RichTextEditor';
 import { Hint } from '../types';
-import { Description } from 'components/misc/Description';
+import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CloseButton } from 'components/misc/CloseButton';
+import { Description } from 'components/misc/Description';
+import { Heading } from 'components/misc/Heading';
 import { ProjectSlug } from 'data/types';
+import React from 'react';
 import { Descendant } from 'slate';
 
 interface HintsProps {

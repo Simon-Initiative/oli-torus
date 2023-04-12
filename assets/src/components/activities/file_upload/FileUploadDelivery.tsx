@@ -1,48 +1,48 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { maybe } from 'tsmonad';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
-import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import {
-  ActivityDeliveryState,
-  isEvaluated,
-  isSubmitted,
-  activityDeliverySlice,
-  initializeState,
-  resetAction,
-  savePart,
-  submitFiles,
-  listenForReviewAttemptChange,
-  listenForParentSurveyReset,
-} from 'data/activities/DeliveryState';
-import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
-import { safelySelectFiles } from 'data/activities/utils';
-import {
-  ActivityState,
-  PartResponse,
-  StudentResponse,
-  FileMetaData,
-} from 'components/activities/types';
-import { configureStore } from 'state/store';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { RemoveButton } from '../common/authoring/RemoveButton';
+import { castPartId } from '../common/utils';
+import { fileName, getReadableFileSizeString } from './utils';
+import { defaultMaxFileSize } from './utils';
+import { Dispatch } from '@reduxjs/toolkit';
 import {
   DeliveryElement,
   DeliveryElementProps,
   EvaluationResponse,
 } from 'components/activities/DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { Manifest } from 'components/activities/types';
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { FileSpec, FileUploadSchema } from 'components/activities/file_upload/schema';
-import { getReadableFileSizeString, fileName } from './utils';
-import { RemoveButton } from '../common/authoring/RemoveButton';
-import { uploadActivityFile } from 'data/persistence/state/intrinsic';
-import { defaultMaxFileSize } from './utils';
-import { Dispatch } from '@reduxjs/toolkit';
+import {
+  ActivityState,
+  FileMetaData,
+  PartResponse,
+  StudentResponse,
+} from 'components/activities/types';
+import { Manifest } from 'components/activities/types';
+import {
+  ActivityDeliveryState,
+  activityDeliverySlice,
+  initializeState,
+  isEvaluated,
+  isSubmitted,
+  listenForParentSurveyReset,
+  listenForReviewAttemptChange,
+  resetAction,
+  savePart,
+  submitFiles,
+} from 'data/activities/DeliveryState';
+import { safelySelectFiles } from 'data/activities/utils';
 import * as Events from 'data/events';
-import { castPartId } from '../common/utils';
+import { uploadActivityFile } from 'data/persistence/state/intrinsic';
+import React, { useEffect, useMemo, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from 'state/store';
+import { maybe } from 'tsmonad';
 
 function onUploadClick(id: string) {
   (window as any).$('#' + id).trigger('click');

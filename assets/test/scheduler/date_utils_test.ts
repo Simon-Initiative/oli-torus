@@ -1,5 +1,5 @@
-import { DateWithoutTime } from 'epoq';
 import { barGeometry, generateDayGeometry, leftToDate } from '../../src/apps/scheduler/date-utils';
+import { DateWithoutTime } from 'epoq';
 
 describe('Scheduler date utils', () => {
   describe('generateGeometry', () => {

@@ -1,6 +1,6 @@
+import { makeRequest } from './common';
 import { BibEntry, Paging } from 'data/content/bibentry';
 import { ProjectSlug } from 'data/types';
-import { makeRequest } from './common';
 
 export interface BibEntrysRetrieval {
   result: 'success';

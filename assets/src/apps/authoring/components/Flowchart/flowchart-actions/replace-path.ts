@@ -1,4 +1,3 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
 import { clone, cloneT } from '../../../../../utils/common';
 import {
   IActivity,
@@ -12,6 +11,7 @@ import { AllPaths } from '../paths/path-types';
 import { isDestinationPath } from '../paths/path-utils';
 import { validatePath } from '../paths/path-validation';
 import { addFlowchartScreen } from './add-screen';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 
 interface ReplacePathPayload {
   oldPathId: string;

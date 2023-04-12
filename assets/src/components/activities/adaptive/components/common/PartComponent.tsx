@@ -1,16 +1,16 @@
 /* eslint-disable react/prop-types */
 import {
-  AuthorPartComponentProps,
-  CustomProperties,
-  PartComponentProps,
-} from 'components/parts/types/parts';
-import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
-import {
   NotificationContext,
   NotificationType,
   subscribeToNotification,
 } from '../../../../../apps/delivery/components/NotificationContext';
 import { tagName as UnknownTag } from './UnknownPart';
+import {
+  AuthorPartComponentProps,
+  CustomProperties,
+  PartComponentProps,
+} from 'components/parts/types/parts';
+import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 
 const stubHandler = async () => {
   return;

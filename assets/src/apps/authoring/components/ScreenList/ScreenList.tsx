@@ -1,8 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { EntityId } from '@reduxjs/toolkit';
-import React, { useCallback, useMemo } from 'react';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { useOnClickOutside } from '../../../../hooks/click_outside';
 import {
@@ -12,13 +8,17 @@ import {
 } from '../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 import { AdvancedAuthoringPopup } from '../AdvancedAuthoringModal';
+import { FlowchartModeOptions } from '../Flowchart/FlowchartModeOptions';
 import { addFlowchartScreen } from '../Flowchart/flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from '../Flowchart/flowchart-actions/delete-screen';
 import { duplicateFlowchartScreen } from '../Flowchart/flowchart-actions/duplicate-screen';
-import { FlowchartModeOptions } from '../Flowchart/FlowchartModeOptions';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
 import { sortScreens } from '../Flowchart/screens/screen-utils';
 import { AddScreenModal } from './AddScreenModal';
+import { EntityId } from '@reduxjs/toolkit';
+import React, { useCallback, useMemo } from 'react';
+import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 
 /*
   The ScreenList is a simplified view of activities within a lesson similar to the SequenceEditor, but with a reduced feature set

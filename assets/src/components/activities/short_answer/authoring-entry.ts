@@ -1,11 +1,12 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { ShortAnswerModelSchema } from './schema';
+import { defaultModel } from './utils';
+
 export { ShortAnswerDelivery } from './ShortAnswerDelivery';
 export { ShortAnswerAuthoring } from './ShortAnswerAuthoring';
 
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { ShortAnswerModelSchema } from './schema';
-import { defaultModel } from './utils';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 

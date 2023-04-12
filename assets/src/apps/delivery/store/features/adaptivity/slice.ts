@@ -1,6 +1,6 @@
-import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { DeliveryRootState } from '../../rootReducer';
 import AdaptivitySlice from './name';
+import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
 
 export interface CheckResults {
   timestamp: number;

@@ -1,16 +1,16 @@
-import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { dateWithoutTimeLabel, stringToDateWithoutTime } from './date-utils';
 import { getSchedule, getSelectedItem } from './schedule-selectors';
 import {
-  moveScheduleItem,
-  getScheduleItem,
   HierarchyItem,
   ScheduleItemType,
-  unlockScheduleItem,
   SchedulingType,
   changeScheduleType,
+  getScheduleItem,
+  moveScheduleItem,
+  unlockScheduleItem,
 } from './scheduler-slice';
+import React, { useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 type StringDateChangeHandler = (val: string | null) => void;
 type ScheduleTypeChangeHandler = (val: SchedulingType) => void;

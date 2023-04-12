@@ -1,8 +1,3 @@
-import { applyState, templatizeText } from 'adaptivity/scripting';
-import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
-import { updateGlobalUserState } from 'data/persistence/extrinsic';
-import React, { CSSProperties, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -53,6 +48,11 @@ import {
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
 import HistoryNavigation from './components/HistoryNavigation';
+import { applyState, templatizeText } from 'adaptivity/scripting';
+import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
+import { updateGlobalUserState } from 'data/persistence/extrinsic';
+import React, { CSSProperties, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 export const handleValueExpression = (
   currentActivityTree: any[] | null,

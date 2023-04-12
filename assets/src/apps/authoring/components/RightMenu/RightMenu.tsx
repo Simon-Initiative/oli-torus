@@ -1,12 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { UiSchema } from '@rjsf/core';
-import { JSONSchema7 } from 'json-schema';
-
-import React, { useCallback, useMemo } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
-
 import {
   selectAppMode,
   selectRightPanelActiveTab,
@@ -14,9 +6,9 @@ import {
 } from '../../../authoring/store/app/slice';
 import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 import {
-  findInSequence,
   SequenceBank,
   SequenceEntry,
+  findInSequence,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentActivityTree,
@@ -29,7 +21,6 @@ import { updateSequenceItem } from '../../store/groups/layouts/deck/actions/upda
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../store/page/slice';
 import { selectCurrentSelection } from '../../store/parts/slice';
-
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import bankSchema, {
   bankUiSchema,
@@ -48,7 +39,6 @@ import lessonSchema, {
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
-
 import screenSchema, {
   screenUiSchema,
   simpleScreenSchema,
@@ -57,6 +47,12 @@ import screenSchema, {
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
 import { PartPropertyEditor } from './PartPropertyEditor';
+import { UiSchema } from '@rjsf/core';
+import { JSONSchema7 } from 'json-schema';
+import React, { useCallback, useMemo } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { clone } from 'utils/common';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',

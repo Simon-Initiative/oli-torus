@@ -1,6 +1,6 @@
+import { ServerError, makeRequest } from './common';
 import { ProjectSlug } from 'data/types';
-import { makeRequest, ServerError } from './common';
-import { PaginatedResponse, MediaItem } from 'types/media';
+import { MediaItem, PaginatedResponse } from 'types/media';
 
 export type MediaItemCreated = {
   title: 'success';

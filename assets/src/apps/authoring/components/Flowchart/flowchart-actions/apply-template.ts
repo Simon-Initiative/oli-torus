@@ -1,4 +1,3 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
 import {
   selectActivityById,
   upsertActivity,
@@ -8,6 +7,7 @@ import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { Template } from '../template-types';
 import { applyTemplateToActivity } from '../template-utils';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 
 interface ApplyTemplatePayload {
   screenId: EntityId;

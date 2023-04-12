@@ -1,19 +1,18 @@
-import * as React from 'react';
-import * as Immutable from 'immutable';
-import { Maybe } from 'tsmonad';
-import { MediaIcon } from './MediaIcon';
-import { MediaItem } from 'types/media';
-import guid from 'utils/guid';
-import { convert, stringFormat } from 'utils/format';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
-import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
-import { relativeToNow } from 'utils/date';
-import { uploadFiles } from './upload';
-
+import { MediaIcon } from './MediaIcon';
 import './MediaManager.scss';
 import { VideoUploadWarning } from './VideoUploadWarning';
+import { uploadFiles } from './upload';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import * as Immutable from 'immutable';
+import * as React from 'react';
 import { Dropdown } from 'react-bootstrap';
+import { Maybe } from 'tsmonad';
+import { MediaItem } from 'types/media';
 import { classNames } from 'utils/classNames';
+import { relativeToNow } from 'utils/date';
+import { convert, stringFormat } from 'utils/format';
+import guid from 'utils/guid';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;

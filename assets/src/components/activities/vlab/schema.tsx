@@ -1,12 +1,13 @@
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
+import { MultiInputType } from 'components/activities/multi_input/schema';
 import {
-  Stem,
   ActivityModelSchema,
-  ChoiceIdsToResponseId,
-  Part,
-  Transformation,
   Choice,
   ChoiceId,
+  ChoiceIdsToResponseId,
+  Part,
+  Stem,
+  Transformation,
 } from 'components/activities/types';
 import { Identifiable } from 'data/content/model/other';
 
@@ -31,7 +32,7 @@ export interface VlabValue extends Identifiable {
   species: string;
   parameter: string;
 }
-import { MultiInputType } from 'components/activities/multi_input/schema';
+
 export type VlabInputType = MultiInputType | 'vlabvalue';
 
 export type VlabParameter =

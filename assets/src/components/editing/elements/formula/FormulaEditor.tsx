@@ -1,11 +1,10 @@
-import React from 'react';
+import { modalActions } from '../../../../actions/modal';
+import { Formula } from '../../../common/Formula';
+import { FormulaModal } from './FormulaModal';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { Formula } from '../../../common/Formula';
-
-import { FormulaModal } from './FormulaModal';
-import { modalActions } from '../../../../actions/modal';
+import React from 'react';
 
 interface Props extends EditorProps<ContentModel.FormulaBlock | ContentModel.FormulaInline> {}
 export const FormulaEditor = (props: Props) => {

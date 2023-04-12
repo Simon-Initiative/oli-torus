@@ -1,18 +1,18 @@
-import {
-  makeRule,
-  parseInputFromRule,
-  Input,
-  InputText,
-  InputNumeric,
-  InputRange,
-} from 'data/activities/model/rules';
 import { InputType } from 'components/activities/short_answer/schema';
-import { Response } from 'components/activities/types';
-import { useState } from 'react';
-import React from 'react';
+import { MathInput } from 'components/activities/short_answer/sections/MathInput';
 import { NumericInput } from 'components/activities/short_answer/sections/NumericInput';
 import { TextInput } from 'components/activities/short_answer/sections/TextInput';
-import { MathInput } from 'components/activities/short_answer/sections/MathInput';
+import { Response } from 'components/activities/types';
+import {
+  Input,
+  InputNumeric,
+  InputRange,
+  InputText,
+  makeRule,
+  parseInputFromRule,
+} from 'data/activities/model/rules';
+import { useState } from 'react';
+import React from 'react';
 
 interface InputProps {
   inputType: InputType;

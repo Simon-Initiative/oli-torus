@@ -1,8 +1,8 @@
 import { CapiVariableTypes } from 'adaptivity/capi';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import {
-  applyState,
   ApplyStateOperation,
+  applyState,
   checkExpressionsWithWrongBrackets,
   evalScript,
   extractUniqueVariablesFromText,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { toggleCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { toggleBlockquote } from 'components/editing/elements/blockquote/blockquoteActions';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
@@ -6,6 +5,7 @@ import { switchType } from 'components/editing/elements/commands/toggleTextTypes
 import { toggleHeading } from 'components/editing/elements/heading/headingActions';
 import { toggleUnorderedList } from 'components/editing/elements/list/listActions';
 import { isActive } from 'components/editing/slateUtils';
+import React from 'react';
 
 export const toggleParagraph = createButtonCommandDesc({
   icon: <i className="fa-solid fa-paragraph"></i>,

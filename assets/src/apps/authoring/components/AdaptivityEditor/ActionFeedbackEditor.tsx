@@ -1,10 +1,10 @@
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { FeedbackAction } from 'apps/authoring/types';
 import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
-import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ActionFeedbackEditorProps {
   action: FeedbackAction;

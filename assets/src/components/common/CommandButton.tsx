@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
 import * as ContentModel from '../../data/content/model/elements/types';
-import { dispatch, makeCommandButtonEvent, Registry } from '../../data/events';
+import { Registry, dispatch, makeCommandButtonEvent } from '../../data/events';
+import React, { useCallback } from 'react';
 
 interface Props {
   commandButton: ContentModel.CommandButton;

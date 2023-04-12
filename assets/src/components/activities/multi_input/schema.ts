@@ -1,12 +1,12 @@
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import {
-  Stem,
   ActivityModelSchema,
-  ChoiceIdsToResponseId,
-  Part,
-  Transformation,
   Choice,
   ChoiceId,
+  ChoiceIdsToResponseId,
+  Part,
+  Stem,
+  Transformation,
 } from 'components/activities/types';
 import { Identifiable } from 'data/content/model/other';
 import { Maybe } from 'tsmonad';

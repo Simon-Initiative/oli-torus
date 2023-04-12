@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { makeRequest } from 'data/persistence/common';
 import * as Events from 'data/events';
+import { makeRequest } from 'data/persistence/common';
+import React, { useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 
 export interface AttemptDetails {

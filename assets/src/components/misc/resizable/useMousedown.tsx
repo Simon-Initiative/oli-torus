@@ -1,4 +1,5 @@
 import React from 'react';
+
 /**
  * Returns the state of the mouse button
  * @returns true if mouse button is engaged

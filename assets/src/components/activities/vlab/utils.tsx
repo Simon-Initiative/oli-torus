@@ -1,18 +1,18 @@
 import { setDifference, setUnion } from 'components/activities/common/utils';
 import {
-  VlabInput,
-  VlabSchema,
-  VlabInputType,
-  VlabParameter,
-} from 'components/activities/vlab/schema';
-import {
+  Part,
+  Transform,
   makeChoice,
   makeHint,
   makePart,
   makeTransformation,
-  Part,
-  Transform,
 } from 'components/activities/types';
+import {
+  VlabInput,
+  VlabInputType,
+  VlabParameter,
+  VlabSchema,
+} from 'components/activities/vlab/schema';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';
 import { Model } from 'data/content/model/elements/factories';

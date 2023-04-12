@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { SequenceDropdown } from './SequenceDropdown';
 import {
-  findInSequence,
-  getHierarchy,
   SequenceEntry,
   SequenceEntryChild,
+  findInSequence,
+  getHierarchy,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import React, { Fragment, useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
-import { SequenceDropdown } from './SequenceDropdown';
 
 interface ScreenDropdownProps {
   id: string;

@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { useDispatch } from 'react-redux';
+import { modalActions } from '../../../../actions/modal';
+import { useAudio } from '../../../hooks/useAudio';
+import { useToggle } from '../../../hooks/useToggle';
+import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
+import { Toolbar } from '../../toolbar/Toolbar';
 import { DescriptiveButton } from '../../toolbar/buttons/DescriptiveButton';
 import { createButtonCommandDesc } from '../commands/commandFactories';
-import { modalActions } from '../../../../actions/modal';
-import { Toolbar } from '../../toolbar/Toolbar';
-import { Modal, ModalSize } from 'components/modal/Modal';
 import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
-import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
-import { useToggle } from '../../../hooks/useToggle';
-import { useAudio } from '../../../hooks/useAudio';
 import { Tooltip } from 'components/common/Tooltip';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { Modal, ModalSize } from 'components/modal/Modal';
+import * as ContentModel from 'data/content/model/elements/types';
+import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 
 interface SettingsButtonProps {
   model: ContentModel.Audio;

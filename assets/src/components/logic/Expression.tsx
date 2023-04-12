@@ -1,15 +1,14 @@
-import * as React from 'react';
-import * as Bank from 'data/content/bank';
-import { Select } from 'components/common/Selection';
-import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
-import { Fact } from 'data/content/bank';
-import { Tags } from 'components/resource/Tags';
-import { ActivityTypeSelection } from './ActivityTypeSelection';
-import { TextInput } from 'components/common/TextInput';
 import { LogicProps } from '../../components/logic/common';
 import { CloseButton } from '../../components/misc/CloseButton';
-
+import { ActivityTypeSelection } from './ActivityTypeSelection';
 import styles from './Expression.modules.scss';
+import { Select } from 'components/common/Selection';
+import { TextInput } from 'components/common/TextInput';
+import { Tags } from 'components/resource/Tags';
+import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
+import * as Bank from 'data/content/bank';
+import { Fact } from 'data/content/bank';
+import * as React from 'react';
 
 export interface ExpressionProps extends LogicProps {
   expression: Bank.Expression;

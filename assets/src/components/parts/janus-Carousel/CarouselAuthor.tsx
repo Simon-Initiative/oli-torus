@@ -1,6 +1,6 @@
+import { CarouselModel } from './schema';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
-import { CarouselModel } from './schema';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
 const CarouselAuthor: React.FC<AuthorPartComponentProps<CarouselModel>> = (props) => {

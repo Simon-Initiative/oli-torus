@@ -1,16 +1,16 @@
-import { render, fireEvent, screen } from '@testing-library/react';
-import React from 'react';
 import { defaultDeliveryElementProps } from '../utils/activity_mocks';
-import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
-import { defaultOrderingModel } from 'components/activities/ordering/utils';
-import { OrderingComponent } from 'components/activities/ordering/OrderingDelivery';
-import { makeHint } from 'components/activities/types';
-import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
-import { Provider } from 'react-redux';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
+import { OrderingComponent } from 'components/activities/ordering/OrderingDelivery';
+import { defaultOrderingModel } from 'components/activities/ordering/utils';
+import { makeHint } from 'components/activities/types';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { defaultActivityState } from 'data/activities/utils';
+import React from 'react';
+import { act } from 'react-dom/test-utils';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
 
 describe('ordering delivery', () => {
   it('renders ungraded correctly', async () => {

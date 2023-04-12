@@ -1,8 +1,8 @@
-import * as React from 'react';
-import * as Bank from 'data/content/bank';
-import { LogicProps } from './common';
-import { Expression } from './Expression';
 import { CloseButton } from '../misc/CloseButton';
+import { Expression } from './Expression';
+import { LogicProps } from './common';
+import * as Bank from 'data/content/bank';
+import * as React from 'react';
 import guid from 'utils/guid';
 
 export interface ClauseProps extends LogicProps {

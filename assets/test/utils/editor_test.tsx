@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { render } from '@testing-library/react';
-import * as Utils from 'components/editing/slateUtils';
-import React from 'react';
 import '@testing-library/jest-dom';
-import { Editable, Slate, withReact } from 'slate-react';
-import { createEditor, Descendant, Element } from 'slate';
+import { render } from '@testing-library/react';
 import { editorFor, markFor } from 'components/editing/editor/modelEditorDispatch';
-import { ModelElement, InputRef, Paragraph } from 'data/content/model/elements/types';
+import * as Utils from 'components/editing/slateUtils';
+import { InputRef, ModelElement, Paragraph } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
+import React from 'react';
+import { Descendant, Element, createEditor } from 'slate';
+import { Editable, Slate, withReact } from 'slate-react';
 
 const exampleContent = require('../writer/example_content.json');
 

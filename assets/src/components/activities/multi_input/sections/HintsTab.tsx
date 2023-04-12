@@ -2,7 +2,7 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { partTitle } from 'components/activities/multi_input/utils';
-import { makeHint, RichText } from 'components/activities/types';
+import { RichText, makeHint } from 'components/activities/types';
 import { Hints } from 'data/activities/model/hints';
 import React from 'react';
 

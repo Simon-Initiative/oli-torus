@@ -1,9 +1,9 @@
-import React from 'react';
+import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { ActivityModelSchema, ClientEvaluation, PartResponse } from 'components/activities/types';
 import * as Persistence from 'data/persistence/activity';
-import { RequestHintResponse } from 'components/activities/DeliveryElement';
-import { removeEmpty } from 'utils/common';
 import produce from 'immer';
+import React from 'react';
+import { removeEmpty } from 'utils/common';
 
 export const xdefaultState = (model: ActivityModelSchema) => {
   const parts = model.authoring.parts.map((p: any) => ({

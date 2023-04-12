@@ -1,8 +1,8 @@
-import { Maybe } from 'tsmonad';
-import React, { useContext } from 'react';
-import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 import { DeliveryElementProps } from './DeliveryElement';
 import { ActivityModelSchema } from './types';
+import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
+import React, { useContext } from 'react';
+import { Maybe } from 'tsmonad';
 
 export interface DeliveryElementState<T extends ActivityModelSchema>
   extends DeliveryElementProps<T> {

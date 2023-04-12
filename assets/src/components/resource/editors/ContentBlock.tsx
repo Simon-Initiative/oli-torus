@@ -1,8 +1,8 @@
-import React, { PropsWithChildren } from 'react';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import { StructuredContent, ActivityBankSelection } from 'data/content/resource';
-import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import { ActivityBankSelection, StructuredContent } from 'data/content/resource';
+import React, { PropsWithChildren } from 'react';
+import { classNames } from 'utils/classNames';
 
 interface ContentBlockProps {
   editMode: boolean;

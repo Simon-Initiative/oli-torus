@@ -1,8 +1,3 @@
-import { evaluateJsonObject, looksLikeJson, templatizeText } from 'adaptivity/scripting';
-import { Environment } from 'janus-script';
-import debounce from 'lodash/debounce';
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import guid from 'utils/guid';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -11,8 +6,13 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
-import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
+import { JanusCAPIRequestTypes, getJanusCAPIRequestTypeString } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
+import { evaluateJsonObject, looksLikeJson, templatizeText } from 'adaptivity/scripting';
+import { Environment } from 'janus-script';
+import debounce from 'lodash/debounce';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import guid from 'utils/guid';
 
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';

@@ -1,11 +1,11 @@
-import { Button, Modal } from 'react-bootstrap';
-import React, { useCallback, useState } from 'react';
 import { UrlOrUpload } from '../../../../components/media/UrlOrUpload';
 import {
   MIMETYPE_FILTERS,
   SELECTION_TYPES,
 } from '../../../../components/media/manager/MediaManager';
 import { MediaItem } from '../../../../types/media';
+import React, { useCallback, useState } from 'react';
+import { Button, Modal } from 'react-bootstrap';
 
 interface Props {
   initialSelection: string;

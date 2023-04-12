@@ -1,9 +1,9 @@
+import { useToggle } from '../../../../../components/hooks/useToggle';
+import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
+import { QuillEditor } from '../../../../../components/parts/janus-text-flow/QuillEditor';
+import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 import React, { useCallback, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
-import { useToggle } from '../../../../../components/hooks/useToggle';
-import { QuillEditor } from '../../../../../components/parts/janus-text-flow/QuillEditor';
-import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 
 type OptionsNodes = Record<string, any>[];
 

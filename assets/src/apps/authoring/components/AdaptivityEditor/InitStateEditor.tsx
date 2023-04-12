@@ -1,21 +1,21 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import debounce from 'lodash/debounce';
-import { clone } from 'utils/common';
-import guid from 'utils/guid';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
-import { OverlayPlacements, VariablePicker } from './VariablePicker';
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ActionOperatorOption,
-  actionOperatorOptions,
   TypeOption,
+  actionOperatorOptions,
   typeOptions,
 } from './AdaptiveItemOptions';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
+import debounce from 'lodash/debounce';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { clone } from 'utils/common';
+import guid from 'utils/guid';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;

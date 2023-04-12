@@ -1,12 +1,12 @@
-import React, { useMemo } from 'react';
-import { DateWithoutTime } from 'epoq';
-import { generateDayGeometry } from './date-utils';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
-import { useCallbackRef, useResizeObserver } from '@restart/hooks';
-import { useSelector } from 'react-redux';
+import { generateDayGeometry } from './date-utils';
 import { getTopLevelSchedule } from './schedule-selectors';
 import { ScheduleItemType } from './scheduler-slice';
+import { useCallbackRef, useResizeObserver } from '@restart/hooks';
+import { DateWithoutTime } from 'epoq';
+import React, { useMemo } from 'react';
+import { useSelector } from 'react-redux';
 
 interface GridProps {
   startDate: string;

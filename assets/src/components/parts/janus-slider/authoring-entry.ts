@@ -1,20 +1,21 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
 import {
+  PartAuthoringMode,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
-  PartAuthoringMode,
 } from '../partsApi';
+import SliderAuthor from './SliderAuthor';
 import {
   adaptivitySchema,
   createSchema,
   schema,
-  uiSchema,
   simpleSchema,
   simpleUISchema,
+  uiSchema,
 } from './schema';
-import SliderAuthor from './SliderAuthor';
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };

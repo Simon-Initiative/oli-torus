@@ -1,7 +1,7 @@
-import { Transforms, Path, Editor, Element } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement, Table, TableCell, TableRow } from 'data/content/model/elements/types';
 import { FormattedText } from 'data/content/model/text';
+import { Editor, Element, Path, Transforms } from 'slate';
 
 /**
  * Given an array of columns that may or may not have colspan set, sum up the total

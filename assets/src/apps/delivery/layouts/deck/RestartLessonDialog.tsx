@@ -1,7 +1,4 @@
 /* eslint-disable react/prop-types */
-import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
-import React, { Fragment, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from '../../store/features/adaptivity/slice';
 import {
   selectFinalizeGradedURL,
@@ -12,6 +9,9 @@ import {
   selectResourceAttemptGuid,
   selectSectionSlug,
 } from '../../store/features/page/slice';
+import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
+import React, { Fragment, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 interface RestartLessonDialogProps {
   onRestart: () => void;

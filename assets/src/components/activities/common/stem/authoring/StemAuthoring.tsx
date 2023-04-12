@@ -1,6 +1,6 @@
-import React from 'react';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { RichText, Stem } from 'components/activities/types';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import React from 'react';
 
 interface Props {
   stem: Stem;

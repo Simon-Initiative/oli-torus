@@ -1,11 +1,11 @@
 import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptivity/capi';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import ConditionItemEditor from './ConditionItemEditor';
 import { isEqual } from 'lodash';
 import React, { useEffect, useState } from 'react';
-import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
-import ConditionItemEditor from './ConditionItemEditor';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 type JanusNestedCondition = JanusConditionProperties | JanusTopLevelCondition;
 type JanusAllConditions = { id: string; all: JanusNestedCondition[] };

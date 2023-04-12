@@ -1,3 +1,4 @@
+import { slateFixer } from './SlateFixer';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { Editor } from 'components/editing/editor/Editor';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
@@ -5,7 +6,6 @@ import { StructuredContent } from 'data/content/resource';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import React from 'react';
 import { Descendant } from 'slate';
-import { slateFixer } from './SlateFixer';
 
 export type StructuredContentEditor = {
   editMode: boolean; // Whether or not we can edit

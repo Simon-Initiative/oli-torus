@@ -1,9 +1,9 @@
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
+import { Response } from 'components/activities/types';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { Card } from 'components/misc/Card';
 import { ID } from 'data/content/model/other';
 import React from 'react';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { Response } from 'components/activities/types';
-import { Card } from 'components/misc/Card';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Descendant } from 'slate';
 
 interface Props {

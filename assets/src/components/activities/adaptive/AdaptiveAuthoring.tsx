@@ -1,3 +1,8 @@
+import { ModalContainer } from '../../../apps/authoring/components/AdvancedAuthoringModal';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import * as ActivityTypes from '../types';
+import LayoutEditor from './components/authoring/LayoutEditor';
+import { AdaptiveModelSchema } from './schema';
 import {
   NotificationContext,
   NotificationType,
@@ -8,11 +13,6 @@ import EventEmitter from 'events';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { clone } from 'utils/common';
-import { ModalContainer } from '../../../apps/authoring/components/AdvancedAuthoringModal';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import * as ActivityTypes from '../types';
-import LayoutEditor from './components/authoring/LayoutEditor';
-import { AdaptiveModelSchema } from './schema';
 
 const Adaptive = (
   props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },

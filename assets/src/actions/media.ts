@@ -1,7 +1,7 @@
-import { List, Map } from 'immutable';
-import { State, Dispatch } from 'state/index';
-import { ProjectSlug } from 'data/types';
 import * as persistence from 'data/persistence/media';
+import { ProjectSlug } from 'data/types';
+import { List, Map } from 'immutable';
+import { Dispatch, State } from 'state/index';
 import { Maybe } from 'tsmonad';
 import { MediaItem, MediaRef } from 'types/media';
 import guid from 'utils/guid';

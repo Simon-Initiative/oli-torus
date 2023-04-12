@@ -1,12 +1,14 @@
+import { RESPONSES_PATH } from '../../../data/activities/model/responses';
+import { OrderingSchema as Ordering } from './schema';
 import { remove } from 'components/activities/common/utils';
 import {
   Choice,
   ChoiceId,
-  makeResponse,
-  makeUndoable,
   PostUndoable,
   Response,
   ResponseId,
+  makeResponse,
+  makeUndoable,
 } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import {
@@ -21,8 +23,6 @@ import { matchInOrderRule } from 'data/activities/model/rules';
 import jp from 'jsonpath';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { RESPONSES_PATH } from '../../../data/activities/model/responses';
-import { OrderingSchema as Ordering } from './schema';
 
 export class Actions {
   static addChoice(choice: Choice) {

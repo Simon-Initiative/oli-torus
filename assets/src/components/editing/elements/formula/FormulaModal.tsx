@@ -1,10 +1,10 @@
-import React, { Suspense, useState } from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import * as monaco from 'monaco-editor';
-import { Formula } from '../../../common/Formula';
 import { isDarkMode } from '../../../../utils/browser';
+import { Formula } from '../../../common/Formula';
 import { FormulaToolbar } from './FormulaToolbar';
 import { Modal, ModalSize } from 'components/modal/Modal';
+import * as ContentModel from 'data/content/model/elements/types';
+import * as monaco from 'monaco-editor';
+import React, { Suspense, useState } from 'react';
 
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
 

@@ -1,7 +1,7 @@
 /* eslint-disable react/react-in-jsx-scope */
-import { useCallback, useState } from 'react';
-import { ApplyStateOperation } from 'adaptivity/scripting';
 import AutoDetectInput from '../../../../src/apps/delivery/components/preview-tools/inspector/AutoDetectInput';
+import { ApplyStateOperation } from 'adaptivity/scripting';
+import { useCallback, useState } from 'react';
 
 interface StateDisplayProps {
   label: string;

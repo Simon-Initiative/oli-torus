@@ -1,17 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptivity/capi';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ConditionOperatorOption,
-  conditionOperatorOptions,
   ConditionTypeOperatorCombo,
+  TypeOption,
+  conditionOperatorOptions,
   conditionTypeOperatorCombos,
   inferTypeFromOperatorAndValue,
-  TypeOption,
   typeOptions,
 } from './AdaptiveItemOptions';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
+import React, { useEffect, useRef, useState } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 interface ConditionItemEditorProps {
   condition: JanusConditionProperties;

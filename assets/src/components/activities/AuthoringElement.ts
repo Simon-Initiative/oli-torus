@@ -1,5 +1,5 @@
-import { ProjectSlug } from 'data/types';
 import { ActivityModelSchema, MediaItemRequest, Undoable } from './types';
+import { ProjectSlug } from 'data/types';
 import { EventEmitter } from 'events';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {

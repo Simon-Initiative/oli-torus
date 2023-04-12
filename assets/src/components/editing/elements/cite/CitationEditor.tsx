@@ -1,11 +1,11 @@
-import * as BibPersistence from 'data/persistence/bibentry';
-import React, { createRef, useEffect, useState } from 'react';
-import { Citation } from 'data/content/model/elements/types';
-import { BibEntry } from 'data/content/bibentry';
 import { CommandContext } from '../commands/interfaces';
-import * as ContentModel from 'data/content/model/elements/types';
-import * as Immutable from 'immutable';
+import { BibEntry } from 'data/content/bibentry';
 import { Model } from 'data/content/model/elements/factories';
+import { Citation } from 'data/content/model/elements/types';
+import * as ContentModel from 'data/content/model/elements/types';
+import * as BibPersistence from 'data/persistence/bibentry';
+import * as Immutable from 'immutable';
+import React, { createRef, useEffect, useState } from 'react';
 
 const Cite = (window as any).cite;
 

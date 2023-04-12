@@ -8,13 +8,13 @@ import {
   Transformation,
 } from 'components/activities/types';
 import {
+  Responses,
   getChoiceIds,
   getCorrectResponse,
   getResponseBy,
   getResponseId,
   getResponses,
   getTargetedResponses,
-  Responses,
 } from 'data/activities/model/responses';
 import { matchListRule, matchRule } from 'data/activities/model/rules';
 import { Maybe } from 'tsmonad';

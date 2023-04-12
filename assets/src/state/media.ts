@@ -1,16 +1,15 @@
 import {
   FETCH_MEDIA_PAGE,
   FetchMediaPageAction,
-  RESET_MEDIA,
-  ResetMediaAction,
-  RECEIVE_MEDIA_PAGE,
-  ReceiveMediaPageAction,
-  SIDELOAD_DATA,
-  SideloadDataAction,
   LOAD_MEDIA_REFS,
   LoadMediaReferencesAction,
+  RECEIVE_MEDIA_PAGE,
+  RESET_MEDIA,
+  ReceiveMediaPageAction,
+  ResetMediaAction,
+  SIDELOAD_DATA,
+  SideloadDataAction,
 } from 'actions/media';
-
 import { OrderedMediaLibrary } from 'components/media/OrderedMediaLibrary';
 
 export type ActionTypes =

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { ContentWriter } from 'data/content/writers/writer';
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { HtmlParser } from 'data/content/writers/html';
-import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { ContentWriter } from 'data/content/writers/writer';
 
 const exampleUnsupportedContent = require('./example_unsupported_content.json');
 const exampleMalformedContent = require('./example_malformed_content.json');

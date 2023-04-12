@@ -1,5 +1,5 @@
-import React, { MouseEventHandler, ReactNode } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
+import React, { MouseEventHandler, ReactNode } from 'react';
 
 export const Definition: React.FC<{
   definition: ContentModel.Definition;

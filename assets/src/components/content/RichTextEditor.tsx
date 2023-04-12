@@ -1,14 +1,14 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { MediaItemRequest } from 'components/activities/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';
 import { NormalizerContext } from 'components/editing/editor/normalizers/normalizer';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 import { ProjectSlug } from 'data/types';
 import React from 'react';
-import { Descendant, Editor as SlateEditor, Operation } from 'slate';
+import { Descendant, Operation, Editor as SlateEditor } from 'slate';
 import { classNames } from 'utils/classNames';
-import { MediaItemRequest } from 'components/activities/types';
-import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 
 type Props = {
   projectSlug: ProjectSlug;

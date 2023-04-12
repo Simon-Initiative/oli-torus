@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { CommandInventory } from '../../../../data/events';
 import { MessageEditorComponent } from './commandButtonTypes';
+import { useEffect } from 'react';
 
 /**
  * Use this hook to register an editor component as being capable of recieving oli-command-button-click events

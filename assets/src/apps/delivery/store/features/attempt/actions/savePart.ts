@@ -1,15 +1,15 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
   defaultGlobalEnv,
   evalScript,
   getAssignStatements,
   getValue,
 } from '../../../../../../adaptivity/scripting';
+import { deferredSavePart } from '../../../../../../data/persistence/deferredSavePart';
 import { DeliveryRootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
-import { selectActivityAttemptState, selectById, upsertActivityAttemptState } from '../slice';
 import AttemptSlice from '../name';
-import { deferredSavePart } from '../../../../../../data/persistence/deferredSavePart';
+import { selectActivityAttemptState, selectById, upsertActivityAttemptState } from '../slice';
+import { createAsyncThunk } from '@reduxjs/toolkit';
 
 interface SavePartPayload {
   attemptGuid: string;

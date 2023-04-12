@@ -1,11 +1,11 @@
-import React from 'react';
-import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
-import { useElementSelected } from 'data/content/utils';
-import { classNames } from 'utils/classNames';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
 import { WebpageSettings } from 'components/editing/elements/webpage/WebpageSettings';
+import * as ContentModel from 'data/content/model/elements/types';
+import { useElementSelected } from 'data/content/utils';
+import React from 'react';
+import { classNames } from 'utils/classNames';
 
 export interface Props extends EditorProps<ContentModel.Webpage> {}
 export const WebpageEditor = (props: Props) => {

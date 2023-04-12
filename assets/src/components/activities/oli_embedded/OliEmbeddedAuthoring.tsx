@@ -1,19 +1,20 @@
-import { configureStore } from 'state/store';
-import React from 'react';
-import { AuthoringElement, AuthoringElementProps } from 'components/activities/AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import * as ActivityTypes from 'components/activities/types';
+import { AuthoringElement, AuthoringElementProps } from 'components/activities/AuthoringElement';
 import { OliEmbeddedActions } from 'components/activities/oli_embedded/actions';
-import guid from 'utils/guid';
+import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
+import { lastPart } from 'components/activities/oli_embedded/utils';
+import * as ActivityTypes from 'components/activities/types';
+import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
+import { XmlEditor } from 'components/common/XmlEditor';
 import { uploadFiles } from 'components/media/manager/upload';
 import { CloseButton } from 'components/misc/CloseButton';
-import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
-import { lastPart } from 'components/activities/oli_embedded/utils';
-import { XmlEditor } from 'components/common/XmlEditor';
 import { Modal } from 'components/modal/Modal';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
+import guid from 'utils/guid';
+
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {

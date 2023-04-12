@@ -1,7 +1,7 @@
-import React, { PropsWithChildren } from 'react';
+import styles from './ContentBlock.modules.scss';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { ActivityReference } from 'data/content/resource';
-import styles from './ContentBlock.modules.scss';
+import React, { PropsWithChildren } from 'react';
 import { classNames } from 'utils/classNames';
 
 interface ActivityBlockProps {

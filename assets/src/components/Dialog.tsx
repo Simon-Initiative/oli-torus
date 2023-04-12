@@ -1,7 +1,7 @@
-import React from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import { HtmlContentModelRenderer } from '../data/content/writers/renderer';
 import { WriterContext } from '../data/content/writers/context';
+import { HtmlContentModelRenderer } from '../data/content/writers/renderer';
+import * as ContentModel from 'data/content/model/elements/types';
+import React from 'react';
 
 export const Speaker: React.FC<{ speaker?: ContentModel.DialogSpeaker; onClick?: () => void }> = ({
   speaker,

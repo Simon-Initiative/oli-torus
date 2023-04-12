@@ -1,11 +1,11 @@
-import React from 'react';
-import { ActivityBankSelection } from 'data/content/resource';
-import { ContentBlock } from './ContentBlock';
-import * as Immutable from 'immutable';
-import { Objective } from 'data/content/objective';
 import { ActivityBankSelectionEditor } from './ActivityBankSelectionEditor';
-import { Tag } from 'data/content/tags';
+import { ContentBlock } from './ContentBlock';
 import { EditorProps } from './createEditor';
+import { Objective } from 'data/content/objective';
+import { ActivityBankSelection } from 'data/content/resource';
+import { Tag } from 'data/content/tags';
+import * as Immutable from 'immutable';
+import React from 'react';
 
 interface SelectionEditorProps extends EditorProps {
   contentItem: ActivityBankSelection;

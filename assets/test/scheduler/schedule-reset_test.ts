@@ -1,8 +1,8 @@
 import {
   countWorkingDays,
   findNthDay,
-  findStartEndByPercent,
   findStartEnd,
+  findStartEndByPercent,
 } from '../../src/apps/scheduler/schedule-reset';
 import { DateWithoutTime } from 'epoq';
 

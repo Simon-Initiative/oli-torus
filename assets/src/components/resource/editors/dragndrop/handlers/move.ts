@@ -1,9 +1,9 @@
-import { ActivityReference, ResourceContent } from 'data/content/resource';
-import { ActivityEditorMap } from 'data/content/editors';
 import { getFriendlyName } from '../utils';
 import { ActivityEditContext } from 'data/content/activity';
-import * as Immutable from 'immutable';
+import { ActivityEditorMap } from 'data/content/editors';
+import { ActivityReference, ResourceContent } from 'data/content/resource';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
+import * as Immutable from 'immutable';
 
 function determineIndex(index: number[], up: boolean) {
   const lastIndex = index[index.length - 1];

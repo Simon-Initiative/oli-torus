@@ -1,21 +1,21 @@
-import React from 'react';
-import { useSelected, useFocused } from 'slate-react';
-import { useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { Transforms } from 'slate';
-import { getQueryVariableFromString } from 'utils/params';
-import { Model } from 'data/content/model/elements/factories';
-import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { YouTubeModal } from './YoutubeModal';
+import { youtubeUrlToId } from './youtubeActions';
 import { modalActions } from 'actions/modal';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import { useEditModelCallback } from 'components/editing/elements/utils';
+import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
-import { youtubeUrlToId } from './youtubeActions';
+import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { Model } from 'data/content/model/elements/factories';
+import * as ContentModel from 'data/content/model/elements/types';
+import React from 'react';
+import { Transforms } from 'slate';
+import { useFocused, useSelected } from 'slate-react';
+import { getQueryVariableFromString } from 'utils/params';
 
 const toLink = (src = '') => 'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
 

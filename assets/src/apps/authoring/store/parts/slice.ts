@@ -1,6 +1,6 @@
-import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { AuthoringRootState } from '../rootReducer';
 import PartsSlice from './name';
+import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
 
 export interface PartState {
   currentSelection: string;

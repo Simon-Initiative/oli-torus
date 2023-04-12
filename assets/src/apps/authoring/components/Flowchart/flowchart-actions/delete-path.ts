@@ -1,4 +1,3 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
 import { clone } from '../../../../../utils/common';
 import {
   selectActivityById,
@@ -9,6 +8,7 @@ import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { createEndOfActivityPath } from '../paths/path-factories';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 
 interface DeletePathPayload {
   pathId: string;

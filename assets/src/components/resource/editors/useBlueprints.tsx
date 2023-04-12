@@ -1,13 +1,13 @@
-import React from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import guid from 'utils/guid';
-import { Editor, Node, Transforms } from 'slate';
+import { ModelTypes } from '../../../data/content/model/elements/types';
 import {
-  CommandDescription,
   Command,
   CommandContext,
+  CommandDescription,
 } from '../../editing/elements/commands/interfaces';
-import { ModelTypes } from '../../../data/content/model/elements/types';
+import React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Editor, Node, Transforms } from 'slate';
+import guid from 'utils/guid';
 
 interface Blueprint {
   name: string;

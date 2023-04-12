@@ -1,15 +1,15 @@
-import React, { PropsWithChildren, useEffect, useRef, Suspense, useState } from 'react';
-import { throttle } from 'lodash';
+import './BlockcodeElement.scss';
+import { RefEditorInstance } from '@uiw/react-monacoeditor';
+import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
+import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
-import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
+import { throttle } from 'lodash';
 import * as monaco from 'monaco-editor';
-import { RefEditorInstance } from '@uiw/react-monacoeditor';
-import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
+import React, { PropsWithChildren, Suspense, useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
-import './BlockcodeElement.scss';
+import { addDarkModeListener, isDarkMode, removeDarkModeListener } from 'utils/browser';
 
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
 

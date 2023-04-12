@@ -5,9 +5,9 @@ import {
   isStringArray,
   parseArray,
   parseBoolean,
+  removeEmpty,
   valueOr,
   zip,
-  removeEmpty,
 } from 'utils/common';
 
 describe('common valueOr', () => {

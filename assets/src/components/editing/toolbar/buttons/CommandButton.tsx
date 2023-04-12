@@ -1,10 +1,10 @@
+import styles from '../Toolbar.modules.scss';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { ButtonContent } from 'components/editing/toolbar/buttons/ButtonContent';
 import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React from 'react';
 import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
-import styles from '../Toolbar.modules.scss';
 
 interface Props {
   description: CommandDescription;

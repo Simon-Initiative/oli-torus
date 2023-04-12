@@ -1,17 +1,17 @@
-import { EditorProps } from 'components/editing/elements/interfaces';
+import { createButtonCommandDesc } from '../commands/commandFactories';
+import { modalActions } from 'actions/modal';
 import { CitationEditor } from 'components/editing/elements/cite/CitationEditor';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { InlineChromiumBugfix, updateModel } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
+import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+import { Modal } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
-import { useSelected, useSlate } from 'slate-react';
-import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
-import { createButtonCommandDesc } from '../commands/commandFactories';
-import { configureStore } from 'state/store';
-import { modalActions } from 'actions/modal';
-import { Modal } from 'components/modal/Modal';
 import { Provider } from 'react-redux';
+import { useSelected, useSlate } from 'slate-react';
+import { configureStore } from 'state/store';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));

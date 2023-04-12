@@ -19,8 +19,8 @@ import { createCondition } from './create-condition';
 import {
   DEFAULT_CORRECT_FEEDBACK,
   DEFAULT_INCORRECT_FEEDBACK,
-  getSequenceIdFromScreenResourceId,
   IConditionWithFeedback,
+  getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
 import { generateThreeTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';

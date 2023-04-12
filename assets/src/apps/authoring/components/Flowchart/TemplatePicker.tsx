@@ -1,9 +1,8 @@
+import { screenTypeToTitle, screenTypes } from './screens/screen-factories';
+import { Template } from './template-types';
+import { templates } from './templates';
 import React, { useCallback, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import { screenTypes, screenTypeToTitle } from './screens/screen-factories';
-import { Template } from './template-types';
-
-import { templates } from './templates';
 
 interface Props {
   onPick: (template: Template) => void;

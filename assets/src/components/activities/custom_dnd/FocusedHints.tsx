@@ -1,6 +1,6 @@
+import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
-
 import {
   ActivityDeliveryState,
   isEvaluated,
@@ -8,8 +8,7 @@ import {
   requestHint,
 } from 'data/activities/DeliveryState';
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
+import { useDispatch, useSelector } from 'react-redux';
 
 export type FocusedHintsProps = {
   focusedPart: string | null;

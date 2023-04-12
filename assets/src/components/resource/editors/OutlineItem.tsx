@@ -1,12 +1,12 @@
-import React, { PropsWithChildren, useRef } from 'react';
-import * as Immutable from 'immutable';
-import { ClassName, classNames } from 'utils/classNames';
-import { PurposeTypes, ResourceGroup, ResourceContent } from 'data/content/resource';
+import { DragHandle } from '../DragHandle';
 import styles from './ContentOutline.modules.scss';
 import { DropTarget } from './dragndrop/DropTarget';
 import { scrollToResourceEditor } from './dragndrop/utils';
-import { DragHandle } from '../DragHandle';
 import { ActivityEditContext } from 'data/content/activity';
+import { PurposeTypes, ResourceContent, ResourceGroup } from 'data/content/resource';
+import * as Immutable from 'immutable';
+import React, { PropsWithChildren, useRef } from 'react';
+import { ClassName, classNames } from 'utils/classNames';
 
 export interface OutlineItemProps {
   className?: ClassName;

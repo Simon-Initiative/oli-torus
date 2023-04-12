@@ -1,32 +1,32 @@
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { LikertModelSchema } from './schema';
-import * as ActivityTypes from '../types';
-import { StemDelivery } from '../common/stem/delivery/StemDelivery';
-import { configureStore } from 'state/store';
-import {
-  activityDeliverySlice,
-  ActivityDeliveryState,
-  initializeState,
-  setSelection,
-  resetAction,
-  PartInputs,
-  isEvaluated,
-  listenForParentSurveySubmit,
-  listenForParentSurveyReset,
-  listenForReviewAttemptChange,
-} from 'data/activities/DeliveryState';
-import { Provider, useSelector, useDispatch } from 'react-redux';
-import { initialPartInputs } from 'data/activities/utils';
-import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
-import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
-import { useDeliveryElementContext, DeliveryElementProvider } from '../DeliveryElementProvider';
-import { LikertTable } from './Sections/LikertTable';
+import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
+import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
+import { StemDelivery } from '../common/stem/delivery/StemDelivery';
 import { castPartId } from '../common/utils';
+import * as ActivityTypes from '../types';
+import { LikertTable } from './Sections/LikertTable';
+import { LikertModelSchema } from './schema';
+import {
+  ActivityDeliveryState,
+  PartInputs,
+  activityDeliverySlice,
+  initializeState,
+  isEvaluated,
+  listenForParentSurveyReset,
+  listenForParentSurveySubmit,
+  listenForReviewAttemptChange,
+  resetAction,
+  setSelection,
+} from 'data/activities/DeliveryState';
+import { initialPartInputs } from 'data/activities/utils';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from 'state/store';
 
 const LikertComponent: React.FC = () => {
   const {

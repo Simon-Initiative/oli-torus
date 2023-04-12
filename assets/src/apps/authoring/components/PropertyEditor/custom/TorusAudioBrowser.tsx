@@ -1,12 +1,12 @@
-import React, { useCallback } from 'react';
-import { Button, ButtonGroup } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
 import { useAudio } from '../../../../../components/hooks/useAudio';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { MIMETYPE_FILTERS } from '../../../../../components/media/manager/MediaManager';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
 import { MediaBrowserComponent, TorusMediaBrowserWrapper } from './TorusMediaBrowserWrapper';
+import React, { useCallback } from 'react';
+import { Button, ButtonGroup } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 
 const _TorusAudioBrowser: MediaBrowserComponent = ({ id, label, value, onChange, onBlur }) => {
   const [pickerOpen, , openPicker, closePicker] = useToggle();

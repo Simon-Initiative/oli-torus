@@ -1,4 +1,4 @@
-import { HasHints, Hint, makeUndoable, PostUndoable, RichText } from 'components/activities/types';
+import { HasHints, Hint, PostUndoable, RichText, makeUndoable } from 'components/activities/types';
 import { List } from 'data/activities/model/list';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';

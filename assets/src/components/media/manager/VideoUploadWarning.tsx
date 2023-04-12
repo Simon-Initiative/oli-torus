@@ -1,5 +1,5 @@
-import React from 'react';
 import { MaxFileUploadSizeMB } from './upload';
+import React from 'react';
 
 export const VideoUploadWarning = () => (
   <div className="alert alert-info show" role="alert">

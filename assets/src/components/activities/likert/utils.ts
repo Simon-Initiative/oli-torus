@@ -1,6 +1,5 @@
-import { LikertModelSchema, makeLikertChoice, makeLikertItem, LikertChoice } from './schema';
-import { makeStem, makeHint, makePart } from '../types';
-
+import { makeHint, makePart, makeStem } from '../types';
+import { LikertChoice, LikertModelSchema, makeLikertChoice, makeLikertItem } from './schema';
 import { Responses } from 'data/activities/model/responses';
 import { Maybe } from 'tsmonad';
 

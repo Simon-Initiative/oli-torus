@@ -1,6 +1,3 @@
-import React from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../delivery/store/features/activities/slice';
 import {
   selectIsAdmin,
@@ -16,6 +13,10 @@ import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContex
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
 import { getScreenQuestionType } from './Flowchart/paths/path-options';
 import { DiagnosticsTrigger } from './Modal/DiagnosticsWindow';
+import React from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;

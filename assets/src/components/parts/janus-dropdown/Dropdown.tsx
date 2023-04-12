@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -9,6 +8,7 @@ import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { DropdownModel } from './schema';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 
 const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

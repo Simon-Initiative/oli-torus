@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
-import { Button, Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
+import React, { useCallback } from 'react';
+import { Button, Modal } from 'react-bootstrap';
 
 interface Props {
   onCancel: () => void;

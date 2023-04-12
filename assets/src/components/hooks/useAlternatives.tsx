@@ -1,6 +1,6 @@
-import React, { PropsWithChildren, useEffect, useState } from 'react';
 import { AlternativesGroup } from 'data/persistence/resource';
 import * as Persistence from 'data/persistence/resource';
+import React, { PropsWithChildren, useEffect, useState } from 'react';
 
 export enum AlternativesTypes {
   REQUEST,

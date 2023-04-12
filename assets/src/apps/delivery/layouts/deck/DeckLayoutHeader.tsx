@@ -1,5 +1,3 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import {
   selectIsInstructor,
   selectPageContent,
@@ -13,6 +11,8 @@ import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
 import OptionsPanel from './components/OptionsPanel';
 import ReviewModeNavigation from './components/ReviewModeNavigation';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 interface DeckLayoutHeaderProps {
   pageName?: string;

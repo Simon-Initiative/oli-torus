@@ -1,4 +1,3 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
 import { cloneT } from '../../../../../utils/common';
 import {
   selectActivityById,
@@ -8,6 +7,7 @@ import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { createUnknownPathWithDestination } from '../paths/path-factories';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 
 interface AddPathPayload {
   screenId: EntityId;

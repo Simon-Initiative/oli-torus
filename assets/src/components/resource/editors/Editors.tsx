@@ -1,21 +1,20 @@
-import * as Immutable from 'immutable';
-import React from 'react';
-import { ResourceContent, ResourceContext } from 'data/content/resource';
+import { AddResource } from './AddResource';
+import './Editors.scss';
+import { createEditor } from './createEditor';
+import { EditorErrorBoundary } from './editor_error_boundary';
+import { FeatureFlags } from 'apps/page-editor/types';
+import { Undoable } from 'components/activities/types';
+import { EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
-import { ProjectSlug, ResourceSlug } from 'data/types';
 import { Objective, ResourceId } from 'data/content/objective';
-import { ClassName, classNames } from 'utils/classNames';
-import { AddResource } from './AddResource';
-import { createEditor } from './createEditor';
-import { EditorUpdate } from 'components/activity/InlineActivityEditor';
-import { Undoable } from 'components/activities/types';
-import { FeatureFlags } from 'apps/page-editor/types';
+import { ResourceContent, ResourceContext } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
-import { EditorErrorBoundary } from './editor_error_boundary';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
-
-import './Editors.scss';
+import { ProjectSlug, ResourceSlug } from 'data/types';
+import * as Immutable from 'immutable';
+import React from 'react';
+import { ClassName, classNames } from 'utils/classNames';
 
 export type EditorsProps = {
   className?: ClassName;

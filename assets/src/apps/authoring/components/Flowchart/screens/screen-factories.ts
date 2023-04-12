@@ -1,6 +1,6 @@
 import {
-  createActivityTemplate,
   IActivityTemplate,
+  createActivityTemplate,
 } from '../../../store/activities/templates/activity';
 
 export const screenTypes = [

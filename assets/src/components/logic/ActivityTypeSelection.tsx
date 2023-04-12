@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import * as Immutable from 'immutable';
+import React, { useState } from 'react';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import guid from 'utils/guid';
 

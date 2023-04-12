@@ -1,6 +1,6 @@
+import { MultiLineTextModel } from './schema';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
-import { MultiLineTextModel } from './schema';
 
 const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextModel>> = (
   props,

@@ -1,5 +1,3 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -7,8 +5,10 @@ import {
   getLocalizedStateSnapshot,
 } from '../../../../../../adaptivity/scripting';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';
-import { setMutationTriggered } from '../slice';
 import AdaptivitySlice from '../name';
+import { setMutationTriggered } from '../slice';
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 
 export const applyStateChange = createAsyncThunk(
   `${AdaptivitySlice}/applyStateChange`,

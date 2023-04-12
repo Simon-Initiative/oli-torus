@@ -1,6 +1,6 @@
+import { DropdownModel } from './schema';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
-import { DropdownModel } from './schema';
 
 const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props) => {
   const { id, model } = props;

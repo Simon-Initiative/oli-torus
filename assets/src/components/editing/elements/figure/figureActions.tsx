@@ -1,8 +1,8 @@
+import { insideSemanticElement } from '../utils';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Transforms } from 'slate';
-import { Model } from 'data/content/model/elements/factories';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { insideSemanticElement } from '../utils';
 
 export const insertFigure = createButtonCommandDesc({
   icon: <i className="fa-solid fa-note-sticky"></i>,

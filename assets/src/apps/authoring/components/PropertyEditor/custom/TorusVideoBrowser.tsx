@@ -1,11 +1,11 @@
-import React, { useCallback } from 'react';
-import { Button } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { MIMETYPE_FILTERS } from '../../../../../components/media/manager/MediaManager';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
 import { MediaBrowserComponent, TorusMediaBrowserWrapper } from './TorusMediaBrowserWrapper';
+import React, { useCallback } from 'react';
+import { Button } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 
 const _TorusVideoBrowser: MediaBrowserComponent = ({ id, label, value, onChange, onBlur }) => {
   const [pickerOpen, , openPicker, closePicker] = useToggle();

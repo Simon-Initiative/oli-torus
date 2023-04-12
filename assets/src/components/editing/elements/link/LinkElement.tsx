@@ -1,18 +1,16 @@
+import './LinkElement.scss';
+import { LinkModal } from './LinkModal';
+import { modalActions } from 'actions/modal';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { InlineChromiumBugfix, useEditModelCallback } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
+import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import { useSelected } from 'slate-react';
-
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
-import { LinkModal } from './LinkModal';
-import { modalActions } from 'actions/modal';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-
-import './LinkElement.scss';
 
 export interface Props extends EditorProps<ContentModel.Hyperlink> {}
 export const LinkEditor = (props: Props) => {

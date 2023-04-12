@@ -1,12 +1,3 @@
-import debounce from 'lodash/debounce';
-import React, {
-  CSSProperties,
-  ReactEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -17,6 +8,15 @@ import { parseBool } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
+import debounce from 'lodash/debounce';
+import React, {
+  CSSProperties,
+  ReactEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 /**
  * If you pass in a string, return the JSON.parse, otherwise return the same value.

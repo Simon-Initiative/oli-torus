@@ -1,11 +1,11 @@
-import React from 'react';
 import {
   HasPerPartSubmissionOption,
-  makeTransformation,
   PartId,
   Transform,
   Transformation,
+  makeTransformation,
 } from '../types';
+import React from 'react';
 
 export const isShuffled = (transformations: Transformation[]): boolean =>
   !!transformations.find((xform) => xform.operation === Transform.shuffle);

@@ -1,6 +1,6 @@
+import { NavButtonModel } from './schema';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
-import { NavButtonModel } from './schema';
 
 const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (props) => {
   const { model } = props;

@@ -1,9 +1,9 @@
+import { AuthoringElementProps } from './AuthoringElement';
+import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import produce from 'immer';
 import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
-import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
-import { AuthoringElementProps } from './AuthoringElement';
-import { ErrorBoundary } from 'components/common/ErrorBoundary';
 
 export interface AuthoringElementState<T> {
   projectSlug: string;

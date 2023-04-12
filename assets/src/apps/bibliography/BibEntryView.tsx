@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { BibEntry } from 'data/content/bibentry';
+import * as React from 'react';
 
 const Cite = (window as any).cite;
 

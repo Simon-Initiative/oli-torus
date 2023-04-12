@@ -1,3 +1,7 @@
+import { AuthorPartComponentProps } from '../types/parts';
+import Markup from './Markup';
+import { tagName as quillEditorTagName, registerEditor } from './QuillEditor';
+import { TextFlowModel } from './schema';
 import {
   NotificationType,
   subscribeToNotification,
@@ -7,10 +11,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { clone, parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
-import { AuthorPartComponentProps } from '../types/parts';
-import Markup from './Markup';
-import { registerEditor, tagName as quillEditorTagName } from './QuillEditor';
-import { TextFlowModel } from './schema';
 
 export interface MarkupTree {
   tag: string;

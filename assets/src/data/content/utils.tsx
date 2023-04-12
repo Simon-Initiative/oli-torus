@@ -1,3 +1,4 @@
+import { StructuredContent } from './resource';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { AllModelElements, ModelElement } from 'data/content/model/elements/types';
 import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
@@ -5,7 +6,6 @@ import * as React from 'react';
 import { PopoverState } from 'react-tiny-popover';
 import { Element, Range, Text } from 'slate';
 import { useFocused, useSelected, useSlate } from 'slate-react';
-import { StructuredContent } from './resource';
 
 export function useElementSelected() {
   const focused = useFocused();

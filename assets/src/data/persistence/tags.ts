@@ -1,6 +1,6 @@
+import { makeRequest } from './common';
 import { Tag } from 'data/content/tags';
 import { ProjectSlug } from 'data/types';
-import { makeRequest } from './common';
 
 export interface TagsRetrieval {
   result: 'success';

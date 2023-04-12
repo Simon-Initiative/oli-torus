@@ -1,17 +1,17 @@
+import styles from './InlineActivityEditor.modules.scss';
+import { TextEditor } from 'components/TextEditor';
 import { ActivityModelSchema, Undoable } from 'components/activities/types';
-import { ActivityLOs } from 'components/resource/objectives/ActivityLOs';
 import { selectImage } from 'components/editing/elements/image/imageActions';
+import { DeleteButton } from 'components/misc/DeleteButton';
 import { Tags } from 'components/resource/Tags';
+import { ActivityLOs } from 'components/resource/objectives/ActivityLOs';
 import { ActivityEditContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ResourceId } from 'data/types';
 import React from 'react';
-import { valueOr } from 'utils/common';
-import { TextEditor } from 'components/TextEditor';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import styles from './InlineActivityEditor.modules.scss';
 import { classNames } from 'utils/classNames';
+import { valueOr } from 'utils/common';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;

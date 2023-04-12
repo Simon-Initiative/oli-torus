@@ -1,12 +1,12 @@
-import React from 'react';
-import { Heading } from 'components/misc/Heading';
-import { RichTextEditor } from 'components/content/RichTextEditor';
-import { ModelEditorProps } from '../schema';
 import { Feedback as FeedbackItem } from '../../types';
+import { ModelEditorProps } from '../schema';
+import { RichTextEditor } from 'components/content/RichTextEditor';
 import { Description } from 'components/misc/Description';
+import { Heading } from 'components/misc/Heading';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
 import { ProjectSlug } from 'data/types';
+import React from 'react';
 import { Descendant } from 'slate';
 
 interface FeedbackProps extends ModelEditorProps {
