@@ -427,7 +427,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section: section
     } do
       enroll_user_to_section(instructor, section, :context_instructor)
-      Oli.Authoring.Course.delete_project_survey(section)
+
+      Oli.Authoring.Course.delete_project_survey(section.base_project)
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 

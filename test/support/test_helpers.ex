@@ -596,11 +596,10 @@ defmodule Oli.TestHelpers do
         title: "Course Survey"
       )
 
-    project =
-      insert(:project, required_survey_resource_id: survey_revision.resource.id, authors: [author])
+    project = insert(:project, required_survey_resource_id: survey_resource.id, authors: [author])
 
     # Associate survey to the project
-    insert(:project_resource, %{project_id: project.id, resource_id: survey_revision.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: survey_resource.id})
 
     # Graded page revision
     page_revision =
@@ -707,6 +706,42 @@ defmodule Oli.TestHelpers do
       end
 
     {:ok, section} = Sections.create_section_resources(section, publication)
+
+    # Create new unpublished publication for the project
+    new_publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id,
+        published: nil
+      })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: survey_resource,
+      revision: survey_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: unit_one_resource,
+      revision: unit_one_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
 
     {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
   end
