@@ -12,7 +12,11 @@ import { AllPaths, DestinationPath, DestinationPaths, RuleTypes } from '../paths
 import {
   addComponentId,
   addDestinationId,
+  isComponentPath,
+  isCorrectPath,
   isDestinationPath,
+  isEndOfActivityPath,
+  isIncorrectPath,
   sortByPriority,
 } from '../paths/path-utils';
 
@@ -167,7 +171,7 @@ const PathEditor: React.FC<EditParams> = ({
 
   return (
     <div className={className}>
-      {questionId && <span>When {questionType} is</span>}
+      {questionId && <label>When {questionType} is</label>}
 
       {availableWithCurrent.length === 1 && <label>{availableWithCurrent[0].label}</label>}
 
@@ -181,25 +185,25 @@ const PathEditor: React.FC<EditParams> = ({
         </select>
       )}
 
-      <div className="param-box">
-        {isDestinationPath(workingPath) && (
-          <>
-            Go to
-            <DestinationPicker
-              screens={destinationScreens}
-              path={workingPath}
-              onChange={onDestinationChange}
-            />
-          </>
-        )}
-      </div>
+      {isDestinationPath(workingPath) && (
+        <div className="destination-section">
+          <label>Go to</label>
+          <DestinationPicker
+            screens={destinationScreens}
+            path={workingPath}
+            onChange={onDestinationChange}
+          />
+        </div>
+      )}
 
-      <button onClick={onSave} className="btn btn-primary">
-        <Icon icon="save" /> Save Rule
-      </button>
-      <button onClick={toggleDeleteConfirm} className="icon-button">
-        <Icon icon="trash" />
-      </button>
+      <div className="bottom-buttons">
+        <button onClick={toggleDeleteConfirm} className="btn btn-danger">
+          Delete
+        </button>
+        <button onClick={onSave} className="btn btn-primary">
+          Done
+        </button>
+      </div>
       {showDeleteConfirm && (
         <ConfirmDelete
           show={true}
@@ -221,14 +225,21 @@ interface ROParams {
 }
 
 const ReadOnlyPath: React.FC<ROParams> = ({ path, toggleEditMode, className, screens }) => {
+  const prelabel = isEndOfActivityPath(path)
+    ? 'Always '
+    : isComponentPath(path) || isCorrectPath(path) || isIncorrectPath(path)
+    ? 'If answer is '
+    : '';
+  const goToLabel = isDestinationPath(path) ? ' go to ' : '';
   return (
-    <div className={className}>
-      <label>{path.label}</label>
+    <div className={className} onClick={toggleEditMode}>
+      {prelabel}
+      <div className="param-box">
+        <span className="path-param">{path.label}</span>
+      </div>
+      {goToLabel}
       <div className="param-box">
         {isDestinationPath(path) && <DestinationLabel path={path} screens={screens} />}
-        <button onClick={toggleEditMode} className="icon-button">
-          <Icon icon="edit" />
-        </button>
       </div>
     </div>
   );

@@ -1,7 +1,5 @@
 import { EntityId } from '@reduxjs/toolkit';
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { addPath } from '../flowchart-actions/add-path';
 import { AllPaths } from '../paths/path-types';
 import { sortByPriority } from '../paths/path-utils';
 import { PathEditBox } from './PathEditor';
@@ -23,8 +21,6 @@ export const PathsEditor: React.FC<Props> = ({
   paths,
   screens,
 }) => {
-  const dispatch = useDispatch();
-
   const sortedPath = [...paths].sort(sortByPriority);
   const usedPathIds = paths.map((p) => p.id);
   return (
