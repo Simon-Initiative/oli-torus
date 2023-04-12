@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -27,7 +27,7 @@ import {
 import { FlowchartModeOptions } from './FlowchartModeOptions';
 import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
-import { changeEditMode } from '../../store/app/slice';
+import { changeAppMode, changeEditMode } from '../../store/app/slice';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { node } from 'webpack';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
@@ -44,6 +44,7 @@ export const FlowchartEditor = () => {
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
 
+  console.info('Rendering flowchart', activities, sequence);
   const activityEdges = buildEdges(activities);
   const activityNodes = activitiesToNodes(activities);
   const placeholders = buildPlaceholders(activities);
@@ -51,6 +52,18 @@ export const FlowchartEditor = () => {
 
   const nodes = [starting.node, ...activityNodes, ...placeholders.nodes];
   const edges = [starting.edge, ...activityEdges, ...placeholders.edges];
+
+  useEffect(() => {
+    // A cheat-code for going to advanced editor
+    const cheat = (e: KeyboardEvent) => {
+      console.info(e.key);
+      if (e.ctrlKey && e.key === 'F2') {
+        dispatch(changeAppMode({ mode: 'expert' }));
+      }
+    };
+    window.addEventListener('keydown', cheat);
+    return () => window.removeEventListener('keydown', cheat);
+  }, [dispatch]);
 
   const onAddScreen = useCallback(
     (params: FlowchartAddScreenParams) => {
@@ -109,7 +122,7 @@ export const FlowchartEditor = () => {
       <div className="flowchart-editor">
         <DndProvider backend={HTML5Backend}>
           <div className="panel-inner">
-            <FlowchartModeOptions onScreenEditMode={onScreenEdit} />
+            <FlowchartModeOptions />
             <FlowchartSidebar />
           </div>
 

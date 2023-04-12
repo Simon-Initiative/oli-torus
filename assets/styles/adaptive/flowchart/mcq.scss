@@ -1,0 +1,105 @@
+janus-mcq {
+  .mcq-input {
+    border: none !important;
+    padding: 0px;
+
+    > div {
+      display: block;
+      position: static !important;
+      margin: 0 9px 15px 0;
+      min-height: 20px;
+      vertical-align: text-top;
+    }
+    > div:last-of-type {
+      margin-right: 0;
+    }
+
+    //label
+    label {
+      display: block;
+      padding: 0 0 0 15px;
+      margin: 0 20px 0 0;
+      position: relative;
+      cursor: pointer;
+      line-height: 1.4;
+      text-decoration: none;
+      white-space: normal;
+      border: 0px;
+      max-width: none;
+    }
+
+    input {
+      /* Style the radio buttons */
+
+      appearance: none;
+      -webkit-appearance: none;
+      background-color: transparent;
+      border: 3px solid $primary;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      margin: 0 3px 0 0;
+      outline: none;
+      position: relative;
+      transition: background-color 0.3s ease;
+
+      /* Style the radio button when it is selected */
+      &:checked::before {
+        content: '\2713';
+        font-family: OpenSans;
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font-size: 16px;
+      }
+
+      &:checked {
+        background-color: $primary;
+      }
+    }
+
+    input[type='checkbox'] {
+      /* Style the checkbox buttons to be more squarish*/
+      border-radius: 2px;
+    }
+
+    label {
+      color: $lightForeground;
+      font-family: OpenSans;
+      font-weight: 600;
+      div {
+        display: block;
+        position: relative !important;
+        top: 2px;
+        left: -15px;
+      }
+    }
+
+    p {
+      margin: 0px;
+    }
+    > br {
+      display: none !important;
+    }
+  }
+
+  //Horizontal
+  .mcq-wrap > div,
+  .mcq-wrap label,
+  .mcq-wrap label div,
+  .mcq-wrap p {
+    display: inline-block !important;
+  }
+  .mcq-wrap > div {
+    margin-right: 10px !important;
+  }
+  ul {
+    padding: 0 !important;
+  }
+  li {
+    margin-left: 30px !important;
+  }
+}
