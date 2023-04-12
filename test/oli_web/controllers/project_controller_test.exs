@@ -1,23 +1,19 @@
 defmodule OliWeb.ProjectControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
-  alias Oli.Authoring.Course.Project
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistrationProject
 
   import Oli.Factory
 
-  @basic_get_routes [:overview, :insights]
   setup [:author_project_conn]
   @valid_attrs %{title: "default title"}
   @invalid_attrs %{title: ""}
-  @update_attrs %{description: "default description"}
 
   describe "authorization" do
     test "all get routes redirect to workspace path when attempting to view a project that does not exist",
          %{conn: conn} do
-      @basic_get_routes
-      |> Enum.each(fn path -> unauthorized_redirect(conn, path, "does not exist") end)
+      unauthorized_redirect(conn, :insights, "does not exist")
     end
   end
 
@@ -25,8 +21,7 @@ defmodule OliWeb.ProjectControllerTest do
     {:ok, author: _author2, project: project2} = author_project_fixture()
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
 
-    @basic_get_routes
-    |> Enum.each(fn path -> unauthorized_redirect(conn, path, project2.slug) end)
+    unauthorized_redirect(conn, :insights, project2.slug)
   end
 
   describe "projects" do
@@ -54,7 +49,7 @@ defmodule OliWeb.ProjectControllerTest do
       })
       |> Repo.insert()
 
-      conn = get(conn, Routes.project_path(conn, :overview, project.slug))
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug))
 
       response = html_response(conn, 200)
       assert response =~ "Overview"
@@ -79,36 +74,6 @@ defmodule OliWeb.ProjectControllerTest do
     test "redirects back to workspace when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.project_path(conn, :create), project: @invalid_attrs)
       assert html_response(conn, 302) =~ "/projects"
-    end
-  end
-
-  describe "delete project" do
-    test "redirects back to workspace when project is deleted", %{conn: conn, project: project} do
-      conn = delete(conn, Routes.project_path(conn, :delete, project), title: project.title)
-      assert html_response(conn, 302) =~ "/projects"
-    end
-  end
-
-  describe "update project" do
-    test "performs update when data is valid", %{conn: conn, project: project} do
-      put(conn, Routes.project_path(conn, :update, project), project: @update_attrs)
-      assert Repo.get_by(Project, @update_attrs)
-    end
-
-    test "prevents update when data is invalid", %{conn: conn, project: project} do
-      put(conn, Routes.project_path(conn, :update, project), project: @invalid_attrs)
-      refute Repo.get_by(Project, @invalid_attrs)
-    end
-
-    test "redirects on success", %{conn: conn, project: project} do
-      conn = put(conn, Routes.project_path(conn, :update, project), project: @update_attrs)
-      assert redirected_to(conn) =~ Routes.project_path(conn, :overview, project)
-    end
-
-    test "does not redirect on failure", %{conn: conn, project: project} do
-      conn = put(conn, Routes.project_path(conn, :update, project), project: @invalid_attrs)
-      refute conn.assigns.changeset.valid?
-      assert html_response(conn, 200) =~ "Overview"
     end
   end
 

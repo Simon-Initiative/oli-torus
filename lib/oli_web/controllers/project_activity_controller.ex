@@ -6,24 +6,24 @@ defmodule OliWeb.ProjectActivityController do
   def enable_activity(conn, %{"project_id" => project_id, "activity_slug" => activity_slug}) do
     case Activities.enable_activity_in_project(project_id, activity_slug) do
       {:ok, _} ->
-        redirect(conn, to: Routes.project_path(conn, :overview, project_id))
+        redirect(conn, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
 
       {:error, message} ->
         conn
         |> put_flash(:error, "We couldn't enable activity for the project. #{message}")
-        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
     end
   end
 
   def disable_activity(conn, %{"project_id" => project_id, "activity_slug" => activity_slug}) do
     case Activities.disable_activity_in_project(project_id, activity_slug) do
       {:ok, _} ->
-        redirect(conn, to: Routes.project_path(conn, :overview, project_id))
+        redirect(conn, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
 
       {:error, message} ->
         conn
         |> put_flash(:error, "We couldn't disable activity from the project. #{message}")
-        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
     end
   end
 end

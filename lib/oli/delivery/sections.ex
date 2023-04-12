@@ -20,8 +20,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
-  alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Course.ProjectAttributes
+  alias Oli.Authoring.Course.{Project, ProjectAttributes}
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Delivery.Snapshots.Snapshot
@@ -2174,5 +2173,57 @@ defmodule Oli.Delivery.Sections do
         )
     ] ++
       get_flatten_hierarchy(rest, resources)
+  end
+
+  def get_parent_project_survey(section_slug) do
+    Section
+    |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
+    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:inner, [_, _, pr], rev in Revision, on: pr.revision_id == rev.id)
+    |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
+    |> where(
+      [s, spp, _, pr, proj],
+      s.slug == ^section_slug and
+        spp.project_id == s.base_project_id and
+        spp.section_id == s.id and
+        pr.resource_id == proj.required_survey_resource_id
+    )
+    |> select([_, _, _, rev], rev)
+    |> Repo.one()
+  end
+
+  defp update_project_required_survey_resource_id(section_id, resource_id) do
+    Section
+    |> where([s], s.id == ^section_id)
+    |> Repo.one()
+    |> Section.changeset(%{required_survey_resource_id: resource_id})
+    |> Repo.update()
+  end
+
+  def create_required_survey(section) do
+    case section.required_survey_resource_id do
+      nil -> do_create_required_survey(section)
+      _ -> {:error, "The section already has a survey"}
+    end
+  end
+
+  defp do_create_required_survey(section) do
+    case get_parent_project_survey(section.slug) do
+      nil ->
+        {:error, "The parent project doesn't have a survey"}
+
+      survey ->
+        update_project_required_survey_resource_id(section.id, survey.resource_id)
+    end
+  end
+
+  def delete_required_survey(section) do
+    case section.required_survey_resource_id do
+      nil ->
+        {:error, "The section doesn't have a survey"}
+
+      _ ->
+        update_project_required_survey_resource_id(section.id, nil)
+    end
   end
 end

@@ -8,8 +8,11 @@ defmodule Oli.Authoring.Course do
   alias Oli.Groups.CommunityVisibility
   alias Oli.Inventories
   alias Oli.Publishing
+  alias Oli.Publishing.Publications.Publication
+  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -337,5 +340,74 @@ defmodule Oli.Authoring.Course do
       title: title,
       description: "New family from project creation"
     }
+  end
+
+  defp project_has_survey?(project_id) do
+    Project
+    |> where([p], p.id == ^project_id and not is_nil(p.required_survey_resource_id))
+    |> select([p], p.required_survey_resource_id)
+    |> Repo.one()
+    |> Kernel.!=(nil)
+  end
+
+  defp get_project_survey(project_id) do
+    PublishedResource
+    |> join(:inner, [pr], rev in Revision, on: pr.revision_id == rev.id)
+    |> join(:inner, [_, _, proj], proj in Project, on: proj.id == ^project_id)
+    |> where(
+      [pr, rev, proj],
+      pr.publication_id in subquery(
+        Publication
+        |> where([p], is_nil(p.published) and p.project_id == ^project_id)
+        |> select([p], p.id)
+      ) and pr.resource_id == proj.required_survey_resource_id
+    )
+    |> select([_, rev], rev)
+    |> Repo.one()
+  end
+
+  defp update_project_required_survey_resource_id(project_id, resource_id) do
+    Project
+    |> where([p], p.id == ^project_id)
+    |> Repo.one()
+    |> Project.changeset(%{required_survey_resource_id: resource_id})
+    |> Repo.update()
+  end
+
+  def create_project_survey(project, author_id) do
+    case project_has_survey?(project.id) do
+      false -> do_create_project_survey(project, author_id)
+      _ -> {:error, "The project already has a survey"}
+    end
+  end
+
+  defp do_create_project_survey(project, author_id) do
+    {:ok, %{revision: revision}} =
+      create_and_attach_resource(project, %{
+        title: "Course Survey",
+        author_id: author_id,
+        max_attempts: 1,
+        scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent"),
+        resource_type_id: ResourceType.get_id_by_type("page")
+      })
+
+    update_project_required_survey_resource_id(project.id, revision.resource_id)
+
+    Oli.Publishing.ChangeTracker.track_revision(project.slug, revision)
+  end
+
+  def delete_project_survey(project) do
+    case project_has_survey?(project.id) do
+      false -> {:error, "The project doesn't have a survey"}
+      _ -> do_delete_project_survey(project)
+    end
+  end
+
+  defp do_delete_project_survey(project) do
+    case get_project_survey(project.id) do
+      revision ->
+        update_project_required_survey_resource_id(project.id, nil)
+        Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
+    end
   end
 end

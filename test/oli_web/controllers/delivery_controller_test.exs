@@ -126,14 +126,13 @@ defmodule OliWeb.DeliveryControllerTest do
     setup [:setup_lti_session]
 
     test "removes deleted project from available publications", %{
-      conn: conn,
       project: project,
       author: author,
       institution: institution
     } do
       Publishing.publish_project(project, "some changes")
 
-      delete(conn, Routes.project_path(conn, :delete, project), title: project.title)
+      Oli.Authoring.Course.update_project(project, %{status: :deleted})
 
       available_publications = Publishing.available_publications(author, institution)
       assert available_publications == []
