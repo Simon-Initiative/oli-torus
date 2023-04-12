@@ -134,7 +134,6 @@ const PathEditor: React.FC<EditParams> = ({
   }, [screens, screenId]);
 
   const onDelete = () => {
-    //onDeleteScreen(data.resourceId!);
     dispatch(
       deletePath({
         pathId: workingPath.id,

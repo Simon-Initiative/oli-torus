@@ -43,7 +43,7 @@ export const PathsEditor: React.FC<Props> = ({
           path={path}
         />
       ))}
-      <button onClick={addRule} className="btn btn-primary">
+      <button onClick={addRule} className="btn btn-primary w-full">
         Add Rule
       </button>
     </div>

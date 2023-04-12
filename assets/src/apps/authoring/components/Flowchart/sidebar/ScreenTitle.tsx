@@ -23,7 +23,9 @@ const ScreenTitle: React.FC<ScreenTitleProps> = ({ screenType, title, validated,
   }, []);
 
   const handleTitleSubmit = useCallback(() => {
-    onChange(newTitle);
+    if (title !== newTitle) {
+      onChange(newTitle);
+    }
     setEditingTitle(false);
   }, [newTitle, onChange]);
 
@@ -45,7 +47,7 @@ const ScreenTitle: React.FC<ScreenTitleProps> = ({ screenType, title, validated,
   );
 
   return (
-    <div className="screen-title">
+    <div className="screen-title" onClick={handleTitleClick}>
       <ScreenIcon screenType={screenType} />
       {editingTitle ? (
         <input
@@ -58,7 +60,7 @@ const ScreenTitle: React.FC<ScreenTitleProps> = ({ screenType, title, validated,
           onKeyPress={handleKeyPress}
         />
       ) : (
-        <span onClick={handleTitleClick}>{newTitle}</span>
+        <span>{newTitle}</span>
       )}
       <ScreenButton tooltip="Rename Screen" onClick={handleRenameButtonClick}>
         <ScreenEditIcon />
