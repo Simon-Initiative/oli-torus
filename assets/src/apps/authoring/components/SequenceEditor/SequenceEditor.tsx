@@ -64,7 +64,17 @@ const SequenceEditor: React.FC = () => {
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
     dispatch(setCurrentActivityFromSequence(entry.custom.sequenceId));
-    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+    dispatch(
+      setRightPanelActiveTab({
+        _rightPanelActiveTab: RightPanelTabs.SCREEN,
+        get rightPanelActiveTab() {
+          return this._rightPanelActiveTab;
+        },
+        set rightPanelActiveTab(value) {
+          this._rightPanelActiveTab = value;
+        },
+      }),
+    );
   };
 
   const addNewSequence = async (newSequenceEntry: any, siblingId: any) => {

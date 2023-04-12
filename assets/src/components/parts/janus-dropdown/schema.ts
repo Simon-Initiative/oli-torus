@@ -10,26 +10,54 @@ export interface DropdownModel extends JanusAbsolutePositioned, JanusCustomCss {
   optionLabels: string[];
   fontSize?: number;
   correctAnswer?: number;
+  correctFeedback?: string;
+  incorrectFeedback?: string;
+  commonErrorFeedback?: string[];
 }
 
 export const simpleUISchema = {
+  'ui:classNames': 'dropdown-editor',
+  classNames: 'dropdown-editor',
   correctAnswer: {
     'ui:widget': 'OptionsCorrectPicker',
+  },
+  commonErrorFeedback: {
+    'ui:widget': 'OptionsCustomErrorFeedbackAuthoring',
+  },
+  optionLabels: {
+    classNames: 'dropdown-options-field',
+    items: {
+      classNames: 'dropdown-options-field',
+      'ui:emptyValue': '',
+    },
   },
 };
 
 export const simpleSchema: JSONSchema7Object = {
   label: {
     type: 'string',
-    title: 'Label',
+    title: 'Question Prompt',
     description: 'text label for the dropdown',
   },
+
+  prompt: {
+    title: 'Student action prompt',
+    type: 'string',
+    description: 'placeholder text for dropdown',
+  },
+
+  fontSize: {
+    title: 'Font Size',
+    type: 'number',
+    default: 12,
+  },
+
   optionLabels: {
-    title: 'Dropdown Options',
+    title: 'Option Labels',
     type: 'array',
     description: 'list of options',
     items: {
-      $ref: '#/definitions/optionLabel',
+      type: 'string',
     },
   },
   correctAnswer: {
@@ -37,11 +65,22 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'number',
     default: 0,
   },
-  definitions: {
-    optionLabel: {
+  correctFeedback: {
+    title: 'Correct Feedback',
+    type: 'string',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incorrect Feedback',
+    type: 'string',
+    default: '',
+  },
+  commonErrorFeedback: {
+    title: 'Advanced Feedback',
+    type: 'array',
+    default: [],
+    items: {
       type: 'string',
-      description: 'text for the dropdown item',
-      $anchor: 'optionLabel',
     },
   },
 };
@@ -95,7 +134,13 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  optionLabels: {
+    items: {
+      'ui:emptyValue': '',
+    },
+  },
+};
 
 export const adaptivitySchema = {
   selectedIndex: CapiVariableTypes.NUMBER,
@@ -111,4 +156,8 @@ export const createSchema = (): Partial<DropdownModel> => ({
   optionLabels: ['Option 1', 'Option 2'],
   enabled: true,
   correctAnswer: 0,
+
+  correctFeedback: '',
+  incorrectFeedback: '',
+  commonErrorFeedback: [],
 });

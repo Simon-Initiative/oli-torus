@@ -4,8 +4,16 @@ import register from '../customElementWrapper';
 import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
+  PartAuthoringMode,
 } from '../partsApi';
-import { adaptivitySchema, createSchema, schema, uiSchema } from './schema';
+import {
+  adaptivitySchema,
+  createSchema,
+  schema,
+  uiSchema,
+  simpleSchema,
+  simpleUISchema,
+} from './schema';
 import SliderAuthor from './SliderAuthor';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
@@ -20,8 +28,9 @@ register(SliderAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => schema,
-    getUiSchema: () => uiSchema,
+    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUISchema : uiSchema),
+
     createSchema,
     getAdaptivitySchema: async () => adaptivitySchema,
   },

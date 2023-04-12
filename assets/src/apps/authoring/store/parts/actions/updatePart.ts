@@ -14,7 +14,10 @@ import { PartsSlice } from '../name';
 
 export const updatePart = createAsyncThunk(
   `${PartsSlice}/updatePart`,
-  async (payload: { activityId: string; partId: string; changes: any }, { getState, dispatch }) => {
+  async (
+    payload: { activityId: string; partId: string; changes: any; mergeChanges: boolean },
+    { getState, dispatch },
+  ) => {
     const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
     const activity = selectActivityById(rootState, payload.activityId);
     const undo: any[] = [];
@@ -90,7 +93,21 @@ export const updatePart = createAsyncThunk(
 
     // merge so that a partial of {custom: {x: 1, y: 1}} will not overwrite the entire custom object
     // TODO: payload.changes is Partial<Part>
-    merge(partDef, payload.changes);
+
+    if (payload.mergeChanges) {
+      merge(partDef, payload.changes);
+    } else {
+      if (!payload.changes.id || !payload.changes.type) {
+        console.error('Not merging part changes, but no id/type specified.', payload.changes);
+      }
+
+      activityClone.content.partsLayout = activityClone.content.partsLayout.map((part: any) => {
+        if (part.id === payload.partId) {
+          return payload.changes;
+        }
+        return part;
+      });
+    }
 
     if (authorPart) {
       authorPart.gradingApproach = partDef.custom.requiresManualGrading ? 'manual' : 'automatic';

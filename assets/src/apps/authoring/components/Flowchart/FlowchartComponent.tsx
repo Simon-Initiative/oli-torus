@@ -7,7 +7,7 @@ import { FlowchartEdge, FlowchartNode } from './flowchart-utils';
 import { ScreenNode } from './chart-components/ScreenNode';
 import { FloatingEdge } from './chart-components/FloatingEdge';
 import FloatingConnectionLine from './chart-components/FloatingConnectionLine';
-import { PlaceholderNode } from './chart-components/PlaceholderNode';
+import { EndNode } from './chart-components/PlaceholderNode';
 import { PlaceholderEdge } from './chart-components/PlaceholderEdge';
 import { StartNode } from './chart-components/StartNode';
 
@@ -18,7 +18,7 @@ interface FlowchartComponentProps {
 
 const NodeTypes = {
   screen: ScreenNode,
-  placeholder: PlaceholderNode,
+  placeholder: EndNode,
   start: StartNode,
 };
 
@@ -42,7 +42,7 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
       nodeTypes={NodeTypes}
       edgeTypes={EdgeTypes}
       nodes={layout.nodes}
-      edges={edges}
+      edges={layout.edges}
       panOnDrag={true}
       nodesDraggable={false}
       nodesConnectable={false}

@@ -5,6 +5,7 @@ import {
   authoringObservedAttributes,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
+  PartAuthoringMode,
 } from '../partsApi';
 import McqAuthor from './McqAuthor';
 import {
@@ -12,6 +13,8 @@ import {
   createSchema,
   getCapabilities,
   schema,
+  simpleSchema,
+  simpleUiSchema,
   uiSchema,
   validateUserConfig,
 } from './schema';
@@ -33,8 +36,8 @@ register(McqAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => schema,
-    getUiSchema: () => uiSchema,
+    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUiSchema : uiSchema),
     createSchema,
     getCapabilities,
     getAdaptivitySchema: async () => adaptivitySchema,
