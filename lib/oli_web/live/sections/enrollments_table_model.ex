@@ -2,10 +2,10 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
-  use Surface.LiveComponent
+  use Phoenix.Component
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div>nothing</div>
     """
   end
@@ -67,17 +67,24 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         },
         _
       ) do
-    assigns = Map.merge(assigns, %{progress: parse_progress(progress)})
-    # TODO link to "Student Details View" (not yet developed) instead of "Student Progress View"
-    ~F"""
+    assigns =
+      Map.merge(assigns, %{
+        progress: parse_progress(progress),
+        id: id,
+        name: name,
+        family_name: family_name,
+        given_name: given_name
+      })
+
+    ~H"""
     <div class="flex items-center ml-8">
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
-      <a
+      <.link
         class="ml-6 text-gray-600 underline hover:text-gray-700"
-        href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}
+        navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.StudentDashboard.StudentDashboardLive, @section_slug, @id, :content)}
       >
-        {Utils.name(name, given_name, family_name)}
-      </a>
+        <%= Utils.name(@name, @given_name, @family_name) %>
+      </.link>
     </div>
     """
   end
@@ -85,14 +92,14 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   def render_progress_column(assigns, user, _) do
     assigns = Map.merge(assigns, %{progress: parse_progress(user.progress)})
 
-    ~F"""
-    <div class={if @progress < 50, do: "text-red-600 font-bold"} data-progress-check={if @progress >= 50, do: "true", else: "false"}>{@progress}%</div>
+    ~H"""
+    <div class={if @progress < 50, do: "text-red-600 font-bold"} data-progress-check={if @progress >= 50, do: "true", else: "false"}><%= @progress %>%</div>
     """
   end
 
-  def render_unenroll_column(assigns, user, _) do
-    ~F"""
-    <button class="btn btn-outline-danger" phx-click="unenroll" phx-value-id={user.id}>
+  def render_unenroll_column(assigns, _user, _) do
+    ~H"""
+    <button class="btn btn-outline-danger" phx-click="unenroll" phx-value-id={@user.id}>
       Unenroll
     </button>
     """
@@ -102,24 +109,24 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     random_datetime = DateTime.utc_now() |> DateTime.add(-Enum.random(1..365), :day)
     assigns = Map.merge(assigns, %{last_interacted_stub: random_datetime})
 
-    ~F"""
-    {Timex.format!(@last_interacted_stub, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")}
+    ~H"""
+    <%= Timex.format!(@last_interacted_stub, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}") %>
     """
   end
 
   def stub_overall_mastery(assigns, _user, _) do
     assigns = Map.merge(assigns, %{overall_mastery: random_value()})
 
-    ~F"""
-      <div class={if @overall_mastery == "Low", do: "text-red-600 font-bold"}>{@overall_mastery}</div>
+    ~H"""
+      <div class={if @overall_mastery == "Low", do: "text-red-600 font-bold"}><%= @overall_mastery %></div>
     """
   end
 
   def stub_engagement(assigns, _user, _) do
     assigns = Map.merge(assigns, %{engagement: random_value()})
 
-    ~F"""
-      <div class={if @engagement == "Low", do: "text-red-600 font-bold"}>{@engagement}</div>
+    ~H"""
+      <div class={if @engagement == "Low", do: "text-red-600 font-bold"}><%= @engagement %></div>
     """
   end
 
