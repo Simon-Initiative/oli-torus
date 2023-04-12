@@ -5,6 +5,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import {
   selectAllActivities,
+  selectCurrentActivityId,
   setCurrentActivityId,
 } from '../../../delivery/store/features/activities/slice';
 
@@ -37,6 +38,7 @@ export const FlowchartEditor = () => {
 
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
+  const currentActivityId = useSelector(selectCurrentActivityId);
 
   console.info('Rendering flowchart', activities, sequence);
   const edges = buildEdges(activities);
@@ -52,6 +54,11 @@ export const FlowchartEditor = () => {
     window.addEventListener('keydown', cheat);
     return () => window.removeEventListener('keydown', cheat);
   }, [dispatch]);
+
+  const onPageEditMode = useCallback(() => {
+    if (!currentActivityId) return;
+    dispatch(changeEditMode({ mode: 'page' }));
+  }, [currentActivityId, dispatch]);
 
   const onAddScreen = useCallback(
     (params: FlowchartAddScreenParams) => {
@@ -110,7 +117,7 @@ export const FlowchartEditor = () => {
       <div className="flowchart-editor">
         <DndProvider backend={HTML5Backend}>
           <div className="flowchart-left">
-            <FlowchartModeOptions activeMode="flowchart" />
+            <FlowchartModeOptions activeMode="flowchart" onPageEditMode={onPageEditMode} />
             <FlowchartSidebar />
           </div>
 

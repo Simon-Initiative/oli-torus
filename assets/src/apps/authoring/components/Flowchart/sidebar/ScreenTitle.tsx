@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { ScreenIcon } from '../chart-components/ScreenIcon';
 import { ScreenButton } from '../chart-components/ScreenButton';
 import { ScreenEditIcon } from '../chart-components/ScreenEditIcon';
+import { ScreenValidationColors } from '../screen-icons/screen-icons';
 
 interface ScreenTitleProps {
   screenType?: string;
@@ -27,7 +28,7 @@ const ScreenTitle: React.FC<ScreenTitleProps> = ({ screenType, title, validated,
       onChange(newTitle);
     }
     setEditingTitle(false);
-  }, [newTitle, onChange]);
+  }, [newTitle, onChange, title]);
 
   const handleRenameButtonClick = useCallback(() => {
     if (editingTitle) {
@@ -48,7 +49,12 @@ const ScreenTitle: React.FC<ScreenTitleProps> = ({ screenType, title, validated,
 
   return (
     <div className="screen-title" onClick={handleTitleClick}>
-      <ScreenIcon screenType={screenType} />
+      <ScreenIcon
+        screenType={screenType}
+        bgColor={
+          validated ? ScreenValidationColors.VALIDATED : ScreenValidationColors.NOT_VALIDATED
+        }
+      />
       {editingTitle ? (
         <input
           className="form-control"
