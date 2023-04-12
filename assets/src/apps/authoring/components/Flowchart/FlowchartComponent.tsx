@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactFlow, { Controls, Background } from 'reactflow';
+import ReactFlow, { Controls } from 'reactflow';
 
 import { layoutFlowchart } from './flowchart-layout';
 
@@ -44,9 +44,7 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
       connectionLineComponent={FloatingConnectionLine}
       proOptions={{ hideAttribution: true }}
     >
-      {/* <MiniMap /> */}
-      <Controls />
-      {/* <Background /> */}
+      <Controls position="top-right" showInteractive={false} />
     </ReactFlow>
   );
 };

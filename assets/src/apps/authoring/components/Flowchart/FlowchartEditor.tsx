@@ -11,12 +11,7 @@ import {
 import { addFlowchartScreen } from './flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
 
-import {
-  buildEdges,
-  buildPlaceholders,
-  activitiesToNodes,
-  buildStartingNode,
-} from './flowchart-utils';
+import { buildEdges, activitiesToNodes, buildStartingNode } from './flowchart-utils';
 
 import { FlowchartComponent } from './FlowchartComponent';
 import {
@@ -29,7 +24,6 @@ import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
 import { changeAppMode, changeEditMode } from '../../store/app/slice';
 import { screenTypeToTitle } from './screens/screen-factories';
-import { node } from 'webpack';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 
 /*
@@ -45,30 +39,12 @@ export const FlowchartEditor = () => {
   const sequence = useSelector(selectSequence);
 
   console.info('Rendering flowchart', activities, sequence);
-  const activityEdges = buildEdges(activities);
-  const activityNodes = activitiesToNodes(activities);
-  //const placeholders = buildPlaceholders(activities);
-  const starting = buildStartingNode(activities, sequence);
-
-  const nodes = [starting.node, ...activityNodes];
-  const edges = [starting.edge, ...activityEdges];
+  const edges = buildEdges(activities);
+  const nodes = activitiesToNodes(activities);
 
   useEffect(() => {
     // A cheat-code for going to advanced editor
     const cheat = (e: KeyboardEvent) => {
-      console.info(e.key);
-      if (e.ctrlKey && e.key === 'F2') {
-        dispatch(changeAppMode({ mode: 'expert' }));
-      }
-    };
-    window.addEventListener('keydown', cheat);
-    return () => window.removeEventListener('keydown', cheat);
-  }, [dispatch]);
-
-  useEffect(() => {
-    // A cheat-code for going to advanced editor
-    const cheat = (e: KeyboardEvent) => {
-      console.info(e.key);
       if (e.ctrlKey && e.key === 'F2') {
         dispatch(changeAppMode({ mode: 'expert' }));
       }
@@ -134,7 +110,7 @@ export const FlowchartEditor = () => {
       <div className="flowchart-editor">
         <DndProvider backend={HTML5Backend}>
           <div className="panel-inner">
-            <FlowchartModeOptions />
+            <FlowchartModeOptions activeMode="flowchart" />
             <FlowchartSidebar />
           </div>
 

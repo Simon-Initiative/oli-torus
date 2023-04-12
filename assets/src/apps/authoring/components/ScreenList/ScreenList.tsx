@@ -145,7 +145,11 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
         </AdvancedAuthoringPopup>
       )}
       {showNewScreenModal && <AddScreenModal onCancel={closeNewScreenModal} onCreate={onCreate} />}
-      <FlowchartModeOptions onFlowchartMode={onFlowchartMode} onAddNewScreen={onAddNewScreen} />
+      <FlowchartModeOptions
+        onFlowchartMode={onFlowchartMode}
+        onAddNewScreen={onAddNewScreen}
+        activeMode="page"
+      />
       <ul className="screen-list">
         {sortedActivities.map((activity) => (
           <li

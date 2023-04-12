@@ -51,7 +51,7 @@ export type ApplicationMode = 'flowchart' | 'expert';
  * When in flowchart mode, we might be looking at the flowchart editor or the page editor.
  * When in expert mode, there is only the page editor.
  */
-type EditingMode = 'page' | 'flowchart';
+export type EditingMode = 'page' | 'flowchart';
 
 export interface AppState {
   applicationMode: ApplicationMode;
