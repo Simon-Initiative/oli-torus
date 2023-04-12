@@ -23,6 +23,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(%{"active_tab" => "learning_objectives"} = params, _, socket) do
+    socket =
+      socket
+      |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
+      |> assign_new(:objectives_tab, fn ->
+        %{
+          objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section.slug),
+          filter_options:
+            Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
+        }
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     {:noreply,
      assign(socket, params: params, active_tab: String.to_existing_atom(params["active_tab"]))}
@@ -43,6 +59,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         module={OliWeb.Components.Delivery.LearningObjectives}
         params={@params}
         section_slug={@section.slug}
+        objectives_tab={@objectives_tab}
       />
     """
   end

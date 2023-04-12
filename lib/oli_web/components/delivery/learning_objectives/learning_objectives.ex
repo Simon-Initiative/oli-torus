@@ -3,7 +3,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   alias OliWeb.Common.{PagedTable, SearchInput}
   alias Phoenix.LiveView.JS
-  alias Oli.Delivery.Sections
   alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Common.Params
   alias OliWeb.Router.Helpers, as: Routes
@@ -23,19 +22,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     filter_by: "all"
   }
 
-  def update(assigns, socket) do
-    params = decode_params(assigns.params)
+  def update(
+        %{objectives_tab: objectives_tab, section_slug: section_slug, params: params} = _assigns,
+        socket
+      ) do
+    params = decode_params(params)
 
-    {objectives, total_count} =
-      Sections.get_objectives_and_subobjectives(assigns.section_slug, params)
+    units_modules = objectives_tab.filter_options
 
-    units_modules = Sections.get_units_and_modules_from_a_section(assigns.section_slug)
+    {total_count, rows} = apply_filters(objectives_tab.objectives, params, units_modules)
 
-    {:ok, objectives_table_model} = ObjectivesTableModel.new(objectives)
+    {:ok, objectives_table_model} = ObjectivesTableModel.new(rows)
 
     objectives_table_model =
       Map.merge(objectives_table_model, %{
-        rows: objectives,
+        rows: rows,
         sort_order: params.sort_order,
         sort_by_spec:
           Enum.find(objectives_table_model.column_specs, fn col_spec ->
@@ -48,7 +49,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        table_model: objectives_table_model,
        total_count: total_count,
        params: params,
-       section_slug: assigns.section_slug,
+       section_slug: section_slug,
        units_modules: units_modules
      )}
   end
@@ -92,7 +93,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           />
         </div>
       {#else}
-        <h6 class="text-center mt-4">There are no objectives to show</h6>
+        <h6 class="text-center py-4">There are no objectives to show</h6>
       {/if}
     </div>
     """
@@ -160,7 +161,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
-      sort_by: Params.get_atom_param(params, "sort_by", [:objective, :subobjective], @default_params.sort_by),
+      sort_by:
+        Params.get_atom_param(
+          params,
+          "sort_by",
+          [:objective, :subobjective],
+          @default_params.sort_by
+        ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       filter_by: Params.get_param(params, "filter_by", @default_params.filter_by)
     }
@@ -183,6 +190,55 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     # there is no need to add a param to the url if its value is equal to the default one
     Map.filter(params, fn {key, value} ->
       @default_params[key] != value
+    end)
+  end
+
+  defp apply_filters(objectives, params, units_modules) do
+    objectives =
+      objectives
+      |> maybe_filter_by_text(params.text_search)
+      |> maybe_filter_by_option(params.filter_by, units_modules)
+      |> sort_by(params.sort_by, params.sort_order)
+
+    {length(objectives), objectives |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+  end
+
+  defp sort_by(objectives, sort_by, sort_order) do
+    case sort_by do
+      :objective ->
+        Enum.sort_by(objectives, fn obj -> obj.objective end, sort_order)
+
+      :subobjective ->
+        Enum.sort_by(objectives, fn obj -> obj.subobjective end, sort_order)
+
+      _ ->
+        Enum.sort_by(objectives, fn obj -> obj.objective end, sort_order)
+    end
+  end
+
+  defp maybe_filter_by_option(objectives, "all", _units_modules), do: objectives
+
+  defp maybe_filter_by_option(objectives, container_id, units_modules) do
+    container =
+      Enum.filter(units_modules, fn elem ->
+        elem.container_id == String.to_integer(container_id)
+      end)
+      |> List.first()
+
+    Enum.filter(objectives, fn objective ->
+      Enum.any?(objective[:pages_id], fn page_id ->
+        Enum.member?(container.children, page_id)
+      end)
+    end)
+  end
+
+  defp maybe_filter_by_text(objectives, nil), do: objectives
+  defp maybe_filter_by_text(objectives, ""), do: objectives
+
+  defp maybe_filter_by_text(objectives, text_search) do
+    objectives
+    |> Enum.filter(fn objective ->
+      String.contains?(String.downcase(objective.objective), String.downcase(text_search))
     end)
   end
 end

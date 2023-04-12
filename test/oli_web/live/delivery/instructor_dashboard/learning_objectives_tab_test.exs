@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
   end
 
   describe "instructor" do
-    setup [:instructor_conn, :section_with_assessment]
+    setup [:instructor_conn, :create_project_with_objectives]
 
     test "cannot access page if not enrolled to section", %{conn: conn, section: section} do
       redirect_path = "/unauthorized"
