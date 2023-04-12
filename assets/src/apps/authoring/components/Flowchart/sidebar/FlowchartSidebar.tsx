@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useCallback, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   IActivity,
   selectAllActivities,
@@ -15,6 +15,12 @@ import {
 import { validateScreen } from '../screens/screen-validation';
 
 import { PathsEditor } from './PathsEditor';
+import { ScreenIcon } from '../chart-components/ScreenIcon';
+import { ScreenButton } from '../chart-components/ScreenButton';
+import { ScreenEditIcon } from '../chart-components/ScreenEditIcon';
+import ScreenTitle from './ScreenTitle';
+import { dispatch } from '../../../../../data/events';
+import { changeTitle } from '../flowchart-actions/change-title';
 
 interface FlowchartSidebarProps {}
 
@@ -31,6 +37,14 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
   const validations = validateScreen(screen, activities, sequence);
+  const dispatch = useDispatch();
+
+  const onChangeTitle = useCallback(
+    (newTitle) => {
+      dispatch(changeTitle({ screenId: screen.id, newTitle }));
+    },
+    [dispatch, screen.id],
+  );
 
   const screens: Record<string, string> = useMemo(() => {
     return activities.reduce((acc, activity) => {
@@ -43,7 +57,12 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
 
   return (
     <div>
-      <h2>{screen.title}</h2>
+      <ScreenTitle
+        screenType={screen.authoring?.flowchart?.screenType}
+        title={screen.title || 'Untitled'}
+        validated={validations.length === 0}
+        onChange={onChangeTitle}
+      />
 
       {validations.map((err, index) => (
         <ValidationError key={index}>{err}</ValidationError>

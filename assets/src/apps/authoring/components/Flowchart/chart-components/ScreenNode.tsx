@@ -20,6 +20,10 @@ import { selectSequence } from '../../../../delivery/store/features/groups/selec
 import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
 import { WelcomeScreenIcon } from '../screen-icons/WelcomeScreenIcon';
 import { ScreenValidationColors, screenTypeToIcon } from '../screen-icons/screen-icons';
+import { ScreenEditIcon } from './ScreenEditIcon';
+import { ScreenDuplicateIcon } from './ScreenDuplicateIcon';
+import { ScreenDeleteIcon } from './ScreenDeleteIcon';
+import { ScreenIcon } from './ScreenIcon';
 
 interface NodeProps {
   data: IActivity;
@@ -87,16 +91,13 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   if (selected) classNames.push('node-selected');
   if (hover) classNames.push('drop-over');
 
-  const Icon =
-    screenTypeToIcon[data.authoring?.flowchart?.screenType || 'blank_screen'] || WelcomeScreenIcon;
-
   const iconBG = isValid ? ScreenValidationColors.VALIDATED : ScreenValidationColors.NOT_VALIDATED;
 
   return (
     <div className={`flowchart-node`}>
       <div className="title-bar">
         <div className="title-icon">
-          <Icon fill={iconBG} />
+          <ScreenIcon screenType={data.authoring?.flowchart?.screenType} fill={iconBG} />
         </div>
         <div className="title-text" title={data.title}>
           {data.title}
@@ -109,21 +110,24 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
         ref={drop}
       >
         <div className="button-bar">
-          {/* <ScreenButton onClick={() => onAddScreen({ prevNodeId: data.resourceId })}>
-            <Icon icon="plus" />
-          </ScreenButton> */}
+          {isWelcomeScreen && <span className="start-end-label">Start</span>}
+          {isEndScreen && <span className="start-end-label">End</span>}
 
-          <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
-            <Icon />
-          </ScreenButton>
-          {isRequiredScreen || (
+          {selected && (
             <>
-              <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
-                <Icon />
+              <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
+                <ScreenEditIcon />
               </ScreenButton>
-              <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
-                <Icon />
-              </ScreenButton>
+              {isRequiredScreen || (
+                <>
+                  <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
+                    <ScreenDuplicateIcon />
+                  </ScreenButton>
+                  <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
+                    <ScreenDeleteIcon />
+                  </ScreenButton>
+                </>
+              )}
             </>
           )}
         </div>
