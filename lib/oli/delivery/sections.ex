@@ -1027,7 +1027,8 @@ defmodule Oli.Delivery.Sections do
 
       # create any remaining section resources which are not in the hierarchy
       create_nonstructural_section_resources(section.id, [publication_id],
-        skip_resource_ids: processed_ids
+        skip_resource_ids: processed_ids,
+        required_survey_resource_id: section.required_survey_resource_id
       )
 
       update_section(section, %{root_section_resource_id: root_section_resource_id})
@@ -1415,7 +1416,8 @@ defmodule Oli.Delivery.Sections do
         |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
 
       create_nonstructural_section_resources(section_id, publication_ids,
-        skip_resource_ids: processed_resource_ids
+        skip_resource_ids: processed_resource_ids,
+        required_survey_resource_id: section.required_survey_resource_id
       )
 
       # Rebuild section previous next index
@@ -1888,14 +1890,21 @@ defmodule Oli.Delivery.Sections do
   # creates all non-structural section resources for the given publication ids skipping
   # any that belong to the resource ids in skip_resource_ids
   defp create_nonstructural_section_resources(section_id, publication_ids,
-         skip_resource_ids: skip_resource_ids
+         skip_resource_ids: skip_resource_ids,
+         required_survey_resource_id: required_survey_resource_id
        ) do
     published_resources_by_resource_id =
       published_resources_map(publication_ids, preload: [:revision, :publication])
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    unreachable_page_resource_ids = determine_unreachable_pages(publication_ids, skip_resource_ids)
+    # determine which pages are unreachable from the hierarchy, taking into account
+    # the optional survey resource
+    unreachable_page_resource_ids = case required_survey_resource_id do
+      nil -> determine_unreachable_pages(publication_ids, skip_resource_ids)
+      id -> determine_unreachable_pages(publication_ids, [id | skip_resource_ids])
+    end
+
     skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
 
     published_resources_by_resource_id
