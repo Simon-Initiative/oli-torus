@@ -1,7 +1,7 @@
 defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   use OliWeb, :live_view
 
-  alias OliWeb.Components.Delivery.StudentDashboard
+  alias OliWeb.Delivery.StudentDashboard.Components.Helpers
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -17,7 +17,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-      <StudentDashboard.tabs active_tab={@active_tab} section_slug={@section_slug} student_id={@student.id} preview_mode={@preview_mode} />
+      <Helpers.tabs active_tab={@active_tab} section_slug={@section_slug} student_id={@student.id} preview_mode={@preview_mode} />
       <%= render_tab(assigns) %>
     """
   end
@@ -56,5 +56,32 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       module={OliWeb.Delivery.StudentDashboard.Components.ProgressTab}
       />
     """
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("breadcrumb-navigate", _unsigned_params, socket) do
+    if socket.assigns.preview_mode do
+      {:noreply,
+       redirect(socket,
+         to:
+           Routes.instructor_dashboard_path(
+             socket,
+             :preview,
+             socket.assigns.section_slug,
+             :students
+           )
+       )}
+    else
+      {:noreply,
+       redirect(socket,
+         to:
+           Routes.live_path(
+             socket,
+             OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+             socket.assigns.section_slug,
+             :students
+           )
+       )}
+    end
   end
 end

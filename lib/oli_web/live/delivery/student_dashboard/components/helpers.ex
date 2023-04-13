@@ -1,4 +1,4 @@
-defmodule OliWeb.Components.Delivery.StudentDashboard do
+defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   use Phoenix.Component
 
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
@@ -19,7 +19,7 @@ defmodule OliWeb.Components.Delivery.StudentDashboard do
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header current_user={@current_user} section={@section} preview_mode={@preview_mode} />
+        <.header current_user={@current_user} student={@student} section={@section} preview_mode={@preview_mode} />
         <.section_details_header section={@section} student={@student}/>
         <Header.delivery_breadcrumb {assigns} />
 
@@ -112,17 +112,18 @@ defmodule OliWeb.Components.Delivery.StudentDashboard do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
-  defp logo_link(nil, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+  defp logo_link(nil, _, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
 
-  defp logo_link(section, preview_mode) do
+  defp logo_link(section, student_id, preview_mode) do
     if preview_mode do
-      Routes.student_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :content)
+      Routes.student_dashboard_path(OliWeb.Endpoint, :preview, section.slug, student_id, :content)
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
     end
   end
 
   attr :current_user, User
+  attr :student, User
   attr :section, Section
   attr :preview_mode, :boolean, default: false
 
@@ -131,7 +132,7 @@ defmodule OliWeb.Components.Delivery.StudentDashboard do
       <div class="w-full bg-delivery-header text-white border-b border-slate-600">
         <div class="container mx-auto py-2 flex flex-row justify-between">
           <div class="flex-1 flex items-center">
-            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section, @preview_mode)}>
+            <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section, @student.id, @preview_mode)}>
               <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
             </a>
           </div>
@@ -166,11 +167,47 @@ defmodule OliWeb.Components.Delivery.StudentDashboard do
 
   def student_details(assigns) do
     ~H"""
-    <div class="w-full py-8">
-      <div class="container mx-auto flex flex-row justify-between">
-        <%= @student.name %>
+      <div class="flex flex-col sm:flex-row items-center mx-10">
+        <div class="flex shrink-0 mb-6 sm:mb-0 sm:mr-6">
+          <%= if @student.picture do %>
+            <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
+          <% else %>
+              <i class="h-52 w-52 fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-200"></i>
+          <% end %>
+        </div>
+        <div class="flex flex-row justify-between w-full bg-white">
+          <div class="flex flex-col divide-y divide-gray-100 w-full">
+            <div class="h-28 pt-6 pl-10">
+              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">pronouns <i class="fa fa-info-circle text-primary h-3 w-3 ml-2"></i></h4>
+              <span class="text-base font-semibold tracking-wide text-gray-800 h-5 flex items-center mt-2"><%= @student.pronouns || "-" %></span>
+            </div>
+            <div class="h-28 pt-6 pl-10">
+              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">average score</h4>
+              <span class={"text-base font-semibold tracking-wide h-5 flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}><%= format_student_score(@student.avg_score) %></span>
+            </div>
+          </div>
+          <div class="flex flex-col divide-y divide-gray-100 w-full">
+            <div class="h-28 pt-6">
+              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">mayor</h4>
+              <span class="text-base font-semibold tracking-wide text-gray-800 h-5 flex items-center mt-2"><%= @student.mayor || "-" %></span>
+            </div>
+            <div class="h-28 pt-6">
+              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">course completion</h4>
+              <span class={"text-base font-semibold tracking-wide h-5 flex items-center mt-2 #{text_color(:progress, @student.progress)}"}><%= format_percentage(@student.progress) %></span>
+            </div>
+          </div>
+          <div class="flex flex-col divide-y divide-gray-100 w-full">
+            <div class="h-28 pt-6 pr-10">
+              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">experience</h4>
+              <span class="text-base font-semibold tracking-wide text-gray-800 h-5 flex items-center mt-2"><%= @student.experience || "-" %></span>
+            </div>
+            <div class="h-28 pt-6 pr-10">
+              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">platform engagement <i class="fa fa-info-circle text-primary h-3 w-3 ml-2"></i></h4>
+              <span class={"text-base font-semibold tracking-wide h-5 flex items-center mt-2 #{text_color(:engagement, @student.engagement)}"}><%= @student.engagement %></span>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
     """
   end
 
@@ -181,15 +218,43 @@ defmodule OliWeb.Components.Delivery.StudentDashboard do
 
   def section_details_header(assigns) do
     ~H"""
-    <div class="w-full bg-delivery-header text-white py-8">
-      <div class="container mx-auto flex flex-row justify-between">
-        <div class="flex-1 flex items-center text-[1.5em]">
-          <div class="font-bold text-slate-300">
-            <%= @section.title %> > <%= @student.name %>
-          </div>
-        </div>
+      <div class="flex flex-row justify-between items-center h-20 w-full py-6 px-10">
+        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 underline font-normal cursor-pointer"><%= @section.title %> | Students  >  <%= @student.name %></span>
+        <button class="torus-button flex justify-center primary h-9 w-48">Email Student</button>
       </div>
-    </div>
     """
+  end
+
+  defp text_color(metric_type, metric_value) when metric_type in [:avg_score, :progress] do
+    case metric_value do
+      nil -> "text-gray-800"
+      value when value < 0.5 -> "text-red-600"
+      value when value < 0.8 -> "text-yellow-600"
+      _ -> "text-green-700"
+    end
+  end
+
+  defp text_color(:engagement, metric_value) do
+    case metric_value do
+      nil -> "text-gray-800"
+      "Low" -> "text-red-600"
+      "Medium" -> "text-yellow-600"
+      _ -> "text-green-700"
+    end
+  end
+
+  defp format_student_score(nil), do: "-"
+
+  defp format_student_score(score) do
+    format_percentage(score)
+  end
+
+  defp format_percentage(score) do
+    {value, _} =
+      (score * 100)
+      |> Float.to_string()
+      |> Integer.parse()
+
+    "#{value}%"
   end
 end
