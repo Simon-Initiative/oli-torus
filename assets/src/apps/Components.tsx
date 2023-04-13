@@ -1,3 +1,4 @@
+import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
 import { Navbar } from 'components/common/Navbar';
 import { UserAccountMenu } from 'components/common/UserAccountMenu';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
@@ -23,3 +24,4 @@ registerApplication('AlternativesPreferenceSelector', AlternativesPreferenceSele
 registerApplication('Navbar', Navbar, globalStore);
 registerApplication('CourseContentOutline', CourseContentOutline, globalStore);
 registerApplication('UserAccountMenu', UserAccountMenu, globalStore);
+registerApplication('DeliveryElementRenderer', DeliveryElementRenderer, globalStore);
