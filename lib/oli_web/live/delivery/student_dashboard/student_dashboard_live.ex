@@ -17,6 +17,8 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+      <Helpers.section_details_header section_title={@section.title} student_name={@student.name}/>
+      <Helpers.student_details student={@student} />
       <Helpers.tabs active_tab={@active_tab} section_slug={@section_slug} student_id={@student.id} preview_mode={@preview_mode} />
       <%= render_tab(assigns) %>
     """

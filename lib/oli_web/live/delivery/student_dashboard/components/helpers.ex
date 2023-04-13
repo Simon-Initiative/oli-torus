@@ -20,10 +20,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
         <.header current_user={@current_user} student={@student} section={@section} preview_mode={@preview_mode} />
-        <.section_details_header section={@section} student={@student}/>
         <Header.delivery_breadcrumb {assigns} />
-
-        <.student_details student={@student} />
 
         <div class="flex-1 flex flex-col">
           <div class="relative flex-1 flex flex-col pb-[60px]">
@@ -167,7 +164,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
 
   def student_details(assigns) do
     ~H"""
-      <div class="flex flex-col sm:flex-row items-center mx-10">
+      <div id="student_details_card" class="flex flex-col sm:flex-row items-center mx-10">
         <div class="flex shrink-0 mb-6 sm:mb-0 sm:mr-6">
           <%= if @student.picture do %>
             <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
@@ -211,15 +208,15 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     """
   end
 
-  attr :section, Section
-  attr :student, User
+  attr :section_title, :string
+  attr :student_name, :string
 
   def section_details_header(%{section: nil}), do: nil
 
   def section_details_header(assigns) do
     ~H"""
-      <div class="flex flex-row justify-between items-center h-20 w-full py-6 px-10">
-        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 underline font-normal cursor-pointer"><%= @section.title %> | Students  >  <%= @student.name %></span>
+      <div id="section_details_header" class="flex flex-row justify-between items-center h-20 w-full py-6 px-10">
+        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span>
         <button class="torus-button flex justify-center primary h-9 w-48">Email Student</button>
       </div>
     """
