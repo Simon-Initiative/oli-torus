@@ -2,12 +2,13 @@ defmodule Oli.Delivery do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
   alias Oli.Delivery.{DeliverySetting, Sections}
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
   alias Oli.Publishing
   alias Oli.Repo
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{DeliveryResolver, PublishedResource}
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess}
 
   import Ecto.Query, warn: false
   import Oli.Utils
@@ -290,5 +291,44 @@ defmodule Oli.Delivery do
       _ ->
         {:ok, section}
     end
+  end
+
+  def has_completed_survey?(section_slug, user_id) do
+    survey = Sections.get_survey(section_slug)
+
+    survey_activities =
+      Enum.reduce(survey.content["model"], [], fn item, activities ->
+        if item["type"] == "activity-reference" do
+          [item["activity_id"] | activities]
+        else
+          activities
+        end
+      end)
+
+    Section
+    |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
+    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:inner, [s, spp, pr], a_att in ActivityAttempt,
+      on: a_att.revision_id == pr.revision_id
+    )
+    |> join(:inner, [s, spp, pr, a_att], r_att in ResourceAttempt,
+      on: r_att.id == a_att.resource_attempt_id
+    )
+    |> join(:inner, [s, spp, pr, a_att, r_att], r_acc in ResourceAccess,
+      on: r_att.resource_access_id == r_acc.id
+    )
+    |> where(
+      [s, spp, pr, a_att, r_att, r_acc],
+      s.slug == ^section_slug and
+        spp.section_id == s.id and
+        spp.project_id == s.base_project_id and
+        pr.resource_id in ^survey_activities and
+        r_acc.user_id == ^user_id and
+        a_att.lifecycle_state == ^"evaluated"
+    )
+    |> group_by([s, spp, pr, a_att], a_att.revision_id)
+    |> select([s, spp, pr, a_att, r_att, r_acc], a_att.revision_id)
+    |> Repo.all()
+    |> length() == length(survey_activities)
   end
 end
