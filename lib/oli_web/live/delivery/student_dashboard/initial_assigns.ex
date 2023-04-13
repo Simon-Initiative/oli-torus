@@ -30,14 +30,10 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
 
-        # TODO: recheck if all this initial assigns are really needed
         {:cont,
          assign(socket,
            context: SessionContext.init(session),
            current_user: current_user,
-           title: section.title,
-           description: section.description,
-           section_slug: section_slug,
            student:
              Accounts.get_user!(student_id)
              |> add_students_survey_data(section_slug)

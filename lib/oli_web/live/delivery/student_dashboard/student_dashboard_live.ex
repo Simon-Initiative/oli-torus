@@ -19,7 +19,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     ~H"""
       <Helpers.section_details_header section_title={@section.title} student_name={@student.name}/>
       <Helpers.student_details student={@student} />
-      <Helpers.tabs active_tab={@active_tab} section_slug={@section_slug} student_id={@student.id} preview_mode={@preview_mode} />
+      <Helpers.tabs active_tab={@active_tab} section_slug={@section.slug} student_id={@student.id} preview_mode={@preview_mode} />
       <%= render_tab(assigns) %>
     """
   end
@@ -69,7 +69,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
            Routes.instructor_dashboard_path(
              socket,
              :preview,
-             socket.assigns.section_slug,
+             socket.assigns.section.slug,
              :students
            )
        )}
@@ -80,7 +80,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
            Routes.live_path(
              socket,
              OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-             socket.assigns.section_slug,
+             socket.assigns.section.slug,
              :students
            )
        )}
