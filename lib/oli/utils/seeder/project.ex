@@ -611,7 +611,7 @@ defmodule Oli.Utils.Seeder.Project do
     children_ids = Enum.map(resources, fn r -> r.id end)
 
     {:ok, updated} =
-      Oli.Resources.create_revision_from_previous(container_revision, %{children: children_ids})
+      Oli.Resources.create_revision_from_previous(container_revision, %{children: container_revision.children ++ children_ids})
 
     Publishing.get_published_resource!(publication.id, container_revision.resource_id)
     |> Publishing.update_published_resource(%{revision_id: updated.id})

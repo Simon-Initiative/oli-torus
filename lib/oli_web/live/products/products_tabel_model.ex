@@ -53,7 +53,7 @@ defmodule OliWeb.Products.ProductsTableModel do
   end
 
   def render_project_column(assigns, %{base_project: base_project}, _) do
-    route_path = Routes.project_path(OliWeb.Endpoint, :overview, base_project.slug)
+    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, base_project.slug)
     SortableTableModel.render_link_column(assigns, base_project.title, route_path)
   end
 end

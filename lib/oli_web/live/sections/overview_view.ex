@@ -11,6 +11,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
+  alias OliWeb.Projects.RequiredSurvey
 
   prop(user, :any)
   data(modal, :any, default: nil)
@@ -57,6 +58,14 @@ defmodule OliWeb.Sections.OverviewView do
           Sections.check_for_available_publication_updates(section)
           |> Enum.count()
 
+        show_required_section_config =
+          if section.required_survey_resource_id != nil or
+               Sections.get_parent_project_survey(section.slug) do
+            true
+          else
+            false
+          end
+
         %{slug: revision_slug} = DeliveryResolver.root_container(section.slug)
 
         {:ok, collab_space_config} =
@@ -77,7 +86,8 @@ defmodule OliWeb.Sections.OverviewView do
            submission_count:
              Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section),
            collab_space_config: collab_space_config,
-           resource_slug: revision_slug
+           resource_slug: revision_slug,
+           show_required_section_config: show_required_section_config
          )}
     end
   end
@@ -111,11 +121,9 @@ defmodule OliWeb.Sections.OverviewView do
             label="Institution"
             type={if @is_system_admin, do: "link"}
             link_label={deployment.institution.name}
-            value={
-              if @is_system_admin,
-                do: Routes.institution_path(OliWeb.Endpoint, :show, deployment.institution_id),
-                else: deployment.institution.name
-            }
+            value={if @is_system_admin,
+              do: Routes.institution_path(OliWeb.Endpoint, :show, deployment.institution_id),
+              else: deployment.institution.name}
           />
         {/unless}
       </Group>
@@ -143,26 +151,61 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
       <Group label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)} class={"btn btn-link"}>Manage Enrolled Students</a></li>
+          <li><a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)}
+              class="btn btn-link"
+            >Manage Enrolled Students</a></li>
           {#if @section.open_and_free}
-            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)} class={"btn btn-link"}>Invite Students</a></li>
+            <li><a
+                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}
+                class="btn btn-link"
+              >Invite Students</a></li>
           {/if}
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)} class={"btn btn-link"}>Edit Section Details</a></li>
-          <li><a href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)} class={"btn btn-link"}>Browse Collaborative Spaces</a></li>
-          <li><button type="button" class=" btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button></li>
+          <li><a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}
+              class="btn btn-link"
+            >Edit Section Details</a></li>
+          <li><a
+              href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}
+              class="btn btn-link"
+            >Browse Collaborative Spaces</a></li>
+          <li><button
+              type="button"
+              class="btn btn-link text-danger action-button"
+              :on-click="show_delete_modal"
+            >Delete Section</button></li>
         </ul>
+      </Group>
+      <Group
+        label="Required Survey"
+        description="Show a required to students who access the course for the first time"
+      >
+        {#if @show_required_section_config}
+          {live_component(RequiredSurvey, %{
+            project: @section,
+            enabled: @section.required_survey_resource_id,
+            is_section: true,
+            id: "section-required-survey-section"
+          })}
+        {#else}
+          <div class="flex items-center h-full ml-8">
+            <p class="m-0">You are not allowed to have student surveys in this resource.<br>Please contact the admin to be granted with that permission.</p>
+          </div>
+        {/if}
       </Group>
       <Group label="Collaborative Space" description="Activate and configure a collaborative space for this section">
         <div class="container mx-auto">
           {#if @collab_space_config && @collab_space_config.status != :disabled}
-            {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView, id: "collab_space_config",
-                session: %{
-                  "collab_space_config" => @collab_space_config,
-                  "section_slug" => @section.slug,
-                  "resource_slug" => @resource_slug,
-                  "is_overview_render" => true,
-                  "is_delivery" => true
-                })}
+            {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+              id: "collab_space_config",
+              session: %{
+                "collab_space_config" => @collab_space_config,
+                "section_slug" => @section.slug,
+                "resource_slug" => @resource_slug,
+                "is_overview_render" => true,
+                "is_delivery" => true
+              }
+            )}
           {#else}
             <p class="ml-8 mt-2">Collaborative spaces are not enabled by the course project.<br>Please contact a system administrator to enable.</p>
           {/if}
@@ -170,9 +213,12 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">
         <ul class="link-list">
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, @section.slug)} class={"btn btn-link"}>
-            Score Manually Graded Activities
-            {#if @submission_count > 0}
+          <li><a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, @section.slug)}
+              class="btn btn-link"
+            >
+              Score Manually Graded Activities
+              {#if @submission_count > 0}
                 <span class="badge badge-primary">{@submission_count}</span>
               {/if}
             </a>
@@ -183,21 +229,32 @@ defmodule OliWeb.Sections.OverviewView do
           {#if @is_system_admin}
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Snapshots.SnapshotsView, @section.slug)} class={"btn btn-link"}>Manage Snapshot Records</a></li>
           {/if}
-
           {#if !@section.open_and_free}
-            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)} class={"btn btn-link"}>Manage LMS Gradebook</a></li>
-            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)} class={"btn btn-link"}>View Grades that failed to sync</a></li>
+            <li><a
+                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}
+                class="btn btn-link"
+              >Manage LMS Gradebook</a></li>
+            <li><a
+                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)}
+                class="btn btn-link"
+              >View Grades that failed to sync</a></li>
             {#if @is_lms_or_system_admin}
-              <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.ObserveGradeUpdatesView, @section.slug)} class={"btn btn-link"}>Observe grade updates in real-time</a></li>
+              <li><a
+                  href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.ObserveGradeUpdatesView, @section.slug)}
+                  class="btn btn-link"
+                >Observe grade updates in real-time</a></li>
             {/if}
-            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)} class={"btn btn-link"}>Browse LMS Grade Update Log</a></li>
+            <li><a
+                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)}
+                class="btn btn-link"
+              >Browse LMS Grade Update Log</a></li>
           {/if}
-          </ul>
+        </ul>
       </Group>
 
       {#if @is_lms_or_system_admin and !@section.open_and_free}
         <Group label="LMS Admin" description="Administrator LMS Connection">
-          <UnlinkSection unlink="unlink" section={@section}/>
+          <UnlinkSection unlink="unlink" section={@section} />
         </Group>
       {/if}
     </Groups>
@@ -246,7 +303,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     modal = fn assigns ->
       ~F"""
-        <DeleteModalNoConfirmation {...@modal_assigns} />
+      <DeleteModalNoConfirmation {...@modal_assigns} />
       """
     end
 

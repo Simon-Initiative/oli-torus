@@ -1805,6 +1805,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       )
       |> Seeder.add_adaptive_page()
 
+
+
     graded_attrs = %{
       graded: true,
       max_attempts: 1,
@@ -1858,10 +1860,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
       collab_space_config: collab_space_config
     }
 
-    map = Seeder.add_page(map, graded_attrs, :page)
-    map = Seeder.add_page(map, ungraded_attrs, :ungraded_page)
-    map = Seeder.add_page(map, collab_space_attrs, :collab_space_page)
-    map = Seeder.add_page(map, disabled_collab_space_attrs, :disabled_collab_space_page)
+    map = Seeder.add_page(map, graded_attrs, :container, :page)
+    map = Seeder.add_page(map, ungraded_attrs, :container, :ungraded_page)
+    map = Seeder.add_page(map, collab_space_attrs, :container, :collab_space_page)
+    map = Seeder.add_page(map, disabled_collab_space_attrs, :container, :disabled_collab_space_page)
 
     exploration_page_1 = %{
       graded: false,
@@ -1895,8 +1897,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       relates_to: [map.page.resource.id]
     }
 
-    map = Seeder.add_page(map, exploration_page_1, :exploration_page_1)
-    map = Seeder.add_page(map, exploration_page_2, :exploration_page_2)
+    map = Seeder.add_page(map, exploration_page_1, :container, :exploration_page_1)
+    map = Seeder.add_page(map, exploration_page_2, :container, :exploration_page_2)
 
     {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes")
 

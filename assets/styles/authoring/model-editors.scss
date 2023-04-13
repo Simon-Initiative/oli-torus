@@ -1,7 +1,7 @@
 .editors .structured-content,
 .rich-text-editor {
   &.fixed-toolbar {
-    border: 2px solid var(--toolbar-border-color);
+    border: 2px solid var(--color-toolbar-border);
   }
 
   .slate-editor.fixed-toolbar {
@@ -103,6 +103,10 @@ html.dark {
   .rich-text-editor {
     color: var(--color-body-color-dark);
     background-color: var(--color-body-dark);
+
+    &.fixed-toolbar {
+      border: 2px solid var(--color-toolbar-border-dark);
+    }
 
     .captions-input {
       color: var(--color-body-color-dark);

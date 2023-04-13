@@ -11,6 +11,7 @@ import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Navbar } from 'components/common/Navbar';
 import { CourseContentOutline } from 'components/delivery/CourseContentOutline';
 import { UserAccountMenu } from 'components/common/UserAccountMenu';
+import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
@@ -23,3 +24,4 @@ registerApplication('AlternativesPreferenceSelector', AlternativesPreferenceSele
 registerApplication('Navbar', Navbar, globalStore);
 registerApplication('CourseContentOutline', CourseContentOutline, globalStore);
 registerApplication('UserAccountMenu', UserAccountMenu, globalStore);
+registerApplication('DeliveryElementRenderer', DeliveryElementRenderer, globalStore);
