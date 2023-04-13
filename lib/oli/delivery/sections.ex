@@ -840,32 +840,33 @@ defmodule Oli.Delivery.Sections do
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy and linked pages.
   defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
-
     # Start with all pages
-    unreachable = Oli.Publishing.all_page_resource_ids(publication_ids)
-    |> MapSet.new()
+    unreachable =
+      Oli.Publishing.all_page_resource_ids(publication_ids)
+      |> MapSet.new()
 
     # create a map of page resource ids to a list of target resource ids that they link to. We
     # do this both for resource-to-page links and for page to activity links (aka activity-references).
     # We do this because we want to treat these links the same way when we traverse the graph, and
     # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
     # links to a page outside the hierarchy.
-    all_links = MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
-    |> MapSet.to_list()
+    all_links =
+      MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
+      |> MapSet.to_list()
 
-    link_map = Enum.reduce(all_links, %{}, fn {source, target}, map ->
-      case Map.get(map, source) do
-        nil -> Map.put(map, source, [target])
-        targets -> Map.put(map, source, [target | targets])
-      end
-    end)
+    link_map =
+      Enum.reduce(all_links, %{}, fn {source, target}, map ->
+        case Map.get(map, source) do
+          nil -> Map.put(map, source, [target])
+          targets -> Map.put(map, source, [target | targets])
+        end
+      end)
 
     # Now traverse the pages in the hiearchy, and follow (recursively) the links that
     # they have to other pages.
-    {unreachable, _ } = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
+    {unreachable, _} = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
 
     MapSet.to_list(unreachable)
-
   end
 
   # Traverse the graph structure of the links to determine which pages are reachable
@@ -873,17 +874,19 @@ defmodule Oli.Delivery.Sections do
   # This also tracks seen pages to avoid infinite recursion, in cases where pages create a
   # a circular link structure.
   def traverse_links(link_map, hiearchy_ids, unreachable, seen) do
-
     unreachable = MapSet.difference(unreachable, MapSet.new(hiearchy_ids))
     seen = MapSet.union(seen, MapSet.new(hiearchy_ids))
 
     Enum.reduce(hiearchy_ids, {unreachable, seen}, fn id, {unreachable, seen} ->
       case Map.get(link_map, id) do
-        nil -> {unreachable, seen}
+        nil ->
+          {unreachable, seen}
+
         targets ->
-          not_already_seen = MapSet.new(targets)
-          |> MapSet.difference(seen)
-          |> MapSet.to_list()
+          not_already_seen =
+            MapSet.new(targets)
+            |> MapSet.difference(seen)
+            |> MapSet.to_list()
 
           traverse_links(link_map, not_already_seen, unreachable, seen)
       end
@@ -893,7 +896,6 @@ defmodule Oli.Delivery.Sections do
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
   # representing all of the links between pages in the section
   defp get_all_page_links(publication_ids) do
-
     joined_publication_ids = Enum.join(publication_ids, ",")
 
     item_types =
@@ -913,19 +915,22 @@ defmodule Oli.Delivery.Sections do
 
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
-    slug_lookup = Oli.Publishing.distinct_slugs(publication_ids)
-    |> Enum.reduce(%{}, fn {id, slug}, acc -> Map.put(acc, slug, id) end)
+    slug_lookup =
+      Oli.Publishing.distinct_slugs(publication_ids)
+      |> Enum.reduce(%{}, fn {id, slug}, acc -> Map.put(acc, slug, id) end)
 
     Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
       case content["type"] do
-        "a" -> case content["href"] do
-          "/course/link/" <> slug -> MapSet.put(links, {source_id, Map.get(slug_lookup, slug)})
-          _ -> links
-        end
-        "page_link" -> MapSet.put(links, {source_id, content["idref"]})
+        "a" ->
+          case content["href"] do
+            "/course/link/" <> slug -> MapSet.put(links, {source_id, Map.get(slug_lookup, slug)})
+            _ -> links
+          end
+
+        "page_link" ->
+          MapSet.put(links, {source_id, content["idref"]})
       end
     end)
-
   end
 
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
@@ -942,15 +947,13 @@ defmodule Oli.Delivery.Sections do
     on mapping.revision_id = rev.id
     where mapping.publication_id IN (#{joined_publication_ids})
     """
+
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
       MapSet.put(links, {source_id, content["activity_id"]})
     end)
-
   end
-
-
 
   @doc """
   Create all section resources from the given section and publication and optional hierarchy definition.
@@ -1900,10 +1903,11 @@ defmodule Oli.Delivery.Sections do
 
     # determine which pages are unreachable from the hierarchy, taking into account
     # the optional survey resource
-    unreachable_page_resource_ids = case required_survey_resource_id do
-      nil -> determine_unreachable_pages(publication_ids, skip_resource_ids)
-      id -> determine_unreachable_pages(publication_ids, [id | skip_resource_ids])
-    end
+    unreachable_page_resource_ids =
+      case required_survey_resource_id do
+        nil -> determine_unreachable_pages(publication_ids, skip_resource_ids)
+        id -> determine_unreachable_pages(publication_ids, [id | skip_resource_ids])
+      end
 
     skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
 
@@ -2134,32 +2138,30 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp append_related_resources(graded_pages, user_id) do
-
     case graded_pages do
-      [] -> []
+      [] ->
+        []
+
       _ ->
+        section_id = graded_pages |> List.first() |> Map.get(:section_id)
 
-      section_id = graded_pages |> List.first() |> Map.get(:section_id)
+        related_resources =
+          graded_pages
+          |> Enum.reduce([], fn page, related_pages -> page.relates_to ++ related_pages end)
+          |> get_related_resources(section_id, user_id)
 
-      related_resources =
-        graded_pages
-        |> Enum.reduce([], fn page, related_pages -> page.relates_to ++ related_pages end)
-        |> get_related_resources(section_id, user_id)
-
-      Enum.map(graded_pages, fn page ->
-        Map.get_and_update(page, :relates_to, fn relates_to ->
-          {relates_to,
-           Enum.map(relates_to, fn resource_id ->
-             Enum.find(related_resources, &(&1.id == resource_id))
-           end)
-           |> Enum.filter(&(&1 != nil))}
+        Enum.map(graded_pages, fn page ->
+          Map.get_and_update(page, :relates_to, fn relates_to ->
+            {relates_to,
+             Enum.map(relates_to, fn resource_id ->
+               Enum.find(related_resources, &(&1.id == resource_id))
+             end)
+             |> Enum.filter(&(&1 != nil))}
+          end)
+          |> elem(1)
+          |> Map.delete(:children)
         end)
-        |> elem(1)
-        |> Map.delete(:children)
-      end)
     end
-
-
   end
 
   @doc """
@@ -2186,12 +2188,59 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
-  def get_resources_scheduled_dates(section_slug) do
+  @doc """
+  Returns the resources scheduled dates for a given student.
+  Hard sceduled dates for a specific student take precedence over "global" hard scheduled dates.
+  Global hard scheduled dates take precedence over soft scheduled dates.
+  """
+  def get_resources_scheduled_dates_for_student(section_slug, student_id) do
+    get_soft_scheduled_dates(section_slug)
+    |> Map.merge(get_hard_scheduled_dates(section_slug))
+    |> Map.merge(get_hard_scheduled_dates_for_student(section_slug, student_id))
+  end
+
+  def get_soft_scheduled_dates(section_slug) do
     query =
       from [sr, _s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
         select: {
           sr.resource_id,
           %{end_date: sr.end_date, scheduled_type: sr.scheduling_type}
+        }
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  def get_hard_scheduled_dates(section_slug) do
+    query =
+      from [_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: gc in GatingCondition,
+        on: gc.section_id == s.id,
+        where: gc.type == :schedule and is_nil(gc.user_id),
+        select: {
+          gc.resource_id,
+          %{
+            end_date: fragment("cast(cast(? as text) as date)", gc.data["end_datetime"]),
+            scheduled_type: gc.type
+          }
+        }
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  def get_hard_scheduled_dates_for_student(section_slug, student_id) do
+    query =
+      from [_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: gc in GatingCondition,
+        on: gc.section_id == s.id,
+        where: gc.type == :schedule and gc.user_id == ^student_id,
+        select: {
+          gc.resource_id,
+          %{
+            end_date: fragment("cast(cast(? as text) as date)", gc.data["end_datetime"]),
+            scheduled_type: gc.type
+          }
         }
 
     Repo.all(query)

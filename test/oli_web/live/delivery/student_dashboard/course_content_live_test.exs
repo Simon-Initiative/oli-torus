@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Repo
+  alias Oli.Delivery.Gating
 
   defp isolated_live_view_course_content(conn, section_slug, user_id) do
     live_isolated(conn, CourseContentLive,
@@ -227,6 +228,79 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
              )
     end
 
+    test "hard scheduled dates and student-specific hard scheduled dates are rendered correctly",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           mod1_pages: mod1_pages
+         } do
+      [p1, p2, _p3] = mod1_pages
+
+      read_by_end_date = ~D[2023-10-15]
+      inclass_end_date = ~D[2023-10-01]
+
+      update_section_resource(section.id, p1.published_resource.resource_id, %{
+        end_date: read_by_end_date,
+        scheduling_type: :read_by
+      })
+
+      update_section_resource(section.id, p2.published_resource.resource_id, %{
+        end_date: inclass_end_date,
+        scheduling_type: :inclass_activity
+      })
+
+      # set hard scheduled dates for page 1 and page 2
+      hard_scheduled_date_1 = ~U[2023-10-24 15:39:16.949268Z]
+      hard_scheduled_date_2 = ~U[2023-10-25 15:39:16.949268Z]
+
+      create_global_hard_scheduled_date(
+        section.id,
+        p1.published_resource.resource_id,
+        hard_scheduled_date_1
+      )
+
+      create_global_hard_scheduled_date(
+        section.id,
+        p2.published_resource.resource_id,
+        hard_scheduled_date_2
+      )
+
+      # set specific student hard end date for page 2
+      hard_scheduled_date_for_student = ~U[2023-10-30 15:39:16.949268Z]
+
+      create_hard_scheduled_date_for_student(
+        section.id,
+        p2.published_resource.resource_id,
+        user.id,
+        hard_scheduled_date_for_student
+      )
+
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
+
+      view
+      |> navigate_to_unit_1()
+      |> drill_down_to_module_1()
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "Due by #{Timex.format!(hard_scheduled_date_1, "{YYYY}-{0M}-{0D}")}"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "Due by #{Timex.format!(hard_scheduled_date_for_student, "{YYYY}-{0M}-{0D}")}"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section:has(h4[phx-click="go_down"]) span},
+               "No due date"
+             )
+    end
+
     test "can open a container resource", %{conn: conn, user: user, section: section} do
       {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
 
@@ -314,7 +388,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
     |> Core.update_resource_access(%{progress: progress})
   end
 
-  def update_section_resource(section_id, resource_id, params) do
+  defp update_section_resource(section_id, resource_id, params) do
     query =
       from sr in SectionResource,
         where: sr.section_id == ^section_id and sr.resource_id == ^resource_id
@@ -322,5 +396,24 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
     Repo.one(query)
     |> Oli.Delivery.Sections.SectionResource.changeset(params)
     |> Repo.update()
+  end
+
+  defp create_global_hard_scheduled_date(section_id, resource_id, end_date) do
+    Gating.create_gating_condition(%{
+      type: :schedule,
+      resource_id: resource_id,
+      section_id: section_id,
+      data: %{end_datetime: end_date}
+    })
+  end
+
+  defp create_hard_scheduled_date_for_student(section_id, resource_id, student_id, end_date) do
+    Gating.create_gating_condition(%{
+      type: :schedule,
+      resource_id: resource_id,
+      section_id: section_id,
+      user_id: student_id,
+      data: %{end_datetime: end_date}
+    })
   end
 end
