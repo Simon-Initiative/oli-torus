@@ -1,0 +1,145 @@
+defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
+  use ExUnit.Case, async: true
+  use OliWeb.ConnCase
+
+  import Oli.Factory
+  import Phoenix.LiveViewTest
+
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Sections
+
+  defp live_view_students_dashboard_route(
+         section_slug,
+         student_id,
+         tab \\ :content,
+         params \\ %{}
+       ) do
+    Routes.live_path(
+      OliWeb.Endpoint,
+      OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+      section_slug,
+      student_id,
+      tab,
+      params
+    )
+  end
+
+  defp enrolled_student(%{section: section}) do
+    student = insert(:user)
+    Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+    %{student: student}
+  end
+
+  describe "user" do
+    test "can not access page when it is not logged in", %{conn: conn} do
+      section = insert(:section)
+      student = insert(:user)
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      redirect_path =
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fstudent_dashboard%2F#{student.id}%2Fcontent"
+
+      assert {:error, {:redirect, %{to: ^redirect_path}}} =
+               live(conn, live_view_students_dashboard_route(section.slug, student.id))
+    end
+  end
+
+  describe "student" do
+    setup [:user_conn]
+
+    test "can not access page", %{user: user, conn: conn} do
+      section = insert(:section)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      redirect_path = "/unauthorized"
+
+      assert {:error, {:redirect, %{to: ^redirect_path}}} =
+               live(conn, live_view_students_dashboard_route(section.slug, user.id))
+    end
+  end
+
+  describe "instructor" do
+    setup [:instructor_conn, :section_with_assessment, :enrolled_student]
+
+    test "cannot access page if not enrolled to section", %{
+      conn: conn,
+      section: section,
+      student: student
+    } do
+      redirect_path = "/unauthorized"
+
+      assert {:error, {:redirect, %{to: ^redirect_path}}} =
+               live(conn, live_view_students_dashboard_route(section.slug, student.id))
+    end
+
+    test "can access page if enrolled to section", %{
+      instructor: instructor,
+      section: section,
+      conn: conn,
+      student: student
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id))
+
+      # Content tab is the selected one
+      assert has_element?(
+               view,
+               ~s{a[href="#{live_view_students_dashboard_route(section.slug, student.id, :content)}"].border-b-2},
+               "Content"
+             )
+
+      assert has_element?(view, "p", "Not available yet")
+    end
+
+    test "can see the student details card correctly", %{
+      instructor: instructor,
+      student: student,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id))
+
+      student_details_card = element(view, "#student_details_card")
+      assert render(student_details_card) =~ "pronouns"
+      assert render(student_details_card) =~ "average score"
+      assert render(student_details_card) =~ "mayor"
+      assert render(student_details_card) =~ "experience"
+    end
+
+    test "can see the details header correctly and navigate through breadcrumb", %{
+      instructor: instructor,
+      student: student,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id))
+
+      assert view
+             |> element("#section_details_header")
+             |> render() =~ ~s{#{section.title} | Students  &gt;  #{student.name}}
+
+      view
+      |> element(~s{#section_details_header span[phx-click="breadcrumb-navigate"]})
+      |> render_click()
+
+      assert_redirect(
+        view,
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :students
+        )
+      )
+    end
+  end
+end
