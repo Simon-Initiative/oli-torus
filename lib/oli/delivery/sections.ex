@@ -20,8 +20,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
-  alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Course.ProjectAttributes
+  alias Oli.Authoring.Course.{Project, ProjectAttributes}
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Delivery.Snapshots.Snapshot
@@ -836,6 +835,122 @@ defmodule Oli.Delivery.Sections do
       end
     )
   end
+
+  # For a given section id and the list of resource ids that exist in its hiearchy,
+  # determine and return the list of page resource ids that are not reachable from that
+  # hierarchy and linked pages.
+  defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
+
+    # Start with all pages
+    unreachable = Oli.Publishing.all_page_resource_ids(publication_ids)
+    |> MapSet.new()
+
+    # create a map of page resource ids to a list of target resource ids that they link to. We
+    # do this both for resource-to-page links and for page to activity links (aka activity-references).
+    # We do this because we want to treat these links the same way when we traverse the graph, and
+    # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
+    # links to a page outside the hierarchy.
+    all_links = MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
+    |> MapSet.to_list()
+
+    link_map = Enum.reduce(all_links, %{}, fn {source, target}, map ->
+      case Map.get(map, source) do
+        nil -> Map.put(map, source, [target])
+        targets -> Map.put(map, source, [target | targets])
+      end
+    end)
+
+    # Now traverse the pages in the hiearchy, and follow (recursively) the links that
+    # they have to other pages.
+    {unreachable, _ } = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
+
+    MapSet.to_list(unreachable)
+
+  end
+
+  # Traverse the graph structure of the links to determine which pages are reachable
+  # from the pages in the hierarchy, removing them from the candidate set of unreachable pages.
+  # This also tracks seen pages to avoid infinite recursion, in cases where pages create a
+  # a circular link structure.
+  def traverse_links(link_map, hiearchy_ids, unreachable, seen) do
+
+    unreachable = MapSet.difference(unreachable, MapSet.new(hiearchy_ids))
+    seen = MapSet.union(seen, MapSet.new(hiearchy_ids))
+
+    Enum.reduce(hiearchy_ids, {unreachable, seen}, fn id, {unreachable, seen} ->
+      case Map.get(link_map, id) do
+        nil -> {unreachable, seen}
+        targets ->
+          not_already_seen = MapSet.new(targets)
+          |> MapSet.difference(seen)
+          |> MapSet.to_list()
+
+          traverse_links(link_map, not_already_seen, unreachable, seen)
+      end
+    end)
+  end
+
+  # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
+  # representing all of the links between pages in the section
+  defp get_all_page_links(publication_ids) do
+
+    joined_publication_ids = Enum.join(publication_ids, ",")
+
+    item_types =
+      ["page_link", "a"]
+      |> Enum.map(&~s|@.type == "#{&1}"|)
+      |> Enum.join(" || ")
+
+    sql = """
+    select
+      rev.resource_id,
+      jsonb_path_query(content, '$.** ? (#{item_types})')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id IN (#{joined_publication_ids})
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    slug_lookup = Oli.Publishing.distinct_slugs(publication_ids)
+    |> Enum.reduce(%{}, fn {id, slug}, acc -> Map.put(acc, slug, id) end)
+
+    Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
+      case content["type"] do
+        "a" -> case content["href"] do
+          "/course/link/" <> slug -> MapSet.put(links, {source_id, Map.get(slug_lookup, slug)})
+          _ -> links
+        end
+        "page_link" -> MapSet.put(links, {source_id, content["idref"]})
+      end
+    end)
+
+  end
+
+  # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
+  # representing the links of pages to activities
+  defp get_activity_references(publication_ids) do
+    joined_publication_ids = Enum.join(publication_ids, ",")
+
+    sql = """
+    select
+      rev.resource_id,
+      jsonb_path_query(content, '$.** ? (@.type == "activity-reference")')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id IN (#{joined_publication_ids})
+    """
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
+      MapSet.put(links, {source_id, content["activity_id"]})
+    end)
+
+  end
+
+
 
   @doc """
   Create all section resources from the given section and publication and optional hierarchy definition.
@@ -1780,7 +1895,8 @@ defmodule Oli.Delivery.Sections do
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    skip_set = MapSet.new(skip_resource_ids)
+    unreachable_page_resource_ids = determine_unreachable_pages(publication_ids, skip_resource_ids)
+    skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
 
     published_resources_by_resource_id
     |> Enum.filter(fn {resource_id, %{revision: rev}} ->
@@ -2009,24 +2125,32 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp append_related_resources(graded_pages, user_id) do
-    section_id = graded_pages |> List.first() |> Map.get(:section_id)
 
-    related_resources =
-      graded_pages
-      |> Enum.reduce([], fn page, related_pages -> page.relates_to ++ related_pages end)
-      |> get_related_resources(section_id, user_id)
+    case graded_pages do
+      [] -> []
+      _ ->
 
-    Enum.map(graded_pages, fn page ->
-      Map.get_and_update(page, :relates_to, fn relates_to ->
-        {relates_to,
-         Enum.map(relates_to, fn resource_id ->
-           Enum.find(related_resources, &(&1.id == resource_id))
-         end)
-         |> Enum.filter(&(&1 != nil))}
+      section_id = graded_pages |> List.first() |> Map.get(:section_id)
+
+      related_resources =
+        graded_pages
+        |> Enum.reduce([], fn page, related_pages -> page.relates_to ++ related_pages end)
+        |> get_related_resources(section_id, user_id)
+
+      Enum.map(graded_pages, fn page ->
+        Map.get_and_update(page, :relates_to, fn relates_to ->
+          {relates_to,
+           Enum.map(relates_to, fn resource_id ->
+             Enum.find(related_resources, &(&1.id == resource_id))
+           end)
+           |> Enum.filter(&(&1 != nil))}
+        end)
+        |> elem(1)
+        |> Map.delete(:children)
       end)
-      |> elem(1)
-      |> Map.delete(:children)
-    end)
+    end
+
+
   end
 
   @doc """
@@ -2174,5 +2298,57 @@ defmodule Oli.Delivery.Sections do
         )
     ] ++
       get_flatten_hierarchy(rest, resources)
+  end
+
+  def get_parent_project_survey(section_slug) do
+    Section
+    |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
+    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:inner, [_, _, pr], rev in Revision, on: pr.revision_id == rev.id)
+    |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
+    |> where(
+      [s, spp, _, pr, proj],
+      s.slug == ^section_slug and
+        spp.project_id == s.base_project_id and
+        spp.section_id == s.id and
+        pr.resource_id == proj.required_survey_resource_id
+    )
+    |> select([_, _, _, rev], rev)
+    |> Repo.one()
+  end
+
+  defp update_project_required_survey_resource_id(section_id, resource_id) do
+    Section
+    |> where([s], s.id == ^section_id)
+    |> Repo.one()
+    |> Section.changeset(%{required_survey_resource_id: resource_id})
+    |> Repo.update()
+  end
+
+  def create_required_survey(section) do
+    case section.required_survey_resource_id do
+      nil -> do_create_required_survey(section)
+      _ -> {:error, "The section already has a survey"}
+    end
+  end
+
+  defp do_create_required_survey(section) do
+    case get_parent_project_survey(section.slug) do
+      nil ->
+        {:error, "The parent project doesn't have a survey"}
+
+      survey ->
+        update_project_required_survey_resource_id(section.id, survey.resource_id)
+    end
+  end
+
+  def delete_required_survey(section) do
+    case section.required_survey_resource_id do
+      nil ->
+        {:error, "The section doesn't have a survey"}
+
+      _ ->
+        update_project_required_survey_resource_id(section.id, nil)
+    end
   end
 end

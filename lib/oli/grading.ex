@@ -10,7 +10,7 @@ defmodule Oli.Grading do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{SectionResource, Section}
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
@@ -22,6 +22,7 @@ defmodule Oli.Grading do
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
+
   alias Oli.Repo
   alias Oli.Delivery.Sections.SectionsProjectsPublications
 
@@ -306,26 +307,28 @@ defmodule Oli.Grading do
   end
 
   def fetch_graded_pages(section_slug) do
-    resource_type_id = ResourceType.get_id_by_type("page")
-
-    Repo.all(
-      from(s in Section,
-        join: spp in SectionsProjectsPublications,
-        on: s.id == spp.section_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id,
-        join: rev in Revision,
-        on: rev.id == pr.revision_id,
-        where:
-          rev.deleted == false and
-            rev.graded == true and
-            rev.resource_type_id == ^resource_type_id and
-            s.slug == ^section_slug and
-            s.status == :active,
-        order_by: [rev.inserted_at, rev.id],
-        distinct: true,
-        select: rev
+      SectionResource
+      |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+      |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+        on: spp.section_id == s.id and spp.project_id == sr.project_id
       )
-    )
+      |> join(:inner, [sr, _, spp], pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+      )
+      |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+      |> where(
+        [sr, s, _, _, rev],
+        s.slug == ^section_slug and
+          rev.deleted == false and
+          rev.graded == true and
+          rev.resource_type_id == ^ResourceType.get_id_by_type("page")
+      )
+      |> order_by([_, _, _, _, rev], asc: rev.resource_id)
+      |> select([_, _, _, _, rev], rev)
+      |> Repo.all()
+  end
+
+  def fetch_reachable_graded_pages(section_slug) do
+    fetch_graded_pages(section_slug)
   end
 end

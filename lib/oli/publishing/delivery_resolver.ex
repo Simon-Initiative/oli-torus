@@ -74,6 +74,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
+
   @impl Resolver
   def from_revision_slug(section_slug, revision_slug) do
     fn ->

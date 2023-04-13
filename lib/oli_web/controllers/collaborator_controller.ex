@@ -32,7 +32,7 @@ defmodule OliWeb.CollaboratorController do
             :error,
             "Collaborator invitations cannot exceed #{@max_invitation_emails} emails at a time. Please try again with fewer invites"
           )
-          |> redirect(to: Routes.project_path(conn, :overview, project_id))
+          |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
         else
           emails
           |> Enum.reduce({conn, []}, fn email, {conn, failures} ->
@@ -42,7 +42,7 @@ defmodule OliWeb.CollaboratorController do
             {conn, []} ->
               conn
               |> put_flash(:info, "Collaborator invitations sent!")
-              |> redirect(to: Routes.project_path(conn, :overview, project_id))
+              |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
 
             {conn, failures} ->
               if Enum.count(failures) == Enum.count(emails) do
@@ -50,7 +50,7 @@ defmodule OliWeb.CollaboratorController do
 
                 conn
                 |> put_flash(:error, error_msg)
-                |> redirect(to: Routes.project_path(conn, :overview, project_id))
+                |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
               else
                 failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
 
@@ -62,7 +62,7 @@ defmodule OliWeb.CollaboratorController do
 
                 conn
                 |> put_flash(:error, error_msg)
-                |> redirect(to: Routes.project_path(conn, :overview, project_id))
+                |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
               end
           end
         end
@@ -70,7 +70,7 @@ defmodule OliWeb.CollaboratorController do
       {:success, false} ->
         conn
         |> put_flash(:error, "reCaptcha failed, please try again")
-        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
     end
   end
 
@@ -81,12 +81,12 @@ defmodule OliWeb.CollaboratorController do
   def delete(conn, %{"project_id" => project_id, "author_email" => author_email}) do
     case Collaborators.remove_collaborator(author_email, project_id) do
       {:ok, _} ->
-        redirect(conn, to: Routes.project_path(conn, :overview, project_id))
+        redirect(conn, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
 
       {:error, message} ->
         conn
         |> put_flash(:error, "We couldn't remove that author from the project. #{message}")
-        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_id))
     end
   end
 
