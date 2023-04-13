@@ -17,7 +17,7 @@ defmodule Oli.Delivery.Metrics do
 
   This query leverages the `contained_pages` relation, which is always an
   up to date view of the structure of a course section. This allows this
-  query to take into account structural chagnes as the result of course
+  query to take into account structural changes as the result of course
   remix. The `contained_pages` relation is rebuilt after every remix.
 
   It returns a map:
@@ -182,6 +182,62 @@ defmodule Oli.Delivery.Metrics do
             ^user_count
           )
         }
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculate the average score for a specific student (or a list of students),
+  in all pages of a specific container.
+
+  Omitting the container_id (or specifying nil) calculates average score
+  across the entire course section.
+
+  This query leverages the `contained_pages` relation, which is always an
+  up to date view of the structure of a course section. This allows this
+  query to take into account structural changes as the result of course
+  remix. The `contained_pages` relation is rebuilt after every remix.
+
+  It returns a map:
+
+    %{user_id_1 => user_1_avg_score,
+      ...
+      user_id_n => user_n_avg_score
+    }
+  """
+  @spec avg_score_for(
+          section_id :: integer,
+          user_id :: integer | list(integer),
+          container_id :: integer | nil
+        ) :: map
+
+  def avg_score_for(section_id, user_id, container_id \\ nil) do
+    user_id_list = if is_list(user_id), do: user_id, else: [user_id]
+
+    filter_by_container =
+      case container_id do
+        nil ->
+          dynamic([cp, _], is_nil(cp.container_id))
+
+        _ ->
+          dynamic([cp, _], cp.container_id == ^container_id)
+      end
+
+    query =
+      ContainedPage
+      |> join(:inner, [cp], ra in ResourceAccess,
+        on:
+          cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
+            ra.user_id in ^user_id_list
+      )
+      |> where([cp, ra], cp.section_id == ^section_id and not is_nil(ra.score))
+      |> where(^filter_by_container)
+      |> group_by([_cp, ra], ra.user_id)
+      |> select(
+        [cp, ra],
+        {ra.user_id, fragment("SUM(?)", ra.score) / fragment("COUNT(?)", ra.out_of)}
+      )
 
     Repo.all(query)
     |> Enum.into(%{})
