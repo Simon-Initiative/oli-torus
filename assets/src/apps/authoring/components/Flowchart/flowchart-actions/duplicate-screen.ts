@@ -24,7 +24,6 @@ import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { savePage } from '../../../store/page/actions/savePage';
-import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { createEndOfActivityPath } from '../paths/path-factories';
 import {
@@ -32,10 +31,7 @@ import {
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
-import {
-  getActivitySlugFromScreenResourceId,
-  getSequenceIdFromScreenResourceId,
-} from '../rules/create-generic-rule';
+import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
 import { sortScreens } from '../screens/screen-utils';
 import { replaceIds } from '../template-utils';
 

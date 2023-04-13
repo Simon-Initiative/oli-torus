@@ -1,13 +1,5 @@
 import React, { ChangeEvent, useCallback, useMemo } from 'react';
-import { convertLatexToSpeakableText } from 'mathlive';
-import {
-  Descendant,
-  Editor,
-  Operation,
-  Editor as SlateEditor,
-  Transforms,
-  createEditor,
-} from 'slate';
+import { Editor, Editor as SlateEditor, Transforms, createEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import { ReactEditor, withReact } from 'slate-react';
 import { Model } from '../../../../data/content/model/elements/factories';

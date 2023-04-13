@@ -132,10 +132,10 @@ const IRulesList: React.FC = () => {
     type: CopyableItemTypes | null,
     index: number | 'initState',
   ) => {
-    const copyRule = copied;
+    // const copyRule = copied;
     let activityClone: IActivity = clone(currentActivity);
     if (!activityClone.authoring?.rules) return;
-    const { payload: copy } = await dispatch<any>(copyItem({ type: 'initState', item: copyRule }));
+    // const { payload: copy } = await dispatch<any>(copyItem({ type: 'initState', item: copyRule }));
     if (type === 'initState') {
       activityClone = set(activityClone, 'content.custom.facts', copied.facts);
     } else if (typeof index === 'number') {
@@ -275,17 +275,17 @@ const IRulesList: React.FC = () => {
 
         <Dropdown.Menu>
           {item !== 'initState' && (
-            <Dropdown.Item onClick={(e) => setRuleToEdit(item)}>
+            <Dropdown.Item onClick={() => setRuleToEdit(item)}>
               <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
             </Dropdown.Item>
           )}
 
           {(item === 'initState' || !item.default || (item.default && item.correct)) && (
             <>
-              <Dropdown.Item onClick={(e) => handleCopyRule(item)}>
+              <Dropdown.Item onClick={() => handleCopyRule(item)}>
                 <i className="fas fa-copy mr-2" /> Copy
               </Dropdown.Item>
-              <Dropdown.Item onClick={(e) => handlePasteRule(copied, copiedType, index)}>
+              <Dropdown.Item onClick={() => handlePasteRule(copied, copiedType, index)}>
                 <i className="fas fa-clipboard mr-2" /> Insert copied rule
               </Dropdown.Item>
             </>
@@ -295,15 +295,15 @@ const IRulesList: React.FC = () => {
             <>
               {!item.default && (
                 <>
-                  <Dropdown.Item onClick={(e) => handleMoveRule(index, 'down')}>
+                  <Dropdown.Item onClick={() => handleMoveRule(index, 'down')}>
                     <i className="fas fa-arrow-down mr-2" /> Move Down
                   </Dropdown.Item>
                   <div className="dropdown-divider"></div>
-                  <Dropdown.Item onClick={(e) => handleDuplicateRule(item, index)}>
+                  <Dropdown.Item onClick={() => handleDuplicateRule(item, index)}>
                     <i className="fas fa-copy mr-2" /> Duplicate
                   </Dropdown.Item>
                   <Dropdown.Item
-                    onClick={(e) => {
+                    onClick={() => {
                       setItemToDelete(item);
                       setShowConfirmDelete(true);
                     }}
@@ -314,12 +314,12 @@ const IRulesList: React.FC = () => {
                 </>
               )}
               {index > 1 && !item.default && (
-                <Dropdown.Item onClick={(e) => handleMoveRule(index, 'up')}>
+                <Dropdown.Item onClick={() => handleMoveRule(index, 'up')}>
                   <i className="fas fa-arrow-up mr-2" /> Move Up
                 </Dropdown.Item>
               )}
               {arr && index < arr.length - 2 && !item.default && (
-                <Dropdown.Item onClick={(e) => handleMoveRule(index, 'down')}>
+                <Dropdown.Item onClick={() => handleMoveRule(index, 'down')}>
                   <i className="fas fa-arrow-down mr-2" /> Move Down
                 </Dropdown.Item>
               )}

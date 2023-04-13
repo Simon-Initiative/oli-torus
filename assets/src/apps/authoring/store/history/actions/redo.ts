@@ -8,7 +8,7 @@ export const redo = createAsyncThunk(
   async (payload: null, { getState, dispatch }) => {
     const rootState = getState() as any;
     const present = selectRedoAction(rootState) || { redo: [] };
-    const state = selectState(rootState);
+    const _state = selectState(rootState);
 
     reverse(present.redo).forEach((a: PayloadAction) => {
       dispatch(a);

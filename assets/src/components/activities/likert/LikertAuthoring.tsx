@@ -2,10 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import {
-  Hints,
-  Hints as HintsAuthoring,
-} from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { Radio } from 'components/misc/icons/radio/Radio';

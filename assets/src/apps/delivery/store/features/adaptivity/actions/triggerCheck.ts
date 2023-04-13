@@ -24,11 +24,7 @@ import {
   updateExtrinsicState,
   upsertActivityAttemptState,
 } from '../../attempt/slice';
-import {
-  findNextSequenceId,
-  navigateToActivity,
-  navigateToNextActivity,
-} from '../../groups/actions/deck';
+import { findNextSequenceId } from '../../groups/actions/deck';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,

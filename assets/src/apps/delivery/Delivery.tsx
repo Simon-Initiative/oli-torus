@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import useWindowSize from 'components/hooks/useWindowSize';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
@@ -9,7 +9,6 @@ import ScreenIdleTimeOutDialog from './layouts/deck/IdleTimeOutDialog';
 import LessonFinishedDialog from './layouts/deck/LessonFinishedDialog';
 import RestartLessonDialog from './layouts/deck/RestartLessonDialog';
 import { LayoutProps } from './layouts/layouts';
-import store from './store';
 import {
   selectLessonEnd,
   selectRestartLesson,

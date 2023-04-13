@@ -6,17 +6,7 @@ import { FIBModel } from './schema';
 const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   const { model } = props;
 
-  const {
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    content,
-    elements,
-    alternateCorrectDelimiter,
-    customCss,
-  } = model;
+  const { content, elements, customCss } = model;
   const styles: CSSProperties = {
     borderRadius: '5px',
     fontFamily: 'revert',

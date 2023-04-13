@@ -7,7 +7,7 @@ import { Operations } from 'utils/pathOperations';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { HasParts, Part, makeHint } from '../types';
 import * as ActivityTypes from '../types';
-import { LikertModelSchema, makeLikertChoice } from './schema';
+import { makeLikertChoice } from './schema';
 
 export const LikertActions = {
   addChoice() {

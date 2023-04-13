@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { UrlOrUpload } from '../../../../components/media/UrlOrUpload';
 import {

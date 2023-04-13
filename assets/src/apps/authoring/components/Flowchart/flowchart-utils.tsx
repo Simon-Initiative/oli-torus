@@ -3,7 +3,7 @@ import { MarkerType } from 'reactflow';
 import guid from '../../../../utils/guid';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
 import { AllPaths } from './paths/path-types';
-import { buildEdgesForActivity, isEndOfActivityPath, isExitActivityPath } from './paths/path-utils';
+import { buildEdgesForActivity, isExitActivityPath } from './paths/path-utils';
 
 export interface FlowchartPlaceholderNodeData {
   fromScreenId: number;
@@ -131,7 +131,7 @@ export const buildPlaceholders = (
     .map((item) => {
       const paths = item.authoring?.flowchart?.paths || [];
       const nodeId = guid();
-      return paths.filter(isExitActivityPath).map((_path: AllPaths) => {
+      return paths.filter(isExitActivityPath).map((path: AllPaths) => {
         return {
           node: createPlaceholderNode(nodeId, item.resourceId!),
           edge: createPlaceholderEdge(String(item.resourceId!), nodeId),

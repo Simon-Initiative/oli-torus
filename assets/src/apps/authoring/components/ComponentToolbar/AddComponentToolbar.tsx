@@ -102,7 +102,7 @@ const AddComponentToolbar: React.FC<{
     setShowPartsMenu(!showPartsMenu);
     setPartsMenuTarget(event.target);
   };
-  const handlePartPasteClick = (event: any) => {
+  const handlePartPasteClick = () => {
     const newPartData = {
       id: `${copiedPart.type}-${guid()}`,
       type: copiedPart.type,

@@ -151,11 +151,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   }, []);
 
   const {
-    x = 0,
-    y = 0,
     width,
-    z = 0,
-    customCssClass,
     nodes,
     palette,
     fontSize,
@@ -243,7 +239,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       if (!inConfigureMode) {
         return;
       } // not mine
-      const { payload, callback } = e.detail;
+      const { payload } = e.detail;
       // console.log('TF EDITOR SAVE', { payload, callback, props });
       const modelClone = clone(model);
       modelClone.nodes = payload;
@@ -268,7 +264,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       if (!inConfigureMode) {
         return;
       } // not mine
-      const { payload, callback } = e.detail;
+      const { payload } = e.detail;
       // console.log('TF EDITOR CHANGE', { payload, callback });
       setTextNodes(payload.value);
     };

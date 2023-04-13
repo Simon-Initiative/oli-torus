@@ -6,7 +6,7 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
-import { Manifest, PartState } from 'components/activities/types';
+import { Manifest } from 'components/activities/types';
 import {
   ActivityDeliveryState,
   activityDeliverySlice,

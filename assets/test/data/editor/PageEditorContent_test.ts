@@ -118,7 +118,7 @@ describe('PageEditorContent', () => {
 
   it('replaceAt', () => {
     const defaultPageEditorContent = createDefaultPageEditorContent();
-    const { exampleContent, exampleGroup, doesntExist } = defaultPageEditorContent;
+    const { exampleContent, doesntExist } = defaultPageEditorContent;
     let { pageEditorContent } = defaultPageEditorContent;
 
     pageEditorContent = pageEditorContent.replaceAt([0], doesntExist);

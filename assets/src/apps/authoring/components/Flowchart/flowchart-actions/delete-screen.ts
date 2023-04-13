@@ -1,6 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { cloneT } from '../../../../../utils/common';
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
   IActivity,
   deleteActivity,

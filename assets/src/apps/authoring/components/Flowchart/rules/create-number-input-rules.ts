@@ -12,7 +12,6 @@ import {
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
-import { NumericCommonErrorPath } from '../paths/path-types';
 import {
   isAlwaysPath,
   isCorrectPath,

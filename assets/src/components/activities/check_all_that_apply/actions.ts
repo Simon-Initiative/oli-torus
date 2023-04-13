@@ -21,7 +21,6 @@ import {
   makeResponse,
   makeUndoable,
 } from '../types';
-import { CATASchema as CATA } from './schema';
 
 // interface to use actions with other activity's models (ImageHotspot)
 export interface CATACompatible {

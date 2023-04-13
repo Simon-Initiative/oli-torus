@@ -36,12 +36,7 @@ interface InitStateItemProps {
   onChange: (id: string, key: string, value: string) => void;
   onDelete: (id: string) => void;
 }
-const InitStateItem: React.FC<InitStateItemProps> = ({
-  state,
-  authoringContainer,
-  onChange,
-  onDelete,
-}) => {
+const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
   const typeRef = useRef<HTMLSelectElement>(null);
 
   const [target, setTarget] = useState(state.target);

@@ -8,7 +8,7 @@ import { PartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
 
 const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
+  const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
@@ -97,7 +97,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { x, y, z, width, height, src, alt, customCssClass } = model;
+  const { width, height, src, alt } = model;
   const imageStyles: CSSProperties = {
     width,
     height,

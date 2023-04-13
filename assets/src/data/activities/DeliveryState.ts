@@ -22,7 +22,7 @@ import {
 } from 'components/activities/types';
 import { ActivityModelSchema } from 'components/activities/types';
 import { studentInputToString } from 'data/activities/utils';
-import { initialPartInputs, isCorrect } from 'data/activities/utils';
+import { initialPartInputs } from 'data/activities/utils';
 import * as Events from 'data/events';
 import { updatePaginationState } from 'data/persistence/pagination';
 

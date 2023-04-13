@@ -1,5 +1,5 @@
 import React from 'react';
-import { Choice, ChoiceId, PartId, makeContent } from 'components/activities/types';
+import { ChoiceId, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
@@ -27,7 +27,7 @@ export const LikertTable: React.FC<Props> = ({
   disabled = false,
   context,
 }) => {
-  const { choices, items, orderDescending } = model;
+  const { choices, items } = model;
 
   return (
     <table className="likertTable">
@@ -49,7 +49,7 @@ export const LikertTable: React.FC<Props> = ({
                 <HtmlContentModelRenderer content={item.content} context={context} />
               </td>
             )}
-            {choices.map((choice, i) => (
+            {choices.map((choice) => (
               <td align="center" key={item.id + '-' + choice.id}>
                 <input
                   type="radio"

@@ -13,7 +13,7 @@ import { CapiIframeModel } from './schema';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
   const { model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
-  const { x, y, z, width, height, src, configData } = model;
+  const { z, width, height, src, configData } = model;
   const id: string = props.id;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const messageListener = useRef<any>(null);
@@ -92,7 +92,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   }, [configuremode]);
 
   const initialize = useCallback(async (pModel) => {
-    const initResult = await props.onInit({
+    const _initResult = await props.onInit({
       id: props.id,
       responses: [],
     });

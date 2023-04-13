@@ -8,7 +8,7 @@ import {
 
 export const createNew = createAsyncThunk(
   `${GroupsSlice}/layouts/deck/createNew`,
-  async (payload: any, { dispatch, getState }) => {
+  async (payload: any, { dispatch }) => {
     // children should be SequenceEntry (TODO: typing)
     const children = payload.children || [];
 

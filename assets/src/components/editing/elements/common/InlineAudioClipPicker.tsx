@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Tooltip } from 'components/common/Tooltip';
 import { AudioSource } from '../../../../data/content/model/elements/types';
 import { MediaItem } from '../../../../types/media';

@@ -15,21 +15,21 @@ type CodeSettingsProps = {
 export const CodeSettings = (props: CodeSettingsProps) => {
   // Which selection is active, URL or in course page
   const [model, setModel] = useState(props.model);
-  const [checkId] = useState(guid());
+  const [_checkId] = useState(guid());
 
   const ref = useRef();
 
   useEffect(() => {
-    // Inits the tooltips, since this popover rendres in a react portal
+    // Inits the tooltips, since this popover renders in a react portal
     // this was necessary
     if (ref !== null && ref.current !== null) {
       (window as any).$('[data-bs-toggle="tooltip"]').tooltip();
     }
   });
 
-  const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
+  const _setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
 
-  const onChange = (e: any) => {
+  const _onChange = (e: any) => {
     const language = e.target.value;
     setModel(Object.assign({}, model, { language }));
   };

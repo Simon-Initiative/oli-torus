@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { DateWithoutTime } from 'epoq';
 import { padLeft } from '../../utils/common';
 

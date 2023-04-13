@@ -6,14 +6,9 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
   const { id, model } = props;
 
   const {
-    x,
-    y,
-    z,
     width,
-    height,
     minValue,
     maxValue,
-    customCssClass,
     unitsLabel,
     label,
     showLabel,

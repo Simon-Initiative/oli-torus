@@ -1,6 +1,6 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-import { Editor, Element, Transforms } from 'slate';
+import { Transforms } from 'slate';
 import {
   Command,
   CommandContext,

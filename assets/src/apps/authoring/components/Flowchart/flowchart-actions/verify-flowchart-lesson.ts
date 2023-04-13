@@ -4,7 +4,6 @@ import {
   selectAllActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import { flattenHierarchy } from '../../../../delivery/store/features/groups/actions/sequence';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   IGroup,

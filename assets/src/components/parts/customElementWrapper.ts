@@ -38,7 +38,7 @@ class ContextProvider extends React.Component<{ context: any; children: any }> {
   }
 
   render() {
-    const { context, children, ...rest } = this.props;
+    const { children, ...rest } = this.props;
     return React.cloneElement(children, rest);
   }
 }

@@ -16,7 +16,7 @@ import { CapiIframeModel } from './schema';
 
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
-const getExternalActivityMap = () => {
+const _getExternalActivityMap = () => {
   const result: any = {};
 
   externalActivityMap.forEach((value, key) => {
@@ -54,7 +54,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [lessonId, setLessonId] = useState('');
 
   // these rely on being set every render and the "model" useState value being set
-  const { src, title, allowScrolling, configData } = model;
+  const { title, allowScrolling, configData } = model;
 
   // console.log('ExternalActivity', props, model);
 

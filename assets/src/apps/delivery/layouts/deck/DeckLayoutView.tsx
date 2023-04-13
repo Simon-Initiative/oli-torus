@@ -9,10 +9,8 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   evalScript,
-  getEnvState,
   getLocalizedStateSnapshot,
   getValue,
-  removeStateValues,
 } from '../../../../adaptivity/scripting';
 import { contexts } from '../../../../types/applicationContext';
 import ActivityRenderer from '../../components/ActivityRenderer';
@@ -29,7 +27,6 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
-  selectEnableHistory,
   selectPageSlug,
   selectReviewMode,
   selectUserName,

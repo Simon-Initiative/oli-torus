@@ -1,5 +1,4 @@
 import React, { PropsWithChildren } from 'react';
-import { DeleteButton } from 'components/misc/DeleteButton';
 import { ActivityReference } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';

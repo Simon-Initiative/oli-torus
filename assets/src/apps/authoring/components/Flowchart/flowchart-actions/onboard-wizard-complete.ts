@@ -3,7 +3,6 @@ import { acquireLock } from '../../../../../data/persistence/lock';
 import { edit } from '../../../../../data/persistence/resource';
 import { cloneT } from '../../../../../utils/common';
 import { ApplicationMode } from '../../../store/app/slice';
-import { savePage } from '../../../store/page/actions/savePage';
 
 /**
  * Logic for applying the onboarding wizard.

@@ -9,7 +9,6 @@ import {
   Stem,
   Transformation,
   makeChoice,
-  makeContent,
 } from '../types';
 
 export class Hotspot implements Choice {

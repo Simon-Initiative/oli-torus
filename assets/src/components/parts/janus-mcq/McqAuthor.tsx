@@ -34,9 +34,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
 
   const {
-    x = 0,
-    y = 0,
-    z = 0,
     width,
     multipleSelection,
     mcqItems,
@@ -55,7 +52,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const [editOptionClicked, setEditOptionClicked] = useState<boolean>(false);
   const [deleteOptionClicked, setDeleteOptionClicked] = useState<boolean>(false);
   const [textNodes, setTextNodes] = useState<any[]>([]);
-  const [windowModel, setWindowModel] = useState<any>(model);
   const [ready, setReady] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   useEffect(() => {
@@ -124,7 +120,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
         switch (notificationType) {
           case NotificationType.CONFIGURE:
             {
-              const { partId, configure } = payload;
+              const { partId } = payload;
               if (partId === id) {
                 setInConfigureMode(false);
                 setShowConfigureMode(!showConfigureMode);
@@ -175,7 +171,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       if (!inConfigureMode) {
         return;
       } // not mine
-      const { payload, callback } = e.detail;
+      const { payload } = e.detail;
       setTextNodes(payload.value);
     };
 

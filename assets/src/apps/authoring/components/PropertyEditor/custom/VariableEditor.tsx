@@ -8,7 +8,7 @@ import {
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 import { validateVariables } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { PageError } from '../../Modal/DiagnosticsWindow';

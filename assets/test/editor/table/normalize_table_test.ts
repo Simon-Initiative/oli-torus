@@ -1,5 +1,5 @@
 import { getEffectiveColumns } from '../../../src/components/editing/editor/normalizers/tables';
-import { Table, TableRow } from '../../../src/data/content/model/elements/types';
+import { Table } from '../../../src/data/content/model/elements/types';
 import { generateRow } from './table-test-util';
 
 describe('Table normalization', () => {

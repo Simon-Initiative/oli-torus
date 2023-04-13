@@ -1,4 +1,3 @@
-import { Maybe } from 'tsmonad';
 import { Responses } from 'data/activities/model/responses';
 import { makeHint, makePart, makeStem } from '../types';
 import { LikertChoice, LikertModelSchema, makeLikertChoice, makeLikertItem } from './schema';

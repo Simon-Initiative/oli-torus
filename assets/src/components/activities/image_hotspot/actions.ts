@@ -1,6 +1,4 @@
-import { Descendant } from 'slate';
 import { PostUndoable } from 'components/activities/types';
-import { toSimpleText } from 'components/editing/slateUtils';
 import { Responses } from 'data/activities/model/responses';
 import { matchListRule } from 'data/activities/model/rules';
 import { Operations } from 'utils/pathOperations';
@@ -9,8 +7,8 @@ import * as ActivityTypes from '../types';
 
 export const ImageHotspotActions = {
   setCoords(id: string, coords: number[]) {
-    return (model: any, _post: PostUndoable) => {
-      const content = makeContent(coords.join(',')).content;
+    return (model: any, post: PostUndoable) => {
+      const _content = makeContent(coords.join(',')).content;
       Operations.applyAll(model, [
         // Operations.replace(`$..choices[?(@.id=='${id}')].content`, content),
         Operations.replace(`$..choices[?(@.id=='${id}')].coords`, coords),

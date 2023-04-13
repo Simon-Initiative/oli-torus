@@ -18,7 +18,7 @@ const Adaptive = (
   props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },
 ) => {
   // we create this to be able to further send down notifcations that came from the parent notifier
-  const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(50));
+  const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
 
   useEffect(() => {
     if (!props.notify) {
@@ -87,7 +87,7 @@ const Adaptive = (
       }
       setSelectedPartId(partId);
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('selectPart', {
+        const _result = await props.onCustomEvent('selectPart', {
           activityId: props.model.id,
           id: partId,
         });
@@ -101,7 +101,7 @@ const Adaptive = (
     async (selectedPart: any) => {
       /* console.log('AUTHOR PART COPY', { selectedPart }); */
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('copyPart', {
+        const _result = await props.onCustomEvent('copyPart', {
           activityId: props.model.id,
           copiedPart: selectedPart,
         });
@@ -115,7 +115,7 @@ const Adaptive = (
     async (part: any, context: any) => {
       /* console.log('[AdaptiveAuthoring] PART CONFIGURE', { part, context }); */
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('configurePart', {
+        const _result = await props.onCustomEvent('configurePart', {
           activityId: props.model.id,
           part,
           context,
@@ -129,7 +129,7 @@ const Adaptive = (
     async (partId: string) => {
       /* console.log('AUTHOR PART CANCEL CONFIGURE', { partId }); */
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('cancelConfigurePart', {
+        const _result = await props.onCustomEvent('cancelConfigurePart', {
           activityId: props.model.id,
           partId,
         });

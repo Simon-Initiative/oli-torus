@@ -7,7 +7,7 @@ const Unknown: React.FC<PartComponentProps<any>> = (props) => {
   console.log('UNKNOWN RENDER', { props });
   const { model } = props;
 
-  const { x, y, z, width } = model;
+  const { _x, _y, z, width } = model;
   const styles: CSSProperties = {
     /* position: 'absolute',
     top: y,

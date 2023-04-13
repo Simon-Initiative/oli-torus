@@ -4,15 +4,13 @@ import { OverlayPlacements, VariablePicker } from '../../AdaptivityEditor/Variab
 import { SolutionProps } from './SolutionProps';
 
 export const FixTargetButton: React.FC<SolutionProps> = ({
-  suggestion,
-  type,
   onClick,
 }: SolutionProps): JSX.Element => {
   const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
 
   const [target, setTarget] = useState();
-  const [isDirty, setIsDirty] = useState(false);
+  const [_isDirty, setIsDirty] = useState(false);
 
   const uuid = guid();
 

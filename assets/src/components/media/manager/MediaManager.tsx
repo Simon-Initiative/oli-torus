@@ -519,7 +519,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       );
     }
 
-    const detailsOnClick = () => this.setState({ showDetails: !showDetails });
+    const _detailsOnClick = () => this.setState({ showDetails: !showDetails });
 
     if (selectedMediaItems.size > 0) {
       const selectedItem = selectedMediaItems.first() as MediaItem;

@@ -18,11 +18,11 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
-  const { dispatch, model, onRequestMedia } = useAuthoringElementContext<OliEmbeddedModelSchema>();
+  const { dispatch, model } = useAuthoringElementContext<OliEmbeddedModelSchema>();
 
   const { projectSlug } = props;
 
-  function select(_projectSlug: string): Promise<string> {
+  function select(projectSlug: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',
@@ -41,7 +41,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     });
   }
 
-  const addFile = (e: any) => {
+  const addFile = () => {
     select(projectSlug).then((url: string) => {
       dispatch(OliEmbeddedActions.addResourceURL(url));
     });
@@ -155,7 +155,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           <i className="fa fa-upload" /> Upload File
         </button>
         &nbsp;&nbsp;&nbsp;
-        <button className="btn btn-primary media-toolbar-item upload" onClick={() => addFile(id)}>
+        <button className="btn btn-primary media-toolbar-item upload" onClick={() => addFile()}>
           Media Library
         </button>
       </div>

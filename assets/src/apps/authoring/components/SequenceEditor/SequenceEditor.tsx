@@ -7,7 +7,6 @@ import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
-  selectAppMode,
   selectIsAdmin,
   selectProjectSlug,
   setCurrentRule,
@@ -626,7 +625,7 @@ const SequenceEditor: React.FC = () => {
 
             <Dropdown.Menu>
               <Dropdown.Item
-                onClick={(event) => {
+                onClick={() => {
                   handleItemAdd(undefined);
                 }}
               >

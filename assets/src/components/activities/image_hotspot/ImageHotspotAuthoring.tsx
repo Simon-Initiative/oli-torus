@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
-import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
@@ -15,7 +14,6 @@ import { Choices } from 'data/activities/model/choices';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
-import { clone } from 'utils/common';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { CATAActions } from '../check_all_that_apply/actions';
@@ -25,7 +23,7 @@ import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import * as ActivityTypes from '../types';
-import { MediaItemRequest, makeChoice, makeContent } from '../types';
+import { MediaItemRequest, makeChoice } from '../types';
 import { CircleEditor } from './Sections/CircleEditor';
 import { PolygonAdder } from './Sections/PolygonAdder';
 import { PolygonEditor } from './Sections/PolygonEditor';
@@ -34,8 +32,7 @@ import { ImageHotspotActions } from './actions';
 import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
-  const { dispatch, model, editMode, projectSlug, onRequestMedia } =
-    useAuthoringElementContext<ImageHotspotModelSchema>();
+  const { dispatch, model, projectSlug } = useAuthoringElementContext<ImageHotspotModelSchema>();
 
   const selectedPartId = model.authoring.parts[0].id;
   const writerContext = defaultWriterContext({
@@ -64,7 +61,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     });
   }
 
-  const setImageURL = (_e: any) => {
+  const setImageURL = (e: any) => {
     selectImage().then((url: string) => {
       dispatch(ImageHotspotActions.setImageURL(url));
     });
@@ -80,7 +77,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     model.multiple ? dispatch(CATAActions.addChoice(hs)) : dispatch(Choices.addOne(hs));
   };
 
-  const addCircle = (_e: any) => {
+  const addCircle = (e: any) => {
     if (model.width && model.height) {
       const hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
       addHotspot(hs);
@@ -88,7 +85,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     }
   };
 
-  const addRect = (_e: any) => {
+  const addRect = (e: any) => {
     if (model.width && model.height) {
       const hs = makeHotspot([
         Math.floor(model.width / 2) - 50,
@@ -158,7 +155,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             {model.imageURL && (
               <div
                 style={{ position: 'relative', width: model.width, height: model.height }}
-                onMouseDown={(e: any) => setSelectedHotspot(null)}
+                onMouseDown={() => setSelectedHotspot(null)}
               >
                 <img
                   src={model.imageURL}
@@ -230,7 +227,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             &nbsp;&nbsp;
             <button
               className="btn btn-primary mt-2"
-              onClick={(_e) => removeHotspot(selectedHotspot!)}
+              onClick={(e) => removeHotspot(selectedHotspot!)}
               disabled={!selectedHotspot || model.choices.length <= 1}
             >
               Remove

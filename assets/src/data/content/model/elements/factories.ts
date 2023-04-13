@@ -29,7 +29,6 @@ import {
   ImageInline,
   InputRef,
   ListItem,
-  ModelElement,
   OrderedList,
   PageLink,
   Paragraph,

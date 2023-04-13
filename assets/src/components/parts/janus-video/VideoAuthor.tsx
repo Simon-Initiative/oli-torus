@@ -1,11 +1,11 @@
-import React, { CSSProperties, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { VideoModel } from './schema';
 
 const VideoAuthor: React.FC<AuthorPartComponentProps<VideoModel>> = (props) => {
   const { model } = props;
 
-  const { x, y, z, width, src, height } = model;
+  const { height } = model;
 
   useEffect(() => {
     // all activities *must* emit onReady

@@ -9,12 +9,7 @@ import {
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
-import {
-  isAlwaysPath,
-  isCorrectPath,
-  isEndOfActivityPath,
-  isIncorrectPath,
-} from '../paths/path-utils';
+import { isAlwaysPath, isCorrectPath, isIncorrectPath } from '../paths/path-utils';
 import { createCondition } from './create-condition';
 import {
   DEFAULT_CORRECT_FEEDBACK,

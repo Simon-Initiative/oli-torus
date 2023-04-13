@@ -27,7 +27,7 @@ const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
 export function confirmDelete(): Promise<boolean> {
-  return new Promise((resolve, _reject) => {
+  return new Promise((resolve, reject) => {
     const modelOpen = (
       <Modal
         title="Delete Entry"
@@ -53,7 +53,7 @@ export function confirmDelete(): Promise<boolean> {
 }
 
 export function confirmTextBibEditor(bibEntry?: BibEntry): Promise<string> {
-  return new Promise((resolve, _reject) => {
+  return new Promise((resolve, reject) => {
     let bibContent = '';
     const modelOpen = (
       <Modal
@@ -85,7 +85,7 @@ export function confirmUiBibEditor(
   model: CitationModel,
   bibEntry?: BibEntry,
 ): Promise<Maybe<CitationModel>> {
-  return new Promise((resolve, _reject) => {
+  return new Promise((resolve, reject) => {
     let bibContent = model;
     const modelOpen = (
       <Modal
@@ -170,10 +170,10 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
             cslJson[0].title,
             JSON.stringify(cslJson),
             entry.id,
-          ).then((_s) => fetchBibEntrys(paging));
+          ).then((s) => fetchBibEntrys(paging));
         } else {
           BibPersistence.create(props.projectSlug, cslJson[0].title, JSON.stringify(cslJson)).then(
-            (_s) => fetchBibEntrys(paging),
+            (s) => fetchBibEntrys(paging),
           );
         }
       } catch (error) {

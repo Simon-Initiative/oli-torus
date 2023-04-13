@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentSelection } from '../../../store/parts/slice';

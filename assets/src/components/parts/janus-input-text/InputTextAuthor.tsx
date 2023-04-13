@@ -5,7 +5,7 @@ import { InputTextModel } from './schema';
 const InputTextAuthor: React.FC<AuthorPartComponentProps<InputTextModel>> = (props) => {
   const { id, model } = props;
 
-  const { x, y, z, width, height, showLabel, label, prompt, fontSize } = model;
+  const { z, showLabel, label, prompt, fontSize } = model;
   const styles: CSSProperties = {
     width: '100%',
     // height // TODO: only if the delivery component supports it

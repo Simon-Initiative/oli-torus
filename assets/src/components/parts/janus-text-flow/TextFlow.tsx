@@ -96,7 +96,7 @@ export const renderFlow = (
 
 const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   const [state, setState] = useState<any>({});
-  const [model, setModel] = useState<any>(props.model);
+  const [model, _setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
   const [scriptEnv, setScriptEnv] = useState<any>();
   const [textVisible, setTextVisible] = useState<boolean>(
@@ -196,7 +196,6 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
 
   const {
     width,
-    customCssClass,
     nodes,
     palette,
     fontSize,

@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useCallback, useRef, useState } from 'react';
+import React, { PropsWithChildren, useCallback, useState } from 'react';
 import { Transition } from '@tailwindui/react';
 import { useOnClickOutside } from 'hooks/click_outside';
 import { MediaSize, useMediaQuery } from 'hooks/media_query';

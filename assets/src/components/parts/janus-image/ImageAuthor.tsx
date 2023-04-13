@@ -19,7 +19,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { x, y, z, width, height, src, alt, customCssClass } = model;
+  const { width, height, src, alt } = model;
   const imageStyles: CSSProperties = {
     width,
     height,

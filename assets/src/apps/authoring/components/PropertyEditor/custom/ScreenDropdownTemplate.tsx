@@ -20,7 +20,7 @@ interface ScreenDropdownProps {
   buttonCSSClass?: string;
 }
 const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
-  const { id, label, value, onChange, dropDownCSSClass, buttonCSSClass } = props;
+  const { id, label, value, onChange, buttonCSSClass } = props;
   // console.log('ScreenDropdownTemplate', props);
   const sequence = useSelector(selectSequence);
 

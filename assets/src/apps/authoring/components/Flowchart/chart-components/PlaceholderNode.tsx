@@ -1,9 +1,6 @@
-import React, { useContext } from 'react';
-import { useDrop } from 'react-dnd';
+import React from 'react';
 import { Handle, Position } from 'reactflow';
-import { FlowchartEventContext } from '../FlowchartEventContext';
 import { FlowchartPlaceholderNodeData } from '../flowchart-utils';
-import { screenTypes } from '../screens/screen-factories';
 
 /**
  * This is the empty node on the flowchart that allows you to add new screens to the graph.
@@ -16,7 +13,7 @@ interface NodeProps {
 }
 
 // Note: use className="nodrag" on interactive pieces here.
-export const EndNode: React.FC<NodeProps> = ({ data }) => {
+export const EndNode: React.FC<NodeProps> = (props) => {
   return (
     <>
       <Handle type="target" position={Position.Left} style={{ display: 'none' }} />

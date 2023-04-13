@@ -32,7 +32,7 @@ describe('multiple choice delivery', () => {
       },
       preview: false,
     };
-    const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;
+    const { onSubmitActivity } = defaultDeliveryElementProps;
     const store = configureStore({}, activityDeliverySlice.reducer);
 
     render(

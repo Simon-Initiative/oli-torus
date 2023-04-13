@@ -8,7 +8,7 @@ import { selectAutoOpenPath } from '../../../store/flowchart/flowchart-slice';
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { deletePath } from '../flowchart-actions/delete-path';
 import { replacePath } from '../flowchart-actions/replace-path';
-import { AllPaths, DestinationPath, DestinationPaths, RuleTypes } from '../paths/path-types';
+import { AllPaths, DestinationPath } from '../paths/path-types';
 import {
   addComponentId,
   addDestinationId,

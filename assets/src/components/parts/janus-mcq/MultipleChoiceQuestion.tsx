@@ -370,7 +370,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       if (Array.isArray(selectedArray)) {
         const newSelectionArray = selectedArray
           .map((choiceText) => ({
-            value: getOptionNumberFromText(options, choiceText),
+            value: getOptionNumberFromText(options, choiceText as string),
             textValue: choiceText,
             checked: true,
           }))
@@ -631,7 +631,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray
                     .map((choiceText) => ({
-                      value: getOptionNumberFromText(options, choiceText),
+                      value: getOptionNumberFromText(options, choiceText as string),
                       textValue: choiceText,
                       checked: true,
                     }))
@@ -719,7 +719,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray
                     .map((choiceText) => ({
-                      value: getOptionNumberFromText(options, choiceText),
+                      value: getOptionNumberFromText(options, choiceText as string),
                       textValue: choiceText,
                       checked: true,
                     }))

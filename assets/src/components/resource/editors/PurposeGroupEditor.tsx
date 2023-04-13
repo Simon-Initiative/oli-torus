@@ -9,7 +9,6 @@ import {
   isGroupWithPurpose,
 } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
-import { AddResource } from './AddResource';
 import styles from './ContentBlock.modules.scss';
 import { GroupEditor } from './GroupEditor';
 import {
@@ -20,7 +19,7 @@ import {
   resourceGroupTitle,
 } from './OutlineItem';
 import { PaginationModes } from './PaginationModes';
-import { EditorProps, createEditor } from './createEditor';
+import { EditorProps } from './createEditor';
 
 interface PurposeGroupEditorProps extends EditorProps {
   contentItem: PurposeGroupContent;

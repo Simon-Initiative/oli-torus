@@ -9,7 +9,6 @@ import {
   isEvaluated,
   isSubmitted,
   requestHint,
-  resetAction,
   resetAndRequestHintAction,
 } from 'data/activities/DeliveryState';
 import { isCorrect } from '../../../../../data/activities/utils';

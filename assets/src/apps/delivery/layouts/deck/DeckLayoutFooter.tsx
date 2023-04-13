@@ -397,7 +397,7 @@ const DeckLayoutFooter: React.FC = () => {
         return globalOp;
       });
 
-      const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      const _mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
       if (!isPreviewMode) {
         saveMutateStateValuesToServer(mutations);
       }

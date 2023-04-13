@@ -1,5 +1,4 @@
 import React, { useCallback, useContext } from 'react';
-import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDrop } from 'react-dnd';
 import { useDispatch, useSelector } from 'react-redux';
 import { Handle, Position } from 'reactflow';
@@ -33,7 +32,7 @@ export const ScreenNode: React.FC<NodeProps> = ({ data }) => {
   );
 };
 
-const dontDoNothing = () => {
+const _dontDoNothing = () => {
   console.warn("This don't do nuthin yet");
 };
 

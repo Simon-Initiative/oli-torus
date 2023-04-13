@@ -11,13 +11,13 @@ import { PartComponentProps } from '../types/parts';
 import { InputTextModel } from './schema';
 
 const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
+  const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
 
   const [enabled, setEnabled] = useState(true);
-  const [cssClass, setCssClass] = useState('');
+  const [_cssClass, setCssClass] = useState('');
   const [text, setText] = useState<string>('');
 
   //need to save the textLength
@@ -197,7 +197,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   }, [ready]);
 
   const { x, y, z, width, height, showLabel, label, prompt, fontSize } = model;
-  const styles: CSSProperties = {
+  const _styles: CSSProperties = {
     position: 'absolute',
     top: y,
     left: x,

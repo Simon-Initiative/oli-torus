@@ -49,7 +49,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   }
 
   const [isDirty, setIsDirty] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
+  const [_isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
   const [actions, setActions] = useState(currentRule?.event?.params?.actions || []);
   const [conditions, setConditions] = useState<any>(
     currentRule?.conditions?.all || currentRule?.conditions?.any || [],

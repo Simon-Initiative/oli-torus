@@ -35,7 +35,7 @@ export const addSequenceItem = createAsyncThunk(
       const parentItem = sequenceItems.find((i) => i.activitySlug === parentId);
       if (parentItem) {
         parentItem.custom = parentItem.custom || {};
-        const parentIndex = sequenceItems.indexOf(parentItem);
+        const _parentIndex = sequenceItems.indexOf(parentItem);
         // it should already be set?
         item.custom.layerRef = parentItem.activitySlug;
         // need to add it *after* any other children

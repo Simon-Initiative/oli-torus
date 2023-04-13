@@ -13,7 +13,7 @@ type TableSettingsProps = {
 
 export const TableSettings = (props: TableSettingsProps) => {
   // Which selection is active, URL or in course page
-  const [model, setModel] = useState(props.model);
+  const [model, _setModel] = useState(props.model);
 
   const ref = useRef();
 

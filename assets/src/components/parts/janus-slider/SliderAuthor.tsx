@@ -7,12 +7,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
   const { id, model } = props;
 
   const {
-    x,
-    y,
     z,
-    width,
-    height,
-    customCssClass,
     label,
     maximum = 1,
     minimum = 0,
@@ -44,7 +39,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
   const [inputInnerWidth, setInputInnerWidth] = useState<number>(0);
   const [spanInnerWidth, setSpanInnerWidth] = useState<number>(0);
 
-  const [sliderValue, setSliderValue] = useState(0);
+  const [sliderValue, _setSliderValue] = useState(0);
 
   useEffect(() => {
     // all activities *must* emit onReady
