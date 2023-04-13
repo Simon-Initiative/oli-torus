@@ -1,7 +1,7 @@
 // Common schema elements for parts
+import { JSONSchema7Object } from 'json-schema';
 import { AdvancedFeedbackNumberRange } from '../../apps/authoring/components/PropertyEditor/custom/AdvancedFeedbackNumberRange';
 import CustomFieldTemplate from '../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
-import { JSONSchema7Object } from 'json-schema';
 
 interface SchemaDef {
   schema: JSONSchema7Object;

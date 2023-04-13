@@ -1,9 +1,9 @@
+import React from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import {
   MathJaxLatexFormula,
   MathJaxMathMLFormula,
 } from '../../src/components/common/MathJaxFormula';
-import { fireEvent, render, screen } from '@testing-library/react';
-import React from 'react';
 
 describe('MathJaxFormula', () => {
   let restore: any = undefined;

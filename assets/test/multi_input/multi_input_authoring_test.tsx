@@ -1,4 +1,5 @@
-import { defaultAuthoringElementProps } from '../utils/activity_mocks';
+import React from 'react';
+import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
@@ -20,11 +21,10 @@ import {
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { Model } from 'data/content/model/elements/factories';
-import React from 'react';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
+import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
 const DEFAULT_PART_ID = '1';
 const input = Model.inputRef();

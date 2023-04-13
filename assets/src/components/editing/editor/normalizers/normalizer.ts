@@ -1,3 +1,4 @@
+import { Editor, Element, Node, NodeEntry, Text, Transforms } from 'slate';
 import { normalize as blockNormalize } from 'components/editing/editor/normalizers/block';
 import { normalize as codeNormalize } from 'components/editing/editor/normalizers/code';
 import { normalize as forceRootNode } from 'components/editing/editor/normalizers/forceRootNode';
@@ -7,7 +8,6 @@ import { normalize as spacesNormalize } from 'components/editing/editor/normaliz
 import { normalize as tableNormalize } from 'components/editing/editor/normalizers/tables';
 import { Model } from 'data/content/model/elements/factories';
 import { AllModelElements } from 'data/content/model/elements/types';
-import { Editor, Element, Node, NodeEntry, Text, Transforms } from 'slate';
 
 export interface NormalizerContext {
   // Node types normally not allowed in an editor

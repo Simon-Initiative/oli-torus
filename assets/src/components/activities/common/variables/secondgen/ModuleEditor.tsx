@@ -1,8 +1,8 @@
+import * as React from 'react';
+import { Variable, VariableEvaluation, evaluateVariables } from 'data/persistence/variables';
 import './ModuleEditor.scss';
 import { ResultsPanel } from './ResultsPanel';
 import { SourcePanel } from './SourcePanel';
-import { Variable, VariableEvaluation, evaluateVariables } from 'data/persistence/variables';
-import * as React from 'react';
 
 const NUMBER_OF_ATTEMPTS = 10;
 

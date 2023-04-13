@@ -1,5 +1,3 @@
-import { AuthoringFlowchartScreenData } from '../../../../authoring/components/Flowchart/paths/path-types';
-import ActivitiesSlice from './name';
 import {
   EntityAdapter,
   EntityId,
@@ -11,6 +9,8 @@ import {
   createSlice,
 } from '@reduxjs/toolkit';
 import { ObjectiveMap } from 'data/content/activity';
+import { AuthoringFlowchartScreenData } from '../../../../authoring/components/Flowchart/paths/path-types';
+import ActivitiesSlice from './name';
 
 interface IBasePartLayoutCustomProp {
   x: number;

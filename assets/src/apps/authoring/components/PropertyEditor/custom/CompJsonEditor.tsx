@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
-import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { CSSProperties, ChangeEvent, Fragment, useState } from 'react';
 import { useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
+import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 
 interface JsonEditorProps {
   jsonValue: any;

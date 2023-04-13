@@ -1,3 +1,6 @@
+import React, { useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { DateWithoutTime } from 'epoq';
 import { useToggle } from '../../components/hooks/useToggle';
 import { DragBar } from './DragBar';
 import { PageScheduleLine } from './PageScheduleLine';
@@ -17,9 +20,6 @@ import {
   selectItem,
   unlockScheduleItem,
 } from './scheduler-slice';
-import { DateWithoutTime } from 'epoq';
-import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 interface ScheduleLineProps {
   item: HierarchyItem;

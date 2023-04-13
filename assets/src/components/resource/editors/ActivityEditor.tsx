@@ -1,11 +1,11 @@
-import { ActivityBlock } from './ActivityBlock';
-import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
-import { EditorError, EditorProps } from './createEditor';
+import React from 'react';
 import { Undoable } from 'components/activities/types';
 import { EditorUpdate, InlineActivityEditor } from 'components/activity/InlineActivityEditor';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityReference, ResourceContent } from 'data/content/resource';
-import React from 'react';
+import { ActivityBlock } from './ActivityBlock';
+import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
+import { EditorError, EditorProps } from './createEditor';
 
 interface ActivityEditorProps extends EditorProps {
   contentItem: ActivityReference;

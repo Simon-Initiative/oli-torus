@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
@@ -21,7 +22,6 @@ import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {

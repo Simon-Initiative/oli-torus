@@ -1,5 +1,5 @@
-import { ToolbarItem } from './ToolbarItem';
 import React from 'react';
+import { ToolbarItem } from './ToolbarItem';
 
 interface FlowchartTopToolbarProps {}
 export const FlowchartTopToolbar: React.FC<FlowchartTopToolbarProps> = () => {

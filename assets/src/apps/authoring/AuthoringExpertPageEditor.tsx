@@ -1,3 +1,4 @@
+import React, { useRef } from 'react';
 import { useToggle } from '../../components/hooks/useToggle';
 import { BottomPanel } from './BottomPanel';
 import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
@@ -8,7 +9,6 @@ import { TemplateExporter } from './components/Flowchart/TemplateExporter';
 import LeftMenu from './components/LeftMenu/LeftMenu';
 import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
-import React, { useRef } from 'react';
 
 interface PanelState {
   left: boolean;

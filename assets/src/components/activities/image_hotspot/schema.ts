@@ -1,3 +1,4 @@
+import { ID } from 'data/content/model/other';
 import { CATACompatible } from '../check_all_that_apply/actions';
 import {
   ActivityModelSchema,
@@ -10,7 +11,6 @@ import {
   makeChoice,
   makeContent,
 } from '../types';
-import { ID } from 'data/content/model/other';
 
 export class Hotspot implements Choice {
   id: ID;

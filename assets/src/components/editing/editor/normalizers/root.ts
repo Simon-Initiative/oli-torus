@@ -1,5 +1,5 @@
-import { Model } from 'data/content/model/elements/factories';
 import { Descendant, Editor, Element, Path, Transforms } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
 
 const blockTexts = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'];
 const isBlockText = (e: Descendant) => Element.isElement(e) && blockTexts.includes(e.type);

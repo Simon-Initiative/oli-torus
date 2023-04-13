@@ -1,7 +1,7 @@
-import { activityWithDuplicateParts, activityWithInvalidPartIds, page } from './diagnostics_mocks';
 import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
 import { diagnosePage } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { clone } from 'utils/common';
+import { activityWithDuplicateParts, activityWithInvalidPartIds, page } from './diagnostics_mocks';
 
 describe('Adaptive Diagnostics', () => {
   it('should be able to detect duplicate part ids on the same screen (activity)', () => {

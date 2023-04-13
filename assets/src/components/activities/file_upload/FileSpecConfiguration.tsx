@@ -1,9 +1,9 @@
+import React from 'react';
+import { Select } from 'components/common/Selection';
+import { TextInput } from 'components/common/TextInput';
 import { FileSpec as FileSpecType } from './schema';
 import { defaultMaxFileSize } from './utils';
 import { getReadableFileSizeString } from './utils';
-import { Select } from 'components/common/Selection';
-import { TextInput } from 'components/common/TextInput';
-import React from 'react';
 
 const sizes = [
   1024 * 100,

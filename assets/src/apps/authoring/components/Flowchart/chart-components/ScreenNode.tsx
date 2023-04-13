@@ -1,3 +1,8 @@
+import React, { useCallback, useContext } from 'react';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDrop } from 'react-dnd';
+import { useDispatch, useSelector } from 'react-redux';
+import { Handle, Position } from 'reactflow';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
 import {
@@ -12,11 +17,6 @@ import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen'
 import { screenTypes } from '../screens/screen-factories';
 import { validateScreen } from '../screens/screen-validation';
 import { ScreenButton } from './ScreenButton';
-import React, { useCallback, useContext } from 'react';
-import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDrop } from 'react-dnd';
-import { useDispatch, useSelector } from 'react-redux';
-import { Handle, Position } from 'reactflow';
 
 interface NodeProps {
   data: IActivity;

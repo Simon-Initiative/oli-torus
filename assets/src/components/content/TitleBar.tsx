@@ -1,6 +1,6 @@
-import { TextEditor } from '../TextEditor';
 import React from 'react';
 import { classNames } from 'utils/classNames';
+import { TextEditor } from '../TextEditor';
 
 export type TitleBarProps = {
   title: string; // The title of the resource

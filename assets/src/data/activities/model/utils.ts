@@ -1,5 +1,5 @@
-import { HasParts, Part } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
+import { HasParts, Part } from 'components/activities/types';
 
 // Helper. Assumes a correct ID is given
 export function getByUnsafe<T>(slice: T[], predicate: (x: T, i: number) => boolean): T {

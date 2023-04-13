@@ -1,11 +1,3 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
-import {
-  NotificationType,
-  subscribeToNotification,
-} from '../../../apps/delivery/components/NotificationContext';
-import { PartComponentProps } from '../types/parts';
-import './Carousel.css';
-import { CarouselModel } from './schema';
 import React, { CSSProperties, createRef, useCallback, useEffect, useState } from 'react';
 import { A11y, Keyboard, Navigation, Pagination, Zoom } from 'swiper';
 import 'swiper/css';
@@ -14,6 +6,14 @@ import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 import 'swiper/css/zoom';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
+import { PartComponentProps } from '../types/parts';
+import './Carousel.css';
+import { CarouselModel } from './schema';
 
 interface CarouselImageModel {
   url: string;

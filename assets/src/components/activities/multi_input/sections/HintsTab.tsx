@@ -1,10 +1,10 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { partTitle } from 'components/activities/multi_input/utils';
 import { RichText, makeHint } from 'components/activities/types';
 import { Hints } from 'data/activities/model/hints';
-import React from 'react';
 
 interface Props {
   input: MultiInput;

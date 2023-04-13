@@ -1,3 +1,5 @@
+import React, { ChangeEventHandler, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   dateWithTimeLabel,
   dateWithoutTimeLabel,
@@ -12,8 +14,6 @@ import {
   changeScheduleType,
   moveScheduleItem,
 } from './scheduler-slice';
-import React, { ChangeEventHandler, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 interface SaveIndicatorProps {
   onSave: () => void;

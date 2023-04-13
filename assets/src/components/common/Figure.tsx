@@ -1,7 +1,7 @@
+import React, { ReactNode } from 'react';
 import { SemanticChildren } from '../../data/content/model/elements/types';
 import { WriterContext } from '../../data/content/writers/context';
 import { HtmlContentModelRenderer } from '../../data/content/writers/renderer';
-import React, { ReactNode } from 'react';
 
 export const Figure: React.FC<{
   title: SemanticChildren[];

@@ -1,8 +1,8 @@
-import { iso639_language_codes } from '../../../../utils/language-codes-iso639';
+import React, { useCallback } from 'react';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
-import React, { useCallback } from 'react';
+import { iso639_language_codes } from '../../../../utils/language-codes-iso639';
 
 interface Props {
   onDone: (changes: Partial<ContentModel.Foreign>) => void;

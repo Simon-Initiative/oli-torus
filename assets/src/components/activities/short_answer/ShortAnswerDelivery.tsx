@@ -1,7 +1,7 @@
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { MathInput } from '../common/delivery/inputs/MathInput';
-import { initializePersistence } from '../common/delivery/persistence';
-import { castPartId } from '../common/utils';
+import React, { useEffect, useMemo, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { Maybe } from 'tsmonad';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
@@ -26,12 +26,12 @@ import {
   resetAction,
 } from 'data/activities/DeliveryState';
 import { safelySelectStringInputs } from 'data/activities/utils';
-import React, { useEffect, useMemo, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import { Maybe } from 'tsmonad';
 import { assertNever, valueOr } from 'utils/common';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { MathInput } from '../common/delivery/inputs/MathInput';
+import { initializePersistence } from '../common/delivery/persistence';
+import { castPartId } from '../common/utils';
 
 type InputProps = {
   input: string;

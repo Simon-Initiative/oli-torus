@@ -1,5 +1,5 @@
-import { ControlButtonProps } from './ControlBar';
 import React from 'react';
+import { ControlButtonProps } from './ControlBar';
 
 export const InitialPlayButton: React.FC<ControlButtonProps> = ({ actions, player }) => {
   if (player?.hasStarted) return null;

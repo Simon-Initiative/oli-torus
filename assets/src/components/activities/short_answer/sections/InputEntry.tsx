@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import React from 'react';
 import { InputType } from 'components/activities/short_answer/schema';
 import { MathInput } from 'components/activities/short_answer/sections/MathInput';
 import { NumericInput } from 'components/activities/short_answer/sections/NumericInput';
@@ -11,8 +13,6 @@ import {
   makeRule,
   parseInputFromRule,
 } from 'data/activities/model/rules';
-import { useState } from 'react';
-import React from 'react';
 
 interface InputProps {
   inputType: InputType;

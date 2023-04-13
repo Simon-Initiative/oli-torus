@@ -1,7 +1,7 @@
-import { HistorySlice } from '../name';
-import { selectRedoAction, selectState } from '../slice';
 import { PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import reverse from 'lodash/reverse';
+import { HistorySlice } from '../name';
+import { selectRedoAction, selectState } from '../slice';
 
 export const redo = createAsyncThunk(
   `${HistorySlice}/redo`,

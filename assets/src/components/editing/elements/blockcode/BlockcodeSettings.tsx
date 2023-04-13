@@ -1,7 +1,7 @@
+import React, { useEffect, useRef, useState } from 'react';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import * as Settings from 'components/editing/elements/common/settings/Settings';
 import * as ContentModel from 'data/content/model/elements/types';
-import React, { useEffect, useRef, useState } from 'react';
 import guid from 'utils/guid';
 
 type CodeSettingsProps = {

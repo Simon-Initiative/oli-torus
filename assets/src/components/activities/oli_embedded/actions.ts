@@ -1,7 +1,7 @@
+import { Maybe } from 'tsmonad';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import { PostUndoable, ScoringStrategy, makeUndoable } from 'components/activities/types';
 import { Identifiable } from 'data/content/model/other';
-import { Maybe } from 'tsmonad';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';

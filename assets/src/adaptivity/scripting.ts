@@ -1,8 +1,8 @@
-import { CapiVariableTypes, getCapiType } from './capi';
-import { janus_std } from './janus-scripts/builtin_functions';
 import { EntityId } from '@reduxjs/toolkit';
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
 import { formatNumber, parseArray, parseBoolean } from 'utils/common';
+import { CapiVariableTypes, getCapiType } from './capi';
+import { janus_std } from './janus-scripts/builtin_functions';
 
 export const looksLikeJson = (str: string) => {
   const emptyJsonObj = '{}';

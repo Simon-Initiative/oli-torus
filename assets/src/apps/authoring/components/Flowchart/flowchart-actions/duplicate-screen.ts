@@ -1,3 +1,5 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { create } from 'data/persistence/activity';
 import { cloneT } from '../../../../../utils/common';
 import guid from '../../../../../utils/guid';
 import {
@@ -36,8 +38,6 @@ import {
 } from '../rules/create-generic-rule';
 import { sortScreens } from '../screens/screen-utils';
 import { replaceIds } from '../template-utils';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { create } from 'data/persistence/activity';
 
 interface DuplicateFlowchartScreenPayload {
   screenId: number;

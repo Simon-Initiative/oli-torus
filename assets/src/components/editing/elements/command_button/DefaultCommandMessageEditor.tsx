@@ -1,5 +1,5 @@
-import { MessageEditorComponent } from './commandButtonTypes';
 import React, { useCallback } from 'react';
+import { MessageEditorComponent } from './commandButtonTypes';
 
 export const DefaultCommandMessageEditor: MessageEditorComponent = ({ onChange, value }) => {
   const onChangeHandler = useCallback(

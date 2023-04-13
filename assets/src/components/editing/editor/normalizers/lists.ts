@@ -1,8 +1,8 @@
+import { Editor, Element, Path, Text, Transforms } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement } from 'data/content/model/elements/types';
 import { schema } from 'data/content/model/schema';
 import { FormattedText } from 'data/content/model/text';
-import { Editor, Element, Path, Text, Transforms } from 'slate';
 
 export const normalize = (
   editor: Editor,

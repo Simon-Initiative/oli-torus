@@ -1,4 +1,4 @@
-import { disableScrollWheelChange } from '../utils';
+import React, { createRef, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { InfoTip } from 'components/misc/InfoTip';
 import {
@@ -10,9 +10,9 @@ import {
   numericOperator,
   rangeOperator,
 } from 'data/activities/model/rules';
-import React, { createRef, useState } from 'react';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
+import { disableScrollWheelChange } from '../utils';
 
 // here we defined a "editable number" variant data type that contains information
 // about the number that is being edited. for example, a number input being edited

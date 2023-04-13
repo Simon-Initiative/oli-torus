@@ -1,6 +1,6 @@
-import { Identifiable } from '../other';
-import { RichText } from 'components/activities/types';
 import { BaseElement, Descendant, Text } from 'slate';
+import { RichText } from 'components/activities/types';
+import { Identifiable } from '../other';
 
 interface SlateElement<Children extends Descendant[]> extends BaseElement, Identifiable {
   children: Children;

@@ -1,5 +1,5 @@
-import { getFileExtensionColor, getFileExtensionGlyph } from './utils';
 import * as React from 'react';
+import { getFileExtensionColor, getFileExtensionGlyph } from './utils';
 
 export interface FileIconProps {
   className?: string;

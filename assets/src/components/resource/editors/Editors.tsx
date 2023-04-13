@@ -1,10 +1,8 @@
-import { AddResource } from './AddResource';
-import './Editors.scss';
-import { createEditor } from './createEditor';
-import { EditorErrorBoundary } from './editor_error_boundary';
-import { FeatureFlags } from 'apps/page-editor/types';
+import React from 'react';
+import * as Immutable from 'immutable';
 import { Undoable } from 'components/activities/types';
 import { EditorUpdate } from 'components/activity/InlineActivityEditor';
+import { FeatureFlags } from 'apps/page-editor/types';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective, ResourceId } from 'data/content/objective';
@@ -12,9 +10,11 @@ import { ResourceContent, ResourceContext } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ProjectSlug, ResourceSlug } from 'data/types';
-import * as Immutable from 'immutable';
-import React from 'react';
 import { ClassName, classNames } from 'utils/classNames';
+import { AddResource } from './AddResource';
+import './Editors.scss';
+import { createEditor } from './createEditor';
+import { EditorErrorBoundary } from './editor_error_boundary';
 
 export type EditorsProps = {
   className?: ClassName;

@@ -1,7 +1,7 @@
+import React from 'react';
 import * as ContentModel from '../../data/content/model/elements/types';
 import { Next } from '../../data/content/writers/writer';
 import { useAudio } from '../hooks/useAudio';
-import React from 'react';
 
 export const Pronunciation: React.FC<{
   pronunciation: ContentModel.Pronunciation;

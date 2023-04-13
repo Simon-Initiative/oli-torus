@@ -1,8 +1,6 @@
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { castPartId } from '../common/utils';
-import * as ActivityTypes from '../types';
-import { MCSchema } from './schema';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
@@ -23,10 +21,12 @@ import {
   submit,
 } from 'data/activities/DeliveryState';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { castPartId } from '../common/utils';
+import * as ActivityTypes from '../types';
+import { MCSchema } from './schema';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
 // about to submit that state with a submission. This saves a network call that isn't necessary and avoids

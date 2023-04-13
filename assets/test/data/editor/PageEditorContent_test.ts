@@ -1,3 +1,4 @@
+import * as Immutable from 'immutable';
 import { Model } from 'data/content/model/elements/factories';
 import {
   ResourceContent,
@@ -5,7 +6,6 @@ import {
   createGroup,
 } from 'data/content/resource';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
-import * as Immutable from 'immutable';
 import guid from 'utils/guid';
 
 describe('PageEditorContent', () => {

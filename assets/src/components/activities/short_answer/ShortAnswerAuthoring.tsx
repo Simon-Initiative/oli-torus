@@ -1,10 +1,6 @@
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
-import { ShortAnswerActions } from './actions';
-import { ShortAnswerModelSchema } from './schema';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
 import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
@@ -27,10 +23,14 @@ import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
+import { ShortAnswerActions } from './actions';
+import { ShortAnswerModelSchema } from './schema';
 
 const store = configureStore();
 

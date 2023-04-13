@@ -1,3 +1,19 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ActivityState } from 'components/activities/types';
+import { CapiVariableTypes } from 'adaptivity/capi';
+import { applyState, templatizeText } from 'adaptivity/scripting';
+import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
+import {
+  getBulkActivitiesForAuthoring,
+  getBulkActivitiesForDelivery,
+} from 'data/persistence/activity';
+import {
+  getBulkAttemptState,
+  getPageAttemptState,
+  writePageAttemptState,
+} from 'data/persistence/state/intrinsic';
+import { ResourceId } from 'data/types';
+import guid from 'utils/guid';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -34,22 +50,6 @@ import { GroupsSlice } from '../name';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { CapiVariableTypes } from 'adaptivity/capi';
-import { applyState, templatizeText } from 'adaptivity/scripting';
-import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
-import { ActivityState } from 'components/activities/types';
-import {
-  getBulkActivitiesForAuthoring,
-  getBulkActivitiesForDelivery,
-} from 'data/persistence/activity';
-import {
-  getBulkAttemptState,
-  getPageAttemptState,
-  writePageAttemptState,
-} from 'data/persistence/state/intrinsic';
-import { ResourceId } from 'data/types';
-import guid from 'utils/guid';
 
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,

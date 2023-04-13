@@ -1,3 +1,4 @@
+import { OrderedMediaLibrary } from 'components/media/OrderedMediaLibrary';
 import {
   FETCH_MEDIA_PAGE,
   FetchMediaPageAction,
@@ -10,7 +11,6 @@ import {
   SIDELOAD_DATA,
   SideloadDataAction,
 } from 'actions/media';
-import { OrderedMediaLibrary } from 'components/media/OrderedMediaLibrary';
 
 export type ActionTypes =
   | FetchMediaPageAction

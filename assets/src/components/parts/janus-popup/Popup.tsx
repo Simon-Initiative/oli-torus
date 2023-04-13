@@ -1,3 +1,7 @@
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { Environment } from 'janus-script';
+import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -9,10 +13,6 @@ import { getIcon, getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
 import { PopupModel } from './schema';
 import { InitResultProps } from './types';
-import { Environment } from 'janus-script';
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { parseBool } from 'utils/common';
 
 const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);

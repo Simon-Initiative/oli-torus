@@ -1,3 +1,4 @@
+import uniq from 'lodash/uniq';
 import guid from '../../../../../utils/guid';
 import {
   IAction,
@@ -11,7 +12,6 @@ import {
   newId,
 } from './create-generic-rule';
 import { RulesAndVariables } from './rule-compilation';
-import uniq from 'lodash/uniq';
 
 /**
  * This will generate rules for a screen that has three attempts to get it right with appropriate feedback loops.

@@ -1,3 +1,5 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { writeActivityAttemptState } from 'data/persistence/state/intrinsic';
 import {
   defaultGlobalEnv,
   evalScript,
@@ -7,8 +9,6 @@ import { DeliveryRootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import AttemptSlice from '../name';
 import { selectById, upsertActivityAttemptState } from '../slice';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { writeActivityAttemptState } from 'data/persistence/state/intrinsic';
 
 export const submitActivityState = createAsyncThunk(
   `${AttemptSlice}/submitActivityState`,

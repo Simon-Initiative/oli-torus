@@ -1,3 +1,7 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
 import { clone } from '../../utils/common';
 import {
   IActivity,
@@ -9,10 +13,6 @@ import ConfirmDelete from './components/Modal/DeleteConfirmationModal';
 import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
 import { saveActivity } from './store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from './store/app/slice';
-import { debounce } from 'lodash';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 
 export interface BottomPanelProps {
   panelState: any;

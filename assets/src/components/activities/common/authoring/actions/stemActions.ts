@@ -1,7 +1,7 @@
+import { Descendant } from 'slate';
 import { HasPreviewText } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
-import { Descendant } from 'slate';
 import { Operations } from 'utils/pathOperations';
 
 export const StemActions = {

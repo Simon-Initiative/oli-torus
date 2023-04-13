@@ -1,7 +1,7 @@
-import AccordionTemplate from '../custom/AccordionTemplate';
 import { UiSchema } from '@rjsf/core';
-import { SequenceBank, SequenceEntry } from 'apps/delivery/store/features/groups/actions/sequence';
 import { JSONSchema7 } from 'json-schema';
+import { SequenceBank, SequenceEntry } from 'apps/delivery/store/features/groups/actions/sequence';
+import AccordionTemplate from '../custom/AccordionTemplate';
 
 const bankSchema: JSONSchema7 = {
   type: 'object',

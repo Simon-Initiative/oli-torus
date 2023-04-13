@@ -1,8 +1,8 @@
+import React from 'react';
+import produce from 'immer';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { ActivityModelSchema, ClientEvaluation, PartResponse } from 'components/activities/types';
 import * as Persistence from 'data/persistence/activity';
-import produce from 'immer';
-import React from 'react';
 import { removeEmpty } from 'utils/common';
 
 export const xdefaultState = (model: ActivityModelSchema) => {

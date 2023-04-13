@@ -1,3 +1,11 @@
+import React, { useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { maybe } from 'tsmonad';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import { defaultWriterContext } from 'data/content/writers/context';
+import * as Events from 'data/events';
+import { configureStore } from 'state/store';
 import {
   DeliveryElement,
   DeliveryElementProps,
@@ -15,14 +23,6 @@ import { EvalContext, Evaluator } from './Evaluator';
 import { ImageCodingModelSchema } from './schema';
 import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
-import { defaultWriterContext } from 'data/content/writers/context';
-import * as Events from 'data/events';
-import React, { useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import { maybe } from 'tsmonad';
 
 type Evaluation = {
   score: number;

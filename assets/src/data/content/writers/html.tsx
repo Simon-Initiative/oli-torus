@@ -1,22 +1,6 @@
 /* eslint-disable react/display-name */
-import { ContentTable } from '../../../components/ContentTable';
-import { Dialog } from '../../../components/Dialog';
-import { CommandButton } from '../../../components/common/CommandButton';
-import { Conjugation } from '../../../components/common/Conjugation';
-import { Definition } from '../../../components/common/Definition';
-import { DescriptionList } from '../../../components/common/DescriptionList';
-import { Figure as FigureElement } from '../../../components/common/Figure';
-import {
-  MathJaxLatexFormula,
-  MathJaxMathMLFormula,
-} from '../../../components/common/MathJaxFormula';
-import { Popup } from '../../../components/common/Popup';
-import { Pronunciation } from '../../../components/common/Pronunciation';
-import { TableConjugation } from '../../../components/common/TableConjugation';
-import { cellAttributes } from '../../../components/editing/elements/table/table-util';
-import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
-import { WriterContext } from './context';
-import { ContentWriter, Next, WriterImpl } from './writer';
+import React from 'react';
+import { Text } from 'slate';
 import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
 import { MathInput } from 'components/activities/common/delivery/inputs/MathInput';
@@ -71,9 +55,25 @@ import {
   YouTube,
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
-import React from 'react';
-import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
+import { ContentTable } from '../../../components/ContentTable';
+import { Dialog } from '../../../components/Dialog';
+import { CommandButton } from '../../../components/common/CommandButton';
+import { Conjugation } from '../../../components/common/Conjugation';
+import { Definition } from '../../../components/common/Definition';
+import { DescriptionList } from '../../../components/common/DescriptionList';
+import { Figure as FigureElement } from '../../../components/common/Figure';
+import {
+  MathJaxLatexFormula,
+  MathJaxMathMLFormula,
+} from '../../../components/common/MathJaxFormula';
+import { Popup } from '../../../components/common/Popup';
+import { Pronunciation } from '../../../components/common/Pronunciation';
+import { TableConjugation } from '../../../components/common/TableConjugation';
+import { cellAttributes } from '../../../components/editing/elements/table/table-util';
+import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
+import { WriterContext } from './context';
+import { ContentWriter, Next, WriterImpl } from './writer';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.

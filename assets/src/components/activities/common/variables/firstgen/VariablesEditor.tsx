@@ -1,8 +1,8 @@
-import { WrappedMonaco } from '../WrappedMonaco';
-import { Variable, VariableEvaluation, evaluateVariables } from 'data/persistence/variables';
-import * as Immutable from 'immutable';
 import * as React from 'react';
+import * as Immutable from 'immutable';
+import { Variable, VariableEvaluation, evaluateVariables } from 'data/persistence/variables';
 import guid from 'utils/guid';
+import { WrappedMonaco } from '../WrappedMonaco';
 
 export interface VariablesEditorProps {
   editMode: boolean;

@@ -6,6 +6,20 @@
   "trailingComma": "all",
   "arrowParens": "always",
   "printWidth": 100,
-  "importOrderSeparation": true,
+  "importOrder": [
+    "^react",
+    "<THIRD_PARTY_MODULES>",
+    "^components/(.*)$",
+    "^actions/(.*)$",
+    "^adaptivity/(.*)$",
+    "^apps/(.*)$",
+    "^data/(.*)$",
+    "^hooks/(.*)$",
+    "^state/(.*)$",
+    "^styles/(.*)$",
+    "^types/(.*)$",
+    "^utils/(.*)$",
+    "^[./]"
+  ],
   "importOrderSortSpecifiers": true
 }

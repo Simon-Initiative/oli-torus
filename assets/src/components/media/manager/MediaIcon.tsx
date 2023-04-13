@@ -1,7 +1,7 @@
+import * as React from 'react';
 import { FileIcon } from './FileIcon';
 import { ImageIcon } from './ImageIcon';
 import { isImage } from './utils';
-import * as React from 'react';
 
 export interface MediaIconProps {
   className?: string;

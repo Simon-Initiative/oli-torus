@@ -1,11 +1,11 @@
-import { CommandContext } from '../commands/interfaces';
+import React, { createRef, useEffect, useState } from 'react';
+import * as Immutable from 'immutable';
 import { BibEntry } from 'data/content/bibentry';
 import { Model } from 'data/content/model/elements/factories';
 import { Citation } from 'data/content/model/elements/types';
 import * as ContentModel from 'data/content/model/elements/types';
 import * as BibPersistence from 'data/persistence/bibentry';
-import * as Immutable from 'immutable';
-import React, { createRef, useEffect, useState } from 'react';
+import { CommandContext } from '../commands/interfaces';
 
 const Cite = (window as any).cite;
 

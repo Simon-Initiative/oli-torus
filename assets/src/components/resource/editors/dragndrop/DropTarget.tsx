@@ -1,6 +1,6 @@
-import styles from './DropTarget.modules.scss';
 import React, { useState } from 'react';
 import { classNames } from 'utils/classNames';
+import styles from './DropTarget.modules.scss';
 
 interface DropTargetProps {
   id: string | 'last';

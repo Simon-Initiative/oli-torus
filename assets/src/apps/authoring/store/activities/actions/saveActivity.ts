@@ -1,3 +1,12 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { diff } from 'deep-object-diff';
+import cloneDeep from 'lodash/cloneDeep';
+import debounce from 'lodash/debounce';
+import memoize from 'lodash/memoize';
+import { ActivityModelSchema } from 'components/activities/types';
+import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
+import { ObjectiveMap } from 'data/content/activity';
+import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
 import { ProjectSlug, ResourceId } from '../../../../../data/types';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
@@ -15,15 +24,6 @@ import { createUndoAction } from '../../history/slice';
 import { savePage } from '../../page/actions/savePage';
 import { selectState as selectCurrentPage, selectResourceId } from '../../page/slice';
 import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
-import { ActivityModelSchema } from 'components/activities/types';
-import { ObjectiveMap } from 'data/content/activity';
-import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
-import { diff } from 'deep-object-diff';
-import cloneDeep from 'lodash/cloneDeep';
-import debounce from 'lodash/debounce';
-import memoize from 'lodash/memoize';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,

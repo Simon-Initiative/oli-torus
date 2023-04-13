@@ -1,15 +1,4 @@
 import {
-  complexExpressionRule,
-  complexRuleWithMultipleActions,
-  defaultCorrectRule,
-  defaultWrongRule,
-  disabledCorrectRule,
-  expressionScoringCorrectRule,
-  getAttemptScoringContext,
-  mockState,
-  simpleScoringCorrectRule,
-} from './rules_mocks';
-import {
   containsAnyOfOperator,
   containsExactlyOperator,
   containsOnlyOperator,
@@ -41,6 +30,17 @@ import {
 } from 'adaptivity/rules-engine';
 import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
+import {
+  complexExpressionRule,
+  complexRuleWithMultipleActions,
+  defaultCorrectRule,
+  defaultWrongRule,
+  disabledCorrectRule,
+  expressionScoringCorrectRule,
+  getAttemptScoringContext,
+  mockState,
+  simpleScoringCorrectRule,
+} from './rules_mocks';
 
 describe('Rules Engine', () => {
   const correctAttemptScoringContext = getAttemptScoringContext();

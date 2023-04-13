@@ -1,7 +1,5 @@
-import { bulkSaveActivity, saveActivity } from '../../activities/actions/saveActivity';
-import { createUndoAction } from '../../history/slice';
-import { PartsSlice } from '../name';
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import merge from 'lodash/merge';
 import { IActivity, selectActivityById } from 'apps/delivery/store/features/activities/slice';
 import {
   findInSequenceByResourceId,
@@ -9,8 +7,10 @@ import {
   getHierarchy,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import merge from 'lodash/merge';
 import { clone } from 'utils/common';
+import { bulkSaveActivity, saveActivity } from '../../activities/actions/saveActivity';
+import { createUndoAction } from '../../history/slice';
+import { PartsSlice } from '../name';
 
 export const updatePart = createAsyncThunk(
   `${PartsSlice}/updatePart`,

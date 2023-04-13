@@ -1,3 +1,18 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import {
+  Hints,
+  Hints as HintsAuthoring,
+} from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { Radio } from 'components/misc/icons/radio/Radio';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { Choices, Items } from 'data/activities/model/choices';
+import { defaultWriterContext } from 'data/content/writers/context';
+import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
@@ -11,21 +26,6 @@ import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { LikertActions } from './actions';
 import { LikertModelSchema } from './schema';
-import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import {
-  Hints,
-  Hints as HintsAuthoring,
-} from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { Radio } from 'components/misc/icons/radio/Radio';
-import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { Choices, Items } from 'data/activities/model/choices';
-import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   const { dispatch, model, editMode, projectSlug } =

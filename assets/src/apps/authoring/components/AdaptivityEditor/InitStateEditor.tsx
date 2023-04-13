@@ -1,3 +1,9 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import debounce from 'lodash/debounce';
+import { clone } from 'utils/common';
+import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
@@ -10,12 +16,6 @@ import {
   typeOptions,
 } from './AdaptiveItemOptions';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
-import debounce from 'lodash/debounce';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
-import guid from 'utils/guid';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;

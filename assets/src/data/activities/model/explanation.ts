@@ -1,5 +1,5 @@
-import { getPartById } from './utils';
 import { HasParts, PostUndoable, makeFeedback } from 'components/activities/types';
+import { getPartById } from './utils';
 
 export const getExplanation = (model: HasParts, partId: string) => {
   return getPartById(model, partId).explanation;

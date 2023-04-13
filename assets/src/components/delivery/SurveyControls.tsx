@@ -1,5 +1,5 @@
-import * as Events from 'data/events';
 import React, { useState } from 'react';
+import * as Events from 'data/events';
 
 export interface SurveyControlsProps {
   id: string;

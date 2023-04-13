@@ -1,9 +1,9 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
 import { RichText, makeHint } from 'components/activities/types';
 import { Hints } from 'data/activities/model/hints';
-import React from 'react';
 
 interface Props {
   partId: string;

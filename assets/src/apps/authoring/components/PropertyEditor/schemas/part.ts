@@ -1,6 +1,6 @@
-import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 import { JSONSchema7 } from 'json-schema';
 import { parseNumString } from 'utils/common';
+import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const partSchema: JSONSchema7 = {
   type: 'object',

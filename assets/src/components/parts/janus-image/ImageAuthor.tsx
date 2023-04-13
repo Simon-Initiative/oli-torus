@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { AuthorPartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
-import React, { CSSProperties, useEffect, useState } from 'react';
 
 const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   const { model } = props;

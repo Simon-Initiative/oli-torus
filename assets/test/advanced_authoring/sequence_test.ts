@@ -1,9 +1,9 @@
-import { simpleSequence } from './sequence_mocks';
 import {
   findInSequence,
   findInSequenceByResourceId,
   getHierarchy,
 } from 'apps/delivery/store/features/groups/actions/sequence';
+import { simpleSequence } from './sequence_mocks';
 
 describe('Sequence Util Methods', () => {
   describe('getHierarchy', () => {

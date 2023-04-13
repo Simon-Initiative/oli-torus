@@ -1,5 +1,8 @@
-import { IPartLayout } from '../../../delivery/store/features/activities/slice';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import React, { useState } from 'react';
+import { useCallback } from 'react';
+import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import cloneDeep from 'lodash/cloneDeep';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import {
   selectPartComponentTypes,
@@ -8,11 +11,8 @@ import {
 } from 'apps/authoring/store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
-import cloneDeep from 'lodash/cloneDeep';
-import React, { useState } from 'react';
-import { useCallback } from 'react';
-import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
+import { IPartLayout } from '../../../delivery/store/features/activities/slice';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 const ComponentSearchContextMenu: React.FC<{
   authoringContainer: React.RefObject<HTMLElement>;

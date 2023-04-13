@@ -1,10 +1,3 @@
-import * as ContentModel from '../../data/content/model/elements/types';
-import { useCommandTarget } from '../editing/elements/command_button/useCommandTarget';
-import { ClosedCaptionButton } from './ClosedCaptionButton';
-import { InitialPlayButton } from './InitialPlayButton';
-import { FullScreenButton } from './VideoFullScreenButton';
-import { MuteButton } from './VideoMuteButton';
-import { PlayButton } from './VideoPlayButton';
 import React, { ReactNode, useCallback, useRef } from 'react';
 import {
   BigPlayButton,
@@ -17,6 +10,13 @@ import {
   ProgressControl,
   TimeDivider,
 } from 'video-react';
+import * as ContentModel from '../../data/content/model/elements/types';
+import { useCommandTarget } from '../editing/elements/command_button/useCommandTarget';
+import { ClosedCaptionButton } from './ClosedCaptionButton';
+import { InitialPlayButton } from './InitialPlayButton';
+import { FullScreenButton } from './VideoFullScreenButton';
+import { MuteButton } from './VideoMuteButton';
+import { PlayButton } from './VideoPlayButton';
 
 const startEndCueRegex = /startcuepoint=([0-9.]+);endcuepoint=([0-9.]+)/;
 const startCueRegex = /startcuepoint=([0-9.]+)/;

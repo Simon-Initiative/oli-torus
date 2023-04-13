@@ -1,6 +1,6 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButton } from 'components/activities/common/authoring/AuthoringButton';
-import React from 'react';
 
 type Props = {
   onClick: () => void;

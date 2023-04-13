@@ -1,7 +1,7 @@
-import { DeliveryRootState } from '../../rootReducer';
-import PageSlice from './name';
 import { PayloadAction, createSelector, createSlice } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
+import { DeliveryRootState } from '../../rootReducer';
+import PageSlice from './name';
 
 export interface PageState {
   userId: number;

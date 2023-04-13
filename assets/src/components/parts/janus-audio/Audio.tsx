@@ -1,3 +1,5 @@
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -5,8 +7,6 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { PartComponentProps } from '../types/parts';
 import { AudioModel } from './schema';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
 
 const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

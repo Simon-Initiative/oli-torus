@@ -1,9 +1,9 @@
+import React, { PropsWithChildren } from 'react';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import { ResourceContent, ResourceGroup } from 'data/content/resource';
 import { AddResource } from './AddResource';
 import styles from './ContentBlock.modules.scss';
 import { EditorProps, createEditor } from './createEditor';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import { ResourceContent, ResourceGroup } from 'data/content/resource';
-import React, { PropsWithChildren } from 'react';
 
 interface GroupEditorProps extends EditorProps {
   contentItem: ResourceGroup;

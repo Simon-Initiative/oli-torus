@@ -1,3 +1,5 @@
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import Select2 from 'react-select2-wrapper';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -8,8 +10,6 @@ import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
 import './FillBlanks.scss';
 import { FIBModel } from './schema';
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import Select2 from 'react-select2-wrapper';
 
 export const parseBool = (val: any) => {
   // cast value to number

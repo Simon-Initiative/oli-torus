@@ -1,6 +1,6 @@
+import React, { useState } from 'react';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
-import React, { useState } from 'react';
 
 interface ModalProps {
   onDone: (x: any) => void;

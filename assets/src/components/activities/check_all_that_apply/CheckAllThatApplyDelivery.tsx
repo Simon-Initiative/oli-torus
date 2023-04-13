@@ -1,6 +1,6 @@
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { castPartId } from '../common/utils';
+import React, { useEffect, useMemo } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
@@ -23,10 +23,10 @@ import {
   setSelection,
 } from 'data/activities/DeliveryState';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
-import React, { useEffect, useMemo } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { castPartId } from '../common/utils';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {

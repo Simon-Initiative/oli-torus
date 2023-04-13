@@ -1,7 +1,7 @@
-import { Tooltip } from 'components/common/Tooltip';
-import { PurposeTypes } from 'data/content/resource';
 import React, { PropsWithChildren, useState } from 'react';
 import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
+import { Tooltip } from 'components/common/Tooltip';
+import { PurposeTypes } from 'data/content/resource';
 import guid from 'utils/guid';
 
 export type PurposeProps = {

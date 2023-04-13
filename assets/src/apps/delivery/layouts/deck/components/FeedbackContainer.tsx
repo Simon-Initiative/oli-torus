@@ -1,9 +1,9 @@
-import FeedbackRenderer from './FeedbackRenderer';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { selectIsLegacyTheme } from 'apps/delivery/store/features/page/slice';
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import FeedbackRenderer from './FeedbackRenderer';
 
 export interface FeedbackContainerProps {
   minimized: boolean;

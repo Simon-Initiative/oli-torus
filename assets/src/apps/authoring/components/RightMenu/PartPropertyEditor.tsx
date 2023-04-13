@@ -1,3 +1,9 @@
+import React, { useCallback, useMemo } from 'react';
+import { Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { JSONSchema7 } from 'json-schema';
+import { isEqual } from 'lodash';
+import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { PartAuthoringMode } from '../../../../components/parts/partsApi';
 import { clone } from '../../../../utils/common';
@@ -17,12 +23,6 @@ import partSchema, {
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
 import { RightPanelTabs } from './RightMenu';
-import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
-import { JSONSchema7 } from 'json-schema';
-import { isEqual } from 'lodash';
-import React, { useCallback, useMemo } from 'react';
-import { Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 
 interface Props {
   currentActivity: IActivity;

@@ -1,4 +1,4 @@
-import styles from './InlineActivityEditor.modules.scss';
+import React from 'react';
 import { TextEditor } from 'components/TextEditor';
 import { ActivityModelSchema, Undoable } from 'components/activities/types';
 import { selectImage } from 'components/editing/elements/image/imageActions';
@@ -9,9 +9,9 @@ import { ActivityEditContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ResourceId } from 'data/types';
-import React from 'react';
 import { classNames } from 'utils/classNames';
 import { valueOr } from 'utils/common';
+import styles from './InlineActivityEditor.modules.scss';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;

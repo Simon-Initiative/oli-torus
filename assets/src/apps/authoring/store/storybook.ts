@@ -1,3 +1,5 @@
+import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers } from '@reduxjs/toolkit';
 import { modal } from '../../../state/modal';
 import ActivitiesSlice from '../../delivery/store/features/activities/name';
 import ActivitiesReducer from '../../delivery/store/features/activities/slice';
@@ -13,8 +15,6 @@ import PageSlice from './page/name';
 import PageReducer from './page/slice';
 import PartsSlice from './parts/name';
 import PartsReducer from './parts/slice';
-import { configureStore } from '@reduxjs/toolkit';
-import { combineReducers } from '@reduxjs/toolkit';
 
 const rootReducer = combineReducers({
   [AppSlice]: AppReducer,

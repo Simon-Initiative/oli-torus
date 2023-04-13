@@ -1,7 +1,7 @@
-import { WriterContext } from './context';
-import { AllModelElements } from 'data/content/model/elements/types';
 import React from 'react';
 import { Text } from 'slate';
+import { AllModelElements } from 'data/content/model/elements/types';
+import { WriterContext } from './context';
 
 export type Next = () => React.ReactElement;
 type ElementWriter = (ctx: WriterContext, next: Next, text: AllModelElements) => React.ReactElement;

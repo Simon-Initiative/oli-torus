@@ -1,10 +1,10 @@
-import { selectPaths } from '../../store/app/slice';
-import { redo } from 'apps/authoring/store/history/actions/redo';
-import { undo } from 'apps/authoring/store/history/actions/undo';
-import { selectHasRedo, selectHasUndo } from 'apps/authoring/store/history/slice';
 import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { redo } from 'apps/authoring/store/history/actions/redo';
+import { undo } from 'apps/authoring/store/history/actions/undo';
+import { selectHasRedo, selectHasUndo } from 'apps/authoring/store/history/slice';
+import { selectPaths } from '../../store/app/slice';
 
 const UndoRedoToolbar: React.FC = () => {
   const paths = useSelector(selectPaths);

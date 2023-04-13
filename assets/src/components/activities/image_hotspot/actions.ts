@@ -1,11 +1,11 @@
-import { HasParts, makeContent } from '../types';
-import * as ActivityTypes from '../types';
+import { Descendant } from 'slate';
 import { PostUndoable } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { Responses } from 'data/activities/model/responses';
 import { matchListRule } from 'data/activities/model/rules';
-import { Descendant } from 'slate';
 import { Operations } from 'utils/pathOperations';
+import { HasParts, makeContent } from '../types';
+import * as ActivityTypes from '../types';
 
 export const ImageHotspotActions = {
   setCoords(id: string, coords: number[]) {

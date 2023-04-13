@@ -1,3 +1,7 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
+import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
@@ -7,10 +11,6 @@ import {
   typeOptions,
 } from './AdaptiveItemOptions';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
-import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
-import React, { useEffect, useRef, useState } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import guid from 'utils/guid';
 
 interface ActionMutateEditorProps {
   action: MutateStateAction;
@@ -172,7 +172,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
           id={`action-mutate-value-${uuid}`}
           value={value}
           onChange={(e) => handleValueChange(e)}
-          onBlur={(e) => setIsDirty(true)}
+          onBlur={() => setIsDirty(true)}
           title={value}
           placeholder="Value"
         />

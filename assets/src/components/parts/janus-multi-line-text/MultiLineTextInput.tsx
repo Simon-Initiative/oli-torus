@@ -1,4 +1,6 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import debounce from 'lodash/debounce';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -7,8 +9,6 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import { MultiLineTextModel } from './schema';
-import debounce from 'lodash/debounce';
-import React, { CSSProperties, ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

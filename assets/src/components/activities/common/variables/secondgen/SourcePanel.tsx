@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { WrappedMonaco } from '../WrappedMonaco';
 import './SourcePanel.scss';
-import * as React from 'react';
 
 interface SourcePanelProps {
   editMode: boolean;

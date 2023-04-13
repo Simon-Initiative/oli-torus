@@ -1,9 +1,9 @@
+import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
+import guid from 'utils/guid';
 import { AuthoringRootState } from '../rootReducer';
 import { redo } from './actions/redo';
 import { undo } from './actions/undo';
 import { HistorySlice } from './name';
-import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
-import guid from 'utils/guid';
 
 export interface UndoAction {
   id: string;

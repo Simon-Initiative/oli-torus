@@ -1,11 +1,11 @@
 /* eslint-disable no-prototype-builtins */
 
 /* eslint-disable react/prop-types */
+import React, { useCallback, useEffect, useState } from 'react';
+import debounce from 'lodash/debounce';
+import { v4 as uuidv4 } from 'uuid';
 import { CapiVariable, CapiVariableTypes, parseCapiValue } from '../../../../../adaptivity/capi';
 import { ApplyStateOperation } from '../../../../../adaptivity/scripting';
-import debounce from 'lodash/debounce';
-import React, { useCallback, useEffect, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 interface AutoDetectInputProps {
   label: string;

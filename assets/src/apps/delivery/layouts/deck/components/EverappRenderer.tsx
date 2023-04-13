@@ -1,4 +1,6 @@
-import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { ActivityState, StudentResponse } from 'components/activities/types';
 import {
   defaultGlobalEnv,
   evalAssignScript,
@@ -10,10 +12,8 @@ import { triggerCheck } from 'apps/delivery/store/features/adaptivity/actions/tr
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
 import { selectPreviewMode } from 'apps/delivery/store/features/page/slice';
-import { ActivityState, StudentResponse } from 'components/activities/types';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
 
 export interface Everapp {
   id: string;

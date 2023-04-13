@@ -1,16 +1,16 @@
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
+import { clone, parseBoolean } from 'utils/common';
 import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/DeleteConfirmationModal';
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
 import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { MCQItem } from './MultipleChoiceQuestion';
 import { McqModel } from './schema';
-import {
-  NotificationType,
-  subscribeToNotification,
-} from 'apps/delivery/components/NotificationContext';
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { clone, parseBoolean } from 'utils/common';
 
 // eslint-disable-next-line react/display-name
 const Editor: React.FC<any> = React.memo(({ html, tree, portal, type }) => {

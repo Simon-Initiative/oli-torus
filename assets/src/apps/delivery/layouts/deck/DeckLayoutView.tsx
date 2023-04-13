@@ -1,4 +1,9 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import chroma from 'chroma-js';
+import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
+import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -33,11 +38,6 @@ import {
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
-import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
-import chroma from 'chroma-js';
-import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
-import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   // migrated legacy include as customCss

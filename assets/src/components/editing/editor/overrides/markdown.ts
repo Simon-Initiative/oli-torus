@@ -1,9 +1,9 @@
-import { toggleBlockquote } from './../../elements/blockquote/blockquoteActions';
-import { toggleOrderedList, toggleUnorderedList } from './../../elements/list/listActions';
+import { Editor, Range, Transforms } from 'slate';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { isTopLevel } from 'components/editing/slateUtils';
-import { Editor, Range, Transforms } from 'slate';
+import { toggleBlockquote } from './../../elements/blockquote/blockquoteActions';
+import { toggleOrderedList, toggleUnorderedList } from './../../elements/list/listActions';
 
 const SHORTCUTS = {
   '#': 'h1',

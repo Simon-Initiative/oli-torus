@@ -1,3 +1,6 @@
+import React, { useState } from 'react';
+import { Button } from 'react-bootstrap';
+import Spinner from 'react-bootstrap/Spinner';
 import { ApplicationMode } from '../../../store/app/slice';
 import { D6 } from './D6';
 import { D20 } from './D20';
@@ -5,9 +8,6 @@ import { Landscape } from './Landscape';
 import { LeftArrow } from './LeftArrow';
 import { Portrait } from './Portrait';
 import { RightArrow } from './RightArrow';
-import React, { useState } from 'react';
-import { Button } from 'react-bootstrap';
-import Spinner from 'react-bootstrap/Spinner';
 
 interface Props {
   onSetupComplete: (mode: ApplicationMode, title: string) => void;

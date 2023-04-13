@@ -1,10 +1,10 @@
+import React, { useCallback, useMemo } from 'react';
+import { v4 } from 'uuid';
+import * as ContentModel from 'data/content/model/elements/types';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { PronunciationEditor } from '../PronunciationEditor';
 import { CommandContext } from '../commands/interfaces';
 import { InlineEditor } from '../common/settings/InlineEditor';
-import * as ContentModel from 'data/content/model/elements/types';
-import React, { useCallback, useMemo } from 'react';
-import { v4 } from 'uuid';
 
 export const DefinitionInlineEditor: React.FC<{
   definition: ContentModel.Definition;

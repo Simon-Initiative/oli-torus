@@ -1,5 +1,3 @@
-import { SequenceEntry, SequenceEntryChild } from './actions/sequence';
-import GroupsSlice from './name';
 import {
   EntityAdapter,
   EntityState,
@@ -9,6 +7,8 @@ import {
   createSelector,
   createSlice,
 } from '@reduxjs/toolkit';
+import { SequenceEntry, SequenceEntryChild } from './actions/sequence';
+import GroupsSlice from './name';
 
 export enum LayoutType {
   DECK = 'deck',

@@ -1,3 +1,8 @@
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useDispatch, useSelector } from 'react-redux';
+import { node } from 'webpack';
 import {
   selectAllActivities,
   setCurrentActivityId,
@@ -22,11 +27,6 @@ import {
 import { screenTypeToTitle } from './screens/screen-factories';
 import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useDispatch, useSelector } from 'react-redux';
-import { node } from 'webpack';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.

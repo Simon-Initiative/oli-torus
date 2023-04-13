@@ -1,8 +1,8 @@
-import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
+import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import { Model } from 'data/content/model/elements/factories';
 
 interface InputRefToolbar {
   setEditor: React.Dispatch<React.SetStateAction<ReactEditor & Editor>>;

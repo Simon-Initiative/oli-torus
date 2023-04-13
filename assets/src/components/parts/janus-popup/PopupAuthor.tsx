@@ -1,16 +1,16 @@
-import { getIconSrc } from './GetIcon';
-import PopupWindow from './PopupWindow';
-import { PopupModel } from './schema';
-import { ContextProps } from './types';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { clone, parseBoolean } from 'utils/common';
+import { getIconSrc } from './GetIcon';
+import PopupWindow from './PopupWindow';
+import { PopupModel } from './schema';
+import { ContextProps } from './types';
 
 // eslint-disable-next-line react/display-name
 const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal }) => {

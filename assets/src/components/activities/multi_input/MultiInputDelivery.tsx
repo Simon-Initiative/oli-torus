@@ -1,5 +1,6 @@
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { initializePersistence } from '../common/delivery/persistence';
+import React, { useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
 import { Submission } from 'components/activities/common/delivery/evaluation/Submission';
@@ -28,10 +29,9 @@ import {
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React, { useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { initializePersistence } from '../common/delivery/persistence';
 
 export const MultiInputComponent: React.FC = () => {
   const {

@@ -1,5 +1,5 @@
-import { ControlButtonProps } from './ControlBar';
 import React, { useCallback } from 'react';
+import { ControlButtonProps } from './ControlBar';
 
 export const FullScreenButton: React.FC<ControlButtonProps> = ({ actions, player }) => {
   const isFullscreen = player?.isFullscreen;

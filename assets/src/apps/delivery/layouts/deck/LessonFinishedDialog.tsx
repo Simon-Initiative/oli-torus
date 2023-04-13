@@ -1,3 +1,6 @@
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
   selectIsGraded,
   selectOverviewURL,
@@ -6,9 +9,6 @@ import {
   selectResourceAttemptGuid,
   selectSectionSlug,
 } from '../../store/features/page/slice';
-import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 
 interface LessonFinishedDialogProps {
   imageUrl?: string;

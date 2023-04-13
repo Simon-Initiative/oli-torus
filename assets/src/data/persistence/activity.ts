@@ -1,5 +1,3 @@
-import { makeRequest } from './common';
-import { fixObjectiveParts } from './objectives';
 import {
   ActivityModelSchema,
   FeedbackAction,
@@ -9,6 +7,8 @@ import {
 import { ObjectiveMap } from 'data/content/activity';
 import { ActivityTypeSlug, ProjectSlug, ResourceId } from 'data/types';
 import { clone } from 'utils/common';
+import { makeRequest } from './common';
+import { fixObjectiveParts } from './objectives';
 
 export type ActivityUpdate = {
   title: string;

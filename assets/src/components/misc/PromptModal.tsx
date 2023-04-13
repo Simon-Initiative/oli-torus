@@ -1,7 +1,7 @@
+import React, { ReactNode, useCallback } from 'react';
 import { useToggle } from '../hooks/useToggle';
 import { Button } from './Button';
 import { Card } from './Card';
-import React, { ReactNode, useCallback } from 'react';
 
 interface PromptModalProps {
   title: string;

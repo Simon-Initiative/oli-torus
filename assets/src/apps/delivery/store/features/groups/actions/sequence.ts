@@ -1,5 +1,5 @@
-import { selectCurrentSequenceId, selectSequence } from '../selectors/deck';
 import { useSelector } from 'react-redux';
+import { selectCurrentSequenceId, selectSequence } from '../selectors/deck';
 
 export interface SequenceEntryChild {
   sequenceId: string;

@@ -1,3 +1,5 @@
+import React from 'react';
+import { Descendant, Operation, Editor as SlateEditor } from 'slate';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MediaItemRequest } from 'components/activities/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
@@ -6,8 +8,6 @@ import { NormalizerContext } from 'components/editing/editor/normalizers/normali
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 import { ProjectSlug } from 'data/types';
-import React from 'react';
-import { Descendant, Operation, Editor as SlateEditor } from 'slate';
 import { classNames } from 'utils/classNames';
 
 type Props = {

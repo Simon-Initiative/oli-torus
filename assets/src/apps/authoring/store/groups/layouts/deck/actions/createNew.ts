@@ -1,10 +1,10 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 import {
   DeckLayoutGroup,
   LayoutType,
   upsertGroup,
 } from '../../../../../../delivery/store/features/groups/slice';
-import { createAsyncThunk } from '@reduxjs/toolkit';
 
 export const createNew = createAsyncThunk(
   `${GroupsSlice}/layouts/deck/createNew`,

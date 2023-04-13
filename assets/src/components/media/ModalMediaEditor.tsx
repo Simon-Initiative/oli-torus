@@ -1,5 +1,5 @@
-import { Modal, ModalSize } from 'components/modal/Modal';
 import * as React from 'react';
+import { Modal, ModalSize } from 'components/modal/Modal';
 
 // eslint-disable-next-line
 interface ModalMediaEditor {}

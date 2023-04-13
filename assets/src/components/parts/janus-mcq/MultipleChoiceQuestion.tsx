@@ -1,4 +1,6 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { shuffle } from 'lodash';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -11,8 +13,6 @@ import { PartComponentProps } from '../types/parts';
 import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
 import { getNodeText } from './mcq-util';
 import { McqItem, McqModel } from './schema';
-import { shuffle } from 'lodash';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 
 const MCQItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
   return (

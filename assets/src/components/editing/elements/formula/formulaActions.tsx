@@ -1,7 +1,7 @@
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Transforms } from 'slate';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { Model } from 'data/content/model/elements/factories';
 
 export const insertFormula = createButtonCommandDesc({
   icon: <i className="fa-solid fa-square-root-variable"></i>,

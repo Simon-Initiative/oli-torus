@@ -1,3 +1,4 @@
+import React from 'react';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 import { ImagePlaceholder } from 'components/editing/elements/image/block/ImagePlaceholder';
@@ -7,7 +8,6 @@ import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Resizable } from 'components/misc/resizable/Resizable';
 import * as ContentModel from 'data/content/model/elements/types';
 import { useElementSelected } from 'data/content/utils';
-import React from 'react';
 
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
 

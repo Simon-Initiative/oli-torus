@@ -1,6 +1,3 @@
-import { VideoPlayer } from '../components/video_player/VideoPlayer';
-import { References } from './bibliography/References';
-import { registerApplication } from 'apps/app';
 import { Navbar } from 'components/common/Navbar';
 import { UserAccountMenu } from 'components/common/UserAccountMenu';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
@@ -10,7 +7,10 @@ import { AttemptSelector } from 'components/misc/AttemptSelector';
 import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import { PaginationControls } from 'components/misc/PaginationControls';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { registerApplication } from 'apps/app';
 import { globalStore } from 'state/store';
+import { VideoPlayer } from '../components/video_player/VideoPlayer';
+import { References } from './bibliography/References';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);

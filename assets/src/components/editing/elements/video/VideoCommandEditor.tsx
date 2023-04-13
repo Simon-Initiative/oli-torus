@@ -1,5 +1,5 @@
-import { MessageEditorComponent } from '../command_button/commandButtonTypes';
 import React, { useEffect, useMemo } from 'react';
+import { MessageEditorComponent } from '../command_button/commandButtonTypes';
 
 const startEndCueRegex = /startcuepoint=([0-9]+).([0-9]+);endcuepoint=([0-9]+).([0-9]+)/;
 const startCueRegex = /startcuepoint=([0-9]+).([0-9]+)/;

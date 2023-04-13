@@ -1,13 +1,13 @@
-import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
+import React from 'react';
+import { Accordion, ListGroup } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import {
   SequenceEntryChild,
   SequenceEntryType,
   SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import React from 'react';
-import { Accordion, ListGroup } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
 
 interface SeqDropdownProps {
   items: SequenceHierarchyItem<SequenceEntryChild>[];

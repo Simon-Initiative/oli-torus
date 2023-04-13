@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -8,7 +9,6 @@ import { contexts } from '../../../types/applicationContext';
 import { parseBoolean } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { NavButtonModel } from './schema';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 
 const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

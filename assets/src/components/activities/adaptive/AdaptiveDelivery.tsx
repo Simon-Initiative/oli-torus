@@ -1,3 +1,8 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { EventEmitter } from 'events';
+import { Environment } from 'janus-script';
+import { evalAssignScript, getEnvState, getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import {
   NotificationContext,
   NotificationType,
@@ -8,11 +13,6 @@ import * as ActivityTypes from '../types';
 import { StudentResponse } from '../types';
 import PartsLayoutRenderer from './components/delivery/PartsLayoutRenderer';
 import { AdaptiveModelSchema } from './schema';
-import { evalAssignScript, getEnvState, getLocalizedStateSnapshot } from 'adaptivity/scripting';
-import { EventEmitter } from 'events';
-import { Environment } from 'janus-script';
-import React, { useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 
 // eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;

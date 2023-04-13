@@ -1,9 +1,9 @@
-import { ObjectivesSelection } from '../../../../../components/resource/objectives/ObjectivesSelection';
-import { ObjectivesMap, selectProjectSlug } from '../../../store/app/slice';
-import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 import React from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { ObjectivesSelection } from '../../../../../components/resource/objectives/ObjectivesSelection';
+import { ObjectivesMap, selectProjectSlug } from '../../../store/app/slice';
+import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 
 interface LearningModalObjectiveProps {
   readonly: boolean;

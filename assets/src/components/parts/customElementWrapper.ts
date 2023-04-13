@@ -20,9 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 // tslint:disable: max-classes-per-file
-import EventEmitter from 'events';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import EventEmitter from 'events';
 
 function toCamelCase(str: string) {
   return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''));

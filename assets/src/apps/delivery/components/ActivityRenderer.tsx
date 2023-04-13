@@ -1,3 +1,26 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Environment } from 'janus-script';
+import {
+  EvaluationResponse,
+  PartActivityResponse,
+  RequestHintResponse,
+  ResetActivityResponse,
+} from 'components/activities/DeliveryElement';
+import {
+  ActivityModelSchema,
+  ActivityState,
+  ClientEvaluation,
+  PartResponse,
+  PartState,
+  StudentResponse,
+  Success,
+  makeFeedback,
+} from 'components/activities/types';
+import { CapiVariableTypes } from 'adaptivity/capi';
+import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
+import * as Extrinsic from 'data/persistence/extrinsic';
+import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
 import { handleValueExpression } from '../layouts/deck/DeckLayoutFooter';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
@@ -18,29 +41,6 @@ import {
   selectUserId,
 } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
-import { CapiVariableTypes } from 'adaptivity/capi';
-import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
-import {
-  EvaluationResponse,
-  PartActivityResponse,
-  RequestHintResponse,
-  ResetActivityResponse,
-} from 'components/activities/DeliveryElement';
-import {
-  ActivityModelSchema,
-  ActivityState,
-  ClientEvaluation,
-  PartResponse,
-  PartState,
-  StudentResponse,
-  Success,
-  makeFeedback,
-} from 'components/activities/types';
-import * as Extrinsic from 'data/persistence/extrinsic';
-import { Environment } from 'janus-script';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { clone } from 'utils/common';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;

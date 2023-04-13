@@ -1,5 +1,5 @@
-import { Tooltip } from 'components/common/Tooltip';
 import React from 'react';
+import { Tooltip } from 'components/common/Tooltip';
 
 export type DeleteBibEntryProps = {
   onDelete: () => void;

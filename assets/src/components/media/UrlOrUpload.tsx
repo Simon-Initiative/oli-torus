@@ -1,8 +1,8 @@
-import { ErrorBoundary } from '../common/ErrorBoundary';
-import { MediaManager, SELECTION_TYPES } from './manager/MediaManager.controller';
 import React, { useCallback, useState } from 'react';
 import { MediaItem } from 'types/media';
 import { classNames } from 'utils/classNames';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+import { MediaManager, SELECTION_TYPES } from './manager/MediaManager.controller';
 
 type Source = 'library' | 'url';
 

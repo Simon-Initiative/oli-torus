@@ -1,3 +1,14 @@
+import React from 'react';
+import * as Immutable from 'immutable';
+import { EditorUpdate } from 'components/activity/InlineActivityEditor';
+import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { Undoable } from 'apps/page-editor/types';
+import { FeatureFlags } from 'apps/page-editor/types';
+import { ActivityEditContext } from 'data/content/activity';
+import { ActivityEditorMap } from 'data/content/editors';
+import { Objective } from 'data/content/objective';
+import { ResourceContent, ResourceContext } from 'data/content/resource';
+import { Tag } from 'data/content/tags';
 import { ActivityEditor } from './ActivityEditor';
 import { AlternativesEditor } from './AlternativesEditor';
 import { ContentBreakEditor } from './ContentBreak';
@@ -5,17 +16,6 @@ import { ContentEditor } from './ContentEditor';
 import { PurposeGroupEditor } from './PurposeGroupEditor';
 import { SelectionEditor } from './SelectionEditor';
 import { SurveyEditor } from './SurveyEditor';
-import { Undoable } from 'apps/page-editor/types';
-import { FeatureFlags } from 'apps/page-editor/types';
-import { EditorUpdate } from 'components/activity/InlineActivityEditor';
-import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
-import { ActivityEditContext } from 'data/content/activity';
-import { ActivityEditorMap } from 'data/content/editors';
-import { Objective } from 'data/content/objective';
-import { ResourceContent, ResourceContext } from 'data/content/resource';
-import { Tag } from 'data/content/tags';
-import * as Immutable from 'immutable';
-import React from 'react';
 
 export type EditorProps = {
   resourceContext: ResourceContext;

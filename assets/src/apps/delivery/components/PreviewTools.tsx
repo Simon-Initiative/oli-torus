@@ -1,6 +1,8 @@
 /* eslint-disable no-prototype-builtins */
 
 /* eslint-disable react/prop-types */
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   ApplyStateOperation,
   applyState,
@@ -12,8 +14,6 @@ import { navigateToActivity } from '../store/features/groups/actions/deck';
 import Adaptivity from './preview-tools/Adaptivity';
 import Inspector from './preview-tools/Inspector';
 import ScreenSelector from './preview-tools/ScreenSelector';
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 // Title Component
 interface TitleProps {

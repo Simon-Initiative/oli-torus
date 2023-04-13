@@ -1,5 +1,3 @@
-import { DeliveryRootState } from '../../rootReducer';
-import AttemptSlice from './name';
 import {
   EntityAdapter,
   EntityState,
@@ -10,6 +8,8 @@ import {
   createSlice,
 } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
+import { DeliveryRootState } from '../../rootReducer';
+import AttemptSlice from './name';
 
 interface ExtrinsicState extends Record<string, unknown> {
   'session.attemptNumber': number;

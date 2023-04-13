@@ -1,11 +1,11 @@
+import * as React from 'react';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import { Break } from 'data/content/resource';
+import { classNames } from 'utils/classNames';
 import styles from './ContentBreak.modules.scss';
 import { OutlineItemProps } from './OutlineItem';
 import { DropTarget } from './dragndrop/DropTarget';
 import { scrollToResourceEditor } from './dragndrop/utils';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import { Break } from 'data/content/resource';
-import * as React from 'react';
-import { classNames } from 'utils/classNames';
 
 interface ContentBreakProps {
   editMode: boolean;

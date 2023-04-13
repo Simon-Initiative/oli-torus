@@ -1,3 +1,6 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import merge from 'lodash/merge';
+import { Created, create } from 'data/persistence/activity';
 import { selectState as selectPageState } from '../../../../authoring/store/page/slice';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import { createEndOfActivityPath } from '../../../components/Flowchart/paths/path-factories';
@@ -11,9 +14,6 @@ import {
 import { createActivityTemplate } from '../templates/activity';
 import { createSimpleText } from '../templates/simpleText';
 import { createCorrectRule, createIncorrectRule } from './rules';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { Created, create } from 'data/persistence/activity';
-import merge from 'lodash/merge';
 
 interface CreateNewPayload {
   activityTypeSlug?: string;

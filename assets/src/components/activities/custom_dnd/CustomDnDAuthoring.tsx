@@ -1,3 +1,10 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { Manifest } from 'components/activities/types';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { WrappedMonaco } from '../common/variables/WrappedMonaco';
@@ -6,13 +13,6 @@ import { HintsEditor } from './HintsEditor';
 import { PartManager } from './PartManager';
 import { CustomDnDActions } from './actions';
 import { CustomDnDSchema } from './schema';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { Manifest } from 'components/activities/types';
-import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
 
 const store = configureStore();
 

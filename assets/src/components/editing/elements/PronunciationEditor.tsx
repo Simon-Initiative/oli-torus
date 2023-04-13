@@ -1,10 +1,10 @@
+import React, { useCallback, useMemo } from 'react';
+import { v4 } from 'uuid';
 import { Model } from '../../../data/content/model/elements/factories';
 import { AudioSource, Pronunciation } from '../../../data/content/model/elements/types';
 import { CommandContext } from './commands/interfaces';
 import { AudioClipPicker } from './common/AudioClipPicker';
 import { InlineEditor } from './common/settings/InlineEditor';
-import React, { useCallback, useMemo } from 'react';
-import { v4 } from 'uuid';
 
 interface Props {
   pronunciation: Pronunciation;

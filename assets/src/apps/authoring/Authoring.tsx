@@ -1,3 +1,9 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Button } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { isFirefox } from 'utils/browser';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { initAppSignal } from '../../utils/appsignal';
 import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
@@ -32,12 +38,6 @@ import {
 } from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import { PageContext } from './types';
-import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { isFirefox } from 'utils/browser';
 
 export interface AuthoringProps {
   isAdmin: boolean;

@@ -1,10 +1,10 @@
 /* eslint-disable no-prototype-builtins */
 
 /* eslint-disable react/prop-types */
+import React, { useCallback, useState } from 'react';
 import { ApplyStateOperation } from '../../../../../adaptivity/scripting';
 import AutoDetectInput from './AutoDetectInput';
 import { hasNesting } from './utils';
-import React, { useCallback, useState } from 'react';
 
 interface NestedStateDisplayProps {
   rootLevel: any;

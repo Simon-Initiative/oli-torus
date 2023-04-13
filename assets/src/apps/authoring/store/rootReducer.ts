@@ -1,3 +1,4 @@
+import { combineReducers } from '@reduxjs/toolkit';
 import { media } from '../../../state/media';
 import { modal } from '../../../state/modal';
 import ActivitiesSlice from '../../delivery/store/features/activities/name';
@@ -16,7 +17,6 @@ import PageSlice from './page/name';
 import PageReducer from './page/slice';
 import PartsSlice from './parts/name';
 import PartsReducer from './parts/slice';
-import { combineReducers } from '@reduxjs/toolkit';
 
 const rootReducer = combineReducers({
   [AppSlice]: AppReducer,

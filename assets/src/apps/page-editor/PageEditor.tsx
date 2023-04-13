@@ -1,10 +1,8 @@
-import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
-import { PageEditorContent } from '../../data/editor/PageEditorContent';
-import { initAppSignal } from '../../utils/appsignal';
-import '../ResourceEditor.scss';
-import { registerUnload, unregisterUnload } from './listeners';
-import { FeatureFlags, PageUndoable, Undoables, empty } from './types';
+import React from 'react';
+import { connect } from 'react-redux';
 import Appsignal from '@appsignal/javascript';
+import * as Immutable from 'immutable';
+import { Dispatch, State } from 'state';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
 import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
@@ -40,13 +38,15 @@ import * as ActivityPersistence from 'data/persistence/activity';
 import { NotAcquired, acquireLock, releaseLock } from 'data/persistence/lock';
 import * as Persistence from 'data/persistence/resource';
 import { ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
-import * as Immutable from 'immutable';
-import React from 'react';
-import { connect } from 'react-redux';
-import { Dispatch, State } from 'state';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
+import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
+import { PageEditorContent } from '../../data/editor/PageEditorContent';
+import { initAppSignal } from '../../utils/appsignal';
+import '../ResourceEditor.scss';
+import { registerUnload, unregisterUnload } from './listeners';
+import { FeatureFlags, PageUndoable, Undoables, empty } from './types';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements

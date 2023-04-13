@@ -1,15 +1,15 @@
 import React, { ChangeEvent, ChangeEventHandler, useCallback, useState } from 'react';
 import { v4 } from 'uuid';
-import * as ContentModel from '../../../../data/content/model/elements/types';
-import { Modal, ModalSize } from '../../../modal/Modal';
+import { CommandButton } from 'data/content/model/elements/types';
+import { Modal, ModalSize } from 'components/modal/Modal';
 import { CommandContext } from '../commands/interfaces';
 import { CommandTarget } from './commandButtonTypes';
 import { CommandMessageEditor } from './CommandMessageEditor';
 import { useCommandInventory } from './useCommandInventory';
 
 interface Props {
-  model: ContentModel.CommandButton;
-  onEdit: (attrs: Partial<ContentModel.CommandButton>) => void;
+  model: CommandButton;
+  onEdit: (attrs: Partial<CommandButton>) => void;
   commandContext: CommandContext;
   onCancel: () => void;
   onDone: () => void;
@@ -21,7 +21,7 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
   onCancel,
   onDone,
 }) => {
-  const [workingCopy, setWorkingCopy] = useState<ContentModel.CommandButton>({ ...model });
+  const [workingCopy, setWorkingCopy] = useState<CommandButton>({ ...model });
   const onSubmit = useCallback(() => {
     onEdit(workingCopy);
     onDone();

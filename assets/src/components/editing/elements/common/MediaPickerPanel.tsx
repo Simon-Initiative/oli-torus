@@ -1,7 +1,7 @@
+import React, { useCallback, useState } from 'react';
 import { UrlOrUpload } from '../../../media/UrlOrUpload';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from '../../../media/manager/MediaManager';
 import { SlideOutPanel } from './SlideOutPanel';
-import React, { useCallback, useState } from 'react';
 
 export interface MediaInfo {
   url: string;

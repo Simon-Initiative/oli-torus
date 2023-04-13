@@ -1,3 +1,21 @@
+import React, { useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import * as Immutable from 'immutable';
+import { Maybe } from 'tsmonad';
+import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
+import { Radio } from 'components/misc/icons/radio/Radio';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { Choices } from 'data/activities/model/choices';
+import { getCorrectChoiceIds } from 'data/activities/model/responses';
+import { defaultWriterContext } from 'data/content/writers/context';
+import { configureStore } from 'state/store';
+import { clone } from 'utils/common';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { CATAActions } from '../check_all_that_apply/actions';
@@ -14,24 +32,6 @@ import { PolygonEditor } from './Sections/PolygonEditor';
 import { RectangleEditor } from './Sections/RectangleEditor';
 import { ImageHotspotActions } from './actions';
 import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
-import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
-import { Radio } from 'components/misc/icons/radio/Radio';
-import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { Choices } from 'data/activities/model/choices';
-import { getCorrectChoiceIds } from 'data/activities/model/responses';
-import { defaultWriterContext } from 'data/content/writers/context';
-import * as Immutable from 'immutable';
-import React, { useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import { Maybe } from 'tsmonad';
-import { clone } from 'utils/common';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
   const { dispatch, model, editMode, projectSlug, onRequestMedia } =

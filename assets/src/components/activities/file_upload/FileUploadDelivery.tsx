@@ -1,9 +1,8 @@
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { RemoveButton } from '../common/authoring/RemoveButton';
-import { castPartId } from '../common/utils';
-import { fileName, getReadableFileSizeString } from './utils';
-import { defaultMaxFileSize } from './utils';
+import React, { useEffect, useMemo, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { Dispatch } from '@reduxjs/toolkit';
+import { maybe } from 'tsmonad';
 import {
   DeliveryElement,
   DeliveryElementProps,
@@ -38,11 +37,12 @@ import {
 import { safelySelectFiles } from 'data/activities/utils';
 import * as Events from 'data/events';
 import { uploadActivityFile } from 'data/persistence/state/intrinsic';
-import React, { useEffect, useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import { maybe } from 'tsmonad';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { RemoveButton } from '../common/authoring/RemoveButton';
+import { castPartId } from '../common/utils';
+import { fileName, getReadableFileSizeString } from './utils';
+import { defaultMaxFileSize } from './utils';
 
 function onUploadClick(id: string) {
   (window as any).$('#' + id).trigger('click');

@@ -1,12 +1,12 @@
+import React from 'react';
+import { Editor } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { WrappedMonaco } from 'components/activities/common/variables/WrappedMonaco';
 import { VlabActions } from 'components/activities/vlab/actions';
 import { VlabSchema } from 'components/activities/vlab/schema';
 import { Card } from 'components/misc/Card';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import React from 'react';
-import { Editor } from 'slate';
-import { ReactEditor } from 'slate-react';
 
 interface Props {
   editor: ReactEditor & Editor;

@@ -1,5 +1,5 @@
-import { makeRequest } from './common';
 import { ProjectSlug } from 'data/types';
+import { makeRequest } from './common';
 
 export type Created = {
   result: 'success';

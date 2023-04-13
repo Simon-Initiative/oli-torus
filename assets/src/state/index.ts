@@ -1,6 +1,6 @@
-import { MediaActions } from 'actions/media';
 import { combineReducers } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { MediaActions } from 'actions/media';
 import { MediaState, initMediaState, media } from 'state/media';
 import { ModalActions, ModalState, initModalState, modal } from 'state/modal';
 import { OtherAction } from 'state/other';

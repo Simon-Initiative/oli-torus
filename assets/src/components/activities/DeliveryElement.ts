@@ -1,3 +1,5 @@
+import { EventEmitter } from 'events';
+import { valueOr } from 'utils/common';
 import {
   Action,
   ActivityModelSchema,
@@ -10,8 +12,6 @@ import {
   StudentResponse,
   Success,
 } from './types';
-import { EventEmitter } from 'events';
-import { valueOr } from 'utils/common';
 
 /**
  * Response to a submitted activity evaluation.

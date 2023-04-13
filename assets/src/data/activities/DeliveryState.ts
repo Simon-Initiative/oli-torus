@@ -1,4 +1,6 @@
 import { AnyAction, Dispatch, PayloadAction, ThunkAction, createSlice } from '@reduxjs/toolkit';
+import { WritableDraft } from 'immer/dist/internal';
+import { Maybe } from 'tsmonad';
 import {
   ActivityContext,
   EvaluationResponse,
@@ -23,8 +25,6 @@ import { studentInputToString } from 'data/activities/utils';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import * as Events from 'data/events';
 import { updatePaginationState } from 'data/persistence/pagination';
-import { WritableDraft } from 'immer/dist/internal';
-import { Maybe } from 'tsmonad';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,

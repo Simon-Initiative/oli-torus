@@ -1,7 +1,7 @@
-import { OverlayPlacements, VariablePicker } from '../../AdaptivityEditor/VariablePicker';
-import { SolutionProps } from './SolutionProps';
 import React, { useRef, useState } from 'react';
 import guid from 'utils/guid';
+import { OverlayPlacements, VariablePicker } from '../../AdaptivityEditor/VariablePicker';
+import { SolutionProps } from './SolutionProps';
 
 export const FixTargetButton: React.FC<SolutionProps> = ({
   suggestion,

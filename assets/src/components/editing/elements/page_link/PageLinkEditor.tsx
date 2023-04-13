@@ -1,17 +1,17 @@
-import styles from './PageLink.modules.scss';
-import { modalActions } from 'actions/modal';
+import React, { useState } from 'react';
+import { Maybe, maybe } from 'tsmonad';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { Purpose } from 'components/content/Purpose';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import { SelectModal } from 'components/modal/SelectModal';
+import { modalActions } from 'actions/modal';
 import * as ContentModel from 'data/content/model/elements/types';
 import { PurposeTypes } from 'data/content/resource';
 import { useElementSelected } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
-import React, { useState } from 'react';
-import { Maybe, maybe } from 'tsmonad';
 import { classNames } from 'utils/classNames';
+import styles from './PageLink.modules.scss';
 
 export interface Props extends EditorProps<ContentModel.PageLink> {}
 export const PageLinkEditor = ({ model, commandContext, attributes, children }: Props) => {

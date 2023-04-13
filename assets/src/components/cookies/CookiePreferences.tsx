@@ -1,7 +1,7 @@
-import { consentOptions, setCookies } from 'components/cookies/utils';
-import { Modal } from 'components/modal/Modal';
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { consentOptions, setCookies } from 'components/cookies/utils';
+import { Modal } from 'components/modal/Modal';
 
 const userOptions = consentOptions();
 

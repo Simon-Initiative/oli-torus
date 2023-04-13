@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -10,7 +11,6 @@ import { RichText } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import { getTargetedResponseMappings } from 'data/activities/model/responses';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
 
 export const TargetedFeedback: React.FC = () => {
   const { model, dispatch, authoringContext, editMode, projectSlug } =

@@ -1,5 +1,5 @@
-import { PersistenceState } from 'data/persistence/PersistenceStrategy';
 import React, { useState } from 'react';
+import { PersistenceState } from 'data/persistence/PersistenceStrategy';
 
 // Displays a label indicating persistence state to
 // the end user.  Nothing is displayed until an edit

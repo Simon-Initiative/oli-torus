@@ -1,3 +1,4 @@
+import LiveReact from 'phoenix_live_react';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { CopyListener } from './copy_listener';
@@ -17,7 +18,6 @@ import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { TooltipInit } from './tooltip';
-import LiveReact from 'phoenix_live_react';
 
 export const Hooks = {
   GraphNavigation,

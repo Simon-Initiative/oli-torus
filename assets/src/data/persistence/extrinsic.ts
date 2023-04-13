@@ -1,6 +1,6 @@
-import { makeRequest } from './common';
 import { SectionSlug } from 'data/types';
 import { batchedBuffer } from 'utils/common';
+import { makeRequest } from './common';
 
 // eslint-disable-next-line
 export type ExtrinsicRead = Object;

@@ -1,3 +1,4 @@
+import { Maybe } from 'tsmonad';
 import {
   ActivityModelSchema,
   ActivityState,
@@ -6,7 +7,6 @@ import {
   PartState,
 } from 'components/activities/types';
 import { PartInputs, StudentInput } from 'data/activities/DeliveryState';
-import { Maybe } from 'tsmonad';
 import { removeEmpty } from 'utils/common';
 import guid from 'utils/guid';
 

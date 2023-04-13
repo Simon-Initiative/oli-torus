@@ -1,15 +1,5 @@
-import { Model } from '../../../../data/content/model/elements/factories';
-import { Conjugation, TableRow } from '../../../../data/content/model/elements/types';
-import { installNormalizer } from '../../editor/normalizers/normalizer';
-import { withInlines } from '../../editor/overrides/inlines';
-import { withMarkdown } from '../../editor/overrides/markdown';
-import { withTables } from '../../editor/overrides/tables';
-import { withVoids } from '../../editor/overrides/voids';
-import { PronunciationEditor } from '../PronunciationEditor';
-import { CommandContext } from '../commands/interfaces';
-import { InlineEditor } from '../common/settings/InlineEditor';
-import { convertLatexToSpeakableText } from 'mathlive';
 import React, { ChangeEvent, useCallback, useMemo } from 'react';
+import { convertLatexToSpeakableText } from 'mathlive';
 import {
   Descendant,
   Editor,
@@ -20,6 +10,16 @@ import {
 } from 'slate';
 import { withHistory } from 'slate-history';
 import { ReactEditor, withReact } from 'slate-react';
+import { Model } from '../../../../data/content/model/elements/factories';
+import { Conjugation, TableRow } from '../../../../data/content/model/elements/types';
+import { installNormalizer } from '../../editor/normalizers/normalizer';
+import { withInlines } from '../../editor/overrides/inlines';
+import { withMarkdown } from '../../editor/overrides/markdown';
+import { withTables } from '../../editor/overrides/tables';
+import { withVoids } from '../../editor/overrides/voids';
+import { PronunciationEditor } from '../PronunciationEditor';
+import { CommandContext } from '../commands/interfaces';
+import { InlineEditor } from '../common/settings/InlineEditor';
 
 interface Props {
   model: Conjugation;

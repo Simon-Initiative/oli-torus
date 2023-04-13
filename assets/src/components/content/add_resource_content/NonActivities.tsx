@@ -1,9 +1,9 @@
-import { ResourceChoice } from './ResourceChoice';
-import { modalActions } from 'actions/modal';
-import { FeatureFlags } from 'apps/page-editor/types';
+import React from 'react';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
+import { modalActions } from 'actions/modal';
+import { FeatureFlags } from 'apps/page-editor/types';
 import {
   ResourceContext,
   createAlternatives,
@@ -17,7 +17,7 @@ import {
   createSurvey,
 } from 'data/content/resource';
 import * as Persistence from 'data/persistence/resource';
-import React from 'react';
+import { ResourceChoice } from './ResourceChoice';
 
 interface Props {
   index: number[];

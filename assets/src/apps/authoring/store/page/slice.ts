@@ -1,7 +1,7 @@
-import { AuthoringRootState } from '../rootReducer';
-import PageSlice from './name';
 import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
 import { ResourceId } from 'data/types';
+import { AuthoringRootState } from '../rootReducer';
+import PageSlice from './name';
 
 export interface PageState {
   graded: boolean;

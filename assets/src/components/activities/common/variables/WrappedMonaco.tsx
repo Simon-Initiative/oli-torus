@@ -1,8 +1,8 @@
+import React, { PropsWithChildren, Suspense, useEffect, useRef, useState } from 'react';
 import { RefEditorInstance } from '@uiw/react-monacoeditor';
-import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import { throttle } from 'lodash';
 import * as monaco from 'monaco-editor';
-import React, { PropsWithChildren, Suspense, useEffect, useRef, useState } from 'react';
+import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import { addDarkModeListener, isDarkMode, removeDarkModeListener } from 'utils/browser';
 
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));

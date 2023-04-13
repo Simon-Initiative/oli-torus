@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+import { Maybe } from 'tsmonad';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 import { Modal, ModalSize } from 'components/modal/Modal';
@@ -9,8 +11,6 @@ import {
   toInternalLink,
 } from 'data/content/model/elements/utils';
 import * as Persistence from 'data/persistence/resource';
-import React, { useState } from 'react';
-import { Maybe } from 'tsmonad';
 
 interface ModalProps {
   onDone: (x: any) => void;

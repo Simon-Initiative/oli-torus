@@ -1,3 +1,17 @@
+import { Environment } from 'janus-script';
+import {
+  AllConditions,
+  AnyConditions,
+  ConditionProperties,
+  Engine,
+  EngineResult,
+  Event,
+  NestedCondition,
+  RuleProperties,
+  TopLevelCondition,
+} from 'json-rules-engine';
+import { parseArray } from 'utils/common';
+import { b64EncodeUnicode } from 'utils/decode';
 import { CapiVariableTypes, JanusConditionProperties } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
@@ -13,20 +27,6 @@ import {
   getExpressionStringForValue,
   getValue,
 } from './scripting';
-import { Environment } from 'janus-script';
-import {
-  AllConditions,
-  AnyConditions,
-  ConditionProperties,
-  Engine,
-  EngineResult,
-  Event,
-  NestedCondition,
-  RuleProperties,
-  TopLevelCondition,
-} from 'json-rules-engine';
-import { parseArray } from 'utils/common';
-import { b64EncodeUnicode } from 'utils/decode';
 
 export interface JanusRuleProperties extends RuleProperties {
   id?: string;

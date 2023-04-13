@@ -1,14 +1,3 @@
-import {
-  Choice,
-  ChoiceId,
-  ChoiceIdsToResponseId,
-  Part,
-  PostUndoable,
-  ResponseId,
-  makeResponse,
-  makeUndoable,
-} from '../types';
-import { CATASchema as CATA } from './schema';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { addOrRemove, remove } from 'components/activities/common/utils';
 import { Choices } from 'data/activities/model/choices';
@@ -22,6 +11,17 @@ import {
 import { matchListRule } from 'data/activities/model/rules';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
+import {
+  Choice,
+  ChoiceId,
+  ChoiceIdsToResponseId,
+  Part,
+  PostUndoable,
+  ResponseId,
+  makeResponse,
+  makeUndoable,
+} from '../types';
+import { CATASchema as CATA } from './schema';
 
 // interface to use actions with other activity's models (ImageHotspot)
 export interface CATACompatible {

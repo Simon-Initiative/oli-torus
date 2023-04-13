@@ -1,3 +1,4 @@
+import { Maybe } from 'tsmonad';
 import { OrderingSchemaV1 as V1 } from 'components/activities/ordering/transformations/v1';
 import {
   ActivityModelSchema,
@@ -17,7 +18,6 @@ import {
   getTargetedResponses,
 } from 'data/activities/model/responses';
 import { matchInOrderRule, matchRule } from 'data/activities/model/rules';
-import { Maybe } from 'tsmonad';
 
 export interface OrderingSchemaV2 extends ActivityModelSchema {
   stem: Stem;

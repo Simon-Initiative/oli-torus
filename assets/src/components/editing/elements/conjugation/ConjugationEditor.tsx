@@ -1,3 +1,7 @@
+import React, { useCallback } from 'react';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import { useEditModelCallback } from 'components/editing/elements/utils';
+import * as ContentModel from 'data/content/model/elements/types';
 import { useElementSelected } from '../../../../data/content/utils';
 import { WriterContext, defaultWriterContext } from '../../../../data/content/writers/context';
 import { HtmlParser } from '../../../../data/content/writers/html';
@@ -6,10 +10,6 @@ import { Conjugation } from '../../../common/Conjugation';
 import { HoverContainer } from '../../toolbar/HoverContainer';
 import { ConjugationInlineEditor } from './ConjugationInlineEditor';
 import { ConjugationSettings } from './ConjugationToolbar';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
-import React, { useCallback } from 'react';
 
 interface Props extends EditorProps<ContentModel.Conjugation> {}
 export const ConjugationEditor: React.FC<Props> = ({

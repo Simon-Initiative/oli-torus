@@ -1,6 +1,6 @@
-import * as Immutable from 'immutable';
 import React, { useState } from 'react';
 import { Typeahead } from 'react-bootstrap-typeahead';
+import * as Immutable from 'immutable';
 import guid from 'utils/guid';
 
 export type ActivityType = {

@@ -1,5 +1,3 @@
-import { bulkSaveActivity } from '../../activities/actions/saveActivity';
-import { PartsSlice } from '../name';
 import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 import { selectActivityById } from 'apps/delivery/store/features/activities/slice';
 import {
@@ -9,6 +7,8 @@ import {
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { clone } from 'utils/common';
+import { bulkSaveActivity } from '../../activities/actions/saveActivity';
+import { PartsSlice } from '../name';
 
 export const addPart = createAsyncThunk(
   `${PartsSlice}/addPart`,

@@ -1,8 +1,8 @@
-import { selectCurrentActivityTree } from '../../groups/selectors/deck';
-import AdaptivitySlice from '../name';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
+import { selectCurrentActivityTree } from '../../groups/selectors/deck';
+import AdaptivitySlice from '../name';
 
 export const getLocalizedCurrentStateSnapshot = createAsyncThunk(
   `${AdaptivitySlice}/getLocalizedCurrentStateSnapshot`,

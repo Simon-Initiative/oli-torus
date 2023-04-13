@@ -1,3 +1,4 @@
+import { Maybe } from 'tsmonad';
 import { MCSchema } from 'components/activities/multiple_choice/schema';
 import {
   Choice,
@@ -11,7 +12,6 @@ import {
 } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import { Responses, getCorrectResponse } from 'data/activities/model/responses';
-import { Maybe } from 'tsmonad';
 
 export const defaultMCModel: () => MCSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');

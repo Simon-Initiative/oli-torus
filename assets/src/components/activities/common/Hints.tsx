@@ -1,11 +1,11 @@
-import { Hint } from '../types';
+import React from 'react';
+import { Descendant } from 'slate';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Description } from 'components/misc/Description';
 import { Heading } from 'components/misc/Heading';
 import { ProjectSlug } from 'data/types';
-import React from 'react';
-import { Descendant } from 'slate';
+import { Hint } from '../types';
 
 interface HintsProps {
   onaddCognitiveHint: () => void;

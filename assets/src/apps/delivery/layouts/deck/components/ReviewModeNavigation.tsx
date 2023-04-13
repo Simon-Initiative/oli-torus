@@ -1,4 +1,6 @@
 /* eslint-disable react/prop-types */
+import React, { Fragment } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
@@ -6,8 +8,6 @@ import { navigateToActivity } from '../../../store/features/groups/actions/deck'
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
 import { selectShowHistory, setShowHistory } from '../../../store/features/page/slice';
 import ReviewModeHistoryPanel from './ReviewModeHistoryPanel';
-import React, { Fragment } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 export interface ReviewEntry {
   id: string;

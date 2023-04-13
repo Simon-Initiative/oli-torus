@@ -1,9 +1,6 @@
-import { setCurrentRule } from '../../store/app/slice';
-import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
-import DiagnosticMessage from './diagnostics/DiagnosticMessage';
-import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
-import { DiagnosticRuleTypes, DiagnosticTypes } from './diagnostics/DiagnosticTypes';
-import { createUpdater } from './diagnostics/actions';
+import React, { Fragment, useEffect, useState } from 'react';
+import { Badge, ListGroup, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   selectReadOnly,
   selectShowDiagnosticsWindow,
@@ -17,9 +14,12 @@ import {
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { IAdaptiveRule, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import React, { Fragment, useEffect, useState } from 'react';
-import { Badge, ListGroup, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentRule } from '../../store/app/slice';
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
+import DiagnosticMessage from './diagnostics/DiagnosticMessage';
+import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
+import { DiagnosticRuleTypes, DiagnosticTypes } from './diagnostics/DiagnosticTypes';
+import { createUpdater } from './diagnostics/actions';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,

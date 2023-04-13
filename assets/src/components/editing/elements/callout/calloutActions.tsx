@@ -1,8 +1,8 @@
-import { Model } from '../../../../data/content/model/elements/factories';
-import { insideSemanticElement } from '../utils';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import React from 'react';
 import { Transforms } from 'slate';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { Model } from '../../../../data/content/model/elements/factories';
+import { insideSemanticElement } from '../utils';
 
 export const insertCallout = createButtonCommandDesc({
   icon: <i className="fa-solid fa-bullhorn"></i>,

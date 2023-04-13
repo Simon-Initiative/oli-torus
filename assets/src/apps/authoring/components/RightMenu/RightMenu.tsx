@@ -1,4 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import React, { useCallback, useMemo } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { UiSchema } from '@rjsf/core';
+import { JSONSchema7 } from 'json-schema';
+import { clone } from 'utils/common';
 import {
   selectAppMode,
   selectRightPanelActiveTab,
@@ -47,12 +53,6 @@ import screenSchema, {
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
 import { PartPropertyEditor } from './PartPropertyEditor';
-import { UiSchema } from '@rjsf/core';
-import { JSONSchema7 } from 'json-schema';
-import React, { useCallback, useMemo } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',

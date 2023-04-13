@@ -1,5 +1,4 @@
-import { RESPONSES_PATH } from '../../../data/activities/model/responses';
-import { OrderingSchema as Ordering } from './schema';
+import jp from 'jsonpath';
 import { remove } from 'components/activities/common/utils';
 import {
   Choice,
@@ -20,9 +19,10 @@ import {
   getResponses,
 } from 'data/activities/model/responses';
 import { matchInOrderRule } from 'data/activities/model/rules';
-import jp from 'jsonpath';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
+import { RESPONSES_PATH } from '../../../data/activities/model/responses';
+import { OrderingSchema as Ordering } from './schema';
 
 export class Actions {
   static addChoice(choice: Choice) {

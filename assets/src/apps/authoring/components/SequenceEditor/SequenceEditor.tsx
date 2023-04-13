@@ -1,3 +1,9 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import { clone } from 'utils/common';
+import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
@@ -33,12 +39,6 @@ import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
-import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
-import guid from 'utils/guid';
 
 const SequenceEditor: React.FC = () => {
   const dispatch = useDispatch();

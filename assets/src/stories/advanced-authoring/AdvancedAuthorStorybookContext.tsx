@@ -1,9 +1,9 @@
-import { ModalContainer } from '../../apps/authoring/components/AdvancedAuthoringModal';
-import adaptiveStore from '../../apps/authoring/store/storybook';
 import React from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Provider } from 'react-redux';
+import { ModalContainer } from '../../apps/authoring/components/AdvancedAuthoringModal';
+import adaptiveStore from '../../apps/authoring/store/storybook';
 
 export const AdvancedAuthorStorybookContext: React.FC<{ className: string }> = ({
   children,

@@ -1,5 +1,5 @@
-import { Icon } from '../../../../components/misc/Icon';
 import React from 'react';
+import { Icon } from '../../../../components/misc/Icon';
 
 interface Props {
   onAddNewScreen?: () => void;

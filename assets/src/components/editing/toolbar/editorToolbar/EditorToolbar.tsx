@@ -1,3 +1,6 @@
+import React from 'react';
+import { Editor, Element } from 'slate';
+import { ReactEditor, useSlate } from 'slate-react';
 import {
   CommandContext,
   CommandDescription,
@@ -9,9 +12,6 @@ import { Inlines } from 'components/editing/toolbar/editorToolbar/Inlines';
 import { BlockInsertMenu } from 'components/editing/toolbar/editorToolbar/blocks/BlockInsertMenu';
 import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/BlockSettings';
 import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
-import React from 'react';
-import { Editor, Element } from 'slate';
-import { ReactEditor, useSlate } from 'slate-react';
 
 interface Props {
   context: CommandContext;

@@ -1,8 +1,6 @@
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { castPartId } from '../common/utils';
-import * as ActivityTypes from '../types';
-import { OrderingSchema } from './schema';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
@@ -23,10 +21,12 @@ import {
 } from 'data/activities/DeliveryState';
 import { Choices } from 'data/activities/model/choices';
 import { initialPartInputs, studentInputToString } from 'data/activities/utils';
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { castPartId } from '../common/utils';
+import * as ActivityTypes from '../types';
+import { OrderingSchema } from './schema';
 
 export const OrderingComponent: React.FC = () => {
   const {

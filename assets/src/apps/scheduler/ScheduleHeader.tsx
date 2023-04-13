@@ -1,5 +1,5 @@
-import { DayGeometry, weekGeometry } from './date-utils';
 import React from 'react';
+import { DayGeometry, weekGeometry } from './date-utils';
 
 interface ScheduleHeaderRowProps {
   labels: boolean;

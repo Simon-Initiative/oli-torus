@@ -1,4 +1,6 @@
-import { defaultDeliveryElementProps } from '../utils/activity_mocks';
+import React from 'react';
+import { act } from 'react-dom/test-utils';
+import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
@@ -7,10 +9,8 @@ import { defaultCATAModel } from 'components/activities/check_all_that_apply/uti
 import { makeHint } from 'components/activities/types';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { defaultActivityState } from 'data/activities/utils';
-import React from 'react';
-import { act } from 'react-dom/test-utils';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
+import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 
 describe('check all that apply delivery', () => {
   it('renders ungraded correctly', async () => {

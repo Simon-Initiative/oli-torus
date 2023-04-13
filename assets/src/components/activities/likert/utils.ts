@@ -1,7 +1,7 @@
+import { Maybe } from 'tsmonad';
+import { Responses } from 'data/activities/model/responses';
 import { makeHint, makePart, makeStem } from '../types';
 import { LikertChoice, LikertModelSchema, makeLikertChoice, makeLikertItem } from './schema';
-import { Responses } from 'data/activities/model/responses';
-import { Maybe } from 'tsmonad';
 
 export const defaultLikertModel: () => LikertModelSchema = () => {
   const choiceA: LikertChoice = makeLikertChoice('Agree');

@@ -1,13 +1,13 @@
+import React, { useCallback } from 'react';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import { useEditModelCallback } from 'components/editing/elements/utils';
+import * as ContentModel from 'data/content/model/elements/types';
 import { useElementSelected } from '../../../../data/content/utils';
 import { WriterContext, defaultWriterContext } from '../../../../data/content/writers/context';
 import { Dialog } from '../../../Dialog';
 import { HoverContainer } from '../../toolbar/HoverContainer';
 import { DialogInlineEditor } from './DialogInlineEditor';
 import { DialogSettings } from './DialogToolbar';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
-import React, { useCallback } from 'react';
 
 interface Props extends EditorProps<ContentModel.Dialog> {}
 export const DialogEditor: React.FC<Props> = ({ model, attributes, children, commandContext }) => {

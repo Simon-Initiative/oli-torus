@@ -1,11 +1,11 @@
+import React, { FocusEventHandler, useCallback, useState } from 'react';
+import { useSelected } from 'slate-react';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { Model } from '../../../../data/content/model/elements/factories';
 import * as ContentModel from '../../../../data/content/model/elements/types';
 import { CommandContext } from '../commands/interfaces';
 import { InlineEditor } from '../common/settings/InlineEditor';
 import { useEditModelCallback } from '../utils';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import React, { FocusEventHandler, useCallback, useState } from 'react';
-import { useSelected } from 'slate-react';
 
 type TitleType = ContentModel.Inline | ContentModel.TextBlock;
 

@@ -1,3 +1,4 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import { clone } from '../../../../../utils/common';
 import {
   selectAllActivities,
@@ -17,7 +18,6 @@ import { savePage } from '../../../store/page/actions/savePage';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { createExitPath } from '../paths/path-factories';
 import { addFlowchartScreen } from './add-screen';
-import { createAsyncThunk } from '@reduxjs/toolkit';
 
 interface VerifyFlowchartLessonPayload {}
 

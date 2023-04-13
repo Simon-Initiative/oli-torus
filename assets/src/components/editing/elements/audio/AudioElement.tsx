@@ -1,11 +1,11 @@
-import { HoverContainer } from '../../toolbar/HoverContainer';
-import { AudioToolbar } from './AudioSettings';
+import React from 'react';
+import { useSlate } from 'slate-react';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { updateModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import { useSlate } from 'slate-react';
+import { HoverContainer } from '../../toolbar/HoverContainer';
+import { AudioToolbar } from './AudioSettings';
 
 export interface AudioProps extends EditorProps<ContentModel.Audio> {}
 

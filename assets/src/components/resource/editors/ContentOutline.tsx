@@ -1,3 +1,20 @@
+import React, { useEffect, useState } from 'react';
+import * as Immutable from 'immutable';
+import isHotkey from 'is-hotkey';
+import { throttle } from 'lodash';
+import { ActivityEditContext } from 'data/content/activity';
+import { ActivityEditorMap } from 'data/content/editors';
+import {
+  ActivityReference,
+  ResourceContent,
+  ResourceGroup,
+  canInsert,
+} from 'data/content/resource';
+import { PageEditorContent } from 'data/editor/PageEditorContent';
+import { ProjectSlug } from 'data/types';
+import { getViewportHeight } from 'utils/browser';
+import { ClassName, classNames } from 'utils/classNames';
+import { useStateFromLocalStorage } from 'utils/useStateFromLocalStorage';
 import { SelectionOutlineItem } from './ActivityBankSelectionEditor';
 import { ActivityEditorContentOutlineItem } from './ActivityEditor';
 import { AlternativeOutlineItem, AlternativesOutlineItem } from './AlternativesEditor';
@@ -14,23 +31,6 @@ import { dropHandler } from './dragndrop/handlers/drop';
 import { focusHandler } from './dragndrop/handlers/focus';
 import { moveHandler } from './dragndrop/handlers/move';
 import { getDragPayload } from './dragndrop/utils';
-import { ActivityEditContext } from 'data/content/activity';
-import { ActivityEditorMap } from 'data/content/editors';
-import {
-  ActivityReference,
-  ResourceContent,
-  ResourceGroup,
-  canInsert,
-} from 'data/content/resource';
-import { PageEditorContent } from 'data/editor/PageEditorContent';
-import { ProjectSlug } from 'data/types';
-import * as Immutable from 'immutable';
-import isHotkey from 'is-hotkey';
-import { throttle } from 'lodash';
-import React, { useEffect, useState } from 'react';
-import { getViewportHeight } from 'utils/browser';
-import { ClassName, classNames } from 'utils/classNames';
-import { useStateFromLocalStorage } from 'utils/useStateFromLocalStorage';
 
 const calculateOutlineHeight = (scrollOffset: number) => {
   const topMargin = 420;

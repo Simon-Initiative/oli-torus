@@ -1,3 +1,6 @@
+import React from 'react';
+import { useSelected } from 'slate-react';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { modalActions } from '../../../../actions/modal';
 import * as ContentModel from '../../../../data/content/model/elements/types';
 import { CommandButton } from '../../../common/CommandButton';
@@ -8,9 +11,6 @@ import { createButtonCommandDesc } from '../commands/commandFactories';
 import { CommandContext } from '../commands/interfaces';
 import { InlineChromiumBugfix, useEditModelCallback } from '../utils';
 import { CommandButtonSettingsModal } from './CommandButtonSettingsModal';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import React from 'react';
-import { useSelected } from 'slate-react';
 
 interface Props extends EditorProps<ContentModel.CommandButton> {}
 

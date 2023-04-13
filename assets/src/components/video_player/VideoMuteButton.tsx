@@ -1,5 +1,5 @@
-import { ControlButtonProps } from './ControlBar';
 import React, { useCallback } from 'react';
+import { ControlButtonProps } from './ControlBar';
 
 export const MuteButton: React.FC<ControlButtonProps> = ({ actions, player }) => {
   const muted = player?.volume === 0 || player?.muted;

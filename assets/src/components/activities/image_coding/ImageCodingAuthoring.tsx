@@ -1,3 +1,16 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { Hints as HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
+import { CloseButton } from 'components/misc/CloseButton';
+import { Heading } from 'components/misc/Heading';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { Model } from 'data/content/model/elements/factories';
+import * as ContentModel from 'data/content/model/elements/types';
+import { configureStore } from 'state/store';
+import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
@@ -8,19 +21,6 @@ import { ImageCodingModelSchema } from './schema';
 import { Feedback } from './sections/Feedback';
 import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
-import { Hints as HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import { CloseButton } from 'components/misc/CloseButton';
-import { Heading } from 'components/misc/Heading';
-import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { Model } from 'data/content/model/elements/factories';
-import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import guid from 'utils/guid';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();

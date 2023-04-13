@@ -1,4 +1,5 @@
-import { modalActions } from 'actions/modal';
+import React from 'react';
+import { Maybe } from 'tsmonad';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { ImageModal } from 'components/editing/elements/image/ImageModal';
@@ -6,9 +7,8 @@ import { selectImage } from 'components/editing/elements/image/imageActions';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { modalActions } from 'actions/modal';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import { Maybe } from 'tsmonad';
 
 interface SettingsProps {
   commandContext: CommandContext;

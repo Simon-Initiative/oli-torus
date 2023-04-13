@@ -1,8 +1,8 @@
 // Registers the creation function:
+import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 import { registerCreationFunc } from '../creation';
 import { CreationContext, Manifest } from '../types';
 import { defaultCATAModel } from './utils';
-import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 
 // This is the entry point for the check all that apply authoring
 // component, as specified in the manifest.json

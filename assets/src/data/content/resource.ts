@@ -1,4 +1,4 @@
-import { ActivityEditContext } from './activity';
+import * as Immutable from 'immutable';
 import { ActivityModelSchema } from 'components/activities/types';
 import * as Bank from 'data/content/bank';
 import { Model } from 'data/content/model/elements/factories';
@@ -6,8 +6,8 @@ import { ModelElement } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
-import * as Immutable from 'immutable';
 import guid from 'utils/guid';
+import { ActivityEditContext } from './activity';
 
 export type PageContent = {
   model: ResourceContent[];

@@ -1,8 +1,8 @@
+import React, { useCallback } from 'react';
+import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
 import { DayGeometry, barGeometry, dateWithoutTimeLabel, leftToDate } from './date-utils';
-import { DateWithoutTime } from 'epoq';
-import React, { useCallback } from 'react';
 
 interface DragBarProps {
   endDate: DateWithoutTime;

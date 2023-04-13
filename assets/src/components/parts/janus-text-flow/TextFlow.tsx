@@ -1,3 +1,7 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import chroma from 'chroma-js';
+import { Environment } from 'janus-script';
+import guid from 'utils/guid';
 import {
   NotificationType,
   subscribeToNotification,
@@ -5,10 +9,6 @@ import {
 import { PartComponentProps } from '../types/parts';
 import Markup from './Markup';
 import { TextFlowModel } from './schema';
-import chroma from 'chroma-js';
-import { Environment } from 'janus-script';
-import React, { useCallback, useEffect, useState } from 'react';
-import guid from 'utils/guid';
 
 export interface MarkupTree {
   tag: string;

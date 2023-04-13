@@ -1,9 +1,9 @@
+import React from 'react';
 import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { useElementSelected } from 'data/content/utils';
-import React from 'react';
 
 interface Props extends EditorProps<ContentModel.ImageInline> {}
 export const ImageInlineEditor = (props: Props) => {

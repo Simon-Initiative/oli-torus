@@ -1,8 +1,8 @@
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
-import { MultiInput } from '../multi_input/schema';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { Editor, Transforms } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
@@ -15,12 +15,12 @@ import { VlabStem } from 'components/activities/vlab/sections/VlabStem';
 import { elementsOfType } from 'components/editing/slateUtils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { InputRef } from 'data/content/model/elements/types';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { Editor, Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
 import { configureStore } from 'state/store';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
+import { MultiInput } from '../multi_input/schema';
 
 const store = configureStore();
 

@@ -1,14 +1,14 @@
-import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
-import { findConditionById, forEachCondition } from '../../AdaptivityEditor/ConditionsBlockEditor';
-import { DiagnosticTypes } from './DiagnosticTypes';
+import cloneDeep from 'lodash/cloneDeep';
+import has from 'lodash/has';
 import { JanusConditionProperties } from 'adaptivity/capi';
 import {
   updatePart,
   updatePartWithCorrectExpression,
 } from 'apps/authoring/store/parts/actions/updatePart';
-import cloneDeep from 'lodash/cloneDeep';
-import has from 'lodash/has';
 import { clone } from 'utils/common';
+import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
+import { findConditionById, forEachCondition } from '../../AdaptivityEditor/ConditionsBlockEditor';
+import { DiagnosticTypes } from './DiagnosticTypes';
 
 export const updateId = (problem: any, fixed: string) => {
   const activityId = problem.owner.resourceId;

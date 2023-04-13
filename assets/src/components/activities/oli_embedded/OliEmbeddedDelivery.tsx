@@ -1,4 +1,6 @@
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import * as ActivityTypes from 'components/activities/types';
@@ -8,10 +10,8 @@ import {
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
-import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 
 interface Context {
   attempt_guid: string;

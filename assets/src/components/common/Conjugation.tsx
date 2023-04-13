@@ -1,5 +1,5 @@
-import * as ContentModel from 'data/content/model/elements/types';
 import React, { MouseEventHandler, ReactNode } from 'react';
+import * as ContentModel from 'data/content/model/elements/types';
 
 export const Conjugation: React.FC<{
   conjugation: ContentModel.Conjugation;

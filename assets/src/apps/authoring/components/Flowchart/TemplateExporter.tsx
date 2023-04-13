@@ -1,9 +1,9 @@
-import { IActivity, selectAllActivities } from '../../../delivery/store/features/activities/slice';
-import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
-import { Template } from './template-types';
 import React from 'react';
 import { Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { IActivity, selectAllActivities } from '../../../delivery/store/features/activities/slice';
+import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import { Template } from './template-types';
 
 interface Props {
   onToggleExport: () => void;

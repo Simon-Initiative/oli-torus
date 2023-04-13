@@ -1,5 +1,5 @@
-import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import { JSONSchema7Object } from 'json-schema';
+import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;

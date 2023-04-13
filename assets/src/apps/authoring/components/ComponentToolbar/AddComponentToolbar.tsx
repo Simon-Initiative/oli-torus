@@ -1,4 +1,6 @@
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import React, { Fragment, useCallback, useState } from 'react';
+import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   selectCopiedPart,
   selectPartComponentTypes,
@@ -11,10 +13,8 @@ import {
   selectCurrentActivityTree,
   selectSequence,
 } from 'apps/delivery/store/features/groups/selectors/deck';
-import React, { Fragment, useCallback, useState } from 'react';
-import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 const defaultFrequentlyUsed = [
   'janus_text_flow',

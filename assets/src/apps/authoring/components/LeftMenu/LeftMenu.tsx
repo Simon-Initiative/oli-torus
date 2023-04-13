@@ -1,6 +1,6 @@
+import React from 'react';
 import AdaptiveRulesList from '../AdaptiveRulesList/AdaptiveRulesList';
 import SequenceEditor from '../SequenceEditor/SequenceEditor';
-import React from 'react';
 
 const LeftMenu: React.FC = () => {
   return (

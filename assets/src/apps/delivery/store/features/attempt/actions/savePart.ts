@@ -1,3 +1,4 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
   defaultGlobalEnv,
   evalScript,
@@ -9,7 +10,6 @@ import { DeliveryRootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import AttemptSlice from '../name';
 import { selectActivityAttemptState, selectById, upsertActivityAttemptState } from '../slice';
-import { createAsyncThunk } from '@reduxjs/toolkit';
 
 interface SavePartPayload {
   attemptGuid: string;

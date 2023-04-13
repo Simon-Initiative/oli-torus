@@ -1,6 +1,3 @@
-import { PageError } from '../../Modal/DiagnosticsWindow';
-import { ObjectFieldTemplateProps } from '@rjsf/core';
-import { validateVariables } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import React, { useState } from 'react';
 import {
   Button,
@@ -12,6 +9,9 @@ import {
   Tooltip,
 } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { ObjectFieldTemplateProps } from '@rjsf/core';
+import { validateVariables } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
+import { PageError } from '../../Modal/DiagnosticsWindow';
 
 interface CustomFieldProps {
   onAddClick: any;

@@ -1,3 +1,4 @@
+import { Descendant, Editor, Element, Operation } from 'slate';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import {
@@ -24,7 +25,6 @@ import { Responses, getCorrectResponse } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model/elements/types';
-import { Descendant, Editor, Element, Operation } from 'slate';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 

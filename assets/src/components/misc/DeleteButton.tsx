@@ -1,6 +1,6 @@
-import styles from './DeleteButton.modules.scss';
 import React from 'react';
 import { WithClassName, classNames } from 'utils/classNames';
+import styles from './DeleteButton.modules.scss';
 
 export type DeleteButtonProps = {
   onClick: () => void;

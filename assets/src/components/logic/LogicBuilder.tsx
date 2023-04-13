@@ -1,8 +1,8 @@
+import * as React from 'react';
+import * as Bank from 'data/content/bank';
 import { Clause } from './Clause';
 import { Expression } from './Expression';
 import { LogicProps } from './common';
-import * as Bank from 'data/content/bank';
-import * as React from 'react';
 
 export interface LogicBuilderProps extends LogicProps {
   logic: Bank.Logic;

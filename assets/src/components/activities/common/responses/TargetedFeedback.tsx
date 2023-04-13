@@ -1,4 +1,4 @@
-import { ShowPage } from './ShowPage';
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
@@ -14,7 +14,7 @@ import {
 } from 'components/activities/types';
 import { ResponseMapping, getTargetedResponseMappings } from 'data/activities/model/responses';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
+import { ShowPage } from './ShowPage';
 
 interface Props {
   choices?: Choice[];

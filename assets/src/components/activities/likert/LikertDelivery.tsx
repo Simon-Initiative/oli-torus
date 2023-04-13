@@ -1,15 +1,6 @@
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
-import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
-import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
-import { StemDelivery } from '../common/stem/delivery/StemDelivery';
-import { castPartId } from '../common/utils';
-import * as ActivityTypes from '../types';
-import { LikertTable } from './Sections/LikertTable';
-import { LikertModelSchema } from './schema';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import {
   ActivityDeliveryState,
   PartInputs,
@@ -23,10 +14,19 @@ import {
   setSelection,
 } from 'data/activities/DeliveryState';
 import { initialPartInputs } from 'data/activities/utils';
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
+import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
+import { StemDelivery } from '../common/stem/delivery/StemDelivery';
+import { castPartId } from '../common/utils';
+import * as ActivityTypes from '../types';
+import { LikertTable } from './Sections/LikertTable';
+import { LikertModelSchema } from './schema';
 
 const LikertComponent: React.FC = () => {
   const {

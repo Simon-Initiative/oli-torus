@@ -1,5 +1,3 @@
-import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
-import { IGroup, upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
   SequenceBank,
@@ -7,6 +5,8 @@ import {
   SequenceEntryChild,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { clone } from 'utils/common';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
+import { IGroup, upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
 
 export const updateSequenceItemFromActivity = createAsyncThunk(
   `${GroupsSlice}/updateSequenceItemFromActivity`,

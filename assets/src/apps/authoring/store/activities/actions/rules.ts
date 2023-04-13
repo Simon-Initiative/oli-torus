@@ -1,6 +1,3 @@
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
-import { IAdaptiveRule, InitState } from '../../../../delivery/store/features/activities/slice';
-import { createFeedback } from './createFeedback';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import cloneDeep from 'lodash/cloneDeep';
 import has from 'lodash/has';
@@ -9,6 +6,9 @@ import isObject from 'lodash/isObject';
 import reduce from 'lodash/reduce';
 import set from 'lodash/set';
 import guid from 'utils/guid';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
+import { IAdaptiveRule, InitState } from '../../../../delivery/store/features/activities/slice';
+import { createFeedback } from './createFeedback';
 
 const newId = (val: { [key: string]: any }) => {
   const idx = val?.indexOf(':');

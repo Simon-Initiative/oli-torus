@@ -1,5 +1,5 @@
-import { fromJS, isImmutable } from 'immutable';
 import { useState } from 'react';
+import { fromJS, isImmutable } from 'immutable';
 
 const maybeHydrateImmutable = (maybeImmutable: any) =>
   maybeImmutable instanceof Object && maybeImmutable.isImmutable

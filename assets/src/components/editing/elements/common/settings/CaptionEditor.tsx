@@ -1,9 +1,9 @@
-import { InlineEditor } from './InlineEditor';
+import React from 'react';
+import { Descendant } from 'slate';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Model } from 'data/content/model/elements/factories';
 import { Caption, CaptionV2, ModelElement } from 'data/content/model/elements/types';
-import React from 'react';
-import { Descendant } from 'slate';
+import { InlineEditor } from './InlineEditor';
 
 const defaultCaption = (text = '') => [Model.p(text)];
 interface Props {

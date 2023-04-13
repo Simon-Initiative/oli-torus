@@ -1,13 +1,13 @@
-import styles from './ChoicesAuthoring.modules.scss';
+import React from 'react';
+import { Descendant } from 'slate';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Choice, makeContent } from 'components/activities/types';
 import { Draggable } from 'components/common/DraggableColumn';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { toSimpleText } from 'components/editing/slateUtils';
-import React from 'react';
-import { Descendant } from 'slate';
 import { classNames } from 'utils/classNames';
+import styles from './ChoicesAuthoring.modules.scss';
 
 const renderChoiceIcon = (icon: any, choice: any, index: any) =>
   icon ? (

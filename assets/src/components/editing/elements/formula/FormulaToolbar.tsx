@@ -1,5 +1,5 @@
-import { FormulaSubTypes } from '../../../../data/content/model/elements/types';
 import React, { Dispatch, SetStateAction } from 'react';
+import { FormulaSubTypes } from '../../../../data/content/model/elements/types';
 
 const markups: Array<{ label: string; code: FormulaSubTypes; reference?: string }> = [
   {

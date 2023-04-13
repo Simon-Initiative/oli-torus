@@ -1,4 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import React, { useCallback, useMemo } from 'react';
+import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { EntityId } from '@reduxjs/toolkit';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { useOnClickOutside } from '../../../../hooks/click_outside';
 import {
@@ -15,10 +19,6 @@ import { duplicateFlowchartScreen } from '../Flowchart/flowchart-actions/duplica
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
 import { sortScreens } from '../Flowchart/screens/screen-utils';
 import { AddScreenModal } from './AddScreenModal';
-import { EntityId } from '@reduxjs/toolkit';
-import React, { useCallback, useMemo } from 'react';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 
 /*
   The ScreenList is a simplified view of activities within a lesson similar to the SequenceEditor, but with a reduced feature set

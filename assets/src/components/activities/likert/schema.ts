@@ -1,3 +1,5 @@
+import { Maybe } from 'tsmonad';
+import { ID } from 'data/content/model/other';
 import {
   ActivityModelSchema,
   Choice,
@@ -9,8 +11,6 @@ import {
   makeChoice,
   makeStem,
 } from '../types';
-import { ID } from 'data/content/model/other';
-import { Maybe } from 'tsmonad';
 
 // Likert Scale element. Functions as subclass of Choice
 export class LikertChoice implements Choice {

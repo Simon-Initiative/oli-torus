@@ -1,6 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Registry, dispatch, makeCommandInventoryEvent } from '../../../../data/events';
 import { CommandTarget, MessageEditorComponent } from './commandButtonTypes';
-import { useEffect, useState } from 'react';
 
 /**
  * Use this hook to get a list of components that are command-targetable. It relies on those components

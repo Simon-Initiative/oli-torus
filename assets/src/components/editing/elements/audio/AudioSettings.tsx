@@ -1,3 +1,9 @@
+import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { Tooltip } from 'components/common/Tooltip';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { Modal, ModalSize } from 'components/modal/Modal';
+import * as ContentModel from 'data/content/model/elements/types';
 import { modalActions } from '../../../../actions/modal';
 import { useAudio } from '../../../hooks/useAudio';
 import { useToggle } from '../../../hooks/useToggle';
@@ -6,12 +12,6 @@ import { Toolbar } from '../../toolbar/Toolbar';
 import { DescriptiveButton } from '../../toolbar/buttons/DescriptiveButton';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
-import { Tooltip } from 'components/common/Tooltip';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { Modal, ModalSize } from 'components/modal/Modal';
-import * as ContentModel from 'data/content/model/elements/types';
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
 
 interface SettingsButtonProps {
   model: ContentModel.Audio;

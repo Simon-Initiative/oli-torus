@@ -1,12 +1,12 @@
-import { FeatureFlags } from 'apps/page-editor/types';
+import React, { useState } from 'react';
 import { AddActivity } from 'components/content/add_resource_content/AddActivity';
 import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
 import { NonActivities } from 'components/content/add_resource_content/NonActivities';
+import { FeatureFlags } from 'apps/page-editor/types';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective } from 'data/content/objective';
 import { ResourceContent, ResourceContext } from 'data/content/resource';
-import React, { useState } from 'react';
 
 export type AddResourceProps = {
   index: number[];

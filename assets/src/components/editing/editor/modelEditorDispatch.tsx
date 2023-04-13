@@ -1,3 +1,19 @@
+import * as React from 'react';
+import { RenderElementProps } from 'slate-react';
+import { AudioEditor } from 'components/editing/elements/audio/AudioElement';
+import { CodeEditor } from 'components/editing/elements/blockcode/BlockcodeElement';
+import { BlockQuoteEditor } from 'components/editing/elements/blockquote/BlockquoteElement';
+import { InputRefEditor } from 'components/editing/elements/inputref/InputRefEditor';
+import { LinkEditor } from 'components/editing/elements/link/LinkElement';
+import { PopupEditor } from 'components/editing/elements/popup/PopupElement';
+import { TableEditor } from 'components/editing/elements/table/TableElement';
+import { TdEditor } from 'components/editing/elements/table/TdElement';
+import { ThEditor } from 'components/editing/elements/table/ThElement';
+import { TrEditor } from 'components/editing/elements/table/TrElement';
+import { WebpageEditor } from 'components/editing/elements/webpage/WebpageElement';
+import { YouTubeEditor } from 'components/editing/elements/youtube/YoutubeElement';
+import * as ContentModel from 'data/content/model/elements/types';
+import { Mark } from 'data/content/model/text';
 import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutElement';
 import { CiteEditor } from '../elements/cite/CiteElement';
 import { CommandButtonEditor } from '../elements/command_button/CommandButtonEditor';
@@ -15,22 +31,6 @@ import { EditorProps } from '../elements/interfaces';
 import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
 import { TcEditor } from '../elements/table/TcElement';
 import { VideoEditor } from '../elements/video/VideoEditor';
-import { AudioEditor } from 'components/editing/elements/audio/AudioElement';
-import { CodeEditor } from 'components/editing/elements/blockcode/BlockcodeElement';
-import { BlockQuoteEditor } from 'components/editing/elements/blockquote/BlockquoteElement';
-import { InputRefEditor } from 'components/editing/elements/inputref/InputRefEditor';
-import { LinkEditor } from 'components/editing/elements/link/LinkElement';
-import { PopupEditor } from 'components/editing/elements/popup/PopupElement';
-import { TableEditor } from 'components/editing/elements/table/TableElement';
-import { TdEditor } from 'components/editing/elements/table/TdElement';
-import { ThEditor } from 'components/editing/elements/table/ThElement';
-import { TrEditor } from 'components/editing/elements/table/TrElement';
-import { WebpageEditor } from 'components/editing/elements/webpage/WebpageElement';
-import { YouTubeEditor } from 'components/editing/elements/youtube/YoutubeElement';
-import * as ContentModel from 'data/content/model/elements/types';
-import { Mark } from 'data/content/model/text';
-import * as React from 'react';
-import { RenderElementProps } from 'slate-react';
 
 export function editorFor(
   model: ContentModel.ModelElement,

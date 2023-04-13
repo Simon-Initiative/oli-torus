@@ -1,8 +1,3 @@
-import styles from './ObjectivesSelection.modules.scss';
-import { Objective, ResourceId } from 'data/content/objective';
-import { create } from 'data/persistence/objective';
-import { ProjectSlug } from 'data/types';
-import * as Immutable from 'immutable';
 import React, { useEffect, useState } from 'react';
 import {
   AllTypeaheadOwnAndInjectedProps,
@@ -10,8 +5,13 @@ import {
   TypeaheadMenuProps,
   TypeaheadResult,
 } from 'react-bootstrap-typeahead';
+import * as Immutable from 'immutable';
+import { Objective, ResourceId } from 'data/content/objective';
+import { create } from 'data/persistence/objective';
+import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
+import styles from './ObjectivesSelection.modules.scss';
 
 export type ObjectivesProps = {
   objectives: Objective[];

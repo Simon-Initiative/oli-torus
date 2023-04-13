@@ -1,4 +1,6 @@
 /* eslint-disable react/prop-types */
+import React, { Fragment } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import {
@@ -14,8 +16,6 @@ import {
   setShowHistory,
 } from '../../../store/features/page/slice';
 import HistoryPanel from './HistoryPanel';
-import React, { Fragment } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 export interface HistoryEntry {
   id: string;

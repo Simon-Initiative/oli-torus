@@ -1,7 +1,7 @@
-import { ActivitiesSlice } from '../../../../delivery/store/features/activities/name';
-import { createSimpleText } from '../templates/simpleText';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
+import { ActivitiesSlice } from '../../../../delivery/store/features/activities/name';
+import { createSimpleText } from '../templates/simpleText';
 
 export const createFeedback = createAsyncThunk(
   `${ActivitiesSlice}/createFeedback`,

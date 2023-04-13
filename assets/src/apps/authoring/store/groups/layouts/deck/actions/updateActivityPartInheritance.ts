@@ -1,13 +1,13 @@
-import { selectActivityById } from '../../../../../../delivery/store/features/activities/slice';
-import { getSequenceLineage } from '../../../../../../delivery/store/features/groups/actions/sequence';
-import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
-import { DeckLayoutGroup } from '../../../../../../delivery/store/features/groups/slice';
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { isEqual } from 'lodash';
 import { bulkSaveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import { selectProjectSlug, selectReadOnly } from 'apps/authoring/store/app/slice';
 import { selectResourceId } from 'apps/authoring/store/page/slice';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
-import { isEqual } from 'lodash';
+import { selectActivityById } from '../../../../../../delivery/store/features/activities/slice';
+import { getSequenceLineage } from '../../../../../../delivery/store/features/groups/actions/sequence';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
+import { DeckLayoutGroup } from '../../../../../../delivery/store/features/groups/slice';
 
 export const updateActivityPartInheritance = createAsyncThunk(
   `${GroupsSlice}/updateActivityPartInheritance`,

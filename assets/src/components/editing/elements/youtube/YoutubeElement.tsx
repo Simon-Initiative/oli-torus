@@ -1,6 +1,6 @@
-import { YouTubeModal } from './YoutubeModal';
-import { youtubeUrlToId } from './youtubeActions';
-import { modalActions } from 'actions/modal';
+import React from 'react';
+import { Transforms } from 'slate';
+import { useFocused, useSelected } from 'slate-react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
@@ -10,12 +10,12 @@ import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { modalActions } from 'actions/modal';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import { Transforms } from 'slate';
-import { useFocused, useSelected } from 'slate-react';
 import { getQueryVariableFromString } from 'utils/params';
+import { YouTubeModal } from './YoutubeModal';
+import { youtubeUrlToId } from './youtubeActions';
 
 const toLink = (src = '') => 'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
 

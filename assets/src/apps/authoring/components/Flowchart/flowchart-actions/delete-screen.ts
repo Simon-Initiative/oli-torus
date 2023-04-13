@@ -1,3 +1,4 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import { cloneT } from '../../../../../utils/common';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
@@ -25,7 +26,6 @@ import {
 import { AllPaths } from '../paths/path-types';
 import { getDownstreamScreenIds } from '../paths/path-utils';
 import { generateRules } from '../rules/rule-compilation';
-import { createAsyncThunk } from '@reduxjs/toolkit';
 
 interface DeleteFlowchartScreenPayload {
   screenId: number;

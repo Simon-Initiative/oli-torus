@@ -1,6 +1,6 @@
+import { Descendant } from 'slate';
 import { Choice, PostUndoable } from 'components/activities/types';
 import { List } from 'data/activities/model/list';
-import { Descendant } from 'slate';
 import { Operations } from 'utils/pathOperations';
 
 const PATH = '$..choices';

@@ -1,6 +1,6 @@
-import { makeRequest } from './common';
 import { BankedActivity, Logic, Paging } from 'data/content/bank';
 import { ProjectSlug } from 'data/types';
+import { makeRequest } from './common';
 
 export interface PagedBankRetrieval {
   result: 'success';

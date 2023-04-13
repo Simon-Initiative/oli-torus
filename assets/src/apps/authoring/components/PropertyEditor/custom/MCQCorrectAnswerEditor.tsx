@@ -1,10 +1,10 @@
+import React, { useCallback, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { ToggleOption } from '../../../../../components/common/ThreeStateToggle';
 import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import { IMCQPartLayout } from '../../../../delivery/store/features/activities/slice';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentSelection } from '../../../store/parts/slice';
-import React, { useCallback, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 
 interface Props {
   id: string;

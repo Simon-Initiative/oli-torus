@@ -1,11 +1,11 @@
+import React from 'react';
+import { Provider } from 'react-redux';
+import { globalStore } from 'state/store';
 import { configureStore } from '../state/store';
 import { registerApplication } from './app';
 import { ScheduleEditor } from './scheduler/ScheduleEditor';
 import { initState, schedulerAppReducer } from './scheduler/scheduler-reducer';
 import { StringDate } from './scheduler/scheduler-slice';
-import React from 'react';
-import { Provider } from 'react-redux';
-import { globalStore } from 'state/store';
 
 export interface SchedulerAppProps {
   start_date: StringDate;

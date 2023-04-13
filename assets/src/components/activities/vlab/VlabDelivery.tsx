@@ -1,4 +1,6 @@
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
@@ -23,10 +25,8 @@ import {
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 
 export const VlabComponent: React.FC = () => {
   const {

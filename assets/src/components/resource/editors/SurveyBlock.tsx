@@ -1,10 +1,10 @@
-import styles from './ContentBlock.modules.scss';
+import React, { PropsWithChildren } from 'react';
 import { TextEditor } from 'components/TextEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { SurveyContent } from 'data/content/resource';
-import React, { PropsWithChildren } from 'react';
 import { classNames } from 'utils/classNames';
 import { valueOr } from 'utils/common';
+import styles from './ContentBlock.modules.scss';
 
 interface SurveyBlockProps {
   editMode: boolean;

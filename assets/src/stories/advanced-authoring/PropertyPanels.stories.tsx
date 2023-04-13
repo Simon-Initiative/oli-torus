@@ -1,4 +1,7 @@
 // MyComponent.story.ts|tsx
+import React from 'react';
+import { ComponentMeta, ComponentStory } from '@storybook/react';
+import { JSONSchema7Object } from 'json-schema';
 import '../../../styles/index.scss';
 import PropertyEditor from '../../apps/authoring/components/PropertyEditor/PropertyEditor';
 import {
@@ -12,9 +15,6 @@ import * as MultipleChoiceSchema from '../../components/parts/janus-mcq/schema';
 import * as MultiLineTextInputSchema from '../../components/parts/janus-multi-line-text/schema';
 import * as SliderSchema from '../../components/parts/janus-slider/schema';
 import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext';
-import { ComponentMeta, ComponentStory } from '@storybook/react';
-import { JSONSchema7Object } from 'json-schema';
-import React from 'react';
 
 interface PanelDef {
   title: string;

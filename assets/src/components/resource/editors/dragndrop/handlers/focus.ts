@@ -1,9 +1,9 @@
+import * as Immutable from 'immutable';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ActivityReference, ResourceContent } from 'data/content/resource';
 import { getContentDescription } from 'data/content/utils';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
-import * as Immutable from 'immutable';
 
 export const focusHandler =
   (

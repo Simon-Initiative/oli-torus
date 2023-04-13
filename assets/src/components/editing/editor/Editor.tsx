@@ -1,3 +1,11 @@
+import React, { FocusEventHandler, useCallback, useMemo } from 'react';
+import { Descendant, Operation, Editor as SlateEditor, Transforms, createEditor } from 'slate';
+import { withHistory } from 'slate-history';
+import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
+import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
+import { Model } from 'data/content/model/elements/factories';
+import { Mark, Marks } from 'data/content/model/text';
+import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
@@ -10,14 +18,6 @@ import { withInlines } from './overrides/inlines';
 import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
-import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
-import { Model } from 'data/content/model/elements/factories';
-import { Mark, Marks } from 'data/content/model/text';
-import React, { FocusEventHandler, useCallback, useMemo } from 'react';
-import { Descendant, Operation, Editor as SlateEditor, Transforms, createEditor } from 'slate';
-import { withHistory } from 'slate-history';
-import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
-import { classNames } from 'utils/classNames';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor

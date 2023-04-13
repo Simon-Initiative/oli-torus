@@ -1,12 +1,12 @@
-import { VideoModal } from './VideoModal';
-import { modalActions } from 'actions/modal';
+import React from 'react';
+import { useDispatch } from 'react-redux';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { modalActions } from 'actions/modal';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import { useDispatch } from 'react-redux';
+import { VideoModal } from './VideoModal';
 
 interface SettingsProps {
   commandContext: CommandContext;

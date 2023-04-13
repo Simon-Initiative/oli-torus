@@ -1,10 +1,10 @@
+import { DateWithoutTime } from 'epoq';
 import {
   countWorkingDays,
   findNthDay,
   findStartEnd,
   findStartEndByPercent,
 } from '../../src/apps/scheduler/schedule-reset';
-import { DateWithoutTime } from 'epoq';
 
 const allDays = [true, true, true, true, true, true, true];
 const weekdays = [false, true, true, true, true, true, false];

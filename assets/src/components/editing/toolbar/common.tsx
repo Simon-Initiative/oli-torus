@@ -1,9 +1,9 @@
-import { Command, CommandContext } from '../elements/commands/interfaces';
 import React from 'react';
 import * as Popover from 'react-tiny-popover';
 import { Editor } from 'slate';
 import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
+import { Command, CommandContext } from '../elements/commands/interfaces';
 
 const buttonContent = (icon: JSX.Element, description: string | undefined) =>
   icon ? icon : <span className="toolbar-button-text">{description}</span>;

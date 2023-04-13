@@ -1,6 +1,6 @@
+import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
-import { JSONSchema7Object } from 'json-schema';
 
 export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;

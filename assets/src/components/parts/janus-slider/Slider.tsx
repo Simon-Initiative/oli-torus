@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -8,7 +9,6 @@ import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import './Slider.scss';
 import { SliderModel } from './schema';
-import React, { CSSProperties, ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   const [state, setState] = useState<unknown>([]);

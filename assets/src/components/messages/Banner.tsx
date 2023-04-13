@@ -1,9 +1,9 @@
-import styles from './Banner.modules.scss';
-import { Message } from './Message';
-import { MessageAction, Message as Msg, Severity } from 'data/messages/messages';
 import * as React from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import { MessageAction, Message as Msg, Severity } from 'data/messages/messages';
 import { classNames } from 'utils/classNames';
+import styles from './Banner.modules.scss';
+import { Message } from './Message';
 
 export interface BannerProps {
   dismissMessage: (message: Msg) => void;

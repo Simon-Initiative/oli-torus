@@ -1,12 +1,3 @@
-import { insertCallout } from '../../../elements/callout/calloutActions';
-import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
-import { insertDefinition } from '../../../elements/definition/definitionActions';
-import { insertDescriptionListCommand } from '../../../elements/description/description-list-actions';
-import { insertDialog } from '../../../elements/dialog/dialogActions';
-import { insertFigure } from '../../../elements/figure/figureActions';
-import { insertFormula } from '../../../elements/formula/formulaActions';
-import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
-import { insertVideo } from '../../../elements/video/videoActions';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { insertAudio } from 'components/editing/elements/audio/audioActions';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
@@ -19,6 +10,15 @@ import { insertYoutube } from 'components/editing/elements/youtube/youtubeAction
 import { ActivityEditorMap } from 'data/content/editors';
 import { ContentModelMode } from 'data/content/model/elements/types';
 import { ResourceContext } from 'data/content/resource';
+import { insertCallout } from '../../../elements/callout/calloutActions';
+import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
+import { insertDefinition } from '../../../elements/definition/definitionActions';
+import { insertDescriptionListCommand } from '../../../elements/description/description-list-actions';
+import { insertDialog } from '../../../elements/dialog/dialogActions';
+import { insertFigure } from '../../../elements/figure/figureActions';
+import { insertFormula } from '../../../elements/formula/formulaActions';
+import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
+import { insertVideo } from '../../../elements/video/videoActions';
 
 export const extendedBlockInsertActions = (onRequestMedia: any) => [
   insertTable,

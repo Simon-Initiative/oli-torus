@@ -1,4 +1,4 @@
-import { normalizeHref } from './utils';
+import { Text } from 'slate';
 import {
   AllModelElements,
   Audio,
@@ -46,8 +46,8 @@ import {
   Webpage,
   YouTube,
 } from 'data/content/model/elements/types';
-import { Text } from 'slate';
 import guid from 'utils/guid';
+import { normalizeHref } from './utils';
 
 function create<E extends AllModelElements>(params: Partial<E>): E {
   return {

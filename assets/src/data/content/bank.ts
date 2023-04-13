@@ -1,5 +1,5 @@
-import { ObjectiveMap } from './activity';
 import { ResourceId } from 'data/types';
+import { ObjectiveMap } from './activity';
 
 export interface Logic {
   conditions: null | Expression | Clause;

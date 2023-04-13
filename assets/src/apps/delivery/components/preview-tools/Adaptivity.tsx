@@ -1,10 +1,10 @@
 /* eslint-disable no-prototype-builtins */
 
 /* eslint-disable react/prop-types */
-import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
-import { setLastCheckResults } from '../../store/features/adaptivity/slice';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
+import { setLastCheckResults } from '../../store/features/adaptivity/slice';
 
 interface AdaptivityProps {
   currentActivity: any;

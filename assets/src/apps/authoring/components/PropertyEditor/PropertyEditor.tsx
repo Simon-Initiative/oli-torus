@@ -1,3 +1,9 @@
+import React, { Fragment, useEffect, useState } from 'react';
+import Form from '@rjsf/bootstrap-4';
+import { UiSchema } from '@rjsf/core';
+import { diff } from 'deep-object-diff';
+import { JSONSchema7 } from 'json-schema';
+import { at } from 'lodash';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
@@ -9,12 +15,6 @@ import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
-import Form from '@rjsf/bootstrap-4';
-import { UiSchema } from '@rjsf/core';
-import { diff } from 'deep-object-diff';
-import { JSONSchema7 } from 'json-schema';
-import { at } from 'lodash';
-import React, { Fragment, useEffect, useState } from 'react';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;

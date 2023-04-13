@@ -1,3 +1,5 @@
+import React from 'react';
+import { useSlate } from 'slate-react';
 import { toggleBlockquote } from 'components/editing/elements/blockquote/blockquoteActions';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { toggleHeading } from 'components/editing/elements/heading/headingActions';
@@ -7,8 +9,6 @@ import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
 import { activeBlockType } from 'components/editing/toolbar/toolbarUtils';
-import React from 'react';
-import { useSlate } from 'slate-react';
 
 export const toggleTextTypes = [toggleParagraph, toggleHeading, toggleList, toggleBlockquote];
 

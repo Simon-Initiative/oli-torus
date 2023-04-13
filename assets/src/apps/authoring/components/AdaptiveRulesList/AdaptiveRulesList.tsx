@@ -1,3 +1,17 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
+import set from 'lodash/set';
+import { usePrevious } from 'components/hooks/usePrevious';
+import {
+  CopyableItemTypes,
+  copyItem,
+  pasteItem,
+  selectCopiedItem,
+  selectCopiedType,
+} from 'apps/authoring/store/clipboard/slice';
+import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { clone } from '../../../../utils/common';
 import {
@@ -16,20 +30,6 @@ import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
-import {
-  CopyableItemTypes,
-  copyItem,
-  pasteItem,
-  selectCopiedItem,
-  selectCopiedType,
-} from 'apps/authoring/store/clipboard/slice';
-import { usePrevious } from 'components/hooks/usePrevious';
-import { debounce } from 'lodash';
-import set from 'lodash/set';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import guid from 'utils/guid';
 
 const IRulesList: React.FC = () => {
   const dispatch = useDispatch();

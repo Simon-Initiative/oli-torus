@@ -1,3 +1,5 @@
+import React, { useCallback, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../delivery/store/features/activities/slice';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import { TemplatePicker } from './components/Flowchart/TemplatePicker';
@@ -8,8 +10,6 @@ import RightMenu from './components/RightMenu/RightMenu';
 import { ScreenList } from './components/ScreenList/ScreenList';
 import { SidePanel } from './components/SidePanel';
 import { changeEditMode } from './store/app/slice';
-import React, { useCallback, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 interface PanelState {
   left: boolean;

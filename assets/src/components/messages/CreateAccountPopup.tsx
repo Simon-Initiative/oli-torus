@@ -1,6 +1,6 @@
-import styles from './CreateAccountPopup.modules.scss';
 import React, { useEffect, useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
+import styles from './CreateAccountPopup.modules.scss';
 
 export interface CreateAccountPopupProps {
   sectionSlug?: string;

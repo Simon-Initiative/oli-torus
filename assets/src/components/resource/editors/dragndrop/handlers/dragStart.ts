@@ -1,6 +1,6 @@
-import { DragPayload } from '../interfaces';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { ResourceContent } from 'data/content/resource';
+import { DragPayload } from '../interfaces';
 
 export const dragStartHandler =
   (

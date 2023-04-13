@@ -1,9 +1,9 @@
-import { Routes, User, UserAccountMenu } from './UserAccountMenu';
+import React, { PropsWithChildren, useCallback, useRef, useState } from 'react';
 import { Transition } from '@tailwindui/react';
 import { useOnClickOutside } from 'hooks/click_outside';
 import { MediaSize, useMediaQuery } from 'hooks/media_query';
-import React, { PropsWithChildren, useCallback, useRef, useState } from 'react';
 import { classNames } from 'utils/classNames';
+import { Routes, User, UserAccountMenu } from './UserAccountMenu';
 
 /**
  * Loads a react component by react-phoenix identifier with given props

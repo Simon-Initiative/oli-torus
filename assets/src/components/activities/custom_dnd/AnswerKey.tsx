@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -11,7 +12,6 @@ import { TextInput } from 'components/common/TextInput';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { InputKind, containsRule } from 'data/activities/model/rules';
 import { makeRule } from 'data/activities/model/rules';
-import React from 'react';
 
 export const addTargetedFeedbackFillInTheBlank = (partId: string) =>
   ResponseActions.addResponse(makeResponse(containsRule('another answer'), 0, ''), partId);

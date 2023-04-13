@@ -1,6 +1,6 @@
-import { Model } from 'data/content/model/elements/factories';
 import { KeyboardEvent } from 'react';
 import { Element, Path, Range, Editor as SlateEditor, Text, Transforms } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
 
 export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
   if (e.key === 'Enter') {

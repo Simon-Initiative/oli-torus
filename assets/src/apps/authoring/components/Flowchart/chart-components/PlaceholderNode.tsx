@@ -1,9 +1,9 @@
-import { FlowchartEventContext } from '../FlowchartEventContext';
-import { FlowchartPlaceholderNodeData } from '../flowchart-utils';
-import { screenTypes } from '../screens/screen-factories';
 import React, { useContext } from 'react';
 import { useDrop } from 'react-dnd';
 import { Handle, Position } from 'reactflow';
+import { FlowchartEventContext } from '../FlowchartEventContext';
+import { FlowchartPlaceholderNodeData } from '../flowchart-utils';
+import { screenTypes } from '../screens/screen-factories';
 
 /**
  * This is the empty node on the flowchart that allows you to add new screens to the graph.

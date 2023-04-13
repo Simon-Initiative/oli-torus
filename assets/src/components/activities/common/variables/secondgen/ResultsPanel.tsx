@@ -1,6 +1,6 @@
-import './ResultsPanel.scss';
-import { VariableEvaluation } from 'data/persistence/variables';
 import * as React from 'react';
+import { VariableEvaluation } from 'data/persistence/variables';
+import './ResultsPanel.scss';
 
 interface ResultsPanelProps {
   evalResults: VariableEvaluation[];

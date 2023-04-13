@@ -1,11 +1,11 @@
-import { MediaItemRequest } from '../../../../activities';
+import React, { FocusEventHandler } from 'react';
+import { Descendant, Editor as SlateEditor } from 'slate';
+import { useSlate } from 'slate-react';
 import { Editor } from 'components/editing/editor/Editor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { getEditMode } from 'components/editing/elements/utils';
 import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
-import React, { FocusEventHandler } from 'react';
-import { Descendant, Editor as SlateEditor } from 'slate';
-import { useSlate } from 'slate-react';
+import { MediaItemRequest } from '../../../../activities';
 
 interface Props {
   onEdit: (content: any[]) => void;

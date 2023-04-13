@@ -1,3 +1,5 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import guid from 'utils/guid';
 import {
   setActivities,
   setCurrentActivityId,
@@ -15,8 +17,6 @@ import { AuthoringRootState } from '../../rootReducer';
 import PageSlice from '../name';
 import { PageState, loadPage } from '../slice';
 import { savePage } from './savePage';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import guid from 'utils/guid';
 
 export const initializeFromContext = createAsyncThunk(
   `${PageSlice}/initializeFromContext`,

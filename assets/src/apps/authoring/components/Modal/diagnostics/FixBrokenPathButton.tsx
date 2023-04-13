@@ -1,7 +1,7 @@
-import ScreenDropdownTemplate from '../../PropertyEditor/custom/ScreenDropdownTemplate';
-import { SolutionProps } from './SolutionProps';
 import React from 'react';
 import guid from 'utils/guid';
+import ScreenDropdownTemplate from '../../PropertyEditor/custom/ScreenDropdownTemplate';
+import { SolutionProps } from './SolutionProps';
 
 export const FixBrokenPathButton: React.FC<SolutionProps> = ({
   onClick,

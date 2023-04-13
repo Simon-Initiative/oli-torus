@@ -1,16 +1,16 @@
-import { AuthorPartComponentProps } from '../types/parts';
-import Markup from './Markup';
-import { tagName as quillEditorTagName, registerEditor } from './QuillEditor';
-import { TextFlowModel } from './schema';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import chroma from 'chroma-js';
 import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import chroma from 'chroma-js';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { clone, parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
+import { AuthorPartComponentProps } from '../types/parts';
+import Markup from './Markup';
+import { tagName as quillEditorTagName, registerEditor } from './QuillEditor';
+import { TextFlowModel } from './schema';
 
 export interface MarkupTree {
   tag: string;

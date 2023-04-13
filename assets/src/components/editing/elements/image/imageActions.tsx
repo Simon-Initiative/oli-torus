@@ -1,17 +1,17 @@
-import { modalActions } from 'actions/modal';
+import React, { useState } from 'react';
+import { Provider } from 'react-redux';
+import { BaseSelection, Transforms } from 'slate';
+import { Maybe } from 'tsmonad';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Command } from 'components/editing/elements/commands/interfaces';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import { SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
+import { modalActions } from 'actions/modal';
 import { Model } from 'data/content/model/elements/factories';
 import { SlateEditor } from 'data/content/model/slate';
-import React, { useState } from 'react';
-import { Provider } from 'react-redux';
-import { BaseSelection, Transforms } from 'slate';
 import { configureStore } from 'state/store';
-import { Maybe } from 'tsmonad';
 import { MediaItem } from 'types/media';
 
 const display = (c: any) => window.oliDispatch(modalActions.display(c));

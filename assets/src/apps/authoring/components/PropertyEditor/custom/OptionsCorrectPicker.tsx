@@ -1,7 +1,7 @@
-import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
-import { selectCurrentSelection } from '../../../store/parts/slice';
 import React, { useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
+import { selectCurrentSelection } from '../../../store/parts/slice';
 
 interface CorrectOptionProps {
   label: string;

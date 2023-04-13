@@ -1,8 +1,8 @@
+import React, { useState } from 'react';
+import { Popover } from 'react-tiny-popover';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { Checkmark } from 'components/misc/icons/Checkmark';
-import React, { useState } from 'react';
-import { Popover } from 'react-tiny-popover';
 import { classNames } from 'utils/classNames';
 
 interface SettingProps {

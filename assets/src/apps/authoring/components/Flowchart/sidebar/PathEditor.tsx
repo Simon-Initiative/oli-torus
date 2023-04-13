@@ -1,3 +1,6 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { EntityId } from '@reduxjs/toolkit';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
 import { clone } from '../../../../../utils/common';
@@ -12,9 +15,6 @@ import {
   isDestinationPath,
   sortByPriority,
 } from '../paths/path-utils';
-import { EntityId } from '@reduxjs/toolkit';
-import React, { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 interface Props {
   screenId: EntityId;

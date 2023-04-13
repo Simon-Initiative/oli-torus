@@ -1,5 +1,5 @@
-import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import '@testing-library/jest-dom';
+import { Dispatch, Store } from 'redux';
 import { ActivityContext } from 'components/activities';
 import { defaultCATAModel } from 'components/activities/check_all_that_apply/utils';
 import { makeHint } from 'components/activities/types';
@@ -11,8 +11,8 @@ import {
   stringToStudentInput,
   studentInputToString,
 } from 'data/activities/utils';
-import { Dispatch, Store } from 'redux';
 import { configureStore } from 'state/store';
+import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 
 describe('activity delivery state management', () => {
   const model = defaultCATAModel();

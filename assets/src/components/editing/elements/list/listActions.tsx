@@ -1,17 +1,17 @@
+import React from 'react';
+import { Editor, Element, Transforms } from 'slate';
+import { handleIndent, handleOutdent } from 'components/editing/editor/handlers/lists';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
+import { isActive, isPropActive, isTopLevel } from 'components/editing/slateUtils';
+import guid from 'utils/guid';
 import {
   OrderedListStyle,
   OrderedListStyles,
   UnorderdListStyles,
   UnorderedListStyle,
 } from '../../../../data/content/model/elements/types';
-import { handleIndent, handleOutdent } from 'components/editing/editor/handlers/lists';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
-import { isActive, isPropActive, isTopLevel } from 'components/editing/slateUtils';
-import React from 'react';
-import { Editor, Element, Transforms } from 'slate';
-import guid from 'utils/guid';
 
 const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
   return {

@@ -1,5 +1,5 @@
-import { SolutionProps } from './SolutionProps';
 import React from 'react';
+import { SolutionProps } from './SolutionProps';
 
 export const FixIdButton: React.FC<SolutionProps> = ({
   suggestion,

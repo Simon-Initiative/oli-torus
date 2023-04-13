@@ -1,5 +1,5 @@
-import PartsLayoutRenderer from '../../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import PartsLayoutRenderer from '../../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 
 interface FeedbackRendererProps {
   feedbacks: any[];

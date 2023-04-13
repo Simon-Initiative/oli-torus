@@ -1,11 +1,7 @@
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
-import * as ActivityTypes from '../types';
-import { Actions } from './actions';
-import { OrderingSchema } from './schema';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { Maybe } from 'tsmonad';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
@@ -20,11 +16,15 @@ import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Choices } from 'data/activities/model/choices';
 import { getCorrectChoiceIds } from 'data/activities/model/responses';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import { Maybe } from 'tsmonad';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
+import * as ActivityTypes from '../types';
+import { Actions } from './actions';
+import { OrderingSchema } from './schema';
 
 const store = configureStore();
 

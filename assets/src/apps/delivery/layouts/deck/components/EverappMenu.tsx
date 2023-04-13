@@ -1,7 +1,7 @@
-import { Everapp } from './EverappRenderer';
-import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
+import { Everapp } from './EverappRenderer';
 
 export interface IEverappMenuProps {
   apps: Everapp[];

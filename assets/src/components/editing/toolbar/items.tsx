@@ -1,3 +1,5 @@
+import React from 'react';
+import { Editor } from 'slate';
 import { insertAudio } from 'components/editing/elements/audio/audioActions';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { toggleBlockquote } from 'components/editing/elements/blockquote/blockquoteActions';
@@ -15,8 +17,6 @@ import { toggleParagraph } from 'components/editing/elements/paragraph/paragraph
 import { insertTable } from 'components/editing/elements/table/commands/insertTable';
 import { insertWebpage } from 'components/editing/elements/webpage/webpageActions';
 import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
-import React from 'react';
-import { Editor } from 'slate';
 
 export const formattingDropdownAction = createButtonCommandDesc({
   icon: <i className="fa-solid fa-caret-down"></i>,

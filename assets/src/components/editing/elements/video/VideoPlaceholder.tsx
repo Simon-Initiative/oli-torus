@@ -1,10 +1,10 @@
-import { selectVideo } from './videoActions';
+import React from 'react';
+import { Maybe } from 'tsmonad';
 import { Placeholder } from 'components/editing/elements/common/Placeholder';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import { Maybe } from 'tsmonad';
+import { selectVideo } from './videoActions';
 
 interface Props extends EditorProps<ContentModel.Video> {}
 export function VideoPlaceholder(props: Props) {

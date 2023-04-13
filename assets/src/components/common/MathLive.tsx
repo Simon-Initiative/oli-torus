@@ -1,4 +1,4 @@
-import styles from './MathLive.modules.scss';
+import React, { useEffect, useRef } from 'react';
 import { Mathfield, MathfieldElement, MathfieldOptions } from 'mathlive';
 import 'mathlive/dist/mathlive-fonts.css';
 import 'mathlive/dist/sounds/keypress-delete.wav';
@@ -6,9 +6,9 @@ import 'mathlive/dist/sounds/keypress-return.wav';
 import 'mathlive/dist/sounds/keypress-spacebar.wav';
 import 'mathlive/dist/sounds/keypress-standard.wav';
 import 'mathlive/dist/sounds/plonk.wav';
-import React, { useEffect, useRef } from 'react';
 import { classNames } from 'utils/classNames';
 import { valueOr } from 'utils/common';
+import styles from './MathLive.modules.scss';
 
 const DEFAULT_OPTIONS: Partial<MathfieldOptions> = {
   virtualKeyboardMode: 'manual',

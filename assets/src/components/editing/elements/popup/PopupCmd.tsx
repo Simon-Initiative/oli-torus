@@ -1,8 +1,8 @@
-import { isActive } from '../../slateUtils';
-import { createButtonCommandDesc } from '../commands/commandFactories';
-import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Element, Transforms } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
+import { isActive } from '../../slateUtils';
+import { createButtonCommandDesc } from '../commands/commandFactories';
 
 export const popupCmdDesc = createButtonCommandDesc({
   icon: <i className="fa-solid fa-window-restore"></i>,
