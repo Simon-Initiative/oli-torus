@@ -681,44 +681,13 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{}, next, %{"trigger" => trigger, "content" => content} = element) do
-    trigger =
-      if escape_xml!(trigger) == "hover" do
-        "hover focus"
-      else
-        "manual"
-      end
+  def popup(%Context{}, _next, element) do
+    {:safe, rendered} =
+      ReactPhoenix.ClientSide.react_component("Components.DeliveryElementRenderer", %{
+        "element" => element
+      })
 
-    popup_content =
-      case parse_html_content(content) do
-        "" -> ~s|<i class="fa-solid fa-volume-high"></i>|
-        content -> content
-      end
-
-    [audio_element, _play_code, audio_id] = audio_player(element["audioSrc"])
-
-    [
-      ~s"""
-      <span
-        tabindex="0"
-        role="button"
-        class="term popup-anchor#{if !String.contains?(trigger, "hover") do
-        " popup-click"
-      else
-        ""
-      end}"
-        data-audio="#{audio_id}"
-        data-bs-trigger="#{trigger}"
-        data-bs-toggle="popover"
-        data-bs-placement="top"
-        data-bs-container=".content"
-        data-bs-html="true"
-        data-bs-content="#{escape_xml!(popup_content)}">
-        #{next.()}
-        #{audio_element}
-      </span>\n
-      """
-    ]
+    rendered
   end
 
   def selection(%Context{} = context, _, selection) do
