@@ -771,6 +771,33 @@ defmodule OliWeb.Router do
     post("/:section_slug/payment/code", PaymentController, :apply_code)
   end
 
+  ### Sections - Student Dashboard
+
+  scope "/sections/:section_slug/student_dashboard/:student_id", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery_and_admin,
+      :maybe_gated_resource,
+      :pow_email_layout
+    ])
+
+    live_session :student_dashboard,
+      on_mount: OliWeb.Delivery.StudentDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      live("/:active_tab", Delivery.StudentDashboard.StudentDashboardLive)
+    end
+
+    live_session :student_dashboard_preview,
+      on_mount: OliWeb.Delivery.StudentDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      live(
+        "/preview/:active_tab",
+        Delivery.StudentDashboard.StudentDashboardLive,
+        :preview
+      )
+    end
+  end
+
   ### Sections - Instructor Dashboard
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
