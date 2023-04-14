@@ -41,6 +41,8 @@ import {
 } from '../paths/path-utils';
 import { sortScreens } from '../screens/screen-utils';
 import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
+import { useDispatch } from 'react-redux';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;
@@ -113,8 +115,7 @@ export const addFlowchartScreen = createAsyncThunk(
       );
 
       if (createResults.result === 'failure') {
-        // TODO - handle error
-        return;
+        throw new Error("Couldn't create activity: " + JSON.stringify(createResults));
       }
 
       const getLastScreenId = (): number | undefined => {
@@ -148,7 +149,6 @@ export const addFlowchartScreen = createAsyncThunk(
             setGoToAlwaysPath(fromScreen, createResults.resourceId);
           }
 
-          // TODO - these two should be a single operation?
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
           await dispatch(upsertActivity({ activity: fromScreen }));
         }
@@ -206,7 +206,15 @@ export const addFlowchartScreen = createAsyncThunk(
       await dispatch(savePage({ undoable: false }));
       return activity;
     } catch (e) {
-      console.error(e);
+      dispatch(
+        reportAPIError({
+          error: JSON.stringify(e, Object.getOwnPropertyNames(e), 2),
+          title: 'Could not add screen',
+          message: 'A screen could not be added. Please try again.',
+          failedActivity: null,
+          info: null,
+        }),
+      );
       throw e;
     }
   },

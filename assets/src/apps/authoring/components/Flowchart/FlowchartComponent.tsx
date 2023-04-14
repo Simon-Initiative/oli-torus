@@ -1,5 +1,5 @@
-import React from 'react';
-import ReactFlow, { Controls } from 'reactflow';
+import React, { useCallback } from 'react';
+import ReactFlow, { Controls, ReactFlowInstance } from 'reactflow';
 
 import { layoutFlowchart } from './flowchart-layout';
 
@@ -31,6 +31,20 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
   const { nodes, edges } = props;
 
   const layout = layoutFlowchart(nodes, edges);
+  const onInit = useCallback(
+    (reactFlowInstance: ReactFlowInstance) => {
+      setTimeout(() => {
+        const startNode = nodes.filter(
+          (n) => (n.data as any)?.authoring?.flowchart?.screenType === 'welcome_screen',
+        );
+        console.info('Fitting to', startNode);
+        reactFlowInstance.fitView({
+          nodes: startNode,
+        });
+      }, 1000);
+    },
+    [nodes],
+  );
 
   return (
     <ReactFlow

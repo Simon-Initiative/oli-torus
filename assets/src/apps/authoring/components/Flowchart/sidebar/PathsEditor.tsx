@@ -25,12 +25,12 @@ export const PathsEditor: React.FC<Props> = ({
   const usedPathIds = paths.map((p) => p.id);
   return (
     <div>
-      {sortedPath.map((path) => (
+      {sortedPath.map((path, index) => (
         <PathEditBox
           screens={screens}
           questionId={questionId}
           screenId={screenId}
-          key={path.id}
+          key={path.id + String(index)}
           questionType={questionType}
           availablePaths={availablePaths}
           usedPathIds={usedPathIds}

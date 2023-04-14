@@ -19,6 +19,7 @@ import { savePage } from '../../../store/page/actions/savePage';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { createExitPath } from '../paths/path-factories';
 import { selectState as selectPageState } from '../../../store/page/slice';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 
 interface VerifyFlowchartLessonPayload {}
 
@@ -47,7 +48,16 @@ export const verifyFlowchartLesson = createAsyncThunk(
       await verifyFinishMessageExists(getState, dispatch);
       await verifyAllRules(getState, dispatch);
     } catch (e) {
-      console.error(e);
+      dispatch(
+        reportAPIError({
+          error: JSON.stringify(e, Object.getOwnPropertyNames(e), 2),
+          title: 'Could not validate lesson',
+          message:
+            'Something went wrong when attempting to validate this lesson. There is likely a problem with the lesson data that needs to be fixed before it can be delivered to learners. Please contact support for assistance.',
+          failedActivity: null,
+          info: null,
+        }),
+      );
       throw e;
     }
   },
@@ -179,8 +189,6 @@ const verifyEndScreenHasOnlyExitLessonPath = async (getState: () => unknown, dis
         dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
         await dispatch(upsertActivity({ activity: modifiedScreen }));
       }
-    } else {
-      // All other screens should NOT have an exit lesson path.
     }
   }
 };

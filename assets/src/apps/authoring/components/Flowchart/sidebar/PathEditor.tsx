@@ -169,9 +169,12 @@ const PathEditor: React.FC<EditParams> = ({
 
   availableWithCurrent.sort(sortByPriority);
 
+  const showQuestionLabel =
+    isComponentPath(workingPath) || isCorrectPath(workingPath) || isIncorrectPath(workingPath);
+
   return (
     <div className={className}>
-      {questionId && <label>When {questionType} is</label>}
+      {questionId && showQuestionLabel && <label>When {questionType} is</label>}
 
       {availableWithCurrent.length === 1 && <label>{availableWithCurrent[0].label}</label>}
 

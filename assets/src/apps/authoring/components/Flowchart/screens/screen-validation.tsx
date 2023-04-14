@@ -17,11 +17,6 @@ import { AllPaths } from '../paths/path-types';
 import { isDestinationPath, isOptionCommonErrorPath, isUnknownPath } from '../paths/path-utils';
 import { validatePath } from '../paths/path-validation';
 
-const validateQuestion = (question: any) => {
-  // TODO!
-  return null;
-};
-
 const hasPathTo = (
   screenId: number,
   allActivities: IActivity[],
@@ -92,13 +87,6 @@ export const validateScreen = (
         are no interactions missing here.
       </ValidationError>,
     );
-  }
-
-  if (question) {
-    const reason = validateQuestion(question);
-    if (reason) {
-      validations.push(reason);
-    }
   }
 
   const unknownPaths = (screen.authoring?.flowchart?.paths || []).filter(isUnknownPath);

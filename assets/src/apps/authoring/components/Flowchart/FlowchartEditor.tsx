@@ -26,6 +26,7 @@ import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
 import { changeAppMode, changeEditMode } from '../../store/app/slice';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import { FlowchartErrorDisplay } from './FlowchartErrorMessages';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.
@@ -127,6 +128,7 @@ export const FlowchartEditor = () => {
           </div>
         </DndProvider>
       </div>
+      <FlowchartErrorDisplay />
     </FlowchartEventContext.Provider>
   );
 };

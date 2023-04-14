@@ -8,6 +8,7 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
+  QuestionType,
   getAvailablePaths,
   getScreenPrimaryQuestion,
   getScreenQuestionType,
@@ -44,7 +45,8 @@ export const FlowchartSidebar: React.FC<FlowchartSidebarProps> = () => {
 
 const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
   const primaryQuestion = getScreenPrimaryQuestion(screen);
-  const questionType = questionTypeLabels[getScreenQuestionType(screen)];
+  const questionType: QuestionType = getScreenQuestionType(screen);
+  const questionTypeLabel = questionTypeLabels[questionType];
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
   const validations = validateScreen(screen, activities, sequence);
@@ -74,6 +76,9 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
     dispatch(addPath({ screenId: screen.id }));
   };
 
+  const paths = screen.authoring?.flowchart?.paths || [];
+  const addPathDisabled = questionType === 'none' && paths.length > 0;
+
   return (
     <>
       <h2 className="edit-logic-header">
@@ -99,14 +104,18 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
             screens={screens}
             questionId={primaryQuestion?.id || ''}
             screenId={screen.id}
-            questionType={questionType}
+            questionType={questionTypeLabel}
             availablePaths={getAvailablePaths(screen)}
-            paths={screen.authoring?.flowchart?.paths || []}
+            paths={paths}
           />
         )}
       </div>
 
-      <button onClick={addRule} className="btn btn-primary add-rule-button">
+      <button
+        disabled={addPathDisabled}
+        onClick={addRule}
+        className="btn btn-primary add-rule-button"
+      >
         Add Rule
       </button>
     </>

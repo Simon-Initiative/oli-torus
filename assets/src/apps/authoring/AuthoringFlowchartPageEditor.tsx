@@ -12,6 +12,7 @@ import { SidePanel } from './components/SidePanel';
 import { changeEditMode } from './store/app/slice';
 import FlowchartHeaderNav from './components/FlowchartHeaderNav';
 import RightMenu from './components/RightMenu/RightMenu';
+import { FlowchartErrorDisplay } from './components/Flowchart/FlowchartErrorMessages';
 
 interface PanelState {
   left: boolean;
@@ -80,6 +81,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
           />
         )}
       </SidePanel>
+      <FlowchartErrorDisplay />
     </div>
   );
 };

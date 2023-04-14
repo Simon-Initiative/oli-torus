@@ -8,6 +8,7 @@ import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { Template } from '../template-types';
 import { applyTemplateToActivity } from '../template-utils';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 
 interface ApplyTemplatePayload {
   screenId: EntityId;
@@ -17,10 +18,11 @@ interface ApplyTemplatePayload {
 export const applyTemplate = createAsyncThunk(
   `${FlowchartSlice}/applyTemplate`,
   async (payload: ApplyTemplatePayload, { dispatch, getState }) => {
+    const { screenId, template } = payload;
+    const rootState = getState() as AuthoringRootState;
+    const screen = selectActivityById(rootState, screenId);
+
     try {
-      const { screenId, template } = payload;
-      const rootState = getState() as AuthoringRootState;
-      const screen = selectActivityById(rootState, screenId);
       if (!screen) return null;
 
       const modifiedScreen = applyTemplateToActivity(screen, template);
@@ -30,7 +32,16 @@ export const applyTemplate = createAsyncThunk(
       await dispatch(upsertActivity({ activity: modifiedScreen }));
       return modifiedScreen;
     } catch (e) {
-      console.error(e);
+      dispatch(
+        reportAPIError({
+          error: JSON.stringify(e, Object.getOwnPropertyNames(e), 2),
+          title: 'Could not apply template to screen',
+          message:
+            'Something went wrong when attempting to apply a template to a screen. Please try again.',
+          failedActivity: screen,
+          info: null,
+        }),
+      );
       throw e;
     }
   },
