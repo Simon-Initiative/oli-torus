@@ -2370,6 +2370,90 @@ defmodule Oli.Delivery.Sections do
       get_flatten_hierarchy(rest, resources)
   end
 
+  def get_objectives_and_subobjectives(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    objectives_list =
+      DeliveryResolver.all_pages(section_slug)
+      |> Enum.into([], fn elem -> elem.objectives["attached"] end)
+      |> List.flatten()
+
+    objectives =
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        left_join: rev2 in Revision,
+        on: rev2.resource_id in rev.children,
+        where: rev.deleted == false and rev.resource_type_id == ^page_id,
+        where: rev.resource_id in ^objectives_list,
+        group_by: [rev2.title, rev.resource_id, rev.title],
+        select: %{
+          resource_id: rev.resource_id,
+          objective: rev.title,
+          subobjective: rev2.title,
+          student_mastery_obj: "Medium",
+          student_mastery_subobj: "High",
+          student_engagement:
+            fragment("('{High,Medium,Low,Not enough data}'::text[])[ceil(random()*4)]")
+        }
+      )
+      |> Repo.all()
+
+    objectives_pages_map =
+      DeliveryResolver.all_pages(section_slug)
+      |> Enum.reduce(%{}, fn page, acc ->
+        Enum.map(page.objectives["attached"], fn obj_id -> {obj_id, [page.resource_id]} end)
+        |> Enum.into(%{})
+        |> Map.merge(acc, fn _, x1, x2 ->
+          x1 ++ x2
+        end)
+      end)
+
+    Enum.map(objectives, fn obj ->
+      Map.put(obj, :pages_id, Map.get(objectives_pages_map, obj.resource_id))
+    end)
+  end
+
+  def get_units_and_modules_from_a_section(section_slug) do
+    all =
+      Repo.all(
+        from(
+          [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+          join: cp in ContainedPage,
+          on: cp.container_id == rev.resource_id,
+          where: rev.deleted == false and s.slug == ^section_slug and rev.resource_type_id == 2,
+          group_by: [cp.container_id, rev.title, sr.numbering_level, rev.children],
+          order_by: [asc: rev.title],
+          select: %{
+            container_id: cp.container_id,
+            title: rev.title,
+            level: sr.numbering_level,
+            children: rev.children
+          }
+        )
+      )
+
+    Enum.map(all, fn %{children: children} = elem ->
+      children_from_children =
+        all
+        |> Enum.filter(fn %{container_id: container_id} -> container_id in children end)
+        |> Enum.flat_map(fn child_map ->
+          child_map[:children]
+        end)
+
+      elem = %{elem | children: children ++ children_from_children}
+
+      if elem.level == 2 do
+        Map.put(
+          elem,
+          :title,
+          "#{Map.get(Enum.find(all, fn %{children: children} -> Enum.member?(children, elem.container_id) end), :title)} / #{elem.title}"
+        )
+      else
+        elem
+      end
+    end)
+    |> Enum.sort_by(& &1.title)
+  end
+
   def get_parent_project_survey(section_slug) do
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
