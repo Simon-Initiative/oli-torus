@@ -4057,6 +4057,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -2.5rem;
 }
 
+.-mt-5 {
+  margin-top: -1.25rem;
+}
+
 .mb-0 {
   margin-bottom: 0px;
 }
@@ -4701,6 +4705,24 @@ table.table-striped tbody tr:nth-child(even) {
   row-gap: 1rem;
 }
 
+.space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-x-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.75rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.divide-x > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-x-reverse: 0;
+  border-right-width: calc(1px * var(--tw-divide-x-reverse));
+  border-left-width: calc(1px * calc(1 - var(--tw-divide-x-reverse)));
+}
+
 .divide-y > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-y-reverse: 0;
   border-top-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
@@ -4949,11 +4971,6 @@ table.table-striped tbody tr:nth-child(even) {
 .border-light {
   --tw-border-opacity: 1;
   border-color: rgb(212 212 212 / var(--tw-border-opacity));
-}
-
-.border-secondary {
-  --tw-border-opacity: 1;
-  border-color: rgb(82 82 82 / var(--tw-border-opacity));
 }
 
 .border-slate-300 {
@@ -5483,6 +5500,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .text-\[1\.5em\] {
   font-size: 1.5em;
+}
+
+.text-\[10px\] {
+  font-size: 10px;
 }
 
 .text-\[11px\] {
@@ -6958,6 +6979,11 @@ p {
 
 .dark .dark\:hidden {
   display: none;
+}
+
+.dark .dark\:divide-gray-700 > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1;
+  border-color: rgb(64 64 64 / var(--tw-divide-opacity));
 }
 
 .dark .dark\:border-gray-400 {
