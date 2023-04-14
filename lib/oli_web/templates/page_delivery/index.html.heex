@@ -25,8 +25,13 @@
       </div>
 
       <div class="flex flex-col gap-x-4 lg:flex-row">
-        <div class={if @collab_space_config && assigns.collab_space_config.status != :disabled, do: "lg:basis-2/3", else: "w-full"}>
-            <Components.Delivery.CourseContentPanel.course_content_panel {assigns} />
+        <div class={if @collab_space_config && assigns.collab_space_config.status != :disabled, do: "lg:basis-2/3 mt-3", else: "w-full"}>
+          <%=
+          live_render(@conn, OliWeb.Delivery.StudentDashboard.CourseContentLive,
+            session: %{
+              "section_slug" => @section_slug,
+            })
+          %>
         </div>
 
         <%= if @collab_space_config && assigns.collab_space_config.status != :disabled do %>
@@ -43,7 +48,6 @@
           </div>
         <% end %>
       </div>
-
     </div>
 
     <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
