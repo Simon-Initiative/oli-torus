@@ -17,9 +17,11 @@ import {
 import { compareRules, generateRules } from '../rules/rule-compilation';
 import { savePage } from '../../../store/page/actions/savePage';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
-import { createExitPath } from '../paths/path-factories';
+import { createAlwaysGoToPath, createExitPath } from '../paths/path-factories';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
+import { isUnknownPath } from '../paths/path-utils';
+import { replacePath } from './replace-path';
 
 interface VerifyFlowchartLessonPayload {}
 
@@ -34,12 +36,7 @@ export const verifyFlowchartLesson = createAsyncThunk(
       }
       console.info('Verifying flowchart lesson data');
 
-      // Some things a flowchart lesson requires:
-      // 1. A starting screen
-      // 2. An end of lesson screen
-      // 3. The end screen must be the last screen in the sequence
-      // 4. The end screen must only have an exit-lesson path.
-      // 5. Make sure our rules are up to date
+      await verifySingleEmptyRule(getState, dispatch);
       await verifyMaxAttempts(getState, dispatch);
       await verifyStartScreenExists(getState, dispatch);
       await verifyEndScreenExists(getState, dispatch);
@@ -62,6 +59,32 @@ export const verifyFlowchartLesson = createAsyncThunk(
     }
   },
 );
+
+// If there is a single "empty" path, turn it into an always-go-to path.
+const verifySingleEmptyRule = async (getState: () => unknown, dispatch: any) => {
+  const allActivities = selectAllActivities(getState() as AuthoringRootState);
+  for (const activity of allActivities) {
+    if (!activity.authoring?.flowchart?.paths) {
+      continue;
+    }
+
+    if (activity.authoring?.flowchart?.paths.length !== 1) {
+      continue;
+    }
+
+    const onlyPath = activity.authoring?.flowchart?.paths[0];
+
+    if (isUnknownPath(onlyPath)) {
+      await dispatch(
+        replacePath({
+          oldPathId: onlyPath.id,
+          newPath: createAlwaysGoToPath(onlyPath.destinationScreenId),
+          screenId: activity.id,
+        }),
+      );
+    }
+  }
+};
 
 // Our rules logic is set up for 3-tries and you're done, so we want the maxAttempt capped at 2 for scoring.
 const verifyMaxAttempts = async (getState: () => unknown, dispatch: any) => {
