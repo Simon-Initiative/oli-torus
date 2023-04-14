@@ -17,8 +17,7 @@ interface FloatingEdgeProps {
   data?: FlowchartEdgeData;
 }
 
-const SVGOffset = 65;
-
+const SVGOffset = 92;
 const createCurvedPath = (points: { x: number; y: number }[]): string => {
   switch (points.length) {
     case 3:

@@ -12,7 +12,7 @@ import {
 import { addFlowchartScreen } from './flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
 
-import { buildEdges, activitiesToNodes, buildStartingNode } from './flowchart-utils';
+import { buildEdges, activitiesToNodes } from './flowchart-utils';
 
 import { FlowchartComponent } from './FlowchartComponent';
 import {
@@ -25,7 +25,6 @@ import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
 import { changeAppMode, changeEditMode } from '../../store/app/slice';
 import { screenTypeToTitle } from './screens/screen-factories';
-import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 import { FlowchartErrorDisplay } from './FlowchartErrorMessages';
 
 /*
@@ -38,10 +37,8 @@ export const FlowchartEditor = () => {
   const dispatch = useDispatch();
 
   const activities = useSelector(selectAllActivities);
-  const sequence = useSelector(selectSequence);
   const currentActivityId = useSelector(selectCurrentActivityId);
 
-  console.info('Rendering flowchart', activities, sequence);
   const edges = buildEdges(activities);
   const nodes = activitiesToNodes(activities);
 
