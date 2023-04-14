@@ -28,7 +28,6 @@ import {
 } from '../../store/activities/actions/rules';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
-import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 const IRulesList: React.FC = () => {
