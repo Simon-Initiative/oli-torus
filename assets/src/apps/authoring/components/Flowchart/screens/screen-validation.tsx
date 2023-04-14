@@ -66,16 +66,25 @@ export const validateScreen = (
   const question = getScreenPrimaryQuestion(screen);
   const questionType = getScreenQuestionType(screen);
 
-  if (screen.authoring?.flowchart?.screenType === 'end_screen') return [];
-
   if (!screen.authoring?.flowchart?.templateApplied) {
     validations.push(
       <ValidationError key="template-not-applied" title="Component Settings">
-        Component settings are missing. Please go to <b>edit screen mode</b> and set up the correct
-        answer.
+        {questionType === 'none' && (
+          <span>
+            Screen settings are missing. Please go to <b>edit screen mode</b> and design the screen.
+          </span>
+        )}
+        {questionType !== 'none' && (
+          <span>
+            Component settings are missing. Please go to <b>edit screen mode</b> and set up the
+            correct answer.
+          </span>
+        )}
       </ValidationError>,
     );
   }
+
+  if (screen.authoring?.flowchart?.screenType === 'end_screen') return validations;
 
   if (
     sequence.length > 0 &&
