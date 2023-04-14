@@ -1,11 +1,37 @@
 import React, { ChangeEvent, ChangeEventHandler, useCallback, useState } from 'react';
 import { v4 } from 'uuid';
-import { CommandButton } from 'data/content/model/elements/types';
 import { Modal, ModalSize } from 'components/modal/Modal';
+import { CommandButton } from 'data/content/model/elements/types';
 import { CommandContext } from '../commands/interfaces';
-import { CommandTarget } from './commandButtonTypes';
 import { CommandMessageEditor } from './CommandMessageEditor';
+import { CommandTarget as CommandTargetType } from './commandButtonTypes';
 import { useCommandInventory } from './useCommandInventory';
+
+const CommandTarget: React.FC<{
+  target: CommandTargetType;
+  selected: boolean;
+  onChange: ChangeEventHandler<HTMLInputElement>;
+}> = ({ target, selected, onChange }) => {
+  const id = v4();
+  return (
+    <div className="form-check">
+      <input
+        onChange={onChange}
+        checked={selected}
+        name="target-radio"
+        value={target.id}
+        className="form-check-input"
+        type="radio"
+        id={id}
+      />
+      <label className="form-check-label" htmlFor={id}>
+        <b>{target.componentType}</b>
+        <br />
+        <i>{target.label}</i>
+      </label>
+    </div>
+  );
+};
 
 interface Props {
   model: CommandButton;
@@ -52,7 +78,7 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
       onOk={onSubmit}
     >
       <p className="alert alert-info">
-        Command buttons allow you to triger actions in other components. An example of this is
+        Command buttons allow you to trigger actions in other components. An example of this is
         playing a video at a specific cue point.
       </p>
       <h4 className="mb-2">Button Style</h4>
@@ -116,31 +142,5 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
         target={targets.find((t) => t.id === workingCopy.target)}
       />
     </Modal>
-  );
-};
-
-const CommandTarget: React.FC<{
-  target: CommandTarget;
-  selected: boolean;
-  onChange: ChangeEventHandler<HTMLInputElement>;
-}> = ({ target, selected, onChange }) => {
-  const id = v4();
-  return (
-    <div className="form-check">
-      <input
-        onChange={onChange}
-        checked={selected}
-        name="target-radio"
-        value={target.id}
-        className="form-check-input"
-        type="radio"
-        id={id}
-      />
-      <label className="form-check-label" htmlFor={id}>
-        <b>{target.componentType}</b>
-        <br />
-        <i>{target.label}</i>
-      </label>
-    </div>
   );
 };
