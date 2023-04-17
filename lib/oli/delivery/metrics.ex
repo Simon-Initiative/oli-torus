@@ -73,7 +73,7 @@ defmodule Oli.Delivery.Metrics do
   """
   def progress_for_page(section_id, user_ids, page_id) do
     query =
-      from ra in ResourceAccess,
+      from(ra in ResourceAccess,
         where:
           ra.resource_id == ^page_id and ra.section_id == ^section_id and ra.user_id in ^user_ids,
         group_by: ra.user_id,
@@ -84,6 +84,7 @@ defmodule Oli.Delivery.Metrics do
             ra.progress
           )
         }
+      )
 
     Repo.all(query)
     |> Enum.into(%{})
@@ -169,7 +170,7 @@ defmodule Oli.Delivery.Metrics do
     user_count = max(user_count, 1)
 
     query =
-      from ra in ResourceAccess,
+      from(ra in ResourceAccess,
         where:
           ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
             ra.user_id not in ^user_ids_to_ignore,
@@ -182,6 +183,30 @@ defmodule Oli.Delivery.Metrics do
             ^user_count
           )
         }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculate the progress for a specific student in a collection of pages.
+  """
+  def progress_across_for_pages(section_id, pages_ids, student_id) do
+    query =
+      from(ra in ResourceAccess,
+        where:
+          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+            ra.user_id == ^student_id,
+        group_by: ra.resource_id,
+        select: {
+          ra.resource_id,
+          fragment(
+            "SUM(?) / COUNT(*)",
+            ra.progress
+          )
+        }
+      )
 
     Repo.all(query)
     |> Enum.into(%{})
