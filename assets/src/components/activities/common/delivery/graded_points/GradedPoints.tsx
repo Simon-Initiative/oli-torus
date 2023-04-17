@@ -1,5 +1,6 @@
-import { ActivityState } from 'components/activities/types';
 import React from 'react';
+import { ActivityState } from 'components/activities/types';
+
 interface Props {
   icon: React.ReactNode;
   attemptState: ActivityState;

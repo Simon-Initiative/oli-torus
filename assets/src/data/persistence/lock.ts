@@ -1,5 +1,5 @@
-import { makeRequest, ServerError } from './common';
 import { ProjectSlug, ResourceSlug } from '../types';
+import { ServerError, makeRequest } from './common';
 
 export type LockResult = Acquired | Released | NotAcquired | ServerError;
 

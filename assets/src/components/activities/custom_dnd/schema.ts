@@ -1,4 +1,4 @@
-import { Part, Transformation, ActivityModelSchema, Stem } from '../types';
+import { ActivityModelSchema, Part, Stem, Transformation } from '../types';
 
 export interface CustomDnDSchema extends ActivityModelSchema {
   stem: Stem;

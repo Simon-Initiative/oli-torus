@@ -1,13 +1,13 @@
 export const LtiConnectInstructions = {
   mounted() {
-    const canvasDeveloperInput = <HTMLInputElement>(
-      document.getElementById('canvas_developer_key_url')
-    );
+    const canvasDeveloperInput = document.getElementById(
+      'canvas_developer_key_url',
+    ) as HTMLInputElement;
     const canvasDeveloperInputValue = canvasDeveloperInput.value;
 
-    const courseNavigationCheckbox = <HTMLInputElement>(
-      document.getElementById('course_navigation_default')
-    );
+    const courseNavigationCheckbox = document.getElementById(
+      'course_navigation_default',
+    ) as HTMLInputElement;
 
     courseNavigationCheckbox.addEventListener('change', () => {
       if (courseNavigationCheckbox?.checked) {

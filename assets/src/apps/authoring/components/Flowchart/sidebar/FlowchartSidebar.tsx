@@ -13,7 +13,6 @@ import {
   questionTypeLabels,
 } from '../paths/path-options';
 import { validateScreen } from '../screens/screen-validation';
-
 import { PathsEditor } from './PathsEditor';
 
 interface FlowchartSidebarProps {}
@@ -49,14 +48,16 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
         <ValidationError key={index}>{err}</ValidationError>
       ))}
 
-      <PathsEditor
-        screens={screens}
-        questionId={primaryQuestion?.id || ''}
-        screenId={screen.id}
-        questionType={questionType}
-        availablePaths={getAvailablePaths(screen)}
-        paths={screen.authoring?.flowchart?.paths || []}
-      />
+      {screen.authoring?.flowchart?.screenType !== 'end_screen' && (
+        <PathsEditor
+          screens={screens}
+          questionId={primaryQuestion?.id || ''}
+          screenId={screen.id}
+          questionType={questionType}
+          availablePaths={getAvailablePaths(screen)}
+          paths={screen.authoring?.flowchart?.paths || []}
+        />
+      )}
     </div>
   );
 };

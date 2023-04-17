@@ -1,8 +1,8 @@
+import chroma from 'chroma-js';
+import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import { formatExpression } from 'adaptivity/scripting';
 import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
-import chroma from 'chroma-js';
-import { JSONSchema7Object } from 'json-schema';
 import { parseNumString } from 'utils/common';
 import {
   ColorPalette,

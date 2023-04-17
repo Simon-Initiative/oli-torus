@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { VariableEvaluation, evaluateVariables, Variable } from 'data/persistence/variables';
-
-import { SourcePanel } from './SourcePanel';
-import { ResultsPanel } from './ResultsPanel';
+import { Variable, VariableEvaluation, evaluateVariables } from 'data/persistence/variables';
 import './ModuleEditor.scss';
+import { ResultsPanel } from './ResultsPanel';
+import { SourcePanel } from './SourcePanel';
+
 const NUMBER_OF_ATTEMPTS = 10;
 
 export interface ModuleEditorProps {

@@ -1,10 +1,19 @@
+import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import guid from '../../../../../utils/guid';
-import { IDropdownPartLayout } from '../../../../delivery/store/features/activities/slice';
+import {
+  AdvancedFeedbackAnswerType,
+  IDropdownPartLayout,
+  IInputNumberPartLayout,
+  IMCQPartLayout,
+  ISliderPartLayout,
+} from '../../../../delivery/store/features/activities/slice';
 import {
   AlwaysGoToPath,
   CorrectPath,
   EndOfActivityPath,
+  ExitActivityPath,
   IncorrectPath,
+  NumericCommonErrorPath,
   OptionCommonErrorPath,
   UnknownPathWithDestination,
 } from './path-types';
@@ -21,14 +30,34 @@ export const createUnknownPathWithDestination = (
   priority: 20,
 });
 
-const createDestinationPath = (id: string, destinationScreenId: number | null = null) => ({
+const createDestinationPathTemplate = (id: string, destinationScreenId: number | null = null) => ({
   id,
   ruleId: null,
   destinationScreenId,
   completed: false,
 });
 
-export const createOptionCommonErrorPath = (
+export const createInputNumberCommonErrorPath = (
+  ni: IInputNumberPartLayout | ISliderPartLayout,
+  index: number,
+): NumericCommonErrorPath => {
+  const feedback = ni.custom!.advancedFeedback![index];
+  const label =
+    feedback.answer?.answerType === AdvancedFeedbackAnswerType.Between
+      ? `Answer is ${feedback.answer.correctMin} to ${feedback.answer.correctMax}`
+      : `Answer is ${feedback.answer?.correctAnswer}`;
+
+  return {
+    ...createDestinationPathTemplate(`input-number-common-error-${index}`),
+    type: 'numeric-common-error',
+    feedbackIndex: index,
+    componentId: ni.id,
+    label,
+    priority: 4,
+  };
+};
+
+export const createDropdownCommonErrorPath = (
   dropdown: IDropdownPartLayout,
   selectedOption: number,
   destinationScreenId: number | null = null,
@@ -37,11 +66,29 @@ export const createOptionCommonErrorPath = (
     dropdown.custom.optionLabels[selectedOption] || `Option #${selectedOption + 1}`;
 
   return {
-    ...createDestinationPath(`option-common-error-${selectedOption}`, destinationScreenId),
+    ...createDestinationPathTemplate(`option-common-error-${selectedOption}`, destinationScreenId),
     type: 'option-common-error',
-    selectedOption,
+    selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: dropdown.id,
     label: 'Selected option ' + optionLabel.substring(0, 20),
+    priority: 4,
+  };
+};
+
+export const createMCQCommonErrorPath = (
+  mcq: IMCQPartLayout,
+  selectedOption: number,
+  destinationScreenId: number | null = null,
+): OptionCommonErrorPath => {
+  const optionLabel =
+    getNodeText(mcq.custom?.mcqItems[selectedOption].nodes) || `Option #${selectedOption + 1}`;
+
+  return {
+    ...createDestinationPathTemplate(`mcq-common-error-${selectedOption}`, destinationScreenId),
+    type: 'option-common-error',
+    selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
+    componentId: mcq.id,
+    label: 'Incorrect option: ' + optionLabel.substring(0, 20),
     priority: 4,
   };
 };
@@ -50,7 +97,7 @@ export const createIncorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
 ): IncorrectPath => ({
-  ...createDestinationPath('incorrect', destinationScreenId),
+  ...createDestinationPathTemplate('incorrect', destinationScreenId),
   type: 'incorrect',
   componentId,
   label: 'Any Incorrect',
@@ -61,7 +108,7 @@ export const createCorrectPath = (
   componentId: string,
   destinationScreenId: number | null = null,
 ): CorrectPath => ({
-  ...createDestinationPath('correct', destinationScreenId),
+  ...createDestinationPathTemplate('correct', destinationScreenId),
   type: 'correct',
   componentId,
   label: 'Correct',
@@ -85,6 +132,15 @@ export const createEndOfActivityPath = (): EndOfActivityPath => ({
   id: 'end-of-activity',
   ruleId: null,
   completed: false,
-  label: 'Exit Activity',
+  label: 'Go To End Screen',
   priority: 16,
+});
+
+export const createExitPath = (): ExitActivityPath => ({
+  type: 'exit-activity',
+  id: 'exit-activity',
+  ruleId: null,
+  completed: true,
+  label: 'Exit Activity',
+  priority: 20,
 });

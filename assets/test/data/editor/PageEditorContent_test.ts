@@ -1,11 +1,11 @@
 import * as Immutable from 'immutable';
-import { PageEditorContent } from 'data/editor/PageEditorContent';
+import { Model } from 'data/content/model/elements/factories';
 import {
   ResourceContent,
   createDefaultStructuredContent,
   createGroup,
 } from 'data/content/resource';
-import { Model } from 'data/content/model/elements/factories';
+import { PageEditorContent } from 'data/editor/PageEditorContent';
 import guid from 'utils/guid';
 
 describe('PageEditorContent', () => {
@@ -118,7 +118,7 @@ describe('PageEditorContent', () => {
 
   it('replaceAt', () => {
     const defaultPageEditorContent = createDefaultPageEditorContent();
-    const { exampleContent, exampleGroup, doesntExist } = defaultPageEditorContent;
+    const { exampleContent, doesntExist } = defaultPageEditorContent;
     let { pageEditorContent } = defaultPageEditorContent;
 
     pageEditorContent = pageEditorContent.replaceAt([0], doesntExist);

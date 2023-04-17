@@ -1,18 +1,17 @@
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import EventEmitter from 'events';
+import {
+  AnyPartComponent,
+  AnyPartModel,
+  PartCapabilities,
+  defaultCapabilities,
+} from 'components/parts/types/parts';
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import {
   NotificationContext,
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import {
-  AnyPartComponent,
-  AnyPartModel,
-  defaultCapabilities,
-  PartCapabilities,
-} from 'components/parts/types/parts';
-import EventEmitter from 'events';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
 import PartComponent from '../common/PartComponent';
@@ -474,6 +473,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.configure && (
             <button
               title="Edit"
+              className="configure-toolbar-button"
               onClick={() => handleToolbarPartConfigure(selectedPartAndCapabilities.id, true)}
             >
               <i className="fas fa-edit"></i>

@@ -1,13 +1,12 @@
-import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Accordion, ListGroup, OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
+import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
-  selectAppMode,
   selectIsAdmin,
   selectProjectSlug,
   setCurrentRule,
@@ -19,14 +18,14 @@ import {
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
 import {
-  findInHierarchy,
-  flattenHierarchy,
-  getHierarchy,
-  getSequenceLineage,
   SequenceEntry,
   SequenceEntryChild,
   SequenceEntryType,
   SequenceHierarchyItem,
+  findInHierarchy,
+  flattenHierarchy,
+  getHierarchy,
+  getSequenceLineage,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentSequenceId,
@@ -64,7 +63,17 @@ const SequenceEditor: React.FC = () => {
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
     dispatch(setCurrentActivityFromSequence(entry.custom.sequenceId));
-    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+    dispatch(
+      setRightPanelActiveTab({
+        _rightPanelActiveTab: RightPanelTabs.SCREEN,
+        get rightPanelActiveTab() {
+          return this._rightPanelActiveTab;
+        },
+        set rightPanelActiveTab(value) {
+          this._rightPanelActiveTab = value;
+        },
+      }),
+    );
   };
 
   const addNewSequence = async (newSequenceEntry: any, siblingId: any) => {
@@ -616,7 +625,7 @@ const SequenceEditor: React.FC = () => {
 
             <Dropdown.Menu>
               <Dropdown.Item
-                onClick={(event) => {
+                onClick={() => {
                   handleItemAdd(undefined);
                 }}
               >

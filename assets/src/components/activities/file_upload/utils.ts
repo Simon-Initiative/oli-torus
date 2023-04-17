@@ -1,6 +1,6 @@
-import { FileUploadSchema, FileSpec } from 'components/activities/file_upload/schema';
+import { FileSpec, FileUploadSchema } from 'components/activities/file_upload/schema';
 import { Responses } from 'data/activities/model/responses';
-import { GradingApproach, makeHint, makeStem, ScoringStrategy } from '../types';
+import { GradingApproach, ScoringStrategy, makeHint, makeStem } from '../types';
 
 export const defaultModel: () => FileUploadSchema = () => {
   return {

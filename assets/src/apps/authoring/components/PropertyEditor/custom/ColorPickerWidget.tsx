@@ -1,5 +1,6 @@
 import React, { CSSProperties, useRef, useState } from 'react';
-import { RGBColor, ColorResult, SketchPicker } from 'react-color';
+import { ColorResult, RGBColor, SketchPicker } from 'react-color';
+
 interface ColorPickerProps {
   id: string;
   label: string;

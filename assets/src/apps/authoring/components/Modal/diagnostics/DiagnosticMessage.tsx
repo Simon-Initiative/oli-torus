@@ -1,5 +1,4 @@
 import React, { Fragment } from 'react';
-
 import { DiagnosticTypes } from './DiagnosticTypes';
 
 export interface Message {

@@ -1,21 +1,21 @@
-import React, { useContext } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useCallback, useContext } from 'react';
 import { useDrop } from 'react-dnd';
+import { useDispatch, useSelector } from 'react-redux';
 import { Handle, Position } from 'reactflow';
+import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
 import {
   IActivity,
   selectAllActivities,
   selectCurrentActivityId,
 } from '../../../../delivery/store/features/activities/slice';
-
-import { FlowchartEventContext } from '../FlowchartEventContext';
-import { screenTypes } from '../screens/screen-factories';
-import { ScreenButton } from './ScreenButton';
-import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
-import { useToggle } from '../../../../../components/hooks/useToggle';
-import { validateScreen } from '../screens/screen-validation';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
+import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
+import { FlowchartEventContext } from '../FlowchartEventContext';
+import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
+import { screenTypes } from '../screens/screen-factories';
+import { validateScreen } from '../screens/screen-validation';
+import { ScreenButton } from './ScreenButton';
 
 interface NodeProps {
   data: IActivity;
@@ -32,7 +32,7 @@ export const ScreenNode: React.FC<NodeProps> = ({ data }) => {
   );
 };
 
-const dontDoNothing = () => {
+const _dontDoNothing = () => {
   console.warn("This don't do nuthin yet");
 };
 
@@ -40,6 +40,7 @@ const dontDoNothing = () => {
 export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const { onAddScreen, onDeleteScreen, onSelectScreen, onEditScreen } =
     useContext(FlowchartEventContext);
+  const dispatch = useDispatch();
   const selectedId = useSelector(selectCurrentActivityId);
   const selected = selectedId === data.resourceId;
   const [showConfirmDelete, toggleConfirmDelete] = useToggle(false);
@@ -48,10 +49,27 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   const sequence = useSelector(selectSequence);
 
   const isValid = validateScreen(data, activities, sequence).length === 0;
+  const isEndScreen =
+    activities.find((s) => s.resourceId === data.resourceId)?.authoring?.flowchart?.screenType ===
+    'end_screen';
+  const isWelcomeScreen =
+    activities.find((s) => s.resourceId === data.resourceId)?.authoring?.flowchart?.screenType ===
+    'welcome_screen';
+
+  const isRequiredScreen = isEndScreen || isWelcomeScreen;
 
   const onDrop = (item: any) => {
-    onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
+    if (isEndScreen) {
+      onAddScreen({ nextNodeId: data.resourceId, screenType: item.screenType });
+    } else {
+      onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
+    }
   };
+
+  const onDuplicateScreen = useCallback(() => {
+    if (!data.resourceId) return;
+    dispatch(duplicateFlowchartScreen({ screenId: data.resourceId }));
+  }, [data.resourceId, dispatch]);
 
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
     accept: screenTypes,
@@ -89,15 +107,19 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
             <Icon icon="plus" />
           </ScreenButton> */}
 
-          <ScreenButton onClick={() => onEditScreen(data.resourceId!)}>
+          <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
             <Icon icon="edit" />
           </ScreenButton>
-          {/* <ScreenButton onClick={dontDoNothing}>
-            <Icon icon="clone" />
-          </ScreenButton> */}
-          <ScreenButton onClick={toggleConfirmDelete}>
-            <Icon icon="trash" />
-          </ScreenButton>
+          {isRequiredScreen || (
+            <>
+              <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
+                <Icon icon="clone" />
+              </ScreenButton>
+              <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
+                <Icon icon="trash" />
+              </ScreenButton>
+            </>
+          )}
         </div>
       </div>
       <small className="text-gray-400">{data.resourceId}</small>

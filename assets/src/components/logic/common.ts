@@ -1,8 +1,8 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
+import { ActivityEditorMap } from 'data/content/editors';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
-import { ActivityEditorMap } from 'data/content/editors';
 
 export interface LogicProps {
   onRemove: () => void;

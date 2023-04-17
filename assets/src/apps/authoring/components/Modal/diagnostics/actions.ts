@@ -1,21 +1,20 @@
-import { clone } from 'utils/common';
-
+import cloneDeep from 'lodash/cloneDeep';
+import has from 'lodash/has';
+import { JanusConditionProperties } from 'adaptivity/capi';
 import {
   updatePart,
   updatePartWithCorrectExpression,
 } from 'apps/authoring/store/parts/actions/updatePart';
+import { clone } from 'utils/common';
 import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
-import { DiagnosticTypes } from './DiagnosticTypes';
-import cloneDeep from 'lodash/cloneDeep';
 import { findConditionById, forEachCondition } from '../../AdaptivityEditor/ConditionsBlockEditor';
-import { JanusConditionProperties } from 'adaptivity/capi';
-import has from 'lodash/has';
+import { DiagnosticTypes } from './DiagnosticTypes';
 
 export const updateId = (problem: any, fixed: string) => {
   const activityId = problem.owner.resourceId;
   const partId = problem.item.id;
   const changes = { id: fixed };
-  return updatePart({ activityId, partId, changes });
+  return updatePart({ activityId, partId, changes, mergeChanges: true });
 };
 
 export const updatePartsWithCorrectExpression = (problem: any, fixed: string) => {

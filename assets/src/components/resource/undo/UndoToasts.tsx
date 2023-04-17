@@ -1,7 +1,6 @@
 import * as React from 'react';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { Undoables } from '../../../apps/page-editor/types';
-import { TransitionGroup, CSSTransition } from 'react-transition-group';
-
 import styles from './UndoToasts.modules.scss';
 
 export type UndoToastsProps = {

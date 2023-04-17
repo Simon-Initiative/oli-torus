@@ -1,6 +1,6 @@
 import React from 'react';
-import { CommandTarget } from './commandButtonTypes';
 import { DefaultCommandMessageEditor } from './DefaultCommandMessageEditor';
+import { CommandTarget } from './commandButtonTypes';
 
 interface Props {
   value: string;

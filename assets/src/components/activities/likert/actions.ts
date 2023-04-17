@@ -1,13 +1,13 @@
-import { LikertModelSchema, makeLikertChoice } from './schema';
-import { makeHint, HasParts, Part } from '../types';
-import * as ActivityTypes from '../types';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
+import { Choices, Items } from 'data/activities/model/choices';
+import { Responses, getCorrectResponse } from 'data/activities/model/responses';
+import { matchRule } from 'data/activities/model/rules';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { Choices, Items } from 'data/activities/model/choices';
-import { matchRule } from 'data/activities/model/rules';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
-import { getCorrectResponse, Responses } from 'data/activities/model/responses';
+import { HasParts, Part, makeHint } from '../types';
+import * as ActivityTypes from '../types';
+import { makeLikertChoice } from './schema';
 
 export const LikertActions = {
   addChoice() {

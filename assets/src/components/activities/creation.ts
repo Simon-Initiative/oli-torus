@@ -1,5 +1,5 @@
-import { Manifest, ActivityModelSchema, CreationContext } from './types';
 import { ResourceContext } from 'data/content/resource';
+import { ActivityModelSchema, CreationContext, Manifest } from './types';
 
 export type creationFn = (context: CreationContext) => Promise<ActivityModelSchema>;
 

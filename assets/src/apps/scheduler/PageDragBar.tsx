@@ -1,8 +1,8 @@
-import { DateWithoutTime } from 'epoq';
 import React, { useCallback } from 'react';
+import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
-import { barGeometry, dateWithoutTimeLabel, DayGeometry, leftToDate } from './date-utils';
+import { DayGeometry, barGeometry, leftToDate } from './date-utils';
 
 interface DragBarProps {
   endDate: DateWithoutTime;
@@ -53,7 +53,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
   );
 
   const stopDrag = useCallback(
-    (_e: React.MouseEvent | MouseEvent) => {
+    (e: React.MouseEvent | MouseEvent) => {
       disableDrag();
       onChange && onChange(null, workingEnd);
     },

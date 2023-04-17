@@ -1,9 +1,8 @@
 import React from 'react';
-
+import { Select } from 'components/common/Selection';
+import { TextInput } from 'components/common/TextInput';
 import { FileSpec as FileSpecType } from './schema';
 import { defaultMaxFileSize } from './utils';
-import { TextInput } from 'components/common/TextInput';
-import { Select } from 'components/common/Selection';
 import { getReadableFileSizeString } from './utils';
 
 const sizes = [

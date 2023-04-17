@@ -1,11 +1,11 @@
 import React from 'react';
-import { Modal } from 'components/modal/Modal';
-import { consentOptions, setCookies } from 'components/cookies/utils';
-import {
-  selectCookiePreferences,
-  CookiePreferencesProps,
-} from 'components/cookies/CookiePreferences';
 import ReactDOM from 'react-dom';
+import {
+  CookiePreferencesProps,
+  selectCookiePreferences,
+} from 'components/cookies/CookiePreferences';
+import { consentOptions, setCookies } from 'components/cookies/utils';
+import { Modal } from 'components/modal/Modal';
 
 export const CookieConsent = (cookiePreferences: CookiePreferencesProps) => {
   return (

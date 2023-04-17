@@ -26,13 +26,13 @@ export interface ToolbarButtonProps {
 export const DropdownToolbarButton = (props: ToolbarButtonProps) => {
   const editor = useSlate();
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
-  const [content, setContent] = React.useState(<span></span>);
+  const [content, _setContent] = React.useState(<span></span>);
 
-  const onDone = (params: any) => {
+  const _onDone = (params: any) => {
     props.setParentPopoverOpen?.(false);
     props.command.execute(props.context, editor, params);
   };
-  const onCancel = () => {
+  const _onCancel = () => {
     props.setParentPopoverOpen?.(false);
   };
 

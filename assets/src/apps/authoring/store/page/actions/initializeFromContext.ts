@@ -6,13 +6,16 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { setGroups } from '../../../../delivery/store/features/groups/slice';
+import { verifyFlowchartLesson } from '../../../components/Flowchart/flowchart-actions/verify-flowchart-lesson';
 import { PageContext } from '../../../types';
 import { createNew as createNewActivity } from '../../activities/actions/createNew';
+import { selectAppMode } from '../../app/slice';
 import { createNew as createNewGroup } from '../../groups/layouts/deck/actions/createNew';
 import { updateActivityPartInheritance } from '../../groups/layouts/deck/actions/updateActivityPartInheritance';
 import { updateActivityRules } from '../../groups/layouts/deck/actions/updateActivityRules';
-import { loadPage, PageState } from '../slice';
+import { AuthoringRootState } from '../../rootReducer';
 import PageSlice from '../name';
+import { PageState, loadPage } from '../slice';
 import { savePage } from './savePage';
 
 export const initializeFromContext = createAsyncThunk(
@@ -52,10 +55,10 @@ export const initializeFromContext = createAsyncThunk(
       // if there are any activities defined that are not in a group they will be
       // assimilated into a new group
       if (!children.length) {
-        const { payload: newActivity } = await dispatch(
-          createNewActivity({ title: 'Welcome Screen' }),
+        const { payload: welcomeScreen } = await dispatch(
+          createNewActivity({ title: 'Welcome Screen', screenType: 'welcome_screen' }),
         );
-        children.push(newActivity);
+        children.push(welcomeScreen);
       }
       // create sequence map of activities which is the group children
       const newSequence = children.map((childActivity) => {
@@ -131,6 +134,11 @@ export const initializeFromContext = createAsyncThunk(
     await Promise.all(ruleProcessing);
 
     await dispatch(setGroups({ groups }));
+
+    const appMode = selectAppMode(getState() as AuthoringRootState);
+    if (appMode === 'flowchart') {
+      await dispatch(verifyFlowchartLesson({}));
+    }
 
     console.log('INIT:', { params, children, groups, activities });
 

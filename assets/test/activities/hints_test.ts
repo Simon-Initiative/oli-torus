@@ -1,4 +1,4 @@
-import { makeHint, ScoringStrategy } from 'components/activities/types';
+import { ScoringStrategy, makeHint } from 'components/activities/types';
 import { Hints } from 'data/activities/model/hints';
 import { dispatch } from 'utils/test_utils';
 

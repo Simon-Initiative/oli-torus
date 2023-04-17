@@ -890,19 +890,6 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Other revision B"
 
-      view
-      |> element("a[phx-click=\"page_change\"]", "2")
-      |> render_click()
-
-      refute view
-             |> element("tr:first-child > td:nth-child(2)")
-             |> render() =~
-               "Other revision A"
-
-      refute view
-             |> element("tr:nth-child(2) > td:nth-child(2)")
-             |> render() =~
-               "Other revision B"
     end
 
     test "renders datetimes using the local timezone", context = %{second_post: second_post} do
@@ -1016,19 +1003,6 @@ defmodule OliWeb.CollaborationLiveTest do
              |> render() =~
                "Other revision B"
 
-      view
-      |> element("a[phx-click=\"page_change\"]", "2")
-      |> render_click()
-
-      refute view
-             |> element("tr:first-child > td:first-child")
-             |> render() =~
-               "Other revision A"
-
-      refute view
-             |> element("tr:nth-child(2) > td:first-child")
-             |> render() =~
-               "Other revision B"
     end
   end
 

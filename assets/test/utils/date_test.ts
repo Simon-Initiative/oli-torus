@@ -1,4 +1,4 @@
-import { parseDate, compareDates, relativeTo } from 'utils/date';
+import { compareDates, parseDate, relativeTo } from 'utils/date';
 
 // must include Z in date constructor to avoid timezone weirdness
 // parseDate is simply new Date() without timezone correction

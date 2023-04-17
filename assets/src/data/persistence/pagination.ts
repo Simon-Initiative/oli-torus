@@ -1,5 +1,5 @@
-import * as Extrinsic from './extrinsic';
 import { SectionSlug } from 'data/types';
+import * as Extrinsic from './extrinsic';
 
 export function updatePaginationState(
   slug: SectionSlug,

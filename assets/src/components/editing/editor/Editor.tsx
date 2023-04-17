@@ -1,9 +1,10 @@
-import { Model } from 'data/content/model/elements/factories';
-import { Mark, Marks } from 'data/content/model/text';
 import React, { FocusEventHandler, useCallback, useMemo } from 'react';
-import { createEditor, Descendant, Editor as SlateEditor, Operation, Transforms } from 'slate';
+import { Descendant, Operation, Editor as SlateEditor, Transforms, createEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
+import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
+import { Model } from 'data/content/model/elements/factories';
+import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
 import { hotkeyHandler } from './handlers/hotkey';
@@ -12,12 +13,11 @@ import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
 import { onKeyDown as titleOnKeyDown } from './handlers/title';
 import { onKeyDown as voidOnKeyDown } from './handlers/void';
 import { editorFor, markFor } from './modelEditorDispatch';
-import { installNormalizer, NormalizerContext } from './normalizers/normalizer';
+import { NormalizerContext, installNormalizer } from './normalizers/normalizer';
 import { withInlines } from './overrides/inlines';
 import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
-import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor

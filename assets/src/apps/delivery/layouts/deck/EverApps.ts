@@ -1,5 +1,5 @@
-import { clone } from 'utils/common';
 import { ActivityState } from 'components/activities/types';
+import { clone } from 'utils/common';
 
 export const everAppActivityState: ActivityState = {
   groupId: null,

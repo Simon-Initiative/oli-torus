@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { Transforms } from 'slate';
-import { modalActions } from 'actions/modal';
-import { Modal } from 'components/modal/Modal';
 import { useState } from 'react';
-import { Model } from 'data/content/model/elements/factories';
-import * as Settings from 'components/editing/elements/common/settings/Settings';
+import { Transforms } from 'slate';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import * as Settings from 'components/editing/elements/common/settings/Settings';
+import { Modal } from 'components/modal/Modal';
+import { modalActions } from 'actions/modal';
+import { Model } from 'data/content/model/elements/factories';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));

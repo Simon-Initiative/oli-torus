@@ -1,6 +1,6 @@
 import React from 'react';
-import { Icon } from '../../../../../components/misc/Icon';
 import { useDrag } from 'react-dnd';
+import { Icon } from '../../../../../components/misc/Icon';
 
 interface Props {
   label: string;

@@ -1,13 +1,24 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button } from 'react-bootstrap';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { isFirefox } from 'utils/browser';
+import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
+import { initAppSignal } from '../../utils/appsignal';
+import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
+import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
+import { ReadOnlyWarning } from './ReadOnlyWarning';
+import { ModalContainer } from './components/AdvancedAuthoringModal';
+import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
+import { onboardWizardComplete } from './components/Flowchart/flowchart-actions/onboard-wizard-complete';
+import { OnboardWizard } from './components/Flowchart/onboard-wizard/OnboardWizard';
 import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import ScoringOverview from './components/Modal/ScoringOverview';
 import { releaseEditingLock } from './store/app/actions/locking';
 import { attemptDisableReadOnly } from './store/app/actions/readonly';
 import {
   AppConfig,
+  ApplicationMode,
   selectAppMode,
   selectBottomPanel,
   selectCurrentRule,
@@ -26,15 +37,6 @@ import {
 } from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import { PageContext } from './types';
-import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
-import { initAppSignal } from '../../utils/appsignal';
-import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
-import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
-import { ReadOnlyWarning } from './ReadOnlyWarning';
-import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
-import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
-import { ModalContainer } from './components/AdvancedAuthoringModal';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -104,6 +106,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const shouldShowPageEditor = readyToEdit && (editingMode === 'page' || isExpertMode);
   const shouldShowFlowchartEditor = readyToEdit && editingMode === 'flowchart';
 
+  const shouldShowOnboarding =
+    props.content.content?.custom?.contentMode === undefined &&
+    props.content.content?.model?.length === 0;
+
   const panelState = {
     left: leftPanelState,
     right: rightPanelState,
@@ -113,6 +119,14 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
+
+  const onOnboardComplete = (appMode: ApplicationMode, title: string) => {
+    const { revisionSlug } = props;
+    const pageContent = props.content.content;
+    const projectSlug = props.content.projectSlug || '';
+    props.content.allObjectives || [];
+    onboardWizardComplete(title, projectSlug, revisionSlug, appMode, pageContent);
+  };
 
   const handlePanelStateChange = ({
     top,
@@ -269,6 +283,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           {showDiagnosticsWindow && <DiagnosticsWindow />}
 
           {showScoringOverview && <ScoringOverview />}
+
+          {shouldShowOnboarding && (
+            <OnboardWizard onSetupComplete={onOnboardComplete} initialTitle={props.content.title} />
+          )}
         </ModalContainer>
       </ErrorBoundary>
     </AppsignalContext.Provider>

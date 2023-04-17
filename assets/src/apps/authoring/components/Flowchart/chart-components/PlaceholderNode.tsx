@@ -1,9 +1,6 @@
-import React, { useContext } from 'react';
-import { useDrop } from 'react-dnd';
+import React from 'react';
 import { Handle, Position } from 'reactflow';
 import { FlowchartPlaceholderNodeData } from '../flowchart-utils';
-import { FlowchartEventContext } from '../FlowchartEventContext';
-import { screenTypes } from '../screens/screen-factories';
 
 /**
  * This is the empty node on the flowchart that allows you to add new screens to the graph.
@@ -16,44 +13,21 @@ interface NodeProps {
 }
 
 // Note: use className="nodrag" on interactive pieces here.
-export const PlaceholderNode: React.FC<NodeProps> = ({ data }) => {
+export const EndNode: React.FC<NodeProps> = (props) => {
   return (
     <>
       <Handle type="target" position={Position.Left} style={{ display: 'none' }} />
-      <PlaceholderNodeBody data={data} />
+      <EndNodeBody />
       <Handle type="source" position={Position.Right} id="a" style={{ display: 'none' }} />
     </>
   );
 };
 
 // Just the interior of the node, useful to have separate for storybook
-export const PlaceholderNodeBody: React.FC<NodeProps> = ({ data }) => {
-  const { onAddScreen } = useContext(FlowchartEventContext);
-
-  const onDrop = (item: any) => {
-    onAddScreen({ prevNodeId: data.fromScreenId, screenType: item.screenType });
-  };
-
-  const [{ canDrop, isOver }, drop] = useDrop(() => ({
-    accept: screenTypes,
-    drop: onDrop,
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
-    }),
-  }));
-
-  const hover = isOver && canDrop;
-  const className = hover ? 'node-box drop-over placeholder' : 'node-box placeholder';
-
+export const EndNodeBody: React.FC = () => {
   return (
-    <div className="flowchart-node">
-      <div className={className} ref={drop}>
-        {hover && <DropMessage />}
-        {hover || <span>End of Lesson</span>}
-      </div>
+    <div className="flowchart-end-node">
+      <span>End</span>
     </div>
   );
 };
-
-const DropMessage: React.FC = () => <span>Drop here to add new screen</span>;

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import * as Immutable from 'immutable';
 import { Typeahead } from 'react-bootstrap-typeahead';
+import * as Immutable from 'immutable';
 import { ResourceId } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
-import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/tags';
+import { ProjectSlug } from 'data/types';
 import guid from 'utils/guid';
-
 import './Tags.scss';
 
 export type TagsProps = {

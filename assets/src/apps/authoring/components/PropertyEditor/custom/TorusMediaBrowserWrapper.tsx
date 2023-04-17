@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { ReactReduxContext } from 'react-redux';
+
 /**
  * In some contexts, this is instantiated inside the main adaptive authoring app with a full redux store set up. In those cases, we can
  * provide a nice torus media browser interface. In other contexts, we don't have a redux store set up, so we can't provide that and will

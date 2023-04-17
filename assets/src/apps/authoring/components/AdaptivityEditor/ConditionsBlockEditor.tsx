@@ -1,11 +1,11 @@
-import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptivity/capi';
-import { isEqual } from 'lodash';
 import React, { useEffect, useState } from 'react';
-import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { isEqual } from 'lodash';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
-import ConditionItemEditor from './ConditionItemEditor';
+import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptivity/capi';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import ConditionItemEditor from './ConditionItemEditor';
 
 type JanusNestedCondition = JanusConditionProperties | JanusTopLevelCondition;
 type JanusAllConditions = { id: string; all: JanusNestedCondition[] };
@@ -224,7 +224,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
   );
 
   return (
-    <div className="aa-conditions d-flex w-100">
+    <div className="aa-conditions d-flex">
       <Dropdown>
         <OverlayTrigger
           placement="top"
@@ -247,7 +247,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         <AddConditionContextMenu />
       </Dropdown>
 
-      <div className="d-flex flex-column w-100">
+      <div className="d-flex flex-column flex-1">
         <div className="aa-condition border rounded p-2 mt-4">
           <div className="aa-condition-header d-flex justify-content-between align-items-center">
             <div>CONDITIONS</div>

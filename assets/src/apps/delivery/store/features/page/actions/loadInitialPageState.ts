@@ -21,7 +21,7 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { loadPageState, PageState, selectResourceAttemptGuid } from '../slice';
+import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -37,9 +37,9 @@ export const loadInitialPageState = createAsyncThunk(
     if (otherTypes.length) {
       groups.push({ type: 'group', layout: 'deck', children: [...otherTypes] });
     }
+    const isReviewMode = selectReviewMode;
     // wait for this to resolve so that state will be updated
     await dispatch(setGroups({ groups }));
-
     const currentGroup = selectCurrentGroup(getState() as DeliveryRootState);
     if (currentGroup?.layout === LayoutType.DECK) {
       // write initial session state (TODO: factor out elsewhere)
@@ -59,7 +59,6 @@ export const loadInitialPageState = createAsyncThunk(
 
       // Sets up Current Active Everapp to None
       sessionState['app.active'] = 'none';
-
       // read all user state for the assigned everapps into the session state
       /* console.log('INIT PAGE', params); */
       if (params.content.custom?.everApps) {
@@ -98,7 +97,7 @@ export const loadInitialPageState = createAsyncThunk(
 
       // update scripting env with session state
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
-      const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+      const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
       if (!params.previewMode) {
         await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
@@ -126,7 +125,7 @@ export const loadInitialPageState = createAsyncThunk(
       }: any = await dispatch(loadActivities(activityAttemptMapping));
 
       const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
-      if (shouldResume) {
+      if (shouldResume && !isReviewMode) {
         // state should be all up to date by now
         const snapshot = getEnvState(defaultGlobalEnv);
         const visitHistory = Object.keys(snapshot)

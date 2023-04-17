@@ -207,7 +207,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
         )
 
       _ ->
-        {:ok, discussion_table_model} = DiscussionTableModel.new([], socket.assigns.myself)
+        {:ok, discussion_table_model} = DiscussionTableModel.new([], section_slug, socket.assigns.myself)
 
         {count, rows} =
           Collaboration.list_posts_in_section_for_instructor(section_slug, filter,
@@ -221,8 +221,9 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
             %{offset: offset}
           )
 
-        discussion_table_model = Map.put(discussion_table_model, :rows, rows)
-        |> Map.put(:data, %{section_slug: section_slug, target: socket.assigns.myself})
+        discussion_table_model =
+          Map.put(discussion_table_model, :rows, rows)
+          |> Map.put(:data, %{section_slug: section_slug, target: socket.assigns.myself})
 
         assign(socket,
           discussion_table_model: discussion_table_model,

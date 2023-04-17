@@ -1,5 +1,5 @@
-import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import React from 'react';
+import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 
 interface Props {
   selected: any;

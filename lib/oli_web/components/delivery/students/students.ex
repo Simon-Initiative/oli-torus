@@ -14,12 +14,13 @@ defmodule OliWeb.Components.Delivery.Students do
 
   prop params, :map, required: true
   prop total_count, :number, required: true
-  prop students_table_model, :struct, required: true
+  prop table_model, :struct, required: true
 
   @default_params %{
     offset: 0,
     limit: 25,
     container_id: nil,
+    page_id: nil,
     sort_order: :asc,
     sort_by: :name,
     text_search: nil
@@ -29,17 +30,33 @@ defmodule OliWeb.Components.Delivery.Students do
     params = decode_params(params)
 
     enrollments =
-      Sections.browse_enrollments(
-        section,
-        %Paging{offset: params.offset, limit: params.limit},
-        %Sorting{direction: params.sort_order, field: params.sort_by},
-        %EnrollmentBrowseOptions{
-          text_search: params.text_search,
-          is_student: true,
-          is_instructor: false
-        }
-      )
-      |> add_students_progress(section.id, params.container_id)
+      case params.page_id do
+        nil ->
+          Sections.browse_enrollments(
+            section,
+            %Paging{offset: params.offset, limit: params.limit},
+            %Sorting{direction: params.sort_order, field: params.sort_by},
+            %EnrollmentBrowseOptions{
+              text_search: params.text_search,
+              is_student: true,
+              is_instructor: false
+            }
+          )
+          |> add_students_progress(section.id, params.container_id)
+
+        page_id ->
+          Sections.browse_enrollments(
+            section,
+            %Paging{offset: params.offset, limit: params.limit},
+            %Sorting{direction: params.sort_order, field: params.sort_by},
+            %EnrollmentBrowseOptions{
+              text_search: params.text_search,
+              is_student: true,
+              is_instructor: false
+            }
+          )
+          |> add_students_progress_for_page(section.id, page_id)
+      end
 
     {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
 
@@ -56,7 +73,6 @@ defmodule OliWeb.Components.Delivery.Students do
        total_count: determine_total(enrollments),
        table_model: table_model,
        params: params,
-       students_table_model: table_model,
        section_slug: section.slug
      )}
   end
@@ -72,7 +88,7 @@ defmodule OliWeb.Components.Delivery.Students do
       </div>
 
       <PagedTable
-        table_model={@students_table_model}
+        table_model={@table_model}
         total_count={@total_count}
         offset={@params.offset}
         limit={@params.limit}
@@ -132,6 +148,7 @@ defmodule OliWeb.Components.Delivery.Students do
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       container_id: Params.get_int_param(params, "container_id", @default_params.container_id),
+      page_id: Params.get_int_param(params, "page_id", @default_params.page_id),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
       # we currently only support sorting by name since the other metrics have not yet been created
@@ -142,6 +159,14 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp add_students_progress(users, section_id, container_id) do
     users_progress = Metrics.progress_for(section_id, Enum.map(users, & &1.id), container_id)
+
+    Enum.map(users, fn user ->
+      Map.merge(user, %{progress: Map.get(users_progress, user.id)})
+    end)
+  end
+
+  defp add_students_progress_for_page(users, section_id, page_id) do
+    users_progress = Metrics.progress_for_page(section_id, Enum.map(users, & &1.id), page_id)
 
     Enum.map(users, fn user ->
       Map.merge(user, %{progress: Map.get(users_progress, user.id)})

@@ -1,6 +1,6 @@
-import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
 import TimeAgo from '../../../../../components/common/TimeAgo';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
@@ -51,7 +51,6 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
 
   const isLegacyTheme = useSelector(selectIsLegacyTheme);
   const isPreviewMode = useSelector(selectPreviewMode);
-
   return (
     <>
       {isLegacyTheme ? (
@@ -108,12 +107,14 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
             ))}
           </nav>
           <div className="theme-history__footer">
+            (
             <button onClick={onRestart} className="theme-history__restart">
               <span>
                 <div className="theme-history__restart-icon" />
                 <span className="theme-history__restart-label">Restart Lesson</span>
               </span>
             </button>
+            )
           </div>
         </div>
       )}

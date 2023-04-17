@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -7,12 +7,11 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
+import './Slider.scss';
 import { SliderModel } from './schema';
 
-import './Slider.scss';
-
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
-  const [state, setState] = useState<unknown>([]);
+  const [_state, setState] = useState<unknown>([]);
   const [model, setModel] = useState<Partial<SliderModel>>({});
   const [ready, setReady] = useState<boolean>(false);
 
@@ -22,7 +21,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
 
   const [sliderValue, setSliderValue] = useState(0);
   const [isSliderEnabled, setIsSliderEnabled] = useState(true);
-  const [cssClass, setCssClass] = useState('');
+  const [_cssClass, setCssClass] = useState('');
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : isSliderEnabled;
@@ -184,12 +183,12 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   }, [props.notify]);
 
   const {
-    x,
-    y,
+    _x,
+    _y,
     z,
     width,
     height,
-    customCssClass,
+    _customCssClass,
     label,
     maximum = 1,
     minimum = 0,

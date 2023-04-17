@@ -1,22 +1,22 @@
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Accordion, Button, Dropdown, ListGroup, OverlayTrigger, Popover } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import { selectPartComponentTypes, selectPaths } from 'apps/authoring/store/app/slice';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import {
-  getHierarchy,
-  getSequenceLineage,
   SequenceEntryChild,
   SequenceHierarchyItem,
+  getHierarchy,
+  getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentActivityTree,
   selectSequence,
 } from 'apps/delivery/store/features/groups/selectors/deck';
-import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { Accordion, Button, Dropdown, ListGroup, OverlayTrigger, Popover } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import { selectState as selectPageState } from '../../store/page/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import { SequenceDropdown } from '../PropertyEditor/custom/SequenceDropdown';
-import { selectState as selectPageState } from '../../store/page/slice';
 import { sessionVariables } from './AdaptiveItemOptions';
 
 export enum OverlayPlacements {
@@ -414,13 +414,12 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     id="target-select"
                     size="sm"
                     split
-                    className="variable-picker-dropdown d-flex align-items-center w-100 flex-grow-1"
+                    className="variable-picker-dropdown d-flex align-items-center flex-grow-1"
                     onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
                   >
-                    <span className="w-100 d-flex">{activeFilter}</span>
+                    <span className="d-flex">{activeFilter}</span>
                   </Dropdown.Toggle>
                   <Dropdown.Menu
-                    className="w-100"
                     onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
                     show={isFilterMenuOpen}
                     rootCloseEvent="click"

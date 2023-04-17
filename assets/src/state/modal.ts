@@ -1,6 +1,6 @@
+import { Maybe } from 'tsmonad';
 import { modalActions } from '../actions/modal';
 import { OtherAction } from './other';
-import { Maybe } from 'tsmonad';
 
 export type ModalActions = modalActions.dismissAction | modalActions.displayAction | OtherAction;
 

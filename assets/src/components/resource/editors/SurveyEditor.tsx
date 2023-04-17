@@ -1,8 +1,6 @@
 import React from 'react';
 import { ResourceContent, SurveyContent } from 'data/content/resource';
-import { SurveyBlock } from './SurveyBlock';
 import { AddResource } from './AddResource';
-import { EditorProps, createEditor } from './createEditor';
 import {
   Description,
   Icon,
@@ -10,6 +8,8 @@ import {
   OutlineGroupProps,
   resourceGroupTitle,
 } from './OutlineItem';
+import { SurveyBlock } from './SurveyBlock';
+import { EditorProps, createEditor } from './createEditor';
 
 interface SurveyEditorProps extends EditorProps {
   contentItem: SurveyContent;

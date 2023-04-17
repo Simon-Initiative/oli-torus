@@ -1,18 +1,18 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { debounce } from 'lodash';
-import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
+import { clone } from '../../utils/common';
 import {
   IActivity,
   IAdaptiveRule,
   selectCurrentActivity,
 } from '../delivery/store/features/activities/slice';
-import { selectCurrentRule, setCurrentRule } from './store/app/slice';
-import { clone } from '../../utils/common';
-import { saveActivity } from './store/activities/actions/saveActivity';
-import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
 import { getIsLayer } from '../delivery/store/features/groups/actions/sequence';
 import ConfirmDelete from './components/Modal/DeleteConfirmationModal';
+import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
+import { saveActivity } from './store/activities/actions/saveActivity';
+import { selectCurrentRule, setCurrentRule } from './store/app/slice';
 
 export interface BottomPanelProps {
   panelState: any;

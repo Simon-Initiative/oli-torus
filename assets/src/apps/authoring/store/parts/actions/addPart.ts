@@ -1,4 +1,4 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 import { selectActivityById } from 'apps/delivery/store/features/activities/slice';
 import {
   findInSequenceByResourceId,

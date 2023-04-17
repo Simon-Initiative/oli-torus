@@ -1,3 +1,5 @@
+import React from 'react';
+import { Descendant } from 'slate';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { HintCard } from 'components/activities/common/hints/authoring/HintCard';
@@ -5,8 +7,6 @@ import { Hint, RichText } from 'components/activities/types';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { Card } from 'components/misc/Card';
 import { ID } from 'data/content/model/other';
-import React from 'react';
-import { Descendant } from 'slate';
 
 interface HintsAuthoringProps {
   addOne: () => void;

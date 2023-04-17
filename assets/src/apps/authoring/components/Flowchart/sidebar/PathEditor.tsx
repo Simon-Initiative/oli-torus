@@ -1,6 +1,6 @@
-import { EntityId } from '@reduxjs/toolkit';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { EntityId } from '@reduxjs/toolkit';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { Icon } from '../../../../../components/misc/Icon';
 import { clone } from '../../../../../utils/common';
@@ -8,7 +8,7 @@ import { selectAutoOpenPath } from '../../../store/flowchart/flowchart-slice';
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { deletePath } from '../flowchart-actions/delete-path';
 import { replacePath } from '../flowchart-actions/replace-path';
-import { AllPaths, DestinationPath, DestinationPaths, RuleTypes } from '../paths/path-types';
+import { AllPaths, DestinationPath } from '../paths/path-types';
 import {
   addComponentId,
   addDestinationId,
@@ -103,8 +103,9 @@ const PathEditor: React.FC<EditParams> = ({
   const [workingPath, setWorkingPath] = useState<AllPaths>(clone(path));
   const onEdit = (props: Partial<AllPaths>) =>
     setWorkingPath((p: AllPaths) => ({ ...p, ...(props as any) }));
-  const onDestinationChange = (screenId: string) =>
+  const onDestinationChange = (screenId: string) => {
     onEdit({ destinationScreenId: parseInt(screenId, 10) });
+  };
   const [showDeleteConfirm, toggleDeleteConfirm] = useToggle(false);
   const dispatch = useDispatch();
   const onIdChange = (id: string) => {
@@ -236,6 +237,20 @@ interface DestinationPickerProps {
   onChange: (screenId: string) => void;
 }
 const DestinationPicker: React.FC<DestinationPickerProps> = ({ path, screens, onChange }) => {
+  useEffect(() => {
+    // On the first render, make sure a valid option is selected.
+    const keys = Object.keys(screens);
+
+    if (path.destinationScreenId !== -1 && !keys.includes(String(path.destinationScreenId))) {
+      if (keys.length > 0) {
+        onChange(Object.keys(screens)[0]);
+      } else {
+        onChange('-1');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onChange, screens]);
+
   return (
     <select value={String(path.destinationScreenId)} onChange={(e) => onChange(e.target.value)}>
       {Object.keys(screens).map((screenId) => (

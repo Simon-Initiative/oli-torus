@@ -48,7 +48,7 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
   end
 
   def render_project_title(assigns, %{project: %{title: title, slug: project_slug}}, _) do
-    route_path = Routes.project_path(OliWeb.Endpoint, :overview, project_slug)
+    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_slug)
     SortableTableModel.render_link_column(assigns, title, route_path)
   end
 

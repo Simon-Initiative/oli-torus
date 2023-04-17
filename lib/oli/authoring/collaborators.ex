@@ -145,7 +145,7 @@ defmodule Oli.Authoring.Collaborators do
           Routes.pow_invitation_invitation_path(conn, :edit, token)
 
         :existing_user ->
-          Routes.project_path(conn, :overview, project.slug)
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
       end
 
     invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())

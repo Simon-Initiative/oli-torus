@@ -1,14 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 import {
   DeckLayoutGroup,
   LayoutType,
   upsertGroup,
 } from '../../../../../../delivery/store/features/groups/slice';
-import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 
 export const createNew = createAsyncThunk(
   `${GroupsSlice}/layouts/deck/createNew`,
-  async (payload: any, { dispatch, getState }) => {
+  async (payload: any, { dispatch }) => {
     // children should be SequenceEntry (TODO: typing)
     const children = payload.children || [];
 

@@ -1,5 +1,5 @@
+import React from 'react';
 import { DateWithoutTime } from 'epoq';
-import React, { ReactNode } from 'react';
 import { padLeft } from '../../utils/common';
 
 /*

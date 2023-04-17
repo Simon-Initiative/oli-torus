@@ -1,7 +1,7 @@
 import { UiSchema } from '@rjsf/core';
-import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import chroma from 'chroma-js';
 import { JSONSchema7 } from 'json-schema';
+import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
@@ -51,10 +51,10 @@ export const BankPropsUiSchema: UiSchema = {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',
     width: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
     height: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
   },
   palette: {
@@ -66,8 +66,8 @@ export const BankPropsUiSchema: UiSchema = {
     borderColor: {
       'ui:widget': ColorPickerWidget,
     },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
   },
 };
 

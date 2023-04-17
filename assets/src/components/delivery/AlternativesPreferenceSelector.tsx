@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { InfoTip } from 'components/misc/InfoTip';
+import * as Events from 'data/events';
 import { updateAlternativesPreference } from 'data/persistence/alternatives';
 import { AlternativesGroupOption } from 'data/persistence/resource';
-import * as Events from 'data/events';
-import { InfoTip } from 'components/misc/InfoTip';
 
 export interface AlternativesPreferenceSelectorProps {
   sectionSlug?: string;

@@ -1,14 +1,7 @@
-import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
-import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
-
-import {
-  ActivityDeliveryState,
-  isEvaluated,
-  isSubmitted,
-  requestHint,
-} from 'data/activities/DeliveryState';
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
+import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
 
 export type FocusedHintsProps = {

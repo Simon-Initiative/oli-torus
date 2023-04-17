@@ -1,20 +1,21 @@
 import register from '../customElementWrapper';
 import {
-  authoringObservedAttributes,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
+  authoringObservedAttributes,
 } from '../partsApi';
+import TextFlowAuthor from './TextFlowAuthor';
 import {
+  adaptivitySchema,
   createSchema,
   getCapabilities,
   schema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
-  adaptivitySchema,
   validateUserConfig,
 } from './schema';
-import TextFlowAuthor from './TextFlowAuthor';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('./manifest.json');
 

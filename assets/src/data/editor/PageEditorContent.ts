@@ -1,10 +1,10 @@
 import * as Immutable from 'immutable';
 import {
+  ResourceContent,
+  ResourceGroup,
   createDefaultStructuredContent,
   createGroup,
-  ResourceContent,
   isResourceGroup,
-  ResourceGroup,
 } from 'data/content/resource';
 import guid from 'utils/guid';
 

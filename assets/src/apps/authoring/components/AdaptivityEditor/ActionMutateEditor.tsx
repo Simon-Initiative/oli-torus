@@ -1,16 +1,16 @@
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
-import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import guid from 'utils/guid';
-import { VariablePicker, OverlayPlacements } from './VariablePicker';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ActionOperatorOption,
-  actionOperatorOptions,
   TypeOption,
+  actionOperatorOptions,
   typeOptions,
 } from './AdaptiveItemOptions';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
 
 interface ActionMutateEditorProps {
   action: MutateStateAction;
@@ -110,7 +110,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         </div>
         <input
           type="text"
-          className="form-control form-control-sm mr-2 flex-grow-1"
+          className="form-control form-control-sm mr-2 flex-grow-1 w-8"
           id={`action-mutate-target-${uuid}`}
           value={target}
           onChange={(e) => setTarget(e.target.value)}
@@ -168,11 +168,11 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         </div>
         <input
           type="text"
-          className="form-control form-control-sm"
+          className="form-control"
           id={`action-mutate-value-${uuid}`}
           value={value}
           onChange={(e) => handleValueChange(e)}
-          onBlur={(e) => setIsDirty(true)}
+          onBlur={() => setIsDirty(true)}
           title={value}
           placeholder="Value"
         />

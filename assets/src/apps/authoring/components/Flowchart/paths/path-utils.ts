@@ -11,13 +11,17 @@
     Do we want to just re-generate all the rules every save, or try to update & delete them?
 
 */
-
 import { MarkerType } from 'reactflow';
+import { cloneT } from '../../../../../utils/common';
 import {
   IActivity,
   IDropdownPartLayout,
+  IInputNumberPartLayout,
+  IInputTextPartLayout,
   IMCQPartLayout,
+  IMultiLineTextPartLayout,
   IPartLayout,
+  ISliderPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import { FlowchartEdge } from '../flowchart-utils';
 import { createAlwaysGoToPath, createUnknownPathWithDestination } from './path-factories';
@@ -25,11 +29,15 @@ import {
   AllPaths,
   AlwaysGoToPath,
   ComponentPaths,
-  componentTypes,
+  CorrectPath,
   DestinationPath,
   DestinationPaths,
   EndOfActivityPath,
+  ExitActivityPath,
+  IncorrectPath,
+  NumericCommonErrorPath,
   OptionCommonErrorPath,
+  componentTypes,
 } from './path-types';
 
 const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
@@ -52,15 +60,41 @@ const getPathsFromScreen = (screen: IActivity): AllPaths[] => {
 export const isComponentPath = (path: AllPaths): path is ComponentPaths =>
   componentTypes.includes(path.type);
 
+export const isMultilineText = (screen: IPartLayout): screen is IMultiLineTextPartLayout =>
+  screen.type === 'janus-multi-line-text';
+
+export const isInputText = (screen: IPartLayout): screen is IInputTextPartLayout =>
+  screen.type === 'janus-input-text';
+
+export const isInputNumber = (screen: IPartLayout): screen is IInputNumberPartLayout =>
+  screen.type === 'janus-input-number';
+
+export const isSlider = (screen: IPartLayout): screen is ISliderPartLayout =>
+  screen.type === 'janus-slider';
+
 export const isMCQ = (screen: IPartLayout): screen is IMCQPartLayout => screen.type === 'janus-mcq';
+
 export const isDropdown = (screen: IPartLayout): screen is IDropdownPartLayout =>
   screen.type === 'janus-dropdown';
 
 export const isEndOfActivityPath = (path: AllPaths): path is EndOfActivityPath =>
   path.type === 'end-of-activity';
 
+export const isExitActivityPath = (path: AllPaths): path is ExitActivityPath =>
+  path.type === 'exit-activity';
+
 export const isDestinationPath = (path: AllPaths): path is DestinationPaths =>
   'destinationScreenId' in path;
+
+export const isAlwaysPath = (path: AllPaths): path is AlwaysGoToPath =>
+  path.type === 'always-go-to';
+
+export const isCorrectPath = (path: AllPaths): path is CorrectPath => path.type === 'correct';
+
+export const isIncorrectPath = (path: AllPaths): path is IncorrectPath => path.type === 'incorrect';
+
+export const isNumericCommonErrorPath = (path: AllPaths): path is NumericCommonErrorPath =>
+  path.type === 'numeric-common-error';
 
 export const isOptionCommonErrorPath = (path: AllPaths): path is OptionCommonErrorPath =>
   path.type === 'option-common-error';
@@ -85,13 +119,35 @@ const destinationPathToEdge = (activity: IActivity) => (path: DestinationPath) =
   },
 });
 
-export const buildEdgesForActivity = (activity: IActivity): FlowchartEdge[] => {
-  const paths = getPathsFromScreen(activity);
-  return paths
-    .filter(isDestinationPath)
-    .filter(hasDestination)
-    .map(destinationPathToEdge(activity));
-};
+const endScreenPathToEdge =
+  (activity: IActivity, endScreenId: number) => (path: EndOfActivityPath) => ({
+    id: `${activity.id}-${path.id}`,
+    source: String(activity.id),
+    target: String(endScreenId),
+    type: 'floating',
+    data: {
+      completed: true,
+    },
+    markerEnd: {
+      type: MarkerType.Arrow,
+      color: '#22f',
+    },
+  });
+
+export const buildEdgesForActivity =
+  (endScreenId: number) =>
+  (activity: IActivity): FlowchartEdge[] => {
+    const paths = getPathsFromScreen(cloneT(activity));
+    const destinationEdges = paths
+      .filter(isDestinationPath)
+      .filter(hasDestination)
+      .map(destinationPathToEdge(activity));
+
+    const endScreenEdges = paths
+      .filter(isEndOfActivityPath)
+      .map(endScreenPathToEdge(activity, endScreenId));
+    return [...destinationEdges, ...endScreenEdges];
+  };
 
 export const removeEndOfActivityPath = (screen: IActivity) => {
   const paths = getPathsFromScreen(screen);

@@ -1,11 +1,11 @@
 import {
-  createEntityAdapter,
-  createSelector,
-  createSlice,
   EntityAdapter,
   EntityState,
   PayloadAction,
   Slice,
+  createEntityAdapter,
+  createSelector,
+  createSlice,
 } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
 import { DeliveryRootState } from '../../rootReducer';

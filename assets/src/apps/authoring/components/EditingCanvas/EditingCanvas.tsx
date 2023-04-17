@@ -1,8 +1,8 @@
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -13,11 +13,11 @@ import StagePan from './StagePan';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
-  const bottomPanelState = useSelector(selectBottomPanel);
+  const _bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
-  const currentPartSelection = useSelector(selectCurrentSelection);
+  const _currentPartSelection = useSelector(selectCurrentSelection);
 
-  const [currentActivity] = (currentActivityTree || []).slice(-1);
+  const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
 
@@ -39,7 +39,7 @@ const EditingCanvas: React.FC = () => {
     setCurrentActivityId(current?.id || '');
   }, [currentActivityTree]);
 
-  const handleSelectionChanged = (selected: string[]) => {
+  const _handleSelectionChanged = (selected: string[]) => {
     const [first] = selected;
     /* console.log('[handleSelectionChanged]', { selected }); */
     const newSelection = first || '';
@@ -64,7 +64,9 @@ const EditingCanvas: React.FC = () => {
 
     const newPosition = { x: dragData.x, y: dragData.y };
 
-    dispatch(updatePart({ activityId, partId, changes: { custom: newPosition } }));
+    dispatch(
+      updatePart({ activityId, partId, changes: { custom: newPosition }, mergeChanges: true }),
+    );
 
     return newPosition;
   };
@@ -160,7 +162,7 @@ const EditingCanvas: React.FC = () => {
             type: NotificationType.CONFIGURE_CANCEL,
             payload: { id: configPartId },
           });
-          // after we send the notifcation we can clear the part id
+          // after we send the notification we can clear the part id
           setConfigPartId('');
           // also reset fullscreen for the next part
           setConfigModalFullscreen(false);

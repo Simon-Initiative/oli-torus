@@ -13,7 +13,8 @@ import {
 import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
-import { DiagnosticsTrigger } from '../components/Modal/DiagnosticsWindow';
+import { DiagnosticsTrigger } from './Modal/DiagnosticsWindow';
+
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;
@@ -21,7 +22,7 @@ interface HeaderNavProps {
   onToggleExport?: () => void;
 }
 
-const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
+const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const { panelState, isVisible } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
@@ -179,4 +180,4 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   );
 };
 
-export default HeaderNav;
+export default ExpertHeaderNav;

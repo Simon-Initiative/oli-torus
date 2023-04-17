@@ -1,6 +1,12 @@
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Col, Container, Row } from 'react-bootstrap';
+import EventEmitter from 'events';
+import { JSONSchema7 } from 'json-schema';
+import { isEqual } from 'lodash';
+import { AnyPartComponent } from 'components/parts/types/parts';
 import ConfigurationModal from 'apps/authoring/components/EditingCanvas/ConfigurationModal';
-import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import partSchema, {
   partUiSchema,
   transformModelToSchema as transformPartModelToSchema,
@@ -11,12 +17,6 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import { AnyPartComponent } from 'components/parts/types/parts';
-import EventEmitter from 'events';
-import { JSONSchema7 } from 'json-schema';
-import { isEqual } from 'lodash';
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Col, Container, Row } from 'react-bootstrap';
 import { classNames } from 'utils/classNames';
 import { clone } from 'utils/common';
 import { convertPalette } from '../common/util';
@@ -77,23 +77,23 @@ const screenUiSchema = {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Position',
     x: {
-      classNames: 'col-4',
+      classNames: 'col-span-4',
     },
     y: {
-      classNames: 'col-4',
+      classNames: 'col-span-4',
     },
     z: {
-      classNames: 'col-4',
+      classNames: 'col-span-4',
     },
   },
   Size: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',
     width: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
     height: {
-      classNames: 'col-6',
+      classNames: 'col-span-6',
     },
   },
   palette: {
@@ -105,14 +105,14 @@ const screenUiSchema = {
     borderColor: {
       'ui:widget': 'ColorPicker',
     },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
   },
   ButtonLabels: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Button Labels',
-    mainBtnLabel: { classNames: 'col-6' },
-    applyBtnLabel: { classNames: 'col-6' },
+    mainBtnLabel: { classNames: 'col-span-6' },
+    applyBtnLabel: { classNames: 'col-span-6' },
     applyBtnFlag: {},
   },
 };

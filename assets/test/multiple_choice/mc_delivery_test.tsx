@@ -1,16 +1,16 @@
-import { render, fireEvent, screen } from '@testing-library/react';
 import React from 'react';
-import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import { act } from 'react-dom/test-utils';
-import '@testing-library/jest-dom';
-import { defaultMCModel } from 'components/activities/multiple_choice/utils';
-import { MultipleChoiceComponent } from 'components/activities/multiple_choice/MultipleChoiceDelivery';
 import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import '@testing-library/jest-dom';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
+import { MultipleChoiceComponent } from 'components/activities/multiple_choice/MultipleChoiceDelivery';
+import { defaultMCModel } from 'components/activities/multiple_choice/utils';
 import { makeHint } from 'components/activities/types';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { defaultActivityState } from 'data/activities/utils';
+import { configureStore } from 'state/store';
+import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 
 describe('multiple choice delivery', () => {
   it('renders ungraded correctly', async () => {

@@ -1,12 +1,12 @@
-import { ImageCodingModelSchema } from './schema';
-import { RichText, Hint as HintType, makeHint } from '../types';
+import { Descendant } from 'slate';
 import { Maybe } from 'tsmonad';
-import { Identifiable } from 'data/content/model/other';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
+import { toSimpleText } from 'components/editing/slateUtils';
+import { Identifiable } from 'data/content/model/other';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { toSimpleText } from 'components/editing/slateUtils';
-import { Descendant } from 'slate';
+import { Hint as HintType, RichText, makeHint } from '../types';
+import { ImageCodingModelSchema } from './schema';
 
 export class ICActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {

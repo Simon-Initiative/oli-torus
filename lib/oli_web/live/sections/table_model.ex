@@ -106,7 +106,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
       SortableTableModel.render_link_column(assigns, section.blueprint.title, route_path)
     else
-      route_path = Routes.project_path(OliWeb.Endpoint, :overview, section.base_project.slug)
+      route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, section.base_project.slug)
       SortableTableModel.render_link_column(assigns, section.base_project.title, route_path)
     end
   end

@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import { ActivityState } from 'components/activities/types';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import { IActivity, selectAllActivities, selectCurrentActivityId } from '../../activities/slice';
 import { selectActivityAttemptState } from '../../attempt/slice';
 import { getSequenceLineage } from '../actions/sequence';

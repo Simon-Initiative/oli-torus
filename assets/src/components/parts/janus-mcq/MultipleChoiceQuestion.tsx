@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
-import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { shuffle } from 'lodash';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -11,22 +11,8 @@ import { parseArray, parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { PartComponentProps } from '../types/parts';
 import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
+import { getNodeText } from './mcq-util';
 import { McqItem, McqModel } from './schema';
-
-// SS assumes the unstyled "text" of the label is the text value
-// there should only be one node in a label text, but we'll concat them jic
-const getNodeText = (node: any): any => {
-  if (Array.isArray(node)) {
-    return node.reduce((txt, newNode) => (txt += getNodeText(newNode)), '');
-  }
-  let nodeText = node.text || '';
-  nodeText += node.children.reduce((childrenText: any, childNode: any) => {
-    let txt = childrenText;
-    txt += getNodeText(childNode);
-    return txt;
-  }, '');
-  return nodeText;
-};
 
 const MCQItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
   return (
@@ -384,7 +370,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       if (Array.isArray(selectedArray)) {
         const newSelectionArray = selectedArray
           .map((choiceText) => ({
-            value: getOptionNumberFromText(options, choiceText),
+            value: getOptionNumberFromText(options, choiceText as string),
             textValue: choiceText,
             checked: true,
           }))
@@ -645,7 +631,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray
                     .map((choiceText) => ({
-                      value: getOptionNumberFromText(options, choiceText),
+                      value: getOptionNumberFromText(options, choiceText as string),
                       textValue: choiceText,
                       checked: true,
                     }))
@@ -733,7 +719,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray
                     .map((choiceText) => ({
-                      value: getOptionNumberFromText(options, choiceText),
+                      value: getOptionNumberFromText(options, choiceText as string),
                       textValue: choiceText,
                       checked: true,
                     }))

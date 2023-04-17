@@ -1,6 +1,6 @@
 import React from 'react';
-import { Model } from 'data/content/model/elements/factories';
 import { Element, Transforms } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
 import { isActive } from '../../slateUtils';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 

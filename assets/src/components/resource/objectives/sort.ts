@@ -1,5 +1,5 @@
-import { Objective } from 'data/content/objective';
 import * as Immutable from 'immutable';
+import { Objective } from 'data/content/objective';
 
 /**
  * Takes an array of objectives and arranges them in a list so that child

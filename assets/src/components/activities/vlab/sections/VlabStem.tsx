@@ -1,14 +1,14 @@
+import React from 'react';
+import { Editor } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
 import { VlabActions } from 'components/activities/vlab/actions';
 import { VlabSchema } from 'components/activities/vlab/schema';
-import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { elementsRemoved } from 'components/editing/slateUtils';
 import { InputRef } from 'data/content/model/elements/types';
-import React from 'react';
-import { Editor } from 'slate';
-import { ReactEditor } from 'slate-react';
 
 interface Props {
   selectedInputRef: InputRef | undefined;

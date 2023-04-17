@@ -1,4 +1,4 @@
-import { parseBoolean, parseArray } from 'utils/common';
+import { parseArray, parseBoolean } from 'utils/common';
 
 export const isAnyOfOperator = (factValue: any, value: any): boolean => {
   const parsedValue = parseArray(value);

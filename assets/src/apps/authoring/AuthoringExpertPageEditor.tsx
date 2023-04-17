@@ -4,8 +4,8 @@ import { BottomPanel } from './BottomPanel';
 import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
 import { InitStateEditor } from './components/AdaptivityEditor/InitStateEditor';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
+import ExpertHeaderNav from './components/ExpertHeaderNav';
 import { TemplateExporter } from './components/Flowchart/TemplateExporter';
-import HeaderNav from './components/HeaderNav';
 import LeftMenu from './components/LeftMenu/LeftMenu';
 import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
@@ -33,7 +33,7 @@ export const AuthoringExpertPageEditor: React.FC<AuthoringPageEditorProps> = ({
 
   return (
     <div id="advanced-authoring" className={`advanced-authoring`} ref={authoringContainer}>
-      <HeaderNav
+      <ExpertHeaderNav
         onToggleExport={toggleExport}
         authoringContainer={authoringContainer}
         panelState={panelState}

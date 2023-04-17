@@ -1,4 +1,4 @@
-import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
+import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
 import {
   IAdaptiveRule,
   selectCurrentActivity,
@@ -8,7 +8,6 @@ import {
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { Objective } from '../../../../data/content/objective';
-
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { saveActivity } from '../activities/actions/saveActivity';
 import { savePage } from '../page/actions/savePage';
@@ -45,7 +44,7 @@ export interface ActivityRegistration {
  * with a limited set of options for rules, or in expert mode, which exposes the full set of options for rules, layers, and
  * sub-screens.
  */
-type ApplicationMode = 'flowchart' | 'expert';
+export type ApplicationMode = 'flowchart' | 'expert';
 
 /**
  * When in flowchart mode, we might be looking at the flowchart editor or the page editor.
@@ -274,8 +273,8 @@ export const selectCurrentRule = createSelector(
   selectCurrentActivity,
   (id: any, activity: any) => {
     return (
-      activity?.authoring?.rules
-        ?.filter((rule: any) => !!rule)
+      (activity?.authoring?.rules || [])
+        .filter((rule: any) => !!rule)
         .find((rule: IAdaptiveRule) => rule.id === id) ?? id
     );
   },

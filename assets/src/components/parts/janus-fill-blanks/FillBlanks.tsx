@@ -8,9 +8,8 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
-import { FIBModel } from './schema';
-
 import './FillBlanks.scss';
+import { FIBModel } from './schema';
 
 export const parseBool = (val: any) => {
   // cast value to number
@@ -24,20 +23,11 @@ interface SelectOption {
 
 const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const id: string = props.id;
-  const [model, setModel] = useState<any>(props.model);
+  const [model, _setModel] = useState<any>(props.model);
   const [localSnapshot, setLocalSnapshot] = useState<any>({});
   const [stateChanged, setStateChanged] = useState<boolean>(false);
   const [mutateState, setMutateState] = useState<any>({});
-  const {
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    content,
-    elements,
-    alternateCorrectDelimiter,
-  } = model;
+  const { width, height, content, elements, alternateCorrectDelimiter } = model;
   const fibContainer = useRef(null);
 
   const [attempted, setAttempted] = useState<boolean>(false);
@@ -61,7 +51,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const [enabled, setEnabled] = useState<boolean>(
     model?.enabled !== undefined ? parseBool(model.enabled) : true,
   );
-  const [correct, setCorrect] = useState<boolean>(
+  const [_correct, setCorrect] = useState<boolean>(
     model?.correct !== undefined ? parseBool(model.correct) : false,
   );
   const [showCorrect, setShowCorrect] = useState<boolean>(

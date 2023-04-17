@@ -1,6 +1,6 @@
-import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
   selectIsGraded,
   selectOverviewURL,

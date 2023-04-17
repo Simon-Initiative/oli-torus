@@ -1,37 +1,37 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { assertNever, valueOr } from 'utils/common';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { Maybe } from 'tsmonad';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
+import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
+import { Manifest } from 'components/activities/types';
 import {
   ActivityDeliveryState,
+  activityDeliverySlice,
   initializeState,
   isEvaluated,
   isSubmitted,
-  activityDeliverySlice,
-  resetAction,
-  listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForParentSurveySubmit,
   listenForReviewAttemptChange,
+  resetAction,
 } from 'data/activities/DeliveryState';
-import { configureStore } from 'state/store';
 import { safelySelectStringInputs } from 'data/activities/utils';
-import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
-import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
-import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
-import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { configureStore } from 'state/store';
+import { assertNever, valueOr } from 'utils/common';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { Manifest } from 'components/activities/types';
-import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
-import { Maybe } from 'tsmonad';
 import { MathInput } from '../common/delivery/inputs/MathInput';
-import { castPartId } from '../common/utils';
 import { initializePersistence } from '../common/delivery/persistence';
+import { castPartId } from '../common/utils';
 
 type InputProps = {
   input: string;

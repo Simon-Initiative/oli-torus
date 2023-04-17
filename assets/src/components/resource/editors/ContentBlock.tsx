@@ -1,6 +1,6 @@
 import React, { PropsWithChildren } from 'react';
 import { DeleteButton } from 'components/misc/DeleteButton';
-import { StructuredContent, ActivityBankSelection } from 'data/content/resource';
+import { ActivityBankSelection, StructuredContent } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
 

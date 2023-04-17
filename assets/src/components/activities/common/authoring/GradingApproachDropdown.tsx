@@ -1,5 +1,6 @@
 import React from 'react';
 import { GradingApproach } from 'components/activities/types';
+
 export type SelectOption<K = string> = { value: K; displayValue: string };
 
 const options = [

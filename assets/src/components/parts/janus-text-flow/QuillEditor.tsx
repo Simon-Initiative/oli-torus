@@ -1,6 +1,6 @@
-import Delta from 'quill-delta';
 import React, { useEffect } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
+import Delta from 'quill-delta';
 import register from '../customElementWrapper';
 import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 
@@ -101,7 +101,7 @@ const customHandlers = {
   },
 };
 
-const QuillEditor: React.FC<QuillEditorProps> = ({
+export const QuillEditor: React.FC<QuillEditorProps> = ({
   tree,
   html,
   showSaveCancelButtons = false,

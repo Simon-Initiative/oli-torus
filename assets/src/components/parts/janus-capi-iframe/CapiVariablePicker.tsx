@@ -1,5 +1,5 @@
 /* eslint-disable react/react-in-jsx-scope */
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { ApplyStateOperation } from 'adaptivity/scripting';
 import AutoDetectInput from '../../../../src/apps/delivery/components/preview-tools/inspector/AutoDetectInput';
 
@@ -20,7 +20,7 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
   showSaveCancelButtons = false,
 }) => {
   const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
-  const [expandedPanels, setExpandedPanels]: any = useState([]);
+  const [expandedPanels, _setExpandedPanels]: any = useState([]);
   const handleValueChange = (changeOp: ApplyStateOperation) => {
     onChange(changeOp);
   };

@@ -1,6 +1,6 @@
-import { EntityId } from '@reduxjs/toolkit';
 import React from 'react';
 import { useDispatch } from 'react-redux';
+import { EntityId } from '@reduxjs/toolkit';
 import { addPath } from '../flowchart-actions/add-path';
 import { AllPaths } from '../paths/path-types';
 import { sortByPriority } from '../paths/path-utils';

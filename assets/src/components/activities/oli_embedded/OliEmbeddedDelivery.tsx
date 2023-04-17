@@ -1,17 +1,17 @@
-import { configureStore } from 'state/store';
 import React, { useEffect, useState } from 'react';
-import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
-import * as ActivityTypes from 'components/activities/types';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
+import * as ActivityTypes from 'components/activities/types';
 import {
   activityDeliverySlice,
-  listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForParentSurveySubmit,
   listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
+import { configureStore } from 'state/store';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 
 interface Context {
   attempt_guid: string;
@@ -23,7 +23,7 @@ interface Context {
   part_ids: string;
 }
 
-const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
+const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
   const {
     state: activityState,
     model,

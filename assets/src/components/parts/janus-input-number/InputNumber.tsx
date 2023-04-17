@@ -1,4 +1,3 @@
-import debounce from 'lodash/debounce';
 import React, {
   CSSProperties,
   ReactEventHandler,
@@ -7,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import debounce from 'lodash/debounce';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,

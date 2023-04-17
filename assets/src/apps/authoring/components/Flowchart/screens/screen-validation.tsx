@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { ReactNode } from 'react';
 import {
   IActivity,
@@ -9,9 +8,9 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { IActivityReference } from '../../../../delivery/store/features/groups/slice';
 import {
+  QuestionType,
   getScreenPrimaryQuestion,
   getScreenQuestionType,
-  QuestionType,
 } from '../paths/path-options';
 import { AllPaths } from '../paths/path-types';
 import { isDestinationPath, isOptionCommonErrorPath } from '../paths/path-utils';
@@ -65,6 +64,8 @@ export const validateScreen = (
   const question = getScreenPrimaryQuestion(screen);
   const questionType = getScreenQuestionType(screen);
 
+  if (screen.authoring?.flowchart?.screenType === 'end_screen') return [];
+
   if (
     sequence.length > 0 &&
     !hasPathTo(screen.resourceId!, allActivities, sequence[0].resourceId || -1)
@@ -107,8 +108,19 @@ export const validatePathSet = (
   questionType: QuestionType,
 ): ReactNode[] => {
   switch (questionType) {
+    case 'input-text':
+    case 'check-all-that-apply':
+    case 'slider':
+    case 'input-number':
+      return validateCorrectOrIncorrectQuestion(paths);
+
+    case 'multiple-choice':
+      return validateMCQQuestion(paths, question as IMCQPartLayout);
+
     case 'dropdown':
       return validateDropdownQuestion(paths, question as IDropdownPartLayout);
+
+    case 'multi-line-text':
     case 'none':
       return validatePathSetNone(paths);
     default:
@@ -119,9 +131,10 @@ export const validatePathSet = (
 // Make sure there is either exactly one always go to, or one exit activity path
 export const validatePathSetNone = (paths: AllPaths[]): ReactNode[] => {
   const alwaysGoTo = paths.filter((path) => path.type === 'always-go-to');
-  const exitActivity = paths.filter((path) => path.type === 'end-of-activity');
+  const endOfActivity = paths.filter((path) => path.type === 'end-of-activity');
+  const exitActivity = paths.filter((path) => path.type === 'exit-activity');
 
-  if (paths.length === 1 && alwaysGoTo.length + exitActivity.length === 1) {
+  if (paths.length === 1 && alwaysGoTo.length + endOfActivity.length + exitActivity.length === 1) {
     return [];
   } else {
     return [
@@ -152,12 +165,15 @@ const coversAllOptions = (paths: AllPaths[], optionCount: number): boolean => {
   // At this point, we have a correct path, but no incorrect path, so need to make sure we cover all the incorrect options with specific rules.
   const options = paths.filter(isOptionCommonErrorPath).map((path) => path.selectedOption);
   const uniqueOptions = [...new Set(options)];
-  //debugger;
   return uniqueOptions.length >= optionCount - 1;
 };
 
 const hasExitPath = (paths: AllPaths[]): boolean => {
   return paths.some((path) => path.type === 'end-of-activity');
+};
+
+const validateMCQQuestion = (paths: AllPaths[], question: IMCQPartLayout): ReactNode[] => {
+  return validateDeterminateQuestion(paths, question.custom.mcqItems.length);
 };
 
 const validateDropdownQuestion = (
@@ -175,6 +191,26 @@ const validateDeterminateQuestion = (paths: AllPaths[], optionCount: number): Re
   const validations: ReactNode[] = [];
 
   if (!coversAllOptions(paths, optionCount)) {
+    validations.push(<span>Not all possible exits are covered.</span>);
+  }
+
+  if (hasExitPath(paths) && paths.length > 1) {
+    validations.push(
+      <span>You can not have both an exit-activity and another path out of this screen.</span>,
+    );
+  }
+
+  if (hasMultipleAlwaysPaths(paths)) {
+    validations.push(<span>You can not have multiple always-go-to paths.</span>);
+  }
+
+  return validations;
+};
+
+const validateCorrectOrIncorrectQuestion = (paths: AllPaths[]): ReactNode[] => {
+  const validations: ReactNode[] = [];
+
+  if (!coversAllOptions(paths, Number.MAX_SAFE_INTEGER)) {
     validations.push(<span>Not all possible exits are covered.</span>);
   }
 

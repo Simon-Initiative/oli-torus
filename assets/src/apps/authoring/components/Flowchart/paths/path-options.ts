@@ -1,24 +1,36 @@
 import {
   IActivity,
   IDropdownPartLayout,
+  IInputNumberPartLayout,
+  IInputTextPartLayout,
   IMCQPartLayout,
   IPartLayout,
+  ISliderPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import {
   createAlwaysGoToPath,
-  createOptionCommonErrorPath,
   createCorrectPath,
-  createUnknownPathWithDestination,
+  createDropdownCommonErrorPath,
   createIncorrectPath,
+  createInputNumberCommonErrorPath,
+  createMCQCommonErrorPath,
+  createUnknownPathWithDestination,
 } from './path-factories';
 import { AllPaths } from './path-types';
-import { isDropdown, isMCQ } from './path-utils';
+import { isDropdown, isInputNumber, isInputText, isMCQ, isSlider } from './path-utils';
 
 // Given a screen, return all the path types that are available for us.
 export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
   switch (getScreenQuestionType(screen)) {
+    case 'multi-line-text':
+      return [createAlwaysGoToPath()];
+    case 'input-text':
+      return createInputTextPathOptions(screen.content?.partsLayout.find(isInputText));
+    case 'slider':
+      return createSliderPathOptions(screen.content?.partsLayout.find(isSlider));
+    case 'input-number':
+      return createInputNumberPathOptions(screen.content?.partsLayout.find(isInputNumber));
     case 'check-all-that-apply':
-      return createCATAChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
     case 'multiple-choice':
       return createMultipleChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
     case 'dropdown':
@@ -36,7 +48,7 @@ const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefin
   if (dropdown) {
     return [
       ...dropdown.custom.optionLabels.map((label, index) =>
-        createOptionCommonErrorPath(dropdown, index),
+        createDropdownCommonErrorPath(dropdown, index),
       ),
       createCorrectPath(dropdown.id),
       createIncorrectPath(dropdown.id),
@@ -46,18 +58,55 @@ const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefin
   return [];
 };
 
-const createCATAChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
-  if (mcq) {
-    // TODO: the per-option incorrect options.
-    return [createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
+const createInputTextPathOptions = (inputText: IInputTextPartLayout | undefined) => {
+  if (inputText) {
+    return [
+      createCorrectPath(inputText.id),
+      createIncorrectPath(inputText.id),
+      ...createDefaultPathTypes(),
+    ];
+  }
+  return [];
+};
+
+const createSliderPathOptions = (slider: ISliderPartLayout | undefined) => {
+  if (slider) {
+    return [
+      ...(slider.custom?.advancedFeedback || []).map((feedback, index) =>
+        createInputNumberCommonErrorPath(slider, index),
+      ),
+      createCorrectPath(slider.id),
+      createIncorrectPath(slider.id),
+      ...createDefaultPathTypes(),
+    ];
+  }
+  return [];
+};
+const createInputNumberPathOptions = (inputNumber: IInputNumberPartLayout | undefined) => {
+  if (inputNumber) {
+    return [
+      ...(inputNumber.custom?.advancedFeedback || []).map((feedback, index) =>
+        createInputNumberCommonErrorPath(inputNumber, index),
+      ),
+      createCorrectPath(inputNumber.id),
+      createIncorrectPath(inputNumber.id),
+      ...createDefaultPathTypes(),
+    ];
   }
   return [];
 };
 
 const createMultipleChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
   if (mcq) {
-    // TODO: the per-option incorrect options.
-    return [createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
+    const multipleSelection = !!mcq.custom?.multipleSelection;
+    const correct = mcq.custom?.correctAnswer || [];
+
+    const commonErrorOptions = (mcq.custom?.mcqItems || [])
+      .map((_, index) => index)
+      .filter((index) => multipleSelection || !correct[index])
+      .map((index) => createMCQCommonErrorPath(mcq, index));
+
+    return [...commonErrorOptions, createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
   }
   return [];
 };
@@ -67,6 +116,7 @@ export type QuestionType =
   | 'check-all-that-apply'
   | 'multi-line-text'
   | 'input-text'
+  | 'slider'
   | 'input-number'
   | 'dropdown'
   | 'none';
@@ -77,6 +127,7 @@ const questionMapping: Record<string, QuestionType> = {
   'janus-input-text': 'input-text',
   'janus-input-number': 'input-number',
   'janus-dropdown': 'dropdown',
+  'janus-slider': 'slider',
 };
 
 const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
@@ -88,10 +139,12 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   'input-text': 'Text Input',
   'input-number': 'Number Input',
   dropdown: 'Dropdown',
+  slider: 'Slider',
   none: 'No question',
 };
 
-export const getScreenQuestionType = (screen: IActivity): QuestionType => {
+export const getScreenQuestionType = (screen: IActivity | undefined): QuestionType => {
+  if (!screen) return 'none';
   const question = getScreenPrimaryQuestion(screen);
   if (!question) return 'none';
 

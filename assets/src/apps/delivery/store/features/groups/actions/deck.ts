@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ActivityState } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import { applyState, templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
-import { ActivityState } from 'components/activities/types';
 import {
   getBulkActivitiesForAuthoring,
   getBulkActivitiesForDelivery,
@@ -41,6 +41,7 @@ import {
   selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
+  selectReviewMode,
   selectSectionSlug,
   setScore,
   setScreenIdleExpirationTime,
@@ -59,6 +60,7 @@ export const initializeActivity = createAsyncThunk(
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
+    const isReviewMode = selectReviewMode(rootState);
     const currentSequenceId = sequence.find((entry) => entry.activity_id === activityId)?.custom
       .sequenceId;
     if (!currentSequenceId) {
@@ -179,8 +181,9 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: 0,
     };
-    sessionOps.push(targetVisitTimeStampOp);
-
+    if (!isReviewMode && !isHistoryMode) {
+      sessionOps.push(targetVisitTimeStampOp);
+    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];

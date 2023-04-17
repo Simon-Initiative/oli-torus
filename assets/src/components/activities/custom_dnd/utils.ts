@@ -1,6 +1,6 @@
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
-import { GradingApproach, makeHint, makeStem, makeResponse, ScoringStrategy } from '../types';
 import { matchRule } from 'data/activities/model/rules';
+import { GradingApproach, ScoringStrategy, makeHint, makeResponse, makeStem } from '../types';
 
 export function createNewPart(id: string, answer: string) {
   return {

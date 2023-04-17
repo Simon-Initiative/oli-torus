@@ -1,0 +1,106 @@
+janus-multi-line-text > div {
+  box-sizing: border-box;
+  background-color: $lightBackgroundGrey;
+  color: $lightForeground;
+  border-radius: 4px;
+  padding-top: 0px;
+}
+
+/*-- label --*/
+janus-input-text label,
+janus-input-number label,
+janus-multi-line-text label {
+  font-family: 'OpenSansBold';
+  font-weight: 700;
+  color: $darkForeground;
+  display: inline-block;
+  margin-bottom: 5px;
+  background-color: #fff;
+  width: 100%;
+  padding-bottom: 0.5rem;
+  min-height: 1rem;
+}
+
+/*-- input --*/
+janus-input-text input,
+janus-input-number input,
+janus-multi-line-text textarea {
+  font-family: 'OpenSans';
+  font-weight: 400;
+  padding: 5px;
+  border: none;
+  box-sizing: border-box;
+  border-radius: 4px;
+  min-height: 44px;
+  background-color: $lightBackgroundGrey;
+  border: 1px solid $lightBackgroundGrey;
+  color: $lightForeground;
+  font-size: 14px;
+  line-height: 18px;
+  outline: none;
+}
+
+janus-input-text input::placeholder,
+janus-input-number input::placeholder,
+janus-multi-line-text textarea::placeholder {
+  color: var(--grayDark40);
+}
+
+/*-- input focused --*/
+janus-input-text input:focus,
+janus-input-text input:active,
+janus-input-text input:focus-visible,
+janus-input-text:active input,
+janus-input-text:focus input,
+janus-input-text:focus-within input,
+janus-input-number input:focus,
+janus-input-number input:active,
+janus-input-number input:focus-visible,
+janus-input-number:active input,
+janus-input-number:focus input,
+janus-input-number:focus-within input,
+janus-multi-line-text textarea:focus,
+janus-multi-line-text textarea:active,
+janus-multi-line-text textarea:focus-visible,
+janus-multi-line-text:active textarea,
+janus-multi-line-text:focus textarea,
+janus-multi-line-text:focus-within textarea {
+  border: 1px solid $primary;
+}
+
+/*-- input disabled --*/
+janus-input-text input:disabled,
+janus-input-number input:disabled,
+janus-multi-line-text textarea:disabled {
+  background-color: $lightBackgroundGrey;
+  color: var(--grayDark40);
+}
+/*This may usable later on
+janus-multi-line-text textarea {
+    resize: both !important;
+}*/
+
+/*-- character counter --*/
+janus-multi-line-text .characterCounter {
+  margin: 0;
+  width: auto !important;
+  font-size: 0.95rem !important;
+  font-family: 'OpenSans', sans-serif !important;
+}
+
+janus-multi-line-text .characterCounter span {
+  display: inline-block;
+  margin: 0 0.5rem 0.5rem 0;
+}
+
+/*-- units --*/
+janus-input-number .unitsLabel {
+  color: #696974;
+  display: block;
+  margin-left: 0 !important;
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 18px;
+}

@@ -820,7 +820,8 @@ defmodule Oli.SectionsTest do
         )
         |> Repo.all()
 
-      assert section_resources |> Enum.count() == 8
+      # there is only seven since one of the pages is unreachable
+      assert section_resources |> Enum.count() == 7
     end
 
     test "apply_publication_update/2 handles minor non-hierarchical updates",
@@ -1079,7 +1080,7 @@ defmodule Oli.SectionsTest do
         )
         |> Repo.all()
 
-      assert product_section_resources |> Enum.count() == 7
+      assert product_section_resources |> Enum.count() == 3
 
       # apply the new publication update to the section
       Sections.apply_publication_update(section, latest_publication.id)
@@ -1123,7 +1124,7 @@ defmodule Oli.SectionsTest do
         )
         |> Repo.all()
 
-      assert section_resources |> Enum.count() == 8
+      assert section_resources |> Enum.count() == 7
     end
   end
 

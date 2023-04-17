@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface TimeAgoProps {
   timeStamp: number;

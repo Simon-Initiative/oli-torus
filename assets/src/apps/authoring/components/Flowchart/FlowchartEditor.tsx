@@ -1,23 +1,13 @@
-import React, { useCallback, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-
+import { useDispatch, useSelector } from 'react-redux';
 import {
   selectAllActivities,
   setCurrentActivityId,
 } from '../../../delivery/store/features/activities/slice';
-
-import { addFlowchartScreen } from './flowchart-actions/add-screen';
-import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
-
-import {
-  buildEdges,
-  buildPlaceholders,
-  activitiesToNodes,
-  buildStartingNode,
-} from './flowchart-utils';
-
+import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import { changeAppMode, changeEditMode } from '../../store/app/slice';
 import { FlowchartComponent } from './FlowchartComponent';
 import {
   FlowchartAddScreenParams,
@@ -25,12 +15,17 @@ import {
   FlowchartEventContextProps,
 } from './FlowchartEventContext';
 import { FlowchartModeOptions } from './FlowchartModeOptions';
+import { addFlowchartScreen } from './flowchart-actions/add-screen';
+import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
+import {
+  activitiesToNodes,
+  buildEdges,
+  buildPlaceholders,
+  buildStartingNode,
+} from './flowchart-utils';
+import { screenTypeToTitle } from './screens/screen-factories';
 import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
-import { changeEditMode } from '../../store/app/slice';
-import { screenTypeToTitle } from './screens/screen-factories';
-import { node } from 'webpack';
-import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.
@@ -44,6 +39,7 @@ export const FlowchartEditor = () => {
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
 
+  console.info('Rendering flowchart', activities, sequence);
   const activityEdges = buildEdges(activities);
   const activityNodes = activitiesToNodes(activities);
   const placeholders = buildPlaceholders(activities);
@@ -51,6 +47,18 @@ export const FlowchartEditor = () => {
 
   const nodes = [starting.node, ...activityNodes, ...placeholders.nodes];
   const edges = [starting.edge, ...activityEdges, ...placeholders.edges];
+
+  useEffect(() => {
+    // A cheat-code for going to advanced editor
+    const cheat = (e: KeyboardEvent) => {
+      console.info(e.key);
+      if (e.ctrlKey && e.key === 'F2') {
+        dispatch(changeAppMode({ mode: 'expert' }));
+      }
+    };
+    window.addEventListener('keydown', cheat);
+    return () => window.removeEventListener('keydown', cheat);
+  }, [dispatch]);
 
   const onAddScreen = useCallback(
     (params: FlowchartAddScreenParams) => {
@@ -109,7 +117,7 @@ export const FlowchartEditor = () => {
       <div className="flowchart-editor">
         <DndProvider backend={HTML5Backend}>
           <div className="panel-inner">
-            <FlowchartModeOptions onScreenEditMode={onScreenEdit} />
+            <FlowchartModeOptions />
             <FlowchartSidebar />
           </div>
 

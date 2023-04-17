@@ -1,15 +1,14 @@
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import useWindowSize from 'components/hooks/useWindowSize';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
-import useWindowSize from 'components/hooks/useWindowSize';
-import React, { useEffect } from 'react';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import PreviewTools from './components/PreviewTools';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
 import ScreenIdleTimeOutDialog from './layouts/deck/IdleTimeOutDialog';
 import LessonFinishedDialog from './layouts/deck/LessonFinishedDialog';
 import RestartLessonDialog from './layouts/deck/RestartLessonDialog';
 import { LayoutProps } from './layouts/layouts';
-import store from './store';
 import {
   selectLessonEnd,
   selectRestartLesson,
@@ -40,6 +39,7 @@ export interface DeliveryProps {
   overviewURL: string;
   finalizeGradedURL: string;
   screenIdleTimeOutInSeconds?: number;
+  reviewMode?: boolean;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -61,6 +61,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   overviewURL = '',
   finalizeGradedURL = '',
   screenIdleTimeOutInSeconds = 1800,
+  reviewMode = false,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -77,7 +78,7 @@ const Delivery: React.FC<DeliveryProps> = ({
 
   useEffect(() => {
     //if it's preview mode, we don't need to do anything
-    if (!screenIdleExpirationTime || previewMode) {
+    if (!screenIdleExpirationTime || previewMode || reviewMode) {
       return;
     }
     const timer = setTimeout(() => {
@@ -121,6 +122,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         overviewURL,
         finalizeGradedURL,
         screenIdleTimeOutInSeconds,
+        reviewMode,
       }),
     );
   };
@@ -139,8 +141,10 @@ const Delivery: React.FC<DeliveryProps> = ({
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
-      {restartLesson ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
-      {isLessonEnded ? (
+      {restartLesson && !reviewMode ? (
+        <RestartLessonDialog onRestart={setInitialPageState} />
+      ) : null}
+      {isLessonEnded && !reviewMode ? (
         <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
       {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}

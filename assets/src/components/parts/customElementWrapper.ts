@@ -19,12 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-
 // tslint:disable: max-classes-per-file
-
-import EventEmitter from 'events';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import EventEmitter from 'events';
 
 function toCamelCase(str: string) {
   return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''));
@@ -40,7 +38,7 @@ class ContextProvider extends React.Component<{ context: any; children: any }> {
   }
 
   render() {
-    const { context, children, ...rest } = this.props;
+    const { children, ...rest } = this.props;
     return React.cloneElement(children, rest);
   }
 }

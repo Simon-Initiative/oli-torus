@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Popup as PopupModel } from 'data/content/model/elements/types';
-import { OverlayTrigger, Popover } from 'react-bootstrap';
-import { useAudio } from '../hooks/useAudio';
 import { isEmptyContent } from '../../data/content/utils';
+import { useAudio } from '../hooks/useAudio';
 
 interface Props {
   children: React.ReactNode;

@@ -12,12 +12,12 @@ defmodule Oli.Delivery.Metrics do
   Calculate the progress for a specific student (or a list of students),
   in all pages of a specific container.
 
-  Ommitting the container_id (or specifying nil) calculates progress
+  Omitting the container_id (or specifying nil) calculates progress
   across the entire course section.
 
   This query leverages the `contained_pages` relation, which is always an
   up to date view of the structure of a course section. This allows this
-  query to take into account structural chagnes as the result of course
+  query to take into account structural changes as the result of course
   remix. The `contained_pages` relation is rebuilt after every remix.
 
   It returns a map:
@@ -69,6 +69,28 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Calculate the progress for each student in a page.
+  """
+  def progress_for_page(section_id, user_ids, page_id) do
+    query =
+      from(ra in ResourceAccess,
+        where:
+          ra.resource_id == ^page_id and ra.section_id == ^section_id and ra.user_id in ^user_ids,
+        group_by: ra.user_id,
+        select: {
+          ra.user_id,
+          fragment(
+            "SUM(?)",
+            ra.progress
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Calculate the progress for a specific student, in all pages of a
   collection of containers.
   """
@@ -82,16 +104,16 @@ defmodule Oli.Delivery.Metrics do
       )
       |> where([cp, ra], cp.section_id == ^section_id and cp.container_id in ^container_ids)
       |> group_by([cp, ra], cp.container_id)
-      |> select([cp, ra], %{
-        container_id: cp.container_id,
-        progress:
-          fragment(
-            "SUM(?) / COUNT(*)",
-            ra.progress
-          )
+      |> select([cp, ra], {
+        cp.container_id,
+        fragment(
+          "SUM(?) / COUNT(*)",
+          ra.progress
+        )
       })
 
     Repo.all(query)
+    |> Enum.into(%{})
   end
 
   @doc """
@@ -122,18 +144,128 @@ defmodule Oli.Delivery.Metrics do
           ra.user_id not in ^user_ids_to_ignore
       )
       |> group_by([cp, ra, sr], [cp.container_id, sr.contained_page_count])
-      |> select([cp, ra, sr], %{
-        container_id: cp.container_id,
-        progress:
-          fragment(
-            "SUM(?) / (? * ?)",
-            ra.progress,
-            sr.contained_page_count,
-            ^user_count
-          )
+      |> select([cp, ra, sr], {
+        cp.container_id,
+        fragment(
+          "SUM(?) / (? * ?)",
+          ra.progress,
+          sr.contained_page_count,
+          ^user_count
+        )
       })
 
     Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculate the progress for all students in a collection of pages.
+
+  The last two parameters gives flexibility into excluding specific users
+  from the calculation. This exists primarily to exclude instructors.
+  `user_ids_to_ignore` can be an empty list, but `user_count` should always be the total
+  number of enrolled students (excluding the count of those in the exlusion parameter).
+  """
+  def progress_across_for_pages(section_id, pages_ids, user_ids_to_ignore, user_count) do
+    user_count = max(user_count, 1)
+
+    query =
+      from(ra in ResourceAccess,
+        where:
+          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+            ra.user_id not in ^user_ids_to_ignore,
+        group_by: ra.resource_id,
+        select: {
+          ra.resource_id,
+          fragment(
+            "SUM(?) / (?)",
+            ra.progress,
+            ^user_count
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculate the progress for a specific student in a collection of pages.
+  """
+  def progress_across_for_pages(section_id, pages_ids, student_id) do
+    query =
+      from(ra in ResourceAccess,
+        where:
+          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+            ra.user_id == ^student_id,
+        group_by: ra.resource_id,
+        select: {
+          ra.resource_id,
+          fragment(
+            "SUM(?) / COUNT(*)",
+            ra.progress
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculate the average score for a specific student (or a list of students),
+  in all pages of a specific container.
+
+  Omitting the container_id (or specifying nil) calculates average score
+  across the entire course section.
+
+  This query leverages the `contained_pages` relation, which is always an
+  up to date view of the structure of a course section. This allows this
+  query to take into account structural changes as the result of course
+  remix. The `contained_pages` relation is rebuilt after every remix.
+
+  It returns a map:
+
+    %{user_id_1 => user_1_avg_score,
+      ...
+      user_id_n => user_n_avg_score
+    }
+  """
+  @spec avg_score_for(
+          section_id :: integer,
+          user_id :: integer | list(integer),
+          container_id :: integer | nil
+        ) :: map
+
+  def avg_score_for(section_id, user_id, container_id \\ nil) do
+    user_id_list = if is_list(user_id), do: user_id, else: [user_id]
+
+    filter_by_container =
+      case container_id do
+        nil ->
+          dynamic([cp, _], is_nil(cp.container_id))
+
+        _ ->
+          dynamic([cp, _], cp.container_id == ^container_id)
+      end
+
+    query =
+      ContainedPage
+      |> join(:inner, [cp], ra in ResourceAccess,
+        on:
+          cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
+            ra.user_id in ^user_id_list
+      )
+      |> where([cp, ra], cp.section_id == ^section_id and not is_nil(ra.score))
+      |> where(^filter_by_container)
+      |> group_by([_cp, ra], ra.user_id)
+      |> select(
+        [cp, ra],
+        {ra.user_id, fragment("SUM(?)", ra.score) / fragment("COUNT(?)", ra.out_of)}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
   end
 
   @doc """
