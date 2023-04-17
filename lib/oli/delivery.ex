@@ -296,39 +296,42 @@ defmodule Oli.Delivery do
   def has_completed_survey?(section_slug, user_id) do
     survey = Sections.get_survey(section_slug)
 
-    survey_activities =
-      Enum.reduce(survey.content["model"], [], fn item, activities ->
-        if item["type"] == "activity-reference" do
-          [item["activity_id"] | activities]
-        else
-          activities
-        end
-      end)
-
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
-    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
-    |> join(:inner, [s, spp, pr], a_att in ActivityAttempt,
+    |> join(:inner, [_s, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id
+    )
+    |> join(:inner, [_s, _spp, pr], a_att in ActivityAttempt,
       on: a_att.revision_id == pr.revision_id
     )
-    |> join(:inner, [s, spp, pr, a_att], r_att in ResourceAttempt,
+    |> join(:inner, [_s, _spp, _pr, a_att], r_att in ResourceAttempt,
       on: r_att.id == a_att.resource_attempt_id
     )
-    |> join(:inner, [s, spp, pr, a_att, r_att], r_acc in ResourceAccess,
+    |> join(:inner, [_s, _spp, _pr, _a_att, r_att], r_acc in ResourceAccess,
       on: r_att.resource_access_id == r_acc.id
     )
+    |> join(:left, [_s, _spp, _pr, _a_att, r_att], r_att_2 in ResourceAttempt,
+      on: r_att_2.resource_access_id == r_att.resource_access_id and r_att.id < r_att_2.id
+    )
     |> where(
-      [s, spp, pr, a_att, r_att, r_acc],
+      [s, spp, _pr, _a_att, _r_att, r_acc, r_att_2],
       s.slug == ^section_slug and
         spp.section_id == s.id and
         spp.project_id == s.base_project_id and
-        pr.resource_id in ^survey_activities and
         r_acc.user_id == ^user_id and
-        a_att.lifecycle_state == ^"evaluated"
+        r_acc.resource_id == ^survey.resource_id and
+        is_nil(r_att_2)
     )
-    |> group_by([s, spp, pr, a_att], a_att.revision_id)
-    |> select([s, spp, pr, a_att, r_att, r_acc], a_att.revision_id)
+    |> group_by([_s, _spp, _pr, a_att], [a_att.revision_id, a_att.lifecycle_state])
+    |> select([_s, _spp, _pr, a_att, _r_att, _r_acc], {a_att.revision_id, a_att.lifecycle_state})
     |> Repo.all()
-    |> length() == length(survey_activities)
+    |> Enum.reduce(%{}, fn {revision_id, lifecycle_state}, acc ->
+      if Map.get(acc, revision_id) == :evaluated do
+        acc
+      else
+        Map.put(acc, revision_id, lifecycle_state)
+      end
+    end)
+    |> Enum.all?(&(elem(&1, 1) == :evaluated))
   end
 end

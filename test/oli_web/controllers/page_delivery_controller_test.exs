@@ -1754,9 +1754,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       user: user,
       section: section,
-      survey: survey
+      survey: survey,
+      survey_questions: survey_questions
     } do
       enroll_user_to_section(user, section, :context_learner)
+
+      create_survey_access(user, section, survey, survey_questions)
 
       conn =
         conn
@@ -2077,7 +2080,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
     }
   end
 
+  defp create_survey_access(student, section, survey, survey_questions) do
+    create_activity_attempts(student, section, survey, survey_questions, "active")
+  end
+
   defp complete_student_survey(student, section, survey, survey_questions) do
+    create_activity_attempts(student, section, survey, survey_questions, "evaluated")
+  end
+
+  defp create_activity_attempts(student, section, survey, survey_questions, status) do
     resource_access =
       insert(:resource_access, user: student, section: section, resource: survey.resource)
 
@@ -2087,7 +2098,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       insert(:activity_attempt,
         resource_attempt: resource_attempt,
         revision: question,
-        lifecycle_state: "evaluated"
+        lifecycle_state: status
       )
     end)
   end
