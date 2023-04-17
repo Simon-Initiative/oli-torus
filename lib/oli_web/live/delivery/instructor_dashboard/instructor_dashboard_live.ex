@@ -76,6 +76,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
+  defp render_tab(%{active_tab: :quiz_scores} = assigns) do
+    ~H"""
+      <.live_component
+        id="quiz_scores_table"
+        module={OliWeb.Components.Delivery.QuizScores}
+        params={@params}
+        section={@section}
+        patch_url_type={:quiz_scores}
+      />
+    """
+  end
+
   defp render_tab(%{active_tab: :content} = assigns) do
     ~H"""
       <.live_component
