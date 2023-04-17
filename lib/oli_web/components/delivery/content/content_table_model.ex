@@ -3,7 +3,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(containers, container_column_name, section_slug) do
+  def new(containers, container_column_name, section_slug, patch_url_type) do
     column_specs = [
       %ColumnSpec{
         name: :numbering_index,
@@ -42,7 +42,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
-      data: %{section_slug: section_slug}
+      data: %{section_slug: section_slug, patch_url_type: patch_url_type}
     )
   end
 
@@ -67,15 +67,21 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     ~H"""
     <div class="flex items-center">
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
-      <.link
-        class="ml-6 text-gray-600 underline hover:text-gray-700"
-        patch={Routes.live_path(OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-        @section_slug,
-        :students, @url_params)}
-      >
-        <%= @title %>
-      </.link>
+      <%= if @patch_url_type == :instructor_dashboard do %>
+        <.link
+          class="ml-6 text-gray-600 underline hover:text-gray-700"
+          patch={Routes.live_path(OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          @section_slug,
+          :students, @url_params)}
+        >
+          <%= @title %>
+        </.link>
+      <% else %>
+        <div class="ml-6 text-gray-600">
+          <%= @title %>
+        </div>
+      <% end %>
     </div>
     """
   end

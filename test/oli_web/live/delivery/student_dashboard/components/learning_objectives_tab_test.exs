@@ -11,7 +11,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
   defp live_view_students_dashboard_route(
          section_slug,
          student_id,
-         tab \\ :content,
+         tab,
          params \\ %{}
        ) do
     Routes.live_path(
@@ -40,7 +40,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       student: student
     } do
       {:ok, view, _html} =
-        live(conn, live_view_students_dashboard_route(section.slug, student.id))
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
 
       # Learning Objectives tab is the selected one
       assert has_element?(
