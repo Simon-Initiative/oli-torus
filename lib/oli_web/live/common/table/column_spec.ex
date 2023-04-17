@@ -35,7 +35,9 @@ defmodule OliWeb.Common.Table.ColumnSpec do
             # class to be applied to the th element
             th_class: nil,
             # class to be applied to the td element
-            td_class: nil
+            td_class: nil,
+            # indicates whether a column can be sortable or not
+            sortable: true
 
   def default_sort_fn(:asc, %{name: name}),
     do: fn row1, row2 -> Map.get(row1, name) <= Map.get(row2, name) end
