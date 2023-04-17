@@ -20,6 +20,7 @@ import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
 import { PaginationModes } from './PaginationModes';
+import { AudienceModes } from './AudienceModes';
 import { GroupEditor } from './GroupEditor';
 
 interface PurposeGroupEditorProps extends EditorProps {
@@ -150,6 +151,11 @@ export const PurposeGroupBlock = ({
             mode={contentItem.paginationMode === undefined ? 'normal' : contentItem.paginationMode}
           />
         ) : null}
+        <AudienceModes
+          onEdit={(audience) => onEdit(Object.assign(contentItem, { audience }))}
+          editMode={editMode}
+          mode={contentItem.audience}
+        />
         <Purpose
           purpose={contentItem.purpose}
           editMode={editMode}
