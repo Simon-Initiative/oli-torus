@@ -1,21 +1,21 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 import debounce from 'lodash/debounce';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
-import { OverlayPlacements, VariablePicker } from './VariablePicker';
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ActionOperatorOption,
-  actionOperatorOptions,
   TypeOption,
+  actionOperatorOptions,
   typeOptions,
 } from './AdaptiveItemOptions';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
@@ -36,12 +36,7 @@ interface InitStateItemProps {
   onChange: (id: string, key: string, value: string) => void;
   onDelete: (id: string) => void;
 }
-const InitStateItem: React.FC<InitStateItemProps> = ({
-  state,
-  authoringContainer,
-  onChange,
-  onDelete,
-}) => {
+const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
   const typeRef = useRef<HTMLSelectElement>(null);
 
   const [target, setTarget] = useState(state.target);

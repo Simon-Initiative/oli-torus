@@ -1,22 +1,22 @@
 import React from 'react';
+import { Editor } from 'slate';
+import { insertAudio } from 'components/editing/elements/audio/audioActions';
+import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
+import { toggleBlockquote } from 'components/editing/elements/blockquote/blockquoteActions';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { toggleHeading } from 'components/editing/elements/heading/headingActions';
+import { insertImage } from 'components/editing/elements/image/imageActions';
 import { commandDesc as linkCmd } from 'components/editing/elements/link/LinkCmd';
-import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
-import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
-import { toggleBlockquote } from 'components/editing/elements/blockquote/blockquoteActions';
 import { toggleList } from 'components/editing/elements/list/listActions';
-import { Editor } from 'slate';
 import {
   additionalFormattingOptions,
   toggleFormat,
 } from 'components/editing/elements/marks/toggleMarkActions';
-import { insertWebpage } from 'components/editing/elements/webpage/webpageActions';
-import { insertTable } from 'components/editing/elements/table/commands/insertTable';
-import { insertImage } from 'components/editing/elements/image/imageActions';
-import { insertAudio } from 'components/editing/elements/audio/audioActions';
-import { toggleHeading } from 'components/editing/elements/heading/headingActions';
 import { toggleParagraph } from 'components/editing/elements/paragraph/paragraphActions';
+import { insertTable } from 'components/editing/elements/table/commands/insertTable';
+import { insertWebpage } from 'components/editing/elements/webpage/webpageActions';
+import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
 
 export const formattingDropdownAction = createButtonCommandDesc({
   icon: <i className="fa-solid fa-caret-down"></i>,

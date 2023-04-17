@@ -1,5 +1,5 @@
-import { disableScrollWheelChange } from 'components/activities/short_answer/utils';
 import React, { createRef } from 'react';
+import { disableScrollWheelChange } from 'components/activities/short_answer/utils';
 
 interface Props {
   value: string;

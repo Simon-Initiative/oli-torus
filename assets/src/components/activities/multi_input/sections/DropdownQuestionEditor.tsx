@@ -1,10 +1,10 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { Dropdown, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { makeChoice } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
-import React from 'react';
 
 interface Props {
   input: Dropdown;

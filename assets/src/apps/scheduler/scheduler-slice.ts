@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
-
 import { resetScheduleItem } from './schedule-reset';
 import { scheduleAppFlushChanges, scheduleAppStartup } from './scheduling-thunk';
 
@@ -254,21 +253,21 @@ const schedulerSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(scheduleAppStartup.pending, (state, _action) => {
+    builder.addCase(scheduleAppStartup.pending, (state, action) => {
       state.appLoading = true;
     });
 
-    builder.addCase(scheduleAppFlushChanges.pending, (state, _action) => {
+    builder.addCase(scheduleAppFlushChanges.pending, (state, action) => {
       state.saving = true;
     });
 
-    builder.addCase(scheduleAppFlushChanges.fulfilled, (state, _action) => {
+    builder.addCase(scheduleAppFlushChanges.fulfilled, (state, action) => {
       state.dirty = [];
       state.saving = false;
       state.selectedId = null;
     });
 
-    builder.addCase(scheduleAppFlushChanges.rejected, (state, _action) => {
+    builder.addCase(scheduleAppFlushChanges.rejected, (state, action) => {
       state.errorMessage = 'Could not save changes.';
     });
     builder.addCase(scheduleAppStartup.rejected, (state, action) => {

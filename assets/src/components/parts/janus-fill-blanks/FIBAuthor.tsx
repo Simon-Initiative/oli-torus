@@ -1,22 +1,12 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
 import Select2 from 'react-select2-wrapper';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { FIBModel } from './schema';
 
 const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   const { model } = props;
 
-  const {
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    content,
-    elements,
-    alternateCorrectDelimiter,
-    customCss,
-  } = model;
+  const { content, elements, customCss } = model;
   const styles: CSSProperties = {
     borderRadius: '5px',
     fontFamily: 'revert',

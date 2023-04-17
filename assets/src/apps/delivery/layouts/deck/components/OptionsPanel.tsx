@@ -1,3 +1,5 @@
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from 'apps/delivery/store/features/adaptivity/slice';
 import {
   selectEnableHistory,
@@ -5,8 +7,6 @@ import {
   selectShowHistory,
   setShowHistory,
 } from 'apps/delivery/store/features/page/slice';
-import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 export interface OptionsPanelProps {
   open: boolean;

@@ -1,9 +1,12 @@
 import React, { useCallback, useContext } from 'react';
 import { useDrop } from 'react-dnd';
-import { useStore /*getBezierPath*/ } from 'reactflow';
+import {
+  useStore,
+  /*getBezierPath*/
+} from 'reactflow';
 import { Icon } from '../../../../../components/misc/Icon';
-import { FlowchartEdgeData } from '../flowchart-utils';
 import { FlowchartEventContext } from '../FlowchartEventContext';
+import { FlowchartEdgeData } from '../flowchart-utils';
 import { screenTypes } from '../screens/screen-factories';
 
 const boxSize = 30;

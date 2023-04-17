@@ -4,11 +4,11 @@ import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptiv
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ConditionOperatorOption,
-  conditionOperatorOptions,
   ConditionTypeOperatorCombo,
+  TypeOption,
+  conditionOperatorOptions,
   conditionTypeOperatorCombos,
   inferTypeFromOperatorAndValue,
-  TypeOption,
   typeOptions,
 } from './AdaptiveItemOptions';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';

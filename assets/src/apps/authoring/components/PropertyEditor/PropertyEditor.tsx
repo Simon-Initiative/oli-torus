@@ -1,20 +1,20 @@
+import React, { Fragment, useEffect, useState } from 'react';
 import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
 import { diff } from 'deep-object-diff';
 import { JSONSchema7 } from 'json-schema';
 import { at } from 'lodash';
-import React, { Fragment, useEffect, useState } from 'react';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
-import { TorusImageBrowser } from './custom/TorusImageBrowser';
-import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
-import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
-import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
+import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
+import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
+import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
-import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
-import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
-import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
+import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
+import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
+import { TorusImageBrowser } from './custom/TorusImageBrowser';
+import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Transforms, Editor, Element } from 'slate';
-import { isTopLevel, isActive } from 'components/editing/slateUtils';
+import { Editor, Element, Transforms } from 'slate';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { isActive, isTopLevel } from 'components/editing/slateUtils';
 import { Model } from 'data/content/model/elements/factories';
 
 export const toggleBlockquote = createButtonCommandDesc({

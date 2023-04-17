@@ -1,11 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-
 import { cloneT } from '../../../../../utils/common';
-
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
-  deleteActivity,
   IActivity,
+  deleteActivity,
   selectActivityById,
   selectAllActivities,
 } from '../../../../delivery/store/features/activities/slice';
@@ -15,7 +12,6 @@ import {
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup, upsertGroup } from '../../../../delivery/store/features/groups/slice';
-
 import { bulkSaveActivity } from '../../../store/activities/actions/saveActivity';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { savePage } from '../../../store/page/actions/savePage';

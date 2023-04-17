@@ -1,12 +1,12 @@
+import React, { Fragment, useCallback, useEffect } from 'react';
+import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
 import { selectAllObjectivesMap, setShowScoringOverview } from 'apps/authoring/store/app/slice';
 import { savePage } from 'apps/authoring/store/page/actions/savePage';
 import { selectState, updatePage } from 'apps/authoring/store/page/slice';
 import { IActivity, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import { debounce } from 'lodash';
-import React, { Fragment, useCallback, useEffect } from 'react';
-import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { Objective } from '../../../../data/content/objective';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';

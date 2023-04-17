@@ -1,13 +1,12 @@
 import {
-  createEntityAdapter,
-  createSelector,
-  createSlice,
   EntityAdapter,
   EntityState,
   PayloadAction,
   Slice,
+  createEntityAdapter,
+  createSelector,
+  createSlice,
 } from '@reduxjs/toolkit';
-
 import { SequenceEntry, SequenceEntryChild } from './actions/sequence';
 import GroupsSlice from './name';
 

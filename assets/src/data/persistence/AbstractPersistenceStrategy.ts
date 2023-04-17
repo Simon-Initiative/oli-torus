@@ -1,11 +1,10 @@
-import { LockResult } from './lock';
-
 import {
+  PersistenceStrategy,
   onFailureCallback,
   onSaveCompletedCallback,
   onStateChangeCallback,
-  PersistenceStrategy,
 } from './PersistenceStrategy';
+import { LockResult } from './lock';
 
 export interface AbstractPersistenceStrategy {
   successCallback: onSaveCompletedCallback | null;

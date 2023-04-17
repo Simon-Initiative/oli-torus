@@ -1,9 +1,9 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
+import './ShapeEditor.scss';
 import { Point } from './common';
 import { throttle } from './timing';
-import './ShapeEditor.scss';
 
 const mapCoordsToPolygonProps = (coords: Immutable.List<number>) => {
   return {

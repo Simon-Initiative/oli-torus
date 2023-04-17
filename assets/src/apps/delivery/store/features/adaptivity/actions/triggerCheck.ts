@@ -1,16 +1,16 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
+import { PartResponse } from 'components/activities/types';
 import {
   checkIfFirstEventHasNavigation,
   processResults,
 } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
-import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
 import { clone } from 'utils/common';
-import { check, CheckResult, ScoringContext } from '../../../../../../adaptivity/rules-engine';
+import { CheckResult, ScoringContext, check } from '../../../../../../adaptivity/rules-engine';
 import {
-  applyState,
   ApplyStateOperation,
+  applyState,
   bulkApplyState,
   defaultGlobalEnv,
   getEnvState,
@@ -24,11 +24,7 @@ import {
   updateExtrinsicState,
   upsertActivityAttemptState,
 } from '../../attempt/slice';
-import {
-  findNextSequenceId,
-  navigateToActivity,
-  navigateToNextActivity,
-} from '../../groups/actions/deck';
+import { findNextSequenceId } from '../../groups/actions/deck';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,

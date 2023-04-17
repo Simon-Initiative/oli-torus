@@ -1,11 +1,12 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { FileUploadSchema } from './schema';
+import { defaultModel } from './utils';
+
 export { FileUploadDelivery } from './FileUploadDelivery';
 export { FileUploadAuthoring } from './FileUploadAuthoring';
 
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { FileUploadSchema } from './schema';
-import { defaultModel } from './utils';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 

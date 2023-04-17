@@ -13,7 +13,6 @@ import {
   questionTypeLabels,
 } from '../paths/path-options';
 import { validateScreen } from '../screens/screen-validation';
-
 import { PathsEditor } from './PathsEditor';
 
 interface FlowchartSidebarProps {}

@@ -1,41 +1,38 @@
-import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Choices } from 'data/activities/model/choices';
 import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
+import * as Immutable from 'immutable';
+import { Maybe } from 'tsmonad';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
+import { Radio } from 'components/misc/icons/radio/Radio';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { Choices } from 'data/activities/model/choices';
+import { getCorrectChoiceIds } from 'data/activities/model/responses';
+import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import * as ActivityTypes from '../types';
-import { ImageHotspotActions } from './actions';
-import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot, shapeType } from './schema';
-import { Radio } from 'components/misc/icons/radio/Radio';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { CATAActions } from '../check_all_that_apply/actions';
 import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
-import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { defaultWriterContext } from 'data/content/writers/context';
+import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
-import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
-import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import { makeChoice, makeContent, MediaItemRequest } from '../types';
-import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
-import { CATAActions } from '../check_all_that_apply/actions';
-import { getCorrectChoiceIds } from 'data/activities/model/responses';
+import * as ActivityTypes from '../types';
+import { MediaItemRequest, makeChoice } from '../types';
 import { CircleEditor } from './Sections/CircleEditor';
-import { RectangleEditor } from './Sections/RectangleEditor';
-import { PolygonEditor } from './Sections/PolygonEditor';
-import { Maybe } from 'tsmonad';
-import * as Immutable from 'immutable';
 import { PolygonAdder } from './Sections/PolygonAdder';
-import { clone } from 'utils/common';
+import { PolygonEditor } from './Sections/PolygonEditor';
+import { RectangleEditor } from './Sections/RectangleEditor';
+import { ImageHotspotActions } from './actions';
+import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
-  const { dispatch, model, editMode, projectSlug, onRequestMedia } =
-    useAuthoringElementContext<ImageHotspotModelSchema>();
+  const { dispatch, model, projectSlug } = useAuthoringElementContext<ImageHotspotModelSchema>();
 
   const selectedPartId = model.authoring.parts[0].id;
   const writerContext = defaultWriterContext({
@@ -64,7 +61,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     });
   }
 
-  const setImageURL = (_e: any) => {
+  const setImageURL = (e: any) => {
     selectImage().then((url: string) => {
       dispatch(ImageHotspotActions.setImageURL(url));
     });
@@ -80,7 +77,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     model.multiple ? dispatch(CATAActions.addChoice(hs)) : dispatch(Choices.addOne(hs));
   };
 
-  const addCircle = (_e: any) => {
+  const addCircle = (e: any) => {
     if (model.width && model.height) {
       const hs = makeHotspot([Math.floor(model.width / 2), Math.floor(model.height / 2), 50]);
       addHotspot(hs);
@@ -88,7 +85,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     }
   };
 
-  const addRect = (_e: any) => {
+  const addRect = (e: any) => {
     if (model.width && model.height) {
       const hs = makeHotspot([
         Math.floor(model.width / 2) - 50,
@@ -158,7 +155,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             {model.imageURL && (
               <div
                 style={{ position: 'relative', width: model.width, height: model.height }}
-                onMouseDown={(e: any) => setSelectedHotspot(null)}
+                onMouseDown={() => setSelectedHotspot(null)}
               >
                 <img
                   src={model.imageURL}
@@ -230,7 +227,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             &nbsp;&nbsp;
             <button
               className="btn btn-primary mt-2"
-              onClick={(_e) => removeHotspot(selectedHotspot!)}
+              onClick={(e) => removeHotspot(selectedHotspot!)}
               disabled={!selectedHotspot || model.choices.length <= 1}
             >
               Remove

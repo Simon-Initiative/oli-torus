@@ -1,6 +1,4 @@
-import React, { Fragment } from 'react';
-import { useEffect } from 'react';
-import { useState } from 'react';
+import React from 'react';
 import { Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 

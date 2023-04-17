@@ -3,7 +3,7 @@ import {
   toggleAnswerChoiceShuffling,
   togglePerPartSubmissionOption,
 } from 'components/activities/common/utils';
-import { HasTransformations, HasPerPartSubmissionOption } from 'components/activities/types';
+import { HasPerPartSubmissionOption, HasTransformations } from 'components/activities/types';
 
 export const shuffleAnswerChoiceSetting = (
   model: HasTransformations,

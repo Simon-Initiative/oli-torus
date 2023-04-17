@@ -1,3 +1,9 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { ImageHotspotModelSchema } from './schema';
+import { defaultImageHotspotModel } from './utils';
+
 // This is the entry point for the Likert authoring
 // component, as specified in the manifest.json
 
@@ -16,12 +22,6 @@
 // Fulfills 1. and 2. from above by exporting these components:
 export { ImageHotspotDelivery } from './ImageHotspotDelivery';
 export { ImageHotspotAuthoring } from './ImageHotspotAuthoring';
-
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { ImageHotspotModelSchema } from './schema';
-import { defaultImageHotspotModel } from './utils';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');

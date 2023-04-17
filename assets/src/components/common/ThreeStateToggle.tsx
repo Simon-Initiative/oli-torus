@@ -1,6 +1,5 @@
 import React, { PropsWithChildren } from 'react';
-import { classNames, ClassName } from 'utils/classNames';
-
+import { ClassName, classNames } from 'utils/classNames';
 import styles from './ThreeStateToggle.modules.scss';
 
 interface ThreeStateToggleProps {

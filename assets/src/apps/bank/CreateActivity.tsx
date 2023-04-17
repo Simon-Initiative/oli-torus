@@ -1,8 +1,7 @@
 import React from 'react';
-
-import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
-import { ActivityEditContext } from 'data/content/activity';
 import { invokeCreationFunc } from 'components/activities/creation';
+import { ActivityEditContext } from 'data/content/activity';
+import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import * as Persistence from 'data/persistence/activity';
 
 export type CreateActivityProps = {

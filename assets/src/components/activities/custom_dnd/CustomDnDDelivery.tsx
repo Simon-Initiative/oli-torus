@@ -1,33 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { Provider, useDispatch, useSelector, useStore } from 'react-redux';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { Provider, useDispatch, useSelector, useStore } from 'react-redux';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
+import { Manifest } from 'components/activities/types';
 import {
   ActivityDeliveryState,
   activityDeliverySlice,
   initializeState,
-  resetAction,
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
-  submitPart,
+  resetAction,
   resetAndSubmitPart,
   resetPart,
+  submitPart,
 } from 'data/activities/DeliveryState';
-
 import { safelySelectFiles } from 'data/activities/utils';
-
 import { configureStore } from 'state/store';
-import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { Manifest, PartState } from 'components/activities/types';
-import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
+import { castPartId } from '../common/utils';
 import { DragCanvas, ResetListener } from './DragCanvas';
 import { FocusedFeedback } from './FocusedFeedback';
 import { FocusedHints } from './FocusedHints';
-import { castPartId } from '../common/utils';
 
 export const CustomDnDComponent: React.FC = () => {
   const {

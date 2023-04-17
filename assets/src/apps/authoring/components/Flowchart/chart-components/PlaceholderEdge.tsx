@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
-import { useStore, getBezierPath } from 'reactflow';
-
+import { getBezierPath, useStore } from 'reactflow';
 import { getEdgeParams } from './utils';
 
 interface FloatingEdgeProps {

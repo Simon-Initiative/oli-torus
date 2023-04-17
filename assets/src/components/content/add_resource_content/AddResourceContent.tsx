@@ -1,10 +1,9 @@
-import { ActivityEditContext } from 'data/content/activity';
-import { ResourceContent } from 'data/content/resource';
 import React, { useState } from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
+import { ActivityEditContext } from 'data/content/activity';
+import { ResourceContent } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
-
 import styles from './AddResourceContent.modules.scss';
 
 export type AddCallback = (

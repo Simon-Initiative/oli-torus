@@ -1,4 +1,3 @@
-import { Tooltip } from 'components/common/Tooltip';
 import React from 'react';
 
 export type EditButtonProps = {

@@ -1,6 +1,12 @@
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Col, Container, Row } from 'react-bootstrap';
+import EventEmitter from 'events';
+import { JSONSchema7 } from 'json-schema';
+import { isEqual } from 'lodash';
+import { AnyPartComponent } from 'components/parts/types/parts';
 import ConfigurationModal from 'apps/authoring/components/EditingCanvas/ConfigurationModal';
-import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import partSchema, {
   partUiSchema,
   transformModelToSchema as transformPartModelToSchema,
@@ -11,12 +17,6 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import { AnyPartComponent } from 'components/parts/types/parts';
-import EventEmitter from 'events';
-import { JSONSchema7 } from 'json-schema';
-import { isEqual } from 'lodash';
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Col, Container, Row } from 'react-bootstrap';
 import { classNames } from 'utils/classNames';
 import { clone } from 'utils/common';
 import { convertPalette } from '../common/util';

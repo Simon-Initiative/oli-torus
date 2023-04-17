@@ -1,3 +1,9 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { MCSchema } from './schema';
+import { defaultMCModel } from './utils';
+
 // This is the entry point for the multiple choice authoring
 // component, as specified in the manifest.json
 
@@ -16,12 +22,6 @@
 // Fulfills 1. and 2. from above by exporting these components:
 export { MultipleChoiceDelivery } from './MultipleChoiceDelivery';
 export { MultipleChoiceAuthoring } from './MultipleChoiceAuthoring';
-
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { MCSchema } from './schema';
-import { defaultMCModel } from './utils';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');

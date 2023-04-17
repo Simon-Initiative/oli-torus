@@ -1,12 +1,12 @@
 import React from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { WebpageModal } from 'components/editing/elements/webpage/WebpageModal';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
-import { WebpageModal } from 'components/editing/elements/webpage/WebpageModal';
 import { modalActions } from 'actions/modal';
+import * as ContentModel from 'data/content/model/elements/types';
 
 interface SettingsProps {
   commandContext: CommandContext;

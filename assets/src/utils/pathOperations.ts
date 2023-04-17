@@ -1,4 +1,5 @@
 import jp from 'jsonpath';
+
 export type PathOperation = FindOperation | InsertOperation | ReplaceOperation | FilterOperation;
 
 // apply a series of transformations which may mutate the given json

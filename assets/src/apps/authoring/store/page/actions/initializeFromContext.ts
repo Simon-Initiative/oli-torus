@@ -6,17 +6,17 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { setGroups } from '../../../../delivery/store/features/groups/slice';
+import { verifyFlowchartLesson } from '../../../components/Flowchart/flowchart-actions/verify-flowchart-lesson';
 import { PageContext } from '../../../types';
 import { createNew as createNewActivity } from '../../activities/actions/createNew';
+import { selectAppMode } from '../../app/slice';
 import { createNew as createNewGroup } from '../../groups/layouts/deck/actions/createNew';
 import { updateActivityPartInheritance } from '../../groups/layouts/deck/actions/updateActivityPartInheritance';
 import { updateActivityRules } from '../../groups/layouts/deck/actions/updateActivityRules';
-import { loadPage, PageState } from '../slice';
-import PageSlice from '../name';
-import { savePage } from './savePage';
-import { selectAppMode } from '../../app/slice';
 import { AuthoringRootState } from '../../rootReducer';
-import { verifyFlowchartLesson } from '../../../components/Flowchart/flowchart-actions/verify-flowchart-lesson';
+import PageSlice from '../name';
+import { PageState, loadPage } from '../slice';
+import { savePage } from './savePage';
 
 export const initializeFromContext = createAsyncThunk(
   `${PageSlice}/initializeFromContext`,

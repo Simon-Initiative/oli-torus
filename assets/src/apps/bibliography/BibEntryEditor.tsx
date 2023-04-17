@@ -1,10 +1,10 @@
 import * as React from 'react';
-import * as Immutable from 'immutable';
 import { useState } from 'react';
-import { CitationModel, DateField, isDateField, isNameField, NameField } from './citation_model';
+import * as Immutable from 'immutable';
 import { TextInput } from 'components/common/TextInput';
-import { cslSchema, ignoredAttributes, toFriendlyLabel } from './common';
 import { Tooltip } from 'components/common/Tooltip';
+import { CitationModel, DateField, NameField, isDateField, isNameField } from './citation_model';
+import { cslSchema, ignoredAttributes, toFriendlyLabel } from './common';
 
 export interface BibEntryEditorProps {
   citationModel: CitationModel;

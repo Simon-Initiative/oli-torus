@@ -1,8 +1,8 @@
-import { Transforms, Range, Node, Point, Path, Editor as SlateEditor, Element, Text } from 'slate';
 import { KeyboardEvent } from 'react';
+import { Element, Node, Path, Point, Range, Editor as SlateEditor, Text, Transforms } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
 import { OrderedList, UnorderedList } from 'data/content/model/elements/types';
 import { ListItem } from '../../../../data/content/model/elements/types';
-import { Model } from 'data/content/model/elements/factories';
 
 // The key down handler required to allow special list processing.
 export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {

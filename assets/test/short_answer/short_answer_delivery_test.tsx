@@ -1,16 +1,16 @@
-import { render, fireEvent, screen } from '@testing-library/react';
 import React from 'react';
-import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import { act } from 'react-dom/test-utils';
-import '@testing-library/jest-dom';
-import { defaultModel } from 'components/activities/short_answer/utils';
-import { ShortAnswerComponent } from 'components/activities/short_answer/ShortAnswerDelivery';
-import { makeHint } from 'components/activities/types';
-import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
+import '@testing-library/jest-dom';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
+import { ShortAnswerComponent } from 'components/activities/short_answer/ShortAnswerDelivery';
+import { defaultModel } from 'components/activities/short_answer/utils';
+import { makeHint } from 'components/activities/types';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { defaultActivityState } from 'data/activities/utils';
+import { configureStore } from 'state/store';
+import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 
 describe('multiple choice delivery', () => {
   it('renders ungraded activities correctly', async () => {
@@ -32,7 +32,7 @@ describe('multiple choice delivery', () => {
       },
       preview: false,
     };
-    const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;
+    const { onSubmitActivity } = defaultDeliveryElementProps;
     const store = configureStore({}, activityDeliverySlice.reducer);
 
     render(

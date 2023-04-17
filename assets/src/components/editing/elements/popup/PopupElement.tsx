@@ -1,14 +1,14 @@
 import React from 'react';
+import { useSlate } from 'slate-react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { PopupContentEditor } from 'components/editing/elements/popup/PopupContentEditor';
 import { InlineChromiumBugfix, updateModel } from 'components/editing/elements/utils';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
-import * as ContentModel from 'data/content/model/elements/types';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+import * as ContentModel from 'data/content/model/elements/types';
 import { useCollapsedSelection } from 'data/content/utils';
-import { useSlate } from 'slate-react';
 import { useToggle } from '../../../hooks/useToggle';
 
 interface Props extends EditorProps<ContentModel.Popup> {}

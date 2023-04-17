@@ -19,7 +19,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const [enabled, setEnabled] = useState(true);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [selectedItem, setSelectedItem] = useState<string>('');
-  const [cssClass, setCssClass] = useState('');
+  const [_cssClass, setCssClass] = useState('');
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -150,19 +150,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const {
-    x,
-    y,
-    z,
-    width,
-    height,
-    customCssClass,
-    showLabel,
-    label,
-    prompt,
-    optionLabels,
-    palette,
-  } = model;
+  const { width, height, showLabel, label, prompt, optionLabels } = model;
 
   useEffect(() => {
     const styleChanges: any = {};

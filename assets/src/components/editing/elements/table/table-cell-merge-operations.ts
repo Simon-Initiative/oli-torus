@@ -1,8 +1,7 @@
 /*
   Functions relating to the merging and splitting of cells in tables in the slateJS editor.
 */
-
-import { Transforms, Editor, Element, Path } from 'slate';
+import { Editor, Element, Path, Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
 import { Table, TableCell, TableRow } from '../../../../data/content/model/elements/types';
 import { getColspan, getRowspan, getVisualGrid } from './table-util';

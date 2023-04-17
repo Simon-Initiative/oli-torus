@@ -1,8 +1,9 @@
+import { Environment } from 'janus-script';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import {
-  applyState,
   ApplyStateOperation,
+  applyState,
   checkExpressionsWithWrongBrackets,
   evalScript,
   extractUniqueVariablesFromText,
@@ -12,7 +13,6 @@ import {
   looksLikeJson,
   templatizeText,
 } from 'adaptivity/scripting';
-import { Environment } from 'janus-script';
 
 describe('Scripting Interface', () => {
   describe('looksLikeJson', () => {

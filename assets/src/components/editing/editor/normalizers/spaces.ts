@@ -1,8 +1,8 @@
+import * as Immutable from 'immutable';
+import { Editor, Element, Path, Transforms } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement } from 'data/content/model/elements/types';
 import { FormattedText } from 'data/content/model/text';
-import * as Immutable from 'immutable';
-import { Editor, Element, Path, Transforms } from 'slate';
 
 const spacesRequiredBetween = Immutable.Set<string>([
   'image',

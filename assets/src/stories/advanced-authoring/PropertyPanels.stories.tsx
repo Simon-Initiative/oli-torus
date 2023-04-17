@@ -1,22 +1,19 @@
 // MyComponent.story.ts|tsx
-
 import React from 'react';
-import { ComponentStory, ComponentMeta } from '@storybook/react';
+import { ComponentMeta } from '@storybook/react';
 import { JSONSchema7Object } from 'json-schema';
-
-import * as DropdownSchema from '../../components/parts/janus-dropdown/schema';
-import * as SliderSchema from '../../components/parts/janus-slider/schema';
-import * as NumberInputSchema from '../../components/parts/janus-input-number/schema';
-import * as MultipleChoiceSchema from '../../components/parts/janus-mcq/schema';
-import * as TextInputSchema from '../../components/parts/janus-input-text/schema';
-import * as MultiLineTextInputSchema from '../../components/parts/janus-multi-line-text/schema';
-
 import '../../../styles/index.scss';
 import PropertyEditor from '../../apps/authoring/components/PropertyEditor/PropertyEditor';
 import {
   simplifiedPartSchema,
   simplifiedPartUiSchema,
 } from '../../apps/authoring/components/PropertyEditor/schemas/part';
+import * as DropdownSchema from '../../components/parts/janus-dropdown/schema';
+import * as NumberInputSchema from '../../components/parts/janus-input-number/schema';
+import * as TextInputSchema from '../../components/parts/janus-input-text/schema';
+import * as MultipleChoiceSchema from '../../components/parts/janus-mcq/schema';
+import * as MultiLineTextInputSchema from '../../components/parts/janus-multi-line-text/schema';
+import * as SliderSchema from '../../components/parts/janus-slider/schema';
 import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext';
 
 interface PanelDef {

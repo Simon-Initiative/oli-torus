@@ -25,7 +25,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const [buttonTransparent, setButtonTransparent] = useState('');
   const [buttonEnabled, setButtonEnabled] = useState(true);
   const [buttonTitle, setButtonTitle] = useState('');
-  const [cssClass, setCssClass] = useState('');
+  const [_cssClass, setCssClass] = useState('');
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -356,21 +356,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     };
   }, [props.notify]);
 
-  const {
-    title,
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    textColor,
-    buttonColor,
-    visible = true,
-    enabled = true,
-    ariaLabel,
-    transparent,
-    selected,
-  } = model;
+  const { width, height, visible = true, enabled = true, ariaLabel } = model;
 
   const styles: CSSProperties = {
     display: visible ? 'block' : 'none',

@@ -1,5 +1,5 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { MultiLineTextModel } from './schema';
 
 const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextModel>> = (
@@ -7,19 +7,8 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
 ) => {
   const { id, model } = props;
 
-  const {
-    label,
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    prompt,
-    showLabel,
-    initValue,
-    fontSize,
-    showCharacterCount,
-  } = model;
+  const { label, width, height, prompt, showLabel, initValue, fontSize, showCharacterCount } =
+    model;
   const wrapperStyles: CSSProperties = {
     width,
   };

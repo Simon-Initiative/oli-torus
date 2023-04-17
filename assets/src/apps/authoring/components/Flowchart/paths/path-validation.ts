@@ -2,8 +2,8 @@ import {
   AllPaths,
   AlwaysGoToPath,
   ComponentPath,
-  OptionCommonErrorPath,
   NumericCommonErrorPath,
+  OptionCommonErrorPath,
 } from './path-types';
 
 export const validatePath = (path: AllPaths) => {

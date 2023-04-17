@@ -3,13 +3,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { dateWithoutTimeLabel, stringToDateWithoutTime } from './date-utils';
 import { getSchedule, getSelectedItem } from './schedule-selectors';
 import {
-  moveScheduleItem,
-  getScheduleItem,
   HierarchyItem,
   ScheduleItemType,
-  unlockScheduleItem,
   SchedulingType,
   changeScheduleType,
+  getScheduleItem,
+  moveScheduleItem,
+  unlockScheduleItem,
 } from './scheduler-slice';
 
 type StringDateChangeHandler = (val: string | null) => void;

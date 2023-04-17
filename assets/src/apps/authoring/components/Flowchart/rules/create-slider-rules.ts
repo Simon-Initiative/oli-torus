@@ -12,7 +12,6 @@ import {
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
-import { NumericCommonErrorPath } from '../paths/path-types';
 import {
   isAlwaysPath,
   isCorrectPath,
@@ -21,12 +20,12 @@ import {
 } from '../paths/path-utils';
 import { createCondition } from './create-condition';
 import {
-  createNeverCondition,
   DEFAULT_CORRECT_FEEDBACK,
   DEFAULT_INCORRECT_FEEDBACK,
+  IConditionWithFeedback,
+  createNeverCondition,
   getSequenceIdFromDestinationPath,
   getSequenceIdFromScreenResourceId,
-  IConditionWithFeedback,
 } from './create-generic-rule';
 import { generateThreeTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';

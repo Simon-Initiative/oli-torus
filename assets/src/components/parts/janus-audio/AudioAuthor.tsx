@@ -1,11 +1,11 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { AudioModel } from './schema';
 
 const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
-  const { id, model } = props;
+  const { model } = props;
 
-  const { x, y, z, width, src, height } = model;
+  const { height } = model;
   const styles: CSSProperties = {
     cursor: 'pointer',
     width: '100%',

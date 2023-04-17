@@ -1,10 +1,9 @@
 import React, { useCallback } from 'react';
+import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { RichText } from 'components/activities/types';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import * as ContentModel from 'data/content/model/elements/types';
-import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
-
 import { InlineAudioClipPicker } from '../common/InlineAudioClipPicker';
 
 interface Props {

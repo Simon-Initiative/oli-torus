@@ -1,7 +1,7 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
-import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import { formatExpression } from 'adaptivity/scripting';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;

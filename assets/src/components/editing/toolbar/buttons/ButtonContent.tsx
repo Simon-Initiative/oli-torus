@@ -1,6 +1,6 @@
-import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import React from 'react';
 import { useSlate } from 'slate-react';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import styles from '../Toolbar.modules.scss';
 
 interface Props {

@@ -9,17 +9,16 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectAllGroups } from '../../../../delivery/store/features/groups/slice';
-
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import {
-  createActivityTemplate,
   IActivityTemplate,
+  createActivityTemplate,
 } from '../../../store/activities/templates/activity';
 import {
-  selectActivityTypes,
-  selectProjectSlug,
-  selectAppMode,
   ActivityRegistration,
+  selectActivityTypes,
+  selectAppMode,
+  selectProjectSlug,
 } from '../../../store/app/slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
@@ -39,8 +38,8 @@ import {
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
-import { sortScreens } from '../screens/screen-utils';
 import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
+import { sortScreens } from '../screens/screen-utils';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;

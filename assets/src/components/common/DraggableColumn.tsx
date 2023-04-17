@@ -4,13 +4,12 @@ import {
   Draggable as DraggableDND,
   DraggableStateSnapshot,
   DraggingStyle,
-  Droppable,
   DropResult,
+  Droppable,
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
 import { ClassName, classNames } from 'utils/classNames';
 import guid from 'utils/guid';
-
 import styles from './DraggableColumn.modules.scss';
 
 interface DragIndicatorProps

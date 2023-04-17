@@ -1,8 +1,8 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { HasParts, makeHint } from 'components/activities/types';
 import { Hints as HintUtils } from 'data/activities/model/hints';
-import React from 'react';
 
 interface Props {
   partId: string;

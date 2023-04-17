@@ -1,10 +1,10 @@
 import React from 'react';
 import {
   HasPerPartSubmissionOption,
-  makeTransformation,
   PartId,
   Transform,
   Transformation,
+  makeTransformation,
 } from '../types';
 
 export const isShuffled = (transformations: Transformation[]): boolean =>

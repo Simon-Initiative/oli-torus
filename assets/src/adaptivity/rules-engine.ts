@@ -439,7 +439,7 @@ export const check = async (
     // load the std lib
     const { env } = evalScript(janus_std);
 
-    const { result: assignResults } = evalAssignScript(state, env);
+    const { result: _assignResults } = evalAssignScript(state, env);
     // console.log('RULES ENGINE STATE ASSIGN', { assignResults, state, env });
 
     // evaluate all rule conditions against context

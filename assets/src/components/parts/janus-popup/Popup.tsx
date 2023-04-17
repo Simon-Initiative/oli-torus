@@ -1,6 +1,6 @@
-import { Environment } from 'janus-script';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { Environment } from 'janus-script';
 import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
@@ -16,9 +16,9 @@ import { InitResultProps } from './types';
 
 const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
-  const [model, setModel] = useState<any>(props.model);
+  const [model, _setModel] = useState<any>(props.model);
   const id: string = props.id;
-  const [context, setContext] = useState<boolean>(false);
+  const [_context, setContext] = useState<boolean>(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupVisible, setPopupVisible] = useState(true);
   const [iconSrc, setIconSrc] = useState('');
@@ -105,21 +105,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     initialize(props.model);
   }, [props]);
 
-  const {
-    x,
-    y,
-    z,
-    width,
-    height,
-    customCssClass,
-    openByDefault,
-    visible,
-    defaultURL,
-    iconURL,
-    useToggleBehavior,
-    popup,
-    description,
-  } = model;
+  const { width, height, useToggleBehavior, popup, description } = model;
 
   useEffect(() => {
     if (!props.notify) {

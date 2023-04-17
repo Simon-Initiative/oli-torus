@@ -1,5 +1,5 @@
-import { AdaptiveModelSchema } from './schema';
 import { ScoringStrategy, makeHint } from '../types';
+import { AdaptiveModelSchema } from './schema';
 
 export const defaultModel: () => AdaptiveModelSchema = () => {
   return {

@@ -1,9 +1,9 @@
-import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { ButtonContent } from 'components/editing/toolbar/buttons/ButtonContent';
-import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React, { PropsWithChildren } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { useSlate } from 'slate-react';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { ButtonContent } from 'components/editing/toolbar/buttons/ButtonContent';
+import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import { classNames } from 'utils/classNames';
 import { valueOr } from 'utils/common';
 import styles from '../Toolbar.modules.scss';

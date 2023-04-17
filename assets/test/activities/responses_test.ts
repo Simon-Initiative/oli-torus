@@ -3,10 +3,10 @@ import {
   ChoiceIdsToResponseId,
   HasChoices,
   HasParts,
+  ScoringStrategy,
   makeChoice,
   makeFeedback,
   makeResponse,
-  ScoringStrategy,
 } from 'components/activities/types';
 import { getResponses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';

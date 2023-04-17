@@ -1,4 +1,4 @@
-import { Logic, Paging, BankedActivity } from 'data/content/bank';
+import { BankedActivity, Logic, Paging } from 'data/content/bank';
 import { ProjectSlug } from 'data/types';
 import { makeRequest } from './common';
 

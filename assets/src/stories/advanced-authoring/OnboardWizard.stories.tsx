@@ -1,11 +1,9 @@
 // MyComponent.story.ts|tsx
-
 import React from 'react';
 import { ComponentMeta } from '@storybook/react';
 import '../../../styles/index.scss';
-
-import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext';
 import { OnboardWizard } from '../../apps/authoring/components/Flowchart/onboard-wizard/OnboardWizard';
+import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext';
 
 export const OnboardWizardStep1 = () => {
   return (

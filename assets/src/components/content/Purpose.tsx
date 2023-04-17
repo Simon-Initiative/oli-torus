@@ -1,8 +1,7 @@
-import React, { PropsWithChildren, useState } from 'react';
-import { Dropdown, OverlayTrigger, Popover } from 'react-bootstrap';
-import guid from 'utils/guid';
-import { PurposeTypes } from 'data/content/resource';
+import React, { PropsWithChildren } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { Tooltip } from 'components/common/Tooltip';
+import { PurposeTypes } from 'data/content/resource';
 
 export type PurposeProps = {
   editMode: boolean; // Whether or not we can edit

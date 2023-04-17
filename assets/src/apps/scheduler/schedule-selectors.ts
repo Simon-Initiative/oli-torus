@@ -1,9 +1,9 @@
 import { SchedulerAppState } from './scheduler-reducer';
 import {
-  getScheduleItem,
-  getScheduleRoot,
   HierarchyItem,
   ScheduleItemType,
+  getScheduleItem,
+  getScheduleRoot,
 } from './scheduler-slice';
 
 export const getTopLevelSchedule = (state: SchedulerAppState): HierarchyItem[] => {

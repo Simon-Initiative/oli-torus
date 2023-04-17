@@ -1,6 +1,6 @@
+import { Maybe } from 'tsmonad';
 import { setDifference } from 'components/activities/common/utils';
 import { Response } from 'components/activities/types';
-import { Maybe } from 'tsmonad';
 
 export const invertRule = (rule: string) => `(!(${rule}))`;
 

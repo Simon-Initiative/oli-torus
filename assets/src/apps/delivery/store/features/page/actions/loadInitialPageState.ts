@@ -21,7 +21,7 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { loadPageState, PageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
+import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -97,7 +97,7 @@ export const loadInitialPageState = createAsyncThunk(
 
       // update scripting env with session state
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
-      const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+      const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
       if (!params.previewMode) {
         await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);

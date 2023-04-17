@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { MIMETYPE_FILTERS, SELECTION_TYPES } from '../../../media/manager/MediaManager';
 import { UrlOrUpload } from '../../../media/UrlOrUpload';
+import { MIMETYPE_FILTERS, SELECTION_TYPES } from '../../../media/manager/MediaManager';
 import { SlideOutPanel } from './SlideOutPanel';
 
 export interface MediaInfo {

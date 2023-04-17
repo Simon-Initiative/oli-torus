@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { CustomDnDSchema } from './schema';
 import guid from 'utils/guid';
+import { CustomDnDSchema } from './schema';
 
 export type ResetListener = () => void;
 

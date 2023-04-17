@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import * as Immutable from 'immutable';
 import isHotkey from 'is-hotkey';
 import { throttle } from 'lodash';
-import { classNames, ClassName } from 'utils/classNames';
-import styles from './ContentOutline.modules.scss';
+import { ActivityEditContext } from 'data/content/activity';
+import { ActivityEditorMap } from 'data/content/editors';
 import {
   ActivityReference,
   ResourceContent,
@@ -11,26 +11,26 @@ import {
   canInsert,
 } from 'data/content/resource';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
-import { ActivityEditContext } from 'data/content/activity';
-import { focusHandler } from './dragndrop/handlers/focus';
-import { moveHandler } from './dragndrop/handlers/move';
-import { dragEndHandler } from './dragndrop/handlers/dragEnd';
-import { dropHandler } from './dragndrop/handlers/drop';
-import { getDragPayload } from './dragndrop/utils';
-import { dragStartHandler } from './dragndrop/handlers/dragStart';
-import { DropTarget } from './dragndrop/DropTarget';
-import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug } from 'data/types';
 import { getViewportHeight } from 'utils/browser';
+import { ClassName, classNames } from 'utils/classNames';
 import { useStateFromLocalStorage } from 'utils/useStateFromLocalStorage';
-import { ContentOutlineItem } from './ContentEditor';
 import { SelectionOutlineItem } from './ActivityBankSelectionEditor';
 import { ActivityEditorContentOutlineItem } from './ActivityEditor';
-import { OutlineItemError, UnknownItem } from './OutlineItem';
+import { AlternativeOutlineItem, AlternativesOutlineItem } from './AlternativesEditor';
 import { ContentBreakOutlineItem } from './ContentBreak';
-import { SurveyOutlineItem } from './SurveyEditor';
-import { AlternativesOutlineItem, AlternativeOutlineItem } from './AlternativesEditor';
+import { ContentOutlineItem } from './ContentEditor';
+import styles from './ContentOutline.modules.scss';
+import { OutlineItemError, UnknownItem } from './OutlineItem';
 import { PurposeGroupOutlineItem } from './PurposeGroupEditor';
+import { SurveyOutlineItem } from './SurveyEditor';
+import { DropTarget } from './dragndrop/DropTarget';
+import { dragEndHandler } from './dragndrop/handlers/dragEnd';
+import { dragStartHandler } from './dragndrop/handlers/dragStart';
+import { dropHandler } from './dragndrop/handlers/drop';
+import { focusHandler } from './dragndrop/handlers/focus';
+import { moveHandler } from './dragndrop/handlers/move';
+import { getDragPayload } from './dragndrop/utils';
 
 const calculateOutlineHeight = (scrollOffset: number) => {
   const topMargin = 420;
