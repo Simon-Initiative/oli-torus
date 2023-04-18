@@ -127,14 +127,7 @@ export const loadInitialPageState = createAsyncThunk(
       if (shouldResume && !isReviewMode) {
         // state should be all up to date by now
         const snapshot = getEnvState(defaultGlobalEnv);
-        const visitHistory = Object.keys(snapshot)
-          .filter((key: string) => key.indexOf('session.visitTimestamps.') === 0)
-          .map((entry) => ({ id: entry.split('.')[2], ts: snapshot[entry] }))
-          .sort((a, b) => b.ts - a.ts);
         const resumeId = snapshot['session.resume'];
-
-        /* console.log('VISIT HISTORY', { visitHistory, resumeId, snapshot }); */
-
         /* console.log('RESUMING!: ', { attempts, resumeId }); */
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
