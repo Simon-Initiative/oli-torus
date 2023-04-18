@@ -81,14 +81,14 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   def render(assigns) do
     ~F"""
       <div class="mx-10 mb-10 bg-white shadow-sm">
-        <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4">
-          <h4 class="pl-9 !py-2 torus-h4 mr-auto">Quiz Scores</h4>
-          <div class="flex flex-row items-center">
+        <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4 pl-9">
+          <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
+          <div class="flex flex-col gap-y-4 md:flex-row items-center">
             <div class="form-check">
               <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} />
               <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
             </div>
-            <form for="search" phx-target={@myself} phx-change="search_student" class="pb-6 ml-9 sm:pb-0">
+            <form for="search" phx-target={@myself} phx-change="search_student" class="pb-3 md:pl-9 sm:pb-0">
               <SearchInput.render id="student_search_input" name="student_name" text={@params.text_search} />
             </form>
           </div>
