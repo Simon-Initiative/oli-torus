@@ -1028,10 +1028,16 @@ defmodule Oli.Delivery.Sections do
 
       processed_ids = [root_resource_id | processed_ids]
 
+      survey_id =
+        Project
+        |> where([p], p.id == ^section.base_project_id)
+        |> select([p], p.required_survey_resource_id)
+        |> Repo.one()
+
       # create any remaining section resources which are not in the hierarchy
       create_nonstructural_section_resources(section.id, [publication_id],
         skip_resource_ids: processed_ids,
-        required_survey_resource_id: section.required_survey_resource_id
+        required_survey_resource_id: survey_id
       )
 
       update_section(section, %{root_section_resource_id: root_section_resource_id})
@@ -1418,9 +1424,15 @@ defmodule Oli.Delivery.Sections do
         processed_section_resources_by_id
         |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
 
+      survey_id =
+        Project
+        |> where([p], p.id == ^section.base_project_id)
+        |> select([p], p.required_survey_resource_id)
+        |> Repo.one()
+
       create_nonstructural_section_resources(section_id, publication_ids,
         skip_resource_ids: processed_resource_ids,
-        required_survey_resource_id: section.required_survey_resource_id
+        required_survey_resource_id: survey_id
       )
 
       # Rebuild section previous next index
