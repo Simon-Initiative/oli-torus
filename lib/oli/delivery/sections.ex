@@ -2390,6 +2390,9 @@ defmodule Oli.Delivery.Sections do
       |> Enum.into([], fn elem -> elem.objectives["attached"] end)
       |> List.flatten()
 
+    # TODO we should be able to calculate the metrics (student_mastery_obj, student_mastery_subobj and student_engagement)
+    # for all students or for a specific student depending on where we are rendering the learning objectives table
+    # (from instructor dashboard or student dashboard perspective)
     objectives =
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         left_join: rev2 in Revision,
@@ -2412,7 +2415,9 @@ defmodule Oli.Delivery.Sections do
     objectives_pages_map =
       DeliveryResolver.all_pages(section_slug)
       |> Enum.reduce(%{}, fn page, acc ->
-        Enum.map(page.objectives["attached"], fn obj_id -> {obj_id, [page.resource_id]} end)
+        Enum.map(page.objectives["attached"] || [], fn obj_id ->
+          {obj_id, [page.resource_id]}
+        end)
         |> Enum.into(%{})
         |> Map.merge(acc, fn _, x1, x2 ->
           x1 ++ x2

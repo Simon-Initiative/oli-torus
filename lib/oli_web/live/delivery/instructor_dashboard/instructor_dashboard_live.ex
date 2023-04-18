@@ -60,6 +60,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         params={@params}
         section_slug={@section.slug}
         objectives_tab={@objectives_tab}
+        patch_url_type={:instructor_dashboard}
       />
     """
   end
