@@ -1,9 +1,9 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { ActivityModelSchema } from 'components/activities/types';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
-import { ActivityModelSchema } from 'components/activities/types';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;

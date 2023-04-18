@@ -1,15 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import guid from 'utils/guid';
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
-import { createFeedback } from './createFeedback';
-
+import cloneDeep from 'lodash/cloneDeep';
+import has from 'lodash/has';
 import isArray from 'lodash/isArray';
 import isObject from 'lodash/isObject';
-import set from 'lodash/set';
-import cloneDeep from 'lodash/cloneDeep';
 import reduce from 'lodash/reduce';
-import has from 'lodash/has';
-import { InitState, IAdaptiveRule } from '../../../../delivery/store/features/activities/slice';
+import set from 'lodash/set';
+import guid from 'utils/guid';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
+import { IAdaptiveRule, InitState } from '../../../../delivery/store/features/activities/slice';
+import { createFeedback } from './createFeedback';
 
 const newId = (val: { [key: string]: any }) => {
   const idx = val?.indexOf(':');

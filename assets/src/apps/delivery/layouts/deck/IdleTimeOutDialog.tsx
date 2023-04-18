@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import TimeRemaining from 'components/common/TimeRemaining';
 import {
   selectOverviewURL,
   setScreenIdleExpirationTime,
 } from 'apps/delivery/store/features/page/slice';
-import TimeRemaining from 'components/common/TimeRemaining';
 import { readGlobal } from 'data/persistence/extrinsic';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { setScreenIdleTimeOutTriggered } from '../../store/features/adaptivity/slice';
 
 const ScreenIdleTimeOutDialog: React.FC<any> = () => {

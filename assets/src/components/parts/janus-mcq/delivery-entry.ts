@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
 import {
   customEvents as apiCustomEvents,
@@ -7,6 +5,9 @@ import {
 } from '../partsApi';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import { adaptivitySchema } from './schema';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };

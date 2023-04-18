@@ -1,4 +1,4 @@
-import { FileUploadSchema, FileSpec } from './schema';
+import { FileSpec, FileUploadSchema } from './schema';
 
 export const FileUploadActions = {
   editFileSpec(fileSpec: FileSpec) {

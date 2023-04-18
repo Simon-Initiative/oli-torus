@@ -1,7 +1,3 @@
-import { RichText } from 'components/activities/types';
-import { ModelElement } from 'data/content/model/elements/types';
-import { schema } from 'data/content/model/schema';
-import { Mark } from 'data/content/model/text';
 import {
   Descendant,
   Editor,
@@ -15,6 +11,10 @@ import {
 } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { Maybe } from 'tsmonad';
+import { RichText } from 'components/activities/types';
+import { ModelElement } from 'data/content/model/elements/types';
+import { schema } from 'data/content/model/schema';
+import { Mark } from 'data/content/model/text';
 
 export function elementsOfType<T extends Element>(root: Editor, type: string): T[] {
   return [...Node.elements(root)]

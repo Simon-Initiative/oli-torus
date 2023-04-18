@@ -1,25 +1,17 @@
 import React, { ChangeEvent, useCallback, useMemo } from 'react';
+import { Editor, Editor as SlateEditor, Transforms, createEditor } from 'slate';
+import { withHistory } from 'slate-history';
+import { ReactEditor, withReact } from 'slate-react';
+import { Model } from '../../../../data/content/model/elements/factories';
 import { Conjugation, TableRow } from '../../../../data/content/model/elements/types';
+import { installNormalizer } from '../../editor/normalizers/normalizer';
+import { withInlines } from '../../editor/overrides/inlines';
+import { withMarkdown } from '../../editor/overrides/markdown';
+import { withTables } from '../../editor/overrides/tables';
+import { withVoids } from '../../editor/overrides/voids';
+import { PronunciationEditor } from '../PronunciationEditor';
 import { CommandContext } from '../commands/interfaces';
 import { InlineEditor } from '../common/settings/InlineEditor';
-import { PronunciationEditor } from '../PronunciationEditor';
-import {
-  createEditor,
-  Descendant,
-  Editor,
-  Editor as SlateEditor,
-  Operation,
-  Transforms,
-} from 'slate';
-import { withMarkdown } from '../../editor/overrides/markdown';
-import { ReactEditor, withReact } from 'slate-react';
-import { withHistory } from 'slate-history';
-import { withTables } from '../../editor/overrides/tables';
-import { withInlines } from '../../editor/overrides/inlines';
-import { withVoids } from '../../editor/overrides/voids';
-import { installNormalizer } from '../../editor/normalizers/normalizer';
-import { Model } from '../../../../data/content/model/elements/factories';
-import { convertLatexToSpeakableText } from 'mathlive';
 
 interface Props {
   model: Conjugation;

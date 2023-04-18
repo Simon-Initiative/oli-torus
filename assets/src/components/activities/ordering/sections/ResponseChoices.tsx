@@ -1,8 +1,8 @@
+import React from 'react';
 import { Choice } from 'components/activities/types';
 import { Draggable } from 'components/common/DraggableColumn';
-import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
+import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import React from 'react';
 
 interface Props {
   choices: Choice[];

@@ -1,6 +1,6 @@
-import { Maybe } from 'tsmonad';
 import React, { useContext } from 'react';
-import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
+import { Maybe } from 'tsmonad';
+import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
 import { DeliveryElementProps } from './DeliveryElement';
 import { ActivityModelSchema } from './types';
 

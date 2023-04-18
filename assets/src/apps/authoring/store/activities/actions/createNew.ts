@@ -1,19 +1,19 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { create, Created } from 'data/persistence/activity';
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
+import merge from 'lodash/merge';
+import { Created, create } from 'data/persistence/activity';
 import { selectState as selectPageState } from '../../../../authoring/store/page/slice';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
+import { createEndOfActivityPath } from '../../../components/Flowchart/paths/path-factories';
+import { AuthoringFlowchartScreenData } from '../../../components/Flowchart/paths/path-types';
 import {
   selectActivityTypes,
   selectAppMode,
   selectProjectSlug,
   selectReadOnly,
 } from '../../app/slice';
+import { createActivityTemplate } from '../templates/activity';
 import { createSimpleText } from '../templates/simpleText';
 import { createCorrectRule, createIncorrectRule } from './rules';
-import { createActivityTemplate } from '../templates/activity';
-import merge from 'lodash/merge';
-import { AuthoringFlowchartScreenData } from '../../../components/Flowchart/paths/path-types';
-import { createEndOfActivityPath } from '../../../components/Flowchart/paths/path-factories';
 
 interface CreateNewPayload {
   activityTypeSlug?: string;

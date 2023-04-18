@@ -1,14 +1,14 @@
 import React from 'react';
 import * as Immutable from 'immutable';
-import { ActivityBankSelection, ActivityBankSelection as Selection } from 'data/content/resource';
-import { LogicBuilder } from 'components/logic/LogicBuilder';
 import { TextInput } from 'components/common/TextInput';
-import { Tag } from 'data/content/tags';
+import { LogicBuilder } from 'components/logic/LogicBuilder';
 import * as Bank from 'data/content/bank';
-import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
-import { Icon, Description, OutlineItemProps, OutlineItem } from './OutlineItem';
+import { Objective } from 'data/content/objective';
+import { ActivityBankSelection, ActivityBankSelection as Selection } from 'data/content/resource';
+import { Tag } from 'data/content/tags';
 import './ActivityBankSelectionEditor.scss';
+import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
 
 export type ActivityBankSelectionEditorProps = {
   contentItem: Selection;

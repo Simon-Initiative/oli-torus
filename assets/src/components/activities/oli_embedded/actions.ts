@@ -1,10 +1,10 @@
 import { Maybe } from 'tsmonad';
-import { Identifiable } from 'data/content/model/other';
-import { makeUndoable, PostUndoable, ScoringStrategy } from 'components/activities/types';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
-import { Operations } from 'utils/pathOperations';
+import { PostUndoable, ScoringStrategy, makeUndoable } from 'components/activities/types';
+import { Identifiable } from 'data/content/model/other';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { Operations } from 'utils/pathOperations';
 
 export class OliEmbeddedActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {

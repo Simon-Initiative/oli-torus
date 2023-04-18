@@ -9,18 +9,13 @@ import {
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
-import {
-  isAlwaysPath,
-  isCorrectPath,
-  isEndOfActivityPath,
-  isIncorrectPath,
-} from '../paths/path-utils';
+import { isAlwaysPath, isCorrectPath, isIncorrectPath } from '../paths/path-utils';
 import { createCondition } from './create-condition';
 import {
   DEFAULT_CORRECT_FEEDBACK,
   DEFAULT_INCORRECT_FEEDBACK,
-  getSequenceIdFromScreenResourceId,
   IConditionWithFeedback,
+  getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
 import { generateThreeTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';

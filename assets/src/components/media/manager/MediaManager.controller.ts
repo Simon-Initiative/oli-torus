@@ -1,9 +1,9 @@
 import { connect } from 'react-redux';
+import { Dispatch, State } from 'state';
 import { Maybe } from 'tsmonad';
-import { State, Dispatch } from 'state';
-import { fetchCourseMediaNextPage, resetMedia, fetchMediaItemByPath } from 'actions/media';
+import { fetchCourseMediaNextPage, fetchMediaItemByPath, resetMedia } from 'actions/media';
+import { MediaItem } from 'types/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
-import { MediaLibraryOption, MediaItem } from 'types/media';
 import { MediaManager, SELECTION_TYPES } from './MediaManager';
 
 export { MIMETYPE_FILTERS, SELECTION_TYPES } from './MediaManager';

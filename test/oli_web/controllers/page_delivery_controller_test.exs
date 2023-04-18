@@ -1747,6 +1747,62 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
+  describe "required survey" do
+    setup [:user_conn, :section_with_survey]
+
+    test "when student, the survey gets rendered if the user didn't complete it", %{
+      conn: conn,
+      user: user,
+      section: section,
+      survey: survey,
+      survey_questions: survey_questions
+    } do
+      enroll_user_to_section(user, section, :context_learner)
+
+      create_survey_access(user, section, survey, survey_questions)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/page/#{survey.slug}\">redirected</a>"
+    end
+
+    test "when instructor, the survey doesn't get rendered", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      enroll_user_to_section(user, section, :context_instructor)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/instructor_dashboard/manage\">redirected</a>"
+    end
+
+    test "when student, the survey doesn't get rendered if the user has already complete it", %{
+      conn: conn,
+      user: user,
+      section: section,
+      survey: survey,
+      survey_questions: survey_questions
+    } do
+      enroll_user_to_section(user, section, :context_learner)
+
+      complete_student_survey(user, section, survey, survey_questions)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Content"
+    end
+  end
+
   defp enroll_as_student(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_learner)
     []
@@ -1805,8 +1861,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
       )
       |> Seeder.add_adaptive_page()
 
-
-
     graded_attrs = %{
       graded: true,
       max_attempts: 1,
@@ -1863,7 +1917,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
     map = Seeder.add_page(map, graded_attrs, :container, :page)
     map = Seeder.add_page(map, ungraded_attrs, :container, :ungraded_page)
     map = Seeder.add_page(map, collab_space_attrs, :container, :collab_space_page)
-    map = Seeder.add_page(map, disabled_collab_space_attrs, :container, :disabled_collab_space_page)
+
+    map =
+      Seeder.add_page(map, disabled_collab_space_attrs, :container, :disabled_collab_space_page)
 
     exploration_page_1 = %{
       graded: false,
@@ -2022,5 +2078,28 @@ defmodule OliWeb.PageDeliveryControllerTest do
       ],
       "version" => "0.1.0"
     }
+  end
+
+  defp create_survey_access(student, section, survey, survey_questions) do
+    create_activity_attempts(student, section, survey, survey_questions, "active")
+  end
+
+  defp complete_student_survey(student, section, survey, survey_questions) do
+    create_activity_attempts(student, section, survey, survey_questions, "evaluated")
+  end
+
+  defp create_activity_attempts(student, section, survey, survey_questions, status) do
+    resource_access =
+      insert(:resource_access, user: student, section: section, resource: survey.resource)
+
+    resource_attempt = insert(:resource_attempt, resource_access: resource_access)
+
+    Enum.map(survey_questions, fn question ->
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt,
+        revision: question,
+        lifecycle_state: status
+      )
+    end)
   end
 end

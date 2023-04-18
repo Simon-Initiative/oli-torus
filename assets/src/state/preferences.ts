@@ -1,14 +1,14 @@
 import { Record } from 'immutable';
-import { Maybe } from 'tsmonad';
-import { OtherAction } from 'state/other';
-import { Dispatch, Action } from 'redux';
+import { Action, Dispatch } from 'redux';
 import { State } from 'state';
-import { valueOr } from 'utils/common';
+import { Maybe } from 'tsmonad';
 import {
   Preferences,
   fetchPreferences as fetchPreferencesRequest,
   updatePreferences as updatePreferencesRequest,
 } from 'data/persistence/preferences';
+import { OtherAction } from 'state/other';
+import { valueOr } from 'utils/common';
 
 //// ACTIONS ////
 

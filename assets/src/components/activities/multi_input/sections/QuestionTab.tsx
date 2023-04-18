@@ -1,3 +1,6 @@
+import React from 'react';
+import { Editor, Element, Transforms } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Dropdown, MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
@@ -5,9 +8,6 @@ import { DropdownQuestionEditor } from 'components/activities/multi_input/sectio
 import { partTitle } from 'components/activities/multi_input/utils';
 import { Card } from 'components/misc/Card';
 import { getParts } from 'data/activities/model/utils';
-import React from 'react';
-import { Editor, Element, Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
 
 interface Props {
   editor: ReactEditor & Editor;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { InputText } from 'data/activities/model/rules';
 import { MathLive } from 'components/common/MathLive';
+import { InputText } from 'data/activities/model/rules';
 
 interface MathInputProps {
   input: InputText;

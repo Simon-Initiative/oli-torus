@@ -585,21 +585,7 @@ defmodule Oli.TestHelpers do
   def section_with_assessment(_context, deployment \\ nil) do
     author = insert(:author)
 
-    # Project survey
-    survey_resource = insert(:resource)
-
-    survey_revision =
-      insert(:revision,
-        resource: survey_resource,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-        author_id: author.id,
-        title: "Course Survey"
-      )
-
-    project = insert(:project, required_survey_resource_id: survey_resource.id, authors: [author])
-
-    # Associate survey to the project
-    insert(:project_resource, %{project_id: project.id, resource_id: survey_resource.id})
+    project = insert(:project, authors: [author])
 
     # Graded page revision
     page_revision =
@@ -654,14 +640,6 @@ defmodule Oli.TestHelpers do
     publication =
       insert(:publication, %{project: project, root_resource_id: container_resource.id})
 
-    # Publish project survey
-    insert(:published_resource, %{
-      publication: publication,
-      resource: survey_resource,
-      revision: survey_revision,
-      author: author
-    })
-
     # Publish root container resource
     insert(:published_resource, %{
       publication: publication,
@@ -714,13 +692,6 @@ defmodule Oli.TestHelpers do
         root_resource_id: container_resource.id,
         published: nil
       })
-
-    insert(:published_resource, %{
-      publication: new_publication,
-      resource: survey_resource,
-      revision: survey_revision,
-      author: author
-    })
 
     insert(:published_resource, %{
       publication: new_publication,
@@ -961,6 +932,151 @@ defmodule Oli.TestHelpers do
       obj_revision_2: obj_revision_2,
       module_revision: module_revision
     }
+  end
+
+  def section_with_survey(_context, survey_enabled \\ true) do
+    author = insert(:author)
+
+    # Project survey
+    survey_question_resource = insert(:resource)
+
+    survey_question_revision =
+      insert(:revision,
+        resource: survey_question_resource,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity")
+      )
+
+    survey_resource = insert(:resource)
+
+    survey_revision =
+      insert(:revision,
+        resource: survey_resource,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        content: %{
+          "version" => "0.1.0",
+          "model" => [
+            %{
+              id: "420168311",
+              type: "activity-reference",
+              children: [],
+              activity_id: survey_question_resource.id
+            }
+          ]
+        },
+        author_id: author.id,
+        title: "Course Survey"
+      )
+
+    project = insert(:project, required_survey_resource_id: survey_resource.id, authors: [author])
+
+    # Associate survey to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: survey_resource.id})
+
+    # Create page 1
+    page_resource = insert(:resource)
+
+    page_revision =
+      insert(:revision, %{
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Page 1",
+        resource: page_resource,
+        slug: "page_1"
+      })
+
+    # Associate page 1 to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_resource.id],
+        content: %{},
+        deleted: false,
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish project survey
+    insert(:published_resource, %{
+      publication: publication,
+      resource: survey_resource,
+      revision: survey_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: survey_question_resource,
+      revision: survey_question_revision,
+      author: author
+    })
+
+    # Publish page resource
+    insert(:published_resource, %{
+      author: author,
+      publication: publication,
+      resource: page_resource,
+      revision: page_revision
+    })
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable,
+        required_survey_resource_id: (survey_enabled && survey_resource.id) || nil
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    # Create new unpublished publication for the project
+    new_publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id,
+        published: nil
+      })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: survey_resource,
+      revision: survey_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: new_publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    {:ok, section: section, survey: survey_revision, survey_questions: [survey_question_revision]}
   end
 
   def section_with_gating_conditions(_context) do

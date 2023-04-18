@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import * as ContentModel from '../../../../data/content/model/elements/types';
-import { useEditModelCallback } from '../utils';
-import { InlineEditor } from '../common/settings/InlineEditor';
 import { CommandContext } from '../commands/interfaces';
+import { InlineEditor } from '../common/settings/InlineEditor';
+import { useEditModelCallback } from '../utils';
 
 interface Props extends EditorProps<ContentModel.Figure> {}
 

@@ -1,8 +1,10 @@
+import React from 'react';
+import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
-import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputComponent } from 'components/activities/multi_input/MultiInputAuthoring';
+import { MultiInputActions } from 'components/activities/multi_input/actions';
 import {
   Dropdown,
   FillInTheBlank,
@@ -11,16 +13,14 @@ import {
 import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { defaultModel, multiInputStem } from 'components/activities/multi_input/utils';
 import {
+  Transform,
   makeChoice,
   makeHint,
   makePart,
   makeTransformation,
-  Transform,
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { Model } from 'data/content/model/elements/factories';
-import React from 'react';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';

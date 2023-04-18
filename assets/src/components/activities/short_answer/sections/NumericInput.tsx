@@ -1,18 +1,18 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import React, { createRef, useState } from 'react';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { InfoTip } from 'components/misc/InfoTip';
 import {
   InputKind,
   InputNumeric,
   InputRange,
-  numericOperator,
-  rangeOperator,
   RuleOperator,
   numberOrVar,
+  numericOperator,
+  rangeOperator,
 } from 'data/activities/model/rules';
-import guid from 'utils/guid';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 import { disableScrollWheelChange } from '../utils';
-import { InfoTip } from 'components/misc/InfoTip';
 
 // here we defined a "editable number" variant data type that contains information
 // about the number that is being edited. for example, a number input being edited

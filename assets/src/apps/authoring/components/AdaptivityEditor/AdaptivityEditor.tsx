@@ -1,3 +1,10 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import debounce from 'lodash/debounce';
+import flatten from 'lodash/flatten';
+import isEqual from 'lodash/isEqual';
+import uniq from 'lodash/uniq';
 import {
   findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
@@ -5,11 +12,6 @@ import {
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import debounce from 'lodash/debounce';
-import isEqual from 'lodash/isEqual';
-import React, { useCallback, useEffect, useState } from 'react';
-import { OverlayTrigger, Tooltip, Dropdown } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
@@ -25,8 +27,7 @@ import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
-import uniq from 'lodash/uniq';
-import flatten from 'lodash/flatten';
+
 export interface AdaptivityEditorProps {
   content?: any;
 }
@@ -48,7 +49,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   }
 
   const [isDirty, setIsDirty] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
+  const [_isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
   const [actions, setActions] = useState(currentRule?.event?.params?.actions || []);
   const [conditions, setConditions] = useState<any>(
     currentRule?.conditions?.all || currentRule?.conditions?.any || [],

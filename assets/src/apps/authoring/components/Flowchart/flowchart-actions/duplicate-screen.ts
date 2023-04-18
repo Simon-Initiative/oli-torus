@@ -9,36 +9,31 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectAllGroups } from '../../../../delivery/store/features/groups/slice';
-
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import {
-  createActivityTemplate,
   IActivityTemplate,
+  createActivityTemplate,
 } from '../../../store/activities/templates/activity';
 import {
-  selectActivityTypes,
-  selectProjectSlug,
-  selectAppMode,
   ActivityRegistration,
+  selectActivityTypes,
+  selectAppMode,
+  selectProjectSlug,
 } from '../../../store/app/slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { savePage } from '../../../store/page/actions/savePage';
-import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { createEndOfActivityPath } from '../paths/path-factories';
 import {
   hasDestinationPath,
   setGoToAlwaysPath,
   setUnknownPathDestination,
 } from '../paths/path-utils';
+import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
 import { sortScreens } from '../screens/screen-utils';
 import { replaceIds } from '../template-utils';
-import { createEndOfActivityPath } from '../paths/path-factories';
-import {
-  getActivitySlugFromScreenResourceId,
-  getSequenceIdFromScreenResourceId,
-} from '../rules/create-generic-rule';
 
 interface DuplicateFlowchartScreenPayload {
   screenId: number;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { valueOr } from 'utils/common';
 
 export interface TextEditorProps {
@@ -27,7 +27,7 @@ export const TextEditor = (props: TextEditorProps) => {
 
   const isValid = (value: string) => value.trim() !== '';
 
-  const onTitleEdit = (e: any) => {
+  const onTitleEdit = () => {
     setIsEditing(false);
     if (isValid(value)) {
       setCurrent(value);
@@ -35,7 +35,7 @@ export const TextEditor = (props: TextEditorProps) => {
     }
   };
 
-  const onSave = (e: any) => {
+  const onSave = () => {
     setIsEditing(false);
     if (isValid(value)) {
       setCurrent(value);
@@ -59,7 +59,7 @@ export const TextEditor = (props: TextEditorProps) => {
       onCancel();
     } else if (e.keyCode === ENTER_KEYCODE) {
       if (allowEmpty || isValid(value)) {
-        onTitleEdit(e);
+        onTitleEdit();
       }
     }
   };

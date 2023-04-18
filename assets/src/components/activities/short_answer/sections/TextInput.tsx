@@ -1,6 +1,6 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { InputText, textOperator } from 'data/activities/model/rules';
-import React from 'react';
 
 interface InputProps {
   onEditInput: (input: InputText) => void;

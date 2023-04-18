@@ -3,7 +3,6 @@ import {
   IActivity,
   IAdaptiveRule,
   ICondition,
-  IInputTextPartLayout,
   IMultiLineTextPartLayout,
 } from '../../../../delivery/store/features/activities/slice';
 import {

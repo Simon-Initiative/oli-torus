@@ -1,14 +1,14 @@
-import guid from '../../../../../utils/guid';
 import uniq from 'lodash/uniq';
+import guid from '../../../../../utils/guid';
 import {
   IAction,
   IAdaptiveRule,
   ICondition,
 } from '../../../../delivery/store/features/activities/slice';
 import {
+  DEFAULT_FILLED_IN_FEEDBACK,
   IConditionWithFeedback,
   generateRule,
-  DEFAULT_FILLED_IN_FEEDBACK,
   newId,
 } from './create-generic-rule';
 import { RulesAndVariables } from './rule-compilation';

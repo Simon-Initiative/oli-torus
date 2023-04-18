@@ -1,11 +1,12 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { MultiInputSchema } from './schema';
+import { defaultModel } from './utils';
+
 export { MultiInputDelivery } from './MultiInputDelivery';
 export { MultiInputAuthoring } from './MultiInputAuthoring';
 
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { MultiInputSchema } from './schema';
-import { defaultModel } from './utils';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 

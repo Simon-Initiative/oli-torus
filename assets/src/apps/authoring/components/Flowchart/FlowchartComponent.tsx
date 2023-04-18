@@ -1,15 +1,13 @@
 import React from 'react';
-import ReactFlow, { Controls, Background } from 'reactflow';
-
-import { layoutFlowchart } from './flowchart-layout';
-
-import { FlowchartEdge, FlowchartNode } from './flowchart-utils';
-import { ScreenNode } from './chart-components/ScreenNode';
-import { FloatingEdge } from './chart-components/FloatingEdge';
+import ReactFlow, { Background, Controls } from 'reactflow';
 import FloatingConnectionLine from './chart-components/FloatingConnectionLine';
-import { EndNode } from './chart-components/PlaceholderNode';
+import { FloatingEdge } from './chart-components/FloatingEdge';
 import { PlaceholderEdge } from './chart-components/PlaceholderEdge';
+import { EndNode } from './chart-components/PlaceholderNode';
+import { ScreenNode } from './chart-components/ScreenNode';
 import { StartNode } from './chart-components/StartNode';
+import { layoutFlowchart } from './flowchart-layout';
+import { FlowchartEdge, FlowchartNode } from './flowchart-utils';
 
 interface FlowchartComponentProps {
   nodes: FlowchartNode[];

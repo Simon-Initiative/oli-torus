@@ -1,8 +1,8 @@
 import { BaseEditor } from 'slate';
-import { ReactEditor } from 'slate-react';
 import { HistoryEditor } from 'slate-history';
-import { ModelElement } from './elements/types';
+import { ReactEditor } from 'slate-react';
 import { FormattedText } from 'data/content/model/text';
+import { ModelElement } from './elements/types';
 
 export type SlateEditor = BaseEditor & ReactEditor & HistoryEditor;
 

@@ -1,8 +1,8 @@
 import React from 'react';
-import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { WriterContext } from 'data/content/writers/context';
-import { Card } from 'components/misc/Card';
 import { Hint } from 'components/activities/types';
+import { Card } from 'components/misc/Card';
+import { WriterContext } from 'data/content/writers/context';
+import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 
 interface Props {
   requestHintDisabled: boolean;

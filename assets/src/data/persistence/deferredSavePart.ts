@@ -1,7 +1,7 @@
 import { PartResponse } from '../../components/activities';
 import { DeferredPersistenceStrategy } from './DeferredPersistenceStrategy';
-import { LockResult } from './lock';
 import { PersistenceState } from './PersistenceStrategy';
+import { LockResult } from './lock';
 import { writeActivityAttemptState } from './state/intrinsic';
 
 const fakeLock = (): Promise<LockResult> => Promise.resolve({ type: 'acquired' });

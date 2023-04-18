@@ -1,5 +1,5 @@
+import React, { useCallback } from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import React, { useCallback, useState } from 'react';
 import { UrlOrUpload } from '../../../../components/media/UrlOrUpload';
 import {
   MIMETYPE_FILTERS,

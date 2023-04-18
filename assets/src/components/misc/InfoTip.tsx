@@ -1,6 +1,6 @@
 import React from 'react';
-import { classNames } from 'utils/classNames';
 import { Tooltip } from 'components/common/Tooltip';
+import { classNames } from 'utils/classNames';
 
 interface InfoTipProps {
   className?: string;

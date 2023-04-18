@@ -12,6 +12,7 @@ defmodule OliWeb.SessionControllerTest do
       refute conn.assigns.current_user
       refute conn.private.plug_session["current_user_id"]
       refute conn.private.plug_session["dismissed_messages"]
+      refute conn.private.plug_session["completed_section_surveys"]
       assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
     end
 

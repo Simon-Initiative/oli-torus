@@ -1,14 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { clone } from 'utils/common';
 import {
+  SequenceEntry,
+  SequenceEntryChild,
   findInHierarchy,
   flattenHierarchy,
   getHierarchy,
-  SequenceEntry,
-  SequenceEntryChild,
 } from '../../../../../../delivery/store/features/groups/actions/sequence';
-import { upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
 import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
+import { upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
 
 export const addSequenceItem = createAsyncThunk(
   `${GroupsSlice}/addSequenceItem`,
@@ -35,7 +35,7 @@ export const addSequenceItem = createAsyncThunk(
       const parentItem = sequenceItems.find((i) => i.activitySlug === parentId);
       if (parentItem) {
         parentItem.custom = parentItem.custom || {};
-        const parentIndex = sequenceItems.indexOf(parentItem);
+        const _parentIndex = sequenceItems.indexOf(parentItem);
         // it should already be set?
         item.custom.layerRef = parentItem.activitySlug;
         // need to add it *after* any other children

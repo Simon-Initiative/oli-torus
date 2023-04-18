@@ -387,6 +387,10 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "Preview Course as Instructor"
              )
     end
+  end
+
+  describe "overview live required surveys" do
+    setup [:instructor_conn, :section_with_disabled_survey]
 
     test "can enable required surveys", %{conn: conn, instructor: instructor, section: section} do
       enroll_user_to_section(instructor, section, :context_instructor)
@@ -441,4 +445,6 @@ defmodule OliWeb.Sections.OverviewLiveTest do
              )
     end
   end
+
+  defp section_with_disabled_survey(conn), do: section_with_survey(conn, false)
 end

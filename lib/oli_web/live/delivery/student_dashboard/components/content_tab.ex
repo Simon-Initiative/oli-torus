@@ -3,7 +3,17 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTab do
 
   def render(assigns) do
     ~H"""
-    <p class="container mx-auto">Not available yet</p>
+    <div>
+      <.live_component
+        id="content_table"
+        module={OliWeb.Components.Delivery.Content}
+        params={@params}
+        section_slug={@section_slug}
+        containers={@containers}
+        student_id={@student_id}
+        patch_url_type={:student_dashboard}
+      />
+    </div>
     """
   end
 end

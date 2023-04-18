@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
-import { VariableEvaluation, evaluateVariables, Variable } from 'data/persistence/variables';
+import { Variable, VariableEvaluation, evaluateVariables } from 'data/persistence/variables';
 import guid from 'utils/guid';
 import { WrappedMonaco } from '../WrappedMonaco';
 

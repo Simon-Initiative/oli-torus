@@ -1,11 +1,11 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { DropdownModel } from './schema';
 
 const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props) => {
   const { id, model } = props;
 
-  const { x, y, z, width, showLabel, label, prompt, optionLabels } = model;
+  const { width, showLabel, label, prompt, optionLabels } = model;
   const styles: CSSProperties = {
     width,
   };

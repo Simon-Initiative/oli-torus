@@ -91,7 +91,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
                "Content"
              )
 
-      assert has_element?(view, "p", "Not available yet")
+      assert has_element?(view, "option", "Units")
     end
 
     test "can see the student details card correctly", %{

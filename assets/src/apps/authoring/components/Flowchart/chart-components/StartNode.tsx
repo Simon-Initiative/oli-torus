@@ -23,7 +23,7 @@ export const StartNode: React.FC<NodeProps> = ({ data }) => {
 };
 
 // Just the interior of the node, useful to have separate for storybook
-export const StartNodeBody: React.FC<NodeProps> = ({ data }) => {
+export const StartNodeBody: React.FC<NodeProps> = () => {
   return (
     <div className="flowchart-start-node">
       <span>Start</span>

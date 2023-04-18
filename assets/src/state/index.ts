@@ -1,10 +1,9 @@
-import { ThunkDispatch } from 'redux-thunk';
-
 import { combineReducers } from 'redux';
-import { OtherAction } from 'state/other';
+import { ThunkDispatch } from 'redux-thunk';
 import { MediaActions } from 'actions/media';
-import { MediaState, media, initMediaState } from 'state/media';
-import { ModalActions, ModalState, modal, initModalState } from 'state/modal';
+import { MediaState, initMediaState, media } from 'state/media';
+import { ModalActions, ModalState, initModalState, modal } from 'state/modal';
+import { OtherAction } from 'state/other';
 import { PreferencesActions, PreferencesState, preferences } from 'state/preferences';
 
 export interface State {

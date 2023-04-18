@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { initSocket } from '../../phoenix/socket';
 
 export function useGlobalState(userId: number, active: boolean) {

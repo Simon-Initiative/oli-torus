@@ -1,31 +1,31 @@
-import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
-import { Manifest } from 'components/activities/types';
-import { initialPartInputs, isCorrect } from 'data/activities/utils';
-import {
-  ActivityDeliveryState,
-  initializeState,
-  isEvaluated,
-  setSelection,
-  activityDeliverySlice,
-  resetAction,
-  listenForParentSurveySubmit,
-  listenForParentSurveyReset,
-  listenForReviewAttemptChange,
-} from 'data/activities/DeliveryState';
 import React, { useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { configureStore } from 'state/store';
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { CATASchema } from 'components/activities/check_all_that_apply/schema';
+import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
-import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
-import { CATASchema } from 'components/activities/check_all_that_apply/schema';
+import { Manifest } from 'components/activities/types';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
+import {
+  ActivityDeliveryState,
+  activityDeliverySlice,
+  initializeState,
+  isEvaluated,
+  listenForParentSurveyReset,
+  listenForParentSurveySubmit,
+  listenForReviewAttemptChange,
+  resetAction,
+  setSelection,
+} from 'data/activities/DeliveryState';
+import { initialPartInputs, isCorrect } from 'data/activities/utils';
+import { configureStore } from 'state/store';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { castPartId } from '../common/utils';
 
 export const CheckAllThatApplyComponent: React.FC = () => {

@@ -1,13 +1,13 @@
 import React from 'react';
-import { Heading } from 'components/misc/Heading';
+import { Descendant } from 'slate';
 import { RichTextEditor } from 'components/content/RichTextEditor';
-import { ModelEditorProps } from '../schema';
-import { Feedback as FeedbackItem } from '../../types';
 import { Description } from 'components/misc/Description';
+import { Heading } from 'components/misc/Heading';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
 import { ProjectSlug } from 'data/types';
-import { Descendant } from 'slate';
+import { Feedback as FeedbackItem } from '../../types';
+import { ModelEditorProps } from '../schema';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (score: number, content: Descendant[]) => void;

@@ -1,8 +1,8 @@
-import { renderPartFeedback } from 'components/activities/common/delivery/evaluation/Evaluation';
-import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
-import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
+import { renderPartFeedback } from 'components/activities/common/delivery/evaluation/Evaluation';
+import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 
 export type FocusedFeedbackProps = {
   focusedPart: string | null;

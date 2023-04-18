@@ -1,7 +1,7 @@
 import { Responses } from 'data/activities/model/responses';
 import { matchInOrderRule } from 'data/activities/model/rules';
 import guid from 'utils/guid';
-import { makeChoice, makeHint, makePart, makeResponse, makeStem, Transform } from '../types';
+import { Transform, makeChoice, makeHint, makePart, makeResponse, makeStem } from '../types';
 import { OrderingSchema as Ordering } from './schema';
 
 // Model creation

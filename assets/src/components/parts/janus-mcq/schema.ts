@@ -1,9 +1,7 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
-import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import { formatExpression } from 'adaptivity/scripting';
-import { MCQOptionsEditor } from '../../../apps/authoring/components/PropertyEditor/custom/MCQOptionsEditor';
-import { MCQCorrectAnswerEditor } from '../../../apps/authoring/components/PropertyEditor/custom/MCQCorrectAnswerEditor';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface McqItem {
   scoreValue: number;

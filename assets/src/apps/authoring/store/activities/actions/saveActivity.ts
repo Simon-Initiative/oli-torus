@@ -1,7 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { diff } from 'deep-object-diff';
+import cloneDeep from 'lodash/cloneDeep';
+import debounce from 'lodash/debounce';
+import memoize from 'lodash/memoize';
 import { ActivityModelSchema } from 'components/activities/types';
+import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 import { ObjectiveMap } from 'data/content/activity';
 import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
+import { ProjectSlug, ResourceId } from '../../../../../data/types';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
   IActivity,
   selectActivityById,
@@ -9,23 +16,14 @@ import {
   upsertActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
-
-import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
-import { savePage } from '../../page/actions/savePage';
-import { selectResourceId, selectState as selectCurrentPage } from '../../page/slice';
-import { createUndoAction } from '../../history/slice';
-import cloneDeep from 'lodash/cloneDeep';
-import memoize from 'lodash/memoize';
-import debounce from 'lodash/debounce';
-
-import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
-import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
-import { diff } from 'deep-object-diff';
-import { ProjectSlug, ResourceId } from '../../../../../data/types';
-import { SAVE_DEBOUNCE_TIMEOUT, SAVE_DEBOUNCE_OPTIONS } from '../../persistance-options';
-import { generateRules } from '../../../components/Flowchart/rules/rule-compilation';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
+import { generateRules } from '../../../components/Flowchart/rules/rule-compilation';
+import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
+import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
+import { createUndoAction } from '../../history/slice';
+import { savePage } from '../../page/actions/savePage';
+import { selectState as selectCurrentPage, selectResourceId } from '../../page/slice';
+import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,

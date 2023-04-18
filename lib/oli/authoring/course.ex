@@ -388,7 +388,11 @@ defmodule Oli.Authoring.Course do
         author_id: author_id,
         max_attempts: 1,
         scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent"),
-        resource_type_id: ResourceType.get_id_by_type("page")
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        content: %{
+          "version" => "0.1.0",
+          "model" => []
+        }
       })
 
     update_project_required_survey_resource_id(project.id, revision.resource_id)

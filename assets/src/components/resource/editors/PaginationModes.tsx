@@ -1,6 +1,6 @@
 import React from 'react';
-import { PaginationMode } from 'data/content/resource';
 import { Dropdown } from 'react-bootstrap';
+import { PaginationMode } from 'data/content/resource';
 
 export type PaginationModesProps = {
   editMode: boolean; // Whether or not we can edit

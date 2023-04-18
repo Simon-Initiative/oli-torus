@@ -1,10 +1,10 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import {
   AuthorPartComponentProps,
   CustomProperties,
   PartComponentProps,
 } from 'components/parts/types/parts';
-import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import {
   NotificationContext,
   NotificationType,

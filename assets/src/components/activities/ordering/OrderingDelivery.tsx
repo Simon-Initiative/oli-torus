@@ -1,3 +1,6 @@
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
@@ -6,25 +9,22 @@ import { HintsDeliveryConnected } from 'components/activities/common/hints/deliv
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import {
-  activityDeliverySlice,
   ActivityDeliveryState,
+  activityDeliverySlice,
   initializeState,
   isEvaluated,
   isSubmitted,
-  listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForParentSurveySubmit,
   listenForReviewAttemptChange,
   resetAction,
 } from 'data/activities/DeliveryState';
 import { Choices } from 'data/activities/model/choices';
 import { initialPartInputs, studentInputToString } from 'data/activities/utils';
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import { castPartId } from '../common/utils';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
 

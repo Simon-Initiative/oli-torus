@@ -1,7 +1,7 @@
 import React from 'react';
-import { createButtonCommandDesc } from '../commands/commandFactories';
 import { Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
+import { createButtonCommandDesc } from '../commands/commandFactories';
 
 export const insertConjugation = createButtonCommandDesc({
   icon: <i className="fa-solid fa-language"></i>,

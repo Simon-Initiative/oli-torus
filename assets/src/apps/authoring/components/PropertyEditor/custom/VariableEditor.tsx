@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import {
-  Modal,
   Button,
   Form,
   ListGroup,
   ListGroupItem,
+  Modal,
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 import { validateVariables } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
-import { useDispatch, useSelector } from 'react-redux';
 import { PageError } from '../../Modal/DiagnosticsWindow';
+
 interface CustomFieldProps {
   onAddClick: any;
   items: any[];

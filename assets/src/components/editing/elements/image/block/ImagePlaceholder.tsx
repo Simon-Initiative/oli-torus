@@ -1,10 +1,10 @@
 import React from 'react';
-import { useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
+import { Maybe } from 'tsmonad';
 import { Placeholder } from 'components/editing/elements/common/Placeholder';
 import { selectImage } from 'components/editing/elements/image/imageActions';
-import { Maybe } from 'tsmonad';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import { useEditModelCallback } from 'components/editing/elements/utils';
+import * as ContentModel from 'data/content/model/elements/types';
 
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
 export function ImagePlaceholder(props: Props) {

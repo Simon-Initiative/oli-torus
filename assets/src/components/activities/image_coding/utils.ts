@@ -1,5 +1,5 @@
+import { ScoringStrategy, makeFeedback, makeHint, makeStem } from '../types';
 import { ImageCodingModelSchema } from './schema';
-import { ScoringStrategy, makeFeedback, makeStem, makeHint } from '../types';
 
 export const defaultICModel: () => ImageCodingModelSchema = () => {
   return {

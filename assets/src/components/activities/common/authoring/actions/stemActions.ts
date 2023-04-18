@@ -1,8 +1,8 @@
-import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
-import { HasPreviewText } from 'components/activities/types';
-import { Operations } from 'utils/pathOperations';
-import { toSimpleText } from 'components/editing/slateUtils';
 import { Descendant } from 'slate';
+import { HasPreviewText } from 'components/activities/types';
+import { toSimpleText } from 'components/editing/slateUtils';
+import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
+import { Operations } from 'utils/pathOperations';
 
 export const StemActions = {
   editStem(content: Descendant[], stemPath = STEM_PATH) {

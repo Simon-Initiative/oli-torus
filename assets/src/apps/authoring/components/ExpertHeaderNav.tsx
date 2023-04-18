@@ -14,6 +14,7 @@ import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
 import { DiagnosticsTrigger } from './Modal/DiagnosticsWindow';
+
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;

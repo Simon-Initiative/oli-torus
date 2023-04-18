@@ -84,6 +84,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       params={@params}
       section_slug={@section.slug}
       containers={@containers}
+      patch_url_type={:instructor_dashboard}
       />
     """
   end

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Transforms, Editor, Element } from 'slate';
-import { isActive } from '../../slateUtils';
+import { Editor, Element, Transforms } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
+import { isActive } from '../../slateUtils';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 
 export const commandDesc = createButtonCommandDesc({

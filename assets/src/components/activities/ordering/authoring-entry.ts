@@ -1,3 +1,9 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { OrderingSchema } from './schema';
+import { defaultOrderingModel } from './utils';
+
 // This is the entry point for the ordering authoring
 // component, as specified in the manifest.json
 
@@ -16,12 +22,6 @@
 // Fulfills 1. and 2. from above by exporting these components:
 export { OrderingDelivery } from './OrderingDelivery';
 export { OrderingAuthoring } from './OrderingAuthoring';
-
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { OrderingSchema } from './schema';
-import { defaultOrderingModel } from './utils';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');

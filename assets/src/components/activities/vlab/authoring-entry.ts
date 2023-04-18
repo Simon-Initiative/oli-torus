@@ -1,11 +1,12 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { VlabSchema } from './schema';
+import { defaultModel } from './utils';
+
 export { VlabDelivery } from './VlabDelivery';
 export { VlabAuthoring } from './VlabAuthoring';
 
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { VlabSchema } from './schema';
-import { defaultModel } from './utils';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 

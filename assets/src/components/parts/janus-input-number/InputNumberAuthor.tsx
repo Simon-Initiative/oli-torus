@@ -1,19 +1,14 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { InputNumberModel } from './schema';
 
 const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = (props) => {
   const { id, model } = props;
 
   const {
-    x,
-    y,
-    z,
     width,
-    height,
     minValue,
     maxValue,
-    customCssClass,
     unitsLabel,
     label,
     showLabel,

@@ -2,17 +2,17 @@ import { remove } from 'components/activities/common/utils';
 import {
   ChoiceIdsToResponseId,
   HasParts,
-  makeUndoable,
   PostUndoable,
   Response,
   ResponseId,
   RichText,
+  makeUndoable,
 } from 'components/activities/types';
 import {
+  RESPONSES_PATH,
   getResponseBy,
   getResponseId,
   getResponsesByPartId,
-  RESPONSES_PATH,
 } from 'data/activities/model/responses';
 import { getParts } from 'data/activities/model/utils';
 import { clone } from 'utils/common';

@@ -1,7 +1,7 @@
-import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
-import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import React, { PropsWithChildren, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
+import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
+import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import { classNames } from 'utils/classNames';
 import { SelectTimezone } from './SelectTimezone';
 

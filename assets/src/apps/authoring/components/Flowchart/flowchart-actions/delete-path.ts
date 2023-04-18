@@ -1,4 +1,4 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 import { clone } from '../../../../../utils/common';
 import {
   selectActivityById,
@@ -20,7 +20,7 @@ export const deletePath = createAsyncThunk(
   async (payload: DeletePathPayload, { dispatch, getState }) => {
     const { pathId, screenId } = payload;
     const rootState = getState() as AuthoringRootState;
-    const sequence = selectSequence(rootState);
+    const _sequence = selectSequence(rootState);
     const screen = selectActivityById(rootState, screenId);
     if (!screen) return;
     const paths = screen.authoring?.flowchart?.paths;

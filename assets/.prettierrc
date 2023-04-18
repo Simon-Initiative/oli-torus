@@ -5,5 +5,21 @@
   "useTabs": false,
   "trailingComma": "all",
   "arrowParens": "always",
-  "printWidth": 100
+  "printWidth": 100,
+  "importOrder": [
+    "^react",
+    "<THIRD_PARTY_MODULES>",
+    "^components/(.*)$",
+    "^actions/(.*)$",
+    "^adaptivity/(.*)$",
+    "^apps/(.*)$",
+    "^data/(.*)$",
+    "^hooks/(.*)$",
+    "^state/(.*)$",
+    "^styles/(.*)$",
+    "^types/(.*)$",
+    "^utils/(.*)$",
+    "^[./]"
+  ],
+  "importOrderSortSpecifiers": true
 }

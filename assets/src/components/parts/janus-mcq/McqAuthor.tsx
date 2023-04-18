@@ -1,16 +1,17 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { clone, parseBoolean } from 'utils/common';
-import { MarkupTree } from '../janus-text-flow/TextFlow';
-import { MCQItem } from './MultipleChoiceQuestion';
-import { McqModel } from './schema';
-import { registerEditor, tagName as quillEditorTagName } from '../janus-text-flow/QuillEditor';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
+import { clone, parseBoolean } from 'utils/common';
 import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/DeleteConfirmationModal';
+import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
+import { MarkupTree } from '../janus-text-flow/TextFlow';
+import { MCQItem } from './MultipleChoiceQuestion';
+import { McqModel } from './schema';
+
 // eslint-disable-next-line react/display-name
 const Editor: React.FC<any> = React.memo(({ html, tree, portal, type }) => {
   const quillProps: { tree?: any; html?: any; showimagecontrol?: boolean } = {};
@@ -33,9 +34,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
 
   const {
-    x = 0,
-    y = 0,
-    z = 0,
     width,
     multipleSelection,
     mcqItems,
@@ -54,7 +52,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const [editOptionClicked, setEditOptionClicked] = useState<boolean>(false);
   const [deleteOptionClicked, setDeleteOptionClicked] = useState<boolean>(false);
   const [textNodes, setTextNodes] = useState<any[]>([]);
-  const [windowModel, setWindowModel] = useState<any>(model);
   const [ready, setReady] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   useEffect(() => {
@@ -123,7 +120,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
         switch (notificationType) {
           case NotificationType.CONFIGURE:
             {
-              const { partId, configure } = payload;
+              const { partId } = payload;
               if (partId === id) {
                 setInConfigureMode(false);
                 setShowConfigureMode(!showConfigureMode);
@@ -174,7 +171,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       if (!inConfigureMode) {
         return;
       } // not mine
-      const { payload, callback } = e.detail;
+      const { payload } = e.detail;
       setTextNodes(payload.value);
     };
 

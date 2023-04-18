@@ -1,23 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-
+import { useDispatch, useSelector } from 'react-redux';
 import {
   selectAllActivities,
   setCurrentActivityId,
 } from '../../../delivery/store/features/activities/slice';
-
-import { addFlowchartScreen } from './flowchart-actions/add-screen';
-import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
-
-import {
-  buildEdges,
-  buildPlaceholders,
-  activitiesToNodes,
-  buildStartingNode,
-} from './flowchart-utils';
-
+import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import { changeAppMode, changeEditMode } from '../../store/app/slice';
 import { FlowchartComponent } from './FlowchartComponent';
 import {
   FlowchartAddScreenParams,
@@ -25,12 +15,17 @@ import {
   FlowchartEventContextProps,
 } from './FlowchartEventContext';
 import { FlowchartModeOptions } from './FlowchartModeOptions';
+import { addFlowchartScreen } from './flowchart-actions/add-screen';
+import { deleteFlowchartScreen } from './flowchart-actions/delete-screen';
+import {
+  activitiesToNodes,
+  buildEdges,
+  buildPlaceholders,
+  buildStartingNode,
+} from './flowchart-utils';
+import { screenTypeToTitle } from './screens/screen-factories';
 import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
-import { changeAppMode, changeEditMode } from '../../store/app/slice';
-import { screenTypeToTitle } from './screens/screen-factories';
-import { node } from 'webpack';
-import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.

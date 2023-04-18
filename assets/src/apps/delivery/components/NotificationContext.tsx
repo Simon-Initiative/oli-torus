@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events';
 import React from 'react';
+import { EventEmitter } from 'events';
 
 export const NotificationContext = React.createContext<EventEmitter | null>(null);
 

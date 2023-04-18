@@ -1,17 +1,17 @@
-import { Transforms, Editor, Element } from 'slate';
+import React from 'react';
+import { Provider } from 'react-redux';
+import { Transforms } from 'slate';
 import {
   Command,
   CommandContext,
   CommandDescription,
 } from 'components/editing/elements/commands/interfaces';
-import { isActive } from '../../slateUtils';
-import React from 'react';
-import { configureStore } from 'state/store';
-import { modalActions } from 'actions/modal';
-import { CitationEditor } from './CitationEditor';
 import { Modal } from 'components/modal/Modal';
-import { Provider } from 'react-redux';
+import { modalActions } from 'actions/modal';
 import * as ContentModel from 'data/content/model/elements/types';
+import { configureStore } from 'state/store';
+import { isActive } from '../../slateUtils';
+import { CitationEditor } from './CitationEditor';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));

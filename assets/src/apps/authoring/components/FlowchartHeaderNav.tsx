@@ -3,19 +3,16 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../delivery/store/features/activities/slice';
 import {
-  selectIsAdmin,
   selectPaths,
   selectProjectSlug,
   selectReadOnly,
   selectRevisionSlug,
-  setShowDiagnosticsWindow,
   setShowScoringOverview,
 } from '../store/app/slice';
 import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
-import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
 import { getScreenQuestionType } from './Flowchart/paths/path-options';
-import { DiagnosticsTrigger } from './Modal/DiagnosticsWindow';
+
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;

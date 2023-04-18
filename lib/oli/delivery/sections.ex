@@ -2454,7 +2454,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.sort_by(& &1.title)
   end
 
-  def get_parent_project_survey(section_slug) do
+  def get_survey(section_slug) do
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
     |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
@@ -2487,7 +2487,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp do_create_required_survey(section) do
-    case get_parent_project_survey(section.slug) do
+    case get_survey(section.slug) do
       nil ->
         {:error, "The parent project doesn't have a survey"}
 

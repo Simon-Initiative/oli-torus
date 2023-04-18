@@ -1,6 +1,20 @@
 import React, { useCallback, useMemo } from 'react';
+import { Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 import { JSONSchema7 } from 'json-schema';
+import { isEqual } from 'lodash';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import { useToggle } from '../../../../components/hooks/useToggle';
+import { PartAuthoringMode } from '../../../../components/parts/partsApi';
+import { clone } from '../../../../utils/common';
+import { IActivity } from '../../../delivery/store/features/activities/slice';
+import { saveActivity } from '../../store/activities/actions/saveActivity';
+import { selectAppMode, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
+import { setCurrentSelection } from '../../store/parts/slice';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import PropertyEditor from '../PropertyEditor/PropertyEditor';
+import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
+import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import partSchema, {
   partUiSchema,
   simplifiedPartSchema,
@@ -8,21 +22,7 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
-import { Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { isEqual } from 'lodash';
-import { clone } from '../../../../utils/common';
-import { saveActivity } from '../../store/activities/actions/saveActivity';
-import { selectAppMode, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
-import { setCurrentSelection } from '../../store/parts/slice';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
-import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
-import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import { RightPanelTabs } from './RightMenu';
-import { useToggle } from '../../../../components/hooks/useToggle';
-import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
-import { IActivity } from '../../../delivery/store/features/activities/slice';
-import { PartAuthoringMode } from '../../../../components/parts/partsApi';
 
 interface Props {
   currentActivity: IActivity;

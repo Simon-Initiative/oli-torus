@@ -4,8 +4,8 @@ import { createNewActivityAttempt } from 'data/persistence/state/intrinsic';
 import guid from 'utils/guid';
 import { DeliveryRootState } from '../../../../store/rootReducer';
 import { selectPreviewMode } from '../../page/slice';
-import { selectById, upsertActivityAttemptState } from '../slice';
 import AttemptSlice from '../name';
+import { selectById, upsertActivityAttemptState } from '../slice';
 
 export const createActivityAttempt = createAsyncThunk(
   `${AttemptSlice}/createActivityAttempt`,

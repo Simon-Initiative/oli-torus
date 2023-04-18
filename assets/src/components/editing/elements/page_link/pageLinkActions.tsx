@@ -1,12 +1,12 @@
 import React from 'react';
-import { Transforms, Location } from 'slate';
-import { isActive } from '../../slateUtils';
+import { Location, Transforms } from 'slate';
+import { Option, SelectModal } from 'components/modal/SelectModal';
+import { modalActions } from 'actions/modal';
 import { Model } from 'data/content/model/elements/factories';
+import * as Persistence from 'data/persistence/resource';
+import { isActive } from '../../slateUtils';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 import { CommandContext } from '../commands/interfaces';
-import { modalActions } from 'actions/modal';
-import * as Persistence from 'data/persistence/resource';
-import { Option, SelectModal } from 'components/modal/SelectModal';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));

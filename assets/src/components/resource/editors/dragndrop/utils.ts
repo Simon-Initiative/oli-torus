@@ -1,8 +1,8 @@
-import { ActivityReference, ResourceContent } from 'data/content/resource';
+import * as Immutable from 'immutable';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
-import * as Immutable from 'immutable';
-import { DragPayload, ActivityPayload } from './interfaces';
+import { ActivityReference, ResourceContent } from 'data/content/resource';
+import { ActivityPayload, DragPayload } from './interfaces';
 
 export const getFriendlyName = (
   item: ActivityReference,

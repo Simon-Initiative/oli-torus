@@ -1,13 +1,13 @@
+import React, { CSSProperties, useEffect } from 'react';
 import register from 'components/parts/customElementWrapper';
 import { customEvents } from 'components/parts/partsApi';
 import { PartComponentProps } from 'components/parts/types/parts';
-import React, { CSSProperties, useEffect } from 'react';
 
 const Unknown: React.FC<PartComponentProps<any>> = (props) => {
   console.log('UNKNOWN RENDER', { props });
   const { model } = props;
 
-  const { x, y, z, width } = model;
+  const { _x, _y, z, width } = model;
   const styles: CSSProperties = {
     /* position: 'absolute',
     top: y,

@@ -1,17 +1,17 @@
-import { registerApplication } from 'apps/app';
-import { globalStore } from 'state/store';
+import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
+import { Navbar } from 'components/common/Navbar';
+import { UserAccountMenu } from 'components/common/UserAccountMenu';
+import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
+import { CourseContentOutline } from 'components/delivery/CourseContentOutline';
+import { SurveyControls } from 'components/delivery/SurveyControls';
+import { AttemptSelector } from 'components/misc/AttemptSelector';
 import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import { PaginationControls } from 'components/misc/PaginationControls';
-import { AttemptSelector } from 'components/misc/AttemptSelector';
-import { SurveyControls } from 'components/delivery/SurveyControls';
-import { References } from './bibliography/References';
-import { VideoPlayer } from '../components/video_player/VideoPlayer';
-import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
-import { Navbar } from 'components/common/Navbar';
-import { CourseContentOutline } from 'components/delivery/CourseContentOutline';
-import { UserAccountMenu } from 'components/common/UserAccountMenu';
-import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
+import { registerApplication } from 'apps/app';
+import { globalStore } from 'state/store';
+import { VideoPlayer } from '../components/video_player/VideoPlayer';
+import { References } from './bibliography/References';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);

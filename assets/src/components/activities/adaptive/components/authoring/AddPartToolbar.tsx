@@ -1,6 +1,6 @@
-import { AnyPartComponent } from 'components/parts/types/parts';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
+import { AnyPartComponent } from 'components/parts/types/parts';
 import guid from 'utils/guid';
 
 interface AddPartToolbarProps {

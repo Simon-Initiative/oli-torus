@@ -1,5 +1,5 @@
-import { editor } from 'monaco-editor';
 import { IMonacoEditor } from '@uiw/react-monacoeditor';
+import { editor } from 'monaco-editor';
 
 export interface ActivityLinksLensArgs {
   projectSlug: string;

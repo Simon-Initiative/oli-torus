@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ActivityState } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import { applyState, templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
-import { ActivityState } from 'components/activities/types';
 import {
   getBulkActivitiesForAuthoring,
   getBulkActivitiesForDelivery,

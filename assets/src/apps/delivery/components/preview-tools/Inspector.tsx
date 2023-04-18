@@ -1,8 +1,9 @@
 /* eslint-disable no-prototype-builtins */
+
 /* eslint-disable react/prop-types */
-import debounce from 'lodash/debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import debounce from 'lodash/debounce';
 import { CapiVariable } from '../../../../adaptivity/capi';
 import {
   ApplyStateOperation,
@@ -18,7 +19,7 @@ interface InspectorProps {
   currentActivity: any;
 }
 // Inspector Placeholder
-const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
+const Inspector: React.FC<InspectorProps> = () => {
   const dispatch = useDispatch();
 
   const [globalState, setGlobalState] = useState<any>(null);
@@ -27,7 +28,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   const [stageState, setStageState] = useState<any>({});
   const [appState, setAppState] = useState<Record<string, unknown>>({});
 
-  const [autoApplyChanges, setAutoApplyChanges] = useState(false);
+  const [autoApplyChanges, _setAutoApplyChanges] = useState(false);
   const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
 
   // TODO: technically this tree concept only exists in the DECK layout
@@ -137,18 +138,15 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     [changeOperations],
   );
 
-  const handleApplyChanges = useCallback(
-    (e) => {
-      if (changeOperations.length === 0) {
-        return;
-      }
-      dispatch(applyStateChange({ operations: changeOperations }));
-      setChangeOperations([]);
-    },
-    [changeOperations],
-  );
+  const handleApplyChanges = useCallback(() => {
+    if (changeOperations.length === 0) {
+      return;
+    }
+    dispatch(applyStateChange({ operations: changeOperations }));
+    setChangeOperations([]);
+  }, [changeOperations]);
 
-  const handleCancelChanges = (e: any) => {
+  const handleCancelChanges = () => {
     debounceStateChanges();
     setChangeOperations([]);
   };

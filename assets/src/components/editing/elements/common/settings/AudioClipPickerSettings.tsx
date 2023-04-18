@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
+import { Provider } from 'react-redux';
+import { Maybe } from 'tsmonad';
+import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
-import { MediaItem } from 'types/media';
-import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { configureStore } from 'state/store';
-import { Provider } from 'react-redux';
+import { MediaItem } from 'types/media';
 import { AudioSource } from '../../../../../data/content/model/elements/types';
-import { Maybe } from 'tsmonad';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));

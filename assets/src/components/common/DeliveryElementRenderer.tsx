@@ -1,7 +1,7 @@
 import React from 'react';
-import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
 import { RichText } from 'components/activities';
+import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
+import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 
 interface DeliveryElementRendererProps {
   element: RichText;

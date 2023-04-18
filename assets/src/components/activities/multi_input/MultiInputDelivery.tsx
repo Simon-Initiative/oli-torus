@@ -1,3 +1,7 @@
+import React, { useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
 import { Submission } from 'components/activities/common/delivery/evaluation/Submission';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
@@ -5,32 +9,28 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { MultiInputSchema, MultiInput } from 'components/activities/multi_input/schema';
+import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
-  activityDeliverySlice,
   ActivityDeliveryState,
+  PartInputs,
+  activityDeliverySlice,
   initializeState,
   isEvaluated,
-  listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForParentSurveySubmit,
   listenForReviewAttemptChange,
-  submitPart,
-  PartInputs,
   resetAction,
-  resetAndSubmitPart,
   resetAndSavePart,
+  resetAndSubmitPart,
+  submitPart,
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React, { useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { initializePersistence } from '../common/delivery/persistence';
 
 export const MultiInputComponent: React.FC = () => {

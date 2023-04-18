@@ -1,10 +1,10 @@
+import React from 'react';
+import { useSelector } from 'react-redux';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import { HasStem, Stem } from 'components/activities/types';
+import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import React from 'react';
-import { ActivityDeliveryState } from 'data/activities/DeliveryState';
-import { useSelector } from 'react-redux';
 import './StemDelivery.scss';
 
 interface StemProps {

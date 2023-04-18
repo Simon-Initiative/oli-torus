@@ -1,3 +1,9 @@
+// Registers the creation function:
+import { registerCreationFunc } from '../creation';
+import { CreationContext, Manifest } from '../types';
+import { ImageCodingModelSchema } from './schema';
+import { defaultICModel } from './utils';
+
 // This is the entry point for the multiple choice authoring
 // component, as specified in the manifest.json
 
@@ -16,12 +22,6 @@
 // Fulfills 1. and 2. from above by exporting these components:
 export { ImageCodingDelivery } from './ImageCodingDelivery';
 export { ImageCodingAuthoring } from './ImageCodingAuthoring';
-
-// Registers the creation function:
-import { Manifest, CreationContext } from '../types';
-import { registerCreationFunc } from '../creation';
-import { ImageCodingModelSchema } from './schema';
-import { defaultICModel } from './utils';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
