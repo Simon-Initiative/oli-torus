@@ -160,7 +160,17 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     """
   end
 
+  defmodule SurveyResponse do
+    use Ecto.Schema
+
+    schema "survey_response" do
+      field :title, :string
+      field :response, :string
+    end
+  end
+
   attr :student, User
+  attr :survey_responses, :list
 
   def student_details(assigns) do
     ~H"""
@@ -172,37 +182,31 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
               <i class="h-52 w-52 fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-200"></i>
           <% end %>
         </div>
-        <div class="flex flex-row justify-between w-full bg-white">
-          <div class="flex flex-col divide-y divide-gray-100 w-full">
-            <div class="h-28 pt-6 pl-10">
-              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">pronouns <i class="fa fa-info-circle text-primary h-3 w-3 ml-2"></i></h4>
-              <span class="text-base font-semibold tracking-wide text-gray-800 h-5 flex items-center mt-2"><%= @student.pronouns || "-" %></span>
+        <div class="flex flex-col divide-y divide-gray-100 w-full bg-white">
+          <div class="grid grid-cols-5 gap-4 w-full p-8">
+            <div class="flex flex-col justify-between">
+              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">average score</h4>
+              <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}><%= format_student_score(@student.avg_score) %></span>
             </div>
-            <div class="h-28 pt-6 pl-10">
-              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">average score</h4>
-              <span class={"text-base font-semibold tracking-wide h-5 flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}><%= format_student_score(@student.avg_score) %></span>
+            <div class="flex flex-col justify-between">
+              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">course completion</h4>
+              <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}><%= format_percentage(@student.progress) %></span>
             </div>
-          </div>
-          <div class="flex flex-col divide-y divide-gray-100 w-full">
-            <div class="h-28 pt-6">
-              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">mayor</h4>
-              <span class="text-base font-semibold tracking-wide text-gray-800 h-5 flex items-center mt-2"><%= @student.mayor || "-" %></span>
-            </div>
-            <div class="h-28 pt-6">
-              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">course completion</h4>
-              <span class={"text-base font-semibold tracking-wide h-5 flex items-center mt-2 #{text_color(:progress, @student.progress)}"}><%= format_percentage(@student.progress) %></span>
+            <div class="flex flex-col justify-between">
+              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">platform engagement <i class="fa fa-info-circle text-primary h-3 w-3 ml-2"></i></h4>
+              <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:engagement, @student.engagement)}"}><%= @student.engagement %></span>
             </div>
           </div>
-          <div class="flex flex-col divide-y divide-gray-100 w-full">
-            <div class="h-28 pt-6 pr-10">
-              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">experience</h4>
-              <span class="text-base font-semibold tracking-wide text-gray-800 h-5 flex items-center mt-2"><%= @student.experience || "-" %></span>
+          <%= if length(@survey_responses) > 0 do%>
+            <div class="grid grid-cols-5 gap-4 w-full p-8">
+              <%= for response <- @survey_responses do %>
+                <div class="flex flex-col justify-between">
+                  <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center"><%= response.title %></h4>
+                  <span class="text-base font-semibold tracking-wide text-gray-800 flex items-center mt-2"><%= response.response || "-" %></span>
+                </div>
+              <% end %>
             </div>
-            <div class="h-28 pt-6 pr-10">
-              <h4 class="text-xs uppercase text-gray-800 font-normal h-6 flex items-center">platform engagement <i class="fa fa-info-circle text-primary h-3 w-3 ml-2"></i></h4>
-              <span class={"text-base font-semibold tracking-wide h-5 flex items-center mt-2 #{text_color(:engagement, @student.engagement)}"}><%= @student.engagement %></span>
-            </div>
-          </div>
+          <% end %>
         </div>
       </div>
     """

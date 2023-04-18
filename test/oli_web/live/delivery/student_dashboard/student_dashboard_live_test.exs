@@ -97,19 +97,21 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
     test "can see the student details card correctly", %{
       instructor: instructor,
       student: student,
-      section: section,
       conn: conn
     } do
+      %{section: section, survey: survey, survey_questions: survey_questions} =
+        section_with_survey()
+
+      complete_student_survey(student, section, survey, survey_questions)
+
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} =
         live(conn, live_view_students_dashboard_route(section.slug, student.id))
 
       student_details_card = element(view, "#student_details_card")
-      assert render(student_details_card) =~ "pronouns"
-      assert render(student_details_card) =~ "average score"
-      assert render(student_details_card) =~ "mayor"
-      assert render(student_details_card) =~ "experience"
+      assert render(student_details_card) =~ "Experience"
+      assert render(student_details_card) =~ "A lot"
     end
 
     test "can see the details header correctly and navigate through breadcrumb", %{
@@ -141,5 +143,9 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
         )
       )
     end
+  end
+
+  def section_with_survey() do
+    elem(section_with_survey(nil), 1) |> Enum.into(%{})
   end
 end

@@ -446,5 +446,5 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     end
   end
 
-  defp section_with_disabled_survey(conn), do: section_with_survey(conn, false)
+  defp section_with_disabled_survey(conn), do: section_with_survey(conn, survey_enabled: false)
 end
