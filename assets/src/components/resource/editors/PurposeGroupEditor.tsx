@@ -152,6 +152,7 @@ export const PurposeGroupBlock = ({
         ) : null}
         <AudienceModes
           onEdit={(audience) => onEdit(Object.assign(contentItem, { audience }))}
+          onRemove={() => onEdit(Object.assign(contentItem, { audience: undefined }))}
           editMode={editMode}
           mode={contentItem.audience}
         />

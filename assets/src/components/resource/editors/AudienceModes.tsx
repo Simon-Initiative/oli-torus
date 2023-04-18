@@ -1,12 +1,13 @@
 import React from 'react';
-import { AudienceMode } from 'data/content/resource';
 import { Dropdown } from 'react-bootstrap';
+import { AudienceMode } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 
 export type AudienceModesProps = {
   editMode: boolean; // Whether or not we can edit
   mode?: AudienceMode;
   onEdit: (mode: AudienceMode) => void;
+  onRemove: () => void;
 };
 
 const descriptions: any = {
@@ -17,7 +18,7 @@ const descriptions: any = {
 };
 
 export const AudienceModes = (props: AudienceModesProps) => {
-  const { editMode, mode, onEdit } = props;
+  const { editMode, mode, onEdit, onRemove } = props;
 
   const current = mode && descriptions[mode];
   const options = Object.keys(descriptions).map((m) => {
@@ -33,13 +34,21 @@ export const AudienceModes = (props: AudienceModesProps) => {
       <Dropdown.Toggle variant="outline-primary" size="sm" disabled={!editMode}>
         <span className="leading-normal">
           <i className="fa-solid fa-users mr-1"></i>
-          {mode !== 'always' && current}
+          {current}
           <i className="fa-solid fa-caret-down ml-2"></i>
         </span>
       </Dropdown.Toggle>
       <Dropdown.Menu>
-        <Dropdown.Header>Content Audience</Dropdown.Header>
+        <Dropdown.Header key="header">Content Audience</Dropdown.Header>
         {options}
+        {mode && (
+          <>
+            <Dropdown.Divider />
+            <Dropdown.Item key="help" onClick={() => onRemove()}>
+              Remove
+            </Dropdown.Item>
+          </>
+        )}
       </Dropdown.Menu>
     </Dropdown>
   );
