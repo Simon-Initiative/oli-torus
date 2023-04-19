@@ -1165,7 +1165,8 @@ defmodule Oli.TestHelpers do
   def section_with_gating_conditions(_context) do
     author = insert(:author)
     project = insert(:project, authors: [author])
-    student = insert(:user)
+    student = insert(:user, %{family_name: "Example", given_name: "Student1"})
+    student_2 = insert(:user, %{family_name: "Example", given_name: "Student2"})
 
     # Create graded pages
     graded_page_1_resource = insert(:resource)
@@ -1345,6 +1346,7 @@ defmodule Oli.TestHelpers do
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     enroll_user_to_section(student, section, :context_learner)
+    enroll_user_to_section(student_2, section, :context_learner)
 
     insert(:gating_condition, %{
       section: section,
@@ -1378,6 +1380,22 @@ defmodule Oli.TestHelpers do
       data: %GatingConditionData{end_datetime: nil}
     })
 
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_5_resource,
+      type: :schedule,
+      user: student_2,
+      data: %GatingConditionData{end_datetime: ~U[2023-07-08 14:00:00Z]}
+    })
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_6_resource,
+      type: :always_open,
+      user: student_2,
+      data: %GatingConditionData{end_datetime: nil}
+    })
+
     %{
       section: section,
       graded_page_1: graded_page_1_revision,
@@ -1386,7 +1404,8 @@ defmodule Oli.TestHelpers do
       graded_page_4: graded_page_4_revision,
       graded_page_5: graded_page_5_revision,
       graded_page_6: graded_page_6_revision,
-      student_with_gating_condition: student
+      student_with_gating_condition: student,
+      student_with_gating_condition_2: student_2
     }
   end
 
