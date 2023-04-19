@@ -4057,6 +4057,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -2.5rem;
 }
 
+.-mt-1 {
+  margin-top: -0.25rem;
+}
+
 .-mt-5 {
   margin-top: -1.25rem;
 }
@@ -4309,10 +4313,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 6rem;
 }
 
-.h-28 {
-  height: 7rem;
-}
-
 .h-3 {
   height: 0.75rem;
 }
@@ -4327,10 +4327,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-52 {
   height: 13rem;
-}
-
-.h-6 {
-  height: 1.5rem;
 }
 
 .h-7 {
@@ -4634,6 +4630,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .grid-cols-12 {
   grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.grid-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .flex-row {
@@ -5378,6 +5378,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 5rem;
 }
 
+.pb-3 {
+  padding-bottom: 0.75rem;
+}
+
 .pb-4 {
   padding-bottom: 1rem;
 }
@@ -5434,10 +5438,6 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 0.25rem;
 }
 
-.pr-10 {
-  padding-right: 2.5rem;
-}
-
 .pr-2 {
   padding-right: 0.5rem;
 }
@@ -5484,10 +5484,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-4 {
   padding-top: 1rem;
-}
-
-.pt-6 {
-  padding-top: 1.5rem;
 }
 
 .text-left {
@@ -6643,6 +6639,11 @@ button.torus-button.secondary:disabled {
   border-left-width: 0px;
 }
 
+.instructor_dashboard_table tr:has(div[data-score-check='false']) {
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.2;
+}
+
 /**
  * Automatically style all links with blue text and underline on hover.
  * External links will automatically get an arrow icon appended.
@@ -7283,6 +7284,10 @@ p {
 
   .md\:pb-4 {
     padding-bottom: 1rem;
+  }
+
+  .md\:pl-9 {
+    padding-left: 2.25rem;
   }
 
   .md\:text-lg {
