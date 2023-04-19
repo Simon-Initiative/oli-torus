@@ -8,7 +8,6 @@ import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { toSimpleText } from 'components/editing/slateUtils';
 import { classNames } from 'utils/classNames';
 import styles from './ChoicesAuthoring.modules.scss';
-import { cpuUsage } from 'process';
 
 const renderChoiceIcon = (icon: any, choice: any, index: any) =>
   icon ? (
