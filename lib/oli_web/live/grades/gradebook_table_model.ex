@@ -111,7 +111,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
          %ResourceAccess{
            score: score,
            out_of: out_of
-         } = _resource_access
+         }
        ) do
     link_type = "bg-white text-red-500"
 

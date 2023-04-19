@@ -85,7 +85,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
           <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
           <div class="flex flex-col gap-y-4 md:flex-row items-center">
             <div class="form-check">
-              <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} />
+              <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} phx-debounce="500"/>
               <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
             </div>
             <form for="search" phx-target={@myself} phx-change="search_student" class="pb-3 md:pl-9 sm:pb-0">
