@@ -6,6 +6,8 @@ defmodule Oli.Delivery.Attempts do
   import Ecto.Query, warn: false
 
   def summarize_survey(survey_resource_id, user_id) do
+    mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+
     ActivityAttempt
     |> join(:inner, [a_att], r_att in ResourceAttempt, on: a_att.resource_attempt_id == r_att.id)
     |> join(:inner, [a_att, r_att], r_acc in ResourceAccess,
@@ -22,7 +24,7 @@ defmodule Oli.Delivery.Attempts do
     |> where(
       [a_att, r_att, r_acc, rev, a_att_2],
       r_acc.resource_id == ^survey_resource_id and r_acc.user_id == ^user_id and is_nil(a_att_2) and
-        a_att.lifecycle_state == :evaluated
+        a_att.lifecycle_state == :evaluated and rev.activity_type_id == ^mcq_reg.id
     )
     |> select([a_att, r_att, r_acc, rev, a_att_2, p_att], %{
       question: rev.title,
