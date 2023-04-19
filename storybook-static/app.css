@@ -4057,10 +4057,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -2.5rem;
 }
 
-.-mt-1 {
-  margin-top: -0.25rem;
-}
-
 .-mt-5 {
   margin-top: -1.25rem;
 }
@@ -5378,10 +5374,6 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 5rem;
 }
 
-.pb-3 {
-  padding-bottom: 0.75rem;
-}
-
 .pb-4 {
   padding-bottom: 1rem;
 }
@@ -6639,11 +6631,6 @@ button.torus-button.secondary:disabled {
   border-left-width: 0px;
 }
 
-.instructor_dashboard_table tr:has(div[data-score-check='false']) {
-  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
-  --tw-bg-opacity: 0.2;
-}
-
 /**
  * Automatically style all links with blue text and underline on hover.
  * External links will automatically get an arrow icon appended.
@@ -7284,10 +7271,6 @@ p {
 
   .md\:pb-4 {
     padding-bottom: 1rem;
-  }
-
-  .md\:pl-9 {
-    padding-left: 2.25rem;
   }
 
   .md\:text-lg {
