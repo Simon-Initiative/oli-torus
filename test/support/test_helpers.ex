@@ -934,34 +934,35 @@ defmodule Oli.TestHelpers do
     }
   end
 
-  defp generate_attempt_content(), do: %{
-    choices: [
-      %{
-        id: "option_1_id",
-        content: [
-          %{
-            children: [
-              %{
-                text: "A lot"
-              }
-            ]
-          }
-        ]
-      },
-      %{
-        id: "option_2_id",
-        content: [
-          %{
-            children: [
-              %{
-                text: "None"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
+  defp generate_attempt_content(),
+    do: %{
+      choices: [
+        %{
+          id: "option_1_id",
+          content: [
+            %{
+              children: [
+                %{
+                  text: "A lot"
+                }
+              ]
+            }
+          ]
+        },
+        %{
+          id: "option_2_id",
+          content: [
+            %{
+              children: [
+                %{
+                  text: "None"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
 
   def section_with_survey(_context, opts \\ [survey_enabled: true]) do
     author = insert(:author)
@@ -969,10 +970,13 @@ defmodule Oli.TestHelpers do
     # Project survey
     survey_question_resource = insert(:resource)
 
+    mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+
     survey_question_revision =
       insert(:revision,
         resource: survey_question_resource,
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        activity_type_id: mcq_reg.id,
         title: "Experience",
         content: generate_attempt_content()
       )
@@ -1140,17 +1144,21 @@ defmodule Oli.TestHelpers do
 
     resource_attempt = insert(:resource_attempt, resource_access: resource_access)
 
-    activity_attempts = Enum.map(survey_questions, fn question ->
-      insert(:activity_attempt,
-        resource_attempt: resource_attempt,
-        revision: question,
-        lifecycle_state: status,
-        transformed_model: generate_attempt_content()
-      )
-    end)
+    activity_attempts =
+      Enum.map(survey_questions, fn question ->
+        insert(:activity_attempt,
+          resource_attempt: resource_attempt,
+          revision: question,
+          lifecycle_state: status,
+          transformed_model: generate_attempt_content()
+        )
+      end)
 
     Enum.map(activity_attempts, fn attempt ->
-      insert(:part_attempt, activity_attempt: attempt, response: %{files: [], input: "option_1_id"})
+      insert(:part_attempt,
+        activity_attempt: attempt,
+        response: %{files: [], input: "option_1_id"}
+      )
     end)
   end
 
