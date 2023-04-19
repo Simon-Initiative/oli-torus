@@ -48,6 +48,7 @@ export const Ordering: React.FC = () => {
           setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
           onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
           onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
+          colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
         />
       </TabbedNavigation.Tab>
 
@@ -57,6 +58,7 @@ export const Ordering: React.FC = () => {
         <ResponseChoices
           writerContext={writerContext}
           choices={getCorrectChoiceIds(model).map((id) => choices[id])}
+          colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
