@@ -34,6 +34,7 @@ interface ItemProps {
   items?: any[];
   index?: number;
   displayOutline?: boolean;
+  color?: string;
   isDragDisabled?: boolean;
 }
 const Item: React.FC<ItemProps> = ({
@@ -46,6 +47,7 @@ const Item: React.FC<ItemProps> = ({
   setItems = () => undefined,
   children,
   displayOutline,
+  color,
   isDragDisabled,
 }) => {
   return (
@@ -60,7 +62,7 @@ const Item: React.FC<ItemProps> = ({
             styles.draggableColumnCard,
             displayOutline ? styles.draggableColumnOutlined : null,
           )}
-          style={getStyle(provided.draggableProps.style, snapshot)}
+          style={{ ...getStyle(provided.draggableProps.style, snapshot), backgroundColor: color }}
           aria-label={itemAriaLabel || 'Item ' + index}
           onKeyDown={(e: any) => reorderByKey(e, index, items, item, setItems)}
         >

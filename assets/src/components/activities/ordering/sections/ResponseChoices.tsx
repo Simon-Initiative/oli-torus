@@ -6,12 +6,14 @@ import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 
 interface Props {
   choices: Choice[];
+  colorMap?: Map<string, string>;
   disabled?: boolean;
   writerContext: WriterContext;
   setChoices: (choices: Choice[]) => void;
 }
 export const ResponseChoices: React.FC<Props> = ({
   choices,
+  colorMap,
   setChoices,
   disabled,
   writerContext: { projectSlug },
@@ -25,8 +27,9 @@ export const ResponseChoices: React.FC<Props> = ({
           key={choice.id}
           id={choice.id}
           item={choice}
+          color={colorMap?.get(choice.id)}
         >
-          {(_choice, index) => (
+          {(choice, index) => (
             <>
               <Draggable.DragIndicator isDragDisabled={disabled ?? false} />
               <div style={{ marginRight: '0.5rem' }}>{index + 1}.</div>

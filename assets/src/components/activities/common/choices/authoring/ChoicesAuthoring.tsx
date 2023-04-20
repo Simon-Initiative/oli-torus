@@ -26,6 +26,7 @@ interface Props {
   onEdit: (id: string, content: Descendant[]) => void;
   onRemove: (id: string) => void;
   simpleText?: boolean;
+  colorMap?: Map<string, string>;
 }
 export const Choices: React.FC<Props> = ({
   icon,
@@ -35,13 +36,20 @@ export const Choices: React.FC<Props> = ({
   onEdit,
   onRemove,
   simpleText,
+  colorMap,
 }) => {
   return (
     <>
       <Draggable.Column items={choices} setItems={setAll}>
         {choices.map((choice) => (
-          <Draggable.Item key={choice.id} id={choice.id} className="mb-4" item={choice}>
-            {(_choice, index) => (
+          <Draggable.Item
+            key={choice.id}
+            id={choice.id}
+            className="mb-4"
+            item={choice}
+            color={colorMap?.get(choice.id)}
+          >
+            {(choice, index) => (
               <>
                 <Draggable.DragIndicator />
                 {renderChoiceIcon(icon, choice, index)}
@@ -54,7 +62,11 @@ export const Choices: React.FC<Props> = ({
                   />
                 ) : (
                   <RichTextEditorConnected
-                    style={{ flexGrow: 1, cursor: 'text' }}
+                    style={{
+                      flexGrow: 1,
+                      cursor: 'text',
+                      backgroundColor: colorMap?.get(choice.id),
+                    }}
                     placeholder="Answer choice"
                     value={choice.content}
                     onEdit={(content) => onEdit(choice.id, content)}
