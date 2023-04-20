@@ -26,6 +26,7 @@ import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { Hotspot, ImageHotspotModelSchema, getShape } from './schema';
 import { HS_COLOR, drawHotspotShape } from './utils';
+import guid from 'utils/guid';
 
 const ImageHotspotComponent: React.FC = () => {
   const {
@@ -110,7 +111,7 @@ const ImageHotspotComponent: React.FC = () => {
     }
   };
 
-  const mapName = 'map' + model.choices[0].id;
+  const mapName = 'map' + guid();
 
   return (
     <div className="activity multiple-choice-activity">
