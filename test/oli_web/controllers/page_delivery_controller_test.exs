@@ -2079,27 +2079,4 @@ defmodule OliWeb.PageDeliveryControllerTest do
       "version" => "0.1.0"
     }
   end
-
-  defp create_survey_access(student, section, survey, survey_questions) do
-    create_activity_attempts(student, section, survey, survey_questions, "active")
-  end
-
-  defp complete_student_survey(student, section, survey, survey_questions) do
-    create_activity_attempts(student, section, survey, survey_questions, "evaluated")
-  end
-
-  defp create_activity_attempts(student, section, survey, survey_questions, status) do
-    resource_access =
-      insert(:resource_access, user: student, section: section, resource: survey.resource)
-
-    resource_attempt = insert(:resource_attempt, resource_access: resource_access)
-
-    Enum.map(survey_questions, fn question ->
-      insert(:activity_attempt,
-        resource_attempt: resource_attempt,
-        revision: question,
-        lifecycle_state: status
-      )
-    end)
-  end
 end

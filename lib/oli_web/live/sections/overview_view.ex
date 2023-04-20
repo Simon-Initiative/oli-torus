@@ -60,7 +60,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         show_required_section_config =
           if section.required_survey_resource_id != nil or
-               Sections.get_survey(section.slug) do
+               Sections.get_base_project_survey(section.slug) do
             true
           else
             false
