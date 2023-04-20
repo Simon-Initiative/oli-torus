@@ -14,6 +14,7 @@ import {
 } from 'data/activities/DeliveryState';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
+import guid from 'utils/guid';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
@@ -26,7 +27,6 @@ import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { Hotspot, ImageHotspotModelSchema, getShape } from './schema';
 import { HS_COLOR, drawHotspotShape } from './utils';
-import guid from 'utils/guid';
 
 const ImageHotspotComponent: React.FC = () => {
   const {
