@@ -4,6 +4,7 @@ defmodule Oli.Rendering.Group do
   """
   import Oli.Utils
 
+  alias Oli.Delivery.Audience
   alias Oli.Rendering.Context
 
   @type next :: (() -> String.t())
@@ -16,20 +17,25 @@ defmodule Oli.Rendering.Group do
   Renders a content group that has children elements. Returns an IO list of strings.
   """
   def render(
-        %Context{} = context,
+        %Context{user: user, section_slug: section_slug, mode: mode} = context,
         %{"type" => "group", "id" => id, "children" => children} = element,
         writer
       ) do
     pagination_mode = Map.get(element, "paginationMode", "normal")
+    audience = Map.get(element, "audience")
 
-    next = fn ->
-      writer.elements(
-        %Context{context | group_id: id, pagination_mode: pagination_mode},
-        children
-      )
+    if Audience.is_intended_audience?(audience, user, section_slug, mode == :review) do
+      next = fn ->
+        writer.elements(
+          %Context{context | group_id: id, pagination_mode: pagination_mode},
+          children
+        )
+      end
+
+      writer.group(context, next, element)
+    else
+      []
     end
-
-    writer.group(context, next, element)
   end
 
   # Renders an error message if none of the signatures above match. Logging and rendering of errors

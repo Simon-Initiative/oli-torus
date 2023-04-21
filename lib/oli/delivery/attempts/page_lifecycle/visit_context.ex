@@ -17,7 +17,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
     :latest_resource_attempt,
     :page_revision,
     :section_slug,
-    :user_id,
+    :user,
     :datashop_session_id,
     :activity_provider
   ]
@@ -28,18 +28,18 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
     :latest_resource_attempt,
     :page_revision,
     :section_slug,
-    :user_id,
+    :user,
     :datashop_session_id,
     :activity_provider
   ]
 
   @type t() :: %__MODULE__{
-          publication_id: integer,
+          publication_id: integer(),
           blacklisted_activity_ids: list(),
           latest_resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{} | nil,
           page_revision: %Oli.Resources.Revision{},
           section_slug: String.t(),
-          user_id: integer,
+          user: Oli.Accounts.User.t() | Oli.Accounts.Author.t(),
           datashop_session_id: String.t() | nil,
           activity_provider: any()
         }

@@ -68,7 +68,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -94,7 +94,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -129,7 +129,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -159,7 +159,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -195,7 +195,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -226,7 +226,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -264,7 +264,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: adaptive_revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -294,7 +294,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           page_revision: adaptive_revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id

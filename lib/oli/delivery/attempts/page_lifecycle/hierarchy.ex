@@ -29,7 +29,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           {get_resource_access(
              context.page_revision.resource_id,
              context.section_slug,
-             context.user_id
+             context.user.id
            ).id, 1}
 
         attempt ->
@@ -52,6 +52,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           publication_id: context.publication_id
         },
         constraining_attempt_prototypes,
+        context.user,
+        context.section_slug,
         Oli.Publishing.DeliveryResolver
       )
 

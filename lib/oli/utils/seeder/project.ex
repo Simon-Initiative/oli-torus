@@ -50,6 +50,26 @@ defmodule Oli.Utils.Seeder.Project do
   end
 
   @doc """
+  Creates a torus system admin
+  """
+  def create_admin(seeds, tags \\ []) do
+    admin_tag = tags[:admin_tag]
+
+    name = "Administrator"
+
+    {:ok, admin} =
+      Author.noauth_changeset(%Author{}, %{
+        email: "#{Slug.slugify(name)}@test.com",
+        given_name: name,
+        system_role_id: SystemRole.role_id().admin
+      })
+      |> Repo.insert()
+
+    seeds
+    |> tag(admin_tag, admin)
+  end
+
+  @doc """
   Creates a sample project
   """
   def create_sample_project(seeds, author, tags \\ []) do
@@ -611,7 +631,9 @@ defmodule Oli.Utils.Seeder.Project do
     children_ids = Enum.map(resources, fn r -> r.id end)
 
     {:ok, updated} =
-      Oli.Resources.create_revision_from_previous(container_revision, %{children: container_revision.children ++ children_ids})
+      Oli.Resources.create_revision_from_previous(container_revision, %{
+        children: container_revision.children ++ children_ids
+      })
 
     Publishing.get_published_resource!(publication.id, container_revision.resource_id)
     |> Publishing.update_published_resource(%{revision_id: updated.id})

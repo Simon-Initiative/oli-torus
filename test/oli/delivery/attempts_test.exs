@@ -89,7 +89,7 @@ defmodule Oli.Delivery.AttemptsTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id
@@ -157,7 +157,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -166,7 +166,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -176,7 +176,7 @@ defmodule Oli.Delivery.AttemptsTest do
           "garbage slug",
           section.slug,
           datashop_session_id,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -190,7 +190,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision,
           section.slug,
           datashop_session_id,
-          user1.id,
+          user1,
           activity_provider
         )
     end
@@ -214,7 +214,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -226,7 +226,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -237,7 +237,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
@@ -247,7 +247,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
@@ -259,7 +259,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
     end
@@ -396,7 +396,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -434,7 +434,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -445,7 +445,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
@@ -569,7 +569,7 @@ defmodule Oli.Delivery.AttemptsTest do
           revision.slug,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 

@@ -88,7 +88,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id

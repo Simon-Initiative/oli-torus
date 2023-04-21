@@ -112,7 +112,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision.slug,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -171,7 +171,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision.slug,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
@@ -408,7 +408,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -436,7 +436,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
     end
@@ -456,7 +456,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -502,7 +502,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -529,7 +529,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -539,7 +539,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
@@ -569,7 +569,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
