@@ -1028,10 +1028,16 @@ defmodule Oli.Delivery.Sections do
 
       processed_ids = [root_resource_id | processed_ids]
 
+      survey_id =
+        Project
+        |> where([p], p.id == ^section.base_project_id)
+        |> select([p], p.required_survey_resource_id)
+        |> Repo.one()
+
       # create any remaining section resources which are not in the hierarchy
       create_nonstructural_section_resources(section.id, [publication_id],
         skip_resource_ids: processed_ids,
-        required_survey_resource_id: section.required_survey_resource_id
+        required_survey_resource_id: survey_id
       )
 
       update_section(section, %{root_section_resource_id: root_section_resource_id})
@@ -1418,9 +1424,15 @@ defmodule Oli.Delivery.Sections do
         processed_section_resources_by_id
         |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
 
+      survey_id =
+        Project
+        |> where([p], p.id == ^section.base_project_id)
+        |> select([p], p.required_survey_resource_id)
+        |> Repo.one()
+
       create_nonstructural_section_resources(section_id, publication_ids,
         skip_resource_ids: processed_resource_ids,
-        required_survey_resource_id: section.required_survey_resource_id
+        required_survey_resource_id: survey_id
       )
 
       # Rebuild section previous next index
@@ -2454,7 +2466,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.sort_by(& &1.title)
   end
 
-  def get_survey(section_slug) do
+  defp do_get_survey(section_slug) do
     Section
     |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
     |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
@@ -2462,12 +2474,24 @@ defmodule Oli.Delivery.Sections do
     |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
     |> where(
       [s, spp, _, pr, proj],
-      s.slug == ^section_slug and
-        spp.project_id == s.base_project_id and
-        spp.section_id == s.id and
+      (s.slug == ^section_slug and
+         spp.project_id == s.base_project_id and
+         spp.section_id == s.id and
+         pr.resource_id == s.required_survey_resource_id) or
         pr.resource_id == proj.required_survey_resource_id
     )
     |> select([_, _, _, rev], rev)
+  end
+
+  def get_base_project_survey(section_slug) do
+    do_get_survey(section_slug)
+    |> where([s, spp, _, pr, proj], pr.resource_id == proj.required_survey_resource_id)
+    |> Repo.one()
+  end
+
+  def get_survey(section_slug) do
+    do_get_survey(section_slug)
+    |> where([s, spp, _, pr, proj], pr.resource_id == s.required_survey_resource_id)
     |> Repo.one()
   end
 
@@ -2487,7 +2511,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp do_create_required_survey(section) do
-    case get_survey(section.slug) do
+    case get_base_project_survey(section.slug) do
       nil ->
         {:error, "The parent project doesn't have a survey"}
 

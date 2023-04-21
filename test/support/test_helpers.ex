@@ -934,16 +934,51 @@ defmodule Oli.TestHelpers do
     }
   end
 
-  def section_with_survey(_context, survey_enabled \\ true) do
+  defp generate_attempt_content(),
+    do: %{
+      choices: [
+        %{
+          id: "option_1_id",
+          content: [
+            %{
+              children: [
+                %{
+                  text: "A lot"
+                }
+              ]
+            }
+          ]
+        },
+        %{
+          id: "option_2_id",
+          content: [
+            %{
+              children: [
+                %{
+                  text: "None"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+
+  def section_with_survey(_context, opts \\ [survey_enabled: true]) do
     author = insert(:author)
 
     # Project survey
     survey_question_resource = insert(:resource)
 
+    mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+
     survey_question_revision =
       insert(:revision,
         resource: survey_question_resource,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity")
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        activity_type_id: mcq_reg.id,
+        title: "Experience",
+        content: generate_attempt_content()
       )
 
     survey_resource = insert(:resource)
@@ -953,15 +988,31 @@ defmodule Oli.TestHelpers do
         resource: survey_resource,
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         content: %{
-          "version" => "0.1.0",
-          "model" => [
+          model: [
             %{
-              id: "420168311",
+              id: "4286170280",
+              type: "content",
+              children: [
+                %{
+                  id: "2905665054",
+                  type: "p",
+                  children: [
+                    %{
+                      text: ""
+                    }
+                  ]
+                }
+              ]
+            },
+            %{
+              id: "3330767711",
               type: "activity-reference",
               children: [],
               activity_id: survey_question_resource.id
             }
-          ]
+          ],
+          bibrefs: [],
+          version: "0.1.0"
         },
         author_id: author.id,
         title: "Course Survey"
@@ -1049,7 +1100,7 @@ defmodule Oli.TestHelpers do
         open_and_free: true,
         registration_open: true,
         type: :enrollable,
-        required_survey_resource_id: (survey_enabled && survey_resource.id) || nil
+        required_survey_resource_id: (opts[:survey_enabled] && survey_resource.id) || nil
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -1079,10 +1130,43 @@ defmodule Oli.TestHelpers do
     {:ok, section: section, survey: survey_revision, survey_questions: [survey_question_revision]}
   end
 
+  def create_survey_access(student, section, survey, survey_questions) do
+    create_activity_attempts(student, section, survey, survey_questions, "active")
+  end
+
+  def complete_student_survey(student, section, survey, survey_questions) do
+    create_activity_attempts(student, section, survey, survey_questions, "evaluated")
+  end
+
+  defp create_activity_attempts(student, section, survey, survey_questions, status) do
+    resource_access =
+      insert(:resource_access, user: student, section: section, resource: survey.resource)
+
+    resource_attempt = insert(:resource_attempt, resource_access: resource_access)
+
+    activity_attempts =
+      Enum.map(survey_questions, fn question ->
+        insert(:activity_attempt,
+          resource_attempt: resource_attempt,
+          revision: question,
+          lifecycle_state: status,
+          transformed_model: generate_attempt_content()
+        )
+      end)
+
+    Enum.map(activity_attempts, fn attempt ->
+      insert(:part_attempt,
+        activity_attempt: attempt,
+        response: %{files: [], input: "option_1_id"}
+      )
+    end)
+  end
+
   def section_with_gating_conditions(_context) do
     author = insert(:author)
     project = insert(:project, authors: [author])
-    student = insert(:user)
+    student = insert(:user, %{family_name: "Example", given_name: "Student1"})
+    student_2 = insert(:user, %{family_name: "Example", given_name: "Student2"})
 
     # Create graded pages
     graded_page_1_resource = insert(:resource)
@@ -1262,6 +1346,7 @@ defmodule Oli.TestHelpers do
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     enroll_user_to_section(student, section, :context_learner)
+    enroll_user_to_section(student_2, section, :context_learner)
 
     insert(:gating_condition, %{
       section: section,
@@ -1295,6 +1380,22 @@ defmodule Oli.TestHelpers do
       data: %GatingConditionData{end_datetime: nil}
     })
 
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_5_resource,
+      type: :schedule,
+      user: student_2,
+      data: %GatingConditionData{end_datetime: ~U[2023-07-08 14:00:00Z]}
+    })
+
+    insert(:gating_condition, %{
+      section: section,
+      resource: graded_page_6_resource,
+      type: :always_open,
+      user: student_2,
+      data: %GatingConditionData{end_datetime: nil}
+    })
+
     %{
       section: section,
       graded_page_1: graded_page_1_revision,
@@ -1303,7 +1404,8 @@ defmodule Oli.TestHelpers do
       graded_page_4: graded_page_4_revision,
       graded_page_5: graded_page_5_revision,
       graded_page_6: graded_page_6_revision,
-      student_with_gating_condition: student
+      student_with_gating_condition: student,
+      student_with_gating_condition_2: student_2
     }
   end
 
