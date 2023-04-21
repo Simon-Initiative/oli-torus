@@ -7,10 +7,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   alias OliWeb.Common.Params
   alias OliWeb.Router.Helpers, as: Routes
 
-  prop params, :any
-  prop table_model, :any
-  prop total_count, :integer
-  prop units_modules, :map
+  prop(params, :any)
+  prop(table_model, :any)
+  prop(total_count, :integer)
+  prop(units_modules, :map)
+  prop(student_id, :integer)
+  prop(patch_url_type, :atom, required: true)
 
   @default_params %{
     offset: 0,

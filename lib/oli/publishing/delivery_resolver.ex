@@ -74,7 +74,6 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
-
   @impl Resolver
   def from_revision_slug(section_slug, revision_slug) do
     fn ->
@@ -127,6 +126,22 @@ defmodule Oli.Publishing.DeliveryResolver do
     fn ->
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
         where: rev.resource_type_id == ^page_id,
+        select: rev
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :delivery], :duration)
+  end
+
+  def pages_with_attached_objectives(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    fn ->
+      from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
+        where:
+          rev.resource_type_id == ^page_id and
+            fragment("? != '[]'", rev.objectives["attached"]),
         select: rev
       )
       |> Repo.all()

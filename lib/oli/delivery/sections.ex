@@ -1117,19 +1117,21 @@ defmodule Oli.Delivery.Sections do
 
   def get_project_by_section_resource(section_id, resource_id) do
     Repo.one(
-      from s in SectionResource,
+      from(s in SectionResource,
         join: p in Project,
         on: s.project_id == p.id,
         where: s.section_id == ^section_id and s.resource_id == ^resource_id,
         select: p
+      )
     )
   end
 
   def get_section_resource(section_id, resource_id) do
     Repo.one(
-      from s in SectionResource,
+      from(s in SectionResource,
         where: s.section_id == ^section_id and s.resource_id == ^resource_id,
         select: s
+      )
     )
   end
 
@@ -2184,7 +2186,7 @@ defmodule Oli.Delivery.Sections do
   """
   def get_units_and_modules_containers(section_slug) do
     query =
-      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where:
           s.slug == ^section_slug and sr.numbering_level in [1, 2] and rev.resource_type_id == 2,
         select: %{
@@ -2193,6 +2195,7 @@ defmodule Oli.Delivery.Sections do
           numbering_level: sr.numbering_level,
           numbering_index: sr.numbering_index
         }
+      )
 
     case Repo.all(query) do
       [] -> {0, get_pages(section_slug)}
@@ -2213,11 +2216,12 @@ defmodule Oli.Delivery.Sections do
 
   def get_soft_scheduled_dates(section_slug) do
     query =
-      from [sr, _s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      from([sr, _s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
         select: {
           sr.resource_id,
           %{end_date: sr.end_date, scheduled_type: sr.scheduling_type}
         }
+      )
 
     Repo.all(query)
     |> Enum.into(%{})
@@ -2225,7 +2229,7 @@ defmodule Oli.Delivery.Sections do
 
   def get_hard_scheduled_dates(section_slug) do
     query =
-      from [_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      from([_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
         join: gc in GatingCondition,
         on: gc.section_id == s.id,
         where: gc.type == :schedule and is_nil(gc.user_id),
@@ -2236,6 +2240,7 @@ defmodule Oli.Delivery.Sections do
             scheduled_type: gc.type
           }
         }
+      )
 
     Repo.all(query)
     |> Enum.into(%{})
@@ -2243,7 +2248,7 @@ defmodule Oli.Delivery.Sections do
 
   def get_hard_scheduled_dates_for_student(section_slug, student_id) do
     query =
-      from [_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      from([_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
         join: gc in GatingCondition,
         on: gc.section_id == s.id,
         where: gc.type == :schedule and gc.user_id == ^student_id,
@@ -2254,6 +2259,7 @@ defmodule Oli.Delivery.Sections do
             scheduled_type: gc.type
           }
         }
+      )
 
     Repo.all(query)
     |> Enum.into(%{})
@@ -2261,13 +2267,14 @@ defmodule Oli.Delivery.Sections do
 
   defp get_pages(section_slug) do
     query =
-      from [sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where: s.slug == ^section_slug and rev.resource_type_id == 1,
         select: %{
           id: rev.resource_id,
           title: rev.title,
           numbering_index: sr.numbering_index
         }
+      )
 
     Repo.all(query)
   end
@@ -2385,8 +2392,10 @@ defmodule Oli.Delivery.Sections do
   def get_objectives_and_subobjectives(section_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
-    objectives_list =
-      DeliveryResolver.all_pages(section_slug)
+    pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
+
+    objectives_id_list =
+      pages_with_objectives
       |> Enum.into([], fn elem -> elem.objectives["attached"] end)
       |> List.flatten()
 
@@ -2398,7 +2407,7 @@ defmodule Oli.Delivery.Sections do
         left_join: rev2 in Revision,
         on: rev2.resource_id in rev.children,
         where: rev.deleted == false and rev.resource_type_id == ^page_id,
-        where: rev.resource_id in ^objectives_list,
+        where: rev.resource_id in ^objectives_id_list,
         group_by: [rev2.title, rev.resource_id, rev.title],
         select: %{
           resource_id: rev.resource_id,
@@ -2413,7 +2422,7 @@ defmodule Oli.Delivery.Sections do
       |> Repo.all()
 
     objectives_pages_map =
-      DeliveryResolver.all_pages(section_slug)
+      pages_with_objectives
       |> Enum.reduce(%{}, fn page, acc ->
         Enum.map(page.objectives["attached"] || [], fn obj_id ->
           {obj_id, [page.resource_id]}
