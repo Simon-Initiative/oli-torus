@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import {
-  findInSequence,
-  getHierarchy,
-  SequenceEntry,
-  SequenceEntryChild,
-} from 'apps/delivery/store/features/groups/actions/sequence';
-import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import React, { Fragment, useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import {
+  SequenceEntry,
+  SequenceEntryChild,
+  findInSequence,
+  getHierarchy,
+} from 'apps/delivery/store/features/groups/actions/sequence';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { SequenceDropdown } from './SequenceDropdown';
 
 interface ScreenDropdownProps {
@@ -20,7 +20,7 @@ interface ScreenDropdownProps {
   buttonCSSClass?: string;
 }
 const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
-  const { id, label, value, onChange, dropDownCSSClass, buttonCSSClass } = props;
+  const { id, label, value, onChange, buttonCSSClass } = props;
   // console.log('ScreenDropdownTemplate', props);
   const sequence = useSelector(selectSequence);
 

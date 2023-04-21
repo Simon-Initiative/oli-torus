@@ -1,8 +1,8 @@
-import { ApplicationMode } from '../../../store/app/slice';
-import { edit } from '../../../../../data/persistence/resource';
 import { PageContent } from '../../../../../data/content/resource';
-import { cloneT } from '../../../../../utils/common';
 import { acquireLock } from '../../../../../data/persistence/lock';
+import { edit } from '../../../../../data/persistence/resource';
+import { cloneT } from '../../../../../utils/common';
+import { ApplicationMode } from '../../../store/app/slice';
 
 /**
  * Logic for applying the onboarding wizard.

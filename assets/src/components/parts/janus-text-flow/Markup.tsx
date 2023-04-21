@@ -1,6 +1,6 @@
-import { templatizeText } from 'adaptivity/scripting';
-import { Environment } from 'janus-script';
 import React, { Fragment, useEffect, useRef } from 'react';
+import { Environment } from 'janus-script';
+import { templatizeText } from 'adaptivity/scripting';
 import guid from 'utils/guid';
 
 // removes irrelevant styles

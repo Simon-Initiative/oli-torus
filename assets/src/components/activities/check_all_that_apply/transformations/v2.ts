@@ -1,3 +1,4 @@
+import { Maybe } from 'tsmonad';
 import { CATASchemaV1 } from 'components/activities/check_all_that_apply/transformations/v1';
 import {
   ActivityModelSchema,
@@ -8,16 +9,15 @@ import {
   Transformation,
 } from 'components/activities/types';
 import {
+  Responses,
   getChoiceIds,
   getCorrectResponse,
   getResponseBy,
   getResponseId,
   getResponses,
   getTargetedResponses,
-  Responses,
 } from 'data/activities/model/responses';
 import { matchListRule, matchRule } from 'data/activities/model/rules';
-import { Maybe } from 'tsmonad';
 
 // Support targeted feedback the way other activities do
 export interface CATASchemaV2 extends ActivityModelSchema {

@@ -1,5 +1,5 @@
-import { EntityId } from '@reduxjs/toolkit';
 import React from 'react';
+import { EntityId } from '@reduxjs/toolkit';
 import { AllPaths } from '../paths/path-types';
 import { sortByPriority } from '../paths/path-utils';
 import { PathEditBox } from './PathEditor';

@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
 import {
+  PartAuthoringMode,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
-  PartAuthoringMode,
 } from '../partsApi';
 import InputNumberAuthor from './InputNumberAuthor';
 import {
@@ -15,6 +13,9 @@ import {
   simpleUiSchema,
   uiSchema,
 } from './schema';
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };

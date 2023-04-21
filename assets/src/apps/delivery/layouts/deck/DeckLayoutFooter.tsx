@@ -1,8 +1,8 @@
+import React, { CSSProperties, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { applyState, templatizeText } from 'adaptivity/scripting';
 import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
-import React, { CSSProperties, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -397,7 +397,7 @@ const DeckLayoutFooter: React.FC = () => {
         return globalOp;
       });
 
-      const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      const _mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
       if (!isPreviewMode) {
         saveMutateStateValuesToServer(mutations);
       }

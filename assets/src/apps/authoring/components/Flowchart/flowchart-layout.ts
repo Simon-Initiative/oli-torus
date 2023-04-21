@@ -1,5 +1,5 @@
-import { FlowchartEdge, FlowchartNode } from './flowchart-utils';
 import dagre from 'dagre';
+import { FlowchartEdge, FlowchartNode } from './flowchart-utils';
 
 export const BOX_WIDTH = 185;
 export const BOX_HEIGHT = 170;

@@ -1,8 +1,8 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { VlabActions } from 'components/activities/vlab/actions';
+import { VlabSchema, VlabValue } from 'components/activities/vlab/schema';
 import { friendlyVlabParameter } from 'components/activities/vlab/utils';
-import { VlabValue, VlabSchema } from 'components/activities/vlab/schema';
-import React from 'react';
 
 interface Props {
   input: VlabValue;

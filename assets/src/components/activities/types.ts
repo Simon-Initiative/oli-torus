@@ -1,10 +1,10 @@
+import { Model } from 'data/content/model/elements/factories';
 import { ModelElement } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
-import { Model } from 'data/content/model/elements/factories';
 
 /**
  * Converts a rich text feedback, that may contain inline markup and

@@ -1,10 +1,12 @@
 /* eslint-disable react/display-name */
+import React from 'react';
+import { Text } from 'slate';
 import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
-import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
-import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
-import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { MathInput } from 'components/activities/common/delivery/inputs/MathInput';
+import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
+import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
   Audio,
@@ -13,10 +15,16 @@ import {
   CodeLine,
   CodeV1,
   CodeV2,
-  Figure,
+  CommandButton as CommandButtonModel,
+  Conjugation as ConjugationModel,
   Definition as DefinitionModel,
   Pronunciation as DefinitionPronunciationModel,
+  DescriptionListDefinition,
+  DescriptionList as DescriptionListModel,
+  DescriptionListTerm,
   Dialog as DialogModel,
+  Figure,
+  Foreign,
   FormulaBlock,
   FormulaInline,
   HeadingFive,
@@ -37,6 +45,7 @@ import {
   Paragraph,
   Popup as PopupModel,
   Table,
+  TableConjugation as TableConjugationModel,
   TableData,
   TableHeader,
   TableRow,
@@ -44,36 +53,27 @@ import {
   Video,
   Webpage,
   YouTube,
-  Conjugation as ConjugationModel,
-  TableConjugation as TableConjugationModel,
-  Foreign,
-  CommandButton as CommandButtonModel,
-  DescriptionList as DescriptionListModel,
-  DescriptionListDefinition,
-  DescriptionListTerm,
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
-import React from 'react';
-import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
+import { ContentTable } from '../../../components/ContentTable';
+import { Dialog } from '../../../components/Dialog';
+import { CommandButton } from '../../../components/common/CommandButton';
+import { Conjugation } from '../../../components/common/Conjugation';
+import { Definition } from '../../../components/common/Definition';
+import { DescriptionList } from '../../../components/common/DescriptionList';
+import { Figure as FigureElement } from '../../../components/common/Figure';
 import {
   MathJaxLatexFormula,
   MathJaxMathMLFormula,
 } from '../../../components/common/MathJaxFormula';
-import { ContentTable } from '../../../components/ContentTable';
+import { Popup } from '../../../components/common/Popup';
+import { Pronunciation } from '../../../components/common/Pronunciation';
+import { TableConjugation } from '../../../components/common/TableConjugation';
 import { cellAttributes } from '../../../components/editing/elements/table/table-util';
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';
-import { Next, WriterImpl, ContentWriter } from './writer';
-import { Definition } from '../../../components/common/Definition';
-import { Pronunciation } from '../../../components/common/Pronunciation';
-import { Figure as FigureElement } from '../../../components/common/Figure';
-import { Dialog } from '../../../components/Dialog';
-import { Conjugation } from '../../../components/common/Conjugation';
-import { TableConjugation } from '../../../components/common/TableConjugation';
-import { Popup } from '../../../components/common/Popup';
-import { CommandButton } from '../../../components/common/CommandButton';
-import { DescriptionList } from '../../../components/common/DescriptionList';
+import { ContentWriter, Next, WriterImpl } from './writer';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.

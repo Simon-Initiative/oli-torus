@@ -59,6 +59,8 @@ defmodule Oli.Delivery.Sections.Section do
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_explorations, :boolean, default: false)
 
+    belongs_to :required_survey, Oli.Resources.Resource, foreign_key: :required_survey_resource_id
+
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
 
     belongs_to(:lti_1p3_deployment, Oli.Lti.Tool.Deployment, foreign_key: :lti_1p3_deployment_id)
@@ -148,7 +150,8 @@ defmodule Oli.Delivery.Sections.Section do
       :skip_email_verification,
       :publisher_id,
       :display_curriculum_item_numbering,
-      :contains_explorations
+      :contains_explorations,
+      :required_survey_resource_id
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

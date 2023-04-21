@@ -1,6 +1,6 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
-import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { JSONSchema7Object } from 'json-schema';
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface VideoModel extends JanusAbsolutePositioned, JanusCustomCss {

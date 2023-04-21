@@ -7,8 +7,8 @@ import {
   getLocalizedStateSnapshot,
 } from '../../../../../../adaptivity/scripting';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';
-import { setMutationTriggered } from '../slice';
 import AdaptivitySlice from '../name';
+import { setMutationTriggered } from '../slice';
 
 export const applyStateChange = createAsyncThunk(
   `${AdaptivitySlice}/applyStateChange`,

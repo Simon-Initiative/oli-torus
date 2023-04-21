@@ -1,31 +1,31 @@
+import { Descendant, Editor, Element, Operation } from 'slate';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import {
-  Dropdown,
-  VlabInput,
-  VlabSchema,
-  VlabInputType,
-  VlabValue,
-} from 'components/activities/vlab/schema';
-import {
   Choice,
   ChoiceId,
+  Part,
+  PostUndoable,
+  Stem,
   makeChoice,
   makeHint,
   makePart,
   makeUndoable,
-  Part,
-  PostUndoable,
-  Stem,
 } from 'components/activities/types';
+import {
+  Dropdown,
+  VlabInput,
+  VlabInputType,
+  VlabSchema,
+  VlabValue,
+} from 'components/activities/vlab/schema';
 import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/slateUtils';
 import { Choices } from 'data/activities/model/choices';
 import { List } from 'data/activities/model/list';
-import { getCorrectResponse, Responses } from 'data/activities/model/responses';
+import { Responses, getCorrectResponse } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model/elements/types';
-import { Descendant, Editor, Element, Operation } from 'slate';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 

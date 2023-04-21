@@ -1,8 +1,8 @@
-import { evalAssignScript, getEnvState, getLocalizedStateSnapshot } from 'adaptivity/scripting';
-import { EventEmitter } from 'events';
-import { Environment } from 'janus-script';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { EventEmitter } from 'events';
+import { Environment } from 'janus-script';
+import { evalAssignScript, getEnvState, getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import {
   NotificationContext,
   NotificationType,
@@ -10,7 +10,6 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import * as ActivityTypes from '../types';
-import { StudentResponse } from '../types';
 import PartsLayoutRenderer from './components/delivery/PartsLayoutRenderer';
 import { AdaptiveModelSchema } from './schema';
 
@@ -23,19 +22,19 @@ const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
-  const [activityId, setActivityId] = useState<string>(
+  const [activityId, _setActivityId] = useState<string>(
     props.model?.id || props.model?.activity_id || `unknown_activity`,
   );
-  const [mode, setMode] = useState<string>(props.mode);
+  const [mode, _setMode] = useState<string>(props.mode);
 
   const isReviewMode = mode === 'review';
 
-  const [partsLayout, setPartsLayout] = useState(
+  const [partsLayout, _setPartsLayout] = useState(
     props.model.content?.partsLayout || props.model.partsLayout || [],
   );
 
   const MAX_LISTENERS = 250;
-  const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(MAX_LISTENERS));
+  const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(MAX_LISTENERS));
 
   // TODO: this type should be Environment | undefined; this is a local script env for each activity
   // should be provided by the parent as a child env, possibly default to having its own instead
@@ -211,12 +210,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             return collect;
           }, {});
           // in the case we are nohost (pageless), we should apply the page state first if we have it
-          const pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
+          const _pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
           /* console.log('PAGE STATE APPLY RESULTS', {
             res: pageStateApplyResults,
             state: props.context.pageState,
           }); */
-          const testRes = evalAssignScript(attemptStateMap, scriptEnv);
+          const _testRes = evalAssignScript(attemptStateMap, scriptEnv);
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging

@@ -65,7 +65,7 @@ defmodule OliWeb.Admin.Ingest do
              List.first(path_upload),
              author
            ) do
-      {:noreply, redirect(socket, to: Routes.project_path(OliWeb.Endpoint, :overview, project))}
+      {:noreply, redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug))}
     else
       error ->
         {:noreply, assign(socket, error: error)}

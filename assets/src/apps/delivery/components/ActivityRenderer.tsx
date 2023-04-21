@@ -1,5 +1,6 @@
-import { CapiVariableTypes } from 'adaptivity/capi';
-import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Environment } from 'janus-script';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -10,16 +11,15 @@ import {
   ActivityModelSchema,
   ActivityState,
   ClientEvaluation,
-  makeFeedback,
   PartResponse,
   PartState,
   StudentResponse,
   Success,
+  makeFeedback,
 } from 'components/activities/types';
+import { CapiVariableTypes } from 'adaptivity/capi';
+import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
 import * as Extrinsic from 'data/persistence/extrinsic';
-import { Environment } from 'janus-script';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
 import { handleValueExpression } from '../layouts/deck/DeckLayoutFooter';

@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
-import { selectActiveEverapp, setActiveEverapp } from '../slice';
 import PageSlice from '../name';
+import { selectActiveEverapp, setActiveEverapp } from '../slice';
 
 export const toggleEverapp = createAsyncThunk(
   `${PageSlice}/toggleEverapp`,

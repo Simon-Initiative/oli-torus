@@ -1,12 +1,12 @@
 import { CATASchema as CATA } from 'components/activities/check_all_that_apply/schema';
 import {
+  Transform,
   makeChoice,
   makeHint,
   makePart,
   makeResponse,
   makeStem,
   makeTransformation,
-  Transform,
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { matchListRule } from 'data/activities/model/rules';

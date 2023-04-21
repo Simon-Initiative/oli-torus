@@ -1,5 +1,5 @@
-import { RichText } from 'components/activities/types';
 import React from 'react';
+import { RichText } from 'components/activities/types';
 import { WriterContext } from './context';
 import { HtmlParser } from './html';
 import { ContentWriter } from './writer';

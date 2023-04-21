@@ -1,5 +1,5 @@
+import React, { useCallback } from 'react';
 import { Tooltip } from 'components/common/Tooltip';
-import React, { useCallback, useRef } from 'react';
 import { AudioSource } from '../../../../data/content/model/elements/types';
 import { useAudio } from '../../../hooks/useAudio';
 import { CommandContext } from '../commands/interfaces';

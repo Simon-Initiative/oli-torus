@@ -1,6 +1,6 @@
-import { setShowHistory } from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { setShowHistory } from 'apps/delivery/store/features/page/slice';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';

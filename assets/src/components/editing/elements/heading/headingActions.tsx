@@ -1,9 +1,9 @@
 import React from 'react';
+import { Editor, Element, Transforms } from 'slate';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
 import { getNearestBlock, isActive, isTopLevel } from 'components/editing/slateUtils';
-import { Editor, Element, Transforms } from 'slate';
 
 export const toggleHeading = createButtonCommandDesc({
   icon: <i className="fa-solid fa-heading"></i>,

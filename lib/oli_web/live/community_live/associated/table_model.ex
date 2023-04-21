@@ -62,7 +62,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
         SortableTableModel.render_link_column(assigns, get_field(:title, item), route_path)
 
       "project" ->
-        route_path = Routes.project_path(OliWeb.Endpoint, :overview, get_field(:slug, item))
+        route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, get_field(:slug, item))
         SortableTableModel.render_link_column(assigns, get_field(:title, item), route_path)
     end
   end

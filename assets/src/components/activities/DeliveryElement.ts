@@ -5,12 +5,12 @@ import {
   ActivityModelSchema,
   ActivityState,
   ClientEvaluation,
+  DeliveryMode,
   Hint,
   PartResponse,
   PartState,
   StudentResponse,
   Success,
-  DeliveryMode,
 } from './types';
 
 /**

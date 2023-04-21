@@ -1,11 +1,11 @@
 import React from 'react';
-import { FeatureFlags } from 'apps/page-editor/types';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { FeatureFlags } from 'apps/page-editor/types';
 import {
-  createDefaultSelection,
-  createBreak,
-  createSurvey,
   ResourceContent,
+  createBreak,
+  createDefaultSelection,
+  createSurvey,
 } from 'data/content/resource';
 
 // returns true if non of the parents are a survey element

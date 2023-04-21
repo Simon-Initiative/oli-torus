@@ -1,8 +1,7 @@
 import React from 'react';
-
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
-import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { createButtonCommandDesc } from '../../elements/commands/commandFactories';
 
 interface ListStyleProps {

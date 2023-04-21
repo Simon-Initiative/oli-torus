@@ -1,5 +1,5 @@
-import { Modal, ModalProps } from 'react-bootstrap';
 import React, { ReactNode, useContext, useState } from 'react';
+import { Modal, ModalProps } from 'react-bootstrap';
 import { createPortal } from 'react-dom';
 
 //  This helps us target our react-bootstrap modals to be within the shadow-dom that the advanced authoring app lives.

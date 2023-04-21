@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as Bank from 'data/content/bank';
-import { LogicProps } from '../../components/logic/common';
 import { Expression } from '../../components/logic/Expression';
+import { LogicProps } from '../../components/logic/common';
 
 export interface LogicFilterProps extends LogicProps {
   expressions: Bank.Expression[];

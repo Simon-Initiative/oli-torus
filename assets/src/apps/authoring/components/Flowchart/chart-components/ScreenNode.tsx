@@ -1,29 +1,26 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useCallback, useContext } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useDrop } from 'react-dnd';
+import { useDispatch, useSelector } from 'react-redux';
 import { Handle, Position } from 'reactflow';
-
+import { useToggle } from '../../../../../components/hooks/useToggle';
 import {
   IActivity,
   selectAllActivities,
   selectCurrentActivityId,
 } from '../../../../delivery/store/features/activities/slice';
-
-import { FlowchartEventContext } from '../FlowchartEventContext';
-import { screenTypes } from '../screens/screen-factories';
-import { ScreenButton } from './ScreenButton';
-import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
-import { useToggle } from '../../../../../components/hooks/useToggle';
-import { validateScreen } from '../screens/screen-validation';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
+import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
+import { FlowchartEventContext } from '../FlowchartEventContext';
 import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
-import { WelcomeScreenIcon } from '../screen-icons/WelcomeScreenIcon';
-import { ScreenValidationColors, screenTypeToIcon } from '../screen-icons/screen-icons';
+import { screenTypes } from '../screens/screen-factories';
+import { validateScreen } from '../screens/screen-validation';
+import { ScreenButton } from './ScreenButton';
+import { ScreenValidationColors } from '../screen-icons/screen-icons';
+import { ScreenIcon } from './ScreenIcon';
 import { ScreenEditIcon } from './ScreenEditIcon';
 import { ScreenDuplicateIcon } from './ScreenDuplicateIcon';
 import { ScreenDeleteIcon } from './ScreenDeleteIcon';
-import { ScreenIcon } from './ScreenIcon';
 
 interface NodeProps {
   data: IActivity;

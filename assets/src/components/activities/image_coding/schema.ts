@@ -1,4 +1,4 @@
-import { ActivityModelSchema, Stem, Part, Feedback } from '../types';
+import { ActivityModelSchema, Feedback, Part, Stem } from '../types';
 
 export interface ImageCodingModelSchema extends ActivityModelSchema {
   stem: Stem;

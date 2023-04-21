@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
 import {
-  authoringObservedAttributes,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
   PartAuthoringMode,
+  authoringObservedAttributes,
 } from '../partsApi';
 import CapiIframeAuthor from './CapiIframeAuthor';
 import {
@@ -18,6 +16,9 @@ import {
   uiSchema,
   validateUserConfig,
 } from './schema';
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes, ...authoringObservedAttributes];
 const customEvents: any = {

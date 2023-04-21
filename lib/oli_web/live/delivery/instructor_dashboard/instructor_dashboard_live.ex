@@ -23,6 +23,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(%{"active_tab" => "learning_objectives"} = params, _, socket) do
+    socket =
+      socket
+      |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
+      |> assign_new(:objectives_tab, fn ->
+        %{
+          objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section.slug),
+          filter_options:
+            Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
+        }
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     {:noreply,
      assign(socket, params: params, active_tab: String.to_existing_atom(params["active_tab"]))}
@@ -33,6 +49,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs active_tab={@active_tab} section_slug={@section_slug} preview_mode={@preview_mode} />
       <%= render_tab(assigns) %>
+    """
+  end
+
+  defp render_tab(%{active_tab: :learning_objectives} = assigns) do
+    ~H"""
+      <.live_component
+        id="objectives_table"
+        module={OliWeb.Components.Delivery.LearningObjectives}
+        params={@params}
+        section_slug={@section.slug}
+        objectives_tab={@objectives_tab}
+      />
     """
   end
 
@@ -48,6 +76,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
+  defp render_tab(%{active_tab: :quiz_scores} = assigns) do
+    ~H"""
+      <.live_component
+        id="quiz_scores_table"
+        module={OliWeb.Components.Delivery.QuizScores}
+        params={@params}
+        section={@section}
+        patch_url_type={:quiz_scores}
+      />
+    """
+  end
+
   defp render_tab(%{active_tab: :content} = assigns) do
     ~H"""
       <.live_component
@@ -56,6 +96,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       params={@params}
       section_slug={@section.slug}
       containers={@containers}
+      patch_url_type={:instructor_dashboard}
       />
     """
   end

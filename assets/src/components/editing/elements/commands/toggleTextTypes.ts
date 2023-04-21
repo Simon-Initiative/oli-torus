@@ -1,5 +1,5 @@
-import { Model } from 'data/content/model/elements/factories';
 import { Editor, Element, Node, Path, Transforms } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
 
 const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 const lists = ['ul', 'ol'];

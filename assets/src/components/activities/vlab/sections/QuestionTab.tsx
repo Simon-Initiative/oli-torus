@@ -1,14 +1,14 @@
+import React from 'react';
+import { Editor, Element, Transforms } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
-import { Dropdown, VlabInput, VlabSchema, VlabValue } from 'components/activities/vlab/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
+import { Dropdown, VlabInput, VlabSchema, VlabValue } from 'components/activities/vlab/schema';
 import { VlabParameterSelector } from 'components/activities/vlab/sections/VlabParameterSelector';
 import { partTitle } from 'components/activities/vlab/utils';
 import { Card } from 'components/misc/Card';
 import { getParts } from 'data/activities/model/utils';
-import React from 'react';
-import { Editor, Element, Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
 
 interface Props {
   editor: ReactEditor & Editor;

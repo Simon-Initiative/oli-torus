@@ -1,9 +1,9 @@
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
-import { isActive } from '../../slateUtils';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Model } from 'data/content/model/elements/factories';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
+import { Model } from 'data/content/model/elements/factories';
+import { isActive } from '../../slateUtils';
 
 const ui = {
   icon: <i className="fa-solid fa-code"></i>,

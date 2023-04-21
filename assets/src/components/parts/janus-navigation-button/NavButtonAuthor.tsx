@@ -1,5 +1,5 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { NavButtonModel } from './schema';
 
 const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (props) => {
@@ -7,9 +7,6 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
 
   const {
     title,
-    x = 0,
-    y = 0,
-    z = 0,
     width,
     height,
     textColor,
@@ -18,7 +15,6 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     enabled = true,
     ariaLabel,
     transparent,
-    selected,
   } = model;
 
   const styles: CSSProperties = {

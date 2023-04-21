@@ -1,4 +1,4 @@
-import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { Stripe, loadStripe } from '@stripe/stripe-js';
 
 /* ------- UI helpers ------- */
 

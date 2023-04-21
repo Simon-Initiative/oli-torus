@@ -134,6 +134,20 @@ module.exports = {
     'feedback-partially-correct-bg': colors.yellow['200'],
     'feedback-partially-correct-color': colors.black,
     'feedback-partially-correct-graphic-color': colors.yellow['500'],
+    toolbar: {
+      bg: {
+        DEFAULT: '#f8f9fb',
+        dark: {
+          DEFAULT: '#3e3f44',
+        },
+      },
+      border: {
+        DEFAULT: '#e5e6e8',
+        dark: {
+          DEFAULT: '#55565d',
+        },
+      },
+    },
     delivery: {
       body: {
         DEFAULT: '#f3f5f8',

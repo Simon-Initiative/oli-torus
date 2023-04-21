@@ -40,6 +40,14 @@
   @apply bg-red-200 bg-opacity-20;
 }
 
+.instructor_dashboard_table tr:has(div[data-engagement-check='false']) {
+  @apply bg-red-200 bg-opacity-20;
+}
+
 .instructor_dashboard_table td {
   @apply border-r-0 border-l-0;
+}
+
+.instructor_dashboard_table tr:has(div[data-score-check='false']) {
+  @apply bg-red-200 bg-opacity-20;
 }

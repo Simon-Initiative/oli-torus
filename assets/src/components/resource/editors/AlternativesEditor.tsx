@@ -1,33 +1,33 @@
 import React, { PropsWithChildren, useState } from 'react';
+import { Maybe } from 'tsmonad';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { Tooltip } from 'components/common/Tooltip';
+import { AlternativesTypes, useAlternatives } from 'components/hooks/useAlternatives';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import { SelectModal } from 'components/modal/SelectModal';
+import { modalActions } from 'actions/modal';
+import { makePageUndoable } from 'apps/page-editor/types';
 import {
   AlternativeContent,
   AlternativesContent,
-  createAlternative,
   ResourceContent,
+  createAlternative,
 } from 'data/content/resource';
-import { EditorProps } from './createEditor';
+import * as Persistence from 'data/persistence/resource';
+import { classNames } from 'utils/classNames';
+import styles from './AlternativesEditor.modules.scss';
+import contentBlockStyles from './ContentBlock.modules.scss';
+import { GroupEditor } from './GroupEditor';
 import {
   Description,
   ExpandToggle,
-  OutlineItem,
-  OutlineItemProps,
   OutlineGroup,
   OutlineGroupProps,
+  OutlineItem,
+  OutlineItemProps,
   resourceGroupTitle,
 } from './OutlineItem';
-import styles from './AlternativesEditor.modules.scss';
-import contentBlockStyles from './ContentBlock.modules.scss';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import { classNames } from 'utils/classNames';
-import { Maybe } from 'tsmonad';
-import { GroupEditor } from './GroupEditor';
-import { modalActions } from 'actions/modal';
-import { SelectModal } from 'components/modal/SelectModal';
-import * as Persistence from 'data/persistence/resource';
-import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
-import { makePageUndoable } from 'apps/page-editor/types';
-import { useAlternatives, AlternativesTypes } from 'components/hooks/useAlternatives';
-import { Tooltip } from 'components/common/Tooltip';
+import { EditorProps } from './createEditor';
 
 interface AlternativesEditorProps extends EditorProps {
   contentItem: AlternativesContent;

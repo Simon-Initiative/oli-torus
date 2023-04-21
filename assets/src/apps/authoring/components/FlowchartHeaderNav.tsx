@@ -13,6 +13,7 @@ import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
 import { getScreenQuestionType } from './Flowchart/paths/path-options';
 import { verifyFlowchartLesson } from './Flowchart/flowchart-actions/verify-flowchart-lesson';
+
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;

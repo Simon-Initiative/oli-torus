@@ -2,12 +2,12 @@ import { AuthoringElementProps } from 'components/activities/AuthoringElement';
 import { EvaluationResponse, RequestHintResponse } from 'components/activities/DeliveryElement';
 import {
   Action,
+  ActivityModelSchema,
   ActivityState,
-  makeFeedback,
-  makeHint,
   DeliveryMode,
   PartState,
-  ActivityModelSchema,
+  makeFeedback,
+  makeHint,
 } from 'components/activities/types';
 
 const partState: PartState = {

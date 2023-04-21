@@ -1,7 +1,7 @@
 import { UiSchema } from '@rjsf/core';
-import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import chroma from 'chroma-js';
 import { JSONSchema7 } from 'json-schema';
+import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 

@@ -3,10 +3,10 @@ import {
   ChoiceId,
   ChoiceIdsToResponseId,
   HasParts,
-  makeResponse,
-  makeUndoable,
   PostUndoable,
   ResponseId,
+  makeResponse,
+  makeUndoable,
 } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import { getCorrectResponse, getResponseBy, getResponseId } from 'data/activities/model/responses';

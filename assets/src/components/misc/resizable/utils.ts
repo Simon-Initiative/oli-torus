@@ -1,4 +1,4 @@
-import { BoundingRect, Point, Handle } from 'components/misc/resizable/types';
+import { BoundingRect, Handle, Point } from 'components/misc/resizable/types';
 import { MousePosition } from 'components/misc/resizable/useMousePosition';
 
 const HANDLE_CENTER_IN_PIXELS = 8;

@@ -1,4 +1,5 @@
 /* eslint-disable no-prototype-builtins */
+
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
@@ -62,7 +63,7 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
                   data-bs-target={`#collapse`}
                   aria-expanded={expandedRules[`initState-${currentActivity.id}`]}
                   aria-controls={`collapse`}
-                  onClick={(e) =>
+                  onClick={() =>
                     setExpandedRules({
                       ...expandedRules,
                       [`initState-${currentActivity.id}`]:
@@ -124,7 +125,7 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
                   data-bs-target={`#collapse${ruleIndex}`}
                   aria-expanded={expandedRules[`rule-${ruleIndex}`]}
                   aria-controls={`collapse${ruleIndex}`}
-                  onClick={(e) =>
+                  onClick={() =>
                     setExpandedRules({
                       ...expandedRules,
                       [`rule-${ruleIndex}`]: !expandedRules[`rule-${ruleIndex}`],

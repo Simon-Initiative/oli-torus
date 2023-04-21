@@ -1,4 +1,4 @@
-import { makeRequest, Ok, ServerError } from './common';
+import { Ok, ServerError, makeRequest } from './common';
 
 export type FetchPreferencesResult = Preferences | ServerError;
 export type UpdatePreferencesResult = Ok | ServerError;

@@ -1,5 +1,5 @@
-import Delta from 'quill-delta';
 import { CSSProperties } from 'react';
+import Delta from 'quill-delta';
 
 interface JanusMarkupNode {
   tag: string;

@@ -1,5 +1,5 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import React from 'react';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { classNames } from 'utils/classNames';
 
 export type Props = {

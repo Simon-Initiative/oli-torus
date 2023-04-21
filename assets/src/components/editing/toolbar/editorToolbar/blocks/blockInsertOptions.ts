@@ -1,24 +1,24 @@
+import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { insertAudio } from 'components/editing/elements/audio/audioActions';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
-import { ActivityEditorMap } from 'data/content/editors';
-import { ResourceContext } from 'data/content/resource';
-import { insertAudio } from 'components/editing/elements/audio/audioActions';
 import { insertImage } from 'components/editing/elements/image/imageActions';
-import { ytCmdDesc } from 'components/editing/elements/youtube/YoutubeElement';
-import { ContentModelMode } from 'data/content/model/elements/types';
 import { insertTable } from 'components/editing/elements/table/commands/insertTable';
 import { insertWebpage } from 'components/editing/elements/webpage/webpageActions';
+import { ytCmdDesc } from 'components/editing/elements/youtube/YoutubeElement';
 import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
-import { insertFormula } from '../../../elements/formula/formulaActions';
+import { ActivityEditorMap } from 'data/content/editors';
+import { ContentModelMode } from 'data/content/model/elements/types';
+import { ResourceContext } from 'data/content/resource';
 import { insertCallout } from '../../../elements/callout/calloutActions';
-import { insertVideo } from '../../../elements/video/videoActions';
-import { insertDefinition } from '../../../elements/definition/definitionActions';
-import { insertFigure } from '../../../elements/figure/figureActions';
-import { insertDialog } from '../../../elements/dialog/dialogActions';
-import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
+import { insertDefinition } from '../../../elements/definition/definitionActions';
 import { insertDescriptionListCommand } from '../../../elements/description/description-list-actions';
+import { insertDialog } from '../../../elements/dialog/dialogActions';
+import { insertFigure } from '../../../elements/figure/figureActions';
+import { insertFormula } from '../../../elements/formula/formulaActions';
+import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
+import { insertVideo } from '../../../elements/video/videoActions';
 
 export const extendedBlockInsertActions = (onRequestMedia: any) => [
   insertTable,

@@ -1,12 +1,12 @@
-import { DragPayload, UnknownPayload } from '../interfaces';
-import * as Persistence from 'data/persistence/activity';
-import { fromPersistence, PageEditorContent } from 'data/editor/PageEditorContent';
 import {
-  isResourceContent,
-  isResourceGroup,
   ResourceContent,
   ResourceGroup,
+  isResourceContent,
+  isResourceGroup,
 } from 'data/content/resource';
+import { PageEditorContent, fromPersistence } from 'data/editor/PageEditorContent';
+import * as Persistence from 'data/persistence/activity';
+import { DragPayload, UnknownPayload } from '../interfaces';
 
 function adjustIndex(src: number[], dest: number[]) {
   return dest.map((destIndex, level) => {

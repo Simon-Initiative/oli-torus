@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react';
-
 import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '../../components/misc/Button';
 import { getError } from './schedule-selectors';

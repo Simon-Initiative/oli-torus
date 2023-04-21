@@ -9,13 +9,13 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import {
   createAlwaysGoToPath,
-  createDropdownCommonErrorPath,
   createCorrectPath,
-  createUnknownPathWithDestination,
+  createDropdownCommonErrorPath,
   createIncorrectPath,
   createInputNumberCommonErrorPath,
   createMCQCommonErrorPath,
   createEndOfActivityPath,
+  createUnknownPathWithDestination,
 } from './path-factories';
 import { AllPaths } from './path-types';
 import { isDropdown, isInputNumber, isInputText, isMCQ, isSlider } from './path-utils';

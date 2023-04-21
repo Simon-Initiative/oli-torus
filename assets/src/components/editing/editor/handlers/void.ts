@@ -1,9 +1,9 @@
-import { Transforms, Range, Path, Editor } from 'slate';
 import { KeyboardEvent } from 'react';
-import { getNearestBlock } from 'components/editing/slateUtils';
+import { Editor, Path, Range, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
-import { schema, SchemaConfig } from 'data/content/model/schema';
+import { getNearestBlock } from 'components/editing/slateUtils';
 import { Model } from 'data/content/model/elements/factories';
+import { SchemaConfig, schema } from 'data/content/model/schema';
 
 export const onKeyDown = (editor: Editor, e: KeyboardEvent) => {
   if (e.key === 'Enter') {

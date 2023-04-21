@@ -26,7 +26,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     setShowControls(dShowControls);
 
     const dStartTime = pModel.startTime || 0;
-    const dEndTime = pModel.endTime || '';
+    const _dEndTime = pModel.endTime || '';
 
     const initResult = await props.onInit({
       id,
@@ -260,13 +260,9 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   }, [ready]);
 
   const {
-    x,
-    y,
-    z,
     width,
     height,
     src,
-    alt,
     customCssClass,
     triggerCheck,
     autoPlay,
@@ -278,8 +274,8 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [audioIsPlayerStarted, setAudioIsPlayerStarted] = useState(false);
   const [audioIsCompleted, setAudioIsCompleted] = useState(false);
   const [audioAutoPlay, setAudioAutoPlay] = useState(autoPlay || false);
-  const [audioEnableReplay, setAudioEnableReplay] = useState(enableReplay || true);
-  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [_audioEnableReplay, setAudioEnableReplay] = useState(enableReplay || true);
+  const [_audioCurrentTime, setAudioCurrentTime] = useState(0);
   const audioStyles: CSSProperties = {
     /* position: 'absolute',
     top: y,

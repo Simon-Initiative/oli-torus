@@ -388,4 +388,63 @@ defmodule OliWeb.Sections.OverviewLiveTest do
              )
     end
   end
+
+  describe "overview live required surveys" do
+    setup [:instructor_conn, :section_with_disabled_survey]
+
+    test "can enable required surveys", %{conn: conn, instructor: instructor, section: section} do
+      enroll_user_to_section(instructor, section, :context_instructor)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      refute has_element?(view, "input[name=\"survey\"][checked]")
+
+      element(view, "form[phx-change=\"set-required-survey\"]")
+      |> render_change(%{
+        survey: "on"
+      })
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      assert update_section.required_survey_resource_id != nil
+      assert has_element?(view, "input[name=\"survey\"][checked]")
+    end
+
+    test "can disable required surveys", %{conn: conn, instructor: instructor, section: section} do
+      enroll_user_to_section(instructor, section, :context_instructor)
+      Oli.Delivery.Sections.create_required_survey(section)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert has_element?(view, "input[name=\"survey\"][checked]")
+
+      element(view, "form[phx-change=\"set-required-survey\"]")
+      |> render_change(%{})
+
+      update_section = Oli.Delivery.Sections.get_section!(section.id)
+      assert update_section.required_survey_resource_id == nil
+      refute has_element?(view, "input[name=\"survey\"][checked]")
+    end
+
+    test "can't enable surveys if the project doesn't allow it", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      enroll_user_to_section(instructor, section, :context_instructor)
+
+      Oli.Authoring.Course.delete_project_survey(section.base_project)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      refute has_element?(view, "form[phx-change=\"set-required-survey\"]")
+
+      assert has_element?(
+               view,
+               "p",
+               "You are not allowed to have student surveys in this resource."
+             )
+    end
+  end
+
+  defp section_with_disabled_survey(conn), do: section_with_survey(conn, survey_enabled: false)
 end

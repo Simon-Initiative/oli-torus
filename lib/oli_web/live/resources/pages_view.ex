@@ -51,7 +51,7 @@ defmodule OliWeb.Resources.PagesView do
     [
       Breadcrumb.new(%{
         full_title: "Project Overview",
-        link: Routes.project_path(OliWeb.Endpoint, :overview, project.slug)
+        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
       }),
       Breadcrumb.new(%{full_title: "All Pages"})
     ]

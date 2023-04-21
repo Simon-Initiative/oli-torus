@@ -81,7 +81,7 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
       route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, item.slug)
       SortableTableModel.render_link_column(assigns, item.title, route_path)
     else
-      route_path = Routes.project_path(OliWeb.Endpoint, :overview, item.project.slug)
+      route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, item.project.slug)
       SortableTableModel.render_link_column(assigns, item.project.title, route_path)
     end
   end

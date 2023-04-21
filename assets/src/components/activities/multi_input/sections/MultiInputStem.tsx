@@ -1,3 +1,6 @@
+import React from 'react';
+import { Editor } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
@@ -6,9 +9,6 @@ import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { elementsRemoved } from 'components/editing/slateUtils';
 import { InputRef } from 'data/content/model/elements/types';
-import React from 'react';
-import { Editor } from 'slate';
-import { ReactEditor } from 'slate-react';
 
 interface Props {
   selectedInputRef: InputRef | undefined;

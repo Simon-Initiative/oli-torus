@@ -1,19 +1,17 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
-import { makeResponse, Response, RichText } from 'components/activities/types';
-import { getCorrectResponse } from 'data/activities/model/responses';
-import { containsRule, InputKind } from 'data/activities/model/rules';
+import { Response, RichText, makeResponse } from 'components/activities/types';
 import { TextInput } from 'components/common/TextInput';
-
+import { getCorrectResponse } from 'data/activities/model/responses';
+import { InputKind, containsRule } from 'data/activities/model/rules';
 import { makeRule } from 'data/activities/model/rules';
-
-import React from 'react';
 
 export const addTargetedFeedbackFillInTheBlank = (partId: string) =>
   ResponseActions.addResponse(makeResponse(containsRule('another answer'), 0, ''), partId);

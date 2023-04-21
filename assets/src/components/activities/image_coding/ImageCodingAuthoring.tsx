@@ -1,3 +1,6 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 import { Hints as HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
@@ -6,9 +9,6 @@ import { Heading } from 'components/misc/Heading';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';

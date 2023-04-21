@@ -1,14 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { FlowchartSlice } from '../../../store/flowchart/name';
-import { AuthoringRootState } from '../../../store/rootReducer';
-import { selectAppMode } from '../../../store/app/slice';
-import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   selectAllActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { addFlowchartScreen } from './add-screen';
 import { clone, cloneT } from '../../../../../utils/common';
+import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   IGroup,
   selectCurrentGroup,
@@ -22,6 +19,9 @@ import { selectState as selectPageState } from '../../../store/page/slice';
 import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { isUnknownPath } from '../paths/path-utils';
 import { replacePath } from './replace-path';
+import { selectAppMode } from '../../../store/app/slice';
+import { FlowchartSlice } from '../../../store/flowchart/name';
+import { AuthoringRootState } from '../../../store/rootReducer';
 
 interface VerifyFlowchartLessonPayload {}
 

@@ -1,17 +1,16 @@
 /* eslint-disable react/prop-types */
-import chroma from 'chroma-js';
-import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import chroma from 'chroma-js';
+import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
+import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
   evalScript,
-  getEnvState,
   getLocalizedStateSnapshot,
   getValue,
-  removeStateValues,
 } from '../../../../adaptivity/scripting';
 import { contexts } from '../../../../types/applicationContext';
 import ActivityRenderer from '../../components/ActivityRenderer';
@@ -28,7 +27,6 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
-  selectEnableHistory,
   selectPageSlug,
   selectReviewMode,
   selectUserName,
@@ -37,7 +35,6 @@ import {
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
-import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   // migrated legacy include as customCss

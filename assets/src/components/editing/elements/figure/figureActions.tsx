@@ -1,7 +1,7 @@
 import React from 'react';
 import { Transforms } from 'slate';
-import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { Model } from 'data/content/model/elements/factories';
 import { insideSemanticElement } from '../utils';
 
 export const insertFigure = createButtonCommandDesc({

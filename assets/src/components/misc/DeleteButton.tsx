@@ -1,5 +1,5 @@
 import React from 'react';
-import { classNames, WithClassName } from 'utils/classNames';
+import { WithClassName, classNames } from 'utils/classNames';
 import styles from './DeleteButton.modules.scss';
 
 export type DeleteButtonProps = {

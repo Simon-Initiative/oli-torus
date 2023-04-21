@@ -2,7 +2,7 @@ import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { isFirefox } from 'utils/browser';
 
 export function registerUnload(strategy: PersistenceStrategy) {
-  return window.addEventListener('beforeunload', (event) => {
+  return window.addEventListener('beforeunload', () => {
     if (isFirefox) {
       setTimeout(() => strategy.destroy());
     } else {

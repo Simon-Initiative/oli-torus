@@ -180,7 +180,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "handles student page access by an enrolled student", %{
@@ -332,7 +332,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "shows the prologue page on an assessment", %{
@@ -862,7 +862,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         recycle(conn)
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
       assert user.sub != nil
 
       # access again, verify the same user is used that was created before
@@ -874,7 +874,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       same_user = Pow.Plug.current_user(conn)
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
       assert user.id == same_user.id
       assert user.sub == same_user.sub
     end
@@ -915,7 +915,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "redirects to enroll page if no user is logged in", %{conn: conn, section: section} do
@@ -960,7 +960,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "handles student access who has not paid when section not requires enrollment", %{
@@ -1311,7 +1311,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "index preview redirects ok when section slug ends with 'preview'", %{
@@ -1326,7 +1326,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :index, updated_section.slug)
         )
 
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Course Content"
     end
 
     test "container preview redirects ok", %{
@@ -1747,6 +1747,62 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
+  describe "required survey" do
+    setup [:user_conn, :section_with_survey]
+
+    test "when student, the survey gets rendered if the user didn't complete it", %{
+      conn: conn,
+      user: user,
+      section: section,
+      survey: survey,
+      survey_questions: survey_questions
+    } do
+      enroll_user_to_section(user, section, :context_learner)
+
+      create_survey_access(user, section, survey, survey_questions)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/page/#{survey.slug}\">redirected</a>"
+    end
+
+    test "when instructor, the survey doesn't get rendered", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      enroll_user_to_section(user, section, :context_instructor)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/instructor_dashboard/manage\">redirected</a>"
+    end
+
+    test "when student, the survey doesn't get rendered if the user has already complete it", %{
+      conn: conn,
+      user: user,
+      section: section,
+      survey: survey,
+      survey_questions: survey_questions
+    } do
+      enroll_user_to_section(user, section, :context_learner)
+
+      complete_student_survey(user, section, survey, survey_questions)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Content"
+    end
+  end
+
   defp enroll_as_student(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_learner)
     []
@@ -1858,10 +1914,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       collab_space_config: collab_space_config
     }
 
-    map = Seeder.add_page(map, graded_attrs, :page)
-    map = Seeder.add_page(map, ungraded_attrs, :ungraded_page)
-    map = Seeder.add_page(map, collab_space_attrs, :collab_space_page)
-    map = Seeder.add_page(map, disabled_collab_space_attrs, :disabled_collab_space_page)
+    map = Seeder.add_page(map, graded_attrs, :container, :page)
+    map = Seeder.add_page(map, ungraded_attrs, :container, :ungraded_page)
+    map = Seeder.add_page(map, collab_space_attrs, :container, :collab_space_page)
+
+    map =
+      Seeder.add_page(map, disabled_collab_space_attrs, :container, :disabled_collab_space_page)
 
     exploration_page_1 = %{
       graded: false,
@@ -1895,8 +1953,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       relates_to: [map.page.resource.id]
     }
 
-    map = Seeder.add_page(map, exploration_page_1, :exploration_page_1)
-    map = Seeder.add_page(map, exploration_page_2, :exploration_page_2)
+    map = Seeder.add_page(map, exploration_page_1, :container, :exploration_page_1)
+    map = Seeder.add_page(map, exploration_page_2, :container, :exploration_page_2)
 
     {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes")
 

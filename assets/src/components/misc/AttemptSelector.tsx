@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { makeRequest } from 'data/persistence/common';
-import * as Events from 'data/events';
 import { Dropdown } from 'react-bootstrap';
+import * as Events from 'data/events';
+import { makeRequest } from 'data/persistence/common';
 
 export interface AttemptDetails {
   attemptNumber: number;

@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { BaseSelection, Transforms } from 'slate';
-import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import { Command } from 'components/editing/elements/commands/interfaces';
-import { Model } from 'data/content/model/elements/factories';
-import { modalActions } from 'actions/modal';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { SlateEditor } from 'data/content/model/slate';
-import { Maybe } from 'tsmonad';
 import { Provider } from 'react-redux';
-import { MediaItem } from 'types/media';
+import { BaseSelection, Transforms } from 'slate';
+import { Maybe } from 'tsmonad';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { Command } from 'components/editing/elements/commands/interfaces';
+import { UrlOrUpload } from 'components/media/UrlOrUpload';
+import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import { SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
-import { UrlOrUpload } from 'components/media/UrlOrUpload';
+import { modalActions } from 'actions/modal';
+import { Model } from 'data/content/model/elements/factories';
+import { SlateEditor } from 'data/content/model/slate';
 import { configureStore } from 'state/store';
+import { MediaItem } from 'types/media';
 
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
 const dismiss = () => window.oliDispatch(modalActions.dismiss());

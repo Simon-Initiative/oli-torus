@@ -3,7 +3,7 @@ import {
   selectAllActivities,
 } from '../../../delivery/store/features/activities/slice';
 import { AuthoringRootState } from '../../store/rootReducer';
-import { AllPaths, AlwaysGoToPath, correctPathTypes, DestinationPaths } from './paths/path-types';
+import { AllPaths, AlwaysGoToPath, DestinationPaths, correctPathTypes } from './paths/path-types';
 
 // Returns a list of output paths for a screen.
 export const selectScreenPaths = (state: AuthoringRootState, screenId: number): AllPaths[] => {

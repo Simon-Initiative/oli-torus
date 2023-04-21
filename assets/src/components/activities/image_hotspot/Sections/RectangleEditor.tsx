@@ -1,9 +1,9 @@
 import * as React from 'react';
-import './ShapeEditor.scss';
 import * as Immutable from 'immutable';
-import { throttle } from './timing';
 import { Maybe } from 'tsmonad';
+import './ShapeEditor.scss';
 import { Point } from './common';
+import { throttle } from './timing';
 
 const mapCoordsToRectProps = (coords: Immutable.List<number>) => {
   return {

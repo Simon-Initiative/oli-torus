@@ -11,7 +11,6 @@ import {
   getEnvState,
 } from '../../../../../../adaptivity/scripting';
 import { DeliveryRootState } from '../../../rootReducer';
-import { setHistoryNavigationTriggered } from '../../adaptivity/slice';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
 import {
   loadActivities,
@@ -21,7 +20,7 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { loadPageState, PageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
+import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -37,7 +36,7 @@ export const loadInitialPageState = createAsyncThunk(
     if (otherTypes.length) {
       groups.push({ type: 'group', layout: 'deck', children: [...otherTypes] });
     }
-    const isReviewMode = selectReviewMode;
+    const isReviewMode = selectReviewMode(getState() as DeliveryRootState);
     // wait for this to resolve so that state will be updated
     await dispatch(setGroups({ groups }));
     const currentGroup = selectCurrentGroup(getState() as DeliveryRootState);
@@ -97,7 +96,7 @@ export const loadInitialPageState = createAsyncThunk(
 
       // update scripting env with session state
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
-      const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+      const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
       if (!params.previewMode) {
         await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
@@ -128,14 +127,7 @@ export const loadInitialPageState = createAsyncThunk(
       if (shouldResume && !isReviewMode) {
         // state should be all up to date by now
         const snapshot = getEnvState(defaultGlobalEnv);
-        const visitHistory = Object.keys(snapshot)
-          .filter((key: string) => key.indexOf('session.visitTimestamps.') === 0)
-          .map((entry) => ({ id: entry.split('.')[2], ts: snapshot[entry] }))
-          .sort((a, b) => b.ts - a.ts);
         const resumeId = snapshot['session.resume'];
-
-        /* console.log('VISIT HISTORY', { visitHistory, resumeId, snapshot }); */
-
         /* console.log('RESUMING!: ', { attempts, resumeId }); */
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
@@ -172,14 +164,6 @@ export const loadInitialPageState = createAsyncThunk(
             return target;
           }, 0);
           resumeSequenceId = sequence[resumeTarget].custom.sequenceId;
-        }
-        // need to check the visitHistory to see if the resumeSequenceId is in there and is NOT the latest, then we need to set history mode to true
-        const resumeHistoryIndex = visitHistory.findIndex(
-          (entry) => entry.id === resumeSequenceId && entry.ts > 0,
-        );
-        if (resumeHistoryIndex > 0) {
-          /*  console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
-          dispatch(setHistoryNavigationTriggered({ historyModeNavigation: true }));
         }
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
         dispatch(navigateToActivity(resumeSequenceId));

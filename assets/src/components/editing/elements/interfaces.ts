@@ -1,5 +1,5 @@
-import * as ContentModel from 'data/content/model/elements/types';
 import { RenderElementProps } from 'slate-react';
+import * as ContentModel from 'data/content/model/elements/types';
 import { CommandContext } from './commands/interfaces';
 
 // This is the interface that all editing components must implement.

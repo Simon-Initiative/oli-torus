@@ -1,4 +1,4 @@
-import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
+import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
 import {
   IAdaptiveRule,
   selectCurrentActivity,
@@ -8,7 +8,6 @@ import {
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { Objective } from '../../../../data/content/objective';
-
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { saveActivity } from '../activities/actions/saveActivity';
 import { savePage } from '../page/actions/savePage';

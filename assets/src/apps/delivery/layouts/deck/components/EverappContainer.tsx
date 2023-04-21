@@ -1,6 +1,6 @@
-import { selectActiveEverapp } from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { selectActiveEverapp } from 'apps/delivery/store/features/page/slice';
 import EverappRenderer, { Everapp } from './EverappRenderer';
 
 export interface EverappContainerProps {

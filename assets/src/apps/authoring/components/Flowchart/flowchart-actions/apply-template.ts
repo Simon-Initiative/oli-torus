@@ -1,4 +1,4 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   selectActivityById,
   upsertActivity,

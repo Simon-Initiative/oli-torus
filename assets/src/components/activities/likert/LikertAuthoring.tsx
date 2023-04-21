@@ -1,31 +1,28 @@
-import {
-  Hints as HintsAuthoring,
-  Hints,
-} from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Choices, Items } from 'data/activities/model/choices';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
+import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { Radio } from 'components/misc/icons/radio/Radio';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { Choices, Items } from 'data/activities/model/choices';
+import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
+import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { SimpleFeedback } from '../common/responses/SimpleFeedback';
+import { TargetedFeedback } from '../common/responses/TargetedFeedback';
+import { StemDelivery } from '../common/stem/delivery/StemDelivery';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { LikertActions } from './actions';
 import { LikertModelSchema } from './schema';
-import { Radio } from 'components/misc/icons/radio/Radio';
-import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
-import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { StemDelivery } from '../common/stem/delivery/StemDelivery';
-import { defaultWriterContext } from 'data/content/writers/context';
-import { SimpleFeedback } from '../common/responses/SimpleFeedback';
-import { TargetedFeedback } from '../common/responses/TargetedFeedback';
-import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
-import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   const { dispatch, model, editMode, projectSlug } =

@@ -1,11 +1,10 @@
 import React, { ChangeEvent, useCallback } from 'react';
 import { v4 } from 'uuid';
 import * as ContentModel from 'data/content/model/elements/types';
-import { InlineEditor } from '../common/settings/InlineEditor';
-import { CommandContext } from '../commands/interfaces';
-
 import { Model } from '../../../../data/content/model/elements/factories';
 import { Speaker } from '../../../Dialog';
+import { CommandContext } from '../commands/interfaces';
+import { InlineEditor } from '../common/settings/InlineEditor';
 import { selectPortrait } from './dialogActions';
 
 export const DialogInlineEditor: React.FC<{

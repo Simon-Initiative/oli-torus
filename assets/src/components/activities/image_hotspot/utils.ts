@@ -1,7 +1,6 @@
-import { getShape, Hotspot, ImageHotspotModelSchema, makeHotspot } from './schema';
-import { makeStem, makeHint, makePart, makeContent } from '../types';
-
 import { Responses } from 'data/activities/model/responses';
+import { makeHint, makePart, makeStem } from '../types';
+import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot } from './schema';
 
 // Default hotspot coords for use before image size is known define a
 // small circle near upper left to fit within any reasonably sized image.

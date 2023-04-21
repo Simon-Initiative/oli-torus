@@ -111,6 +111,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireExplorationPages)
   end
 
+  pipeline :force_required_survey do
+    plug(Oli.Plugs.ForceRequiredSurvey)
+  end
+
   pipeline :enforce_enroll_and_paywall do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
@@ -360,18 +364,22 @@ defmodule OliWeb.Router do
   scope "/authoring/project", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
+    live_session :load_projects,
+      on_mount: [Oli.LiveSessionPlugs.SetCurrentAuthor, Oli.LiveSessionPlugs.SetProject] do
+      live("/:project_id/overview", Projects.OverviewLive)
+      live("/:project_id", Projects.OverviewLive)
+    end
+  end
+
+  scope "/authoring/project", OliWeb do
+    pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
+
     # Project display pages
-    get("/:project_id", ProjectController, :overview)
-    get("/:project_id/overview", ProjectController, :overview)
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/insights", ProjectController, :download_analytics)
     post("/:project_id/duplicate", ProjectController, :clone_project)
-
-    # Project
-    put("/:project_id", ProjectController, :update)
-    delete("/:project_id", ProjectController, :delete)
 
     # Alternatives Groups
     live("/:project_id/alternatives", Resources.AlternativesEditor)
@@ -767,6 +775,33 @@ defmodule OliWeb.Router do
     post("/:section_slug/payment/code", PaymentController, :apply_code)
   end
 
+  ### Sections - Student Dashboard
+
+  scope "/sections/:section_slug/student_dashboard/:student_id", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery_and_admin,
+      :maybe_gated_resource,
+      :pow_email_layout
+    ])
+
+    live_session :student_dashboard,
+      on_mount: OliWeb.Delivery.StudentDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      live("/:active_tab", Delivery.StudentDashboard.StudentDashboardLive)
+    end
+
+    live_session :student_dashboard_preview,
+      on_mount: OliWeb.Delivery.StudentDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      live(
+        "/preview/:active_tab",
+        Delivery.StudentDashboard.StudentDashboardLive,
+        :preview
+      )
+    end
+  end
+
   ### Sections - Instructor Dashboard
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
@@ -799,6 +834,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
+      :force_required_survey,
       :require_exploration_pages,
       :delivery_protected,
       :maybe_gated_resource,

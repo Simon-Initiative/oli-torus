@@ -1,7 +1,8 @@
 /* eslint-disable no-prototype-builtins */
+
 /* eslint-disable react/prop-types */
-import debounce from 'lodash/debounce';
 import React, { useCallback, useEffect, useState } from 'react';
+import debounce from 'lodash/debounce';
 import { v4 as uuidv4 } from 'uuid';
 import { CapiVariable, CapiVariableTypes, parseCapiValue } from '../../../../../adaptivity/capi';
 import { ApplyStateOperation } from '../../../../../adaptivity/scripting';
@@ -12,12 +13,7 @@ interface AutoDetectInputProps {
   state?: any;
   onChange?: (changeOp: ApplyStateOperation) => void;
 }
-const AutoDetectInput: React.FC<AutoDetectInputProps> = ({
-  label,
-  value,
-  state,
-  onChange,
-}): any => {
+const AutoDetectInput: React.FC<AutoDetectInputProps> = ({ label, value, onChange }): any => {
   /* console.log('🚀 > file: PreviewTools.tsx > line 390 > { label, value ,state}', {
     label,
     value,

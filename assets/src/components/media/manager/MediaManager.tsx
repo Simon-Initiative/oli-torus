@@ -1,19 +1,18 @@
 import * as React from 'react';
+import { Dropdown } from 'react-bootstrap';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
-import { MediaIcon } from './MediaIcon';
-import { MediaItem } from 'types/media';
-import guid from 'utils/guid';
-import { convert, stringFormat } from 'utils/format';
-import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { MediaItem } from 'types/media';
+import { classNames } from 'utils/classNames';
 import { relativeToNow } from 'utils/date';
-import { uploadFiles } from './upload';
-
+import { convert, stringFormat } from 'utils/format';
+import guid from 'utils/guid';
+import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
+import { MediaIcon } from './MediaIcon';
 import './MediaManager.scss';
 import { VideoUploadWarning } from './VideoUploadWarning';
-import { Dropdown } from 'react-bootstrap';
-import { classNames } from 'utils/classNames';
+import { uploadFiles } from './upload';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;
@@ -520,7 +519,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       );
     }
 
-    const detailsOnClick = () => this.setState({ showDetails: !showDetails });
+    const _detailsOnClick = () => this.setState({ showDetails: !showDetails });
 
     if (selectedMediaItems.size > 0) {
       const selectedItem = selectedMediaItems.first() as MediaItem;

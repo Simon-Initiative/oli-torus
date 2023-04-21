@@ -1,10 +1,9 @@
-import { createAsyncThunk, EntityId } from '@reduxjs/toolkit';
+import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 import { clone } from '../../../../../utils/common';
 import {
   selectActivityById,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';

@@ -1,9 +1,9 @@
+import React, { useEffect, useState } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import { NavigationAction, NavigationActionParams } from 'apps/authoring/types';
 import { findInSequence } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import React, { useState, useEffect } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
 import guid from 'utils/guid';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import ScreenDropdownTemplate from '../PropertyEditor/custom/ScreenDropdownTemplate';
