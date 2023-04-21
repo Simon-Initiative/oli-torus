@@ -1,13 +1,13 @@
-import { EntityId, createSelector, createSlice } from '@reduxjs/toolkit';
+import { ErrorInfo } from 'react';
+import { createSelector, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import { IActivity } from '../../../delivery/store/features/activities/slice';
 import { addPath } from '../../components/Flowchart/flowchart-actions/add-path';
 import { deletePath } from '../../components/Flowchart/flowchart-actions/delete-path';
 import { replacePath } from '../../components/Flowchart/flowchart-actions/replace-path';
 import { AllPaths } from '../../components/Flowchart/paths/path-types';
 import { AuthoringRootState } from '../rootReducer';
 import { FlowchartSlice } from './name';
-import { ErrorInfo } from 'react';
-import { IActivity } from '../../../delivery/store/features/activities/slice';
 
 interface ReportErrorPayload {
   error: string | null;

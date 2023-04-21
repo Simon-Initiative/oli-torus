@@ -11,8 +11,8 @@ import {
 } from '../store/app/slice';
 import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
-import { getScreenQuestionType } from './Flowchart/paths/path-options';
 import { verifyFlowchartLesson } from './Flowchart/flowchart-actions/verify-flowchart-lesson';
+import { getScreenQuestionType } from './Flowchart/paths/path-options';
 
 interface HeaderNavProps {
   panelState: any;

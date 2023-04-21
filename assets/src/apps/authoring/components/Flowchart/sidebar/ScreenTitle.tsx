@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { ScreenIcon } from '../chart-components/ScreenIcon';
+import React, { useCallback, useState } from 'react';
 import { ScreenButton } from '../chart-components/ScreenButton';
 import { ScreenEditIcon } from '../chart-components/ScreenEditIcon';
+import { ScreenIcon } from '../chart-components/ScreenIcon';
 import { ScreenValidationColors } from '../screen-icons/screen-icons';
 
 interface ScreenTitleProps {

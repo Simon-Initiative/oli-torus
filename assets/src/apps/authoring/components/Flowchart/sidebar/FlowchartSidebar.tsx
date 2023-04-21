@@ -7,6 +7,9 @@ import {
   setCurrentActivityId,
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
+import { ScreenButton } from '../chart-components/ScreenButton';
+import { addPath } from '../flowchart-actions/add-path';
+import { changeTitle } from '../flowchart-actions/change-title';
 import {
   QuestionType,
   getAvailablePaths,
@@ -15,13 +18,10 @@ import {
   questionTypeLabels,
 } from '../paths/path-options';
 import { validateScreen } from '../screens/screen-validation';
-import { PathsEditor } from './PathsEditor';
-import { ScreenButton } from '../chart-components/ScreenButton';
-import ScreenTitle from './ScreenTitle';
-import { changeTitle } from '../flowchart-actions/change-title';
 import { CloseIcon } from './CloseIcon';
 import { InfoIcon } from './InfoIcon';
-import { addPath } from '../flowchart-actions/add-path';
+import { PathsEditor } from './PathsEditor';
+import ScreenTitle from './ScreenTitle';
 
 interface FlowchartSidebarProps {}
 

@@ -13,14 +13,14 @@ import { selectSequence } from '../../../../delivery/store/features/groups/selec
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { FlowchartEventContext } from '../FlowchartEventContext';
 import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
+import { ScreenValidationColors } from '../screen-icons/screen-icons';
 import { screenTypes } from '../screens/screen-factories';
 import { validateScreen } from '../screens/screen-validation';
 import { ScreenButton } from './ScreenButton';
-import { ScreenValidationColors } from '../screen-icons/screen-icons';
-import { ScreenIcon } from './ScreenIcon';
-import { ScreenEditIcon } from './ScreenEditIcon';
-import { ScreenDuplicateIcon } from './ScreenDuplicateIcon';
 import { ScreenDeleteIcon } from './ScreenDeleteIcon';
+import { ScreenDuplicateIcon } from './ScreenDuplicateIcon';
+import { ScreenEditIcon } from './ScreenEditIcon';
+import { ScreenIcon } from './ScreenIcon';
 
 interface NodeProps {
   data: IActivity;

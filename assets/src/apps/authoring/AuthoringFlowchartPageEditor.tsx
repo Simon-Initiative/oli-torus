@@ -2,6 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../delivery/store/features/activities/slice';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
+import { FlowchartErrorDisplay } from './components/Flowchart/FlowchartErrorMessages';
 import { TemplatePicker } from './components/Flowchart/TemplatePicker';
 import { applyTemplate } from './components/Flowchart/flowchart-actions/apply-template';
 import { Template } from './components/Flowchart/template-types';
@@ -10,7 +11,6 @@ import RightMenu from './components/RightMenu/RightMenu';
 import { ScreenList } from './components/ScreenList/ScreenList';
 import { SidePanel } from './components/SidePanel';
 import { changeEditMode } from './store/app/slice';
-import { FlowchartErrorDisplay } from './components/Flowchart/FlowchartErrorMessages';
 
 interface PanelState {
   left: boolean;

@@ -1,27 +1,27 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { clone, cloneT } from '../../../../../utils/common';
 import {
   selectAllActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import { addFlowchartScreen } from './add-screen';
-import { clone, cloneT } from '../../../../../utils/common';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   IGroup,
   selectCurrentGroup,
   upsertGroup,
 } from '../../../../delivery/store/features/groups/slice';
-import { compareRules, generateRules } from '../rules/rule-compilation';
-import { savePage } from '../../../store/page/actions/savePage';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
-import { createAlwaysGoToPath, createExitPath } from '../paths/path-factories';
-import { selectState as selectPageState } from '../../../store/page/slice';
-import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
-import { isUnknownPath } from '../paths/path-utils';
-import { replacePath } from './replace-path';
 import { selectAppMode } from '../../../store/app/slice';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
+import { savePage } from '../../../store/page/actions/savePage';
+import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { createAlwaysGoToPath, createExitPath } from '../paths/path-factories';
+import { isUnknownPath } from '../paths/path-utils';
+import { compareRules, generateRules } from '../rules/rule-compilation';
+import { addFlowchartScreen } from './add-screen';
+import { replacePath } from './replace-path';
 
 interface VerifyFlowchartLessonPayload {}
 

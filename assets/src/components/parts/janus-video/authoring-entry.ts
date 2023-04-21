@@ -1,8 +1,8 @@
 import register from '../customElementWrapper';
 import {
+  PartAuthoringMode,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
-  PartAuthoringMode,
 } from '../partsApi';
 import VideoAuthor from './VideoAuthor';
 import {

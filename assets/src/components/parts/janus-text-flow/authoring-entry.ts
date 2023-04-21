@@ -1,8 +1,8 @@
 import register from '../customElementWrapper';
 import {
+  PartAuthoringMode,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
-  PartAuthoringMode,
   authoringObservedAttributes,
 } from '../partsApi';
 import TextFlowAuthor from './TextFlowAuthor';
@@ -11,12 +11,12 @@ import {
   createSchema,
   getCapabilities,
   schema,
+  simpleSchema,
+  simpleUISchema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
   validateUserConfig,
-  simpleSchema,
-  simpleUISchema,
 } from './schema';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires

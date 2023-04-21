@@ -11,10 +11,10 @@ import {
   createAlwaysGoToPath,
   createCorrectPath,
   createDropdownCommonErrorPath,
+  createEndOfActivityPath,
   createIncorrectPath,
   createInputNumberCommonErrorPath,
   createMCQCommonErrorPath,
-  createEndOfActivityPath,
   createUnknownPathWithDestination,
 } from './path-factories';
 import { AllPaths } from './path-types';

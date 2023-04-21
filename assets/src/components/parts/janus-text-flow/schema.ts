@@ -4,6 +4,7 @@ import { CapiVariableTypes } from 'adaptivity/capi';
 import { formatExpression } from 'adaptivity/scripting';
 import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
 import { parseNumString } from 'utils/common';
+import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import {
   ColorPalette,
   CreationContext,
@@ -11,7 +12,6 @@ import {
   JanusAbsolutePositioned,
   JanusCustomCss,
 } from '../types/parts';
-import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 
 export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
   overrideWidth?: boolean;

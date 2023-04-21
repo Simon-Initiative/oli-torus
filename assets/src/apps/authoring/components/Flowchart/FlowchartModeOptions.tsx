@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icon } from '../../../../components/misc/Icon';
-import { FlowchartIcon } from './chart-components/FlowchartIcon';
 import { EditingMode } from '../../store/app/slice';
+import { FlowchartIcon } from './chart-components/FlowchartIcon';
 
 interface Props {
   onAddNewScreen?: () => void;

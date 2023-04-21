@@ -1,11 +1,11 @@
 // Adding better error handling to flowchart-mode
 // We can turn this into a general advanced-authoring error, but for now sticking to flowchart-mode
 import React, { useCallback } from 'react';
+import { Button, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { useToggle } from '../../../../components/hooks/useToggle';
 import { clearError, selectApiError } from '../../store/flowchart/flowchart-slice';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
-import { Button, Modal } from 'react-bootstrap';
-import { useToggle } from '../../../../components/hooks/useToggle';
 
 export const FlowchartErrorDisplay = () => {
   const error = useSelector(selectApiError);

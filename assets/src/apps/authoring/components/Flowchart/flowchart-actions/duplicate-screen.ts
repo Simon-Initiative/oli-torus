@@ -1,3 +1,4 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import { create } from 'data/persistence/activity';
 import { cloneT } from '../../../../../utils/common';
 import guid from '../../../../../utils/guid';
@@ -19,6 +20,7 @@ import {
   selectAppMode,
   selectProjectSlug,
 } from '../../../store/app/slice';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
@@ -33,8 +35,6 @@ import {
 import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
 import { sortScreens } from '../screens/screen-utils';
 import { replaceIds } from '../template-utils';
-import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
-import { createAsyncThunk } from '@reduxjs/toolkit';
 
 interface DuplicateFlowchartScreenPayload {
   screenId: number;

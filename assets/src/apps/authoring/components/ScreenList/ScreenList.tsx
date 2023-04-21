@@ -16,11 +16,11 @@ import { FlowchartModeOptions } from '../Flowchart/FlowchartModeOptions';
 import { addFlowchartScreen } from '../Flowchart/flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from '../Flowchart/flowchart-actions/delete-screen';
 import { duplicateFlowchartScreen } from '../Flowchart/flowchart-actions/duplicate-screen';
+import { BlankScreenIcon } from '../Flowchart/screen-icons/BlankScreenIcon';
+import { ScreenValidationColors, screenTypeToIcon } from '../Flowchart/screen-icons/screen-icons';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
 import { sortScreens } from '../Flowchart/screens/screen-utils';
 import { AddScreenModal } from './AddScreenModal';
-import { ScreenValidationColors, screenTypeToIcon } from '../Flowchart/screen-icons/screen-icons';
-import { BlankScreenIcon } from '../Flowchart/screen-icons/BlankScreenIcon';
 
 /*
   The ScreenList is a simplified view of activities within a lesson similar to the SequenceEditor, but with a reduced feature set

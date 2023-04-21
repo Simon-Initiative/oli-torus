@@ -1,7 +1,7 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;

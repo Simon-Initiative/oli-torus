@@ -20,6 +20,7 @@ import {
   selectAppMode,
   selectProjectSlug,
 } from '../../../store/app/slice';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
@@ -40,7 +41,6 @@ import {
 } from '../paths/path-utils';
 import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
 import { sortScreens } from '../screens/screen-utils';
-import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;

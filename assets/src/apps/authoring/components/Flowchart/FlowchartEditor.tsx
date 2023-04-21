@@ -9,6 +9,7 @@ import {
 } from '../../../delivery/store/features/activities/slice';
 import { changeAppMode, changeEditMode } from '../../store/app/slice';
 import { FlowchartComponent } from './FlowchartComponent';
+import { FlowchartErrorDisplay } from './FlowchartErrorMessages';
 import {
   FlowchartAddScreenParams,
   FlowchartEventContext,
@@ -21,7 +22,6 @@ import { activitiesToNodes, buildEdges } from './flowchart-utils';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { FlowchartSidebar } from './sidebar/FlowchartSidebar';
 import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
-import { FlowchartErrorDisplay } from './FlowchartErrorMessages';
 
 /*
   Flowchart editor deals with translating data to/from the format that the FlowchartComponent requires.

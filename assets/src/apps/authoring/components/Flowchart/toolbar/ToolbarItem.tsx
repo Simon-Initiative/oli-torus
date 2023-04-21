@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { useDrag } from 'react-dnd';
 import { screenTypeToIcon } from '../screen-icons/screen-icons';
 

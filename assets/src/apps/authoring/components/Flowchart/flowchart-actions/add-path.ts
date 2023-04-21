@@ -5,10 +5,10 @@ import {
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
-import { createEndOfActivityPath, createUnknownPathWithDestination } from '../paths/path-factories';
-import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
+import { createEndOfActivityPath } from '../paths/path-factories';
 
 interface AddPathPayload {
   screenId: EntityId;

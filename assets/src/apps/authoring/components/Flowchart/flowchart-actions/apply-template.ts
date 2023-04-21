@@ -4,11 +4,11 @@ import {
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
 import { Template } from '../template-types';
 import { applyTemplateToActivity } from '../template-utils';
-import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 
 interface ApplyTemplatePayload {
   screenId: EntityId;
