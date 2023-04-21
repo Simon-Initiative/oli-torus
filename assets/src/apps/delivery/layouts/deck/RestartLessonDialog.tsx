@@ -80,7 +80,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         className="RestartLessonDialog modal in"
         data-keyboard="false"
         aria-hidden={!isOpen}
-        style={{ display: isOpen ? 'block' : 'none', top: '20%', left: '50%' }}
+        style={{ display: isOpen ? 'block' : 'none', top: '20%', left: '50%',height:'max-content' }}
       >
         <div className="modal-header">
           <button
