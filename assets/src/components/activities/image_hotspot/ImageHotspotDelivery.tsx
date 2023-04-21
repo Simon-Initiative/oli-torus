@@ -58,6 +58,8 @@ const ImageHotspotComponent: React.FC = () => {
   const selected = partState?.studentInput;
 
   const [hovered, setHovered] = React.useState<Hotspot | null>(null);
+  // for one-time ID generation:
+  const [mapName] = React.useState<string>(guid());
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
@@ -110,8 +112,6 @@ const ImageHotspotComponent: React.FC = () => {
       onSelect(partId, hs.id);
     }
   };
-
-  const mapName = 'map' + guid();
 
   return (
     <div className="activity multiple-choice-activity">
