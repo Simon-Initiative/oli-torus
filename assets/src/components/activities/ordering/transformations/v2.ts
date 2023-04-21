@@ -22,6 +22,7 @@ import { matchInOrderRule, matchRule } from 'data/activities/model/rules';
 export interface OrderingSchemaV2 extends ActivityModelSchema {
   stem: Stem;
   choices: Choice[];
+  choiceColors?: Array<[string, string]>;
   authoring: {
     version: 2;
     // An association list of the choice ids in the correct order to the matching response id

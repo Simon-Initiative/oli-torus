@@ -119,6 +119,7 @@ export const OrderingComponent: React.FC = () => {
         <ResponseChoices
           writerContext={writerContext}
           choices={choices}
+          colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
           disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
