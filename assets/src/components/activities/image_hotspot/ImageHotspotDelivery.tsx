@@ -14,6 +14,7 @@ import {
 } from 'data/activities/DeliveryState';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
+import guid from 'utils/guid';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
@@ -57,6 +58,8 @@ const ImageHotspotComponent: React.FC = () => {
   const selected = partState?.studentInput;
 
   const [hovered, setHovered] = React.useState<Hotspot | null>(null);
+  // for one-time ID generation:
+  const [mapName] = React.useState<string>(guid());
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
@@ -109,8 +112,6 @@ const ImageHotspotComponent: React.FC = () => {
       onSelect(partId, hs.id);
     }
   };
-
-  const mapName = 'map' + model.choices[0].id;
 
   return (
     <div className="activity multiple-choice-activity">
