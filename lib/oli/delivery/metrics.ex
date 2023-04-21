@@ -7,6 +7,9 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole}
+  alias Oli.Accounts.User
+  alias Lti_1p3.Tool.ContextRoles
 
   @doc """
   Calculate the progress for a specific student (or a list of students),
@@ -68,26 +71,71 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
-  @doc """
-  Calculate the progress for each student in a page.
-  """
-  def progress_for_page(section_id, user_ids, page_id) do
-    query =
-      from(ra in ResourceAccess,
-        where:
-          ra.resource_id == ^page_id and ra.section_id == ^section_id and ra.user_id in ^user_ids,
-        group_by: ra.user_id,
-        select: {
-          ra.user_id,
-          fragment(
-            "SUM(?)",
-            ra.progress
-          )
-        }
-      )
+  defp do_get_progress_for_page(section_id, user_ids, page_id) do
+    filter_by_user =
+      case is_list(user_ids) do
+        true -> dynamic([ra], ra.user_id in ^user_ids)
+        _ -> dynamic([ra], ra.user_id == ^user_ids)
+      end
 
-    Repo.all(query)
-    |> Enum.into(%{})
+    from(ra in ResourceAccess,
+      where: ra.resource_id == ^page_id and ra.section_id == ^section_id,
+      where: ^filter_by_user,
+      group_by: ra.user_id,
+      select: {
+        ra.user_id,
+        fragment(
+          "SUM(?)",
+          ra.progress
+        )
+      }
+    )
+  end
+
+  @doc """
+  Calculate the progress for a given student or list of students in a page.
+  """
+  def progress_for_page(_section_id, [], _), do: []
+
+  def progress_for_page(section_id, [_ | _] = user_ids, page_id),
+    do:
+      do_get_progress_for_page(section_id, user_ids, page_id)
+      |> Repo.all()
+      |> Enum.into(%{})
+
+  def progress_for_page(section_id, user_id, page_id) do
+    case do_get_progress_for_page(section_id, user_id, page_id) |> Repo.one() do
+      nil -> 0
+      {_, progress} -> progress
+    end
+  end
+
+  @doc """
+  Calculate the percentage of students that have completed a container or page
+  """
+  def completion_for(section_id, container_id) do
+    completions =
+      User
+      |> join(:inner, [u], e in Enrollment, on: u.id == e.user_id and e.section_id == ^section_id)
+      |> join(:inner, [u, e], ecr in EnrollmentContextRole,
+        on:
+          ecr.enrollment_id == e.id and
+            ecr.context_role_id == ^ContextRoles.get_role(:context_learner).id
+      )
+      |> join(:left, [u, e], ra in ResourceAccess,
+        on:
+          ra.user_id == u.id and ra.section_id == ^section_id and
+            ra.resource_id == ^container_id
+      )
+      |> select([_, _, _, ra], %{
+        progress: ra.progress
+      })
+      |> Repo.all()
+
+    case length(completions) do
+      0 -> 0.0
+      length -> Enum.count(completions, &(&1.progress == 1)) / length * 100
+    end
   end
 
   @doc """

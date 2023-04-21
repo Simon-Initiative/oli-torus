@@ -59,6 +59,9 @@ defmodule OliWeb.PageDeliveryController do
                 section_slug
               )
 
+            next_activities =
+              Sections.get_next_activities_for_student(section_slug, user.id)
+
             render(conn, "index.html",
               title: section.title,
               description: section.description,
@@ -71,7 +74,8 @@ defmodule OliWeb.PageDeliveryController do
               collab_space_config: collab_space_config,
               revision_slug: revision_slug,
               is_instructor: is_instructor,
-              progress: learner_progress(section.id, user.id)
+              progress: learner_progress(section.id, user.id),
+              next_activities: next_activities
             )
           end
       end
