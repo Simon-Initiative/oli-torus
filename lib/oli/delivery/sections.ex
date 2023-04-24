@@ -2310,7 +2310,7 @@ defmodule Oli.Delivery.Sections do
       slug: rev.slug,
       end_date:
         fragment(
-          "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date) as end_date",
+          "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date)",
           gc2.data["end_datetime"],
           gc.data["end_datetime"],
           sr.end_date
@@ -2318,7 +2318,7 @@ defmodule Oli.Delivery.Sections do
       scheduled_type: sr.scheduling_type,
       gate_type:
         fragment(
-          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
+          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL)",
           gc2.type,
           gc.type
         ),
@@ -2337,25 +2337,22 @@ defmodule Oli.Delivery.Sections do
     Returns the activities that a student need to complete next.
   """
   def get_next_activities_for_student(section_slug, user_id) do
-    get_student_pages(section_slug, user_id)
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn activity, activities ->
-      case activity.end_date do
-        nil ->
-          activities
+    student_pages_query = get_student_pages(section_slug, user_id)
 
-        _ ->
-          case Date.compare(activity.end_date, Timex.now()) do
-          :gt -> Map.put(activities, activity.id, activity)
-          _ -> activities
-          end
-      end
-    end)
-    |> Enum.sort(fn {_, activity_1}, {_, activity_2} ->
-      activity_1.end_date < activity_2.end_date
-    end)
-    |> Enum.take(2)
-    |> Enum.map(fn {_, activity} ->
+    query =
+      from sp in subquery(student_pages_query),
+        where:
+          not is_nil(sp.end_date) and
+            sp.end_date >= ^Date.utc_today() and
+            sp.resource_type_id in [
+              ^ResourceType.get_id_by_type("page"),
+              ^ResourceType.get_id_by_type("container")
+            ],
+        limit: 2
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn activity ->
       case ResourceType.get_type_by_id(activity.resource_type_id) do
         "page" ->
           Map.put(
@@ -2374,9 +2371,6 @@ defmodule Oli.Delivery.Sections do
             :progress,
             Oli.Delivery.Metrics.progress_for(activity.section_id, user_id, activity.resource_id)
           ) * 100
-
-        _ ->
-          activity
       end
       |> Map.put(
         :completion_percentage,
@@ -2392,9 +2386,10 @@ defmodule Oli.Delivery.Sections do
     Returns the graded pages and their due dates for a given student.
   """
   def get_graded_pages(section_slug, user_id) do
+    student_pages_query = get_student_pages(section_slug, user_id, graded: true)
+
     {graded_pages_with_date, other_resources} =
-      get_student_pages(section_slug, user_id, graded: true)
-      |> Repo.all()
+      Repo.all(from(sp in subquery(student_pages_query)))
       |> Enum.uniq_by(& &1.id)
       |> Enum.split_with(fn page ->
         page.end_date != nil and page.graded == true and
