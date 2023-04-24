@@ -134,8 +134,9 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
       {showConfirmDelete && (
         <ConfirmDelete
           show={showConfirmDelete}
-          elementType="Screen"
-          elementName={data.title}
+          elementType="screen"
+          title="Are you sure you want to delete this screen?"
+          explanation="Please note, you will permanently lose all content on this screen, and you will unable to undo this action. Consider creating a duplicate of your screen before proceeding."
           deleteHandler={() => {
             onDeleteScreen(data.resourceId!);
             toggleConfirmDelete();
