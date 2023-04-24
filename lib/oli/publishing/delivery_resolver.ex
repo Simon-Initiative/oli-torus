@@ -142,7 +142,10 @@ defmodule Oli.Publishing.DeliveryResolver do
         where:
           rev.resource_type_id == ^page_id and
             fragment("? != '[]'", rev.objectives["attached"]),
-        select: rev
+        select: %{
+          resource_id: rev.resource_id,
+          objectives: rev.objectives
+        }
       )
       |> Repo.all()
     end
