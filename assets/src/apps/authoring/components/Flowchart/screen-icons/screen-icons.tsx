@@ -1,3 +1,4 @@
+import React from 'react';
 import { ScreenTypes } from '../screens/screen-factories';
 import { BlankScreenIcon } from './BlankScreenIcon';
 import { DropdownScreenIcon } from './DropdownScreenIcon';
@@ -26,4 +27,12 @@ export const screenTypeToIcon: Record<ScreenTypes, React.FC<{ fill?: string }>> 
 export const ScreenValidationColors = {
   VALIDATED: '#87CD9B',
   NOT_VALIDATED: '#FFE05E',
+};
+
+export const ScreenIcon: React.FC<{ screenType: string; fill?: string }> = ({
+  screenType,
+  fill,
+}) => {
+  const Icon = screenTypeToIcon[screenType];
+  return <Icon fill={fill} />;
 };
