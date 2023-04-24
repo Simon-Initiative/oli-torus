@@ -13,6 +13,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   prop(params, :map, required: true)
   prop(total_count, :number, required: true)
   prop(grades_table_model, :struct, required: true)
+  prop(student_id, :integer, required: true)
 
   @default_params %{
     offset: 0,
@@ -24,11 +25,97 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   }
 
   def update(
-        %{params: params, section: section, patch_url_type: patch_url_type} = _assigns,
+        %{
+          params: params,
+          section: section,
+          patch_url_type: patch_url_type,
+          student_id: student_id,
+          scores: scores
+        } = _assigns,
         socket
       ) do
     params = decode_params(params)
 
+    case student_id do
+      student_id when is_integer(student_id) ->
+        get_scores_for_student(scores.scores, student_id, section, patch_url_type, params, socket)
+
+      nil ->
+        get_grades_all_students(section, patch_url_type, params, socket)
+    end
+  end
+
+  def render(assigns) do
+    ~F"""
+      <div class="mx-10 mb-10 bg-white shadow-sm">
+        <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4 pl-9">
+          <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
+          <div class="flex flex-col gap-y-4 md:flex-row items-center">
+            {#if @student_id == nil}
+              <div class="form-check">
+                <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} phx-debounce="500"/>
+                <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
+              </div>
+            {/if}
+            <form for="search" phx-target={@myself} phx-change="search_student" class="pb-3 md:pl-9 sm:pb-0">
+              <SearchInput.render id="student_search_input" name="student_name" text={@params.text_search} />
+            </form>
+          </div>
+        </div>
+
+
+        {#if @total_count > 0}
+          <PagedTable
+            table_model={@grades_table_model}
+            total_count={@total_count}
+            offset={@params.offset}
+            limit={@params.limit}
+            render_top_info={false}
+            additional_table_class="instructor_dashboard_table"
+            show_bottom_paging={false}
+            sort={JS.push("paged_table_sort", target: @myself)}
+            page_change={JS.push("paged_table_page_change", target: @myself)}
+          />
+        {#else}
+          <h6 class="text-center py-4">There are no quiz scores to show</h6>
+        {/if}
+      </div>
+    """
+  end
+
+  defp get_scores_for_student(scores, student_id, section, patch_url_type, params, socket) do
+    {total_count, rows} = apply_filters(scores, params)
+
+    {:ok, table_model} =
+      GradebookTableModel.new(
+        rows,
+        section.slug,
+        student_id
+      )
+
+    table_model =
+      Map.merge(table_model, %{
+        rows: rows,
+        sort_order: params.sort_order,
+        sort_by_spec:
+          Enum.find(table_model.column_specs, fn col_spec ->
+            col_spec.name == params.sort_by
+          end)
+      })
+
+    {:ok,
+     assign(
+       socket,
+       total_count: total_count,
+       grades_table_model: table_model,
+       params: params,
+       section_slug: section.slug,
+       patch_url_type: patch_url_type,
+       student_id: student_id
+     )}
+  end
+
+  defp get_grades_all_students(section, patch_url_type, params, socket) do
     enrollments =
       Sections.browse_enrollments(
         section,
@@ -74,44 +161,9 @@ defmodule OliWeb.Components.Delivery.QuizScores do
        grades_table_model: table_model,
        params: params,
        section_slug: section.slug,
-       patch_url_type: patch_url_type
+       patch_url_type: patch_url_type,
+       student_id: nil
      )}
-  end
-
-  def render(assigns) do
-    ~F"""
-      <div class="mx-10 mb-10 bg-white shadow-sm">
-        <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4 pl-9">
-          <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
-          <div class="flex flex-col gap-y-4 md:flex-row items-center">
-            <div class="form-check">
-              <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} phx-debounce="500"/>
-              <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
-            </div>
-            <form for="search" phx-target={@myself} phx-change="search_student" class="pb-3 md:pl-9 sm:pb-0">
-              <SearchInput.render id="student_search_input" name="student_name" text={@params.text_search} />
-            </form>
-          </div>
-        </div>
-
-
-        {#if @total_count > 0}
-          <PagedTable
-            table_model={@grades_table_model}
-            total_count={@total_count}
-            offset={@params.offset}
-            limit={@params.limit}
-            render_top_info={false}
-            additional_table_class="instructor_dashboard_table"
-            show_bottom_paging={false}
-            sort={JS.push("paged_table_sort", target: @myself)}
-            page_change={JS.push("paged_table_page_change", target: @myself)}
-          />
-        {#else}
-          <h6 class="text-center py-4">There are no quiz scores to show</h6>
-        {/if}
-      </div>
-    """
   end
 
   def handle_event("search_student", %{"student_name" => student_name}, socket) do
@@ -181,6 +233,29 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     }
   end
 
+  defp apply_filters(scores, params) do
+    scores =
+      scores
+      |> maybe_filter_by_text(params.text_search)
+      |> sort_by(params.sort_order)
+
+    {length(scores), scores |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+  end
+
+  defp sort_by(scores, sort_order) do
+    Enum.sort_by(scores, fn score -> score.label end, sort_order)
+  end
+
+  defp maybe_filter_by_text(scores, nil), do: scores
+  defp maybe_filter_by_text(scores, ""), do: scores
+
+  defp maybe_filter_by_text(scores, text_search) do
+    scores
+    |> Enum.filter(fn score ->
+      String.contains?(String.downcase(score.label), String.downcase(text_search))
+    end)
+  end
+
   defp fetch_resource_accesses(enrollments, section) do
     student_ids = Enum.map(enrollments, fn user -> user.id end)
 
@@ -225,12 +300,23 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     )
   end
 
-  defp route_for(socket, new_params, :quiz_scores) do
+  defp route_for(socket, new_params, :quiz_scores_instructor) do
     Routes.live_path(
       socket,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       socket.assigns.section_slug,
       :quiz_scores,
+      update_params(socket.assigns.params, new_params)
+    )
+  end
+
+  defp route_for(socket, new_params, :quiz_scores_student) do
+    Routes.live_path(
+      socket,
+      OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+      socket.assigns.section_slug,
+      socket.assigns.student_id,
+      :quizz_scores,
       update_params(socket.assigns.params, new_params)
     )
   end

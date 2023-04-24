@@ -55,7 +55,9 @@ defmodule OliWeb.Grades.GradebookView do
         id: "quiz_scores_table",
         section: assigns.section,
         params: assigns.params,
-        patch_url_type: :gradebook_view
+        patch_url_type: :gradebook_view,
+        student_id: nil,
+        scores: nil
       }
     """
   end
