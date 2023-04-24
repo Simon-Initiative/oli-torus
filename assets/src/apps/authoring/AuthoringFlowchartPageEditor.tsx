@@ -56,13 +56,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
         authoringContainer={authoringContainer}
       />
 
-      <SidePanel
-        position="left"
-        panelState={panelState}
-        onToggle={() => handlePanelStateChange({ left: !panelState.left })}
-      >
-        <ScreenList onFlowchartMode={onFlowchartMode} />
-      </SidePanel>
+      <ScreenList onFlowchartMode={onFlowchartMode} />
 
       <EditingCanvas />
 

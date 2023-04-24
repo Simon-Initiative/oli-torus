@@ -20,6 +20,7 @@ import { BlankScreenIcon } from '../Flowchart/screen-icons/BlankScreenIcon';
 import { ScreenValidationColors, screenTypeToIcon } from '../Flowchart/screen-icons/screen-icons';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
 import { sortScreens } from '../Flowchart/screens/screen-utils';
+import { InfoIcon } from '../Flowchart/sidebar/InfoIcon';
 import { AddScreenModal } from './AddScreenModal';
 
 /*
@@ -133,7 +134,7 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
   );
 
   return (
-    <div>
+    <div className="screen-list-container">
       {contextMenuCoordinates && (
         <AdvancedAuthoringPopup>
           <ContextMenu
@@ -149,23 +150,38 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
         onFlowchartMode={onFlowchartMode}
         onAddNewScreen={onAddNewScreen}
         activeMode="page"
+        reverseOrder={true}
       />
-      <ul className="screen-list">
-        {sortedActivities.map((activity) => (
-          <li
-            className={currentActivityId === activity.id ? 'active' : ''}
-            key={activity.id}
-            onClick={() => onSelectScreen(activity.resourceId!)}
-            onContextMenu={onScreenRightClick(activity.resourceId!)}
-          >
-            <ScreenIcon
-              fill={ScreenValidationColors.VALIDATED}
-              screenType={activity.authoring?.flowchart?.screenType || 'blank_screen'}
-            />
-            {activity.title || 'untitled screen'}
-          </li>
-        ))}
-      </ul>
+
+      <div className="screenlist-scroller">
+        <div className="flowchart-order-note">
+          <InfoIcon />
+          <div>
+            If you want to change the order of the screens, please go to the{' '}
+            <a onClick={onFlowchartMode}>flowchart</a>
+          </div>
+        </div>
+
+        <ul className="screen-list">
+          {sortedActivities.map((activity) => (
+            <li
+              className={currentActivityId === activity.id ? 'active' : ''}
+              key={activity.id}
+              onClick={() => onSelectScreen(activity.resourceId!)}
+              onContextMenu={onScreenRightClick(activity.resourceId!)}
+            >
+              <ScreenIcon
+                fill={ScreenValidationColors.VALIDATED}
+                screenType={activity.authoring?.flowchart?.screenType || 'blank_screen'}
+              />
+              {activity.title || 'untitled screen'}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <button onClick={onAddNewScreen} className="btn btn-primary flowchart-sidebar-button m-4">
+        Add new screen
+      </button>
     </div>
   );
 };

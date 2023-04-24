@@ -113,7 +113,7 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
       <button
         disabled={addPathDisabled}
         onClick={addRule}
-        className="btn btn-primary add-rule-button"
+        className="btn btn-primary flowchart-sidebar-button"
       >
         Add Rule
       </button>

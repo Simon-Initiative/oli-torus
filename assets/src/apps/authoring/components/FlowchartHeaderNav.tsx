@@ -86,7 +86,7 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
         }}
       >
         <div className="btn-toolbar" role="toolbar">
-          <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
+          <div className="btn-group pl-3 align-items-center" role="group">
             <UndoRedoToolbar />
           </div>
           <div className="btn-group px-3 border-right align-items-center" role="group">
@@ -107,7 +107,7 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
             {/* <ComponentSearchContextMenu authoringContainer={props.authoringContainer} /> */}
           </div>
 
-          <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
+          <div className="btn-group pl-3 align-items-center" role="group">
             <OverlayTrigger
               placement="bottom"
               delay={{ show: 150, hide: 150 }}

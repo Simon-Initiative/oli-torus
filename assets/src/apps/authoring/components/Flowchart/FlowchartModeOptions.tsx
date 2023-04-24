@@ -7,6 +7,7 @@ interface Props {
   onAddNewScreen?: () => void;
   onFlowchartMode?: () => void;
   onPageEditMode?: () => void;
+  reverseOrder?: boolean;
   activeMode: EditingMode;
 }
 
@@ -14,12 +15,15 @@ export const FlowchartModeOptions: React.FC<Props> = ({
   onFlowchartMode,
   onAddNewScreen,
   onPageEditMode,
+  reverseOrder,
   activeMode,
 }) => {
+  const screenPanelOrder = reverseOrder ? 'order-2' : 'order-1';
+  const flowchartOrder = reverseOrder ? 'order-1' : 'order-2';
   return (
-    <>
+    <div className="flex flex-col">
       <div
-        className={`sidebar-header ${activeMode === 'page' ? 'active' : ''}`}
+        className={`sidebar-header ${screenPanelOrder} ${activeMode === 'page' ? 'active' : ''}`}
         onClick={onPageEditMode}
       >
         <div className="d-flex align-items-center">
@@ -32,7 +36,7 @@ export const FlowchartModeOptions: React.FC<Props> = ({
         )}
       </div>
       <div
-        className={`sidebar-header ${activeMode === 'flowchart' ? 'active' : ''}`}
+        className={`sidebar-header ${flowchartOrder} ${activeMode === 'flowchart' ? 'active' : ''}`}
         onClick={onFlowchartMode}
       >
         <div className="d-flex align-items-center">
@@ -42,6 +46,6 @@ export const FlowchartModeOptions: React.FC<Props> = ({
           <FlowchartIcon stroke={activeMode === 'flowchart' ? '#3b76d3' : '#222439'} />
         </button>
       </div>
-    </>
+    </div>
   );
 };

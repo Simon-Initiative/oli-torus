@@ -170,7 +170,8 @@ $primary: #3b76d3;
       left: 0px;
       right: 0px;
     }
-    .add-rule-button {
+
+    .flowchart-sidebar-button {
       position: absolute;
       bottom: 1rem;
       left: 1rem;
@@ -381,26 +382,44 @@ $primary: #3b76d3;
     }
   }
 
-  ul.screen-list {
-    list-style: none;
-    padding-left: 4px;
-    li {
-      margin-left: 0px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      padding: 0.25rem;
-      svg {
-        margin-right: 0.5rem;
-      }
-      &:hover {
-        background-color: #eee;
-        cursor: pointer;
-      }
+  .screen-list-container {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    width: 270px;
+    z-index: 50;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    .screenlist-scroller {
+      flex-grow: 1;
+      overflow-y: auto;
     }
+    ul.screen-list {
+      list-style: none;
 
-    li.active {
-      font-weight: 700;
+      margin: 1rem;
+      li {
+        margin-left: 0px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        border-radius: 4px;
+        padding: 0.5rem;
+        svg {
+          margin-right: 0.5rem;
+        }
+        &:hover {
+          background-color: #eee;
+          cursor: pointer;
+        }
+      }
+
+      li.active {
+        font-weight: 700;
+        background-color: #f3f5f8;
+      }
     }
   }
 
@@ -526,6 +545,39 @@ $primary: #3b76d3;
     .configure-toolbar-button {
       // We're going to expose all attributes in the right-hand panel for flowchart mode
       display: none;
+    }
+  }
+
+  .flowchart-order-note {
+    margin: 1rem;
+    gap: 0.5rem;
+
+    background: #f3f5f8;
+    border-radius: 4px;
+
+    display: flex;
+    padding: 1rem 0.25rem 1rem 0.5rem;
+    align-items: center;
+
+    font-family: 'Open Sans';
+    font-size: 12px;
+    line-height: 20px;
+    letter-spacing: 0em;
+    text-align: left;
+    a {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  .aa-panel {
+    background-color: #fff;
+    .aa-panel-inner {
+      background-color: #fff;
     }
   }
 }
