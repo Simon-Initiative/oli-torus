@@ -123,7 +123,7 @@ defmodule OliWeb.Projects.OverviewLive do
 
       <OverviewSection.render title="Collaborators" description="Invite other authors by email to contribute to your project. Specify multiple separated by a comma.">
         <script src="https://createwww.google.com/recaptcha/api.js"></script>
-        <.form let={f} for={:form} id="form-add-collaborator">
+        <.form :let={f} for={%Plug.Conn{}} id="form-add-collaborator" method="POST" action={Routes.collaborator_path(@socket, :create, @project)}>
           <div class="form-group">
             <div class="input-group mb-3">
               <%= text_input f,
