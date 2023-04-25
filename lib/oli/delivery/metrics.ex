@@ -3,11 +3,9 @@ defmodule Oli.Delivery.Metrics do
 
   alias Oli.Repo
 
-  alias Oli.Delivery.Sections.ContainedPage
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole}
+  alias Oli.Delivery.Sections.{ContainedPage, Enrollment, EnrollmentContextRole, SectionResource}
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
 
