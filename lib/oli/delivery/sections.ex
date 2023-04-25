@@ -2279,59 +2279,124 @@ defmodule Oli.Delivery.Sections do
     Repo.all(query)
   end
 
+  defp get_student_pages(section_slug, user_id, opts \\ [graded: false]) do
+    graded_filter =
+      case opts[:graded] do
+        true -> dynamic([_, _, _, _, rev], rev.graded == true)
+        _ -> []
+      end
+
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> join(:left, [sr], gc in GatingCondition,
+      on:
+        gc.section_id == sr.section_id and gc.resource_id == sr.resource_id and
+          is_nil(gc.user_id)
+    )
+    |> join(:left, [sr], gc2 in GatingCondition,
+      on:
+        gc2.section_id == sr.section_id and gc2.resource_id == sr.resource_id and
+          gc2.user_id == ^user_id
+    )
+    |> where(
+      [sr, s, _, _, _, gc, gc2],
+      s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and
+        (is_nil(gc2) or gc2.type == :schedule)
+    )
+    |> where(^graded_filter)
+    |> select([sr, s, _, _, rev, gc, gc2], %{
+      id: sr.id,
+      title: rev.title,
+      slug: rev.slug,
+      end_date:
+        fragment(
+          "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date)",
+          gc2.data["end_datetime"],
+          gc.data["end_datetime"],
+          sr.end_date
+        ),
+      scheduled_type: sr.scheduling_type,
+      gate_type:
+        fragment(
+          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL)",
+          gc2.type,
+          gc.type
+        ),
+      graded: rev.graded,
+      resource_type_id: rev.resource_type_id,
+      resource_id: rev.resource_id,
+      numbering_level: sr.numbering_level,
+      children: sr.children,
+      section_id: s.id,
+      relates_to: rev.relates_to
+    })
+    |> order_by([{:asc_nulls_last, fragment("end_date")}])
+  end
+
+  @doc """
+    Returns the activities that a student need to complete next.
+  """
+  def get_next_activities_for_student(section_slug, user_id) do
+    student_pages_query = get_student_pages(section_slug, user_id)
+
+    query =
+      from sp in subquery(student_pages_query),
+        where:
+          not is_nil(sp.end_date) and
+            sp.end_date >= ^Date.utc_today() and
+            sp.resource_type_id in [
+              ^ResourceType.get_id_by_type("page"),
+              ^ResourceType.get_id_by_type("container")
+            ],
+        limit: 2
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn activity ->
+      case ResourceType.get_type_by_id(activity.resource_type_id) do
+        "page" ->
+          Map.put(
+            activity,
+            :progress,
+            Oli.Delivery.Metrics.progress_for_page(
+              activity.section_id,
+              user_id,
+              activity.resource_id
+            ) * 100
+          )
+
+        "container" ->
+          Map.put(
+            activity,
+            :progress,
+            Oli.Delivery.Metrics.progress_for(activity.section_id, user_id, activity.resource_id)
+          ) * 100
+      end
+      |> Map.put(
+        :completion_percentage,
+        Oli.Delivery.Metrics.completion_for(
+          activity.section_id,
+          activity.resource_id
+        )
+      )
+    end)
+  end
+
+  @doc """
+    Returns the graded pages and their due dates for a given student.
+  """
   def get_graded_pages(section_slug, user_id) do
+    student_pages_query = get_student_pages(section_slug, user_id, graded: true)
+
     {graded_pages_with_date, other_resources} =
-      SectionResource
-      |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
-      |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
-        on: spp.section_id == s.id and spp.project_id == sr.project_id
-      )
-      |> join(:inner, [sr, _, spp], pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
-      )
-      |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
-      |> join(:left, [sr], gc in GatingCondition,
-        on:
-          gc.section_id == sr.section_id and gc.resource_id == sr.resource_id and
-            is_nil(gc.user_id)
-      )
-      |> join(:left, [sr], gc2 in GatingCondition,
-        on:
-          gc2.section_id == sr.section_id and gc2.resource_id == sr.resource_id and
-            gc2.user_id == ^user_id
-      )
-      |> where(
-        [sr, s, _, _, _, gc, gc2],
-        s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and
-          (is_nil(gc2) or gc2.type == :schedule)
-      )
-      |> select([sr, s, _, _, rev, gc, gc2], %{
-        id: sr.id,
-        title: rev.title,
-        slug: rev.slug,
-        end_date:
-          fragment(
-            "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date) as end_date",
-            gc2.data["end_datetime"],
-            gc.data["end_datetime"],
-            sr.end_date
-          ),
-        scheduled_type: sr.scheduling_type,
-        gate_type:
-          fragment(
-            "coalesce(coalesce(cast(? as text), cast(? as text)), NULL) as hard_gate_type",
-            gc2.type,
-            gc.type
-          ),
-        graded: rev.graded,
-        resource_type_id: rev.resource_type_id,
-        numbering_level: sr.numbering_level,
-        children: sr.children,
-        section_id: s.id,
-        relates_to: rev.relates_to
-      })
-      |> order_by([{:asc_nulls_last, fragment("end_date")}])
-      |> Repo.all()
+      Repo.all(from(sp in subquery(student_pages_query)))
       |> Enum.uniq_by(& &1.id)
       |> Enum.split_with(fn page ->
         page.end_date != nil and page.graded == true and
@@ -2342,13 +2407,15 @@ defmodule Oli.Delivery.Sections do
     |> append_related_resources(user_id)
   end
 
+  defp get_graded_pages_without_date([]), do: []
+
   defp get_graded_pages_without_date(resources) do
     {root_container, graded_pages} = get_root_container_and_graded_pages(resources)
 
     graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
 
     {pages, remaining} =
-      get_flatten_hierarchy(root_container.children, resources)
+      get_flatten_hierarchy((root_container || %{})[:children], resources)
       |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
         case Map.get(remaining, id) do
           nil -> {acc, remaining}
