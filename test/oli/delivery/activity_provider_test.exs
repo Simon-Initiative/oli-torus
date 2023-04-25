@@ -103,7 +103,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
       activity2: activity2,
       page: page,
       publication: publication,
-      section: section
+      section: section,
+      user1: user
     } do
       source = %Source{
         publication_id: publication.id,
@@ -116,6 +117,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
           page.revision,
           source,
           [],
+          user,
+          section.slug,
           Oli.Publishing.DeliveryResolver
         )
 
@@ -212,7 +215,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
       page: page,
       publication: publication,
       section: section,
-      o1: o1
+      o1: o1,
+      user1: user
     } do
       content = %{
         "model" => [
@@ -252,6 +256,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
           %{page.revision | content: content},
           source,
           [],
+          user,
+          section.slug,
           Oli.Publishing.DeliveryResolver
         )
 
@@ -293,7 +299,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
       page: page,
       publication: publication,
       section: section,
-      o1: o1
+      o1: o1,
+      user1: user
     } do
       content = %{
         "model" => [
@@ -327,6 +334,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
           %{page.revision | content: content},
           source,
           [%AttemptPrototype{revision: activity1.revision, selection_id: "2"}],
+          user,
+          section.slug,
           Oli.Publishing.DeliveryResolver
         )
 
@@ -342,7 +351,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
       page: page,
       publication: publication,
       section: section,
-      o1: o1
+      o1: o1,
+      user1: user
     } do
       content = %{
         "model" => [
@@ -379,6 +389,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
             %AttemptPrototype{revision: activity1.revision, selection_id: "2"},
             %AttemptPrototype{revision: activity2.revision, selection_id: "2"}
           ],
+          user,
+          section.slug,
           Oli.Publishing.DeliveryResolver
         )
 
@@ -404,7 +416,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
       page: page,
       publication: publication,
       section: section,
-      o1: o1
+      o1: o1,
+      user1: user
     } do
       content = %{
         "model" => [
@@ -461,6 +474,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
           %{page.revision | content: content},
           source,
           [],
+          user,
+          section.slug,
           Oli.Publishing.DeliveryResolver
         )
 
@@ -502,7 +517,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
       page: page,
       publication: publication,
       section: section,
-      o1: o1
+      o1: o1,
+      user1: user
     } do
       content = %{
         "model" => [
@@ -550,6 +566,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
           %{page.revision | content: content},
           source,
           [],
+          user,
+          section.slug,
           Oli.Publishing.DeliveryResolver
         )
 
@@ -604,7 +622,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
       page: page,
       publication: publication,
       section: section,
-      o1: o1
+      o1: o1,
+      user1: user
     } do
       content = %{
         "model" => [
@@ -653,6 +672,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
           %{page.revision | content: content},
           source,
           [],
+          user,
+          section.slug,
           Oli.Publishing.DeliveryResolver
         )
 
