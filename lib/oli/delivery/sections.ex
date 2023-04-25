@@ -2628,12 +2628,14 @@ defmodule Oli.Delivery.Sections do
   def get_base_project_survey(section_slug) do
     do_get_survey(section_slug)
     |> where([s, spp, _, pr, proj], pr.resource_id == proj.required_survey_resource_id)
+    |> limit(1)
     |> Repo.one()
   end
 
   def get_survey(section_slug) do
     do_get_survey(section_slug)
     |> where([s, spp, _, pr, proj], pr.resource_id == s.required_survey_resource_id)
+    |> limit(1)
     |> Repo.one()
   end
 
