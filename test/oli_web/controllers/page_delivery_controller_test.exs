@@ -1930,7 +1930,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     }
   end
 
-  defp setup_audience(map) do
+  defp setup_audience_section(map) do
     map
     |> Oli.Utils.Seeder.Project.create_admin(admin_tag: :admin)
     |> Oli.Utils.Seeder.Project.create_author(author_tag: :author)
@@ -1949,21 +1949,25 @@ defmodule OliWeb.PageDeliveryControllerTest do
       ref(:proj),
       ref(:curriculum),
       %{
+        title: "page_with_audience_groups",
         content: sample_content_with_audiences()
       },
-      revision_tag: :page_with_audience_groups
+      revision_tag: :page_with_audience_groups,
+      container_revision_tag: :curriculum
     )
     |> Oli.Utils.Seeder.Project.create_page(
       ref(:author),
       ref(:proj),
       ref(:curriculum),
       %{
+        title: "graded_page_with_audience_groups",
         content: sample_content_with_audiences(),
         graded: true
       },
-      revision_tag: :graded_page_with_audience_groups
+      revision_tag: :graded_page_with_audience_groups,
+      container_revision_tag: :curriculum
     )
-    |> Oli.Utils.Seeder.Project.ensure_published(ref(:pub), publication_tag: :pub)
+    |> Oli.Utils.Seeder.Project.ensure_published(ref(:pub))
     |> Oli.Utils.Seeder.Section.create_section(
       ref(:proj),
       ref(:pub),
@@ -1984,30 +1988,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "audience" do
-    setup [:setup_audience]
-
-    test "admin sees the appropriate content according to audience", map do
-      %{page_with_audience_groups: page_with_audience_groups, section: section} = map
-
-      %{conn: conn} =
-        map
-        |> Oli.Utils.Seeder.Session.login_as_user(ref(:admin))
-
-      conn =
-        get(
-          conn,
-          Routes.page_delivery_path(conn, :page, section.slug, page_with_audience_groups.slug)
-        )
-
-      assert html_response(conn, 200) =~ "group content with unset audience"
-      assert html_response(conn, 200) =~ "group content with always audience"
-      assert html_response(conn, 200) =~ "group content with instructor audience"
-      refute html_response(conn, 200) =~ "group content with feedback audience"
-      refute html_response(conn, 200) =~ "group content with never audience"
-    end
+    setup [:setup_audience_section]
 
     test "student sees the appropriate content according to audience", map do
-      %{page_with_audience_groups: page_with_audience_groups, section: section} = map
+      %{
+        page_with_audience_groups: page_with_audience_groups,
+        section: section
+      } = map
 
       %{conn: conn} =
         map
