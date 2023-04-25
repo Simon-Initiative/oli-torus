@@ -633,7 +633,7 @@ defmodule Oli.Utils.Seeder.Project do
     |> tag(published_resource_tag, published_resource)
   end
 
-  defp attach_to(seeds, resources, container_revision, publication, tags \\ []) do
+  defp attach_to(seeds, resources, container_revision, publication, tags) do
     children_ids = Enum.map(resources, fn r -> r.id end)
 
     {:ok, updated} =
