@@ -13,7 +13,7 @@ $ui-border-color: #ccc;
 $panel-section-title-bar-color: #e8ebed;
 $workspace-bg: var(--color-body);
 $font-family-sans-serif: var(--font-sans);
-$primary: #3b76d3;
+$primary: #2c6abf;
 //$primary: var(--color-delivery-primary);
 
 .flowchart-editor {
@@ -61,6 +61,46 @@ $primary: #3b76d3;
     flex-shrink: 1;
   }
 
+  /* This is the top-toolbar in page editor mode, not in flowchart mode */
+  .component-toolbar {
+    position: absolute;
+    top: 0px;
+    left: 280px;
+    right: 280px;
+    height: 160px;
+    background-color: #fff;
+    padding: 25px 25px 0px 25px;
+    display: flex;
+    flex-direction: row;
+
+    justify-content: space-between;
+    gap: 5px;
+
+    .toolbar-column {
+      display: flex;
+      flex-direction: column;
+      max-width: 225px;
+      .toolbar-buttons {
+        display: flex;
+        flex-direction: row;
+        flex-flow: row wrap;
+        gap: 18px;
+      }
+      label: {
+        width: 100%;
+        flex-basis: 100%;
+      }
+
+      .component-button {
+        width: 24px;
+        height: 24px;
+        background-color: #f3f5f8;
+        flex-basis: 24px;
+      }
+    }
+  }
+
+  /* This is the top-toolbar in flowchart mode, not in page-edit mode */
   .top-toolbar {
     display: grid;
     padding-top: 15px;
