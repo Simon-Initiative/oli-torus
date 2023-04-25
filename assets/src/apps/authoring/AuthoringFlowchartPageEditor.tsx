@@ -6,7 +6,7 @@ import { FlowchartErrorDisplay } from './components/Flowchart/FlowchartErrorMess
 import { TemplatePicker } from './components/Flowchart/TemplatePicker';
 import { applyTemplate } from './components/Flowchart/flowchart-actions/apply-template';
 import { Template } from './components/Flowchart/template-types';
-import FlowchartHeaderNav from './components/FlowchartHeaderNav';
+import FlowchartHeaderNav from './components/Flowchart/toolbar/FlowchartHeaderNav';
 import RightMenu from './components/RightMenu/RightMenu';
 import { ScreenList } from './components/ScreenList/ScreenList';
 import { SidePanel } from './components/SidePanel';

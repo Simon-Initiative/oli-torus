@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export const LeftArrow: React.FC = (props) => {
+export const ParagraphIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439', ...props }) => {
   return (
     <svg
       width={24}
@@ -8,16 +8,14 @@ export const LeftArrow: React.FC = (props) => {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="inline"
       {...props}
     >
+      <rect width={24} height={24} rx={3} fill="#F3F5F8" />
       <path
-        d="M5 12h14M12 5l7 7-7 7"
-        stroke="#2C6ABF"
-        strokeWidth={2}
+        d="M18 8H6M18 13.332H6M16 10.666H8M16 16H8"
+        stroke={stroke}
         strokeLinecap="round"
         strokeLinejoin="round"
-        transform="rotate(180 14 14) translate(4 5)"
       />
     </svg>
   );

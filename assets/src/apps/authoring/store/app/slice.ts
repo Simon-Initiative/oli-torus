@@ -122,6 +122,9 @@ const slice: Slice<AppState> = createSlice({
     changeEditMode(state, action: PayloadAction<{ mode: EditingMode }>) {
       state.editingMode = action.payload.mode;
     },
+    setDebugConfig(state) {
+      state.paths = {};
+    },
     setInitialConfig(state, action: PayloadAction<AppConfig>) {
       state.paths = action.payload.paths || initialState.paths;
       state.isAdmin = !!action.payload.isAdmin;
@@ -214,6 +217,7 @@ export const {
   setRightPanelActiveTab,
   setCurrentRule,
   setCopiedPart,
+  setDebugConfig,
   setReadonly,
   setShowDiagnosticsWindow,
   changeAppMode,

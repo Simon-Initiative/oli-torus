@@ -13,7 +13,7 @@ export const RightArrow: React.FC = (props) => {
     >
       <path
         d="M5 12h14M12 5l7 7-7 7"
-        stroke="#3b76d3"
+        stroke="#2C6ABF"
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"

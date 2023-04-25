@@ -1,18 +1,18 @@
 import React, { useCallback } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectCurrentActivity } from '../../delivery/store/features/activities/slice';
+import { selectCurrentActivity } from '../../../../delivery/store/features/activities/slice';
 import {
   selectPaths,
   selectProjectSlug,
   selectReadOnly,
   selectRevisionSlug,
   setShowScoringOverview,
-} from '../store/app/slice';
-import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
-import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
-import { verifyFlowchartLesson } from './Flowchart/flowchart-actions/verify-flowchart-lesson';
-import { getScreenQuestionType } from './Flowchart/paths/path-options';
+} from '../../../store/app/slice';
+import AddComponentToolbar from '../../ComponentToolbar/AddComponentToolbar';
+import UndoRedoToolbar from '../../ComponentToolbar/UndoRedoToolbar';
+import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
+import { getScreenQuestionType } from '../paths/path-options';
 
 interface HeaderNavProps {
   panelState: any;
@@ -42,7 +42,7 @@ const questionComponents: string[] = [
   'janus_multi_line_text',
 ];
 
-const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
+export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const { panelState, isVisible } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
@@ -75,36 +75,75 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
 
   return (
     paths && (
-      <nav
-        className={`aa-header-nav top-panel overflow-hidden${
-          isVisible ? ' open' : ''
-        } d-flex aa-panel-section-title-bar`}
-        style={{
-          alignItems: 'center',
-          left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
-          right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
-        }}
-      >
-        <div className="btn-toolbar" role="toolbar">
+      <div className="component-toolbar">
+        <div className="toolbar-column" style={{ flexBasis: '10%' }}>
+          <label>Undo</label>
+          <button className="undo-redo-button">U</button>
+        </div>
+
+        <div className="toolbar-column" style={{ flexBasis: '10%' }}>
+          <label>Undo</label>
+          <button className="undo-redo-button">R</button>
+        </div>
+
+        <div className="toolbar-column" style={{ flexBasis: '42%' }}>
+          <label>Static Components</label>
+          <div className="toolbar-buttons">
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+          </div>
+        </div>
+
+        <div className="toolbar-column" style={{ flexBasis: '42%' }}>
+          <label>Question Components</label>
+          <div className="toolbar-buttons">
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+          </div>
+        </div>
+
+        <div className="toolbar-column" style={{ flexBasis: '14%' }}>
+          <label>Scoring</label>
+          <div className="toolbar-buttons">
+            <button className="component-button">?</button>
+            <button className="component-button">?</button>
+          </div>
+        </div>
+
+        {/* <div className="btn-toolbar" role="toolbar">
           <div className="btn-group pl-3 align-items-center" role="group">
             <UndoRedoToolbar />
           </div>
           <div className="btn-group px-3 border-right align-items-center" role="group">
-            <AddComponentToolbar
-              frequentlyUsed={staticComponents}
-              authoringContainer={props.authoringContainer}
-              showMoreComponentsMenu={false}
-              showPasteComponentOption={false}
-            />
+            <div>
+              <label>Static Components</label>
+              <AddComponentToolbar
+                frequentlyUsed={staticComponents}
+                authoringContainer={props.authoringContainer}
+                showMoreComponentsMenu={false}
+                showPasteComponentOption={false}
+              />
+            </div>
 
-            <AddComponentToolbar
-              disabled={hasQuestion}
-              frequentlyUsed={questionComponents}
-              authoringContainer={props.authoringContainer}
-              showMoreComponentsMenu={false}
-            />
+            <div>
+              <label>Question Components</label>
 
-            {/* <ComponentSearchContextMenu authoringContainer={props.authoringContainer} /> */}
+              <AddComponentToolbar
+                disabled={hasQuestion}
+                frequentlyUsed={questionComponents}
+                authoringContainer={props.authoringContainer}
+                showMoreComponentsMenu={false}
+              />
+            </div>
           </div>
 
           <div className="btn-group pl-3 align-items-center" role="group">
@@ -141,34 +180,6 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
                 </button>
               </span>
             </OverlayTrigger>
-            {/* <DiagnosticsTrigger onClick={handleDiagnosticsClick} />
-            {isAdmin && (
-              <OverlayTrigger
-                placement="bottom"
-                delay={{ show: 150, hide: 150 }}
-                overlay={
-                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                    Revision History (Admin)
-                  </Tooltip>
-                }
-              >
-                <span>
-                  <button
-                    className="px-2 btn btn-link"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // open revistion history in same window
-                      window.open(`/project/${projectSlug}/history/slug/${revisionSlug}`, '_self');
-                    }}
-                  >
-                    <i
-                      className="fa fa-history"
-                      style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
-                    />
-                  </button>
-                </span>
-              </OverlayTrigger>
-            )} */}
 
             {isReadOnly && (
               <OverlayTrigger
@@ -191,8 +202,8 @@ const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => 
               </OverlayTrigger>
             )}
           </div>
-        </div>
-      </nav>
+        </div> */}
+      </div>
     )
   );
 };

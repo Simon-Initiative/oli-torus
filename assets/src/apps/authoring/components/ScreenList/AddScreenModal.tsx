@@ -105,7 +105,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
           >
             <path
               d="M5 12h14M12 5l7 7-7 7"
-              stroke={validInput ? '#3B76D3' : '#b1b1b1'}
+              stroke={validInput ? '#2C6ABF' : '#b1b1b1'}
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"

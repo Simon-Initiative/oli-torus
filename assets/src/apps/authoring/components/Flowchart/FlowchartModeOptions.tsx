@@ -43,7 +43,7 @@ export const FlowchartModeOptions: React.FC<Props> = ({
           <span className="title">Flowchart</span>
         </div>
         <button onClick={onAddNewScreen}>
-          <FlowchartIcon stroke={activeMode === 'flowchart' ? '#3b76d3' : '#222439'} />
+          <FlowchartIcon stroke={activeMode === 'flowchart' ? '#2C6ABF' : '#222439'} />
         </button>
       </div>
     </div>
