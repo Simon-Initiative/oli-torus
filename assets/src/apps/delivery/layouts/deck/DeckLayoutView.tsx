@@ -348,11 +348,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const getStatePrefix = (path: string, activityId: string | number) => {
     const parts = path.split('.');
     const partId = parts[0];
-    const ownerActivityId = currentActivityTree?.filter((activity: any) =>
-      activity?.authoring?.parts?.filter(
-        (part: { id: string; owner: string | number }) =>
-          part?.id === partId && part?.owner == activityId,
-      ),
+    const ownerActivityId = currentActivityTree?.filter(
+      (activity: any) =>
+        activity?.authoring?.parts?.filter(
+          (part: { id: string; owner: string | number }) => part?.id === partId,
+        ).length,
     );
     if (ownerActivityId?.length) {
       return `${ownerActivityId[0].id}|stage`;
