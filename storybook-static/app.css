@@ -5490,6 +5490,10 @@ table.table-striped tbody tr:nth-child(even) {
   text-align: left;
 }
 
+.\!text-center {
+  text-align: center !important;
+}
+
 .text-center {
   text-align: center;
 }
