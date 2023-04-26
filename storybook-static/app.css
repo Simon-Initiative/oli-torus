@@ -6644,6 +6644,11 @@ button.torus-button.secondary:disabled {
   --tw-bg-opacity: 0.2;
 }
 
+.instructor_dashboard_table tr:has(a[data-score-check='false']) {
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.2;
+}
+
 /**
  * Automatically style all links with blue text and underline on hover.
  * External links will automatically get an arrow icon appended.
