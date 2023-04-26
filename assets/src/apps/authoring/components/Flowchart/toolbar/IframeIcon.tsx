@@ -1,6 +1,10 @@
 import * as React from 'react';
 
-export const IframeIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439', ...props }) => {
+export const IframeIcon: React.FC<{ stroke?: string; fill?: string }> = ({
+  stroke = '#222439',
+  fill = '#F3F5F8',
+  ...props
+}) => {
   return (
     <svg
       width={24}
@@ -10,7 +14,7 @@ export const IframeIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439', .
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <rect width={24} height={24} rx={3} fill="#F3F5F8" />
+      <rect width={24} height={24} rx={3} fill={fill} />
       <path
         d="M18 14.332V9a1.333 1.333 0 00-.666-1.154L12.667 5.18a1.333 1.333 0 00-1.333 0L6.667 7.845A1.333 1.333 0 006 9v5.333a1.333 1.333 0 00.667 1.154l4.667 2.666a1.333 1.333 0 001.333 0l4.667-2.666A1.334 1.334 0 0018 14.332z"
         stroke={stroke}

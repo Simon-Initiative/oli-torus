@@ -1,18 +1,31 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import useHover from '../../../../../components/hooks/useHover';
+import guid from '../../../../../utils/guid';
 import { selectCurrentActivity } from '../../../../delivery/store/features/activities/slice';
 import {
+  selectCurrentActivityTree,
+  selectSequence,
+} from '../../../../delivery/store/features/groups/selectors/deck';
+import {
+  selectPartComponentTypes,
   selectPaths,
   selectProjectSlug,
   selectReadOnly,
   selectRevisionSlug,
   setShowScoringOverview,
 } from '../../../store/app/slice';
+import { addPart } from '../../../store/parts/actions/addPart';
 import AddComponentToolbar from '../../ComponentToolbar/AddComponentToolbar';
 import UndoRedoToolbar from '../../ComponentToolbar/UndoRedoToolbar';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
 import { getScreenQuestionType } from '../paths/path-options';
+import { PreviewIcon } from './PreviewIcon';
+import { RedoIcon } from './RedoIcon';
+import { ScoringIcon } from './ScoringIcon';
+import { UndoIcon } from './UndoIcon';
+import { toolbarIcons, toolbarTooltips } from './toolbar-icons';
 
 interface HeaderNavProps {
   panelState: any;
@@ -42,19 +55,56 @@ const questionComponents: string[] = [
   'janus_multi_line_text',
 ];
 
+const ToolbarOption: React.FC<{ disabled?: boolean; component: string; onClick: () => void }> = ({
+  component,
+  onClick,
+  disabled = false,
+}) => {
+  const ref = useRef<HTMLButtonElement>(null);
+  const hover = useHover(ref);
+
+  const Icon = toolbarIcons[component];
+  return (
+    <button
+      key={component}
+      onClick={onClick}
+      className="component-button"
+      disabled={disabled}
+      ref={ref}
+    >
+      <OverlayTrigger
+        key={component}
+        placement="bottom"
+        delay={{ show: 150, hide: 150 }}
+        overlay={
+          <Tooltip placement="top" id="button-tooltip" style={{ fontSize: '12px' }}>
+            <strong>{toolbarTooltips[component]}</strong>
+            {disabled && <div>Only one question component per screen is allowed</div>}
+          </Tooltip>
+        }
+      >
+        <Icon
+          fill={disabled ? '#F3F5F8' : hover ? '#dce7f9' : undefined}
+          stroke={disabled ? '#696974' : undefined}
+        />
+      </OverlayTrigger>
+    </button>
+  );
+};
+
 export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
-  const { panelState, isVisible } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
+  const availablePartComponents = useSelector(selectPartComponentTypes);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
+
   const paths = useSelector(selectPaths);
   const dispatch = useDispatch();
-  const isReadOnly = useSelector(selectReadOnly);
+  //const isReadOnly = useSelector(selectReadOnly);
   const currentActivity = useSelector(selectCurrentActivity);
 
   const questionType = getScreenQuestionType(currentActivity);
   const hasQuestion = questionType !== 'none';
-
-  const PANEL_SIDE_WIDTH = '270px';
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
@@ -64,58 +114,104 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
     window.open(url, windowName);
   }, [dispatch, url, windowName]);
 
-  const handleReadOnlyClick = () => {
-    // TODO: show a modal offering to confirm if you want to disable read only
-    // but changes that were made will be lost. better right now to just use browser refresh
-  };
-
   const handleScoringOverviewClick = () => {
     dispatch(setShowScoringOverview({ show: true }));
   };
 
+  const handleAddComponent = useCallback(
+    (partComponentType: string) => () => {
+      if (!availablePartComponents) {
+        return;
+      }
+      const partComponent = availablePartComponents.find((p) => p.slug === partComponentType);
+      if (!partComponent) {
+        console.warn(`No part ${partComponentType} found in registry!`, {
+          availablePartComponents,
+        });
+        return;
+      }
+      const PartClass = customElements.get(partComponent.authoring_element);
+      if (PartClass) {
+        // only ever add to the current activity, not a layer
+
+        const part = new PartClass() as any;
+        const newPartData = {
+          id: `${partComponentType}-${guid()}`,
+          type: partComponent.delivery_element,
+          custom: {
+            x: 10,
+            y: 10,
+            z: 0,
+            width: 100,
+            height: 100,
+          },
+        };
+        const creationContext = { transform: { ...newPartData.custom } };
+        if (part.createSchema) {
+          newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
+        }
+        if (currentActivityTree) {
+          const [currentActivity] = currentActivityTree.slice(-1);
+          dispatch(addPart({ activityId: currentActivity.id, newPartData }));
+        }
+      }
+    },
+    [availablePartComponents, currentActivityTree, dispatch],
+  );
+
   return (
     paths && (
       <div className="component-toolbar">
-        <div className="toolbar-column" style={{ flexBasis: '10%' }}>
+        <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
           <label>Undo</label>
-          <button className="undo-redo-button">U</button>
+          <button className="undo-redo-button">
+            <UndoIcon />
+          </button>
         </div>
 
-        <div className="toolbar-column" style={{ flexBasis: '10%' }}>
+        <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
           <label>Undo</label>
-          <button className="undo-redo-button">R</button>
+          <button className="undo-redo-button">
+            <RedoIcon />
+          </button>
         </div>
 
         <div className="toolbar-column" style={{ flexBasis: '42%' }}>
           <label>Static Components</label>
           <div className="toolbar-buttons">
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
+            {staticComponents.map((component) => (
+              <ToolbarOption
+                component={component}
+                key={component}
+                onClick={handleAddComponent(component)}
+              />
+            ))}
           </div>
         </div>
 
         <div className="toolbar-column" style={{ flexBasis: '42%' }}>
           <label>Question Components</label>
           <div className="toolbar-buttons">
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
+            {questionComponents.map((component) => (
+              <ToolbarOption
+                disabled={hasQuestion}
+                component={component}
+                key={component}
+                onClick={handleAddComponent(component)}
+              />
+            ))}
           </div>
         </div>
 
         <div className="toolbar-column" style={{ flexBasis: '14%' }}>
-          <label>Scoring</label>
+          <label>Overview</label>
           <div className="toolbar-buttons">
-            <button className="component-button">?</button>
-            <button className="component-button">?</button>
+            <button onClick={previewLesson} className="component-button">
+              <PreviewIcon />
+            </button>
+            <button onClick={handleScoringOverviewClick} className="component-button">
+              <ScoringIcon />
+            </button>
           </div>
         </div>
 

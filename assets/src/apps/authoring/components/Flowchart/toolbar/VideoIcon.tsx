@@ -1,6 +1,10 @@
 import * as React from 'react';
 
-export const VideoIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439', ...props }) => {
+export const VideoIcon: React.FC<{ stroke?: string; fill?: string }> = ({
+  stroke = '#222439',
+  fill = '#F3F5F8',
+  ...props
+}) => {
   return (
     <svg
       width={24}
@@ -10,7 +14,7 @@ export const VideoIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439', ..
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <rect width={24} height={24} rx={3} fill="#F3F5F8" />
+      <rect width={24} height={24} rx={3} fill={fill} />
       <path
         d="M19.5 12a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z"
         stroke={stroke}

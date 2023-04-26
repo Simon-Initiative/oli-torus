@@ -14,6 +14,7 @@ $panel-section-title-bar-color: #e8ebed;
 $workspace-bg: var(--color-body);
 $font-family-sans-serif: var(--font-sans);
 $primary: #2c6abf;
+$hover: #dce7f9;
 //$primary: var(--color-delivery-primary);
 
 .flowchart-editor {
@@ -65,30 +66,51 @@ $primary: #2c6abf;
   .component-toolbar {
     position: absolute;
     top: 0px;
-    left: 280px;
-    right: 280px;
-    height: 160px;
+    left: 270px;
+    right: 270px;
+    z-index: 10;
+
+    //height: 160px;
     background-color: #fff;
-    padding: 25px 25px 0px 25px;
+    padding: 25px 25px 1rem 25px;
     display: flex;
     flex-direction: row;
 
-    justify-content: space-between;
-    gap: 5px;
+    justify-content: center;
+
+    gap: 1.5rem;
 
     .toolbar-column {
       display: flex;
       flex-direction: column;
       max-width: 225px;
+      .undo-redo-button {
+        width: 40px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        margin-bottom: 12px;
+        border-radius: 4px;
+        padding: 4px 0px;
+        &:hover {
+          background-color: $hover;
+        }
+      }
       .toolbar-buttons {
         display: flex;
         flex-direction: row;
         flex-flow: row wrap;
-        gap: 18px;
+        gap: 17px;
       }
-      label: {
+
+      label {
         width: 100%;
-        flex-basis: 100%;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-family: 'Open Sans';
+        font-size: 14px;
+        letter-spacing: 0em;
+        text-align: left;
       }
 
       .component-button {
@@ -110,6 +132,8 @@ $primary: #2c6abf;
     grid-column-gap: 0px;
     grid-row-gap: 0px;
     border-bottom: 1px solid #e8e8e8;
+    max-width: 980px;
+    margin: 0 auto;
 
     .left-header,
     .right-header {
@@ -618,6 +642,28 @@ $primary: #2c6abf;
     background-color: #fff;
     .aa-panel-inner {
       background-color: #fff;
+    }
+  }
+
+  .aa-stage {
+    position: fixed;
+    z-index: 9;
+    top: 210px;
+    left: 335px;
+    right: 270px;
+    bottom: 0;
+    overflow: scroll;
+    background: white;
+
+    .aa-stage-pan {
+      width: 2000px;
+      height: 1000px;
+      backface-visibility: 'visible';
+      background: none;
+      background-color: #f3f5f8;
+      // background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
+      //   repeat;
+      border: 1px solid #999;
     }
   }
 }

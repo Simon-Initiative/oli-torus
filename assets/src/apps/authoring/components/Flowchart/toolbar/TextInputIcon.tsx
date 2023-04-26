@@ -1,6 +1,10 @@
 import * as React from 'react';
 
-export const TextInputIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439', ...props }) => (
+export const TextInputIcon: React.FC<{ stroke?: string; fill?: string }> = ({
+  stroke = '#222439',
+  fill = '#F3F5F8',
+  ...props
+}) => (
   <svg
     width={24}
     height={24}
@@ -9,7 +13,7 @@ export const TextInputIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439'
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
-    <rect width={24} height={24} rx={3} fill="#F3F5F8" />
+    <rect width={24} height={24} rx={3} fill={fill} />
     <path
       d="M7.5 9.75V7.5h9v2.25M10.5 16.5h3M12 7.5v9"
       stroke={stroke}

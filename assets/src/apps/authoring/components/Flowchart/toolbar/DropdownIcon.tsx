@@ -1,6 +1,10 @@
 import * as React from 'react';
 
-export const DropdownIcon: React.FC<{ stroke: string }> = ({ stroke = '#222439', ...props }) => (
+export const DropdownIcon: React.FC<{ stroke?: string; fill?: string }> = ({
+  stroke = '#222439',
+  fill = '#F3F5F8',
+  ...props
+}) => (
   <svg
     width={24}
     height={24}
