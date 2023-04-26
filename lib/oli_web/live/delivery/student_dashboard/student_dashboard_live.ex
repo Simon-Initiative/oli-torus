@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
+  alias Oli.Grading.GradebookRow
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -48,6 +49,21 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
         }
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(%{"active_tab" => "quizz_scores"} = params, _, socket) do
+    socket =
+      socket
+      |> assign(
+        params: params,
+        active_tab: String.to_existing_atom(params["active_tab"])
+      )
+      |> assign_new(:scores, fn ->
+        %{scores: get_scores(socket.assigns.section, socket.assigns.student.id)}
       end)
 
     {:noreply, socket}
@@ -101,8 +117,13 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   defp render_tab(%{active_tab: :quizz_scores} = assigns) do
     ~H"""
       <.live_component
-      id="quizz_scores_tab"
-      module={OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTab}
+        id="quiz_scores_table"
+        module={OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTab}
+        params={@params}
+        section={@section}
+        patch_url_type={:quiz_scores_student}
+        student_id={@student.id}
+        scores={@scores}
       />
     """
   end
@@ -187,5 +208,18 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       container_ids,
       student_id
     )
+  end
+
+  defp get_scores(section, student_id) do
+    {gradebook, _column_labels} = Oli.Grading.generate_gradebook_for_section(section)
+
+    if length(gradebook) > 0 do
+      [%GradebookRow{user: _user, scores: scores} | _] =
+        Enum.filter(gradebook, fn grade -> grade.user.id == student_id end)
+
+      Enum.filter(scores, fn score -> !is_nil(score) end)
+    else
+      []
+    end
   end
 end
