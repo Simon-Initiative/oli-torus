@@ -18,7 +18,7 @@ const ConfirmDelete: React.FC<ConfirmDeleteProps> = (props) => {
   const title = props.title || `Delete ${elementType}`;
 
   return (
-    <AdvancedAuthoringModal show={show} onHide={cancelHandler}>
+    <Modal show={show} onHide={cancelHandler}>
       <Modal.Header closeButton={true} className="px-8 pb-0">
         <h3 className="modal-title font-bold">{title}</h3>
       </Modal.Header>
@@ -38,7 +38,7 @@ const ConfirmDelete: React.FC<ConfirmDeleteProps> = (props) => {
           Cancel
         </button>
       </Modal.Footer>
-    </AdvancedAuthoringModal>
+    </Modal>
   );
 };
 export default ConfirmDelete;
