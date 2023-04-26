@@ -85,8 +85,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         params={@params}
         section={@section}
         patch_url_type={:quiz_scores_instructor}
-        student_id={nil}
-        scores={nil}
       />
     """
   end

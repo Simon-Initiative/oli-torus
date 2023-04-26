@@ -4,16 +4,17 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.Params
-  alias OliWeb.Common.{PagedTable, SearchInput}
+  alias OliWeb.Common.{PagedTable, Params, SearchInput}
   alias OliWeb.Grades.GradebookTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
-  prop(params, :map, required: true)
-  prop(total_count, :number, required: true)
-  prop(grades_table_model, :struct, required: true)
-  prop(student_id, :integer, required: true)
+  prop params, :map, required: true
+  prop total_count, :number, required: true
+  prop grades_table_model, :struct, required: true
+  prop student_id, :integer, default: nil
+  prop scores, :map, default: %{}
+  prop patch_url_type, :atom, default: nil
 
   @default_params %{
     offset: 0,
@@ -27,22 +28,23 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   def update(
         %{
           params: params,
-          section: section,
-          patch_url_type: patch_url_type,
-          student_id: student_id,
-          scores: scores
-        } = _assigns,
+          section: section
+        } = assigns,
         socket
       ) do
     params = decode_params(params)
 
-    case student_id do
-      student_id when is_integer(student_id) ->
-        get_scores_for_student(scores.scores, student_id, section, patch_url_type, params, socket)
-
-      nil ->
-        get_grades_all_students(section, patch_url_type, params, socket)
-    end
+    if is_nil(assigns[:student_id]),
+      do: get_grades_all_students(section, assigns[:patch_url_type], params, socket),
+      else:
+        get_scores_for_student(
+          assigns[:scores].scores,
+          assigns[:student_id],
+          section,
+          assigns[:patch_url_type],
+          params,
+          socket
+        )
   end
 
   def render(assigns) do
@@ -51,7 +53,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4 pl-9">
           <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
           <div class="flex flex-col gap-y-4 md:flex-row items-center">
-            {#if @student_id == nil}
+            {#if is_nil(assigns[:student_id])}
               <div class="form-check">
                 <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} phx-debounce="500"/>
                 <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
@@ -161,8 +163,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
        grades_table_model: table_model,
        params: params,
        section_slug: section.slug,
-       patch_url_type: patch_url_type,
-       student_id: nil
+       patch_url_type: patch_url_type
      )}
   end
 
