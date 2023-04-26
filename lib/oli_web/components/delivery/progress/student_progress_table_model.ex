@@ -3,21 +3,8 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Progress.ResourceTitle
+  alias OliWeb.Common.Utils
 
-  @moduledoc """
-  This table model displays various pieces of "progress" information for all course resources in a
-  course section, for a specific student.
-
-  To construct this rows of this model, this implementation takes a flattened list of hierarchy nodes
-  and maps those to the specific row structure that is needed, pulling in information from a %ResourceAccess{}
-  struct.  A resource access record only exists though if that student has visited the resource at least
-  once.
-  """
-
-  @doc """
-  Takes a list of %HierarchyNode{}, a map of resource_ids to %ResourceAccess{} structs, and the
-  section and user to construct the table model.
-  """
   def new(rows, section_slug, student_id, context) do
     SortableTableModel.new(
       rows: rows,
@@ -64,13 +51,13 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "First Visited",
-          render_fn: &OliWeb.Common.Table.Common.render_date/3,
+          render_fn: &__MODULE__.custom_render_date/3,
           sortable: false
         },
         %ColumnSpec{
           name: :updated_at,
           label: "Last Visited",
-          render_fn: &OliWeb.Common.Table.Common.render_date/3,
+          render_fn: &__MODULE__.custom_render_date/3,
           sortable: false
         }
       ],
@@ -82,6 +69,10 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
         context: context
       }
     )
+  end
+
+  def custom_render_date(assigns, row, col_spec) do
+    Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :context))
   end
 
   def custom_render(assigns, row, %ColumnSpec{name: :title}) do
