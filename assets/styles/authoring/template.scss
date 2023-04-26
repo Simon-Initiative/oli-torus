@@ -1,4 +1,15 @@
 .template-picker {
+  .modal-dialog {
+    width: 850px;
+  }
+  h1 {
+    font-family: Open Sans;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 20px;
+    letter-spacing: 0px;
+    text-align: left;
+  }
   .template-picker-header {
     flex-direction: column;
     .screen-filter {
@@ -21,17 +32,39 @@
       display: inline-block;
       padding: 1rem;
       cursor: pointer;
-      border-radius: 0.5rem;
-      &.active,
-      &:hover {
-        background-color: rgb(170, 201, 191);
-      }
 
       .picker-thumb {
         border-radius: 0.5rem;
         width: 12rem;
         height: 8rem;
-        background-color: #ccc;
+        padding: 5px;
+
+        width: 350px;
+        height: 190px;
+        border: 1px solid #e8e8e8;
+        overflow: hidden;
+      }
+
+      &.active {
+        .picker-thumb {
+          border: 1px solid $primary;
+        }
+      }
+
+      &:hover {
+        .picker-thumb {
+          background-color: $hover;
+        }
+      }
+
+      .parts-layout-container {
+        pointer-events: none;
+        position: relative;
+        width: 1000px;
+        height: 540px;
+        transform: scale(0.33);
+        transform-origin: top left;
+        @import '../adaptive/flowchart.scss';
       }
       .picker-title {
         text-align: center;

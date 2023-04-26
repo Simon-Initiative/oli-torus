@@ -645,6 +645,10 @@ $hover: #dce7f9;
     }
   }
 
+  .activity-content {
+    @import '../adaptive/flowchart.scss';
+  }
+
   .aa-stage {
     position: fixed;
     z-index: 9;
@@ -653,7 +657,7 @@ $hover: #dce7f9;
     right: 270px;
     bottom: 0;
     overflow: scroll;
-    background: white;
+    background-color: #f3f5f8;
 
     .aa-stage-pan {
       width: 2000px;
@@ -661,9 +665,10 @@ $hover: #dce7f9;
       backface-visibility: 'visible';
       background: none;
       background-color: #f3f5f8;
+      border: none;
       // background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
       //   repeat;
-      border: 1px solid #999;
+      //border: 1px solid #999;
     }
   }
 }

@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
+import PartsLayoutRenderer from '../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { screenTypeToTitle, screenTypes } from './screens/screen-factories';
 import { Template } from './template-types';
 import { templates } from './templates';
@@ -8,6 +9,16 @@ interface Props {
   onPick: (template: Template) => void;
   screenType?: string;
 }
+
+export const screenFilter = [
+  'blank_screen',
+  'multiple_choice',
+  'multiline_text',
+  'slider',
+  'number_input',
+  'text_input',
+  'dropdown',
+];
 
 export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -42,10 +53,11 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
 
   return (
     <Modal show={true} size="xl" scrollable={true} className="template-picker">
-      <Modal.Header className="template-picker-header">
-        <h1>Choose a template</h1>
+      <Modal.Header className="template-picker-header"></Modal.Header>
+      <Modal.Body>
+        <h1>Do you want to select the layout?</h1>
         <div className="screen-filter">
-          {screenTypes.map((screenType) => (
+          {screenFilter.map((screenType) => (
             <button
               onClick={onScreenType(screenType)}
               key={screenType}
@@ -57,8 +69,6 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
             </button>
           ))}
         </div>
-      </Modal.Header>
-      <Modal.Body>
         <div className="picker-list">
           {templates.filter(filterType).map((template, i) => (
             <div
@@ -66,8 +76,21 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
               className={`picker-item ${template === selectedTemplate ? 'active' : ''}`}
               onClick={() => setSelectedTemplate(template)}
             >
-              <div className="picker-thumb"></div>
-              <div className="picker-title">{template.name}</div>
+              <div className="picker-thumb ">
+                <div className="parts-layout-container">
+                  <PartsLayoutRenderer
+                    parts={template.partsLayout}
+                    onPartInit={() => true}
+                    onPartReady={() => true}
+                    onPartSave={() => true}
+                    onPartSubmit={() => true}
+                    onPartResize={() => true}
+                    onPartSetData={async () => true}
+                    onPartGetData={async () => true}
+                  />
+                </div>
+              </div>
+              {/* <div className="picker-title">{template.name}</div> */}
             </div>
           ))}
         </div>
