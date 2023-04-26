@@ -1,6 +1,7 @@
 .template-picker {
   .modal-dialog {
-    width: 850px;
+    width: 860px !important;
+    height: 600px !important;
   }
   h1 {
     font-family: Open Sans;
@@ -10,23 +11,27 @@
     letter-spacing: 0px;
     text-align: left;
   }
-  .template-picker-header {
-    flex-direction: column;
-    .screen-filter {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 0.1rem;
+
+  .screen-filter {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    .badge {
+      height: 32px;
     }
   }
+
   .picker-list {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 1rem;
+
     padding: 1rem;
-    min-height: 32rem;
     align-items: first baseline;
+    overflow-y: auto;
+    height: 37px;
 
     .picker-item {
       display: inline-block;
@@ -39,7 +44,7 @@
         height: 8rem;
         padding: 5px;
 
-        width: 350px;
+        width: 340px;
         height: 190px;
         border: 1px solid #e8e8e8;
         overflow: hidden;

@@ -646,6 +646,7 @@ $hover: #dce7f9;
   }
 
   .activity-content {
+    background-color: #fff;
     @import '../adaptive/flowchart.scss';
   }
 
@@ -672,4 +673,18 @@ $hover: #dce7f9;
     }
   }
 }
+
+.screen-context-menu {
+  background-color: #fff;
+
+  li {
+    cursor: pointer;
+    border: 1px solid #ccc;
+    padding: 0.25rem;
+    &:hover {
+      background-color: $hover;
+    }
+  }
+}
+
 @import 'react-flow.scss';

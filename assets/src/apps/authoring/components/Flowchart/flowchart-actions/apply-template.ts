@@ -1,4 +1,5 @@
 import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
+import { cloneT } from '../../../../../utils/common';
 import {
   selectActivityById,
   upsertActivity,
@@ -12,7 +13,7 @@ import { applyTemplateToActivity } from '../template-utils';
 
 interface ApplyTemplatePayload {
   screenId: EntityId;
-  template: Template;
+  template: Template | null;
 }
 
 export const applyTemplate = createAsyncThunk(
@@ -25,8 +26,11 @@ export const applyTemplate = createAsyncThunk(
     try {
       if (!screen) return null;
 
-      const modifiedScreen = applyTemplateToActivity(screen, template);
+      const modifiedScreen = template ? applyTemplateToActivity(screen, template) : cloneT(screen);
       if (!modifiedScreen) return null;
+      if (modifiedScreen?.authoring?.flowchart) {
+        modifiedScreen.authoring.flowchart.templateApplied = true;
+      }
 
       dispatch(saveActivity({ activity: modifiedScreen, undoable: false, immediate: true }));
       await dispatch(upsertActivity({ activity: modifiedScreen }));

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export const RightArrow: React.FC = (props) => {
+export const RightArrow: React.FC<{ stroke?: string }> = ({ stroke = '#2C6ABF', ...props }) => {
   return (
     <svg
       width={24}
@@ -13,7 +13,7 @@ export const RightArrow: React.FC = (props) => {
     >
       <path
         d="M5 12h14M12 5l7 7-7 7"
-        stroke="#2C6ABF"
+        stroke={stroke}
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"

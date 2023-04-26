@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import PartsLayoutRenderer from '../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
+import { RightArrow } from './onboard-wizard/RightArrow';
 import { screenTypeToTitle, screenTypes } from './screens/screen-factories';
 import { Template } from './template-types';
 import { templates } from './templates';
 
 interface Props {
   onPick: (template: Template) => void;
+  onCancel: () => void;
   screenType?: string;
 }
 
@@ -20,7 +22,7 @@ export const screenFilter = [
   'dropdown',
 ];
 
-export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
+export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [activeScreenType, setActiveScreenType] = useState<string>(screenType || '');
 
@@ -50,6 +52,8 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
     },
     [activeScreenType],
   );
+
+  const disabled = selectedTemplate === null;
 
   return (
     <Modal show={true} size="xl" scrollable={true} className="template-picker">
@@ -96,8 +100,11 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, screenType }) => {
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <Button disabled={selectedTemplate === null} onClick={onOk}>
-          Ok
+        <Button variant="link" onClick={onCancel}>
+          Skip
+        </Button>
+        <Button variant="link" disabled={disabled} onClick={onOk}>
+          Next <RightArrow stroke={disabled ? '#a6a6a6' : undefined} />
         </Button>
       </Modal.Footer>
     </Modal>

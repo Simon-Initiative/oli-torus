@@ -36,6 +36,12 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
   const activity = useSelector(selectCurrentActivity);
 
   const requiresTemplateSelection = activity && !activity?.authoring?.flowchart?.templateApplied;
+
+  const onCancelTemplate = useCallback(() => {
+    if (!activity) return;
+    dispatch(applyTemplate({ screenId: activity.id, template: null }));
+  }, [activity, dispatch]);
+
   const onApplyTemplate = useCallback(
     (template: Template) => {
       if (!activity || !template) return;
@@ -70,6 +76,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
           <TemplatePicker
             screenType={activity?.authoring?.flowchart?.screenType}
             onPick={onApplyTemplate}
+            onCancel={onCancelTemplate}
           />
         )}
       </SidePanel>

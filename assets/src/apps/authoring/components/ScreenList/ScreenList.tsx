@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useCallback, useMemo } from 'react';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
 import { useToggle } from '../../../../components/hooks/useToggle';
@@ -21,6 +20,7 @@ import { ScreenValidationColors, screenTypeToIcon } from '../Flowchart/screen-ic
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
 import { sortScreens } from '../Flowchart/screens/screen-utils';
 import { InfoIcon } from '../Flowchart/sidebar/InfoIcon';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { AddScreenModal } from './AddScreenModal';
 
 /*
@@ -40,9 +40,10 @@ interface ContextProps {
 }
 
 const ContextMenu: React.FC<ContextProps> = ({ position, onDelete, onDuplicate, onCancel }) => {
-  const ref = useOnClickOutside<HTMLDivElement>(onCancel);
+  const ref = useOnClickOutside<HTMLUListElement>(onCancel);
   return (
-    <ListGroup
+    <ul
+      className="screen-context-menu"
       ref={ref}
       style={{
         zIndex: 1000,
@@ -51,13 +52,9 @@ const ContextMenu: React.FC<ContextProps> = ({ position, onDelete, onDuplicate, 
         left: position[0],
       }}
     >
-      <ListGroupItem action onClick={onDuplicate}>
-        Duplicate Screen
-      </ListGroupItem>
-      <ListGroupItem action onClick={onDelete}>
-        Delete Screen
-      </ListGroupItem>
-    </ListGroup>
+      <li onClick={onDuplicate}>Duplicate Screen</li>
+      <li onClick={onDelete}>Delete Screen</li>
+    </ul>
   );
 };
 
@@ -70,6 +67,7 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
     [number, number] | null
   >(null);
   const [contextMenuScreenId, setContextMenuScreenId] = React.useState<number | null>(null);
+  const [confirmDeleteScreenId, setConfirmDeleteScreenId] = React.useState<number | null>(null);
 
   const sequence = useSelector(selectSequence);
 
@@ -109,10 +107,16 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
     [dispatch],
   );
 
+  const onConfirmDeleteScreen = useCallback(() => {
+    if (confirmDeleteScreenId === null) return;
+    dispatch(deleteFlowchartScreen({ screenId: confirmDeleteScreenId }));
+    setConfirmDeleteScreenId(null);
+  }, [confirmDeleteScreenId, dispatch]);
+
   const onDeleteScreen = useCallback(() => {
     if (contextMenuScreenId === null) return;
-    dispatch(deleteFlowchartScreen({ screenId: contextMenuScreenId }));
-    console.info('Delete screen', contextMenuScreenId);
+    setConfirmDeleteScreenId(contextMenuScreenId);
+    setContextMenuScreenId(null);
   }, [contextMenuScreenId, dispatch]);
 
   const onDuplicateScreen = useCallback(() => {
@@ -120,6 +124,7 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
     dispatch(duplicateFlowchartScreen({ screenId: contextMenuScreenId }));
 
     console.info('Duplicate screen', contextMenuScreenId);
+    setContextMenuScreenId(null);
   }, [contextMenuScreenId, dispatch]);
 
   const onScreenRightClick = useCallback(
@@ -135,7 +140,17 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
 
   return (
     <div className="screen-list-container">
-      {contextMenuCoordinates && (
+      {confirmDeleteScreenId && (
+        <ConfirmDelete
+          show={true}
+          elementType="screen"
+          title="Are you sure you want to delete this screen?"
+          explanation="Please note, you will permanently lose all content on this screen, and you will unable to undo this action. Consider creating a duplicate of your screen before proceeding."
+          deleteHandler={onConfirmDeleteScreen}
+          cancelHandler={() => setConfirmDeleteScreenId(null)}
+        />
+      )}
+      {contextMenuCoordinates && contextMenuScreenId && (
         <AdvancedAuthoringPopup>
           <ContextMenu
             position={contextMenuCoordinates}
