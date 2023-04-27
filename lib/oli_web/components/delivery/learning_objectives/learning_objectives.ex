@@ -7,10 +7,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   alias OliWeb.Common.Params
   alias OliWeb.Router.Helpers, as: Routes
 
-  prop params, :any
-  prop table_model, :any
-  prop total_count, :integer
-  prop units_modules, :map
+  prop(params, :any)
+  prop(table_model, :any)
+  prop(total_count, :integer)
+  prop(units_modules, :map)
+  prop(student_id, :integer)
+  prop(patch_url_type, :atom, required: true)
 
   @default_params %{
     offset: 0,
@@ -23,7 +25,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   }
 
   def update(
-        %{objectives_tab: objectives_tab, section_slug: section_slug, params: params} = _assigns,
+        %{objectives_tab: objectives_tab, section_slug: section_slug, params: params} = assigns,
         socket
       ) do
     params = decode_params(params)
@@ -49,6 +51,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        table_model: objectives_table_model,
        total_count: total_count,
        params: params,
+       student_id: assigns[:student_id],
+       patch_url_type: assigns.patch_url_type,
        section_slug: section_slug,
        units_modules: units_modules
      )}
@@ -103,12 +107,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         route_for(
            socket,
-           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-           socket.assigns.section_slug,
-           :learning_objectives,
-           update_params(socket.assigns.params, %{filter_by: filter, offset: 0})
+           %{filter_by: filter, offset: 0},
+           socket.assigns.patch_url_type
          )
      )}
   end
@@ -117,12 +119,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         route_for(
            socket,
-           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-           socket.assigns.section_slug,
-           :learning_objectives,
-           update_params(socket.assigns.params, %{text_search: objective_name})
+           %{text_search: objective_name},
+           socket.assigns.patch_url_type
          )
      )}
   end
@@ -131,12 +131,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         route_for(
            socket,
-           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-           socket.assigns.section_slug,
-           :learning_objectives,
-           update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
+           %{sort_by: String.to_existing_atom(sort_by)},
+           socket.assigns.patch_url_type
          )
      )}
   end
@@ -145,12 +143,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         route_for(
            socket,
-           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-           socket.assigns.section_slug,
-           :learning_objectives,
-           update_params(socket.assigns.params, %{limit: limit, offset: offset})
+           %{limit: limit, offset: offset},
+           socket.assigns.patch_url_type
          )
      )}
   end
@@ -240,5 +236,26 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     |> Enum.filter(fn objective ->
       String.contains?(String.downcase(objective.objective), String.downcase(text_search))
     end)
+  end
+
+  defp route_for(socket, new_params, :instructor_dashboard) do
+    Routes.live_path(
+      socket,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      socket.assigns.section_slug,
+      :learning_objectives,
+      update_params(socket.assigns.params, new_params)
+    )
+  end
+
+  defp route_for(socket, new_params, :student_dashboard) do
+    Routes.live_path(
+      socket,
+      OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+      socket.assigns.section_slug,
+      socket.assigns.student_id,
+      :learning_objectives,
+      update_params(socket.assigns.params, new_params)
+    )
   end
 end

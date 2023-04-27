@@ -60,6 +60,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         params={@params}
         section_slug={@section.slug}
         objectives_tab={@objectives_tab}
+        patch_url_type={:instructor_dashboard}
       />
     """
   end
@@ -83,7 +84,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         module={OliWeb.Components.Delivery.QuizScores}
         params={@params}
         section={@section}
-        patch_url_type={:quiz_scores}
+        patch_url_type={:quiz_scores_instructor}
       />
     """
   end

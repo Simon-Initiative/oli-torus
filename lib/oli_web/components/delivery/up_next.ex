@@ -3,7 +3,11 @@ defmodule OliWeb.Components.Delivery.UpNext do
 
   import OliWeb.Components.Delivery.Utils
 
+  alias OliWeb.Router.Helpers, as: Routes
+
   attr(:user, :any, required: true)
+  attr(:next_activities, :list, required: true)
+  attr(:section_slug, :string, required: true)
 
   def up_next(assigns) do
     ~H"""
@@ -14,28 +18,17 @@ defmodule OliWeb.Components.Delivery.UpNext do
           </h4>
 
           <div class="flex flex-col md:flex-row md:px-8 md:pb-4">
-
-            <.card
-              badge_name="Course Content"
-              badge_bg_color="bg-green-700"
-              title="3.3 Molarity"
-              percent_complete={20}
-              complete_by_date={format_date(~D[2020-10-03])}
-              open_href="#"
-              percent_students_completed={80}
-              />
-
-            <.card
-              badge_name="Graded Assignment"
-              badge_bg_color="bg-fuchsia-800"
-              title="Unit 3.1: Understanding Chem 101"
-              percent_complete={0}
-              complete_by_date={format_date(~D[2020-10-03])}
-              open_href="#"
-              request_extension_href="#"
-              percent_students_completed={80}
-              />
-
+            <%= for activity <- @next_activities do %>
+              <.card
+                badge_name={if activity.graded, do: "Graded Assignment", else: "Course Content"}
+                badge_bg_color={if activity.graded, do: "bg-fuchsia-800", else: "bg-green-700"}
+                title={activity.title}
+                percent_complete={activity.progress}
+                complete_by_date={format_date(activity.end_date)}
+                open_href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, activity.slug)}
+                percent_students_completed={Float.floor(activity.completion_percentage) |> trunc()}
+                />
+            <% end %>
           </div>
         </div>
       </div>

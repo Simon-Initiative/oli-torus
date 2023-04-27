@@ -32,7 +32,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
   end
 
   describe "Learning Objectives tab" do
-    setup [:instructor_conn, :section_with_assessment, :enrolled_student_and_instructor]
+    setup [:instructor_conn, :create_project_with_objectives, :enrolled_student_and_instructor]
 
     test "gets rendered correctly", %{
       section: section,
@@ -52,7 +52,225 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
                "Learning Objectives"
              )
 
-      assert has_element?(view, "p", "Not available yet")
+      assert has_element?(view, "h4", "Learning Objectives")
+    end
+
+    test "loads correctly when there are no objectives", %{
+      conn: conn,
+      instructor: instructor,
+      student: student
+    } do
+      section =
+        insert(:section,
+          open_and_free: true,
+          type: :enrollable
+        )
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      refute has_element?(view, "#objectives-table")
+      assert has_element?(view, "h6", "There are no objectives to show")
+    end
+
+    test "applies searching", %{
+      conn: conn,
+      student: student,
+      section: section,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert has_element?(view, "#objectives-table")
+      assert has_element?(view, "span", "#{obj_revision_1.title}")
+      assert has_element?(view, "span", "#{obj_revision_2.title}")
+
+      ## searching by objective
+      params = %{
+        text_search: "Objective 1"
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student.id,
+            :learning_objectives,
+            params
+          )
+        )
+
+      assert has_element?(view, "span", "#{obj_revision_1.title}")
+      refute has_element?(view, "span", "#{obj_revision_2.title}")
+    end
+
+    test "applies sorting", %{
+      conn: conn,
+      student: student,
+      section: section,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> render() =~ obj_revision_1.title
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> render() =~ obj_revision_2.title
+
+      ## sorting by objective
+      params = %{
+        sort_order: :desc
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student.id,
+            :learning_objectives,
+            params
+          )
+        )
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> render() =~ obj_revision_2.title
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> render() =~ obj_revision_1.title
+    end
+
+    test "applies pagination", %{
+      conn: conn,
+      student: student,
+      section: section,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert has_element?(view, "span", "#{obj_revision_1.title}")
+      assert has_element?(view, "span", "#{obj_revision_2.title}")
+
+      ## aplies pagination
+      params = %{
+        limit: 1
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student.id,
+            :learning_objectives,
+            params
+          )
+        )
+
+      assert has_element?(view, "span", "#{obj_revision_1.title}")
+      refute has_element?(view, "span", "#{obj_revision_2.title}")
+
+      ## aplies pagination
+      params = %{
+        offset: 1
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student.id,
+            :learning_objectives,
+            params
+          )
+        )
+
+      refute has_element?(view, "span", "#{obj_revision_1.title}")
+      assert has_element?(view, "span", "#{obj_revision_2.title}")
+    end
+
+    test "filtering by container", %{
+      conn: conn,
+      student: student,
+      section: section,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2,
+      module_revision: module_revision
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert has_element?(view, "span", "#{obj_revision_1.title}")
+      assert has_element?(view, "span", "#{obj_revision_2.title}")
+
+      ## aplies filtering by module container
+      params = %{
+        filter_by: module_revision.resource_id
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student.id,
+            :learning_objectives,
+            params
+          )
+        )
+
+      refute has_element?(view, "span", "#{obj_revision_1.title}")
+      assert has_element?(view, "span", "#{obj_revision_2.title}")
+
+      ## aplies filtering by root container
+      params = %{
+        filter_by: "all"
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(
+            section.slug,
+            student.id,
+            :learning_objectives,
+            params
+          )
+        )
+
+      assert has_element?(view, "span", "#{obj_revision_1.title}")
+      assert has_element?(view, "span", "#{obj_revision_2.title}")
     end
   end
 end

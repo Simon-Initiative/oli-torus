@@ -1409,6 +1409,53 @@ defmodule Oli.TestHelpers do
     }
   end
 
+  def section_without_pages(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [],
+        content: %{},
+        deleted: false,
+        collab_space_config: nil,
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    section = insert(:section,
+      base_project: project,
+      context_id: UUID.uuid4(),
+      open_and_free: true,
+      registration_open: true,
+      type: :enrollable
+    )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    %{section: section}
+  end
+
   def section_with_assessment_without_collab_space(_context, deployment \\ nil) do
     author = insert(:author)
     project = insert(:project, authors: [author])
