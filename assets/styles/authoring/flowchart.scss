@@ -10,6 +10,11 @@ $torus-panel-side-width: 200px;
 $rounded: 4px;
 $ui-border-color: #ccc;
 
+$lightBackgroundGrey: #f3f5f8;
+$lightForeground: #696974;
+$darkForeground: #373a44;
+$darkNavyBlue: #222439;
+
 $panel-section-title-bar-color: #e8ebed;
 $workspace-bg: var(--color-body);
 $font-family-sans-serif: var(--font-sans);
@@ -472,6 +477,8 @@ $hover: #dce7f9;
         border-radius: 4px;
         padding: 0.5rem;
         svg {
+          flex-shrink: 0;
+          flex-grow: 0;
           margin-right: 0.5rem;
         }
         &:hover {
@@ -647,6 +654,8 @@ $hover: #dce7f9;
 
   .activity-content {
     background-color: #fff;
+    font-size: 1.1em;
+    @import '../delivery/page_delivery/page.scss';
     @import '../adaptive/flowchart.scss';
   }
 
@@ -672,7 +681,8 @@ $hover: #dce7f9;
       //border: 1px solid #999;
     }
   }
-}
+  @import './flowchart-component-panels.scss';
+} // Ends the .flowchart-editor section
 
 .screen-context-menu {
   background-color: #fff;

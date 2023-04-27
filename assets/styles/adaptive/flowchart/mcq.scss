@@ -46,7 +46,7 @@ janus-mcq {
       /* Style the radio button when it is selected */
       &:checked::before {
         content: '\2713';
-        font-family: OpenSans;
+        font-family: 'Open Sans';
         display: block;
         position: absolute;
         top: 50%;
@@ -69,7 +69,7 @@ janus-mcq {
 
     label {
       color: $lightForeground;
-      font-family: OpenSans;
+      font-family: 'Open Sans';
       font-weight: 600;
       div {
         display: block;

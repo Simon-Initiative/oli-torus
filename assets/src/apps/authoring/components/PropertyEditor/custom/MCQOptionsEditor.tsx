@@ -4,6 +4,8 @@ import { useToggle } from '../../../../../components/hooks/useToggle';
 import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import { QuillEditor } from '../../../../../components/parts/janus-text-flow/QuillEditor';
 import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
+import { ScreenDeleteIcon } from '../../Flowchart/chart-components/ScreenDeleteIcon';
+import { ScreenEditIcon } from '../../Flowchart/chart-components/ScreenEditIcon';
 
 type OptionsNodes = Record<string, any>[];
 
@@ -94,11 +96,11 @@ const OptionsEditor: React.FC<{
     <div className="flex">
       <div className="flex-1">{getNodeText(value.nodes)}</div>
       <div className="flex-none">
-        <button className="btn btn-secondary" onClick={onEdit}>
-          e
+        <button className="btn btn-link p-0 mr-1" onClick={onEdit}>
+          <ScreenEditIcon />
         </button>
-        <button className="btn btn-secondary" onClick={onDelete}>
-          -
+        <button className="btn btn-link p-0" onClick={onDelete}>
+          <ScreenDeleteIcon />
         </button>
       </div>
       {editorOpen && (

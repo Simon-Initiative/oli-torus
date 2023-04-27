@@ -119,14 +119,32 @@ const getComponentUISchema = (instance: any, partEditMode: PartAuthoringMode) =>
     : getExpertComponentUISchema(instance);
 };
 
+const simplifiedLabels: Record<string, string> = {
+  'janus-text-flow': 'Text Flow',
+  'janus-image': 'Image',
+  'janus-video': 'Video',
+  'janus-popup': 'Popup Icon',
+  'janus-audio': 'Audio',
+  'janus-capi-iframe': 'iFrame',
+  'janus-mcq': 'Multiple Choice Question',
+  'janus-input-text': 'Text Input',
+  'janus-input-number': 'Number Input',
+  'janus-dropdown': 'Dropdown',
+  'janus-slider': 'Slider',
+  'janus-multi-line-text': 'Multi line text input',
+};
+
 const getSimplifiedComponentUISchema = (instance: any) => {
   // ui schema
+  const tagName = instance ? String(instance.tagName).toLowerCase() : '';
+  const title = simplifiedLabels[tagName] || 'Component Options';
+
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('simple');
     const newUiSchema = {
       ...simplifiedPartUiSchema,
       custom: {
-        'ui:title': 'Component Options',
+        'ui:title': title,
         ...customPartUiSchema,
       },
     };
@@ -296,35 +314,38 @@ export const PartPropertyEditor: React.FC<Props> = ({
 
   return (
     <div className="component-tab p-3 overflow-hidden part-property-editor">
-      <ButtonToolbar aria-label="Component Tools">
-        <ButtonGroup className="me-2" aria-label="First group">
-          <div className="input-group-prepend">
-            <div className="input-group-text" id="btnGroupAddon">
-              <i className="fas fa-wrench mr-2" />
+      {selectedPartDef && partEditMode === 'expert' && (
+        <ButtonToolbar aria-label="Component Tools">
+          <ButtonGroup className="me-2" aria-label="First group">
+            <div className="input-group-prepend">
+              <div className="input-group-text" id="btnGroupAddon">
+                <i className="fas fa-wrench mr-2" />
+              </div>
             </div>
-          </div>
-          <Button>
-            <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
-          </Button>
-          {selectedPartDef && partEditMode === 'expert' && (
+            <Button>
+              <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
+            </Button>
+
             <CompJsonEditor
               onChange={handleEditComponentJson}
               jsonValue={selectedPartDef}
               existingPartIds={existingIds}
             />
-          )}
-          <Button variant="danger" onClick={showConfirmDelete}>
-            <i className="fas fa-trash mr-2" />
-          </Button>
-          <ConfirmDelete
-            show={shouldShowConfirmDelete}
-            elementType="Component"
-            elementName={currentComponentData?.id}
-            deleteHandler={DeleteComponentHandler}
-            cancelHandler={hideConfirmDelete}
-          />
-        </ButtonGroup>
-      </ButtonToolbar>
+
+            <Button variant="danger" onClick={showConfirmDelete}>
+              <i className="fas fa-trash mr-2" />
+            </Button>
+
+            <ConfirmDelete
+              show={shouldShowConfirmDelete}
+              elementType="Component"
+              elementName={currentComponentData?.id}
+              deleteHandler={DeleteComponentHandler}
+              cancelHandler={hideConfirmDelete}
+            />
+          </ButtonGroup>
+        </ButtonToolbar>
+      )}
       <PropertyEditor
         key={currentComponentData.id}
         schema={componentSchema}

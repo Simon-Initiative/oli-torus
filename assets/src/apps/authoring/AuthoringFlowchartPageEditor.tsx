@@ -9,7 +9,6 @@ import { Template } from './components/Flowchart/template-types';
 import FlowchartHeaderNav from './components/Flowchart/toolbar/FlowchartHeaderNav';
 import RightMenu from './components/RightMenu/RightMenu';
 import { ScreenList } from './components/ScreenList/ScreenList';
-import { SidePanel } from './components/SidePanel';
 import { changeEditMode } from './store/app/slice';
 
 interface PanelState {
@@ -26,7 +25,6 @@ interface AuthoringPageEditorProps {
 
 export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = ({
   panelState,
-  handlePanelStateChange,
 }) => {
   const authoringContainer = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
@@ -66,20 +64,18 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
 
       <EditingCanvas />
 
-      <SidePanel
-        position="right"
-        panelState={panelState}
-        onToggle={() => handlePanelStateChange({ right: !panelState.right })}
-      >
+      <div className="fixed-right-panel">
         <RightMenu />
-        {requiresTemplateSelection && (
-          <TemplatePicker
-            screenType={activity?.authoring?.flowchart?.screenType}
-            onPick={onApplyTemplate}
-            onCancel={onCancelTemplate}
-          />
-        )}
-      </SidePanel>
+      </div>
+
+      {requiresTemplateSelection && (
+        <TemplatePicker
+          screenType={activity?.authoring?.flowchart?.screenType}
+          onPick={onApplyTemplate}
+          onCancel={onCancelTemplate}
+        />
+      )}
+
       <FlowchartErrorDisplay />
     </div>
   );

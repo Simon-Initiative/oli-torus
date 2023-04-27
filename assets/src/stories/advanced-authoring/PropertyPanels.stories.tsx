@@ -116,23 +116,25 @@ export const PanelPicker = () => {
           <hr />
           <code>UI Schema:{JSON.stringify(panel.uiSchema, null, 2)}</code>
         </pre>
-        <section className="aa-panel right-panel open part-property-editor">
-          <div className="aa-panel-inner">
-            <div className="tab-content">
-              <div className="fade tab-pane active show">
-                <div className="screen-tab p-3 overflow-hidden">
-                  <PropertyEditor
-                    schema={panel.schema}
-                    uiSchema={panel.uiSchema}
-                    value={panel.data}
-                    onChangeHandler={(changes) => setPreview(JSON.stringify(changes, null, 2))}
-                    triggerOnChange={true}
-                  />
+        <div className="fixed-right-panel">
+          <section className="aa-panel right-panel open part-property-editor">
+            <div className="aa-panel-inner">
+              <div className="tab-content">
+                <div className="fade tab-pane active show">
+                  <div className="screen-tab p-3 overflow-hidden">
+                    <PropertyEditor
+                      schema={panel.schema}
+                      uiSchema={panel.uiSchema}
+                      value={panel.data}
+                      onChangeHandler={(changes) => setPreview(JSON.stringify(changes, null, 2))}
+                      triggerOnChange={true}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </AdvancedAuthorStorybookContext>
     </div>
   );

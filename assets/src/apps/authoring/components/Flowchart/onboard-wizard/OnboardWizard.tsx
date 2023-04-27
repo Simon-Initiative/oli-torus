@@ -82,7 +82,7 @@ const Step3Advanced: React.FC<{
   return (
     <div className="wizard-content">
       <h1 className="wizard-header">3. Advanced Authoring</h1>
-      <div className="wizard-body">
+      <div className="wizard-body advanced-author-step">
         <p>
           Recommended for users with experience using html code, json editing, css styling and
           building logic and users ready to take their lessons to the next level

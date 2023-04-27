@@ -4,21 +4,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import useHover from '../../../../../components/hooks/useHover';
 import guid from '../../../../../utils/guid';
 import { selectCurrentActivity } from '../../../../delivery/store/features/activities/slice';
-import {
-  selectCurrentActivityTree,
-  selectSequence,
-} from '../../../../delivery/store/features/groups/selectors/deck';
+import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   selectPartComponentTypes,
   selectPaths,
   selectProjectSlug,
-  selectReadOnly,
   selectRevisionSlug,
   setShowScoringOverview,
 } from '../../../store/app/slice';
+import { redo } from '../../../store/history/actions/redo';
+import { undo } from '../../../store/history/actions/undo';
+import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
-import AddComponentToolbar from '../../ComponentToolbar/AddComponentToolbar';
-import UndoRedoToolbar from '../../ComponentToolbar/UndoRedoToolbar';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
 import { getScreenQuestionType } from '../paths/path-options';
 import { PreviewIcon } from './PreviewIcon';
@@ -98,8 +95,21 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
-  const paths = useSelector(selectPaths);
   const dispatch = useDispatch();
+
+  const hasRedo = useSelector(selectHasRedo);
+  const hasUndo = useSelector(selectHasUndo);
+
+  const handleUndo = () => {
+    dispatch(undo(null));
+  };
+
+  const handleRedo = () => {
+    dispatch(redo(null));
+  };
+
+  const paths = useSelector(selectPaths);
+
   //const isReadOnly = useSelector(selectReadOnly);
   const currentActivity = useSelector(selectCurrentActivity);
 
@@ -164,14 +174,14 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
       <div className="component-toolbar">
         <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
           <label>Undo</label>
-          <button className="undo-redo-button">
+          <button className="undo-redo-button" onClick={handleUndo} disabled={!hasUndo}>
             <UndoIcon />
           </button>
         </div>
 
         <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
-          <label>Undo</label>
-          <button className="undo-redo-button">
+          <label>Redo</label>
+          <button className="undo-redo-button" onClick={handleRedo} disabled={!hasRedo}>
             <RedoIcon />
           </button>
         </div>

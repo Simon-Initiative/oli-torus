@@ -8,6 +8,7 @@ import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 import { ObjectiveMap } from 'data/content/activity';
 import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
 import { ProjectSlug, ResourceId } from '../../../../../data/types';
+import { cloneT } from '../../../../../utils/common';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import {
   IActivity,
@@ -68,6 +69,7 @@ export const saveActivity = createAsyncThunk(
         // to make sure they are always in sync.
         const endScreen = all.find((s) => s.authoring?.flowchart?.screenType === 'end_screen');
         const { variables, rules } = generateRules(activity, sequence, endScreen?.resourceId || -1);
+        activity.authoring = cloneT(activity.authoring);
         activity.authoring.rules = rules;
         activity.authoring.variablesRequiredForEvaluation = variables;
       }
