@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import PartsLayoutRenderer from '../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { RightArrow } from './onboard-wizard/RightArrow';
-import { screenTypeToTitle, screenTypes } from './screens/screen-factories';
+import { screenTypeToTitle } from './screens/screen-factories';
 import { Template } from './template-types';
 import { templates } from './templates';
 

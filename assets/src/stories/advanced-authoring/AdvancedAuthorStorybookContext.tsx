@@ -10,7 +10,7 @@ export const AdvancedAuthorStorybookContext: React.FC<{ className: string }> = (
   children,
   className,
 }) => {
-  adaptiveStore.dispatch(setDebugConfig());
+  adaptiveStore.dispatch(setDebugConfig({}));
 
   return (
     <div className={`flowchart-editor advanced-authoring storybook h-[450px] ${className}`}>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Modal } from 'react-bootstrap';
-import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 interface ConfirmDeleteProps {
   show: boolean;
