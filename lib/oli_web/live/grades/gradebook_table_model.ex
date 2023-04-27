@@ -53,6 +53,54 @@ defmodule OliWeb.Grades.GradebookTableModel do
     )
   end
 
+  def new(graded_pages, section_slug, student_id) do
+    column_specs = [
+      %ColumnSpec{
+        name: :name,
+        label: "Quiz",
+        render_fn: &__MODULE__.render_grade/3,
+        th_class: "pl-10 instructor_dashboard_th"
+      },
+      %ColumnSpec{
+        name: :score,
+        label: "Score",
+        render_fn: &__MODULE__.render_grade_score/3,
+        th_class: "pl-10 instructor_dashboard_th",
+        sortable: false
+      }
+    ]
+
+    SortableTableModel.new(
+      rows: graded_pages,
+      column_specs: column_specs,
+      event_suffix: "",
+      id_field: [:id],
+      data: %{section_slug: section_slug, student_id: student_id}
+    )
+  end
+
+  def render_grade(assigns, row, _) do
+    ~F"""
+      <div class="ml-8">
+        {row.label}
+      </div>
+    """
+  end
+
+  def render_grade_score(assigns, row, _) do
+    perc = row.score / row.out_of * 100
+
+    ~F"""
+      <a
+        class={"ml-8 #{if perc < 40, do: "text-red-500", else: "text-black"}"}
+        data-score-check={if perc < 40, do: "false", else: "true"}
+        href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.student_id, row.resource_id)}
+      >
+          {row.score}/{row.out_of}
+      </a>
+    """
+  end
+
   def render_student(assigns, row, _) do
     resource_accesses_approved =
       Map.values(row)
