@@ -445,7 +445,9 @@ $font-family-sans-serif: var(--font-sans);
   }
   .aa-sequence-editor {
     max-height: 60vh;
+    min-height: 30vh;
   }
+
   .aa-adaptivity-rules {
     max-height: 30vh;
   }
