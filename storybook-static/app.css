@@ -3933,6 +3933,14 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 50;
 }
 
+.order-1 {
+  order: 1;
+}
+
+.order-2 {
+  order: 2;
+}
+
 .col-span-10 {
   grid-column: span 10 / span 10;
 }
@@ -4373,6 +4381,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 100vh;
 }
 
+.max-h-52 {
+  max-height: 13rem;
+}
+
 .min-h-\[300px\] {
   min-height: 300px;
 }
@@ -4542,6 +4554,10 @@ table.table-striped tbody tr:nth-child(even) {
   flex: 1 1 0%;
 }
 
+.flex-none {
+  flex: none;
+}
+
 .flex-shrink-0 {
   flex-shrink: 0;
 }
@@ -4556,6 +4572,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .flex-grow-0 {
   flex-grow: 0;
+}
+
+.basis-1 {
+  flex-basis: 0.25rem;
 }
 
 .border-collapse {
@@ -4682,6 +4702,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .justify-items-start {
   justify-items: start;
+}
+
+.justify-items-stretch {
+  justify-items: stretch;
 }
 
 .gap-1 {
