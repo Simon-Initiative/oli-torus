@@ -20,6 +20,7 @@ import {
   selectAppMode,
   selectProjectSlug,
 } from '../../../store/app/slice';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
@@ -85,7 +86,7 @@ export const addFlowchartScreen = createAsyncThunk(
         height: currentLesson.custom.defaultScreenHeight,
       };
 
-      activity.model.custom.maxAttempt = 3;
+      activity.model.custom.maxAttempt = 2;
 
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
@@ -112,12 +113,13 @@ export const addFlowchartScreen = createAsyncThunk(
       );
 
       if (createResults.result === 'failure') {
-        // TODO - handle error
-        return;
+        throw new Error("Couldn't create activity: " + JSON.stringify(createResults));
       }
 
       const getLastScreenId = (): number | undefined => {
-        const orderedScreens = sortScreens(otherActivities, sequence);
+        const orderedScreens = sortScreens(otherActivities, sequence).filter(
+          (s) => s.authoring?.flowchart?.screenType !== 'end_screen',
+        );
         if (orderedScreens.length === 0) {
           return undefined;
         }
@@ -145,7 +147,6 @@ export const addFlowchartScreen = createAsyncThunk(
             setGoToAlwaysPath(fromScreen, createResults.resourceId);
           }
 
-          // TODO - these two should be a single operation?
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
           await dispatch(upsertActivity({ activity: fromScreen }));
         }
@@ -185,7 +186,6 @@ export const addFlowchartScreen = createAsyncThunk(
         tags: [],
       };
 
-      // TODO - figure out initial rules generation here.
       dispatch(saveActivity({ activity: reduxActivity, undoable: false, immediate: true }));
       await dispatch(upsertActivity({ activity: reduxActivity }));
 
@@ -204,7 +204,15 @@ export const addFlowchartScreen = createAsyncThunk(
       await dispatch(savePage({ undoable: false }));
       return activity;
     } catch (e) {
-      console.error(e);
+      dispatch(
+        reportAPIError({
+          error: JSON.stringify(e, Object.getOwnPropertyNames(e), 2),
+          title: 'Could not add screen',
+          message: 'A screen could not be added. Please try again.',
+          failedActivity: null,
+          info: null,
+        }),
+      );
       throw e;
     }
   },

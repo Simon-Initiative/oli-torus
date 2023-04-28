@@ -445,7 +445,9 @@ $font-family-sans-serif: var(--font-sans);
   }
   .aa-sequence-editor {
     max-height: 60vh;
+    min-height: 30vh;
   }
+
   .aa-adaptivity-rules {
     max-height: 30vh;
   }
@@ -742,8 +744,8 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 
-.modal-dialog.modal-90w {
-  width: 90%;
+.modal-dialog.modal-800 {
+  width: 800px;
   max-width: none !important;
 }
 

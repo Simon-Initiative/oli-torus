@@ -1,37 +1,75 @@
 .template-picker {
-  .template-picker-header {
-    flex-direction: column;
-    .screen-filter {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 0.1rem;
+  .modal-dialog {
+    width: 860px !important;
+    height: 600px !important;
+  }
+  h1 {
+    font-family: Open Sans;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 20px;
+    letter-spacing: 0px;
+    text-align: left;
+  }
+
+  .screen-filter {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    .badge {
+      height: 32px;
     }
   }
+
   .picker-list {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 1rem;
+
     padding: 1rem;
-    min-height: 32rem;
     align-items: first baseline;
+    overflow-y: auto;
+    height: 370px;
 
     .picker-item {
       display: inline-block;
       padding: 1rem;
       cursor: pointer;
-      border-radius: 0.5rem;
-      &.active,
-      &:hover {
-        background-color: rgb(170, 201, 191);
-      }
 
       .picker-thumb {
         border-radius: 0.5rem;
         width: 12rem;
         height: 8rem;
-        background-color: #ccc;
+        padding: 5px;
+
+        width: 340px;
+        height: 190px;
+        border: 1px solid #e8e8e8;
+        overflow: hidden;
+      }
+
+      &.active {
+        .picker-thumb {
+          border: 1px solid $primary;
+        }
+      }
+
+      &:hover {
+        .picker-thumb {
+          background-color: $hover;
+        }
+      }
+
+      .parts-layout-container {
+        pointer-events: none;
+        position: relative;
+        width: 1000px;
+        height: 540px;
+        transform: scale(0.33);
+        transform-origin: top left;
+        @import '../adaptive/flowchart.scss';
       }
       .picker-title {
         text-align: center;

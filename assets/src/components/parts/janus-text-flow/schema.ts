@@ -4,6 +4,7 @@ import { CapiVariableTypes } from 'adaptivity/capi';
 import { formatExpression } from 'adaptivity/scripting';
 import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
 import { parseNumString } from 'utils/common';
+import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import {
   ColorPalette,
   CreationContext,
@@ -49,6 +50,23 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const simpleSchema: JSONSchema7Object = {
+  palette: {
+    type: 'object',
+    properties: {
+      backgroundColor: { type: 'string', title: 'Background Color' },
+      borderColor: { type: 'string', title: 'Border Color' },
+      borderRadius: { type: 'string', title: 'Border Radius' },
+      borderStyle: {
+        type: 'string',
+        title: 'Border Style',
+        enum: ['none', 'solid', 'dotted', 'dashed', 'double', 'groove', 'ridge', 'inset', 'outset'],
+      },
+      borderWidth: { type: 'string', title: 'Border Width' },
+    },
+  },
+};
+
 export const uiSchema = {
   palette: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
@@ -59,8 +77,24 @@ export const uiSchema = {
     borderColor: {
       'ui:widget': 'ColorPicker',
     },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
+  },
+};
+
+export const simpleUISchema = {
+  palette: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': '',
+    backgroundColor: {
+      'ui:widget': 'ColorPicker',
+    },
+    borderColor: {
+      'ui:widget': 'ColorPicker',
+    },
+    borderRadius: { classNames: 'col-span-6' },
+    borderStyle: { classNames: 'col-span-6' },
+    borderWidth: { classNames: 'col-span-6' },
   },
 };
 

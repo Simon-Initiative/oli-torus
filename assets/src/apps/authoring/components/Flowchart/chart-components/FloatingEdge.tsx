@@ -9,7 +9,7 @@ import { FlowchartEventContext } from '../FlowchartEventContext';
 import { FlowchartEdgeData } from '../flowchart-utils';
 import { screenTypes } from '../screens/screen-factories';
 
-const boxSize = 30;
+const boxSize = 24;
 
 interface FloatingEdgeProps {
   id: string;
@@ -20,29 +20,65 @@ interface FloatingEdgeProps {
   data?: FlowchartEdgeData;
 }
 
+const SVGOffset = 92;
 const createCurvedPath = (points: { x: number; y: number }[]): string => {
   switch (points.length) {
     case 3:
       return (
-        `M${points[0].x + 65},${points[0].y + 65}` +
-        `Q${points[1].x + 65},${points[1].y + 65} ` +
-        `${points[2].x + 65},${points[2].y + 65}`
+        `M${points[0].x + SVGOffset},${points[0].y + SVGOffset}` +
+        `Q${points[1].x + SVGOffset},${points[1].y + SVGOffset} ` +
+        `${points[2].x + SVGOffset},${points[2].y + SVGOffset}`
       );
     case 4:
       return (
-        `M${points[0].x + 65},${points[0].y + 65}` +
-        `C${points[1].x + 65},${points[1].y + 65} ` +
-        `${points[2].x + 65},${points[2].y + 65}` +
-        `${points[3].x + 65},${points[3].y + 65}`
+        `M${points[0].x + SVGOffset},${points[0].y + SVGOffset}` +
+        `C${points[1].x + SVGOffset},${points[1].y + SVGOffset} ` +
+        `${points[2].x + SVGOffset},${points[2].y + SVGOffset}` +
+        `${points[3].x + SVGOffset},${points[3].y + SVGOffset}`
       );
     case 5:
       return createCurvedPath(points.slice(0, 3)) + ' ' + createCurvedPath(points.slice(2));
 
     default:
       return points
-        .map((p, i) => (i === 0 ? `M${p.x + 65},${p.y + 65}` : `L${p.x + 65},${p.y + 65}`))
+        .map((p, i) =>
+          i === 0
+            ? `M${p.x + SVGOffset},${p.y + SVGOffset}`
+            : `L${p.x + SVGOffset},${p.y + SVGOffset}`,
+        )
         .join('');
   }
+};
+
+function findCurveCenter(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x3: number,
+  y3: number,
+): { x: number; y: number } {
+  const cx = (x1 + 2 * x2 + x3) / 4;
+  const cy = (y1 + 2 * y2 + y3) / 4;
+  return { x: cx, y: cy };
+}
+const findLabelPoint = (points: { x: number; y: number }[]): { labelX: number; labelY: number } => {
+  if (points.length === 3) {
+    const { x, y } = findCurveCenter(
+      points[0].x + SVGOffset,
+      points[0].y + SVGOffset,
+      points[1].x + SVGOffset,
+      points[1].y + SVGOffset,
+      points[2].x + SVGOffset,
+      points[2].y + SVGOffset,
+    );
+    return { labelX: x, labelY: y };
+  }
+
+  const center = points[Math.round(points.length / 2) - 1];
+  const labelX = center.x + SVGOffset;
+  const labelY = center.y + SVGOffset;
+  return { labelX, labelY };
 };
 
 export const FloatingEdge: React.FC<FloatingEdgeProps> = ({
@@ -64,9 +100,7 @@ export const FloatingEdge: React.FC<FloatingEdgeProps> = ({
 
   const dagrePoints = data?.points || [];
 
-  const center = dagrePoints[Math.floor(dagrePoints.length / 2)];
-  const labelX = center.x + 65;
-  const labelY = center.y + 65;
+  const { labelX, labelY } = findLabelPoint(dagrePoints);
 
   // Dashed line on incomplete edges
   const dash = data?.completed ? undefined : '4 4';
@@ -107,16 +141,17 @@ const DropSpot: React.FC<{ source: number; target: number }> = ({ source, target
     onAddScreen({ prevNodeId: source, nextNodeId: target, screenType: item.screenType });
   };
 
-  const [{ canDrop, isOver }, drop] = useDrop(() => ({
+  const [{ isDragging, canDrop }, drop] = useDrop(() => ({
     accept: screenTypes,
     drop: onDrop,
     collect: (monitor) => ({
-      isOver: monitor.isOver(),
+      // isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
+      isDragging: !!monitor.getItemType(),
     }),
   }));
 
-  const hover = isOver && canDrop;
+  const hover = isDragging && canDrop;
   const className = hover ? 'edgeDropSpot hover' : 'edgeDropSpot';
   return (
     <div className={className} ref={drop}>

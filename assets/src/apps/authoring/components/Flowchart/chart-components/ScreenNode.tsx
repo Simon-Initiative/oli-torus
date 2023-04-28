@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useCallback, useContext } from 'react';
 import { useDrop } from 'react-dnd';
 import { useDispatch, useSelector } from 'react-redux';
 import { Handle, Position } from 'reactflow';
 import { useToggle } from '../../../../../components/hooks/useToggle';
-import { Icon } from '../../../../../components/misc/Icon';
 import {
   IActivity,
   selectAllActivities,
@@ -13,9 +13,14 @@ import { selectSequence } from '../../../../delivery/store/features/groups/selec
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { FlowchartEventContext } from '../FlowchartEventContext';
 import { duplicateFlowchartScreen } from '../flowchart-actions/duplicate-screen';
+import { ScreenValidationColors } from '../screen-icons/screen-icons';
 import { screenTypes } from '../screens/screen-factories';
 import { validateScreen } from '../screens/screen-validation';
 import { ScreenButton } from './ScreenButton';
+import { ScreenDeleteIcon } from './ScreenDeleteIcon';
+import { ScreenDuplicateIcon } from './ScreenDuplicateIcon';
+import { ScreenEditIcon } from './ScreenEditIcon';
+import { ScreenIcon } from './ScreenIcon';
 
 interface NodeProps {
   data: IActivity;
@@ -30,10 +35,6 @@ export const ScreenNode: React.FC<NodeProps> = ({ data }) => {
       <Handle type="source" position={Position.Right} id="a" style={{ display: 'none' }} />
     </>
   );
-};
-
-const _dontDoNothing = () => {
-  console.warn("This don't do nuthin yet");
 };
 
 // Just the interior of the node, useful to have separate for storybook
@@ -60,7 +61,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
 
   const onDrop = (item: any) => {
     if (isEndScreen) {
-      onAddScreen({ nextNodeId: data.resourceId, screenType: item.screenType });
+      console.warn("Can't add a screen after the end screen");
     } else {
       onAddScreen({ prevNodeId: data.resourceId, screenType: item.screenType });
     }
@@ -73,6 +74,7 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
 
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
     accept: screenTypes,
+    canDrop: () => !isEndScreen,
     drop: onDrop,
     collect: (monitor) => ({
       isOver: monitor.isOver(),
@@ -86,15 +88,17 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
   if (selected) classNames.push('node-selected');
   if (hover) classNames.push('drop-over');
 
-  const validity = isValid ? 'node-valid' : 'node-invalid';
+  const iconBG = isValid ? ScreenValidationColors.VALIDATED : ScreenValidationColors.NOT_VALIDATED;
 
   return (
-    <div className={`flowchart-node ${validity}`}>
+    <div className={`flowchart-node`}>
       <div className="title-bar">
         <div className="title-icon">
-          <Icon icon="page" />
+          <ScreenIcon screenType={data.authoring?.flowchart?.screenType} bgColor={iconBG} />
         </div>
-        <div className="inline text-center">{data.title}</div>
+        <div className="title-text" title={data.title}>
+          {data.title}
+        </div>
       </div>
 
       <div
@@ -103,32 +107,36 @@ export const ScreenNodeBody: React.FC<NodeProps> = ({ data }) => {
         ref={drop}
       >
         <div className="button-bar">
-          {/* <ScreenButton onClick={() => onAddScreen({ prevNodeId: data.resourceId })}>
-            <Icon icon="plus" />
-          </ScreenButton> */}
+          {isWelcomeScreen && <span className="start-end-label">Start</span>}
+          {isEndScreen && <span className="start-end-label">End</span>}
 
-          <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
-            <Icon icon="edit" />
-          </ScreenButton>
-          {isRequiredScreen || (
+          {selected && (
             <>
-              <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
-                <Icon icon="clone" />
+              <ScreenButton tooltip="Edit Screen" onClick={() => onEditScreen(data.resourceId!)}>
+                <ScreenEditIcon />
               </ScreenButton>
-              <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
-                <Icon icon="trash" />
-              </ScreenButton>
+              {isRequiredScreen || (
+                <>
+                  <ScreenButton tooltip="Duplicate Screen" onClick={onDuplicateScreen}>
+                    <ScreenDuplicateIcon />
+                  </ScreenButton>
+                  <ScreenButton tooltip="Delete Screen" onClick={toggleConfirmDelete}>
+                    <ScreenDeleteIcon />
+                  </ScreenButton>
+                </>
+              )}
             </>
           )}
         </div>
       </div>
-      <small className="text-gray-400">{data.resourceId}</small>
+      {isValid || <small className="text-gray-400">This screen is not validated.</small>}
 
       {showConfirmDelete && (
         <ConfirmDelete
           show={showConfirmDelete}
-          elementType="Screen"
-          elementName={data.title}
+          elementType="screen"
+          title="Are you sure you want to delete this screen?"
+          explanation="Please note, you will permanently lose all content on this screen, and you will unable to undo this action. Consider creating a duplicate of your screen before proceeding."
           deleteHandler={() => {
             onDeleteScreen(data.resourceId!);
             toggleConfirmDelete();

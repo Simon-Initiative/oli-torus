@@ -5,9 +5,10 @@ import {
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { AuthoringRootState } from '../../../store/rootReducer';
-import { createUnknownPathWithDestination } from '../paths/path-factories';
+import { createEndOfActivityPath } from '../paths/path-factories';
 
 interface AddPathPayload {
   screenId: EntityId;
@@ -16,11 +17,11 @@ interface AddPathPayload {
 export const addPath = createAsyncThunk(
   `${FlowchartSlice}/addPath`,
   async (payload: AddPathPayload, { dispatch, getState }) => {
-    try {
-      const { screenId } = payload;
-      const rootState = getState() as AuthoringRootState;
+    const { screenId } = payload;
+    const rootState = getState() as AuthoringRootState;
+    const screen = cloneT(selectActivityById(rootState, screenId));
 
-      const screen = cloneT(selectActivityById(rootState, screenId));
+    try {
       if (!screen) return null;
       if (!screen.authoring?.flowchart) {
         screen.authoring = screen.authoring || {};
@@ -32,9 +33,9 @@ export const addPath = createAsyncThunk(
       }
       const paths = screen.authoring?.flowchart?.paths;
       if (!paths) return null;
-      const newPaths = [...paths];
-      const newPath = createUnknownPathWithDestination();
-      newPaths.push(newPath);
+
+      const newPath = createEndOfActivityPath();
+      const newPaths = [...paths, newPath];
       screen.authoring.flowchart.paths = newPaths;
 
       dispatch(saveActivity({ activity: screen, undoable: false, immediate: true }));
@@ -42,7 +43,15 @@ export const addPath = createAsyncThunk(
 
       return newPath;
     } catch (e) {
-      console.error(e);
+      dispatch(
+        reportAPIError({
+          error: JSON.stringify(e, Object.getOwnPropertyNames(e), 2),
+          title: 'Could not add path',
+          message: 'This path could not be added. Please try again.',
+          failedActivity: screen,
+          info: null,
+        }),
+      );
       throw e;
     }
   },

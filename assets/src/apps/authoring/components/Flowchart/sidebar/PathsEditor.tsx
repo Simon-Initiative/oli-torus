@@ -1,7 +1,5 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
-import { addPath } from '../flowchart-actions/add-path';
 import { AllPaths } from '../paths/path-types';
 import { sortByPriority } from '../paths/path-utils';
 import { PathEditBox } from './PathEditor';
@@ -23,29 +21,22 @@ export const PathsEditor: React.FC<Props> = ({
   paths,
   screens,
 }) => {
-  const dispatch = useDispatch();
-  const addRule = () => {
-    dispatch(addPath({ screenId }));
-  };
   const sortedPath = [...paths].sort(sortByPriority);
   const usedPathIds = paths.map((p) => p.id);
   return (
     <div>
-      {sortedPath.map((path) => (
+      {sortedPath.map((path, index) => (
         <PathEditBox
           screens={screens}
           questionId={questionId}
           screenId={screenId}
-          key={path.id}
+          key={path.id + String(index)}
           questionType={questionType}
           availablePaths={availablePaths}
           usedPathIds={usedPathIds}
           path={path}
         />
       ))}
-      <button onClick={addRule} className="btn btn-primary">
-        Add Rule
-      </button>
     </div>
   );
 };

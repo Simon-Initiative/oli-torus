@@ -14,6 +14,7 @@
   z-index: 1;
   cursor: -webkit-grab;
   cursor: grab;
+  background-color: #f3f5f8;
 }
 .react-flow__pane.selection {
   cursor: pointer;
@@ -171,7 +172,7 @@
   margin: 15px;
 }
 .react-flow__panel.top {
-  top: 0;
+  top: 5px;
 }
 .react-flow__panel.bottom {
   bottom: 0;
@@ -180,7 +181,7 @@
   left: 0;
 }
 .react-flow__panel.right {
-  right: 0;
+  right: 7px;
 }
 .react-flow__panel.center {
   left: 50%;
@@ -275,23 +276,26 @@
   outline: none;
 }
 .react-flow__controls {
-  box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: row;
+  gap: 1px;
 }
 .react-flow__controls-button {
   border: none;
-  background: #fefefe;
+  background-color: #fff !important;
   border-bottom: 1px solid #eee;
   box-sizing: content-box;
   display: flex;
   justify-content: center;
   align-items: center;
+  border-radius: 2px;
   width: 16px;
   height: 16px;
   cursor: pointer;
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
-  padding: 5px;
+  padding: 7px;
 }
 .react-flow__controls-button:hover {
   background: #f4f4f4;

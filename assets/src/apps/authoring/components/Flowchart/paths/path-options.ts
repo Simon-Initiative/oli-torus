@@ -11,6 +11,7 @@ import {
   createAlwaysGoToPath,
   createCorrectPath,
   createDropdownCommonErrorPath,
+  createEndOfActivityPath,
   createIncorrectPath,
   createInputNumberCommonErrorPath,
   createMCQCommonErrorPath,
@@ -36,12 +37,12 @@ export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
     case 'dropdown':
       return createDropdownChoicePathOptions(screen.content?.partsLayout.find(isDropdown));
     default:
-      return [createAlwaysGoToPath()]; // All other screens only have an "always go to" path
+      return [createAlwaysGoToPath(), createEndOfActivityPath()];
   }
 };
 
 const createDefaultPathTypes = () => {
-  return [createAlwaysGoToPath(), createUnknownPathWithDestination()];
+  return [createAlwaysGoToPath(), createUnknownPathWithDestination(), createEndOfActivityPath()];
 };
 
 const createDropdownChoicePathOptions = (dropdown: IDropdownPartLayout | undefined) => {

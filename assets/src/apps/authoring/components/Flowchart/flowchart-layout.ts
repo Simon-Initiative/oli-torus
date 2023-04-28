@@ -1,8 +1,8 @@
 import dagre from 'dagre';
 import { FlowchartEdge, FlowchartNode } from './flowchart-utils';
 
-export const BOX_WIDTH = 150;
-export const BOX_HEIGHT = 155;
+export const BOX_WIDTH = 185;
+export const BOX_HEIGHT = 170;
 
 const dagreEdgeToFlowchartEdge = (edge: FlowchartEdge & dagre.GraphEdge): FlowchartEdge => {
   const { points, ...rest } = edge;
@@ -19,7 +19,7 @@ const dagreEdgeToFlowchartEdge = (edge: FlowchartEdge & dagre.GraphEdge): Flowch
 export const layoutFlowchart = (nodes: FlowchartNode[], edges: FlowchartEdge[]) => {
   const g = new dagre.graphlib.Graph<FlowchartNode>();
 
-  console.info('layoutFlowchart', nodes.length, edges.length, edges);
+  //console.info('layoutFlowchart', nodes.length, edges.length, edges);
 
   // const nonCycleEdges = weightCycles(edges);
 
@@ -30,9 +30,9 @@ export const layoutFlowchart = (nodes: FlowchartNode[], edges: FlowchartEdge[]) 
     // marginx: 50,
     // marginy: 50,
     ranker: 'tight-tree',
-    nodesep: BOX_HEIGHT,
+    nodesep: BOX_WIDTH / 2,
     // acyclicer: 'greedy',
-    ranksep: BOX_HEIGHT,
+    ranksep: BOX_HEIGHT / 2,
   });
 
   // Default to assigning a new object as a label for each new edge.

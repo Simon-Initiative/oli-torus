@@ -15,26 +15,6 @@ export const OnboardWizardStep1 = () => {
   );
 };
 
-export const OnboardWizardStep2 = () => {
-  return (
-    <div className="advanced-authoring" id="advanced-authoring">
-      <AdvancedAuthorStorybookContext className="">
-        <OnboardWizard onSetupComplete={() => true} startStep={1} />
-      </AdvancedAuthorStorybookContext>
-    </div>
-  );
-};
-
-export const OnboardWizardStep3 = () => {
-  return (
-    <div className="advanced-authoring" id="advanced-authoring">
-      <AdvancedAuthorStorybookContext className="">
-        <OnboardWizard onSetupComplete={() => true} startStep={2} />
-      </AdvancedAuthorStorybookContext>
-    </div>
-  );
-};
-
 export default {
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/react/configure/overview#configure-story-loading

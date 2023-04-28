@@ -4,6 +4,8 @@ import { useToggle } from '../../../../../components/hooks/useToggle';
 import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import { QuillEditor } from '../../../../../components/parts/janus-text-flow/QuillEditor';
 import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
+import { ScreenDeleteIcon } from '../../Flowchart/chart-components/ScreenDeleteIcon';
+import { ScreenEditIcon } from '../../Flowchart/chart-components/ScreenEditIcon';
 
 type OptionsNodes = Record<string, any>[];
 
@@ -72,7 +74,7 @@ const OptionsEditor: React.FC<{
   onChange: (v: OptionsType) => void;
   onDelete: () => void;
 }> = ({ value, onChange, onDelete }) => {
-  const [editorOpen, _, openEditor, closeEditor] = useToggle(false);
+  const [editorOpen, , openEditor, closeEditor] = useToggle(false);
   const [tempValue, setTempValue] = useState<{ value: OptionsNodes }>({ value: [] });
 
   const onSave = useCallback(() => {
@@ -91,14 +93,16 @@ const OptionsEditor: React.FC<{
   }, [openEditor, value.nodes]);
 
   return (
-    <div className="d-flex">
-      <div className="col">{getNodeText(value.nodes)}</div>
-      <button className="btn btn-secondary" onClick={onEdit}>
-        e
-      </button>
-      <button className="btn btn-secondary" onClick={onDelete}>
-        -
-      </button>
+    <div className="flex">
+      <div className="flex-1">{getNodeText(value.nodes)}</div>
+      <div className="flex-none">
+        <button className="btn btn-link p-0 mr-1" onClick={onEdit}>
+          <ScreenEditIcon />
+        </button>
+        <button className="btn btn-link p-0" onClick={onDelete}>
+          <ScreenDeleteIcon />
+        </button>
+      </div>
       {editorOpen && (
         <AdvancedAuthoringModal show={true}>
           <Modal.Body>
