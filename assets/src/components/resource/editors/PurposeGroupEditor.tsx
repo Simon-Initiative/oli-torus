@@ -9,6 +9,7 @@ import {
   isGroupWithPurpose,
 } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
+import { AudienceModes } from './AudienceModes';
 import styles from './ContentBlock.modules.scss';
 import { GroupEditor } from './GroupEditor';
 import {
@@ -149,6 +150,12 @@ export const PurposeGroupBlock = ({
             mode={contentItem.paginationMode === undefined ? 'normal' : contentItem.paginationMode}
           />
         ) : null}
+        <AudienceModes
+          onEdit={(audience) => onEdit(Object.assign(contentItem, { audience }))}
+          onRemove={() => onEdit(Object.assign(contentItem, { audience: undefined }))}
+          editMode={editMode}
+          mode={contentItem.audience}
+        />
         <Purpose
           purpose={contentItem.purpose}
           editMode={editMode}

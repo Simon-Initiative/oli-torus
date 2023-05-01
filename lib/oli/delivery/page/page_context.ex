@@ -93,13 +93,15 @@ defmodule Oli.Delivery.Page.PageContext do
 
     # Determine if the current user (not necessarily the user of this attempt) is instructor
     # or is student
-    {is_instructor, is_student} = case is_admin? do
-      true ->
-        {true, false}
-      _ ->
-        user_roles = Sections.get_user_roles(user, section_slug)
-        {user_roles.is_instructor?, user_roles.is_student?}
-    end
+    {is_instructor, is_student} =
+      case is_admin? do
+        true ->
+          {true, false}
+
+        _ ->
+          user_roles = Sections.get_user_roles(user, section_slug)
+          {user_roles.is_instructor?, user_roles.is_student?}
+      end
 
     %PageContext{
       user: Attempts.get_user_from_attempt(resource_attempt),
@@ -151,14 +153,14 @@ defmodule Oli.Delivery.Page.PageContext do
 
     Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.visit(
              page_revision,
              section_slug,
              datashop_session_id,
-             user.id,
+             user,
              activity_provider
            ) do
         {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->

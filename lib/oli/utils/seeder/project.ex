@@ -50,6 +50,26 @@ defmodule Oli.Utils.Seeder.Project do
   end
 
   @doc """
+  Creates a torus system admin
+  """
+  def create_admin(seeds, tags \\ []) do
+    admin_tag = tags[:admin_tag]
+
+    name = "Administrator"
+
+    {:ok, admin} =
+      Author.noauth_changeset(%Author{}, %{
+        email: "#{Slug.slugify(name)}@test.com",
+        given_name: name,
+        system_role_id: SystemRole.role_id().admin
+      })
+      |> Repo.insert()
+
+    seeds
+    |> tag(admin_tag, admin)
+  end
+
+  @doc """
   Creates a sample project
   """
   def create_sample_project(seeds, author, tags \\ []) do
@@ -288,6 +308,7 @@ defmodule Oli.Utils.Seeder.Project do
 
     resource_tag = tags[:resource_tag]
     revision_tag = tags[:revision_tag]
+    container_revision_tag = tags[:container_revision_tag]
 
     {:ok, resource} =
       Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert()
@@ -324,7 +345,9 @@ defmodule Oli.Utils.Seeder.Project do
       revision,
       published_resource_tag: published_resource_tag
     )
-    |> attach_to([resource], attach_to_container_revision, publication)
+    |> attach_to([resource], attach_to_container_revision, publication,
+      container_revision_tag: container_revision_tag
+    )
     |> tag(resource_tag, resource)
     |> tag(revision_tag, revision)
   end
@@ -345,6 +368,7 @@ defmodule Oli.Utils.Seeder.Project do
 
     resource_tag = tags[:resource_tag]
     revision_tag = tags[:revision_tag]
+    container_revision_tag = tags[:container_revision_tag]
 
     {:ok, resource} =
       Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert()
@@ -380,7 +404,9 @@ defmodule Oli.Utils.Seeder.Project do
       revision,
       published_resource_tag: published_resource_tag
     )
-    |> attach_to([resource], attach_to_container_revision, publication)
+    |> attach_to([resource], attach_to_container_revision, publication,
+      container_revision_tag: container_revision_tag
+    )
     |> tag(resource_tag, resource)
     |> tag(revision_tag, revision)
   end
@@ -607,16 +633,19 @@ defmodule Oli.Utils.Seeder.Project do
     |> tag(published_resource_tag, published_resource)
   end
 
-  defp attach_to(seeds, resources, container_revision, publication) do
+  defp attach_to(seeds, resources, container_revision, publication, tags) do
     children_ids = Enum.map(resources, fn r -> r.id end)
 
     {:ok, updated} =
-      Oli.Resources.create_revision_from_previous(container_revision, %{children: container_revision.children ++ children_ids})
+      Oli.Resources.create_revision_from_previous(container_revision, %{
+        children: container_revision.children ++ children_ids
+      })
 
     Publishing.get_published_resource!(publication.id, container_revision.resource_id)
     |> Publishing.update_published_resource(%{revision_id: updated.id})
 
     seeds
+    |> tag(tags[:container_revision_tag], updated)
   end
 
   def resolve(seeds, project, revision, tags) do
