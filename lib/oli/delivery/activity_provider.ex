@@ -2,12 +2,10 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Selection
-  alias Oli.Resources.Revision
   alias Oli.Resources.PageContent
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
   alias Oli.Delivery.ActivityProvider.AttemptPrototype
   alias Oli.Utils.BibUtils
-  alias Oli.Delivery.Audience
 
   @doc """
   Realizes and resolves activities in a page.
@@ -30,7 +28,7 @@ defmodule Oli.Delivery.ActivityProvider do
   activity attempt prototypes, and the transformed page model.
 
   Parameters for provide are:
-  1. The page revision that we are providing activities for
+  1. The content of the page revision that we are providing activities for
   2. The source through which we provide activities
   3. A list of pre-existing attempt prototypes that constrain the activity realization
   4. The current user
@@ -38,7 +36,7 @@ defmodule Oli.Delivery.ActivityProvider do
   5. The resolver to use
   """
   def provide(
-        %Revision{content: %{"advancedDelivery" => true} = content},
+        %{"advancedDelivery" => true} = content,
         %Source{} = source,
         _constraining_attempt_prototypes,
         _user,
@@ -98,7 +96,7 @@ defmodule Oli.Delivery.ActivityProvider do
   end
 
   def provide(
-        %Revision{content: %{"model" => model} = content},
+        %{"model" => model} = content,
         %Source{} = source,
         constraining_attempt_prototypes,
         user,
@@ -262,8 +260,7 @@ defmodule Oli.Delivery.ActivityProvider do
          user,
          section_slug
        ) do
-    if PageContent.is_resource_group?(model_component) &&
-         Audience.is_intended_audience?(model_component["audience"], user, section_slug, false) do
+    if PageContent.is_resource_group?(model_component) do
       case type do
         "group" ->
           Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->

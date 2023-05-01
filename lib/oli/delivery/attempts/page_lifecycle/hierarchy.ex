@@ -38,6 +38,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
     constraining_attempt_prototypes = construct_attempt_prototypes(context)
 
+    audience_filtered_content = Oli.Delivery.Audience.filter_for_role(context.audience_role, context.page_revision.content)
+
     %Result{
       errors: errors,
       prototypes: prototypes,
@@ -45,7 +47,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       unscored: unscored
     } =
       context.activity_provider.(
-        context.page_revision,
+        audience_filtered_content,
         %Source{
           blacklisted_activity_ids: [],
           section_slug: context.section_slug,

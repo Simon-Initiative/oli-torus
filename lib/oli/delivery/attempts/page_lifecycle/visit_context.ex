@@ -18,6 +18,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
     :page_revision,
     :section_slug,
     :user,
+    :audience_role,
     :datashop_session_id,
     :activity_provider
   ]
@@ -29,6 +30,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
     :page_revision,
     :section_slug,
     :user,
+    :audience_role,
     :datashop_session_id,
     :activity_provider
   ]
@@ -40,6 +42,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
           page_revision: %Oli.Resources.Revision{},
           section_slug: String.t(),
           user: Oli.Accounts.User.t() | Oli.Accounts.Author.t(),
+          audience_role: :student | :instructor,
           datashop_session_id: String.t() | nil,
           activity_provider: any()
         }

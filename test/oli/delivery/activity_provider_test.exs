@@ -114,7 +114,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
       %Result{errors: errors, prototypes: prototypes} =
         ActivityProvider.provide(
-          page.revision,
+          page.revision.content,
           source,
           [],
           user,
@@ -212,7 +212,6 @@ defmodule Oli.Delivery.ActivityProviderTest do
       activity2: activity2,
       activity3: activity3,
       activity6: activity6,
-      page: page,
       publication: publication,
       section: section,
       o1: o1,
@@ -253,7 +252,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         transformed_content: transformed_content
       } =
         ActivityProvider.provide(
-          %{page.revision | content: content},
+          content,
           source,
           [],
           user,
@@ -296,7 +295,6 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
     test "completely constraining a selection via existing prototypes", %{
       activity1: activity1,
-      page: page,
       publication: publication,
       section: section,
       o1: o1,
@@ -331,7 +329,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         prototypes: prototypes
       } =
         ActivityProvider.provide(
-          %{page.revision | content: content},
+          content,
           source,
           [%AttemptPrototype{revision: activity1.revision, selection_id: "2"}],
           user,
@@ -348,7 +346,6 @@ defmodule Oli.Delivery.ActivityProviderTest do
       activity1: activity1,
       activity2: activity2,
       activity3: activity3,
-      page: page,
       publication: publication,
       section: section,
       o1: o1,
@@ -383,7 +380,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         prototypes: prototypes
       } =
         ActivityProvider.provide(
-          %{page.revision | content: content},
+          content,
           source,
           [
             %AttemptPrototype{revision: activity1.revision, selection_id: "2"},
@@ -413,7 +410,6 @@ defmodule Oli.Delivery.ActivityProviderTest do
       activity3: activity3,
       activity6: activity6,
       activity7: activity7,
-      page: page,
       publication: publication,
       section: section,
       o1: o1,
@@ -471,7 +467,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         prototypes: prototypes
       } =
         ActivityProvider.provide(
-          %{page.revision | content: content},
+          content,
           source,
           [],
           user,
@@ -514,7 +510,6 @@ defmodule Oli.Delivery.ActivityProviderTest do
       activity1: activity1,
       activity2: activity2,
       activity3: activity3,
-      page: page,
       publication: publication,
       section: section,
       o1: o1,
@@ -563,7 +558,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         transformed_content: transformed_content
       } =
         ActivityProvider.provide(
-          %{page.revision | content: content},
+          content,
           source,
           [],
           user,
@@ -619,7 +614,6 @@ defmodule Oli.Delivery.ActivityProviderTest do
       activity1: activity1,
       activity2: activity2,
       activity3: activity3,
-      page: page,
       publication: publication,
       section: section,
       o1: o1,
@@ -669,7 +663,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         transformed_content: transformed_content
       } =
         ActivityProvider.provide(
-          %{page.revision | content: content},
+          content,
           source,
           [],
           user,

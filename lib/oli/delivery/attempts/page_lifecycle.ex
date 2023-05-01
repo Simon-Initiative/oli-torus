@@ -70,6 +70,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             page_revision: page_revision,
             section_slug: section_slug,
             user: user,
+            audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
             datashop_session_id: datashop_session_id,
             activity_provider: activity_provider
           }
@@ -129,6 +130,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         page_revision: page_revision,
         section_slug: section_slug,
         user: user,
+        audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
         datashop_session_id: datashop_session_id,
         activity_provider: activity_provider
       }

@@ -29,7 +29,7 @@ defmodule Oli.Delivery.Audience do
     is_intended_audience?(audience, role, review_mode)
   end
 
-  defp audience_role(%User{} = user, section_slug) do
+  def audience_role(%User{} = user, section_slug) do
     if Sections.is_instructor?(user, section_slug) do
       :instructor
     else
@@ -37,13 +37,47 @@ defmodule Oli.Delivery.Audience do
     end
   end
 
-  defp audience_role(%Author{} = author, _section_slug) do
+  def audience_role(%Author{} = author, _section_slug) do
     if Accounts.is_admin?(author) do
       :instructor
     else
       :student
     end
   end
+
+  def filter_for_role(_role, %{"advancedDelivery" => true} = content) do
+    content
+  end
+
+  def filter_for_role(role, content) do
+    %{"model" => filter_for_role_inner(role, content["model"])}
+  end
+
+  defp filter_for_role_inner(role, content) when is_list(content) do
+    content
+    |> Enum.filter(fn element -> audience_matches?(role, element) end)
+    |> Enum.map(fn element -> filter_for_role_inner(role, element) end)
+  end
+
+  defp filter_for_role_inner(role, content) when is_map(content) do
+    case Map.has_key?(content, "children") do
+      true ->
+        Map.put(content, "children", filter_for_role_inner(role, content["children"]))
+      false ->
+        content
+    end
+  end
+
+  defp audience_matches?(role, element) do
+    case Map.get(element, "audience", "always") do
+      "always" -> true
+      "instructor" -> role == :instructor
+      # Here we allow feedback nodes to pass the filter, as these nodes must be filtered out during rendering
+      "feedback" -> true
+      _never -> false
+    end
+  end
+
 
   @spec is_intended_audience?(String.t() | nil, role(), boolean()) :: boolean()
 
@@ -61,4 +95,6 @@ defmodule Oli.Delivery.Audience do
 
   # for all other cases, do not show the content
   defp is_intended_audience?(_audience, _role, _review_mode), do: false
+
+
 end

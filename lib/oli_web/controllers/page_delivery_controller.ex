@@ -479,7 +479,7 @@ defmodule OliWeb.PageDeliveryController do
     base_project_attributes = Sections.get_section_attributes(section)
 
     submitted_surveys =
-      PageContent.survey_activities(context.page.content)
+      PageContent.survey_activities(hd(context.resource_attempts).content)
       |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
         survey_state =
           Enum.all?(activity_ids, fn id ->

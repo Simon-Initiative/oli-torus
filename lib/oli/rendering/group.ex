@@ -4,7 +4,6 @@ defmodule Oli.Rendering.Group do
   """
   import Oli.Utils
 
-  alias Oli.Delivery.Audience
   alias Oli.Rendering.Context
 
   @type next :: (() -> String.t())
@@ -17,14 +16,14 @@ defmodule Oli.Rendering.Group do
   Renders a content group that has children elements. Returns an IO list of strings.
   """
   def render(
-        %Context{user: user, section_slug: section_slug, mode: mode} = context,
+        %Context{mode: mode} = context,
         %{"type" => "group", "id" => id, "children" => children} = element,
         writer
       ) do
     pagination_mode = Map.get(element, "paginationMode", "normal")
-    audience = Map.get(element, "audience")
 
-    if Audience.is_intended_audience?(audience, user, section_slug, mode == :review) do
+
+    if should_render?(mode, element) do
       next = fn ->
         writer.elements(
           %Context{context | group_id: id, pagination_mode: pagination_mode},
@@ -47,6 +46,19 @@ defmodule Oli.Rendering.Group do
       writer.error(context, element, {:invalid, error_id, error_msg})
     else
       []
+    end
+  end
+
+  defp should_render?(mode, element) do
+    audience = Map.get(element, "audience", "always")
+
+    # Only in review mode do we want to render feedback
+    case {mode, audience} do
+      {:review, "feedback"} -> true
+      {_, "feedback"} -> false
+      {_, "always"} -> true
+      {_, "never"} -> false
+      _ -> true
     end
   end
 end
