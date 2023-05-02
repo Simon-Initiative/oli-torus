@@ -37,6 +37,7 @@ import {
   IncorrectPath,
   NumericCommonErrorPath,
   OptionCommonErrorPath,
+  UnknownPathWithDestination,
   componentTypes,
 } from './path-types';
 
@@ -98,6 +99,9 @@ export const isNumericCommonErrorPath = (path: AllPaths): path is NumericCommonE
 
 export const isOptionCommonErrorPath = (path: AllPaths): path is OptionCommonErrorPath =>
   path.type === 'option-common-error';
+
+export const isUnknownPath = (path: AllPaths): path is UnknownPathWithDestination =>
+  path.type === 'unknown-reason-path';
 
 export const hasDestination = (path: DestinationPath): path is DestinationPaths =>
   !!path.destinationScreenId;

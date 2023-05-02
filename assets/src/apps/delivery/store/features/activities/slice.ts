@@ -217,6 +217,7 @@ export interface IMutateAction {
 
 export interface IFeedbackAction {
   type: 'feedback';
+  id?: string;
   params: {
     id: string;
     feedback: {
@@ -267,6 +268,8 @@ export interface AuthoringParts {
   type: string; // ex: "janus-multi-line-text",
   owner: string; // ex: "adaptive_activity_5tcap_4078503139",
   inherited: boolean;
+  gradingApproach?: 'manual' | 'automatic';
+  outOf?: number;
 }
 
 export interface IActivity {
@@ -283,7 +286,7 @@ export interface IActivity {
   activityType?: any;
   title?: string;
   objectives?: ObjectiveMap;
-  tags: number[];
+  tags?: number[];
   [key: string]: any;
 }
 

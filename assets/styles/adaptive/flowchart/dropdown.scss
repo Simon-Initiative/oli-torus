@@ -31,7 +31,7 @@ janus-dropdown select {
   font-family: OpenSans;
 }
 /*-- dropdown arrow --*/
-janus-dropdown:before {
+janus-dropdown .dropdown-input::before {
   content: '';
   color: $primary;
   height: 10px;
@@ -48,6 +48,7 @@ janus-dropdown:before {
   bottom: 20px;
   right: 16px;
   border-radius: 1px;
+  z-index: 10;
 }
 
 /*-- dropdown focused --*/

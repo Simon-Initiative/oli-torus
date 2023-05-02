@@ -82,17 +82,24 @@ const Step3Advanced: React.FC<{
   return (
     <div className="wizard-content">
       <h1 className="wizard-header">3. Advanced Authoring</h1>
-      <div className="wizard-body">
+      <div className="wizard-body advanced-author-step">
+        <p>
+          Recommended for users with experience using html code, json editing, css styling and
+          building logic and users ready to take their lessons to the next level
+        </p>
         <h2>Allows you to</h2>
         <ul>
-          <li>TODO - fill these in</li>
-          <li>TODO - fill these in</li>
-          <li>TODO - fill these in</li>
-          <li>TODO - fill these in</li>
-          <li>TODO - fill these in</li>
+          <li>Create multidimensional and extended lessons</li>
+          <li>Build complex lesson logic and interactions</li>
+          <li>Create advanced conditioning in pathing</li>
+          <li>Set complex scoring rules</li>
         </ul>
         <h2>Note</h2>
-        <p>TODO - fill this in</p>
+
+        <p>
+          Projects created in Advanced Authoring do not open in Basic Authoring. This requires
+          creating a new lesson project.
+        </p>
       </div>
       <div className="wizard-footer">
         <div className="wizard-step">Step 3/3</div>

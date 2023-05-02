@@ -12,37 +12,6 @@ import { AlwaysGoToPath, DestinationPath } from '../paths/path-types';
 import { createFeedbackAction } from './create-feedback-action';
 import { createNavigationAction } from './create-navigation-action';
 
-// export const generateOptionCommonError = (
-//   path: OptionCommonErrorPath,
-//   sequence: SequenceEntry<SequenceEntryChild>[],
-//   screen: IActivity,
-// ): IAdaptiveRule[] => {
-//   const rule = createRuleTemplate('option-common-error');
-//   rule.correct = false;
-//   const sequenceEntry = sequence.find((s) => s.resourceId === path.destinationScreenId);
-//   const question = getScreenPrimaryQuestion(screen);
-//   const questionType = getScreenQuestionType(screen);
-//   if (!sequenceEntry) {
-//     console.warn("Couldn't find sequence entry for path", path);
-//     return [];
-//   }
-
-//   // TODO - add feedback option
-//   rule.event.params.actions = [createNavigationAction(sequenceEntry.custom.sequenceId)];
-
-//   switch (questionType) {
-//     case 'dropdown':
-//       rule.conditions = {
-//         all: createDropdownCommonErrorCondition(path, question as IDropdownPartLayout),
-//       };
-//       break;
-//     default:
-//       console.warn('Unknown question type while generating rules', questionType);
-//   }
-
-//   return [rule];
-// };
-
 export const generateRule = (
   label: string,
   conditions: ICondition[],

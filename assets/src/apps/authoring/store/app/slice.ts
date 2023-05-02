@@ -49,7 +49,7 @@ export type ApplicationMode = 'flowchart' | 'expert';
  * When in flowchart mode, we might be looking at the flowchart editor or the page editor.
  * When in expert mode, there is only the page editor.
  */
-type EditingMode = 'page' | 'flowchart';
+export type EditingMode = 'page' | 'flowchart';
 
 export interface AppState {
   applicationMode: ApplicationMode;
@@ -121,6 +121,9 @@ const slice: Slice<AppState> = createSlice({
     },
     changeEditMode(state, action: PayloadAction<{ mode: EditingMode }>) {
       state.editingMode = action.payload.mode;
+    },
+    setDebugConfig(state) {
+      state.paths = {};
     },
     setInitialConfig(state, action: PayloadAction<AppConfig>) {
       state.paths = action.payload.paths || initialState.paths;
@@ -214,6 +217,7 @@ export const {
   setRightPanelActiveTab,
   setCurrentRule,
   setCopiedPart,
+  setDebugConfig,
   setReadonly,
   setShowDiagnosticsWindow,
   changeAppMode,

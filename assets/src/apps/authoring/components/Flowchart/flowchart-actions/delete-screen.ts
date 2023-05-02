@@ -23,7 +23,7 @@ import {
   createUnknownPathWithDestination,
 } from '../paths/path-factories';
 import { AllPaths } from '../paths/path-types';
-import { getDownstreamScreenIds } from '../paths/path-utils';
+import { getDownstreamScreenIds, isDestinationPath } from '../paths/path-utils';
 import { generateRules } from '../rules/rule-compilation';
 
 interface DeleteFlowchartScreenPayload {
@@ -83,10 +83,17 @@ const removeDestinationPaths =
 
     // Then add in the new paths
     nextScreenIds.forEach((nextScreenId) => {
-      if (canBeAlwaysPath) {
-        activity.authoring?.flowchart?.paths.push(createAlwaysGoToPath(nextScreenId));
-      } else {
-        activity.authoring?.flowchart?.paths.push(createUnknownPathWithDestination(nextScreenId));
+      // If we already have a path to this screen, don't add another
+      const alreadyHasPath = !!activity.authoring?.flowchart?.paths
+        .filter(isDestinationPath)
+        .some((p) => p.destinationScreenId === nextScreenId);
+
+      if (!alreadyHasPath) {
+        if (canBeAlwaysPath) {
+          activity.authoring?.flowchart?.paths.push(createAlwaysGoToPath(nextScreenId));
+        } else {
+          activity.authoring?.flowchart?.paths.push(createUnknownPathWithDestination(nextScreenId));
+        }
       }
     });
 

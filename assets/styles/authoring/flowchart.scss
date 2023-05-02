@@ -9,11 +9,17 @@ $panel-font-color-dark: $panel-font-color-light;
 $torus-panel-side-width: 200px;
 $rounded: 4px;
 $ui-border-color: #ccc;
-$panel-section-title-bar-height: 39px;
+
+$lightBackgroundGrey: #f3f5f8;
+$lightForeground: #696974;
+$darkForeground: #373a44;
+$darkNavyBlue: #222439;
+
 $panel-section-title-bar-color: #e8ebed;
 $workspace-bg: var(--color-body);
 $font-family-sans-serif: var(--font-sans);
-$primary: #3b76d3;
+$primary: #2c6abf;
+$hover: #dce7f9;
 //$primary: var(--color-delivery-primary);
 
 .flowchart-editor {
@@ -61,30 +67,104 @@ $primary: #3b76d3;
     flex-shrink: 1;
   }
 
+  /* This is the top-toolbar in page editor mode, not in flowchart mode */
+  .component-toolbar {
+    position: absolute;
+    top: 0px;
+    left: 270px;
+    right: 270px;
+    z-index: 10;
+
+    //height: 160px;
+    background-color: #fff;
+    padding: 25px 25px 1rem 25px;
+    display: flex;
+    flex-direction: row;
+
+    justify-content: center;
+
+    gap: 1.5rem;
+
+    .toolbar-column {
+      display: flex;
+      flex-direction: column;
+      max-width: 225px;
+      .undo-redo-button {
+        width: 40px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        margin-bottom: 12px;
+        border-radius: 4px;
+        padding: 4px 0px;
+        &:hover {
+          background-color: $hover;
+        }
+      }
+      .toolbar-buttons {
+        display: flex;
+        flex-direction: row;
+        flex-flow: row wrap;
+        gap: 17px;
+      }
+
+      label {
+        width: 100%;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-family: 'Open Sans';
+        font-size: 14px;
+        letter-spacing: 0em;
+        text-align: left;
+      }
+
+      .component-button {
+        width: 24px;
+        height: 24px;
+        background-color: #f3f5f8;
+        flex-basis: 24px;
+      }
+    }
+  }
+
+  /* This is the top-toolbar in flowchart mode, not in page-edit mode */
   .top-toolbar {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    padding-top: 15px;
+    padding-bottom: 3px;
+    grid-template-columns: repeat(4, 1fr);
     grid-template-rows: 0.2fr repeat(2, 1fr);
     grid-column-gap: 0px;
     grid-row-gap: 0px;
+    border-bottom: 1px solid #e8e8e8;
+    max-width: 980px;
+    margin: 0 auto;
 
-    .left-header {
-      grid-area: 1 / 1 / 2 / 3;
+    .left-header,
+    .right-header {
+      font-family: 'Open Sans';
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 22px;
+      letter-spacing: 0em;
+      text-align: left;
       padding-left: 15px;
       padding-bottom: 0.5rem;
-      padding-top: 0.5rem;
+      padding-top: 0.45rem;
+    }
+    .left-header {
+      grid-area: 1 / 1 / 2 / 2;
     }
     .right-header {
-      grid-area: 1 / 3 / 2 / 6;
-      padding-left: 15px;
-      padding-bottom: 0.5rem;
-      padding-top: 0.5rem;
+      grid-area: 1 / 2 / 2 / 5;
     }
 
     .toolbar-option {
+      display: flex;
       // border: 1px solid #fff;
       cursor: grab;
       user-select: none;
+      vertical-align: middle;
       &:hover {
         background-color: #eee;
       }
@@ -93,51 +173,176 @@ $primary: #3b76d3;
       }
       .toolbar-icon {
         margin-right: 0.5rem;
-        width: 25px;
         text-align: center;
-        height: 25px;
-        background-color: #b9d7a1;
-        border-radius: 5px;
         display: inline-block;
       }
-      padding: 1rem;
+      padding: 0.75rem;
     }
   }
 
   .sidebar-header {
-    background: $panel-section-title-bar-color;
-    border-top: 1px solid $ui-border-color;
-    border-bottom: 1px solid $ui-border-color;
+    background: #fff;
+    height: 76px;
+
+    flex-shrink: 0;
+    flex-grow: 0;
+
+    border-bottom: 1px solid #e8e8e8;
+    border-right: 1px solid #e8e8e8;
     display: flex;
-    font-family: 'Raleway', $font-family-sans-serif;
-    font-size: 12px;
+
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 20px;
+
+    cursor: pointer;
+
     color: $panel-font-color-light;
-    height: $panel-section-title-bar-height;
+
+    &.active {
+      color: $primary;
+      border-bottom: 1px solid $primary;
+    }
+
     justify-content: space-between;
     align-items: center;
-    padding: 0 4px;
+    padding: 0 1rem;
     .title {
       font-weight: 700;
       text-transform: uppercase;
     }
   }
 
+  .flowchart-left {
+    display: flex;
+    flex-direction: column;
+  }
+
   .flowchart-sidebar {
-    width: 275px;
-    height: 100%;
-    background-color: $panel-bg-color-light;
-    flex-grow: 0;
-    flex-shrink: 0;
+    width: 280px;
+
+    background-color: #fff;
+    border-right: 1px solid #e8e8e8;
     padding: 1rem;
+    flex-grow: 1;
+    position: relative;
+
+    .sidebar-scroller {
+      flex-grow: 1;
+      overflow-y: auto;
+      position: absolute;
+      top: 100px;
+      bottom: 65px;
+      padding-right: 1rem;
+      padding-left: 1rem;
+      left: 0px;
+      right: 0px;
+    }
+
+    .flowchart-sidebar-button {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+    }
+
     pre {
       font-size: 10px;
     }
     .validation-error {
-      background-color: #eeaaaa;
-      border: 1px solid #bd3d3d;
+      h3 {
+        font-family: 'Open Sans';
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 22px;
+        letter-spacing: 0em;
+        text-align: left;
+      }
+
+      li {
+        list-style: disc;
+        margin-left: 40px;
+        font-weight: bold;
+      }
+      //styleName: Body small;
+      font-family: 'Open Sans';
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 20px;
+      letter-spacing: 0em;
+      text-align: left;
+
+      margin-bottom: 1rem;
+    }
+    .edit-logic-header {
+      display: block;
+      position: relative;
+      margin-bottom: 1rem;
+      font-family: Open Sans;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 16px;
+      letter-spacing: 0em;
+      text-align: left;
+
+      button {
+        position: absolute;
+        right: 0.5rem;
+        top: -4px;
+      }
+    }
+    .none-selected {
+      display: flex;
+      flex-direction: row;
+      background: #f3f5f8;
       border-radius: 4px;
       padding: 0.5rem;
-      margin: 0.25rem;
+      align-items: center;
+      gap: 0.5rem;
+
+      font-family: 'Open Sans';
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 18px;
+      letter-spacing: 0em;
+      text-align: left;
+
+      svg {
+        flex-shrink: 0;
+      }
+    }
+
+    .screen-title {
+      background: #f3f5f8;
+      border-radius: 4px;
+      padding: 0.5rem 32px 0.5rem 0.5rem;
+      display: flex;
+      flex-direction: row;
+
+      gap: 6px;
+      margin-bottom: 1rem;
+
+      font-family: 'Open Sans';
+      font-size: 14px;
+      line-height: 22px;
+      font-weight: 600;
+      letter-spacing: 0em;
+      text-align: left;
+
+      position: relative;
+
+      cursor: pointer;
+
+      span {
+        display: inline-block;
+      }
+
+      button {
+        position: absolute;
+        right: 0.5rem;
+        top: 0.5rem;
+      }
     }
   }
   .flowchart-start-node,
@@ -165,23 +370,32 @@ $primary: #3b76d3;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 156px;
-
-    &.node-valid {
-      .title-icon {
-        background-color: #b9d7a1;
-      }
-    }
-
-    &.node-invalid {
-      .title-icon {
-        background-color: #fed2d2;
-      }
-    }
+    width: 180px;
+    height: 166px;
 
     .title-bar {
       display: flex;
       flex-direction: row;
+      width: 180px;
+      margin-bottom: 10px;
+      .title-text {
+        display: inline-block;
+        width: 150px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+    }
+
+    .start-end-label {
+      background-color: #87cd9b;
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+
+      font-family: 'Open Sans';
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0em;
     }
 
     .title-icon {
@@ -196,9 +410,10 @@ $primary: #3b76d3;
     .node-box {
       // p-4 text-center border-2 w-32 h-28 bg-white text-delivery-body-dark flex justify-center align-middle flex-col
       padding: 8px;
-      border: 2px solid #bcbfc3;
-      width: 128px;
-      height: 112px;
+      border: 1px solid #acbbc9;
+      border-radius: 4px;
+      width: 180px;
+      height: 120px;
       background-color: #fff;
       display: flex;
       flex-direction: column;
@@ -221,12 +436,10 @@ $primary: #3b76d3;
         gap: 1px;
       }
       .screen-button {
-        // bg-delivery-primary-50 hover:bg-delivery-primary text-delivery-body active:bg-delivery-primary-600 px-2 rounded-md
-        //background-color: #eee8fd;
         border: none;
         color: #fff;
-        border-radius: 8px;
-        padding: 0px 8px;
+        border-radius: 3px;
+        padding: 1px;
         box-shadow: none;
         &:hover {
           background-color: $primary;
@@ -238,32 +451,46 @@ $primary: #3b76d3;
     }
   }
 
-  ul.screen-list {
-    list-style: none;
-    padding-left: 4px;
-    li {
-      margin-left: 0px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      .page-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 20px;
-        height: 20px;
-        background-color: #b9d7a1;
-        border-radius: 4px;
-        margin-right: 0.5rem;
-      }
-      &:hover {
-        background-color: #eee;
-        cursor: pointer;
-      }
+  .screen-list-container {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    width: 270px;
+    z-index: 50;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    .screenlist-scroller {
+      flex-grow: 1;
+      overflow-y: auto;
     }
+    ul.screen-list {
+      list-style: none;
 
-    li.active {
-      font-weight: 700;
+      margin: 1rem;
+      li {
+        margin-left: 0px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        border-radius: 4px;
+        padding: 0.5rem;
+        svg {
+          flex-shrink: 0;
+          flex-grow: 0;
+          margin-right: 0.5rem;
+        }
+        &:hover {
+          background-color: #eee;
+          cursor: pointer;
+        }
+      }
+
+      li.active {
+        font-weight: 700;
+        background-color: #f3f5f8;
+      }
     }
   }
 
@@ -271,13 +498,42 @@ $primary: #3b76d3;
   .path-editor-incomplete {
     border-radius: 4px;
     padding: 0.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    justify-content: space-between;
+    color: #696974;
     font-size: 0.75rem;
+    line-height: 1;
     align-items: center;
     margin-bottom: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+
+    label {
+      margin: 3rem 0 0.5rem 0.3rem;
+      color: '#696974';
+      font-family: 'Open Sans';
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 18px;
+      letter-spacing: 0em;
+      text-align: left;
+    }
+    .destination-section {
+      margin-top: 1rem;
+    }
+    select {
+      display: 'block';
+      width: 100%;
+    }
+
+    .bottom-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      button {
+        flex-grow: 1;
+        border-radius: 4px;
+      }
+    }
 
     .icon-button {
       outline: none;
@@ -304,44 +560,141 @@ $primary: #3b76d3;
     label {
       margin-bottom: 0;
       font-weight: 700;
+      cursor: pointer;
     }
     .param-box {
-      display: flex;
+      display: inline-flex;
       flex-direction: row;
       align-items: center;
       gap: 0.5rem;
+      margin-left: 0.1rem;
+      margin-right: 0.1rem;
+      margin-bottom: 0.25rem;
+      margin-top: 0.25rem;
     }
     .path-param {
-      background-color: #fff;
+      color: #373a44;
+
       border-radius: 4px;
+      border: 1px solid #b5c2cf;
       padding: 0.25rem 0.5rem;
+
+      font-family: 'Open Sans';
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 20px;
+      letter-spacing: 0em;
+      text-align: left;
     }
   }
 
   .path-editor-completed {
-    background-color: #e7f0ff;
+    background-color: #f3f5f8;
   }
   .path-editor-incomplete {
-    background-color: #f6e7ff;
+    background-color: #f3f5f8;
   }
 
   .edgeDropSpot {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
+    line-height: 22px;
     text-align: center;
     vertical-align: middle;
-    background-color: #b9d7a1;
-    opacity: 0.1;
+    background-color: #f3f5f8;
+    border-radius: 3px;
+    border: 1px solid $primary;
+    color: $primary;
+    opacity: 0;
 
     &.hover {
       opacity: 1;
-      box-shadow: 0px 0px 40px 20px #0ff;
     }
   }
 
-  .configure-toolbar-button {
-    // We're going to expose all attributes in the right-hand panel for flowchart mode
-    display: none;
+  .janus-mcq {
+    .configure-toolbar-button {
+      // We're going to expose all attributes in the right-hand panel for flowchart mode
+      display: none;
+    }
+  }
+
+  .flowchart-order-note {
+    margin: 1rem;
+    gap: 0.5rem;
+
+    background: #f3f5f8;
+    border-radius: 4px;
+
+    display: flex;
+    padding: 1rem 0.25rem 1rem 0.5rem;
+    align-items: center;
+
+    font-family: 'Open Sans';
+    font-size: 12px;
+    line-height: 20px;
+    letter-spacing: 0em;
+    text-align: left;
+    a {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  .aa-panel {
+    background-color: #fff;
+    .aa-panel-inner {
+      background-color: #fff;
+    }
+  }
+
+  .activity-content {
+    background-color: #fff;
+    font-size: 1.1em;
+    @import '../delivery/page_delivery/page.scss';
+    @import '../adaptive/flowchart.scss';
+  }
+
+  .aa-stage {
+    position: fixed;
+    z-index: 9;
+    top: 210px;
+    left: 335px;
+    right: 270px;
+    bottom: 0;
+    overflow: scroll;
+    background-color: #f3f5f8;
+
+    .aa-stage-pan {
+      width: 2000px;
+      height: 1000px;
+      backface-visibility: 'visible';
+      background: none;
+      background-color: #f3f5f8;
+      border: none;
+      // background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
+      //   repeat;
+      //border: 1px solid #999;
+    }
+  }
+  @import './flowchart-component-panels.scss';
+} // Ends the .flowchart-editor section
+
+.screen-context-menu {
+  background-color: #fff;
+
+  li {
+    cursor: pointer;
+    border: 1px solid #ccc;
+    padding: 0.25rem;
+    &:hover {
+      background-color: $hover;
+    }
   }
 }
+
 @import 'react-flow.scss';

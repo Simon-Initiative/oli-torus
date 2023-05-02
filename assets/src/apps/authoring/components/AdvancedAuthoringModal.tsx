@@ -7,6 +7,12 @@ const ModalContext = React.createContext<HTMLDivElement | null>(null);
 
 export const ModalContainer: React.FC = ({ children }) => {
   const [modalContainer, setModalContainer] = useState<HTMLDivElement | null>(null);
+  const existingContainer = useContext(ModalContext);
+
+  if (existingContainer) {
+    // If we have nested containers for some reason, always use the outermost one.
+    return null;
+  }
 
   return (
     <div>

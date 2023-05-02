@@ -186,12 +186,14 @@ export const createDefaultStructuredContent = (
 export const createGroup = (
   purpose = 'none',
   children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
+  audience?: AudienceMode,
 ): PurposeGroupContent => ({
   type: 'group',
   id: guid(),
   children,
   layout: 'vertical',
   purpose,
+  audience,
 });
 
 export const createAlternatives = (
@@ -266,11 +268,14 @@ export type AlternativesStrategy = 'select_all' | 'user_section_preference';
 
 export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
 
+export type AudienceMode = 'always' | 'instructor' | 'feedback' | 'never';
+
 export interface PurposeGroupContent {
   type: 'group';
   id: string;
   layout: GroupLayout; // TODO define layout types
   purpose: string;
+  audience?: AudienceMode;
   paginationMode?: PaginationMode;
   children: Immutable.List<ResourceContent>;
 }

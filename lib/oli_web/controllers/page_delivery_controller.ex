@@ -471,7 +471,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   # This case handles :in_progress and :revised progress states, in addition to
-  # handling review mode
+  # handling ungraded pages and review mode
   defp render_page(%PageContext{user: user} = context, conn, section_slug, _) do
     section = conn.assigns.section
 
@@ -483,7 +483,7 @@ defmodule OliWeb.PageDeliveryController do
     base_project_attributes = Sections.get_section_attributes(section)
 
     submitted_surveys =
-      PageContent.survey_activities(context.page.content)
+      PageContent.survey_activities(hd(context.resource_attempts).content)
       |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
         survey_state =
           Enum.all?(activity_ids, fn id ->
@@ -871,7 +871,7 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
     if Sections.is_enrolled?(user.id, section_slug) do
       # We must check gating conditions here to account for gates that activated after
@@ -885,7 +885,7 @@ defmodule OliWeb.PageDeliveryController do
                  revision_slug,
                  section_slug,
                  datashop_session_id,
-                 user.id,
+                 user,
                  activity_provider
                ) do
             {:ok, _} ->

@@ -1,5 +1,6 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface MultiLineTextModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -87,7 +88,11 @@ export const simpleSchema: JSONSchema7Object = {
   },
 };
 
-export const simpleUiSchema = {};
+export const simpleUiSchema = {
+  'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  minimumLength: { classNames: 'col-span-6' },
+  fontSize: { classNames: 'col-span-6' },
+};
 export const uiSchema = {};
 
 export const adaptivitySchema = {

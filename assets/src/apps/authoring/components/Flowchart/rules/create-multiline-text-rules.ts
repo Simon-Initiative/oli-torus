@@ -62,17 +62,6 @@ export const generateMultilineTextInputRules = (
 
   rules.push(
     generateRule(
-      'too-short',
-      [tooShort],
-      null,
-      false,
-      50,
-      question.custom?.incorrectFeedback || 'Please type more to finish your answer',
-    ),
-  );
-
-  rules.push(
-    generateRule(
       'correct',
       [longEnough],
       destination,
@@ -81,6 +70,17 @@ export const generateMultilineTextInputRules = (
       question.custom?.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
       [disableAction],
       { default: true },
+    ),
+  );
+
+  rules.push(
+    generateRule(
+      'too-short',
+      [tooShort],
+      null,
+      false,
+      75,
+      question.custom?.incorrectFeedback || 'Please type more to finish your answer',
     ),
   );
 

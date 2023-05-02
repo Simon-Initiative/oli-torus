@@ -4,7 +4,7 @@ $darkForeground: #373a44;
 $darkNavyBlue: #222439;
 
 //$primary: #5b1eea; // The previous purple color
-$primary: #3b76d3;
+$primary: #2c6abf;
 // $primary: var(--color-delivery-primary);
 
 $headerColor: $darkForeground;
@@ -95,4 +95,8 @@ html [type='button'],
 }
 .pointer-events-initial {
   pointer-events: initial !important;
+}
+
+.activity-content {
+  font-family: 'Open Sans';
 }

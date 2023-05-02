@@ -20,7 +20,7 @@ export const Purpose = (props: PurposeProps) => {
     <MaybePurposeTooltip canEditPurpose={canEditPurpose}>
       <div className="form-inline">
         <Dropdown>
-          <Dropdown.Toggle className="my-2" variant="outline-primary" size="sm" disabled={disabled}>
+          <Dropdown.Toggle variant="outline-primary" size="sm" disabled={disabled}>
             {purposeLabel}
             <i className="fa-solid fa-caret-down ml-2"></i>
           </Dropdown.Toggle>

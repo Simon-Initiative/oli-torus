@@ -3,7 +3,7 @@ $lightForeground: #696974;
 $darkForeground: #373a44;
 $darkNavyBlue: #222439;
 //$primary: #5b1eea; // The previous purple color
-$primary: #3b76d3;
+$primary: #2c6abf;
 //$primary: var(--color-delivery-primary);
 $headerColor: $darkForeground;
 
@@ -15,6 +15,13 @@ $headerColor: $darkForeground;
   right: 0px;
   background-color: rgba(0, 0, 0, 0.25);
   z-index: 500;
+
+  ul {
+    padding-left: 40px;
+  }
+  li {
+    list-style-type: disc;
+  }
 
   .wizard-window {
     z-index: 501;
@@ -51,6 +58,9 @@ $headerColor: $darkForeground;
       color: #373a44;
       position: absolute;
       bottom: 15px;
+      &:focus {
+        box-shadow: none;
+      }
     }
     .title-input:focus {
       border: none;
@@ -168,4 +178,40 @@ $headerColor: $darkForeground;
       }
     }
   }
-}
+
+  .advanced-author-step {
+    padding-top: 1rem;
+    h2 {
+      color: $primary;
+      font-family: 'Open Sans';
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 16px;
+      letter-spacing: 0px;
+      text-align: left;
+      margin-bottom: 1rem;
+    }
+    ul {
+      margin-bottom: 1rem;
+    }
+    li {
+      color: #696974;
+      font-family: Open Sans;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 20px;
+      letter-spacing: 0em;
+      text-align: left;
+    }
+    p {
+      //styleName: Body small bold;
+      font-family: Open Sans;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 18px;
+      letter-spacing: 0em;
+      text-align: left;
+      color: #00000099;
+    }
+  }
+} // ends .onboard-wizard

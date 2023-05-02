@@ -95,9 +95,6 @@ export const simplifiedPartUiSchema = {
   Scoring: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Scoring',
-    requiresManualGrading: {
-      classNames: 'col-span-6',
-    },
     maxScore: {
       classNames: 'col-span-6',
     },

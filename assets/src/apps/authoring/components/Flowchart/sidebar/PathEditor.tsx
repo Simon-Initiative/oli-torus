@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
 import { useToggle } from '../../../../../components/hooks/useToggle';
-import { Icon } from '../../../../../components/misc/Icon';
 import { clone } from '../../../../../utils/common';
 import { selectAutoOpenPath } from '../../../store/flowchart/flowchart-slice';
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
@@ -12,7 +11,11 @@ import { AllPaths, DestinationPath } from '../paths/path-types';
 import {
   addComponentId,
   addDestinationId,
+  isComponentPath,
+  isCorrectPath,
   isDestinationPath,
+  isEndOfActivityPath,
+  isIncorrectPath,
   sortByPriority,
 } from '../paths/path-utils';
 
@@ -112,8 +115,12 @@ const PathEditor: React.FC<EditParams> = ({
     if (id === workingPath.id) return;
     const target = availablePaths.find((p) => p.id === id);
     if (!target) return;
-    const { destinationScreenId } = workingPath as DestinationPath;
-    onEdit(addDestinationId(target, destinationScreenId));
+    if (isDestinationPath(target)) {
+      const { destinationScreenId } = workingPath as DestinationPath;
+      setWorkingPath(addDestinationId(target, destinationScreenId));
+    } else {
+      setWorkingPath(target);
+    }
   };
   const onSave = () => {
     onChange(workingPath);
@@ -130,7 +137,6 @@ const PathEditor: React.FC<EditParams> = ({
   }, [screens, screenId]);
 
   const onDelete = () => {
-    //onDeleteScreen(data.resourceId!);
     dispatch(
       deletePath({
         pathId: workingPath.id,
@@ -162,9 +168,12 @@ const PathEditor: React.FC<EditParams> = ({
 
   availableWithCurrent.sort(sortByPriority);
 
+  const showQuestionLabel =
+    isComponentPath(workingPath) || isCorrectPath(workingPath) || isIncorrectPath(workingPath);
+
   return (
     <div className={className}>
-      {questionId && <span>When {questionType} is</span>}
+      {questionId && showQuestionLabel && <label>When {questionType} is</label>}
 
       {availableWithCurrent.length === 1 && <label>{availableWithCurrent[0].label}</label>}
 
@@ -178,25 +187,25 @@ const PathEditor: React.FC<EditParams> = ({
         </select>
       )}
 
-      <div className="param-box">
-        {isDestinationPath(workingPath) && (
-          <>
-            Go to
-            <DestinationPicker
-              screens={destinationScreens}
-              path={workingPath}
-              onChange={onDestinationChange}
-            />
-          </>
-        )}
-      </div>
+      {isDestinationPath(workingPath) && (
+        <div className="destination-section">
+          <label>Go to</label>
+          <DestinationPicker
+            screens={destinationScreens}
+            path={workingPath}
+            onChange={onDestinationChange}
+          />
+        </div>
+      )}
 
-      <button onClick={onSave} className="btn btn-primary">
-        <Icon icon="save" /> Save Rule
-      </button>
-      <button onClick={toggleDeleteConfirm} className="icon-button">
-        <Icon icon="trash" />
-      </button>
+      <div className="bottom-buttons">
+        <button onClick={toggleDeleteConfirm} className="btn btn-danger">
+          Delete
+        </button>
+        <button onClick={onSave} className="btn btn-primary">
+          Done
+        </button>
+      </div>
       {showDeleteConfirm && (
         <ConfirmDelete
           show={true}
@@ -218,14 +227,21 @@ interface ROParams {
 }
 
 const ReadOnlyPath: React.FC<ROParams> = ({ path, toggleEditMode, className, screens }) => {
+  const prelabel = isEndOfActivityPath(path)
+    ? 'Always '
+    : isComponentPath(path) || isCorrectPath(path) || isIncorrectPath(path)
+    ? 'If answer is '
+    : '';
+  const goToLabel = isDestinationPath(path) ? ' go to ' : '';
   return (
-    <div className={className}>
-      <label>{path.label}</label>
+    <div className={className} onClick={toggleEditMode}>
+      {prelabel}
+      <div className="param-box">
+        <span className="path-param">{path.label}</span>
+      </div>
+      {goToLabel}
       <div className="param-box">
         {isDestinationPath(path) && <DestinationLabel path={path} screens={screens} />}
-        <button onClick={toggleEditMode} className="icon-button">
-          <Icon icon="edit" />
-        </button>
       </div>
     </div>
   );

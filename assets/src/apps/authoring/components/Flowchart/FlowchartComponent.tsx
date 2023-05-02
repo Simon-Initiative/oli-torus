@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactFlow, { Background, Controls } from 'reactflow';
+import ReactFlow, { Controls } from 'reactflow';
 import FloatingConnectionLine from './chart-components/FloatingConnectionLine';
 import { FloatingEdge } from './chart-components/FloatingEdge';
 import { PlaceholderEdge } from './chart-components/PlaceholderEdge';
@@ -28,12 +28,21 @@ const EdgeTypes = {
 export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => {
   const { nodes, edges } = props;
 
-  // if (nodes.length > 1) {
-  //   debugger;
-  // }
-
   const layout = layoutFlowchart(nodes, edges);
-  // TODO - we're currently ignoring the dagre edges from layout. I think we could avoid some overlaps by using them.
+  // const onInit = useCallback(
+  //   (reactFlowInstance: ReactFlowInstance) => {
+  //     setTimeout(() => {
+  //       const startNode = nodes.filter(
+  //         (n) => (n.data as any)?.authoring?.flowchart?.screenType === 'welcome_screen',
+  //       );
+  //       console.info('Fitting to', startNode);
+  //       reactFlowInstance.fitView({
+  //         nodes: startNode,
+  //       });
+  //     }, 1000);
+  //   },
+  //   [nodes],
+  // );
 
   return (
     <ReactFlow
@@ -47,9 +56,7 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
       connectionLineComponent={FloatingConnectionLine}
       proOptions={{ hideAttribution: true }}
     >
-      {/* <MiniMap /> */}
-      <Controls />
-      <Background />
+      <Controls position="top-right" showInteractive={false} />
     </ReactFlow>
   );
 };

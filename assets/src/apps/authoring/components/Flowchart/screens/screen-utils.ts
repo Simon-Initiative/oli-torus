@@ -1,3 +1,4 @@
+import uniq from 'lodash/uniq';
 import { IActivity } from '../../../../delivery/store/features/activities/slice';
 import {
   SequenceEntry,
@@ -51,14 +52,16 @@ const isEndScreen = (screen: IActivity): boolean =>
 
 const isScreen = (screen: IActivity | undefined): screen is IActivity => !!screen;
 
-const getOrderedPath = (screen: IActivity, screensLeft: IActivity[]): IActivity[] => {
+export function getOrderedPath(screen: IActivity, screensLeft: IActivity[]): IActivity[] {
   const paths = screen.authoring?.flowchart?.paths || [];
 
   const destinationPaths = paths.filter(isDestinationPath);
 
-  const nextScreens = destinationPaths
-    .map((p) => screensLeft.find((s) => s.resourceId === p.destinationScreenId))
-    .filter(isScreen);
+  const nextScreens = uniq(
+    destinationPaths
+      .map((p) => screensLeft.find((s) => s.resourceId === p.destinationScreenId))
+      .filter(isScreen),
+  );
 
   for (const nextScreen of nextScreens) {
     const remainingScreens = screensLeft.filter((s) => !nextScreens.includes(s));
@@ -67,4 +70,4 @@ const getOrderedPath = (screen: IActivity, screensLeft: IActivity[]): IActivity[
   }
 
   return nextScreens;
-};
+}

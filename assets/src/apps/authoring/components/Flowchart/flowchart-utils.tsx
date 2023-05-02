@@ -2,8 +2,7 @@
 import { MarkerType } from 'reactflow';
 import guid from '../../../../utils/guid';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
-import { AllPaths } from './paths/path-types';
-import { buildEdgesForActivity, isExitActivityPath } from './paths/path-utils';
+import { buildEdgesForActivity } from './paths/path-utils';
 
 export interface FlowchartPlaceholderNodeData {
   fromScreenId: number;
@@ -77,25 +76,12 @@ export const activitiesToNodes = (children: IActivity[]): FlowchartNode[] =>
       },
     }));
 
-interface PlaceholderNodeAndEdge {
-  node: FlowchartPlaceholderNode;
-  edge: FlowchartEdge;
-}
-
 const createStartNode = (id: string, toScreenId: number): FlowchartStartNode => ({
   id,
   position: { x: 0, y: 0 },
   data: { toScreenId },
   draggable: false,
   type: 'start',
-});
-
-const createPlaceholderNode = (id: string, fromScreenId: number): FlowchartPlaceholderNode => ({
-  id,
-  position: { x: 0, y: 0 },
-  data: { fromScreenId },
-  draggable: false,
-  type: 'placeholder',
 });
 
 const createPlaceholderEdge = (fromScreenId: string, toScreenId: string): FlowchartEdge => ({
@@ -123,32 +109,34 @@ export const buildStartingNode = (
   };
 };
 
-export const buildPlaceholders = (
-  children: IActivity[],
-): { nodes: FlowchartPlaceholderNode[]; edges: FlowchartEdge[] } => {
-  const placeholders: PlaceholderNodeAndEdge[] = children
-    .filter((c) => !!c.resourceId)
-    .map((item) => {
-      const paths = item.authoring?.flowchart?.paths || [];
-      const nodeId = guid();
-      return paths.filter(isExitActivityPath).map((path: AllPaths) => {
-        return {
-          node: createPlaceholderNode(nodeId, item.resourceId!),
-          edge: createPlaceholderEdge(String(item.resourceId!), nodeId),
-        };
-      });
-    })
-    .flat();
+// This was to support the placeholder exit-lesson node, but we got rid of that.
+// export const buildPlaceholders = (
+//   children: IActivity[],
+// ): { nodes: FlowchartPlaceholderNode[]; edges: FlowchartEdge[] } => {
+//   const placeholders: PlaceholderNodeAndEdge[] = [];
+// children
+//   .filter((c) => !!c.resourceId)
+//   .map((item) => {
+//     const paths = item.authoring?.flowchart?.paths || [];
+//     const nodeId = guid();
+//     return paths.filter(isExitActivityPath).map((_path: AllPaths) => {
+//       return {
+//         node: createPlaceholderNode(nodeId, item.resourceId!),
+//         edge: createPlaceholderEdge(String(item.resourceId!), nodeId),
+//       };
+//     });
+//   })
+//   .flat();
 
-  // Go from an array of { node, edge } to { nodes: [], edges: [] }
-  return placeholders.reduce(
-    (acc, item) => ({ nodes: [...acc.nodes, item.node], edges: [...acc.edges, item.edge] }),
-    {
-      nodes: [],
-      edges: [],
-    },
-  );
-};
+//   // Go from an array of { node, edge } to { nodes: [], edges: [] }
+//   return placeholders.reduce(
+//     (acc, item) => ({ nodes: [...acc.nodes, item.node], edges: [...acc.edges, item.edge] }),
+//     {
+//       nodes: [],
+//       edges: [],
+//     },
+//   );
+// };
 
 export const buildEdges = (activities: IActivity[]): FlowchartEdge[] => {
   const endScreenId =

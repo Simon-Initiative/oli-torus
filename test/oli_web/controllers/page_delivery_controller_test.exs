@@ -3,6 +3,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
   import Mox
   import Oli.Factory
+  import Oli.Utils.Seeder.Utils
 
   alias Oli.Delivery.Sections
   alias Oli.Seeder
@@ -1832,6 +1833,328 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Content"
+    end
+  end
+
+  defp sample_content_with_audiences() do
+    %{
+      "model" => [
+        %{
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" => "group content with unset audience"
+                    }
+                  ],
+                  "id" => "2832905765",
+                  "type" => "p"
+                }
+              ],
+              "id" => "1637405903",
+              "type" => "content"
+            }
+          ],
+          "id" => "2596425610",
+          "layout" => "vertical",
+          "purpose" => "none",
+          "type" => "group"
+        },
+        %{
+          "audience" => "always",
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" => "group content with always audience"
+                    }
+                  ],
+                  "id" => "1397779851",
+                  "type" => "p"
+                }
+              ],
+              "id" => "2731683728",
+              "type" => "content"
+            }
+          ],
+          "id" => "2507062198",
+          "layout" => "vertical",
+          "purpose" => "none",
+          "type" => "group"
+        },
+        %{
+          "audience" => "instructor",
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" => "group content with instructor audience"
+                    }
+                  ],
+                  "id" => "3636203845",
+                  "type" => "p"
+                }
+              ],
+              "id" => "2754007861",
+              "type" => "content"
+            }
+          ],
+          "id" => "221805210",
+          "layout" => "vertical",
+          "purpose" => "none",
+          "type" => "group"
+        },
+        %{
+          "audience" => "feedback",
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" => "group content with feedback audience"
+                    }
+                  ],
+                  "id" => "1059608464",
+                  "type" => "p"
+                }
+              ],
+              "id" => "145362978",
+              "type" => "content"
+            }
+          ],
+          "id" => "3207833098",
+          "layout" => "vertical",
+          "purpose" => "none",
+          "type" => "group"
+        },
+        %{
+          "audience" => "never",
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" => "group content with never audience"
+                    }
+                  ],
+                  "id" => "3983480101",
+                  "type" => "p"
+                }
+              ],
+              "id" => "3188423142",
+              "type" => "content"
+            }
+          ],
+          "id" => "541687263",
+          "layout" => "vertical",
+          "purpose" => "none",
+          "type" => "group"
+        }
+      ]
+    }
+  end
+
+  defp setup_audience_section(map) do
+    map
+    |> Oli.Utils.Seeder.Project.create_admin(admin_tag: :admin)
+    |> Oli.Utils.Seeder.Project.create_author(author_tag: :author)
+    |> Oli.Utils.Seeder.Project.create_sample_project(
+      ref(:author),
+      project_tag: :proj,
+      publication_tag: :pub,
+      curriculum_revision_tag: :curriculum,
+      unscored_page1_tag: :unscored_page1,
+      unscored_page1_activity_tag: :unscored_page1_activity,
+      scored_page2_tag: :scored_page2,
+      scored_page2_activity_tag: :scored_page2_activity
+    )
+    |> Oli.Utils.Seeder.Project.create_page(
+      ref(:author),
+      ref(:proj),
+      ref(:curriculum),
+      %{
+        title: "page_with_audience_groups",
+        content: sample_content_with_audiences()
+      },
+      revision_tag: :page_with_audience_groups,
+      container_revision_tag: :curriculum
+    )
+    |> Oli.Utils.Seeder.Project.create_page(
+      ref(:author),
+      ref(:proj),
+      ref(:curriculum),
+      %{
+        title: "graded_page_with_audience_groups",
+        content: sample_content_with_audiences(),
+        graded: true
+      },
+      revision_tag: :graded_page_with_audience_groups,
+      container_revision_tag: :curriculum
+    )
+    |> Oli.Utils.Seeder.Project.ensure_published(ref(:pub))
+    |> Oli.Utils.Seeder.Section.create_section(
+      ref(:proj),
+      ref(:pub),
+      nil,
+      %{},
+      section_tag: :section
+    )
+    |> Oli.Utils.Seeder.Section.create_and_enroll_learner(
+      ref(:section),
+      %{},
+      user_tag: :student1
+    )
+    |> Oli.Utils.Seeder.Section.create_and_enroll_instructor(
+      ref(:section),
+      %{},
+      user_tag: :instructor1
+    )
+  end
+
+  describe "audience" do
+    setup [:setup_audience_section]
+
+    test "student sees the appropriate content according to audience", map do
+      %{
+        page_with_audience_groups: page_with_audience_groups,
+        section: section
+      } = map
+
+      %{conn: conn} =
+        map
+        |> Oli.Utils.Seeder.Session.login_as_user(ref(:student1))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :page, section.slug, page_with_audience_groups.slug)
+        )
+
+      assert html_response(conn, 200) =~ "group content with unset audience"
+      assert html_response(conn, 200) =~ "group content with always audience"
+      refute html_response(conn, 200) =~ "group content with instructor audience"
+      refute html_response(conn, 200) =~ "group content with feedback audience"
+      refute html_response(conn, 200) =~ "group content with never audience"
+    end
+
+    test "instructor sees the appropriate content according to audience", map do
+      %{page_with_audience_groups: page_with_audience_groups, section: section} = map
+
+      %{conn: conn} =
+        map
+        |> Oli.Utils.Seeder.Session.login_as_user(ref(:student1))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :page, section.slug, page_with_audience_groups.slug)
+        )
+
+      assert html_response(conn, 200) =~ "group content with unset audience"
+      assert html_response(conn, 200) =~ "group content with always audience"
+      refute html_response(conn, 200) =~ "group content with instructor audience"
+      refute html_response(conn, 200) =~ "group content with feedback audience"
+      refute html_response(conn, 200) =~ "group content with never audience"
+    end
+
+    test "student sees the appropriate content according to audience during review", map do
+      %{graded_page_with_audience_groups: graded_page_with_audience_groups, section: section} =
+        map
+
+      datashop_session_id_user1 = UUID.uuid4()
+
+      %{graded_page_with_audience_groups_attempt: graded_page_with_audience_groups_attempt} =
+        map =
+        map
+        |> Oli.Utils.Seeder.Attempt.start_scored_assessment(
+          ref(:graded_page_with_audience_groups),
+          ref(:section),
+          ref(:student1),
+          datashop_session_id_user1,
+          resource_attempt_tag: :graded_page_with_audience_groups_attempt,
+          attempt_hierarchy_tag: :graded_page_with_audience_groups_attempt_hierarchy
+        )
+        |> Oli.Utils.Seeder.Attempt.submit_scored_assessment(
+          ref(:section),
+          ref(:graded_page_with_audience_groups_attempt),
+          datashop_session_id_user1
+        )
+
+      %{conn: conn} =
+        map
+        |> Oli.Utils.Seeder.Session.login_as_user(ref(:student1))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(
+            conn,
+            :review_attempt,
+            section.slug,
+            graded_page_with_audience_groups.slug,
+            graded_page_with_audience_groups_attempt.attempt_guid
+          )
+        )
+
+      assert html_response(conn, 200) =~ "group content with unset audience"
+      assert html_response(conn, 200) =~ "group content with always audience"
+      refute html_response(conn, 200) =~ "group content with instructor audience"
+      assert html_response(conn, 200) =~ "group content with feedback audience"
+      refute html_response(conn, 200) =~ "group content with never audience"
+    end
+
+    test "instructor sees the appropriate content according to audience during review", map do
+      %{graded_page_with_audience_groups: graded_page_with_audience_groups, section: section} =
+        map
+
+      datashop_session_id_user1 = UUID.uuid4()
+
+      %{graded_page_with_audience_groups_attempt: graded_page_with_audience_groups_attempt} =
+        map =
+        map
+        |> Oli.Utils.Seeder.Attempt.start_scored_assessment(
+          ref(:graded_page_with_audience_groups),
+          ref(:section),
+          ref(:instructor1),
+          datashop_session_id_user1,
+          resource_attempt_tag: :graded_page_with_audience_groups_attempt,
+          attempt_hierarchy_tag: :graded_page_with_audience_groups_attempt_hierarchy
+        )
+        |> Oli.Utils.Seeder.Attempt.submit_scored_assessment(
+          ref(:section),
+          ref(:graded_page_with_audience_groups_attempt),
+          datashop_session_id_user1
+        )
+
+      %{conn: conn} =
+        map
+        |> Oli.Utils.Seeder.Session.login_as_user(ref(:instructor1))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(
+            conn,
+            :review_attempt,
+            section.slug,
+            graded_page_with_audience_groups.slug,
+            graded_page_with_audience_groups_attempt.attempt_guid
+          )
+        )
+
+      assert html_response(conn, 200) =~ "group content with unset audience"
+      assert html_response(conn, 200) =~ "group content with always audience"
+      assert html_response(conn, 200) =~ "group content with instructor audience"
+      assert html_response(conn, 200) =~ "group content with feedback audience"
+      refute html_response(conn, 200) =~ "group content with never audience"
     end
   end
 

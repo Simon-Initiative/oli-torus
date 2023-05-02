@@ -44,7 +44,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   `{:error, {:no_more_attempts}}` if no more attempts are present
 
   """
-  def start(revision_slug, section_slug, datashop_session_id, user_id, activity_provider) do
+  def start(
+        revision_slug,
+        section_slug,
+        datashop_session_id,
+        user,
+        activity_provider
+      ) do
     Repo.transaction(fn ->
       case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
         nil ->
@@ -52,7 +58,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
         page_revision ->
           latest_resource_attempt =
-            get_latest_resource_attempt(page_revision.resource_id, section_slug, user_id)
+            get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
 
           publication_id =
             Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
@@ -63,7 +69,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             latest_resource_attempt: latest_resource_attempt,
             page_revision: page_revision,
             section_slug: section_slug,
-            user_id: user_id,
+            user: user,
+            audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
             datashop_session_id: datashop_session_id,
             activity_provider: activity_provider
           }
@@ -97,7 +104,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   `{:ok, {:not_started, %HistorySummary{}}}`
   """
-  @spec visit(%Revision{}, String.t(), String.t(), number(), any) ::
+  @spec visit(%Revision{}, String.t(), String.t(), User.t(), any) ::
           {:ok, {:in_progress | :revised, %AttemptState{}}}
           | {:ok, {:not_started, %HistorySummary{}}}
           | {:error, any}
@@ -105,12 +112,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         page_revision,
         section_slug,
         datashop_session_id,
-        user_id,
+        user,
         activity_provider
       ) do
     Repo.transaction(fn ->
       {graded, latest_resource_attempt} =
-        get_latest_resource_attempt(page_revision.resource_id, section_slug, user_id)
+        get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
         |> handle_type_transitions(page_revision)
 
       publication_id =
@@ -122,7 +129,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         latest_resource_attempt: latest_resource_attempt,
         page_revision: page_revision,
         section_slug: section_slug,
-        user_id: user_id,
+        user: user,
+        audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
         datashop_session_id: datashop_session_id,
         activity_provider: activity_provider
       }

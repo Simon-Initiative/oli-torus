@@ -89,6 +89,14 @@ defmodule Oli.Utils.Seeder.Section do
     |> enroll_as_learner(section, ref(user_tag))
   end
 
+  def create_and_enroll_instructor(seeds, section, user_attrs, tags \\ []) do
+    user_tag = tags[:user_tag] || random_tag()
+
+    seeds
+    |> create_user(user_attrs, tags)
+    |> enroll_as_instructor(section, ref(user_tag))
+  end
+
   def create_user(seeds, attrs, tags \\ []) do
     given_name = NameGenerator.first_name()
     family_name = NameGenerator.last_name()

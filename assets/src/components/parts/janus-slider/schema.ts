@@ -65,13 +65,13 @@ export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
   answer: correctOrRange.uiSchema,
   minimum: {
-    classNames: 'col-6',
+    classNames: 'col-span-6',
   },
   maximum: {
-    classNames: 'col-6',
+    classNames: 'col-span-6',
   },
   snapInterval: {
-    classNames: 'col-6',
+    classNames: 'col-span-6',
   },
   advancedFeedback: numericAdvancedFeedback.uiSchema,
 };

@@ -20,6 +20,7 @@ import {
   selectAppMode,
   selectProjectSlug,
 } from '../../../store/app/slice';
+import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
 import { addSequenceItem } from '../../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
@@ -49,22 +50,21 @@ interface DuplicateFlowchartScreenPayload {
 export const duplicateFlowchartScreen = createAsyncThunk(
   `${FlowchartSlice}/duplicateFlowchartScreen`,
   async (payload: DuplicateFlowchartScreenPayload, { dispatch, getState }) => {
+    const rootState = getState() as AuthoringRootState;
+    const appMode = selectAppMode(rootState);
+    if (appMode !== 'flowchart') {
+      throw new Error('addFlowchartScreen can only be called when appMode is flowchart');
+    }
+    const projectSlug = selectProjectSlug(rootState);
+    const activityTypes = selectActivityTypes(rootState);
+    const sequence = selectSequence(rootState);
+    const otherActivities = selectAllActivities(rootState);
+    const otherActivityNames = otherActivities.map((a) => a.title || '');
+
+    const group = selectAllGroups(rootState)[0];
+
+    const originalScreen = selectActivityById(rootState, payload.screenId);
     try {
-      const rootState = getState() as AuthoringRootState;
-      const appMode = selectAppMode(rootState);
-      if (appMode !== 'flowchart') {
-        throw new Error('addFlowchartScreen can only be called when appMode is flowchart');
-      }
-      const projectSlug = selectProjectSlug(rootState);
-      const activityTypes = selectActivityTypes(rootState);
-      const sequence = selectSequence(rootState);
-      const otherActivities = selectAllActivities(rootState);
-      const otherActivityNames = otherActivities.map((a) => a.title || '');
-
-      const group = selectAllGroups(rootState)[0];
-
-      const originalScreen = selectActivityById(rootState, payload.screenId);
-
       if (!originalScreen) {
         console.warn('Could not find screen to duplicate');
         return;
@@ -101,8 +101,7 @@ export const duplicateFlowchartScreen = createAsyncThunk(
       );
 
       if (createResults.result === 'failure') {
-        // TODO - handle error
-        return;
+        throw new Error('Failed to create destination activity');
       }
 
       // Get the last non-end screen
@@ -132,7 +131,6 @@ export const duplicateFlowchartScreen = createAsyncThunk(
             setGoToAlwaysPath(fromScreen, createResults.resourceId);
           }
 
-          // TODO - these two should be a single operation?
           dispatch(saveActivity({ activity: fromScreen, undoable: false, immediate: true }));
           await dispatch(upsertActivity({ activity: fromScreen }));
         }
@@ -172,7 +170,6 @@ export const duplicateFlowchartScreen = createAsyncThunk(
         tags: [],
       };
 
-      // TODO - figure out initial rules generation here.
       dispatch(saveActivity({ activity: reduxActivity, undoable: false, immediate: true }));
       await dispatch(upsertActivity({ activity: reduxActivity }));
 
@@ -191,7 +188,16 @@ export const duplicateFlowchartScreen = createAsyncThunk(
       await dispatch(savePage({ undoable: false }));
       return activity;
     } catch (e) {
-      console.error(e);
+      dispatch(
+        reportAPIError({
+          error: JSON.stringify(e, Object.getOwnPropertyNames(e), 2),
+          title: 'Could not duplicate screen',
+          message:
+            'Something went wrong when attempting to duplicate this screen. Please try again.',
+          failedActivity: originalScreen,
+          info: null,
+        }),
+      );
       throw e;
     }
   },

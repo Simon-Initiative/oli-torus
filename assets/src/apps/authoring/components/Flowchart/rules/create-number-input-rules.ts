@@ -123,7 +123,7 @@ export const generteNumberInputRules = (
     `stage.${question.id}.value`,
     'true',
     'isNaN',
-    2,
+    1,
   );
 
   return generateThreeTryWorkflow(

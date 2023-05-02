@@ -122,6 +122,97 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const simpleSchema: JSONSchema7Object = {
+  description: {
+    title: 'Alternate Text',
+    type: 'string',
+    default: 'Additional Information',
+    description: 'provides alt text and aria-label content',
+  },
+  openByDefault: {
+    title: 'Open By Default',
+    type: 'boolean',
+    description: 'specifies whether popup should open by default',
+    default: false,
+  },
+  defaultURL: {
+    title: 'Icon',
+    type: 'string',
+    description: 'URL for the button icon',
+    default: '/repo/icons/question_mark_orange_32x32.png',
+    enum: [
+      '/repo/icons/question_mark_orange_32x32.png',
+      '/repo/icons/question_mark_red_32x32.png',
+      '/repo/icons/question_mark_green_32x32.png',
+      '/repo/icons/question_mark_blue_32x32.png',
+      '/repo/icons/information_mark_orange_32x32.png',
+      '/repo/icons/information_mark_red_32x32.png',
+      '/repo/icons/information_mark_green_32x32.png',
+      '/repo/icons/information_mark_blue_32x32.png',
+      '/repo/icons/exclamation_mark_orange_32x32.png',
+      '/repo/icons/exclamation_mark_red_32x32.png',
+      '/repo/icons/exclamation_mark_green_32x32.png',
+      '/repo/icons/exclamation_mark_blue_32x32.png',
+    ],
+  },
+  useToggleBehavior: {
+    title: 'Use Toggle Behaviour',
+    type: 'boolean',
+    description: 'specifies whether popup toggles open/closed on click or on mouse hover',
+    default: true,
+  },
+  popup: {
+    type: 'object',
+    properties: {
+      Size: {
+        type: 'object',
+        title: 'Dimensions',
+        properties: {
+          width: { type: 'number' },
+          height: { type: 'number' },
+        },
+      },
+      Position: {
+        type: 'object',
+        title: 'Dimensions',
+        properties: {
+          x: { type: 'number' },
+          y: { type: 'number' },
+          z: { type: 'number' },
+        },
+      },
+      customCssClass: {
+        title: 'Custom CSS Class',
+        type: 'string',
+      },
+      palette: {
+        type: 'object',
+        properties: {
+          backgroundColor: { type: 'string', title: 'Background Color' },
+          borderColor: { type: 'string', title: 'Border Color' },
+          borderRadius: { type: 'string', title: 'Border Radius' },
+          borderStyle: {
+            type: 'string',
+            title: 'Border Style',
+            enum: [
+              'none',
+              'solid',
+              'dotted',
+              'dashed',
+              'double',
+              'groove',
+              'ridge',
+              'inset',
+              'outset',
+            ],
+          },
+          borderWidth: { type: 'string', title: 'Border Width' },
+        },
+      },
+    },
+  },
+};
+
 export const uiSchema = {
   popup: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
@@ -163,6 +254,8 @@ export const uiSchema = {
     },
   },
 };
+
+export const simpleUISchema = uiSchema;
 
 export const createSchema = (): Partial<PopupModel> => ({
   width: 32,

@@ -1,5 +1,6 @@
 import register from '../customElementWrapper';
 import {
+  PartAuthoringMode,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
   authoringObservedAttributes,
@@ -10,6 +11,8 @@ import {
   createSchema,
   getCapabilities,
   schema,
+  simpleSchema,
+  simpleUISchema,
   uiSchema,
   validateUserConfig,
 } from './schema';
@@ -34,8 +37,8 @@ register(CapiIframeAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => schema,
-    getUiSchema: () => uiSchema,
+    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUISchema : uiSchema),
     createSchema,
     getCapabilities,
     getAdaptivitySchema: adaptivitySchema,
