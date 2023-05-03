@@ -1255,4 +1255,28 @@ defmodule Oli.SectionsTest do
       assert Enum.at(Enum.at(hierarchy.children, 2).children, 1).numbering.index == 4
     end
   end
+
+  describe "list_user_enrolled_sections/1" do
+    setup do
+      student = insert(:user)
+      section_1 = insert(:section)
+      section_2 = insert(:section)
+
+      Sections.enroll(student.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student.id, section_2.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, %{student: student}}
+    end
+
+    test "returns sections for user", %{student: student} do
+      sections = Sections.list_user_enrolled_sections(student)
+      assert length(sections) == 2
+    end
+
+    test "returns empty list when user is not enrolled in any sections", %{} do
+      student = insert(:user)
+      sections = Sections.list_user_enrolled_sections(student)
+      assert sections == []
+      assert length(sections) == 0
+    end
+  end
 end
