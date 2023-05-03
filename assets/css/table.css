@@ -32,6 +32,10 @@
   background-repeat: no-repeat;
 }
 
+.instructor_dashboard_table_link {
+  @apply h-14 text-gray-500 font-semibold text-xs sm:text-sm;
+}
+
 .instructor_dashboard_table tr {
   @apply h-14 text-gray-500 font-semibold text-xs sm:text-sm;
 }
