@@ -110,7 +110,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ### sorting by student
       params = %{
-        sort_order: :desc,
+        sort_order: :asc,
         sort_by: :name
       }
 
@@ -125,8 +125,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       assert student_for_tr_1 =~ "Di Maria, Angelito"
       assert student_for_tr_2 =~ "Jr, Neymar"
-      assert student_for_tr_3 =~ "Suarez, Luis"
-      assert student_for_tr_4 =~ "Messi, Lionel"
+      assert student_for_tr_3 =~ "Messi, Lionel"
+      assert student_for_tr_4 =~ "Suarez, Luis"
 
       ### text filtering
       params = %{
@@ -153,7 +153,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       ### pagination
       params = %{
         offset: 2,
-        limit: 2
+        limit: 2,
+        sort_order: :desc
       }
 
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
@@ -187,7 +188,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
 
-      assert progress == ["30%", "20%", "0%", "10%"]
+      assert progress == ["10%", "0%", "30%", "20%"]
 
       ### filtering by no container
       ### (we want to get the progress across all course section)
@@ -202,7 +203,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
 
-      assert progress == ["8%", "5%", "0%", "3%"]
+      assert progress == ["3%", "0%", "8%", "5%"]
 
       ### filtering by non existing container
       params = %{container_id: 99999}
@@ -230,7 +231,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
 
-      assert progress == ["90%", "60%", "0%", "30%"]
+      assert progress == ["30%", "0%", "90%", "60%"]
     end
   end
 

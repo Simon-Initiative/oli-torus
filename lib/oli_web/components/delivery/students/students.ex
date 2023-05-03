@@ -4,17 +4,14 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Phoenix.LiveView.JS
 
   alias OliWeb.Common.{PagedTable, SearchInput}
-  alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
-  alias Oli.Delivery.Sections
   alias OliWeb.Common.Params
-  alias Oli.Delivery.Metrics
+  alias OliWeb.Common.Utils
   alias OliWeb.Router.Helpers, as: Routes
 
-  prop params, :map, required: true
-  prop total_count, :number, required: true
-  prop table_model, :struct, required: true
+  prop(params, :map, required: true)
+  prop(total_count, :number, required: true)
+  prop(table_model, :struct, required: true)
 
   @default_params %{
     offset: 0,
@@ -26,45 +23,17 @@ defmodule OliWeb.Components.Delivery.Students do
     text_search: nil
   }
 
-  def update(%{params: params, section: section, context: context} = _assigns, socket) do
-    params = decode_params(params)
+  def update(
+        %{params: params, section: section, context: context, students: students} = _assigns,
+        socket
+      ) do
+    {total_count, rows} = apply_filters(students, params)
 
-    enrollments =
-      case params.page_id do
-        nil ->
-          Sections.browse_enrollments(
-            section,
-            %Paging{offset: params.offset, limit: params.limit},
-            %Sorting{direction: params.sort_order, field: params.sort_by},
-            %EnrollmentBrowseOptions{
-              text_search: params.text_search,
-              is_student: true,
-              is_instructor: false
-            }
-          )
-          |> add_students_progress(section.id, params.container_id)
-          |> add_students_last_interaction(section.slug)
-
-        page_id ->
-          Sections.browse_enrollments(
-            section,
-            %Paging{offset: params.offset, limit: params.limit},
-            %Sorting{direction: params.sort_order, field: params.sort_by},
-            %EnrollmentBrowseOptions{
-              text_search: params.text_search,
-              is_student: true,
-              is_instructor: false
-            }
-          )
-          |> add_students_progress_for_page(section.id, page_id)
-          |> add_students_last_interaction_for_page(section.slug, page_id)
-      end
-
-    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
+    {:ok, table_model} = EnrollmentsTableModel.new(rows, section, context)
 
     table_model =
       Map.merge(table_model, %{
-        rows: enrollments,
+        rows: rows,
         sort_order: params.sort_order,
         sort_by_spec:
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
@@ -72,11 +41,62 @@ defmodule OliWeb.Components.Delivery.Students do
 
     {:ok,
      assign(socket,
-       total_count: determine_total(enrollments),
+       total_count: total_count,
        table_model: table_model,
        params: params,
        section_slug: section.slug
      )}
+  end
+
+  defp apply_filters(students, params) do
+    students =
+      students
+      |> maybe_filter_by_text(params.text_search)
+      |> sort_by(params.sort_by, params.sort_order)
+
+    {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+  end
+
+  defp maybe_filter_by_text(students, nil), do: students
+  defp maybe_filter_by_text(students, ""), do: students
+
+  defp maybe_filter_by_text(students, text_search) do
+    Enum.filter(students, fn student ->
+      String.contains?(
+        String.downcase(Utils.name(student.name, student.given_name, student.family_name)),
+        String.downcase(text_search)
+      )
+    end)
+  end
+
+  defp sort_by(students, sort_by, sort_order) do
+    case sort_by do
+      :name ->
+        Enum.sort_by(
+          students,
+          fn student -> Utils.name(student.name, student.given_name, student.family_name) end,
+          sort_order
+        )
+
+      :last_interaction ->
+        Enum.sort_by(students, fn student -> student.last_interaction end, sort_order)
+
+      :progress ->
+        Enum.sort_by(students, fn student -> student.progress end, sort_order)
+
+      :overall_mastery ->
+        Enum.sort_by(students, fn student -> student.overall_mastery end, sort_order)
+
+      :engagement ->
+        Enum.sort_by(students, fn student -> student.engagement end, sort_order)
+
+      _ ->
+        Enum.sort_by(
+          students,
+          fn student -> Utils.name(student.name, student.given_name, student.family_name) end,
+          sort_order
+        )
+    end
   end
 
   def render(assigns) do
@@ -145,7 +165,7 @@ defmodule OliWeb.Components.Delivery.Students do
      )}
   end
 
-  defp decode_params(params) do
+  def decode_params(params) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
@@ -153,49 +173,15 @@ defmodule OliWeb.Components.Delivery.Students do
       page_id: Params.get_int_param(params, "page_id", @default_params.page_id),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
-      # we currently only support sorting by name since the other metrics have not yet been created
-      sort_by: Params.get_atom_param(params, "sort_by", [:name], @default_params.sort_by),
+      sort_by:
+        Params.get_atom_param(
+          params,
+          "sort_by",
+          [:name, :last_interaction, :progress, :overall_mastery, :engagement],
+          @default_params.sort_by
+        ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search)
     }
-  end
-
-  defp add_students_progress(users, section_id, container_id) do
-    users_progress = Metrics.progress_for(section_id, Enum.map(users, & &1.id), container_id)
-
-    Enum.map(users, fn user ->
-      Map.merge(user, %{progress: Map.get(users_progress, user.id)})
-    end)
-  end
-
-  defp add_students_progress_for_page(users, section_id, page_id) do
-    users_progress = Metrics.progress_for_page(section_id, Enum.map(users, & &1.id), page_id)
-
-    Enum.map(users, fn user ->
-      Map.merge(user, %{progress: Map.get(users_progress, user.id)})
-    end)
-  end
-
-  defp add_students_last_interaction(users, section_slug) do
-    users_last_interaction = Metrics.students_last_interaction(section_slug)
-
-    Enum.map(users, fn user ->
-      Map.merge(user, %{last_interaction: Map.get(users_last_interaction, user.id)})
-    end)
-  end
-
-  defp add_students_last_interaction_for_page(users, section_slug, page_id) do
-    users_last_interaction = Metrics.students_last_interaction_for_page(section_slug, page_id)
-
-    Enum.map(users, fn user ->
-      Map.merge(user, %{last_interaction: Map.get(users_last_interaction, user.id)})
-    end)
-  end
-
-  defp determine_total(students) do
-    case students do
-      [] -> 0
-      [hd | _] -> hd.total_count
-    end
   end
 
   defp update_params(%{sort_by: current_sort_by, sort_order: current_sort_order} = params, %{

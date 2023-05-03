@@ -33,13 +33,13 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       %ColumnSpec{
         name: :overall_mastery,
         label: "OVERALL COURSE MASTERY",
-        render_fn: &__MODULE__.stub_overall_mastery/3,
+        render_fn: &__MODULE__.render_overall_mastery_column/3,
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
         name: :engagement,
         label: "COURSE ENGAGEMENT",
-        render_fn: &__MODULE__.stub_engagement/3,
+        render_fn: &__MODULE__.render_engagement_column/3,
         th_class: "instructor_dashboard_th"
       }
     ]
@@ -107,30 +107,30 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
   def render_last_interaction_column(assigns, user, _) do
     assigns =
-      Map.merge(assigns, %{last_interaction: parse_last_interaction(user.last_interaction)})
+      Map.merge(assigns, %{
+        last_interaction: parse_last_interaction(Map.get(user, :last_interaction))
+      })
 
     ~H"""
     <%= @last_interaction %>
     """
   end
 
-  def stub_overall_mastery(assigns, _user, _) do
-    assigns = Map.merge(assigns, %{overall_mastery: random_value()})
+  def render_overall_mastery_column(assigns, user, _) do
+    assigns = Map.merge(assigns, %{overall_mastery: Map.get(user, :overall_mastery)})
 
     ~H"""
       <div class={if @overall_mastery == "Low", do: "text-red-600 font-bold"}><%= @overall_mastery %></div>
     """
   end
 
-  def stub_engagement(assigns, _user, _) do
-    assigns = Map.merge(assigns, %{engagement: random_value()})
+  def render_engagement_column(assigns, user, _) do
+    assigns = Map.merge(assigns, %{engagement: Map.get(user, :engagement)})
 
     ~H"""
       <div class={if @engagement == "Low", do: "text-red-600 font-bold"}><%= @engagement %></div>
     """
   end
-
-  defp random_value(), do: Enum.random(["Low", "Medium", "High", "Not enough data"])
 
   defp parse_progress(progress) do
     {progress, _} =
