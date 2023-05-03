@@ -168,6 +168,12 @@ $element-margin-bottom: 1.5em;
     }
   }
 
+  .table-bordered {
+    th {
+      border-right: 1px solid #e5e5e5;
+    }
+  }
+
   img {
     margin-bottom: $element-margin-bottom;
   }

@@ -6,20 +6,11 @@ export const ContentTable: React.FC<{
   model: ContentTypes.Table;
   children: React.ReactNode;
 }> = ({ model, children }) => {
-  const cssClasses = [];
-  if (model.border === 'hidden') {
-    cssClasses.push('table-borderless');
-  }
-
-  if (model.rowstyle === 'alternating') {
-    cssClasses.push('table-striped');
-  }
-
   return (
     <table
       className={classNames(
         'min-w-full',
-        model.border === 'hidden' && 'table-borderless',
+        model.border === 'hidden' ? 'table-borderless' : 'table-bordered',
         model.rowstyle === 'alternating' && 'table-striped',
       )}
     >

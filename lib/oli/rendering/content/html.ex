@@ -121,7 +121,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp tableBorderClass(%{"border" => "hidden"}), do: "table-borderless"
-  defp tableBorderClass(_), do: ""
+  defp tableBorderClass(_), do: "table-bordered"
 
   defp tableRowClass(%{"rowstyle" => "alternating"}), do: "table-striped"
   defp tableRowClass(_), do: ""
