@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       %ColumnSpec{
         name: :last_interaction,
         label: "LAST INTERACTED",
-        render_fn: &__MODULE__.stub_last_interacted/3,
+        render_fn: &__MODULE__.render_last_interaction_column/3,
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
@@ -105,12 +105,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  def stub_last_interacted(assigns, _user, _) do
-    random_datetime = DateTime.utc_now() |> DateTime.add(-Enum.random(1..365), :day)
-    assigns = Map.merge(assigns, %{last_interacted_stub: random_datetime})
+  def render_last_interaction_column(assigns, user, _) do
+    assigns =
+      Map.merge(assigns, %{last_interaction: parse_last_interaction(user.last_interaction)})
 
     ~H"""
-    <%= Timex.format!(@last_interacted_stub, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}") %>
+    <%= @last_interaction %>
     """
   end
 
@@ -139,5 +139,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       |> Integer.parse()
 
     progress
+  end
+
+  defp parse_last_interaction(nil), do: "-"
+
+  defp parse_last_interaction(datetime) do
+    Timex.format!(datetime, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
   end
 end

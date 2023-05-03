@@ -5,7 +5,15 @@ defmodule Oli.Delivery.Metrics do
 
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Sections.{ContainedPage, Enrollment, EnrollmentContextRole, SectionResource}
+
+  alias Oli.Delivery.Sections.{
+    ContainedPage,
+    Enrollment,
+    EnrollmentContextRole,
+    Section,
+    SectionResource
+  }
+
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
 
@@ -308,6 +316,64 @@ defmodule Oli.Delivery.Metrics do
       |> select(
         [cp, ra],
         {ra.user_id, fragment("SUM(?)", ra.score) / fragment("COUNT(?)", ra.out_of)}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculates the students latest interaction for a given section:
+  the latest :updated_at time stamp across all ResourceAccess records for each student.
+  If an enrolled student has not yet interacted, it returns nil instead of the timestamp.
+  """
+  @spec students_last_interaction(section_slug :: String.t()) :: map
+  def students_last_interaction(section_slug) do
+    query =
+      from(
+        s in Section,
+        join: e in Enrollment,
+        on: e.section_id == s.id,
+        left_join: ra in ResourceAccess,
+        on: e.user_id == ra.user_id,
+        where: s.slug == ^section_slug,
+        group_by: e.user_id,
+        select: {
+          e.user_id,
+          fragment(
+            "MAX(?)",
+            ra.updated_at
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculates the students latest interaction for a given section page:
+  the latest :updated_at time stamp across all ResourceAccess records for each student for a given page.
+  If an enrolled student has not yet interacted in that page, it returns nil instead of the timestamp.
+  """
+  @spec students_last_interaction_for_page(section_slug :: String.t(), page_id :: integer) :: map
+  def students_last_interaction_for_page(section_slug, page_id) do
+    query =
+      from(
+        s in Section,
+        join: e in Enrollment,
+        on: e.section_id == s.id,
+        left_join: ra in ResourceAccess,
+        on: e.user_id == ra.user_id,
+        where: s.slug == ^section_slug and ra.resource_id == ^page_id,
+        group_by: e.user_id,
+        select: {
+          e.user_id,
+          fragment(
+            "MAX(?)",
+            ra.updated_at
+          )
+        }
       )
 
     Repo.all(query)

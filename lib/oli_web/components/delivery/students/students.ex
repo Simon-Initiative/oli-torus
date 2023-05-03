@@ -43,6 +43,7 @@ defmodule OliWeb.Components.Delivery.Students do
             }
           )
           |> add_students_progress(section.id, params.container_id)
+          |> add_students_last_interaction(section.slug)
 
         page_id ->
           Sections.browse_enrollments(
@@ -56,6 +57,7 @@ defmodule OliWeb.Components.Delivery.Students do
             }
           )
           |> add_students_progress_for_page(section.id, page_id)
+          |> add_students_last_interaction_for_page(section.slug, page_id)
       end
 
     {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
@@ -170,6 +172,22 @@ defmodule OliWeb.Components.Delivery.Students do
 
     Enum.map(users, fn user ->
       Map.merge(user, %{progress: Map.get(users_progress, user.id)})
+    end)
+  end
+
+  defp add_students_last_interaction(users, section_slug) do
+    users_last_interaction = Metrics.students_last_interaction(section_slug)
+
+    Enum.map(users, fn user ->
+      Map.merge(user, %{last_interaction: Map.get(users_last_interaction, user.id)})
+    end)
+  end
+
+  defp add_students_last_interaction_for_page(users, section_slug, page_id) do
+    users_last_interaction = Metrics.students_last_interaction_for_page(section_slug, page_id)
+
+    Enum.map(users, fn user ->
+      Map.merge(user, %{last_interaction: Map.get(users_last_interaction, user.id)})
     end)
   end
 
