@@ -10,7 +10,7 @@
   @apply font-bold text-gray-800;
 }
 
-.instructor_dashboard_table th svg {
+.instructor_dashboard_table th i {
   @apply hidden;
 }
 

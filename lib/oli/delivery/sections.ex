@@ -44,6 +44,24 @@ defmodule Oli.Delivery.Sections do
 
   require Logger
 
+  def enrolled_students(section_slug) do
+    student_role_id = ContextRoles.get_role(:context_learner).id
+
+    query =
+      from(e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        join: u in User,
+        on: e.user_id == u.id,
+        where: s.slug == ^section_slug and ecr.context_role_id == ^student_role_id,
+        select: u
+      )
+
+    Repo.all(query)
+  end
+
   def browse_enrollments(
         %Section{id: section_id},
         %Paging{limit: limit, offset: offset},
@@ -2347,7 +2365,7 @@ defmodule Oli.Delivery.Sections do
     student_pages_query = get_student_pages(section_slug, user_id)
 
     query =
-      from sp in subquery(student_pages_query),
+      from(sp in subquery(student_pages_query),
         where:
           not is_nil(sp.end_date) and
             sp.end_date >= ^Date.utc_today() and
@@ -2356,6 +2374,7 @@ defmodule Oli.Delivery.Sections do
               ^ResourceType.get_id_by_type("container")
             ],
         limit: 2
+      )
 
     query
     |> Repo.all()
