@@ -9,14 +9,10 @@ defmodule OliWeb.Api.ECLController do
     password = System.get_env("ECL_PASSWORD", "")
 
     # Login
-    mark = :os.system_time(:millisecond)
     auth_token = Constellation.login(user_name, password)
-    time = :os.system_time(:millisecond) - mark
 
     # Execute
-    mark = :os.system_time(:millisecond)
     result = Constellation.execute_sll_expression(auth_token, code)
-    time = :os.system_time(:millisecond) - mark
 
     json(conn, %{"result" => result})
   end
