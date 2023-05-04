@@ -97,14 +97,14 @@ export const unorderedListStyleCommands = UnorderdListStyles.map((styleType: str
   createButtonCommandDesc({
     icon: <i className="fa-regular fa-rectangle-list"></i>,
     description: listStyleLabels[styleType],
-    active: (editor) => isPropActive(editor, 'ul', { style: styleType }),
+    active: (editor) => false,
     execute: (_ctx, editor) => {
-      const [, at] = [...Editor.nodes(editor)][1];
-      Transforms.setNodes(
-        editor,
-        { style: styleType },
-        { at, match: (e) => Element.isElement(e) && isList(e), mode: 'all' },
-      );
+      const r = Editor.above(editor, {
+        match: (e) => Element.isElement(e) && isList(e),
+      });
+      if (!r) return;
+      const [, at] = r;
+      Transforms.setNodes(editor, { style: styleType }, { at, mode: 'all' });
     },
   }),
 );
@@ -117,14 +117,14 @@ export const orderedListStyleCommands = OrderedListStyles.filter(notLatinOption)
     createButtonCommandDesc({
       icon: <i className="fa-regular fa-rectangle-list"></i>,
       description: listStyleLabels[styleType],
-      active: (editor) => isPropActive(editor, 'ol', { style: styleType }),
+      active: (editor) => false,
       execute: (_ctx, editor) => {
-        const [, at] = [...Editor.nodes(editor)][1];
-        Transforms.setNodes(
-          editor,
-          { style: styleType },
-          { at, match: (e) => Element.isElement(e) && isList(e), mode: 'all' },
-        );
+        const r = Editor.above(editor, {
+          match: (e) => Element.isElement(e) && isList(e),
+        });
+        if (!r) return;
+        const [, at] = r;
+        Transforms.setNodes(editor, { style: styleType }, { at, mode: 'all' });
       },
     }),
 );
