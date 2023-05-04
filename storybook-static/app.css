@@ -4630,10 +4630,6 @@ table.table-striped tbody tr:nth-child(even) {
   list-style-type: decimal;
 }
 
-.list-disc {
-  list-style-type: disc;
-}
-
 .list-none {
   list-style-type: none;
 }
