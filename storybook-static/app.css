@@ -6637,6 +6637,21 @@ button.torus-button.secondary:disabled {
   background-repeat: no-repeat;
 }
 
+.instructor_dashboard_table_link {
+  height: 3.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
+@media (min-width: 640px) {
+  .instructor_dashboard_table_link {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
 .instructor_dashboard_table tr {
   height: 3.5rem;
   font-size: 0.8rem;
