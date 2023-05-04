@@ -6580,7 +6580,7 @@ button.torus-button.secondary:disabled {
   color: rgb(38 38 38 / var(--tw-text-opacity));
 }
 
-.instructor_dashboard_table th svg {
+.instructor_dashboard_table th i {
   display: none;
 }
 
