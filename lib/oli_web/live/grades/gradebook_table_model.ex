@@ -29,15 +29,18 @@ defmodule OliWeb.Grades.GradebookTableModel do
       [
         %ColumnSpec{
           name: :name,
-          label: "Student",
-          render_fn: &__MODULE__.render_student/3
+          label: "STUDENT NAME",
+          render_fn: &__MODULE__.render_student/3,
+          th_class: "pl-10 instructor_dashboard_th"
         }
       ] ++
         Enum.map(graded_pages, fn revision ->
           %ColumnSpec{
             name: revision.resource_id,
-            label: revision.title,
-            render_fn: &__MODULE__.render_score/3
+            label: String.upcase(revision.title),
+            render_fn: &__MODULE__.render_score/3,
+            th_class: "instructor_dashboard_th",
+            sortable: false
           }
         end)
 
@@ -50,8 +53,67 @@ defmodule OliWeb.Grades.GradebookTableModel do
     )
   end
 
-  def render_student(_, row, _) do
-    OliWeb.Common.Utils.name(row.user)
+  def new(graded_pages, section_slug, student_id) do
+    column_specs = [
+      %ColumnSpec{
+        name: :name,
+        label: "Quiz",
+        render_fn: &__MODULE__.render_grade/3,
+        th_class: "pl-10 instructor_dashboard_th"
+      },
+      %ColumnSpec{
+        name: :score,
+        label: "Score",
+        render_fn: &__MODULE__.render_grade_score/3,
+        th_class: "pl-10 instructor_dashboard_th",
+        sortable: false
+      }
+    ]
+
+    SortableTableModel.new(
+      rows: graded_pages,
+      column_specs: column_specs,
+      event_suffix: "",
+      id_field: [:id],
+      data: %{section_slug: section_slug, student_id: student_id}
+    )
+  end
+
+  def render_grade(assigns, row, _) do
+    ~F"""
+      <div class="ml-8">
+        {row.label}
+      </div>
+    """
+  end
+
+  def render_grade_score(assigns, row, _) do
+    perc = row.score / row.out_of * 100
+
+    ~F"""
+      <a
+        class={"ml-8 #{if perc < 40, do: "text-red-500", else: "text-black"}"}
+        data-score-check={if perc < 40, do: "false", else: "true"}
+        href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.student_id, row.resource_id)}
+      >
+          {row.score}/{row.out_of}
+      </a>
+    """
+  end
+
+  def render_student(assigns, row, _) do
+    resource_accesses_approved =
+      Map.values(row)
+      |> Enum.filter(fn elem ->
+        is_map(elem) and Map.has_key?(elem, :score) and elem.score / elem.out_of * 100 < 40
+      end)
+      |> length()
+
+    ~F"""
+      <div class="ml-8" data-score-check={if resource_accesses_approved > 0, do: "false", else: "true"}>
+        {OliWeb.Common.Utils.name(row.user)}
+      </div>
+    """
   end
 
   def render_score(assigns, row, %ColumnSpec{name: resource_id}) do
@@ -97,14 +159,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
          %ResourceAccess{
            score: score,
            out_of: out_of
-         } = resource_access
+         }
        ) do
-    link_type =
-      if !row.section.open_and_free and ResourceAccess.last_grade_update_failed?(resource_access) do
-        "badge badge-danger"
-      else
-        "badge badge-light"
-      end
+    link_type = "bg-white text-red-500"
 
     if out_of == 0 or out_of == 0.0 do
       ~F"""
@@ -113,17 +170,6 @@ defmodule OliWeb.Grades.GradebookTableModel do
       </a>
       """
     else
-      percentage =
-        case is_nil(score) or is_nil(out_of) do
-          true ->
-            ""
-
-          false ->
-            ((score / out_of * 100)
-             |> Float.round(2)
-             |> Float.to_string()) <> "%"
-        end
-
       safe_score =
         if is_nil(score) do
           "?"
@@ -138,10 +184,12 @@ defmodule OliWeb.Grades.GradebookTableModel do
           out_of
         end
 
+      perc = safe_score / safe_out_of * 100
+
       ~F"""
-      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
-      {safe_score}/{safe_out_of} <small class="text-muted">{percentage}</small>
-      </a>
+        <a class={if perc < 50, do: "text-red-500", else: "text-black"} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+        {safe_score}/{safe_out_of}
+        </a>
       """
     end
   end

@@ -81,8 +81,10 @@ defmodule OliWeb.StaticPageControllerTest do
 
       conn =
         post(conn, Routes.static_page_path(conn, :update_timezone), %{
-          timezone: new_timezone,
-          redirect_to: redirect_to
+          timezone: %{
+            timezone: new_timezone,
+            redirect_to: redirect_to
+          }
         })
 
       assert Accounts.get_author_preference(author.id, :timezone) == new_timezone
@@ -96,8 +98,10 @@ defmodule OliWeb.StaticPageControllerTest do
 
       conn =
         post(conn, Routes.static_page_path(conn, :update_timezone), %{
-          timezone: new_timezone,
-          redirect_to: redirect_to
+          timezone: %{
+            timezone: new_timezone,
+            redirect_to: redirect_to
+          }
         })
 
       assert Accounts.get_user_preference(user.id, :timezone) == new_timezone
@@ -111,8 +115,10 @@ defmodule OliWeb.StaticPageControllerTest do
 
       conn =
         post(conn, Routes.static_page_path(conn, :update_timezone), %{
-          timezone: new_timezone,
-          redirect_to: "invalid_path"
+          timezone: %{
+            timezone: new_timezone,
+            redirect_to: "invalid_path"
+          }
         })
 
       assert Accounts.get_user_preference(user.id, :timezone) == new_timezone

@@ -13,7 +13,7 @@
 <div class="container">
   <span>
     <%= link to: Routes.brand_path(@conn, :index) do %>
-      <i class="las la-arrow-left"></i> Back
+      <i class="fas fa-arrow-left"></i> Back
     <% end %>
   </span>
 

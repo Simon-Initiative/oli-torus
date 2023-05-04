@@ -1,9 +1,10 @@
+import * as React from 'react';
+import { RenderElementProps } from 'slate-react';
 import { AudioEditor } from 'components/editing/elements/audio/AudioElement';
 import { CodeEditor } from 'components/editing/elements/blockcode/BlockcodeElement';
 import { BlockQuoteEditor } from 'components/editing/elements/blockquote/BlockquoteElement';
 import { InputRefEditor } from 'components/editing/elements/inputref/InputRefEditor';
 import { LinkEditor } from 'components/editing/elements/link/LinkElement';
-import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
 import { PopupEditor } from 'components/editing/elements/popup/PopupElement';
 import { TableEditor } from 'components/editing/elements/table/TableElement';
 import { TdEditor } from 'components/editing/elements/table/TdElement';
@@ -13,25 +14,25 @@ import { WebpageEditor } from 'components/editing/elements/webpage/WebpageElemen
 import { YouTubeEditor } from 'components/editing/elements/youtube/YoutubeElement';
 import * as ContentModel from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
-import * as React from 'react';
-import { RenderElementProps } from 'slate-react';
-import { CiteEditor } from '../elements/cite/CiteElement';
-import { CommandContext } from '../elements/commands/interfaces';
-import { ImageEditor } from '../elements/image/block/ImageElement';
-import { EditorProps } from '../elements/interfaces';
-import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
-import { FormulaEditor } from '../elements/formula/FormulaEditor';
 import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutElement';
-import { VideoEditor } from '../elements/video/VideoEditor';
-import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
-import { FigureEditor } from '../elements/figure/FigureEditor';
-import { DialogEditor } from '../elements/dialog/DialogEditor';
-import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
-import { TcEditor } from '../elements/table/TcElement';
-import { ForeignEditor } from '../elements/foreign/ForeignEditor';
+import { CiteEditor } from '../elements/cite/CiteElement';
 import { CommandButtonEditor } from '../elements/command_button/CommandButtonEditor';
+import { CommandContext } from '../elements/commands/interfaces';
+import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
+import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
 import { DescriptionListEditor } from '../elements/description/DescriptionListEditor';
 import { ECLReplEditor } from '../elements/ecl/ECLReplEditor';
+
+import { DialogEditor } from '../elements/dialog/DialogEditor';
+import { FigureEditor } from '../elements/figure/FigureEditor';
+import { ForeignEditor } from '../elements/foreign/ForeignEditor';
+import { FormulaEditor } from '../elements/formula/FormulaEditor';
+import { ImageEditor } from '../elements/image/block/ImageElement';
+import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
+import { EditorProps } from '../elements/interfaces';
+import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
+import { TcEditor } from '../elements/table/TcElement';
+import { VideoEditor } from '../elements/video/VideoEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,

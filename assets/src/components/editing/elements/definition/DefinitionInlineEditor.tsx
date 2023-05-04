@@ -1,12 +1,10 @@
 import React, { useCallback, useMemo } from 'react';
 import { v4 } from 'uuid';
 import * as ContentModel from 'data/content/model/elements/types';
-import { InlineEditor } from '../common/settings/InlineEditor';
-import { CommandContext } from '../commands/interfaces';
-
 import { Model } from '../../../../data/content/model/elements/factories';
-
 import { PronunciationEditor } from '../PronunciationEditor';
+import { CommandContext } from '../commands/interfaces';
+import { InlineEditor } from '../common/settings/InlineEditor';
 
 export const DefinitionInlineEditor: React.FC<{
   definition: ContentModel.Definition;
@@ -124,7 +122,7 @@ export const DefinitionInlineEditor: React.FC<{
               type="button"
               onClick={onDeleteMeaning(index)}
             >
-              <span className="material-icons">delete</span>
+              <i className="fa-solid fa-trash"></i>
             </button>
           </div>
         ))}
@@ -155,7 +153,7 @@ export const DefinitionInlineEditor: React.FC<{
                 type="button"
                 onClick={onDeleteTranslation(index)}
               >
-                <span className="material-icons">delete</span>
+                <i className="fa-solid fa-trash"></i>
               </button>
             </div>
           ),

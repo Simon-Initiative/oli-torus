@@ -1,14 +1,13 @@
 import * as React from 'react';
-import * as Bank from 'data/content/bank';
 import { Select } from 'components/common/Selection';
-import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
-import { Fact } from 'data/content/bank';
-import { Tags } from 'components/resource/Tags';
-import { ActivityTypeSelection } from './ActivityTypeSelection';
 import { TextInput } from 'components/common/TextInput';
+import { Tags } from 'components/resource/Tags';
+import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
+import * as Bank from 'data/content/bank';
+import { Fact } from 'data/content/bank';
 import { LogicProps } from '../../components/logic/common';
 import { CloseButton } from '../../components/misc/CloseButton';
-
+import { ActivityTypeSelection } from './ActivityTypeSelection';
 import styles from './Expression.modules.scss';
 
 export interface ExpressionProps extends LogicProps {
@@ -148,7 +147,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
       return (
         <TextInput
           editMode={props.editMode}
-          label="Enter search text"
+          label="Enter search text..."
           value={props.expression.value as string}
           type="text"
           onEdit={(value) => {

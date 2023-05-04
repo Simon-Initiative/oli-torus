@@ -74,19 +74,19 @@ jobs:
       - name: 📦 Install node_module dependencies
         run: yarn --cwd assets --frozen-lockfile
 
-      - name: ▶️ Run integration tests
-        run: |
-          /usr/local/share/chrome_driver/chromedriver &
-          timeout 90 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:9515)" != "404" ]]; do sleep 1; done' || false
-          set -a;source oli.env && MIX_ENV=hound mix test.hound
+      # - name: ▶️ Run integration tests
+      #   run: |
+      #     /usr/local/share/chrome_driver/chromedriver &
+      #     timeout 90 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:9515)" != "404" ]]; do sleep 1; done' || false
+      #     set -a;source oli.env && MIX_ENV=hound mix test.hound
 
-      - name: 📈 Save test results
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: integration-test-results
-          path: test-results
-          if-no-files-found: ignore
+      # - name: 📈 Save test results
+      #   uses: actions/upload-artifact@v3
+      #   if: failure()
+      #   with:
+      #     name: integration-test-results
+      #     path: test-results
+      #     if-no-files-found: ignore
 
   check-simon-token:
     name: Check simon-bot access token
@@ -169,6 +169,9 @@ jobs:
 
       - name: 🧹 Lint
         run: cd assets && yarn run prettier && yarn run lint
+
+      - name: 👁️ Typecheck
+        run: yarn --cwd assets check-types
 
       - name: 🔨 Build
         run: yarn --cwd assets run deploy

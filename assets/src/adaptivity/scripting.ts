@@ -1,5 +1,6 @@
+import { EntityId } from '@reduxjs/toolkit';
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
-import { formatNumber, parseArray, parseBoolean } from 'utils/common';
+import { parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
@@ -454,7 +455,7 @@ export const removeStateValues = (env: Environment, keys: string[]): void => {
 };
 
 export const getLocalizedStateSnapshot = (
-  activityIds: string[],
+  activityIds: EntityId[],
   env: Environment = defaultGlobalEnv,
 ) => {
   const snapshot = getEnvState(env);
@@ -721,9 +722,9 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
   const lstEvaluatedExpression: Record<string, string> = {};
   allexpression.forEach((expression) => {
     const actualExpression = expression;
-    let result = expression.match(/{([^{^}]+)}/g) || [];
+    let result: any = expression.match(/{([^{^}]+)}/g) || [];
     result = result.filter(
-      (expression) =>
+      (expression: any) =>
         expression.search(
           /app\.[a-zA-Z0-9_.-]|variables\.[a-zA-Z0-9_.-]|stage\.[a-zA-Z0-9._-]|session\.[a-zA-Z0-9_.-]/,
         ) !== -1,

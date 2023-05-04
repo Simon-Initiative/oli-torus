@@ -1,9 +1,13 @@
-import React, {useState } from 'react';
+import React, {useState, useEffect} from 'react';
 import { WrappedMonaco } from 'components/activities/common/variables/WrappedMonaco';
 import { makeRequest, ServerError } from 'data/persistence/common';
+import * as Extrinsic from 'data/persistence/extrinsic';
 
 interface Props {
+  id: string;
   code: string;
+  slug: string;
+  attemptGuid: string;
   children?: React.ReactNode;
 }
 
@@ -30,7 +34,22 @@ function label(waiting: boolean) {
 
 export const ECLRepl: React.FC<Props> = (props) => {
 
-  const [code, setCode] = useState(props.code);
+  const [code, setCode] = useState('');
+  const [key, setKey] = useState('code_' + props.id);
+
+  useEffect(() => {
+    if (props.attemptGuid !== '') {
+      Extrinsic.readAttempt(props.slug, props.attemptGuid, [props.id])
+      .then(result => {
+        if (result && (result as any)[props.id]) {
+          setCode((result as any)[props.id]);
+        } else {
+          setCode(props.code);
+        }
+      });
+    }
+  }, []);
+
   const [output, setOutput] = useState('');
   const [waiting, setWaiting] = useState(false);
 
@@ -51,16 +70,39 @@ export const ECLRepl: React.FC<Props> = (props) => {
 
   const onClear = () => setOutput('');
 
-  return (
-    <div>
-      <WrappedMonaco
+  const onReset = () => {
+    // The Monaco editor doesn't like it when we change the model, but we can
+    // trick it into updating from a pushed down props by changing the key.
+    setKey('code_' + props.id + '_' + Date.now());
+    setCode(props.code);
+    Extrinsic.upsertAttempt(props.slug, props.attemptGuid, {[props.id]: props.code});
+    setOutput('');
+
+  };
+
+  const onUpdate = (code: string) => {
+    setCode(code);
+    if (code !== props.code) {
+      Extrinsic.upsertAttempt(props.slug, props.attemptGuid, {[props.id]: code});
+    }
+  };
+
+  const maybeShowEditor = code !== ''
+    ? <WrappedMonaco
+        key={key}
         language="mathematica"
         model={code}
         editMode={true}
-        onEdit={(code) => setCode(code)}/>
+        onEdit={(code) => onUpdate(code)}/>
+    : null;
+
+  return (
+    <div>
+      {maybeShowEditor}
       <div className="mt-2 mb-2 d-flex flex-row-reverse">
-        <button className="btn btn-secondary" onClick={onClear}>Clear Output</button>
-        <button className="btn btn-primary mr-2" disabled={waiting} onClick={onRun}>{label(waiting)}</button>
+        <button className="btn btn-sm btn-secondary" onClick={onReset}>Reset</button>
+        <button className="btn btn-sm btn-secondary" onClick={onClear}>Clear Output</button>
+        <button className="btn btn-sm btn-primary mr-2" disabled={waiting} onClick={onRun}>{label(waiting)}</button>
       </div>
       <pre>
         <code>

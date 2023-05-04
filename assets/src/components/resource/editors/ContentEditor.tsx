@@ -1,11 +1,11 @@
 import React from 'react';
-import { StructuredContent } from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
-import { ContentBlock } from './ContentBlock';
 import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
-import { EditorProps } from './createEditor';
-import { Icon, Description, OutlineItemProps, OutlineItem } from './OutlineItem';
+import { StructuredContent } from 'data/content/resource';
 import { getContentDescription } from 'data/content/utils';
+import { ContentBlock } from './ContentBlock';
+import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
+import { EditorProps } from './createEditor';
 import { useBlueprintCommandDescriptions } from './useBlueprints';
 
 interface ContentEditorProps extends EditorProps {
@@ -60,7 +60,7 @@ export const ContentOutlineItem = (props: ContentOutlineItemProps) => {
 
   return (
     <OutlineItem {...props}>
-      <Icon iconName="las la-paragraph" />
+      <Icon iconName="fas fa-paragraph" />
       <Description title="Paragraph">{getContentDescription(contentItem)}</Description>
     </OutlineItem>
   );

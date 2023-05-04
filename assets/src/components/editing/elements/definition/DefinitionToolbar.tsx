@@ -1,10 +1,8 @@
 import React from 'react';
-
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-
+import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import * as ContentModel from 'data/content/model/elements/types';
 
 interface SettingsProps {
@@ -39,7 +37,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: 'menu_book',
+      icon: <i className="fa-solid fa-book-open"></i>,
       description: props.editing ? 'Preview' : 'Edit',
       execute: (_context, _editor, _params) => props.toggleEdit(),
     })}

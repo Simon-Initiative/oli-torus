@@ -10,7 +10,6 @@ $workspace-sidebar-width: 65px;
 .workspace {
   flex: 1;
   display: flex;
-  background-color: $workspace-bg;
   flex-direction: column;
   position: relative;
 
@@ -18,20 +17,28 @@ $workspace-sidebar-width: 65px;
     height: $workspace-header-height;
     position: sticky;
     top: 0;
-    z-index: $z-content-5;
-    background-color: $workspace-header-bg;
-    box-shadow: 0 2px 4px 0 rgba($black, 0.15);
+    z-index: var(--z-50);
+    background-color: var(--color-workspace-header-bg);
 
     .header-bar {
       height: 2.5em;
-      background-color: $workspace-logo-bg;
+      background-color: var(--color-workspace-header-bg);
     }
 
     .logo {
       position: relative;
       min-width: $workspace-sidebar-width;
-      background: $workspace-logo-bg;
-      background-image: radial-gradient(70% 176%, $workspace-header-bg 0%, $workspace-logo-bg 100%);
+      background: var(--color-workspace-header-bg);
+      background-image: radial-gradient(
+        70% 176%,
+        var(--color-workspace-header-bg) 0%,
+        var(--color-workspace-header-bg) 100%
+      );
+
+      img {
+        height: 50px;
+        margin-top: 5px;
+      }
 
       // bottom triangle
       &:after {
@@ -42,8 +49,8 @@ $workspace-sidebar-width: 65px;
         width: 0;
         height: 0;
         border-style: solid;
-        border-width: 4px ($workspace-sidebar-width / 2) 0 ($workspace-sidebar-width / 2);
-        border-color: $workspace-logo-bg transparent transparent transparent;
+        border-width: 4px calc($workspace-sidebar-width / 2) 0 calc($workspace-sidebar-width / 2);
+        border-color: var(--color-workspace-header-bg) transparent transparent transparent;
       }
     }
 
@@ -57,8 +64,7 @@ $workspace-sidebar-width: 65px;
 
     .breadcrumb-bar {
       height: 27px;
-      background: $workspace-breadcrumb-bg;
-      box-shadow: inset 0 1px 2px 0 rgba($black, 0.17);
+      background: var(--color-workspace-header-bg);
 
       .phx-connected {
         width: 100%;
@@ -77,7 +83,7 @@ $workspace-sidebar-width: 65px;
     position: sticky;
     top: $workspace-header-height;
     height: calc(100vh - #{$workspace-header-height});
-    z-index: $z-content-2;
+    z-index: var(--z-20);
   }
 
   .workspace-right {
@@ -97,9 +103,13 @@ $workspace-sidebar-width: 65px;
 
   .workspace-header {
     width: 100%;
-    padding: 16px 32px;
     position: relative;
-    background-color: $workspace-header-bg;
+    background-color: var(--color-workspace-header-bg);
+    align-items: center;
+
+    &.with-breadcrumbs {
+      height: 38px;
+    }
 
     h2 {
       margin-bottom: 4px;
@@ -116,24 +126,10 @@ $workspace-sidebar-width: 65px;
     }
   }
 
-  .user-initials-icon {
-    background-color: $workspace-sidebar-bg;
-    border: 2px solid rgb(213, 207, 207);
-    vertical-align: middle;
-    text-align: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: inline-block;
-    padding-top: 2px;
-    font-size: 0.9em;
-    font-weight: 600;
-  }
-
   .custom-breadcrumb {
     background-color: transparent;
     box-shadow: none;
-    padding: 0px;
+    padding: 4px;
     margin-bottom: 8px;
     white-space: nowrap;
     flex-wrap: nowrap;
@@ -146,6 +142,8 @@ $workspace-sidebar-width: 65px;
     }
 
     .breadcrumb-item {
+      display: inline-block;
+
       & + .breadcrumb-item {
         padding-left: 0.35rem;
 
@@ -159,35 +157,9 @@ $workspace-sidebar-width: 65px;
   .workspace-sidebar {
     flex: 1;
     width: $workspace-sidebar-width;
-    background-color: $workspace-sidebar-bg;
+    background-color: var(--color-workspace-sidebar-bg);
     box-shadow: inset -1px 0 3px 0 rgba(0, 0, 0, 0.09);
-    z-index: $z-content-1;
-
-    .dropdown-menu {
-      padding-top: 0px;
-      padding-bottom: 0px;
-      margin-right: 2px;
-      margin-left: 0px;
-      z-index: $z-content-2;
-
-      a {
-        // display: flex;
-        // flex-direction: columns;
-        // margin: 10px 0;
-        color: $workspace-sidebar-link-color;
-      }
-    }
-
-    .dropdown-item {
-      padding-top: 1px;
-      padding-bottom: 1px;
-      margin-top: 5px;
-      margin-bottom: 5px;
-    }
-
-    .dropdown-menu > a:hover {
-      background-color: $gray-500;
-    }
+    z-index: var(--z-10);
 
     .btn-group {
       width: $workspace-sidebar-width;
@@ -197,15 +169,24 @@ $workspace-sidebar-width: 65px;
     }
 
     .sidebar-item {
+      display: block;
       width: $workspace-sidebar-width;
       background-color: transparent;
       border-color: transparent;
-      padding: 0px;
-      padding-top: 8px;
+      padding: 8px;
+      color: var(--color-black);
+
+      img {
+        margin: auto;
+      }
+      .label {
+        text-align: center;
+      }
     }
 
     .sidebar-item:hover {
-      background-color: $gray-500;
+      background-color: var(--color-gray-500);
+      color: var(--color-white);
     }
 
     .sidebar-item:focus {
@@ -226,6 +207,42 @@ $workspace-sidebar-width: 65px;
       white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
+    }
+  }
+}
+
+html.dark {
+  .workspace {
+    .workspace-top {
+      background-color: var(--color-workspace-header-bg-dark);
+
+      .header-bar {
+        background-color: var(--color-workspace-header-bg-dark);
+      }
+
+      .logo {
+        background: var(--color-workspace-header-bg-dark);
+
+        &:after {
+          border-color: var(--color-workspace-header-bg-dark) transparent transparent transparent;
+        }
+      }
+
+      .breadcrumb-bar {
+        background: var(--color-workspace-breadcrumb-bg-dark);
+      }
+    }
+  }
+
+  .workspace-header {
+    background-color: var(--color-workspace-header-bg-dark);
+  }
+
+  .workspace-sidebar {
+    background-color: var(--color-workspace-sidebar-bg-dark);
+
+    .sidebar-item {
+      color: var(--color-body-color-dark);
     }
   }
 }

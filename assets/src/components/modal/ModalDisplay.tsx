@@ -1,19 +1,17 @@
 import * as React from 'react';
-import { ModalState } from 'state/modal';
 import { connect } from 'react-redux';
-import { State, Dispatch } from 'state';
+import { Dispatch, State } from 'state';
+import { ModalState } from 'state/modal';
 
 type ModalDisplayProps = {
   modal: ModalState;
 };
 
 const ModalDisplay = (props: ModalDisplayProps): JSX.Element => {
-  const modals = props.modal
-    .toArray()
-    .reverse()
-    .map((component, i) => <div key={i}>{component}</div>);
-
-  return <div>{modals}</div>;
+  return props.modal.caseOf({
+    just: (modal) => <>{modal}</>,
+    nothing: () => <></>,
+  });
 };
 
 interface StateProps {

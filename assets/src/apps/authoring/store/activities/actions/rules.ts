@@ -1,17 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import guid from 'utils/guid';
-import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
-import { createFeedback } from './createFeedback';
-import {
-  AdaptiveRule,
-  InitState,
-} from 'apps/authoring/components/AdaptiveRulesList/AdaptiveRulesList';
+import cloneDeep from 'lodash/cloneDeep';
+import has from 'lodash/has';
 import isArray from 'lodash/isArray';
 import isObject from 'lodash/isObject';
-import set from 'lodash/set';
-import cloneDeep from 'lodash/cloneDeep';
 import reduce from 'lodash/reduce';
-import has from 'lodash/has';
+import set from 'lodash/set';
+import guid from 'utils/guid';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
+import { IAdaptiveRule, InitState } from '../../../../delivery/store/features/activities/slice';
+import { createFeedback } from './createFeedback';
 
 const newId = (val: { [key: string]: any }) => {
   const idx = val?.indexOf(':');
@@ -35,7 +32,7 @@ function replace(source: any, key: string): any {
 
 export const duplicateRule = createAsyncThunk(
   `${ActivitiesSlice}/duplicateRule`,
-  async (payload: AdaptiveRule | InitState) => {
+  async (payload: IAdaptiveRule | InitState) => {
     const clone = cloneDeep(payload);
     const replaced = replace(clone, 'id');
     // console.log(replaced, payload);
@@ -45,12 +42,12 @@ export const duplicateRule = createAsyncThunk(
 
 export const createCorrectRule = createAsyncThunk(
   `${ActivitiesSlice}/createCorrectRule`,
-  async (payload: { ruleId?: string; isDefault?: boolean }) => {
-    const { ruleId = `r:${guid()}`, isDefault = false } = payload;
+  async (payload: { ruleId?: string; isDefault?: boolean; label?: string }) => {
+    const { ruleId = `r:${guid()}`, isDefault = false, label = 'correct' } = payload;
 
     const rule = {
-      id: `${ruleId}.correct`,
-      name: 'correct',
+      id: `${ruleId}.${label}`,
+      name: label,
       disabled: false,
       additionalScore: 0.0,
       forceProgress: false,
@@ -58,7 +55,7 @@ export const createCorrectRule = createAsyncThunk(
       correct: true,
       conditions: { all: [] },
       event: {
-        type: `${ruleId}.correct`,
+        type: `${ruleId}.${label}`,
         params: {
           actions: [
             {

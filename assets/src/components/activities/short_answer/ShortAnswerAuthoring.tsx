@@ -1,37 +1,36 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
+import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses, shortAnswerOptions } from 'components/activities/short_answer/utils';
 import {
   GradingApproach,
-  makeResponse,
   Manifest,
   Response,
   RichText,
+  makeResponse,
 } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-
-import { ShortAnswerActions } from './actions';
-import { ShortAnswerModelSchema } from './schema';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { ShortAnswerActions } from './actions';
+import { ShortAnswerModelSchema } from './schema';
 
 const store = configureStore();
 
@@ -102,7 +101,7 @@ const ShortAnswer = () => {
               </ResponseCard>
             ))}
             <AuthoringButtonConnected
-              className="align-self-start btn btn-link"
+              className="self-start btn btn-link"
               action={() =>
                 dispatch(
                   ResponseActions.addResponse(

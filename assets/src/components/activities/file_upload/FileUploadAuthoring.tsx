@@ -1,19 +1,19 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { Manifest } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { FileSpecConfiguration } from './FileSpecConfiguration';
-import { FileUploadActions } from './actions';
-import { FileUploadSchema, FileSpec } from './schema';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { FileSpecConfiguration } from './FileSpecConfiguration';
+import { FileUploadActions } from './actions';
+import { FileSpec, FileUploadSchema } from './schema';
 
 const store = configureStore();
 

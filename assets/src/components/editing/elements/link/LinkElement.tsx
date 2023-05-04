@@ -1,18 +1,16 @@
+import React from 'react';
+import { useSelected } from 'slate-react';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { InlineChromiumBugfix, useEditModelCallback } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
-import { useSelected } from 'slate-react';
-
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
-import { LinkModal } from './LinkModal';
 import { modalActions } from 'actions/modal';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-
+import * as ContentModel from 'data/content/model/elements/types';
 import './LinkElement.scss';
+import { LinkModal } from './LinkModal';
 
 export interface Props extends EditorProps<ContentModel.Hyperlink> {}
 export const LinkEditor = (props: Props) => {
@@ -70,7 +68,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: '',
+      icon: <i className="fa-solid fa-link"></i>,
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

@@ -4,6 +4,10 @@ defmodule OliWeb.Common.Utils do
   alias Oli.Accounts.{User, Author}
   alias OliWeb.Common.SessionContext
 
+  def name(%User{guest: true}) do
+    "Guest Student"
+  end
+
   def name(%User{} = user) do
     name(user.name, user.given_name, user.family_name)
   end
@@ -71,5 +75,9 @@ defmodule OliWeb.Common.Utils do
 
   defp has_value(v) do
     !is_nil(v) and v != ""
+  end
+
+  def render_version(edition, major, minor) do
+    "v#{edition}.#{major}.#{minor}"
   end
 end

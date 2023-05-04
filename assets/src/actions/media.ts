@@ -1,8 +1,8 @@
 import { List, Map } from 'immutable';
-import { State, Dispatch } from 'state/index';
-import { ProjectSlug } from 'data/types';
-import * as persistence from 'data/persistence/media';
 import { Maybe } from 'tsmonad';
+import * as persistence from 'data/persistence/media';
+import { ProjectSlug } from 'data/types';
+import { Dispatch, State } from 'state/index';
 import { MediaItem, MediaRef } from 'types/media';
 import guid from 'utils/guid';
 
@@ -112,24 +112,22 @@ export const fetchCourseMedia =
     const reqId = guid();
     dispatch(fetchMediaPage(courseId, reqId));
 
-    const handleError = (err: any) => {
-      /*
-        const content = new Messages.TitledContent().with({
-          title: 'Failed to load media',
-          message: 'There was a problem loading media for this course. '
-            + 'Please check your internet connection and try again.',
-        });
+    // const handleError = (err: any) => {
+    //     const content = new Messages.TitledContent().with({
+    //       title: 'Failed to load media',
+    //       message: 'There was a problem loading media for this course. '
+    //         + 'Please check your internet connection and try again.',
+    //     });
 
-        const failedMessage = new Messages.Message().with({
-          content,
-          scope: Messages.Scope.Resource,
-          severity: Messages.Severity.Error,
-          canUserDismiss: true,
-        });
+    //     const failedMessage = new Messages.Message().with({
+    //       content,
+    //       scope: Messages.Scope.Resource,
+    //       severity: Messages.Severity.Error,
+    //       canUserDismiss: true,
+    //     });
 
-        dispatch(messageActions.showMessage(failedMessage));
-        */
-    };
+    //     dispatch(messageActions.showMessage(failedMessage));
+    // };
 
     return persistence
       .fetchMedia(courseId, offset, limit, mimeFilter, undefined, searchText, orderBy, order)
@@ -172,7 +170,7 @@ export const fetchCourseMediaNextPage =
 
 export const fetchMediaItemByPath =
   (courseId: ProjectSlug, url: string) =>
-  (dispatch: Dispatch, getState: () => State): Promise<Maybe<MediaItem>> => {
+  (_dispatch: Dispatch, _getState: () => State): Promise<Maybe<MediaItem>> => {
     const limit = 1;
     const offset = 0;
 

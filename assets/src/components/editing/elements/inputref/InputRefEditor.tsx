@@ -1,13 +1,13 @@
-import { friendlyType } from 'components/activities/vlab/utils';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
-import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
+import { friendlyType } from 'components/activities/vlab/utils';
 import { initCommands } from 'components/editing/elements/inputref/actions';
+import { EditorProps } from 'components/editing/elements/interfaces';
+import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+import * as ContentModel from 'data/content/model/elements/types';
 
 export interface InputRefEditorProps extends EditorProps<ContentModel.InputRef> {}
 export const InputRefEditor = (props: InputRefEditorProps) => {
@@ -86,7 +86,7 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
             display: 'inline-block',
             userSelect: 'none',
           } as React.CSSProperties)}
-          className="form-control"
+          className="form-control border border-gray-400 rounded p-1"
         >
           {friendlyType(input.inputType)}
           {props.children}

@@ -75,9 +75,17 @@ defmodule Oli.Rendering.Content.Html do
     video_player
   end
 
-  def ecl(%Context{} = _context, _, attrs) do
+  def ecl(%Context{} = context, _, attrs) do
+
+    attempt_guid = case context.resource_attempt do
+      nil -> ""
+      attempt -> attempt.attempt_guid
+    end
+
     {:safe, ecl} =
-      ReactPhoenix.ClientSide.react_component("Components.ECLRepl", %{"code" => attrs["code"]})
+      ReactPhoenix.ClientSide.react_component("Components.ECLRepl",
+        %{"code" => attrs["code"], "id" => attrs["id"], "slug" => context.section_slug, "attemptGuid" => attempt_guid }
+      )
 
     ecl
   end
@@ -103,7 +111,9 @@ defmodule Oli.Rendering.Content.Html do
     captioned_content(context, attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9"#{iframe_width}>
-        <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        <div class="embed-wrapper">
+          <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        </div>
       </div>
       """
     ])
@@ -132,17 +142,17 @@ defmodule Oli.Rendering.Content.Html do
   defp tableRowClass(_), do: ""
 
   def table(%Context{} = context, next, attrs) do
-    caption =
-      case attrs do
-        %{"caption" => c} -> caption(context, c)
-        _ -> ""
-      end
+    # caption =
+    #   case attrs do
+    #     %{"caption" => c} -> caption(context, c)
+    #     _ -> ""
+    #   end
 
-    [
-      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>#{caption}",
+    captioned_content(context, attrs, [
+      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>",
       next.(),
       "</table>\n"
-    ]
+    ])
   end
 
   def tr(%Context{} = _context, next, _) do
@@ -208,11 +218,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ol(%Context{} = _context, next, %{"style" => style}) do
-    ["<ol class=\"list-#{style}\">", next.(), "</ol>\n"]
+    ["<ol class=\"list-#{style} list-inside pl-2\">", next.(), "</ol>\n"]
   end
 
   def ol(%Context{} = _context, next, _) do
-    ["<ol>", next.(), "</ol>\n"]
+    ["<ol class=\"list-decimal list-inside pl-2\">", next.(), "</ol>\n"]
   end
 
   def dl(%Context{}, next, title, %{}) do
@@ -235,11 +245,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ul(%Context{} = _context, next, %{"style" => style}) do
-    ["<ul class=\"list-#{style}\">", next.(), "</ul>\n"]
+    ["<ul class=\"list-#{style} list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
   def ul(%Context{} = _context, next, _) do
-    ["<ul>", next.(), "</ul>\n"]
+    ["<ul class=\"list-disc list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
   def li(%Context{} = _context, next, _) do
@@ -286,8 +296,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def dialog_speaker_portrait() do
-    # "<div class=\"material-icons speaker-portrait\">person</div>"
-    ""
+    ~s|<i class="fa-solid fa-image-portrait"></i>|
   end
 
   def dialog_speaker(speaker_id, %{"speakers" => speakers}) do
@@ -356,7 +365,7 @@ defmodule Oli.Rendering.Content.Html do
 
         [
           "<span class='pronunciation'>",
-          "<span class='material-icons-outlined play-button' onClick='#{play_code}'>play_circle</span>",
+          ~s|<span class='play-button' onClick='#{play_code}'><i class="fa-solid fa-circle-play"></i></span>|,
           "<span class='pronunciation-player' onClick='#{play_code}'>",
           audio_element,
           next.(),
@@ -663,7 +672,7 @@ defmodule Oli.Rendering.Content.Html do
             ~s|<div class="title flex-grow-1">|,
             escape_xml!(title),
             "</div>",
-            ~s|<i class="las la-external-link-square-alt la-2x"></i>|,
+            ~s|<i class="fas fa-external-link-square-alt la-2x self-center"></i>|,
             "</div>\n"
           ]
         end,
@@ -687,49 +696,13 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{}, next, %{"trigger" => trigger, "content" => content} = element) do
-    trigger =
-      if escape_xml!(trigger) == "hover" do
-        "hover focus"
-      else
-        "manual"
-      end
+  def popup(%Context{}, _next, element) do
+    {:safe, rendered} =
+      ReactPhoenix.ClientSide.react_component("Components.DeliveryElementRenderer", %{
+        "element" => element
+      })
 
-    popup_content =
-      case parse_html_content(content) do
-        "" -> "<i class='material-icons'>volume_up</i>"
-        content -> content
-      end
-
-    [audio_element, _play_code, audio_id] = audio_player(element["audioSrc"])
-
-    [
-      ~s"""
-      <span
-        tabindex="0"
-        role="button"
-        class="term popup__anchorText#{if !String.contains?(trigger, "hover") do
-        " popup__click"
-      else
-        ""
-      end}"
-        data-trigger="#{trigger}"
-        data-toggle="popover"
-        data-placement="top"
-        data-html="true"
-        data-audio="#{audio_id}"
-        data-template='
-          <div class="popover popup__content" role="tooltip">
-            <div class="arrow"></div>
-            <h3 class="popover-header"></h3>
-            <div class="popover-body"></div>
-          </div>'
-        data-content="#{escape_xml!(popup_content)}">
-        #{next.()}
-        #{audio_element}
-      </span>\n
-      """
-    ]
+    rendered
   end
 
   def selection(%Context{} = context, _, selection) do

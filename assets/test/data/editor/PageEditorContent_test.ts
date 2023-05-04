@@ -1,11 +1,11 @@
 import * as Immutable from 'immutable';
-import { PageEditorContent } from 'data/editor/PageEditorContent';
+import { Model } from 'data/content/model/elements/factories';
 import {
   ResourceContent,
   createDefaultStructuredContent,
   createGroup,
 } from 'data/content/resource';
-import { Model } from 'data/content/model/elements/factories';
+import { PageEditorContent } from 'data/editor/PageEditorContent';
 import guid from 'utils/guid';
 
 describe('PageEditorContent', () => {
@@ -25,7 +25,7 @@ describe('PageEditorContent', () => {
   const createDefaultPageEditorContent = () => {
     const exampleContent = createExampleContent();
     const nestedGroupContent = createNestedGroupContent();
-    const exampleGroup = createGroup(Immutable.List().push(nestedGroupContent));
+    const exampleGroup = createGroup('none', Immutable.List().push(nestedGroupContent));
     const doesntExist = createDefaultStructuredContent([
       Model.h1('wont be added to the content'),
       Model.p('This is some content that doesnt exist'),
@@ -118,7 +118,7 @@ describe('PageEditorContent', () => {
 
   it('replaceAt', () => {
     const defaultPageEditorContent = createDefaultPageEditorContent();
-    const { exampleContent, exampleGroup, doesntExist } = defaultPageEditorContent;
+    const { exampleContent, doesntExist } = defaultPageEditorContent;
     let { pageEditorContent } = defaultPageEditorContent;
 
     pageEditorContent = pageEditorContent.replaceAt([0], doesntExist);
@@ -284,7 +284,7 @@ describe('PageEditorContent', () => {
           ],
           id: expect.any(String),
           layout: 'vertical',
-          purpose: 'didigetthis',
+          purpose: 'none',
           type: 'group',
         },
       ],

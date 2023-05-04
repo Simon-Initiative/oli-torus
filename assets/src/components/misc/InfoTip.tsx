@@ -1,6 +1,6 @@
 import React from 'react';
-import { classNames } from 'utils/classNames';
 import { Tooltip } from 'components/common/Tooltip';
+import { classNames } from 'utils/classNames';
 
 interface InfoTipProps {
   className?: string;
@@ -8,6 +8,6 @@ interface InfoTipProps {
 }
 export const InfoTip = ({ className, title }: InfoTipProps) => (
   <Tooltip title={title}>
-    <i className={classNames('mx-2 material-icons-outlined', className)}>info</i>
+    <i className={classNames('fa-solid fa-circle-info mx-2', className)}></i>
   </Tooltip>
 );

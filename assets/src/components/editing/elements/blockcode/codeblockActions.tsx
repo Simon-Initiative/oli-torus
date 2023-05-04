@@ -1,11 +1,12 @@
+import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
-import { isActive } from '../../slateUtils';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Model } from 'data/content/model/elements/factories';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
+import { Model } from 'data/content/model/elements/factories';
+import { isActive } from '../../slateUtils';
 
 const ui = {
-  icon: 'code',
+  icon: <i className="fa-solid fa-code"></i>,
   description: 'Code (Block)',
 };
 
@@ -29,7 +30,7 @@ export const codeLanguageDesc = (editor: Editor) => {
   const lang = Element.isElement(topLevel) && topLevel.type === 'code' ? topLevel.language : 'Text';
 
   return createButtonCommandDesc({
-    icon: '',
+    icon: <i className="fa-solid fa-code"></i>,
     description: lang,
     active: (_editor) => false,
     execute: (_ctx, _editor) => {},

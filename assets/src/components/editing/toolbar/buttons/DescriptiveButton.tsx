@@ -1,7 +1,7 @@
-import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React from 'react';
 import { useSlate } from 'slate-react';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import { classNames } from 'utils/classNames';
 import styles from '../Toolbar.modules.scss';
 
@@ -34,7 +34,7 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
       className={classNames(styles.toolbarButton, styles.descriptive, active && styles.active)}
       onMouseDown={onMouseDown}
     >
-      {icon && <span className={classNames(styles.icon, 'material-icons')}>{icon}</span>}
+      {icon && <span className={classNames(styles.icon)}>{icon}</span>}
       <span className={styles.description}>{description}</span>
     </button>
   );

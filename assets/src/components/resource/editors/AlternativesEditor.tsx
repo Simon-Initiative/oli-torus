@@ -1,33 +1,33 @@
 import React, { PropsWithChildren, useState } from 'react';
+import { Maybe } from 'tsmonad';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { Tooltip } from 'components/common/Tooltip';
+import { AlternativesTypes, useAlternatives } from 'components/hooks/useAlternatives';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import { SelectModal } from 'components/modal/SelectModal';
+import { modalActions } from 'actions/modal';
+import { makePageUndoable } from 'apps/page-editor/types';
 import {
   AlternativeContent,
   AlternativesContent,
-  createAlternative,
   ResourceContent,
+  createAlternative,
 } from 'data/content/resource';
-import { EditorProps } from './createEditor';
+import * as Persistence from 'data/persistence/resource';
+import { classNames } from 'utils/classNames';
+import styles from './AlternativesEditor.modules.scss';
+import contentBlockStyles from './ContentBlock.modules.scss';
+import { GroupEditor } from './GroupEditor';
 import {
   Description,
   ExpandToggle,
-  OutlineItem,
-  OutlineItemProps,
   OutlineGroup,
   OutlineGroupProps,
+  OutlineItem,
+  OutlineItemProps,
   resourceGroupTitle,
 } from './OutlineItem';
-import styles from './AlternativesEditor.modules.scss';
-import contentBlockStyles from './ContentBlock.modules.scss';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import { classNames } from 'utils/classNames';
-import { Maybe } from 'tsmonad';
-import { GroupEditor } from './GroupEditor';
-import { modalActions } from 'actions/modal';
-import { SelectModal } from 'components/modal/SelectModal';
-import * as Persistence from 'data/persistence/resource';
-import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
-import { makePageUndoable } from 'apps/page-editor/types';
-import { useAlternatives, AlternativesTypes } from 'components/hooks/useAlternatives';
-import { Tooltip } from 'components/common/Tooltip';
+import { EditorProps } from './createEditor';
 
 interface AlternativesEditorProps extends EditorProps {
   contentItem: AlternativesContent;
@@ -197,7 +197,7 @@ export const ManageAlternativesLink = ({ projectSlug }: ManageAlternativesLinkPr
       target="_blank"
       rel="noreferrer"
     >
-      Manage Alternatives <i className="las la-external-link-alt"></i>
+      Manage Alternatives <i className="fas fa-external-link-alt"></i>
     </a>
   </>
 );
@@ -311,10 +311,10 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
           {options}
           <button
             key="add"
-            className={classNames('btn btn-sm', styles.option, styles.add)}
+            className={classNames('btn btn-sm', styles.option)}
             onClick={onCreateAlternative}
           >
-            <i className="las la-plus"></i>
+            <i className="fas fa-plus"></i>
           </button>
         </div>
         <div className="flex-grow-1"></div>
@@ -346,13 +346,17 @@ const OptionPill = ({
 
   const titleOrWarning = title ?? (
     <Tooltip title="This alternative value no longer exists and should be changed or removed">
-      <i className="las la-exclamation-circle text-danger"></i>
+      <span className="align-middle">
+        <i className="fas fa-exclamation-circle text-danger"></i>
+      </span>
     </Tooltip>
   );
 
   const maybeDuplicateWarning = isDuplicate && (
     <Tooltip title="This alternative has the same value as another. One or the other should be changed or removed">
-      <i className="las la-exclamation-triangle text-warning mx-1"></i>
+      <span className="align-middle">
+        <i className="fas fa-exclamation-triangle text-warning mx-1"></i>
+      </span>
     </Tooltip>
   );
 
@@ -366,7 +370,7 @@ const OptionPill = ({
             className={classNames('btn btn-sm', styles.edit)}
             onClick={onEditAlternativeClick}
           >
-            <i className="las la-ellipsis-h"></i>
+            <i className="fas fa-ellipsis-h"></i>
           </button>
         </>
       </div>

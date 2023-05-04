@@ -1,11 +1,9 @@
 import React, { FocusEventHandler } from 'react';
-
-import { getEditMode } from 'components/editing/elements/utils';
-import { useSlate } from 'slate-react';
 import { Descendant, Editor as SlateEditor } from 'slate';
-
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { useSlate } from 'slate-react';
 import { Editor } from 'components/editing/editor/Editor';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { getEditMode } from 'components/editing/elements/utils';
 import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 import { MediaItemRequest } from '../../../../activities';
 

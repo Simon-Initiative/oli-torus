@@ -1,32 +1,32 @@
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
-import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { VlabSchema } from 'components/activities/vlab/schema';
 import { Manifest, PartId } from 'components/activities/types';
+import { VlabSchema } from 'components/activities/vlab/schema';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
-  activityDeliverySlice,
   ActivityDeliveryState,
+  PartInputs,
+  activityDeliverySlice,
   initializeState,
   isEvaluated,
-  listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForParentSurveySubmit,
   listenForReviewAttemptChange,
-  PartInputs,
   resetAction,
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 
 export const VlabComponent: React.FC = () => {
   const {

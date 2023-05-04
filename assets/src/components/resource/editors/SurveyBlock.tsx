@@ -1,10 +1,10 @@
 import React, { PropsWithChildren } from 'react';
+import { TextEditor } from 'components/TextEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { SurveyContent } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
-import styles from './ContentBlock.modules.scss';
-import { TextEditor } from 'components/TextEditor';
 import { valueOr } from 'utils/common';
+import styles from './ContentBlock.modules.scss';
 
 interface SurveyBlockProps {
   editMode: boolean;
@@ -28,8 +28,8 @@ export const SurveyBlock = ({
   return (
     <div id={`resource-editor-${contentItem.id}`} className={classNames(styles.surveyBlock)}>
       <div className={styles.surveyBlockHeader}>
-        <div className="align-self-center">
-          <i className="las la-poll la-lg"></i>
+        <div className="self-center">
+          <i className="fas fa-poll la-lg"></i>
         </div>
         <TextEditor
           label="Edit Survey Title"

@@ -1,5 +1,6 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface MultiLineTextModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -50,6 +51,48 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const simpleSchema: JSONSchema7Object = {
+  label: {
+    title: 'Question Prompt',
+    type: 'string',
+    description: 'text label for the textbox',
+  },
+  prompt: {
+    title: 'Student Action Prompt',
+    type: 'string',
+    description: 'placeholder for the input field',
+  },
+  fontSize: {
+    title: 'Font Size',
+    type: 'number',
+    default: 12,
+  },
+
+  minimumLength: {
+    title: 'Minimum Length',
+    type: 'number',
+    description: 'minimum number of characters required',
+    default: 0,
+  },
+  correctFeedback: {
+    title: 'Correct Feedback',
+    type: 'string',
+    description: 'feedback to display when the learner fills in the text',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incorrect Feedback',
+    type: 'string',
+    description: 'feedback to display when the the learner has not filled in enough text',
+    default: '',
+  },
+};
+
+export const simpleUiSchema = {
+  'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  minimumLength: { classNames: 'col-span-6' },
+  fontSize: { classNames: 'col-span-6' },
+};
 export const uiSchema = {};
 
 export const adaptivitySchema = {
@@ -65,4 +108,7 @@ export const createSchema = (): Partial<MultiLineTextModel> => ({
   showLabel: true,
   label: '',
   prompt: '',
+  minimumLength: 0,
+  correctFeedback: '',
+  incorrectFeedback: '',
 });

@@ -1,5 +1,5 @@
 defmodule OliWeb.SelectSourceTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   alias Oli.Delivery.Sections
@@ -451,5 +451,5 @@ defmodule OliWeb.SelectSourceTest do
     do: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
 
   defp details_view(section),
-    do: Routes.project_path(OliWeb.Endpoint, :overview, section.project.slug)
+    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, section.project.slug)
 end

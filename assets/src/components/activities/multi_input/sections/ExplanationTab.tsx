@@ -1,6 +1,6 @@
+import React from 'react';
 import { Explanation } from 'components/activities/common/explanation/ExplanationAuthoring';
 import { MultiInput } from 'components/activities/multi_input/schema';
-import React from 'react';
 
 interface Props {
   input: MultiInput;

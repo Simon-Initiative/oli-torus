@@ -113,6 +113,267 @@ defmodule Oli.Seeder do
     |> Map.put(:revision2, revision2)
   end
 
+  @doc """
+  A simple project with no units or modules
+  - Curriculum
+    - page 1
+    - page 2
+  """
+  def base_project_with_pages() do
+    {:ok, family} =
+      Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
+
+    publisher = Inventories.default_publisher()
+
+    {:ok, author} =
+      Author.noauth_changeset(%Author{}, %{
+        email: "test#{System.unique_integer([:positive])}@test.com",
+        given_name: "First",
+        family_name: "Last",
+        provider: "foo",
+        system_role_id: SystemRole.role_id().author
+      })
+      |> Repo.insert()
+
+    {:ok, project} =
+      Project.changeset(%Project{}, %{
+        description: "description",
+        title: "Example Course",
+        version: "1",
+        family_id: family.id,
+        publisher_id: publisher.id
+      })
+      |> Repo.insert()
+
+    {:ok, _} =
+      AuthorProject.changeset(%AuthorProject{}, %{
+        author_id: author.id,
+        project_id: project.id,
+        project_role_id: ProjectRole.role_id().owner
+      })
+      |> Repo.insert()
+
+    {:ok, institution} =
+      Institution.changeset(%Institution{}, %{
+        name: "Example Institution",
+        country_code: "US",
+        institution_email: author.email,
+        institution_url: "example.edu"
+      })
+      |> Repo.insert()
+
+    # A single container resource with a mapped revision
+    {:ok, container_resource} =
+      Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert()
+
+    {:ok, _} =
+      Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{
+        project_id: project.id,
+        resource_id: container_resource.id
+      })
+      |> Repo.insert()
+
+    {:ok, container_revision} =
+      Oli.Resources.create_revision(%{
+        author_id: author.id,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Curriculum",
+        resource_id: container_resource.id
+      })
+
+    {:ok, publication} =
+      Publication.changeset(%Publication{}, %{
+        root_resource_id: container_resource.id,
+        project_id: project.id
+      })
+      |> Repo.insert()
+
+    create_published_resource(publication, container_resource, container_revision)
+
+    %{resource: page1, revision: revision1} =
+      create_page("Page one", publication, project, author)
+
+    %{resource: page2, revision: revision2} =
+      create_page("Page two", publication, project, author, create_sample_content())
+
+    container_revision =
+      attach_pages_to([page1, page2], container_resource, container_revision, publication)
+
+    {:ok, pub1} = Publishing.publish_project(project, "some changes")
+
+    {:ok, section} =
+      Sections.create_section(%{
+        title: "Section Title",
+        registration_open: true,
+        open_and_free: true,
+        context_id: UUID.uuid4(),
+        institution_id: institution.id,
+        base_project_id: project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub1)
+
+    Map.put(%{}, :family, family)
+    |> Map.put(:project, project)
+    |> Map.put(:author, author)
+    |> Map.put(:institution, institution)
+    |> Map.put(:publication, publication)
+    |> Map.put(:container, %{resource: container_resource, revision: container_revision})
+    |> Map.put(:page1, page1)
+    |> Map.put(:page2, page2)
+    |> Map.put(:revision1, revision1)
+    |> Map.put(:revision2, revision2)
+    |> Map.put(:section, section)
+  end
+
+  @doc """
+  A project with units but no modules
+
+  - Curriculum
+    - Unit 1
+      - Page 1
+      - Page 2
+    - Unit 2
+      - Page 3
+      - Page 4
+  """
+  def base_project_with_units() do
+    {:ok, family} =
+      Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
+
+    publisher = Inventories.default_publisher()
+
+    {:ok, author} =
+      Author.noauth_changeset(%Author{}, %{
+        email: "test#{System.unique_integer([:positive])}@test.com",
+        given_name: "First",
+        family_name: "Last",
+        provider: "foo",
+        system_role_id: SystemRole.role_id().author
+      })
+      |> Repo.insert()
+
+    {:ok, project} =
+      Project.changeset(%Project{}, %{
+        description: "description",
+        title: "Example Course",
+        version: "1",
+        family_id: family.id,
+        publisher_id: publisher.id
+      })
+      |> Repo.insert()
+
+    {:ok, _} =
+      AuthorProject.changeset(%AuthorProject{}, %{
+        author_id: author.id,
+        project_id: project.id,
+        project_role_id: ProjectRole.role_id().owner
+      })
+      |> Repo.insert()
+
+    {:ok, institution} =
+      Institution.changeset(%Institution{}, %{
+        name: "Example Institution",
+        country_code: "US",
+        institution_email: author.email,
+        institution_url: "example.edu"
+      })
+      |> Repo.insert()
+
+    # A single container resource with a mapped revision
+    {:ok, container_resource} =
+      Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert()
+
+    {:ok, _} =
+      Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{
+        project_id: project.id,
+        resource_id: container_resource.id
+      })
+      |> Repo.insert()
+
+    {:ok, container_revision} =
+      Oli.Resources.create_revision(%{
+        author_id: author.id,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Curriculum",
+        resource_id: container_resource.id
+      })
+
+    {:ok, publication} =
+      Publication.changeset(%Publication{}, %{
+        root_resource_id: container_resource.id,
+        project_id: project.id
+      })
+      |> Repo.insert()
+
+    create_published_resource(publication, container_resource, container_revision)
+
+    %{resource: unit1_resource, revision: unit1_revision} =
+      create_container("Unit 1", publication, project, author)
+
+    %{resource: unit2_resource, revision: unit2_revision} =
+      create_container("Unit 2", publication, project, author)
+
+    %{resource: page1, revision: _revision1} = create_page("Page 1", publication, project, author)
+
+    %{resource: page2, revision: _revision2} = create_page("Page 2", publication, project, author)
+
+    %{resource: page3, revision: _revision3} = create_page("Page 3", publication, project, author)
+
+    %{resource: page4, revision: _revision4} = create_page("Page 4", publication, project, author)
+
+    unit1_revision = attach_pages_to([page1, page2], unit1_resource, unit1_revision, publication)
+    unit2_revision = attach_pages_to([page3, page4], unit2_resource, unit2_revision, publication)
+
+    container_revision =
+      attach_pages_to(
+        [unit1_resource, unit2_resource],
+        container_resource,
+        container_revision,
+        publication
+      )
+
+    {:ok, pub1} = Publishing.publish_project(project, "some changes")
+
+    {:ok, section} =
+      Sections.create_section(%{
+        title: "Section Title",
+        registration_open: true,
+        open_and_free: true,
+        context_id: UUID.uuid4(),
+        institution_id: institution.id,
+        base_project_id: project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub1)
+
+    Map.put(%{}, :family, family)
+    |> Map.put(:project, project)
+    |> Map.put(:author, author)
+    |> Map.put(:institution, institution)
+    |> Map.put(:publication, publication)
+    |> Map.put(:container, %{resource: container_resource, revision: container_revision})
+    |> Map.put(:unit1_resource, unit1_resource)
+    |> Map.put(:unit2_resource, unit2_resource)
+    |> Map.put(:unit1_revision, unit1_revision)
+    |> Map.put(:unit2_revision, unit2_revision)
+    |> Map.put(:page1, page1)
+    |> Map.put(:page2, page2)
+    |> Map.put(:page3, page3)
+    |> Map.put(:page4, page4)
+    |> Map.put(:section, section)
+  end
+
   def base_project_with_resource2() do
     {:ok, family} =
       Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
@@ -319,9 +580,10 @@ defmodule Oli.Seeder do
         create_sample_adaptive_page_content(activity_revision.resource_id)
       )
 
-    attach_pages_to([page_resource], container.resource, container.revision, publication)
+    container_revision = attach_pages_to([page_resource], container.resource, container.revision, publication)
 
     seed
+    |> Map.put(:container, %{resource: container.resource, revision: container_revision})
     |> Map.put(page_resource_tag, page_resource)
     |> Map.put(page_revision_tag, page_revision)
     |> Map.put(activity_resource_tag, activity_resource)
@@ -361,6 +623,95 @@ defmodule Oli.Seeder do
       nested_revision1: nested_revision1,
       nested_page2: nested_page2,
       nested_revision2: nested_revision2
+    })
+  end
+
+  defp n_pages_for(n, pub, project, author, container_resource, container_revision) do
+    pages =
+      1..n
+      |> Enum.map(fn n ->
+        create_page("Page #{n}", pub, project, author)
+      end)
+
+    resources = Enum.map(pages, fn %{resource: r} -> r end)
+
+    attach_pages_to(resources, container_resource, container_revision, pub)
+
+    pages
+  end
+
+  def base_project_with_larger_hierarchy() do
+    mappings =
+      base_project_with_resource2()
+      |> add_activity(%{title: "title 1"}, :publication, :project, :author, :activity_a)
+      |> add_activity(%{title: "title 2"}, :publication, :project, :author, :activity_b)
+      |> add_activity(%{title: "title 3"}, :publication, :project, :author, :activity_c)
+      |> add_activity(%{title: "title 4"}, :publication, :project, :author, :activity_d)
+      |> add_activity(%{title: "title 5"}, :publication, :project, :author, :activity_e)
+
+    %{
+      container: %{resource: container_resource, revision: container_revision},
+      publication: publication,
+      project: project,
+      author: author
+    } = mappings
+
+    %{resource: unit1_resource, revision: unit1_revision} =
+      create_container("Unit 1", publication, project, author)
+
+    %{resource: unit2_resource, revision: unit2_revision} =
+      create_container("Unit 2", publication, project, author)
+
+    %{resource: mod1_resource, revision: mod1_revision} =
+      create_container("Module 1", publication, project, author)
+
+    %{resource: mod2_resource, revision: mod2_revision} =
+      create_container("Module 2", publication, project, author)
+
+    %{resource: mod3_resource, revision: mod3_revision} =
+      create_container("Module 3", publication, project, author)
+
+    mod1_pages = n_pages_for(3, publication, project, author, mod1_resource, mod1_revision)
+    mod2_pages = n_pages_for(3, publication, project, author, mod2_resource, mod2_revision)
+    mod3_pages = n_pages_for(4, publication, project, author, mod3_resource, mod3_revision)
+
+    attach_pages_to([mod1_resource, mod2_resource], unit1_resource, unit1_revision, publication)
+    attach_pages_to([mod3_resource], unit2_resource, unit2_revision, publication)
+
+    container_revision =
+      attach_pages_to(
+        [unit1_resource, unit2_resource],
+        container_resource,
+        container_revision,
+        publication
+      )
+
+    {:ok, pub1} = Publishing.publish_project(project, "some changes")
+
+    {:ok, section} =
+      Sections.create_section(%{
+        title: "3",
+        registration_open: true,
+        open_and_free: true,
+        context_id: UUID.uuid4(),
+        institution_id: mappings.institution.id,
+        base_project_id: project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub1)
+
+    Map.merge(mappings, %{
+      container: %{resource: container_resource, revision: container_revision},
+      unit1_container: %{resource: unit1_resource, revision: unit1_revision},
+      mod1_pages: mod1_pages,
+      mod2_pages: mod2_pages,
+      mod3_pages: mod3_pages,
+      mod1_resource: mod1_resource,
+      mod2_resource: mod2_resource,
+      mod3_resource: mod3_resource,
+      unit1_resource: unit1_resource,
+      unit2_resource: unit2_resource,
+      section: section
     })
   end
 
@@ -495,7 +846,8 @@ defmodule Oli.Seeder do
       title: "some title",
       context_id: UUID.uuid4(),
       base_project_id: map.project.id,
-      institution_id: map.institution.id
+      institution_id: map.institution.id,
+      contains_explorations: map[:contains_explorations] || false
     }
 
     {:ok, section} =

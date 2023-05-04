@@ -1,19 +1,19 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { clone, parseBoolean } from 'utils/common';
-import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
-import { CapiIframeModel } from './schema';
-import { CapiVariable } from '../../../adaptivity/capi';
-import CapiVariablePicker from './CapiVariablePicker';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
+import { clone, parseBoolean } from 'utils/common';
+import { CapiVariable } from '../../../adaptivity/capi';
+import CapiVariablePicker from './CapiVariablePicker';
+import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
+import { CapiIframeModel } from './schema';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
   const { model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
-  const { x, y, z, width, height, src, configData } = model;
+  const { z, width, height, src, configData } = model;
   const id: string = props.id;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const messageListener = useRef<any>(null);
@@ -92,7 +92,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   }, [configuremode]);
 
   const initialize = useCallback(async (pModel) => {
-    const initResult = await props.onInit({
+    const _initResult = await props.onInit({
       id: props.id,
       responses: [],
     });

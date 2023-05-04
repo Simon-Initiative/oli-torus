@@ -27,8 +27,8 @@ defmodule Oli.Utils.Seeder.Attempt do
         page_revision,
         section.slug,
         datashop_session_id,
-        user.id,
-        &Oli.Delivery.ActivityProvider.provide/4
+        user,
+        &Oli.Delivery.ActivityProvider.provide/6
       )
 
     seeds
@@ -54,8 +54,8 @@ defmodule Oli.Utils.Seeder.Attempt do
         page_revision.slug,
         section.slug,
         datashop_session_id,
-        user.id,
-        &Oli.Delivery.ActivityProvider.provide/4
+        user,
+        &Oli.Delivery.ActivityProvider.provide/6
       )
 
     seeds

@@ -1,14 +1,14 @@
-import React, { PropsWithChildren, useEffect, useRef, Suspense, useState } from 'react';
+import React, { PropsWithChildren, Suspense, useEffect, useRef, useState } from 'react';
+import { Dropdown } from 'react-bootstrap';
+import { RefEditorInstance } from '@uiw/react-monacoeditor';
 import { throttle } from 'lodash';
+import * as monaco from 'monaco-editor';
+import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
+import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
-import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
-import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
-import * as monaco from 'monaco-editor';
-import { RefEditorInstance } from '@uiw/react-monacoeditor';
-import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
-import { DropdownSelect, DropdownItem } from 'components/common/DropdownSelect';
+import { addDarkModeListener, isDarkMode, removeDarkModeListener } from 'utils/browser';
 import './BlockcodeElement.scss';
 
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
@@ -81,29 +81,32 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
 
   return (
     <div {...props.attributes} contentEditable={false}>
-      <DropdownSelect
-        className="my-2"
-        text={props.model.language}
-        bsBtnClass="btn-outline-secondary btn-sm"
-      >
-        {CodeLanguages.all().map(({ prettyName }, i) => (
-          <DropdownItem
-            key={i}
-            onClick={() => {
-              onEdit({ language: prettyName });
+      <Dropdown>
+        <Dropdown.Toggle className="my-2" variant="outline-primary" size="sm">
+          {props.model.language}
+          <i className="fa-solid fa-caret-down ml-2"></i>
+        </Dropdown.Toggle>
 
-              const model = editorRef.current?.editor?.getModel();
-              if (model) {
-                monaco.editor.setModelLanguage(model, prettyName);
-              }
-            }}
-            className={prettyName === props.model.language ? 'active' : ''}
-          >
-            {prettyName}
-          </DropdownItem>
-        ))}
-      </DropdownSelect>
-      <div ref={editorContainer} className="border">
+        <Dropdown.Menu>
+          {CodeLanguages.all().map(({ prettyName }, i) => (
+            <Dropdown.Item
+              key={i}
+              onClick={() => {
+                onEdit({ language: prettyName });
+
+                const model = editorRef.current?.editor?.getModel();
+                if (model) {
+                  monaco.editor.setModelLanguage(model, prettyName);
+                }
+              }}
+              className={prettyName === props.model.language ? 'active' : ''}
+            >
+              {prettyName}
+            </Dropdown.Item>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown>
+      <div ref={editorContainer}>
         <Suspense fallback={<div>Loading...</div>}>
           <MonacoEditor
             ref={editorRef}

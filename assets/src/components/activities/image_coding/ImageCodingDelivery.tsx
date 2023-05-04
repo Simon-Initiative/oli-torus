@@ -1,28 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { maybe } from 'tsmonad';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import { defaultWriterContext } from 'data/content/writers/context';
+import * as Events from 'data/events';
+import { configureStore } from 'state/store';
 import {
   DeliveryElement,
   DeliveryElementProps,
   EvaluationResponse,
-  ResetActivityResponse,
   RequestHintResponse,
+  ResetActivityResponse,
 } from '../DeliveryElement';
-import { ImageCodingModelSchema } from './schema';
-import * as ActivityTypes from '../types';
-import { Stem } from '../common/DisplayedStem';
+import { DeliveryElementProvider } from '../DeliveryElementProvider';
 import { Hints } from '../common/DisplayedHints';
+import { Stem } from '../common/DisplayedStem';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/delivery/evaluation/Evaluation';
-import { Evaluator, EvalContext } from './Evaluator';
-import { lastPart } from './utils';
-import { defaultWriterContext } from 'data/content/writers/context';
+import * as ActivityTypes from '../types';
+import { EvalContext, Evaluator } from './Evaluator';
+import { ImageCodingModelSchema } from './schema';
 import { ImageCodeEditor } from './sections/ImageCodeEditor';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import { DeliveryElementProvider } from '../DeliveryElementProvider';
-import { maybe } from 'tsmonad';
-import * as Events from 'data/events';
+import { lastPart } from './utils';
 
 type Evaluation = {
   score: number;

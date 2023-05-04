@@ -1,9 +1,9 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
+import './ShapeEditor.scss';
 import { Point } from './common';
 import { throttle } from './timing';
-import './ShapeEditor.scss';
 
 const mapCoordsToPolygonProps = (coords: Immutable.List<number>) => {
   return {
@@ -224,7 +224,7 @@ export class PolygonEditor extends React.PureComponent<PolygonEditorProps, Polyg
           )
           .map((coord, i) => (
             <circle
-              className="shape-handle"
+              className="shape-handle shape-move"
               key={i}
               cx={coord.x}
               cy={coord.y}

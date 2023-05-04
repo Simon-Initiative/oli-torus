@@ -4,11 +4,11 @@ import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptiv
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ConditionOperatorOption,
-  conditionOperatorOptions,
   ConditionTypeOperatorCombo,
+  TypeOption,
+  conditionOperatorOptions,
   conditionTypeOperatorCombos,
   inferTypeFromOperatorAndValue,
-  TypeOption,
   typeOptions,
 } from './AdaptiveItemOptions';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
@@ -115,7 +115,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         <input
           key={`target-${parentIndex}`}
           id={`target-${parentIndex}`}
-          className="form-control form-control-sm flex-grow-1 mr-2"
+          className="form-control form-control-sm flex-grow-1 mr-2 w-8"
           type="text"
           placeholder="Target"
           value={fact}

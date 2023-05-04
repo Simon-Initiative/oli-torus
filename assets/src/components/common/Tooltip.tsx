@@ -1,4 +1,4 @@
-import React, { createRef, PropsWithChildren, useEffect } from 'react';
+import React, { PropsWithChildren, createRef, useEffect } from 'react';
 import { classNames } from 'utils/classNames';
 
 interface TooltipProps {
@@ -15,19 +15,19 @@ export const Tooltip = ({
   const ref = createRef<HTMLElement>();
 
   useEffect(() => {
-    const tooltipEl = ref.current !== null && ($(ref.current) as any);
-    tooltipEl.tooltip();
+    const el = ref.current !== null && ($(ref.current) as any);
+    const tooltip = new (window as any).Tooltip(el);
 
     return () => {
       // make sure the tooltip is properly disposed of
-      tooltipEl.tooltip('dispose');
+      tooltip.dispose();
     };
   }, [ref]);
 
   return (
     <span
       ref={ref}
-      className={classNames(className)}
+      className={classNames(className, 'inline-flex items-center')}
       data-placement={placement ?? 'top'}
       title={title}
     >

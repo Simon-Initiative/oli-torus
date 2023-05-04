@@ -30,6 +30,9 @@
     "purpose": {
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
     },
+    "audience": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/audience.schema.json"
+    },
     "children": {
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
     }

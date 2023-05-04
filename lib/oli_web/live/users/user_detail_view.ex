@@ -119,7 +119,7 @@ defmodule OliWeb.Users.UsersDetailView do
             <ul class="list-group">
               {#for lti_params <- @user_lti_params}
                 <li class="list-group-item">
-                  <div class="d-flex pb-2 mb-2 border-bottom">
+                  <div class="d-flex pb-2 mb-2 border-b">
                     <div class="flex-grow-1">{lti_params.issuer}</div>
                     <div>Last Updated: {render_date(lti_params, :updated_at, @context)}</div>
                   </div>

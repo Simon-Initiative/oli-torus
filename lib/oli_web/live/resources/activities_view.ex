@@ -34,7 +34,7 @@ defmodule OliWeb.Resources.ActivitiesView do
     [
       Breadcrumb.new(%{
         full_title: "Project Overview",
-        link: Routes.project_path(OliWeb.Endpoint, :overview, project.slug)
+        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
       }),
       Breadcrumb.new(%{full_title: "All Activities"})
     ]
@@ -235,7 +235,7 @@ defmodule OliWeb.Resources.ActivitiesView do
 
   def render(assigns) do
     ~F"""
-    <div id="activity_review" phx-hook="ReviewActivity">
+    <div id="activity_review" class="container mx-auto" phx-hook="ReviewActivity">
 
       <FilterBox
         card_header_text="Browse All Activities"

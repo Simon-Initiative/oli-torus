@@ -1,9 +1,9 @@
-import { ID } from 'data/content/model/other';
 import React from 'react';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { Feedback } from 'components/activities/types';
-import { Card } from 'components/misc/Card';
 import { Descendant } from 'slate';
+import { Feedback } from 'components/activities/types';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { Card } from 'components/misc/Card';
+import { ID } from 'data/content/model/other';
 
 export const FeedbackCard: React.FC<{
   feedback: Feedback;

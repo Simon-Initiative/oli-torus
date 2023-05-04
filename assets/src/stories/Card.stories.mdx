@@ -1,0 +1,60 @@
+import { Canvas, Meta, Story } from '@storybook/addon-docs';
+import { Button } from 'components/misc/Button';
+import { Card } from 'components/misc/Card';
+import { TorusBG } from './TorusBG.tsx';
+
+<Meta title="Torus/Card" />
+
+# Card
+
+<Story name="Card">
+  <TorusBG>
+    <Card.Card>
+      <Card.Title>Cool Card!</Card.Title>
+      <Card.Content>
+        <div className="py-2">Here is some content for the card to contain.</div>
+        <Button>Ok!</Button>
+      </Card.Content>
+    </Card.Card>
+  </TorusBG>
+</Story>
+
+```tsx
+import { Button } from 'components/misc/Button';
+import { Card } from 'components/misc/Card';
+
+<Card.Card>
+  <Card.Title>Cool Card!</Card.Title>
+  <Card.Content>
+    <div>Here is some content for the card to contain.</div>
+    <Button>Ok!</Button>
+  </Card.Content>
+</Card.Card>;
+```
+
+# Size cards via classname
+
+<Story name="Sized Card">
+  <TorusBG>
+    <Card.Card className="w-52 inline-block">
+      <Card.Title>Cool Card!</Card.Title>
+      <Card.Content>
+        <div className="py-2">Here is some content for the card to contain.</div>
+        <Button>Ok!</Button>
+      </Card.Content>
+    </Card.Card>
+  </TorusBG>
+</Story>
+
+```tsx
+import { Button } from 'components/misc/Button';
+import { Card } from 'components/misc/Card';
+
+<Card.Card className="w-52 inline-block">
+  <Card.Title>Cool Card!</Card.Title>
+  <Card.Content>
+    <div className="py-2">Here is some content for the card to contain.</div>
+    <Button>Ok!</Button>
+  </Card.Content>
+</Card.Card>;
+```

@@ -1,16 +1,16 @@
 import React from 'react';
-import * as ContentModel from '../../../../data/content/model/elements/types';
+import { useSelected } from 'slate-react';
 import { EditorProps } from 'components/editing/elements/interfaces';
+import { modalActions } from '../../../../actions/modal';
+import * as ContentModel from '../../../../data/content/model/elements/types';
 import { CommandButton } from '../../../common/CommandButton';
 import { HoverContainer } from '../../toolbar/HoverContainer';
-import { useSelected } from 'slate-react';
-import { CommandButtonSettingsModal } from './CommandButtonSettingsModal';
-import { InlineChromiumBugfix, useEditModelCallback } from '../utils';
-import { CommandContext } from '../commands/interfaces';
 import { Toolbar } from '../../toolbar/Toolbar';
 import { DescriptiveButton } from '../../toolbar/buttons/DescriptiveButton';
 import { createButtonCommandDesc } from '../commands/commandFactories';
-import { modalActions } from '../../../../actions/modal';
+import { CommandContext } from '../commands/interfaces';
+import { InlineChromiumBugfix, useEditModelCallback } from '../utils';
+import { CommandButtonSettingsModal } from './CommandButtonSettingsModal';
 
 interface Props extends EditorProps<ContentModel.CommandButton> {}
 
@@ -65,7 +65,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: '',
+      icon: <i className="fa-solid fa-gear"></i>,
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

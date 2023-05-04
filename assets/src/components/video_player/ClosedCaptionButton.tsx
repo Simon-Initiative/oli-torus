@@ -31,7 +31,7 @@ export const ClosedCaptionButton: React.FC<any> = (props) => {
       className="video-react-control video-react-button video-captions-button"
     >
       {menuOpen && <TrackMenu tracks={textTracks} activateTrack={activateTrack} />}
-      <span className="material-icons-outlined">closed_caption</span>
+      <i className="fa-solid fa-closed-captioning"></i>
     </button>
   );
 };

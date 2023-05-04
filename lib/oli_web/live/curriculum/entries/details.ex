@@ -9,7 +9,7 @@ defmodule OliWeb.Curriculum.DetailsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="entry-section d-flex flex-column col-4">
+    <div class="entry-section d-flex flex-column col-span-4">
       <small class="text-muted">
         Created <%= Utils.render_date(@child.resource, :inserted_at, @context) %>
       </small>

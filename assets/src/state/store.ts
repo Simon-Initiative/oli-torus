@@ -1,4 +1,4 @@
-import { createStore, applyMiddleware, Reducer } from 'redux';
+import { Reducer, applyMiddleware, createStore } from 'redux';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import { createLogger } from 'redux-logger';
 import thunk from 'redux-thunk';
@@ -45,3 +45,5 @@ export function configureStore(initialState?: any, reducer?: Reducer) {
 
   return store;
 }
+
+export const globalStore = configureStore();

@@ -28,6 +28,31 @@ defmodule Oli.Publishing do
   alias Oli.Publishing.Publications.{Publication, PublicationDiff, PublicationDiffKey}
   alias Oli.Delivery.Updates
 
+  def distinct_slugs(publication_ids) do
+    (from pr in PublishedResource,
+        join: rev in Revision,
+        on: pr.revision_id == rev.id,
+        where:
+          pr.publication_id in ^publication_ids and
+          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+        select: {rev.resource_id, rev.slug},
+        distinct: true)
+      |> Repo.all()
+
+  end
+
+  def all_page_resource_ids(publication_ids) do
+    (from pr in PublishedResource,
+        join: rev in Revision,
+        on: pr.revision_id == rev.id,
+        where:
+          pr.publication_id in ^publication_ids and
+          rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
+        select: rev.resource_id,
+        distinct: true)
+      |> Repo.all()
+  end
+
   @doc """
   Bulk creates a number of resource, revision, project_resource and published_resource
   records.  Useful for optimal execution of project ingest and project duplication.
@@ -497,6 +522,24 @@ defmodule Oli.Publishing do
         limit: 1,
         select: pub
     )
+  end
+
+  @doc """
+  Returns true if the project is published (has at least one publication)
+
+   ## Examples
+
+      iex> is_published?("published-project-slug")
+      true
+
+      iex> is_published?("unpublished-project-slug")
+      false
+  """
+  def project_published?(project_slug) do
+    case get_latest_published_publication_by_slug(project_slug) do
+      nil -> false
+      _ -> true
+    end
   end
 
   def last_publication_query(),

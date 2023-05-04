@@ -23,10 +23,10 @@ import {
 } from 'adaptivity/operators/math';
 import { inRangeOperator, notInRangeOperator } from 'adaptivity/operators/range';
 import {
-  check,
   CheckResult,
-  defaultWrongRule as builtinDefaultWrongRule,
   ScoringContext,
+  defaultWrongRule as builtinDefaultWrongRule,
+  check,
 } from 'adaptivity/rules-engine';
 import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';

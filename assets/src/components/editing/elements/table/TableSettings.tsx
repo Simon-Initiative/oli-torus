@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import * as Settings from 'components/editing/elements/common/settings/Settings';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import * as Settings from 'components/editing/elements/common/settings/Settings';
+import * as ContentModel from 'data/content/model/elements/types';
 
 type TableSettingsProps = {
   model: ContentModel.Table;
@@ -13,7 +13,7 @@ type TableSettingsProps = {
 
 export const TableSettings = (props: TableSettingsProps) => {
   // Which selection is active, URL or in course page
-  const [model, setModel] = useState(props.model);
+  const [model, _setModel] = useState(props.model);
 
   const ref = useRef();
 
@@ -21,7 +21,7 @@ export const TableSettings = (props: TableSettingsProps) => {
     // Inits the tooltips, since this popover rendres in a react portal
     // this was necessary
     if (ref !== null && ref.current !== null) {
-      (window as any).$('[data-toggle="tooltip"]').tooltip();
+      (window as any).$('[data-bs-toggle="tooltip"]').tooltip();
     }
   });
 

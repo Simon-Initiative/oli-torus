@@ -1,0 +1,80 @@
+import { Canvas, Meta, Story } from '@storybook/addon-docs';
+import { PlaceholderNodeBody } from 'apps/authoring/components/Flowchart/chart-components/PlaceholderNode.tsx';
+import { ScreenButton } from 'apps/authoring/components/Flowchart/chart-components/ScreenButton.tsx';
+import { ScreenNodeBody } from 'apps/authoring/components/Flowchart/chart-components/ScreenNode.tsx';
+import { FlowchartSidebar } from 'apps/authoring/components/Flowchart/sidebar/FlowchartSidebar.tsx';
+import { FlowchartHeaderNav } from 'apps/authoring/components/Flowchart/toolbar/FlowchartHeaderNav.tsx';
+import { FlowchartTopToolbar } from 'apps/authoring/components/Flowchart/toolbar/FlowchartTopToolbar.tsx';
+import { ToolbarItem } from 'apps/authoring/components/Flowchart/toolbar/ToolbarItem.tsx';
+import '../../../styles/index.scss';
+import { TorusBG } from '../TorusBG.tsx';
+import { AdvancedAuthorStorybookContext } from './AdvancedAuthorStorybookContext.tsx';
+
+<Meta title="Advanced Authoring/Flowchart Components" />
+
+# Top Page Edit Mode Toolbar
+
+<Canvas>
+  <Story name="Top Page Edit Mode Toolbar">
+    <AdvancedAuthorStorybookContext className="w-full">
+      <div className="flex flex-row" style={{ marginLeft: -240, marginRight: -240 }}>
+        <FlowchartHeaderNav />
+      </div>
+    </AdvancedAuthorStorybookContext>
+  </Story>
+</Canvas>
+
+# Top Flowchart Mode Toolbar
+
+<Canvas>
+  <Story name="Top Flowchart Mode Toolbar">
+    <AdvancedAuthorStorybookContext className="w-full">
+      <div className="w-full flex flex-row">
+        <div className="flowchart-right">
+          <FlowchartTopToolbar />
+        </div>
+      </div>
+    </AdvancedAuthorStorybookContext>
+  </Story>
+</Canvas>
+
+# Sidebar
+
+<Canvas>
+  <Story name="Sidebar">
+    <AdvancedAuthorStorybookContext>
+      <div className="flex flex-row min-h-[300px]">
+        <FlowchartSidebar />
+        <div>Rest of content</div>
+      </div>
+    </AdvancedAuthorStorybookContext>
+  </Story>
+</Canvas>
+
+# Screen Node
+
+<Canvas>
+  <Story name="Screen Node">
+    <AdvancedAuthorStorybookContext>
+      <ScreenNodeBody
+        data={{
+          id: '1',
+          resourceId: 1001,
+          title: 'Sample Screen',
+          type: 'screen',
+          custom: { sequenceName: 'Screen 1' },
+        }}
+      />
+    </AdvancedAuthorStorybookContext>
+  </Story>
+</Canvas>
+
+# Screen Button
+
+<Canvas>
+  <Story name="Screen Button">
+    <AdvancedAuthorStorybookContext>
+      <ScreenButton tooltip="Example Button">Example</ScreenButton>
+    </AdvancedAuthorStorybookContext>
+  </Story>
+</Canvas>

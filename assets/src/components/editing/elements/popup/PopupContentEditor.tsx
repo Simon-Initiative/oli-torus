@@ -1,10 +1,9 @@
 import React, { useCallback } from 'react';
+import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { RichText } from 'components/activities/types';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import * as ContentModel from 'data/content/model/elements/types';
-import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
-
 import { InlineAudioClipPicker } from '../common/InlineAudioClipPicker';
 
 interface Props {
@@ -29,44 +28,42 @@ export const PopupContentEditor = (props: Props) => {
   }, []);
 
   const triggerSettings = (
-    <div className="form-check form-switch">
-      <div className="form-group">
-        <label className="form-check-label">
+    <div className="mb-3">
+      <div>
+        <label>
           <input
             type="radio"
-            className="form-check-input"
+            className="inline-block"
             onChange={() => setTrigger('hover')}
             checked={isTriggerMode('hover')}
           />
-          <p>
-            Trigger on <b>mouseover</b>
+          <p className="ml-2 inline-block">
+            <b>mouseover</b>
           </p>
         </label>
       </div>
-      <div className="form-group">
-        <label className="form-check-label">
+      <div>
+        <label>
           <input
             type="radio"
-            className="form-check-input"
+            className="inline-block"
             onChange={() => setTrigger('click')}
             checked={isTriggerMode('click')}
           />
-          <p>
-            Trigger on <b>click</b>
+          <p className="ml-2 inline-block">
+            <b>click</b>
           </p>
         </label>
       </div>
     </div>
   );
 
-  // onCancel={props.onCancel}
-  //     onOk={() => props.onDone({ content, trigger, ...audioParams })}
   return (
-    <div className="row popup__content_editor" contentEditable={false}>
-      <h2>Popup Content</h2>
-      <div className="col-12">
-        <span className="mb-4">Shown to students when triggered</span>
-        <div className="popup__modalContent">
+    <div className="row ml-5 border border-dashed p-4" contentEditable={false}>
+      <h2 className="text-lg">Popup Content</h2>
+      <div className="col-span-12">
+        <span className="mb-4">Shown to students when triggered on:</span>
+        <div className="min-w-[600px]">
           {triggerSettings}
 
           <RichTextEditor

@@ -1,3 +1,4 @@
+import React from 'react';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { setDifference, setUnion } from 'components/activities/common/utils';
 import {
@@ -6,19 +7,18 @@ import {
   MultiInputType,
 } from 'components/activities/multi_input/schema';
 import {
+  Part,
+  Transform,
   makeChoice,
   makeHint,
   makePart,
   makeTransformation,
-  Part,
-  Transform,
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';
 import { Model } from 'data/content/model/elements/factories';
 import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
-import React from 'react';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 

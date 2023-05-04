@@ -71,6 +71,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), "\n"]
   end
 
+  def ecl(%Context{} = _context, _, attrs) do
+    ["[ecl]"]
+  end
+
   def img(%Context{} = _context, _, %{"src" => src}) do
     ["[image with src #{src}] "]
   end

@@ -1,10 +1,18 @@
+import React from 'react';
+import { connect } from 'react-redux';
+import Appsignal from '@appsignal/javascript';
+import * as Immutable from 'immutable';
+import { Dispatch, State } from 'state';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
 import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
 import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { TitleBar } from 'components/content/TitleBar';
+import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { Banner } from 'components/messages/Banner';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { ContentOutline } from 'components/resource/editors/ContentOutline';
 import { Editors } from 'components/resource/editors/Editors';
 import { Objectives } from 'components/resource/objectives/Objectives';
 import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
@@ -23,29 +31,22 @@ import {
   getResourceContentName,
 } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
-import { createMessage, Message, Severity } from 'data/messages/messages';
-import * as ActivityPersistence from 'data/persistence/activity';
+import { Message, Severity, createMessage } from 'data/messages/messages';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { acquireLock, NotAcquired, releaseLock } from 'data/persistence/lock';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
+import * as ActivityPersistence from 'data/persistence/activity';
+import { NotAcquired, acquireLock, releaseLock } from 'data/persistence/lock';
 import * as Persistence from 'data/persistence/resource';
 import { ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
-import * as Immutable from 'immutable';
-import React from 'react';
-import { connect } from 'react-redux';
-import { Dispatch, State } from 'state';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
-import { registerUnload, unregisterUnload } from './listeners';
-import { empty, PageUndoable, Undoables, FeatureFlags } from './types';
-import { ContentOutline } from 'components/resource/editors/ContentOutline';
-import { PageEditorContent } from '../../data/editor/PageEditorContent';
-import '../ResourceEditor.scss';
-import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
-import Appsignal from '@appsignal/javascript';
+import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import { initAppSignal } from '../../utils/appsignal';
+import '../ResourceEditor.scss';
+import { registerUnload, unregisterUnload } from './listeners';
+import { FeatureFlags, PageUndoable, Undoables, empty } from './types';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -529,8 +530,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
 
     const PreviewButton = () => (
-      <a
+      <button
         className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
+        disabled={isSaving}
         onClick={() =>
           window.open(
             `/authoring/project/${projectSlug}/preview/${resourceSlug}`,
@@ -538,16 +540,18 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           )
         }
       >
-        Preview <i className="las la-external-link-alt ml-1"></i>
-      </a>
+        Preview <i className="fas fa-external-link-alt ml-1"></i>
+      </button>
     );
 
     return (
       <React.StrictMode>
         <AppsignalContext.Provider value={this.state.appsignal}>
+          <ModalDisplay />
+
           <ErrorBoundary>
             <div className="resource-editor row">
-              <div className="col-12">
+              <div className="col-span-12">
                 <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
                 <Banner

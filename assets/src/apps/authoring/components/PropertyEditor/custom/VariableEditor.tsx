@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import {
-  Modal,
   Button,
   Form,
   ListGroup,
   ListGroupItem,
+  Modal,
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 import { validateVariables } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
-import { useDispatch, useSelector } from 'react-redux';
 import { PageError } from '../../Modal/DiagnosticsWindow';
+
 interface CustomFieldProps {
   onAddClick: any;
   items: any[];
@@ -75,7 +76,7 @@ const VariableArrayItem: React.FC<any> = (props) => {
   return (
     <div className={`mt-2 border-bottom`}>
       <div className="mb-2 d-flex flex-row align-items-start">
-        <div className="align-self-end mb-3">
+        <div className="self-end mb-3">
           <Button
             disabled={!props.hasMoveUp || props.readonly || props.disabled}
             variant="link"
@@ -96,7 +97,7 @@ const VariableArrayItem: React.FC<any> = (props) => {
           </Button>
         </div>
         <div className="flex-grow-1">{props.children}</div>
-        <div className="align-self-end mb-3">
+        <div className="self-end mb-3">
           <Button
             variant="danger"
             disabled={props.disabled || props.readonly}

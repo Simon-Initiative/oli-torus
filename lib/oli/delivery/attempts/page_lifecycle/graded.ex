@@ -33,7 +33,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         latest_resource_attempt: latest_resource_attempt,
         page_revision: page_revision,
         section_slug: section_slug,
-        user_id: user_id
+        user: user
       }) do
     # There is no "active" attempt if there has never been an attempt or if the latest
     # attempt has been finalized or submitted
@@ -44,7 +44,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       # see how many attempts, etc.
 
       {access, attempts} =
-        get_resource_attempt_history(page_revision.resource_id, section_slug, user_id)
+        get_resource_attempt_history(page_revision.resource_id, section_slug, user.id)
 
       graded_attempts = Enum.filter(attempts, fn a -> a.revision.graded == true end)
 
@@ -75,11 +75,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         %VisitContext{
           page_revision: page_revision,
           section_slug: section_slug,
-          user_id: user_id
+          user: user
         } = context
       ) do
     {_, resource_attempts} =
-      get_resource_attempt_history(page_revision.resource_id, section_slug, user_id)
+      get_resource_attempt_history(page_revision.resource_id, section_slug, user.id)
 
     # We want to disregard any attempts that pertained to revisions whose graded status
     # do not match the current graded status. This accommodates the toggling of "graded" status
@@ -123,6 +123,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  resource_attempt.resource_access_id
                ) do
             {:ok, resource_access} ->
+              {:ok, _} = Oli.Delivery.Metrics.mark_progress_completed(resource_access)
+
               {:ok,
                %FinalizationSummary{
                  lifecycle_state: :evaluated,
@@ -130,7 +132,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  part_attempt_guids: part_attempt_guids
                }}
 
-            error -> error
+            error ->
+              error
           end
 
         %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->
@@ -149,19 +152,26 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   def finalize(_), do: {:error, {:already_submitted}}
 
   defp finalize_activity_and_part_attempts(resource_attempt, datashop_session_id) do
-    with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
-           Evaluate.update_part_attempts_and_get_activity_attempts(
-             resource_attempt,
-             datashop_session_id
-           ),
-         {:ok, _} <-
-           Persistence.bulk_update_activity_attempts(
-             Enum.join(activity_attempt_values, ", "),
-             activity_attempt_params
-           ) do
-      {:ok, part_attempt_guids}
-    else
-      error -> error
+    case resource_attempt.revision do
+      # For adaptive pages, we never want to evaluate anything at finalization time
+      %{content: %{"advancedDelivery" => true}} ->
+        {:ok, []}
+
+      _ ->
+        with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
+               Evaluate.update_part_attempts_and_get_activity_attempts(
+                 resource_attempt,
+                 datashop_session_id
+               ),
+             {:ok, _} <-
+               Persistence.bulk_update_activity_attempts(
+                 Enum.join(activity_attempt_values, ", "),
+                 activity_attempt_params
+               ) do
+          {:ok, part_attempt_guids}
+        else
+          error -> error
+        end
     end
   end
 
@@ -176,8 +186,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # It is necessary to refetch the resource attempt so that we have the latest view
     # of its state, and to separately fetch the list of most recent attempts for each
     # activity.
+    activity_attempts =
+      case resource_attempt.revision do
+        # For adaptive pages, since we are rolling up to the resource attempt, we must consider
+        # both submitted and evaluated attempts
+        %{content: %{"advancedDelivery" => true}} ->
+          get_latest_non_active_activity_attempts(resource_attempt.id)
 
-    activity_attempts = get_latest_activity_attempts(resource_attempt.id)
+        _ ->
+          get_latest_activity_attempts(resource_attempt.id)
+      end
 
     if is_evaluated?(activity_attempts) do
       apply_evaluation(resource_attempt, activity_attempts)

@@ -26,16 +26,16 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
     <Groups>
       <Group label="Details" description="View and change your authoring account details">
         <div class="account-section">
-          <div class="row mb-4">
-            <div class="col-12">
+          <div class="grid grid-cols-12 mb-4">
+            <div class="col-span-12">
               <h4 class="mb-3">Name</h4>
               <p class="mb-2">
                 {"#{@current_author.name}"}
               </p>
             </div>
           </div>
-          <div class="row my-4">
-            <div class="col-12">
+          <div class="grid grid-cols-12 my-4">
+            <div class="col-span-12">
               <h4 class="mb-3">Email</h4>
               <p class="mb-2">
                 {"#{@current_author.email}"}
@@ -52,8 +52,8 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
               {/if}
             </div>
           </div>
-          <div class="row my-4">
-            <div class="col-12">
+          <div class="grid grid-cols-12 my-4">
+            <div class="col-span-12">
             {link "Change Account Details", to: Routes.authoring_pow_registration_path(OliWeb.Endpoint, :edit), class: "btn btn-outline-primary"}
             </div>
           </div>

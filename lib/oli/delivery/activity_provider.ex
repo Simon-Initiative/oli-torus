@@ -2,7 +2,6 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Selection
-  alias Oli.Resources.Revision
   alias Oli.Resources.PageContent
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
   alias Oli.Delivery.ActivityProvider.AttemptPrototype
@@ -29,15 +28,19 @@ defmodule Oli.Delivery.ActivityProvider do
   activity attempt prototypes, and the transformed page model.
 
   Parameters for provide are:
-  1. The page revision that we are providing activities for
+  1. The content of the page revision that we are providing activities for
   2. The source through which we provide activities
   3. A list of pre-existing attempt prototypes that constrain the activity realization
-  4. The resolver to use
+  4. The current user
+  5. The current section_slug
+  5. The resolver to use
   """
   def provide(
-        %Revision{content: %{"advancedDelivery" => true} = content},
+        %{"advancedDelivery" => true} = content,
         %Source{} = source,
-        _constraining_atttempt_prototypes,
+        _constraining_attempt_prototypes,
+        _user,
+        _section_slug,
         resolver
       ) do
     refs =
@@ -93,15 +96,17 @@ defmodule Oli.Delivery.ActivityProvider do
   end
 
   def provide(
-        %Revision{content: %{"model" => model} = content},
+        %{"model" => model} = content,
         %Source{} = source,
-        constraining_atttempt_prototypes,
+        constraining_attempt_prototypes,
+        user,
+        section_slug,
         resolver
       ) do
     %{
       prototypes: prototypes,
       errors: errors
-    } = fulfill(model, source, constraining_atttempt_prototypes)
+    } = fulfill(model, source, user, section_slug, constraining_attempt_prototypes)
 
     prototypes_with_revisions = resolve_activity_ids(source.section_slug, prototypes, resolver)
 
@@ -140,7 +145,7 @@ defmodule Oli.Delivery.ActivityProvider do
   # In order to prevent multiple selections on the page potentially realizing the same activity more
   # than once, we update the blacklisted activity ids within the source as we proceed through the
   # collection of activity references.
-  defp fulfill(model, %Source{} = source, existing_attempt_prototypes) do
+  defp fulfill(model, %Source{} = source, user, section_slug, existing_attempt_prototypes) do
     # Create a map of selection ids to a list of their existing prototypes
     prototypes_by_selection = build_prototypes_by_selection_map(existing_attempt_prototypes)
 
@@ -161,14 +166,18 @@ defmodule Oli.Delivery.ActivityProvider do
       prototypes_by_activity_id: prototypes_by_activity_id
     }
 
-    Enum.reduce(model, fulfillment_state, fn e, state -> do_fulfill(state, e, nil, nil) end)
+    Enum.reduce(model, fulfillment_state, fn e, state ->
+      do_fulfill(state, e, nil, nil, user, section_slug)
+    end)
   end
 
   defp do_fulfill(
          fulfillment_state,
          %{"type" => "activity-reference"} = model_component,
          group_id,
-         survey_id
+         survey_id,
+         _user,
+         _section_slug
        ) do
     # Create a new attempt prototype, or use an existing one if present for this activity id
     prototype =
@@ -191,7 +200,9 @@ defmodule Oli.Delivery.ActivityProvider do
          fulfillment_state,
          %{"type" => "selection"} = model_component,
          group_id,
-         survey_id
+         survey_id,
+         _user,
+         _section_slug
        ) do
     {:ok, %Selection{id: id} = selection} =
       Selection.parse(model_component)
@@ -241,22 +252,29 @@ defmodule Oli.Delivery.ActivityProvider do
   end
 
   # fulfill any resource group types
-  defp do_fulfill(fulfillment_state, %{"type" => type} = model_component, group_id, survey_id) do
+  defp do_fulfill(
+         fulfillment_state,
+         %{"type" => type} = model_component,
+         group_id,
+         survey_id,
+         user,
+         section_slug
+       ) do
     if PageContent.is_resource_group?(model_component) do
       case type do
         "group" ->
           Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, model_component["id"], survey_id)
+            do_fulfill(s, c, model_component["id"], survey_id, user, section_slug)
           end)
 
         "survey" ->
           Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, group_id, model_component["id"])
+            do_fulfill(s, c, group_id, model_component["id"], user, section_slug)
           end)
 
         _ ->
           Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, group_id, survey_id)
+            do_fulfill(s, c, group_id, survey_id, user, section_slug)
           end)
       end
     else

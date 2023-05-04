@@ -7,7 +7,7 @@ import {
   Stem,
   Transformation,
 } from 'components/activities/types';
-import { getCorrectResponse, getResponses, Responses } from 'data/activities/model/responses';
+import { Responses, getCorrectResponse, getResponses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 
 export interface MCSchemaV2 extends ActivityModelSchema {

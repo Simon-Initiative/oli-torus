@@ -1,16 +1,15 @@
-import {
-  ActivityModelSchema,
-  Stem,
-  Part,
-  ChoiceIdsToResponseId,
-  Transformation,
-  Choice,
-  RichText,
-  makeChoice,
-  makeContent,
-} from '../types';
 import { ID } from 'data/content/model/other';
 import { CATACompatible } from '../check_all_that_apply/actions';
+import {
+  ActivityModelSchema,
+  Choice,
+  ChoiceIdsToResponseId,
+  Part,
+  RichText,
+  Stem,
+  Transformation,
+  makeChoice,
+} from '../types';
 
 export class Hotspot implements Choice {
   id: ID;
@@ -35,8 +34,6 @@ export function makeHotspot(coords: number[] = []): Hotspot {
   hotspot.id = choice.id;
   hotspot.content = choice.content;
   hotspot.coords = coords;
-  // sync coords to text content as comma-separated list
-  hotspot.content = makeContent(coords.join(',')).content;
   return hotspot;
 }
 

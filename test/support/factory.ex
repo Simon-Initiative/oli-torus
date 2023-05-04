@@ -337,7 +337,8 @@ defmodule Oli.Factory do
       section: anonymous_build(:section),
       resource: anonymous_build(:resource),
       updated_at: DateTime.utc_now(),
-      inserted_at: DateTime.utc_now()
+      inserted_at: DateTime.utc_now(),
+      anonymous: false
     }
   end
 

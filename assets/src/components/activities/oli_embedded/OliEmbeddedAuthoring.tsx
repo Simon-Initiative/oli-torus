@@ -1,27 +1,28 @@
-import { configureStore } from 'state/store';
 import React from 'react';
-import { AuthoringElement, AuthoringElementProps } from 'components/activities/AuthoringElement';
-import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import * as ActivityTypes from 'components/activities/types';
+import { AuthoringElement, AuthoringElementProps } from 'components/activities/AuthoringElement';
 import { OliEmbeddedActions } from 'components/activities/oli_embedded/actions';
-import guid from 'utils/guid';
+import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
+import { lastPart } from 'components/activities/oli_embedded/utils';
+import * as ActivityTypes from 'components/activities/types';
+import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
+import { XmlEditor } from 'components/common/XmlEditor';
 import { uploadFiles } from 'components/media/manager/upload';
 import { CloseButton } from 'components/misc/CloseButton';
-import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
-import { lastPart } from 'components/activities/oli_embedded/utils';
-import { XmlEditor } from 'components/common/XmlEditor';
 import { Modal } from 'components/modal/Modal';
+import { configureStore } from 'state/store';
+import guid from 'utils/guid';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
-  const { dispatch, model, onRequestMedia } = useAuthoringElementContext<OliEmbeddedModelSchema>();
+  const { dispatch, model } = useAuthoringElementContext<OliEmbeddedModelSchema>();
 
   const { projectSlug } = props;
 
-  function select(_projectSlug: string): Promise<string> {
+  function select(projectSlug: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',
@@ -40,7 +41,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     });
   }
 
-  const addFile = (e: any) => {
+  const addFile = () => {
     select(projectSlug).then((url: string) => {
       dispatch(OliEmbeddedActions.addResourceURL(url));
     });
@@ -154,7 +155,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           <i className="fa fa-upload" /> Upload File
         </button>
         &nbsp;&nbsp;&nbsp;
-        <button className="btn btn-primary media-toolbar-item upload" onClick={() => addFile(id)}>
+        <button className="btn btn-primary media-toolbar-item upload" onClick={() => addFile()}>
           Media Library
         </button>
       </div>
@@ -176,15 +177,15 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
           <div className="container">
             <div className="row mb-2 text-center">
-              <div className="col col-sm-2">&nbsp;</div>
-              <div className="col col-lg-2">Id</div>
-              <div className="col col-lg-2">Scoring</div>
+              <div className="col sm:col-span-2">&nbsp;</div>
+              <div className="col lg:col-span-2">Id</div>
+              <div className="col lg:col-span-2">Scoring</div>
             </div>
             {model.authoring.parts.map((part, i) => (
               <div className="row mb-2" key={i}>
-                <div className="col col-sm-2">Part {i + 1}</div>
-                <div className="col col-lg-3">{part.id}</div>
-                <div className="col col-lg-2">
+                <div className="col sm:col-span-2">Part {i + 1}</div>
+                <div className="col lg:col-span-3">{part.id}</div>
+                <div className="col lg:col-span-2">
                   <select
                     onChange={(e) => handleScoringChange(part.id, e.target.value)}
                     className="custom-select custom-select-sm"
@@ -208,7 +209,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                     data-dismiss="alert"
                     aria-label="Close"
                   >
-                    <span aria-hidden="true">&times;</span>
+                    <i className="fa-solid fa-xmark fa-xl"></i>
                   </button>
                 </div>
               </div>

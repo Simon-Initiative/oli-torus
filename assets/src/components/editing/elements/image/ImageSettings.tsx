@@ -1,13 +1,13 @@
-import { modalActions } from 'actions/modal';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { selectImage } from 'components/editing/elements/image/imageActions';
-import { ImageModal } from 'components/editing/elements/image/ImageModal';
-import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import React from 'react';
 import { Maybe } from 'tsmonad';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { ImageModal } from 'components/editing/elements/image/ImageModal';
+import { selectImage } from 'components/editing/elements/image/imageActions';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
+import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { modalActions } from 'actions/modal';
 import * as ContentModel from 'data/content/model/elements/types';
 
 interface SettingsProps {
@@ -34,7 +34,7 @@ interface SelectImageProps {
 const SelectImageButton = (props: SelectImageProps) => (
   <CommandButton
     description={createButtonCommandDesc({
-      icon: 'insert_photo',
+      icon: <i className="fa-solid fa-image"></i>,
       description: 'Select Image',
       execute: (context, _editor) =>
         selectImage(context.projectSlug, props.model.src).then((selection) =>
@@ -51,7 +51,6 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: '',
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

@@ -1,7 +1,8 @@
-import { applyState, templatizeText } from 'adaptivity/scripting';
-import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { applyState, templatizeText } from 'adaptivity/scripting';
+import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
+import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -36,12 +37,16 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentActivityTreeAttemptState,
+} from '../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
+  selectReviewMode,
   setScore,
   setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';
@@ -142,15 +147,18 @@ const NextButton: React.FC<NextButton> = ({
 }) => {
   const isEnd = useSelector(selectLessonEnd);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const reviewMode = useSelector(selectReviewMode);
   const styles: CSSProperties = {};
-  if (historyModeNavigation) {
+  if (historyModeNavigation || reviewMode) {
     styles.opacity = 0.5;
     styles.cursor = 'not-allowed';
   }
-  const showDisabled = historyModeNavigation ? true : isLoading;
-  const showHideCheckButton =
+  const showDisabled = historyModeNavigation || reviewMode ? true : isLoading;
+  let showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
+  showHideCheckButton =
+    showHideCheckButton === 'hideCheckBtn' && reviewMode ? '' : showHideCheckButton;
   return (
     <div
       className={`buttonContainer ${showHideCheckButton} ${
@@ -210,7 +218,7 @@ export const checkIfFirstEventHasNavigation = (event: any) => {
 
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
-
+  const reviewMode = useSelector(selectReviewMode);
   const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
@@ -222,8 +230,8 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
+  const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const isPreviewMode = useSelector(selectPreviewMode);
-
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -259,7 +267,71 @@ const DeckLayoutFooter: React.FC = () => {
     return resultHavingNavigation.length === results.length && navigationTargets.length === 1;
   };
 
+  const saveMutateStateValuesToServer = (mutations: any) => {
+    const activityAttemptTree = currentActivityAttemptTree;
+    const currentAttempt: any = activityAttemptTree
+      ? activityAttemptTree[activityAttemptTree.length - 1]
+      : null;
+
+    const currentActivity: any = currentActivityTree
+      ? currentActivityTree[currentActivityTree?.length - 1]
+      : null;
+    const currentActivityAttemptGuid = currentActivity?.attemptGuid;
+    if (!currentAttempt || !currentActivityAttemptGuid) {
+      return;
+    }
+    mutations.forEach((op: any) => {
+      let scopedTarget = op.params.target;
+      if (scopedTarget.indexOf('stage') === 0) {
+        const lstVar = scopedTarget.split('.');
+        if (lstVar?.length > 1) {
+          const partId = lstVar[1];
+          const partKey = lstVar[2];
+          let partAttemptGuid = '';
+          const partAttempt = currentAttempt?.parts.filter(
+            (attempt: any) => attempt.partId == partId,
+          );
+          if (partAttempt?.length) {
+            const ownerActivity = currentActivityTree?.find(
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
+            );
+            scopedTarget = ownerActivity
+              ? `${ownerActivity.id}|${op.params.target}`
+              : `${currentActivityId}|${op.params.target}`;
+
+            partAttemptGuid = partAttempt[0].attemptGuid;
+            const response: any = [
+              {
+                id: op.params.target,
+                key: partKey,
+                type: op.params.targetType || op.params.type,
+                value: getValue(`${scopedTarget}`, defaultGlobalEnv),
+                path: scopedTarget,
+              },
+            ];
+            const responseMap = response.reduce(
+              (result: { [x: string]: any }, item: { key: string; path: string }) => {
+                result[item.key] = { ...item };
+                return result;
+              },
+              {},
+            );
+            dispatch(
+              savePartState({
+                attemptGuid: currentActivityAttemptGuid,
+                partAttemptGuid,
+                response: responseMap,
+              }),
+            );
+          }
+        }
+      }
+    });
+  };
+
   useEffect(() => {
+    dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
     }
@@ -308,7 +380,8 @@ const DeckLayoutFooter: React.FC = () => {
 
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             scopedTarget = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -324,13 +397,16 @@ const DeckLayoutFooter: React.FC = () => {
         return globalOp;
       });
 
-      const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      const _mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      if (!isPreviewMode) {
+        saveMutateStateValuesToServer(mutations);
+      }
       // should respond to scripting errors?
-      console.log('MUTATE ACTIONS', {
+      /* console.log('MUTATE ACTIONS', {
         mutateResults,
         mutationsModified,
         score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
-      });
+      }); */
 
       const everAppUpdates = mutationsModified.filter((op: ApplyStateOperation) => {
         return op.target.indexOf('app') === 0;
@@ -356,7 +432,8 @@ const DeckLayoutFooter: React.FC = () => {
           const lstVar = op.params.target.split('.');
           if (lstVar?.length > 1) {
             const ownerActivity = currentActivityTree?.find(
-              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+              (activity) =>
+                !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
             target = ownerActivity
               ? `${ownerActivity.id}|${op.params.target}`
@@ -620,37 +697,39 @@ const DeckLayoutFooter: React.FC = () => {
 
   return (
     <>
-      <div
-        className={`checkContainer rowRestriction columnRestriction`}
-        style={{ width: containerWidth }}
-      >
-        <NextButton
-          isLoading={isLoading || !initPhaseComplete}
-          text={nextButtonText}
-          handler={checkHandler}
-          isGoodFeedbackPresent={isGoodFeedback}
-          currentFeedbacksCount={currentFeedbacks.length}
-          isFeedbackIconDisplayed={displayFeedbackIcon}
-          showCheckBtn={currentActivity?.custom?.showCheckBtn}
-        />
-        {displaySolutionButton && (
-          <button className="showSolnBtn showSolution">
-            <div className="ellipsis">{solutionButtonText}</div>
-          </button>
-        )}
-        {!isLegacyTheme && (
-          <FeedbackContainer
-            minimized={!displayFeedback}
-            showIcon={displayFeedbackIcon}
-            showHeader={displayFeedbackHeader}
-            onMinimize={() => setDisplayFeedback(false)}
-            onMaximize={() => setDisplayFeedback(true)}
-            feedbacks={currentFeedbacks}
+      {!reviewMode && (
+        <div
+          className={`checkContainer rowRestriction columnRestriction`}
+          style={{ width: containerWidth, display: reviewMode ? 'block' : '' }}
+        >
+          <NextButton
+            isLoading={isLoading || !initPhaseComplete}
+            text={nextButtonText}
+            handler={checkHandler}
+            isGoodFeedbackPresent={isGoodFeedback}
+            currentFeedbacksCount={currentFeedbacks.length}
+            isFeedbackIconDisplayed={displayFeedbackIcon}
+            showCheckBtn={currentActivity?.custom?.showCheckBtn}
           />
-        )}
-        <HistoryNavigation />
-      </div>
-      {isLegacyTheme && (
+          {displaySolutionButton && (
+            <button className="showSolnBtn showSolution">
+              <div className="ellipsis">{solutionButtonText}</div>
+            </button>
+          )}
+          {!isLegacyTheme && (
+            <FeedbackContainer
+              minimized={!displayFeedback}
+              showIcon={displayFeedbackIcon}
+              showHeader={displayFeedbackHeader}
+              onMinimize={() => setDisplayFeedback(false)}
+              onMaximize={() => setDisplayFeedback(true)}
+              feedbacks={currentFeedbacks}
+            />
+          )}
+          <HistoryNavigation />
+        </div>
+      )}
+      {!reviewMode && isLegacyTheme && (
         <>
           <FeedbackContainer
             minimized={!displayFeedback}

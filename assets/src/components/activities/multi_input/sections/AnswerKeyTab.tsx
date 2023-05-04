@@ -1,27 +1,27 @@
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
+import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { ShowPage } from 'components/activities/common/responses/ShowPage';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import {
   Dropdown,
   FillInTheBlank,
   MultiInput,
   MultiInputSchema,
 } from 'components/activities/multi_input/schema';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
-import { makeResponse, Response, RichText } from 'components/activities/types';
+import { Response, RichText, makeResponse } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React from 'react';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -124,7 +124,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
       ))}
       <AuthoringButtonConnected
         ariaLabel="Add targeted feedback"
-        className="align-self-start btn btn-link"
+        className="self-start btn btn-link"
         action={() => dispatch(addTargetedFeedbackFillInTheBlank(props.input as FillInTheBlank))}
       >
         Add targeted feedback

@@ -246,6 +246,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
          previous_page: previous,
          next_page: next,
          collab_space_config: collab_space_config,
+         optionalContentTypes: %{
+           ecl: publication.project.allow_ecl_content_type
+         },
          appsignalKey: Application.get_env(:appsignal, :client_key)
        }}
     else
@@ -276,10 +279,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
            mode: mode,
            activity_map: activities,
            resource_summary_fn: &Resources.resource_summary(&1, project_slug, AuthoringResolver),
-           alternatives_groups_fn: &Resources.alternatives_groups(&1, AuthoringResolver),
+           alternatives_groups_fn: fn -> Resources.alternatives_groups(project_slug, AuthoringResolver) end,
            alternatives_selector_fn: &Resources.Alternatives.select/2,
            extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
            project_slug: project_slug,
+           section_slug: project_slug,
            bib_app_params: Keyword.get(options, :bib_app_params, []),
            learning_language: attributes.learning_language
          } do

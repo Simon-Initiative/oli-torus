@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
 import {
-  authoringObservedAttributes,
+  PartAuthoringMode,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
+  authoringObservedAttributes,
 } from '../partsApi';
 import McqAuthor from './McqAuthor';
 import {
@@ -12,9 +11,14 @@ import {
   createSchema,
   getCapabilities,
   schema,
+  simpleSchema,
+  simpleUiSchema,
   uiSchema,
   validateUserConfig,
 } from './schema';
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes, ...authoringObservedAttributes];
 const customEvents: any = {
@@ -33,8 +37,8 @@ register(McqAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => schema,
-    getUiSchema: () => uiSchema,
+    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUiSchema : uiSchema),
     createSchema,
     getCapabilities,
     getAdaptivitySchema: async () => adaptivitySchema,

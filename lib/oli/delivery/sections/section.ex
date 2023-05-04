@@ -30,6 +30,8 @@ defmodule Oli.Delivery.Sections.Section do
     field(:slug, :string)
     field(:open_and_free, :boolean, default: false)
     field(:requires_enrollment, :boolean, default: false)
+    field(:has_experiments, :boolean, default: false)
+
     field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
     field(:passcode, :string)
@@ -55,6 +57,9 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_gating_index, :map, default: %{}, null: false)
     field(:previous_next_index, :map, default: nil, null: true)
     field(:display_curriculum_item_numbering, :boolean, default: true)
+    field(:contains_explorations, :boolean, default: false)
+
+    belongs_to :required_survey, Oli.Resources.Resource, foreign_key: :required_survey_resource_id
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
 
@@ -116,6 +121,7 @@ defmodule Oli.Delivery.Sections.Section do
       :context_id,
       :slug,
       :open_and_free,
+      :has_experiments,
       :status,
       :invite_token,
       :passcode,
@@ -143,7 +149,9 @@ defmodule Oli.Delivery.Sections.Section do
       :requires_enrollment,
       :skip_email_verification,
       :publisher_id,
-      :display_curriculum_item_numbering
+      :display_curriculum_item_numbering,
+      :contains_explorations,
+      :required_survey_resource_id
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

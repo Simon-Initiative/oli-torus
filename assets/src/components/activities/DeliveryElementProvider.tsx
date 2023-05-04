@@ -1,6 +1,6 @@
-import { Maybe } from 'tsmonad';
 import React, { useContext } from 'react';
-import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
+import { Maybe } from 'tsmonad';
+import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
 import { DeliveryElementProps } from './DeliveryElement';
 import { ActivityModelSchema } from './types';
 
@@ -25,6 +25,7 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
     projectSlug: props.context.projectSlug,
     bibParams: props.context.bibParams,
     learningLanguage: props.context.learningLanguage,
+    resourceAttemptGuid: props.context.pageAttemptGuid,
   });
 
   return (

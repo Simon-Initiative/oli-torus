@@ -244,9 +244,6 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   }, [props.notify]);
 
   const {
-    x,
-    y,
-    z,
     width,
     height,
     src,
@@ -258,7 +255,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     subtitles,
   } = model;
 
-  const videoStyles: CSSProperties = {
+  const _videoStyles: CSSProperties = {
     /* position: 'absolute',
     top: y,
     left: x,

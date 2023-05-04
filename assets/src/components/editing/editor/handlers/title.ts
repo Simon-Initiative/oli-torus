@@ -1,5 +1,5 @@
 import React from 'react';
-import { Point, Range, Editor as SlateEditor, Transforms, Element } from 'slate';
+import { Element, Point, Range, Editor as SlateEditor, Transforms } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
 
 export const onKeyDown = (editor: SlateEditor, e: React.KeyboardEvent) => {

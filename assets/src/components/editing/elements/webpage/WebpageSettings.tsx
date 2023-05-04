@@ -1,12 +1,12 @@
 import React from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { WebpageModal } from 'components/editing/elements/webpage/WebpageModal';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
-import { WebpageModal } from 'components/editing/elements/webpage/WebpageModal';
 import { modalActions } from 'actions/modal';
+import * as ContentModel from 'data/content/model/elements/types';
 
 interface SettingsProps {
   commandContext: CommandContext;
@@ -19,15 +19,15 @@ export const WebpageSettings = (props: SettingsProps) => {
       <Toolbar.Group>
         <CommandButton
           description={createButtonCommandDesc({
-            icon: 'open_in_new',
-            description: 'Open Video',
+            icon: <i className="fa-solid fa-arrow-up-right-from-square"></i>,
+            description: 'Open Webpage',
             execute: () => window.open(props.model.src, '_blank'),
           })}
         />
         <CommandButton
           description={createButtonCommandDesc({
-            icon: 'content_copy',
-            description: 'Copy Video Link',
+            icon: <i className="fa-regular fa-copy"></i>,
+            description: 'Copy Webpage Link',
             execute: () => navigator.clipboard.writeText(props.model.src ?? ''),
           })}
         />
@@ -45,7 +45,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: '',
+      icon: <i className="fa-solid fa-globe"></i>,
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(

@@ -1,9 +1,9 @@
 import React from 'react';
+import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
+import { EditorProps } from 'components/editing/elements/interfaces';
 import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
-import { EditorProps } from 'components/editing/elements/interfaces';
 import { useElementSelected } from 'data/content/utils';
-import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 
 interface Props extends EditorProps<ContentModel.ImageInline> {}
 export const ImageInlineEditor = (props: Props) => {
@@ -30,6 +30,7 @@ export const ImageInlineEditor = (props: Props) => {
         </span>
         <img
           src={props.model.src}
+          className="img-fluid"
           style={{ maxWidth: props.model.width ?? '100%', ...elementBorderStyle(selected) }}
         />
       </span>

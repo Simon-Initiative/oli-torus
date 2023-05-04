@@ -33,7 +33,10 @@ const lessonSchema: JSONSchema7 = {
                 {
                   type: 'string',
                   title: 'Default Theme',
-                  enum: ['/css/delivery_adaptive_themes_default_light.css'],
+                  enum: [
+                    '/css/delivery_adaptive_themes_default_light.css',
+                    '/css/delivery_adaptive_themes_flowchart.css',
+                  ],
                   default: '/css/delivery_adaptive_themes_default_light.css',
                 },
                 { type: 'string', title: 'Custom Theme' },
@@ -110,6 +113,48 @@ const lessonSchema: JSONSchema7 = {
   },
 };
 
+export const simpleLessonSchema: JSONSchema7 = {
+  type: 'object',
+  properties: {
+    Properties: {
+      type: 'object',
+      title: ' Properties',
+      properties: {
+        title: {
+          type: 'string',
+          title: 'Title',
+          readOnly: true,
+        },
+
+        FinishPanel: {
+          type: 'object',
+          properties: {
+            logoutMessage: {
+              title: 'Message',
+              type: 'string',
+              format: 'textarea',
+            },
+          },
+        },
+        enableHistory: {
+          title: 'Enable History',
+          type: 'boolean',
+        },
+      },
+    },
+  },
+};
+
+export const simpleLessonUiSchema: UiSchema = {
+  Properties: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    FinishPanel: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Finish Panel',
+    },
+  },
+};
+
 export const lessonUiSchema: UiSchema = {
   Properties: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
@@ -117,10 +162,10 @@ export const lessonUiSchema: UiSchema = {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Screen Size',
       width: {
-        classNames: 'col-6',
+        classNames: 'col-span-6',
       },
       height: {
-        classNames: 'col-6',
+        classNames: 'col-span-6',
       },
     },
     Appearance: {

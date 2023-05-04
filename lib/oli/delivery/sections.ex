@@ -4,9 +4,11 @@ defmodule Oli.Delivery.Sections do
   """
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.ContainedPage
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
@@ -18,8 +20,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
-  alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Course.ProjectAttributes
+  alias Oli.Authoring.Course.{Project, ProjectAttributes}
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Delivery.Snapshots.Snapshot
@@ -36,6 +37,10 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Utils.Slug
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
+  alias Oli.Delivery
+  alias Ecto.Multi
+  alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
 
   require Logger
 
@@ -120,14 +125,46 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Determines if a user is an instructor in a given section.
+  Determines the user roles (student / instructor) in a given section
   """
-  def is_instructor?(nil, _) do
-    false
+  def get_user_roles(%User{id: user_id}, section_slug) do
+    from(
+      e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+      preload: :context_roles
+    )
+    |> Repo.one()
+    |> reduce_to_roles(%{is_instructor?: false, is_student?: false})
   end
 
+  defp reduce_to_roles(nil, roles), do: roles
+
+  defp reduce_to_roles(%Enrollment{} = enrollment, roles) do
+    Enum.reduce(enrollment.context_roles, roles, fn context_role, acum ->
+      case context_role do
+        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 3} ->
+          Map.put(acum, :is_instructor?, true)
+
+        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 4} ->
+          Map.put(acum, :is_student?, true)
+
+        _ ->
+          acum
+      end
+    end)
+  end
+
+  @doc """
+  Determines if a user is an instructor in a given section.
+  """
   def is_instructor?(%User{id: id} = user, section_slug) do
     is_enrolled?(id, section_slug) && has_instructor_role?(user, section_slug)
+  end
+
+  def is_instructor?(_, _) do
+    false
   end
 
   @doc """
@@ -161,13 +198,11 @@ defmodule Oli.Delivery.Sections do
     user.can_create_sections
   end
 
+  def is_independent_instructor?(_), do: false
+
   @doc """
   Determines if a user is an administrator in a given section.
   """
-  def is_admin?(nil, _) do
-    false
-  end
-
   def is_admin?(%User{} = user, section_slug) do
     PlatformRoles.has_roles?(
       user,
@@ -178,6 +213,10 @@ defmodule Oli.Delivery.Sections do
       :any
     ) ||
       ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator))
+  end
+
+  def is_admin?(_, _) do
+    false
   end
 
   @doc """
@@ -286,6 +325,28 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns the count of enrollments for a given section.
+  By default it returns the students count, but we can get more roles by providing
+  a list of lt1_1p3_context_roles ids as a second argument
+  """
+  def count_enrollments(section_slug, role_ids \\ [4]) do
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: e_cr in EnrollmentContextRole,
+        on: e.id == e_cr.enrollment_id,
+        join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
+        on: e_cr.context_role_id == cr.id,
+        where: s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids,
+        select: count(e)
+      )
+
+    Repo.one(query)
   end
 
   @doc """
@@ -561,6 +622,59 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  @doc """
+  Gets all sections that use a particular project when their 'end_date' attribute is not nil and is later than the current date.
+
+  ## Examples
+      iex> get_active_sections_by_project(project_id)
+      [%Section{}, ...]
+
+      iex> get_active_sections_by_project(invalid_project_id)
+      []
+  """
+  def get_active_sections_by_project(project_id) do
+    today = DateTime.utc_now()
+
+    Repo.all(
+      from(
+        section in Section,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == section.id,
+        where:
+          spp.project_id == ^project_id and
+            (not is_nil(section.end_date) and section.end_date >= ^today),
+        select: section,
+        preload: [section_project_publications: [:publication]]
+      )
+    )
+  end
+
+  @doc """
+  Gets all sections and products that will be affected by forcing the publication update.
+
+  ## Examples
+      iex> get_push_force_affected_sections(project_id, previous_publication_id)
+      %{product_count: 1, section_count: 1}
+  """
+  def get_push_force_affected_sections(project_id, previous_publication_id) do
+    today = DateTime.utc_now()
+
+    Repo.one(
+      from(
+        section in Section,
+        join: spp in SectionsProjectsPublications,
+        on: section.id == spp.section_id,
+        where:
+          spp.project_id == ^project_id and section.status == :active and
+            spp.publication_id == ^previous_publication_id and
+            (is_nil(section.end_date) or section.end_date >= ^today),
+        select: %{
+          product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
+          section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
+        }
+      )
+    )
+  end
 
   @doc """
   For a section resource record, map its children SR records to resource ids,
@@ -571,12 +685,12 @@ defmodule Oli.Delivery.Sections do
       [1, 2, 3, 4]
   """
   def map_section_resource_children_to_resource_ids(root_section_resource) do
-
-    srs = from(s in SectionResource,
-      where: s.id in ^root_section_resource.children
-    )
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
+    srs =
+      from(s in SectionResource,
+        where: s.id in ^root_section_resource.children
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn sr, map -> Map.put(map, sr.id, sr.resource_id) end)
 
     Enum.map(root_section_resource.children, fn sr_id -> Map.get(srs, sr_id) end)
   end
@@ -722,6 +836,125 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  # For a given section id and the list of resource ids that exist in its hiearchy,
+  # determine and return the list of page resource ids that are not reachable from that
+  # hierarchy and linked pages.
+  defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
+    # Start with all pages
+    unreachable =
+      Oli.Publishing.all_page_resource_ids(publication_ids)
+      |> MapSet.new()
+
+    # create a map of page resource ids to a list of target resource ids that they link to. We
+    # do this both for resource-to-page links and for page to activity links (aka activity-references).
+    # We do this because we want to treat these links the same way when we traverse the graph, and
+    # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
+    # links to a page outside the hierarchy.
+    all_links =
+      MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
+      |> MapSet.to_list()
+
+    link_map =
+      Enum.reduce(all_links, %{}, fn {source, target}, map ->
+        case Map.get(map, source) do
+          nil -> Map.put(map, source, [target])
+          targets -> Map.put(map, source, [target | targets])
+        end
+      end)
+
+    # Now traverse the pages in the hiearchy, and follow (recursively) the links that
+    # they have to other pages.
+    {unreachable, _} = traverse_links(link_map, hierarchy_ids, unreachable, MapSet.new())
+
+    MapSet.to_list(unreachable)
+  end
+
+  # Traverse the graph structure of the links to determine which pages are reachable
+  # from the pages in the hierarchy, removing them from the candidate set of unreachable pages.
+  # This also tracks seen pages to avoid infinite recursion, in cases where pages create a
+  # a circular link structure.
+  def traverse_links(link_map, hiearchy_ids, unreachable, seen) do
+    unreachable = MapSet.difference(unreachable, MapSet.new(hiearchy_ids))
+    seen = MapSet.union(seen, MapSet.new(hiearchy_ids))
+
+    Enum.reduce(hiearchy_ids, {unreachable, seen}, fn id, {unreachable, seen} ->
+      case Map.get(link_map, id) do
+        nil ->
+          {unreachable, seen}
+
+        targets ->
+          not_already_seen =
+            MapSet.new(targets)
+            |> MapSet.difference(seen)
+            |> MapSet.to_list()
+
+          traverse_links(link_map, not_already_seen, unreachable, seen)
+      end
+    end)
+  end
+
+  # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
+  # representing all of the links between pages in the section
+  defp get_all_page_links(publication_ids) do
+    joined_publication_ids = Enum.join(publication_ids, ",")
+
+    item_types =
+      ["page_link", "a"]
+      |> Enum.map(&~s|@.type == "#{&1}"|)
+      |> Enum.join(" || ")
+
+    sql = """
+    select
+      rev.resource_id,
+      jsonb_path_query(content, '$.** ? (#{item_types})')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id IN (#{joined_publication_ids})
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    slug_lookup =
+      Oli.Publishing.distinct_slugs(publication_ids)
+      |> Enum.reduce(%{}, fn {id, slug}, acc -> Map.put(acc, slug, id) end)
+
+    Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
+      case content["type"] do
+        "a" ->
+          case content["href"] do
+            "/course/link/" <> slug -> MapSet.put(links, {source_id, Map.get(slug_lookup, slug)})
+            _ -> links
+          end
+
+        "page_link" ->
+          MapSet.put(links, {source_id, content["idref"]})
+      end
+    end)
+  end
+
+  # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
+  # representing the links of pages to activities
+  defp get_activity_references(publication_ids) do
+    joined_publication_ids = Enum.join(publication_ids, ",")
+
+    sql = """
+    select
+      rev.resource_id,
+      jsonb_path_query(content, '$.** ? (@.type == "activity-reference")')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id IN (#{joined_publication_ids})
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
+      MapSet.put(links, {source_id, content["activity_id"]})
+    end)
+  end
+
   @doc """
   Create all section resources from the given section and publication and optional hierarchy definition.
   The hierarchy definition is a map of resource ids to the list of directly contained children (referenced
@@ -795,9 +1028,16 @@ defmodule Oli.Delivery.Sections do
 
       processed_ids = [root_resource_id | processed_ids]
 
+      survey_id =
+        Project
+        |> where([p], p.id == ^section.base_project_id)
+        |> select([p], p.required_survey_resource_id)
+        |> Repo.one()
+
       # create any remaining section resources which are not in the hierarchy
       create_nonstructural_section_resources(section.id, [publication_id],
-        skip_resource_ids: processed_ids
+        skip_resource_ids: processed_ids,
+        required_survey_resource_id: survey_id
       )
 
       update_section(section, %{root_section_resource_id: root_section_resource_id})
@@ -877,19 +1117,21 @@ defmodule Oli.Delivery.Sections do
 
   def get_project_by_section_resource(section_id, resource_id) do
     Repo.one(
-      from s in SectionResource,
+      from(s in SectionResource,
         join: p in Project,
         on: s.project_id == p.id,
         where: s.section_id == ^section_id and s.resource_id == ^resource_id,
         select: p
+      )
     )
   end
 
   def get_section_resource(section_id, resource_id) do
     Repo.one(
-      from s in SectionResource,
+      from(s in SectionResource,
         where: s.section_id == ^section_id and s.resource_id == ^resource_id,
         select: s
+      )
     )
   end
 
@@ -922,7 +1164,7 @@ defmodule Oli.Delivery.Sections do
         on: pub.id == spp.publication_id,
         where:
           spp.section_id == ^section_id and
-          spp.project_id != ^current_project_id,
+            spp.project_id != ^current_project_id,
         select: %{
           id: project.id,
           title: project.title,
@@ -1066,7 +1308,8 @@ defmodule Oli.Delivery.Sections do
         project_publications
       ) do
     if Hierarchy.finalized?(hierarchy) do
-      Repo.transaction(fn ->
+      Multi.new()
+      |> Multi.run(:rebuild_section_resources, fn _repo, _ ->
         # ensure there are no duplicate resources so as to not violate the
         # section_resource [section_id, resource_id] database constraint
         hierarchy =
@@ -1078,6 +1321,14 @@ defmodule Oli.Delivery.Sections do
 
         rebuild_section_resources(section, section_resources, project_publications)
       end)
+      |> Multi.run(
+        :maybe_update_exploration_pages,
+        fn _repo, _ ->
+          # updates contains_explorations field in sections
+          Delivery.maybe_update_section_contains_explorations(section)
+        end
+      )
+      |> Repo.transaction()
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
@@ -1175,15 +1426,134 @@ defmodule Oli.Delivery.Sections do
         processed_section_resources_by_id
         |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
 
+      survey_id =
+        Project
+        |> where([p], p.id == ^section.base_project_id)
+        |> select([p], p.required_survey_resource_id)
+        |> Repo.one()
+
       create_nonstructural_section_resources(section_id, publication_ids,
-        skip_resource_ids: processed_resource_ids
+        skip_resource_ids: processed_resource_ids,
+        required_survey_resource_id: survey_id
       )
 
       # Rebuild section previous next index
       PreviousNextIndex.rebuild(section)
 
+      {:ok, _} = rebuild_contained_pages(section, section_resources)
+
       section_resources
     end)
+  end
+
+  @doc """
+  Rebuilds the "contained pages" relations for a course section.  A "contained page" for a
+  container is the full set of pages found immeidately within that container or in any of
+  its sub-containers.  For every container in a course section, one row will exist in this
+  "contained pages" table for each contained page.  This allows a straightforward join through
+  this relation from a container to then all of its contained pages - to power calculations like
+  aggregating progress complete across all pages within a container.
+  """
+  def rebuild_contained_pages(%Section{id: section_id} = section) do
+    section_resources =
+      from(sr in SectionResource, where: sr.section_id == ^section_id)
+      |> Repo.all()
+
+    rebuild_contained_pages(section, section_resources)
+  end
+
+  def rebuild_contained_pages(%Section{slug: slug, id: section_id} = section, section_resources) do
+    # First start be deleting all existing contained pages for this section.
+    from(cp in ContainedPage, where: cp.section_id == ^section_id)
+    |> Repo.delete_all()
+
+    # We will need the set of resource ids for all containers in the hierarchy.
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    container_ids =
+      DeliveryResolver.revisions_of_type(slug, container_type_id)
+      |> Enum.map(fn rev -> rev.resource_id end)
+      |> MapSet.new()
+
+    # From the section resources, locate the root section resource, and also create a lookup map
+    # from section_resource id to each section resource.
+    root = Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
+    map = Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
+
+    # Now recursively traverse the containers within the course section hierarchy, starting with the root
+    # to build a map of page resource_ids to lists of the ancestor container resource_ids.  The resultant
+    # map will look like:
+    #
+    # %{
+    #   234 => [32, 25, nil],
+    #   135 => [33, 25, nil],
+    #   299 => [25, nil],
+    #   408 => [nil]
+    # }
+    #
+    # The `nil` entries above represent their presence in the root container, and each preceding resource id
+    # references a parent container (like Unit, module, etc).  All container references besides the root are
+    # true resource_id references, and not ids of the section resoource.
+    #
+    page_map = rebuild_contained_pages_helper(root, {[nil], %{}, map, container_ids})
+
+    # Now convert the page_map to a list of maps for bulk insert
+    insertions =
+      Enum.reduce(page_map, [], fn {page_id, ancestors}, all ->
+        Enum.map(ancestors, fn id ->
+          %{section_id: section_id, container_id: id, page_id: page_id}
+        end) ++ all
+      end)
+
+    insertion_count = Repo.insert_all(ContainedPage, insertions)
+
+    # Finally, update the contained_page_count of the container section resource
+    # records.  We calculate this and cache it on the section resource to simplify
+    # the queries that calculate progress
+    {:ok, _} = set_contained_page_counts(section_id)
+
+    {:ok, insertion_count}
+  end
+
+  # Recursive helper to traverse the hierarchy of the section resources and create the page to ancestor
+  # container map.
+  defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
+    case Enum.map(sr.children, fn sr_id ->
+           sr = Map.get(all, sr_id)
+
+           case MapSet.member?(container_ids, sr.resource_id) do
+             true ->
+               rebuild_contained_pages_helper(
+                 sr,
+                 {[sr.resource_id | ancestors], page_map, all, container_ids}
+               )
+               |> Map.merge(page_map)
+
+             false ->
+               Map.put(page_map, sr.resource_id, ancestors)
+           end
+         end) do
+      [] -> %{}
+      other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
+    end
+  end
+
+  defp set_contained_page_counts(section_id) do
+    sql = """
+    UPDATE section_resources
+    SET
+      contained_page_count = subquery.count,
+      updated_at = NOW()
+    FROM (
+        SELECT COUNT(*) as count, container_id
+        FROM contained_pages
+        WHERE section_id = $1
+        GROUP BY container_id
+    ) AS subquery
+    WHERE section_resources.resource_id = subquery.container_id and section_resources.section_id = $2
+    """
+
+    Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id])
   end
 
   @doc """
@@ -1205,6 +1575,7 @@ defmodule Oli.Delivery.Sections do
 
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
+    project = Oli.Repo.get(Oli.Authoring.Course.Project, project_id)
     current_publication = get_current_publication(section_id, project_id)
     current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
@@ -1242,6 +1613,13 @@ defmodule Oli.Delivery.Sections do
               perform_update(:minor, section, project_id, new_publication, current_hierarchy)
           end
       end
+
+    # For a section based on this project, update the has_experiments in the section to match that
+    # setting in the project.
+    if section.base_project_id == project_id and
+         project.has_experiments != section.has_experiments do
+      Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
+    end
 
     Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
 
@@ -1413,6 +1791,7 @@ defmodule Oli.Delivery.Sections do
       # resources and cleaning up any deleted ones
       pinned_project_publications = get_pinned_project_publications(section.id)
       rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
+      Delivery.maybe_update_section_contains_explorations(section)
 
       {:ok}
     end)
@@ -1528,14 +1907,23 @@ defmodule Oli.Delivery.Sections do
   # creates all non-structural section resources for the given publication ids skipping
   # any that belong to the resource ids in skip_resource_ids
   defp create_nonstructural_section_resources(section_id, publication_ids,
-         skip_resource_ids: skip_resource_ids
+         skip_resource_ids: skip_resource_ids,
+         required_survey_resource_id: required_survey_resource_id
        ) do
     published_resources_by_resource_id =
       published_resources_map(publication_ids, preload: [:revision, :publication])
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    skip_set = MapSet.new(skip_resource_ids)
+    # determine which pages are unreachable from the hierarchy, taking into account
+    # the optional survey resource
+    unreachable_page_resource_ids =
+      case required_survey_resource_id do
+        nil -> determine_unreachable_pages(publication_ids, skip_resource_ids)
+        id -> determine_unreachable_pages(publication_ids, [id | skip_resource_ids])
+      end
+
+    skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
 
     published_resources_by_resource_id
     |> Enum.filter(fn {resource_id, %{revision: rev}} ->
@@ -1688,6 +2076,538 @@ defmodule Oli.Delivery.Sections do
 
       true ->
         {:available, section}
+    end
+  end
+
+  defp build_helper(id, previous_next_index) do
+    node = Map.get(previous_next_index, id)
+
+    Map.put(
+      node,
+      "children",
+      Enum.map(node["children"], fn id ->
+        build_helper(id, previous_next_index)
+      end)
+    )
+  end
+
+  def build_hierarchy_from_top_level(resource_ids, previous_next_index) do
+    Enum.map(resource_ids, fn resource_id -> build_helper(resource_id, previous_next_index) end)
+  end
+
+  def build_hierarchy(section) do
+    {:ok, _, previous_next_index} =
+      PreviousNextIndex.retrieve(section, section.root_section_resource.resource_id)
+
+    # Retrieve the top level resource ids, and convert them to strings
+    resource_ids =
+      Oli.Delivery.Sections.map_section_resource_children_to_resource_ids(
+        section.root_section_resource
+      )
+      |> Enum.map(fn integer_id -> Integer.to_string(integer_id) end)
+
+    %{
+      id: "hierarchy_built_with_previous_next_index",
+      # Recursively build the map based hierarchy from the structure defined by previous_next_index
+      children: build_hierarchy_from_top_level(resource_ids, previous_next_index)
+    }
+  end
+
+  defp get_related_resources([], _, _), do: []
+
+  defp get_related_resources(resource_ids, section_id, user_id) do
+    SectionResource
+    |> join(:inner, [sr], spp in SectionsProjectsPublications,
+      on: spp.section_id == sr.section_id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> join(:left, [sr, _, _, rev], ra in ResourceAccess,
+      on:
+        ra.section_id == ^section_id and ra.resource_id == sr.resource_id and
+          ra.user_id == ^user_id
+    )
+    |> join(:left, [sr, _, _, rev, ra], ra2 in ResourceAccess,
+      on:
+        ra2.section_id == ra.section_id and ra2.resource_id == ra.resource_id and
+          ra2.user_id == ra.user_id and ra2.id > ra.id
+    )
+    |> where(
+      [sr, _, _, rev, _ra, ra2],
+      sr.section_id == ^section_id and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page") and
+        sr.resource_id in ^resource_ids
+    )
+    |> select([sr, _, _, rev, ra], %{
+      id: sr.resource_id,
+      title: rev.title,
+      progress: ra.progress,
+      slug: rev.slug,
+      graded: rev.graded,
+      purpose: rev.purpose
+    })
+    |> Repo.all()
+  end
+
+  defp append_related_resources(graded_pages, user_id) do
+    case graded_pages do
+      [] ->
+        []
+
+      _ ->
+        section_id = graded_pages |> List.first() |> Map.get(:section_id)
+
+        related_resources =
+          graded_pages
+          |> Enum.reduce([], fn page, related_pages -> page.relates_to ++ related_pages end)
+          |> get_related_resources(section_id, user_id)
+
+        Enum.map(graded_pages, fn page ->
+          Map.get_and_update(page, :relates_to, fn relates_to ->
+            {relates_to,
+             Enum.map(relates_to, fn resource_id ->
+               Enum.find(related_resources, &(&1.id == resource_id))
+             end)
+             |> Enum.filter(&(&1 != nil))}
+          end)
+          |> elem(1)
+          |> Map.delete(:children)
+        end)
+    end
+  end
+
+  @doc """
+  Returns a tuple with the units and modules from a section.
+  In case there are no units or modules, it returns a zero count and the pages
+  of the curriculum.
+  {container_count, containers} or {0, pages}
+  """
+  def get_units_and_modules_containers(section_slug) do
+    query =
+      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where:
+          s.slug == ^section_slug and sr.numbering_level in [1, 2] and rev.resource_type_id == 2,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index
+        }
+      )
+
+    case Repo.all(query) do
+      [] -> {0, get_pages(section_slug)}
+      containers -> {length(containers), containers}
+    end
+  end
+
+  @doc """
+  Returns the resources scheduled dates for a given student.
+  Hard sceduled dates for a specific student take precedence over "global" hard scheduled dates.
+  Global hard scheduled dates take precedence over soft scheduled dates.
+  """
+  def get_resources_scheduled_dates_for_student(section_slug, student_id) do
+    get_soft_scheduled_dates(section_slug)
+    |> Map.merge(get_hard_scheduled_dates(section_slug))
+    |> Map.merge(get_hard_scheduled_dates_for_student(section_slug, student_id))
+  end
+
+  def get_soft_scheduled_dates(section_slug) do
+    query =
+      from([sr, _s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        select: {
+          sr.resource_id,
+          %{end_date: sr.end_date, scheduled_type: sr.scheduling_type}
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  def get_hard_scheduled_dates(section_slug) do
+    query =
+      from([_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: gc in GatingCondition,
+        on: gc.section_id == s.id,
+        where: gc.type == :schedule and is_nil(gc.user_id),
+        select: {
+          gc.resource_id,
+          %{
+            end_date: fragment("cast(cast(? as text) as date)", gc.data["end_datetime"]),
+            scheduled_type: gc.type
+          }
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  def get_hard_scheduled_dates_for_student(section_slug, student_id) do
+    query =
+      from([_sr, s, _spp, _pr, _rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: gc in GatingCondition,
+        on: gc.section_id == s.id,
+        where: gc.type == :schedule and gc.user_id == ^student_id,
+        select: {
+          gc.resource_id,
+          %{
+            end_date: fragment("cast(cast(? as text) as date)", gc.data["end_datetime"]),
+            scheduled_type: gc.type
+          }
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  defp get_pages(section_slug) do
+    query =
+      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_index: sr.numbering_index
+        }
+      )
+
+    Repo.all(query)
+  end
+
+  defp get_student_pages(section_slug, user_id, opts \\ [graded: false]) do
+    graded_filter =
+      case opts[:graded] do
+        true -> dynamic([_, _, _, _, rev], rev.graded == true)
+        _ -> []
+      end
+
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> join(:left, [sr], gc in GatingCondition,
+      on:
+        gc.section_id == sr.section_id and gc.resource_id == sr.resource_id and
+          is_nil(gc.user_id)
+    )
+    |> join(:left, [sr], gc2 in GatingCondition,
+      on:
+        gc2.section_id == sr.section_id and gc2.resource_id == sr.resource_id and
+          gc2.user_id == ^user_id
+    )
+    |> where(
+      [sr, s, _, _, _, gc, gc2],
+      s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and
+        (is_nil(gc2) or gc2.type == :schedule)
+    )
+    |> where(^graded_filter)
+    |> select([sr, s, _, _, rev, gc, gc2], %{
+      id: sr.id,
+      title: rev.title,
+      slug: rev.slug,
+      end_date:
+        fragment(
+          "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date)",
+          gc2.data["end_datetime"],
+          gc.data["end_datetime"],
+          sr.end_date
+        ),
+      scheduled_type: sr.scheduling_type,
+      gate_type:
+        fragment(
+          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL)",
+          gc2.type,
+          gc.type
+        ),
+      graded: rev.graded,
+      resource_type_id: rev.resource_type_id,
+      resource_id: rev.resource_id,
+      numbering_level: sr.numbering_level,
+      children: sr.children,
+      section_id: s.id,
+      relates_to: rev.relates_to
+    })
+    |> order_by([{:asc_nulls_last, fragment("end_date")}])
+  end
+
+  @doc """
+    Returns the activities that a student need to complete next.
+  """
+  def get_next_activities_for_student(section_slug, user_id) do
+    student_pages_query = get_student_pages(section_slug, user_id)
+
+    query =
+      from sp in subquery(student_pages_query),
+        where:
+          not is_nil(sp.end_date) and
+            sp.end_date >= ^Date.utc_today() and
+            sp.resource_type_id in [
+              ^ResourceType.get_id_by_type("page"),
+              ^ResourceType.get_id_by_type("container")
+            ],
+        limit: 2
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn activity ->
+      case ResourceType.get_type_by_id(activity.resource_type_id) do
+        "page" ->
+          Map.put(
+            activity,
+            :progress,
+            Oli.Delivery.Metrics.progress_for_page(
+              activity.section_id,
+              user_id,
+              activity.resource_id
+            ) * 100
+          )
+
+        "container" ->
+          Map.put(
+            activity,
+            :progress,
+            Oli.Delivery.Metrics.progress_for(activity.section_id, user_id, activity.resource_id)
+          ) * 100
+      end
+      |> Map.put(
+        :completion_percentage,
+        Oli.Delivery.Metrics.completion_for(
+          activity.section_id,
+          activity.resource_id
+        )
+      )
+    end)
+  end
+
+  @doc """
+    Returns the graded pages and their due dates for a given student.
+  """
+  def get_graded_pages(section_slug, user_id) do
+    student_pages_query = get_student_pages(section_slug, user_id, graded: true)
+
+    {graded_pages_with_date, other_resources} =
+      Repo.all(from(sp in subquery(student_pages_query)))
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.split_with(fn page ->
+        page.end_date != nil and page.graded == true and
+          page.resource_type_id == ResourceType.get_id_by_type("page")
+      end)
+
+    (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
+    |> append_related_resources(user_id)
+  end
+
+  defp get_graded_pages_without_date([]), do: []
+
+  defp get_graded_pages_without_date(resources) do
+    {root_container, graded_pages} = get_root_container_and_graded_pages(resources)
+
+    graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+    {pages, remaining} =
+      get_flatten_hierarchy((root_container || %{})[:children], resources)
+      |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
+        case Map.get(remaining, id) do
+          nil -> {acc, remaining}
+          page -> {[page | acc], Map.delete(remaining, id)}
+        end
+      end)
+
+    Enum.reverse(pages) ++ Map.values(remaining)
+  end
+
+  defp get_root_container_and_graded_pages(resources) do
+    Enum.reduce(resources, {nil, []}, fn resource, {root_container, graded_pages} = acc ->
+      cond do
+        resource.numbering_level == 0 ->
+          {resource, graded_pages}
+
+        resource.resource_type_id == ResourceType.get_id_by_type("page") and
+            resource.graded == true ->
+          {root_container, [resource | graded_pages]}
+
+        true ->
+          acc
+      end
+    end)
+  end
+
+  defp get_flatten_hierarchy(nil, _), do: []
+  defp get_flatten_hierarchy([], _), do: []
+
+  defp get_flatten_hierarchy([head_id | rest], resources) do
+    [
+      head_id
+      | get_flatten_hierarchy(
+          Enum.find(resources, %{}, &(&1.id == head_id))[:children],
+          resources
+        )
+    ] ++
+      get_flatten_hierarchy(rest, resources)
+  end
+
+  def get_objectives_and_subobjectives(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
+
+    objectives_id_list =
+      pages_with_objectives
+      |> Enum.into([], fn elem -> elem.objectives["attached"] end)
+      |> List.flatten()
+
+    # TODO we should be able to calculate the metrics (student_mastery_obj, student_mastery_subobj and student_engagement)
+    # for all students or for a specific student depending on where we are rendering the learning objectives table
+    # (from instructor dashboard or student dashboard perspective)
+    objectives =
+      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        left_join: rev2 in Revision,
+        on: rev2.resource_id in rev.children,
+        where: rev.deleted == false and rev.resource_type_id == ^page_id,
+        where: rev.resource_id in ^objectives_id_list,
+        group_by: [rev2.title, rev.resource_id, rev.title],
+        select: %{
+          resource_id: rev.resource_id,
+          objective: rev.title,
+          subobjective: rev2.title,
+          student_mastery_obj: "Medium",
+          student_mastery_subobj: "High",
+          student_engagement:
+            fragment("('{High,Medium,Low,Not enough data}'::text[])[ceil(random()*4)]")
+        }
+      )
+      |> Repo.all()
+
+    objectives_pages_map =
+      pages_with_objectives
+      |> Enum.reduce(%{}, fn page, acc ->
+        Enum.map(page.objectives["attached"] || [], fn obj_id ->
+          {obj_id, [page.resource_id]}
+        end)
+        |> Enum.into(%{})
+        |> Map.merge(acc, fn _, x1, x2 ->
+          x1 ++ x2
+        end)
+      end)
+
+    Enum.map(objectives, fn obj ->
+      Map.put(obj, :pages_id, Map.get(objectives_pages_map, obj.resource_id))
+    end)
+  end
+
+  def get_units_and_modules_from_a_section(section_slug) do
+    all =
+      Repo.all(
+        from(
+          [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
+          join: cp in ContainedPage,
+          on: cp.container_id == rev.resource_id,
+          where: rev.deleted == false and s.slug == ^section_slug and rev.resource_type_id == 2,
+          group_by: [cp.container_id, rev.title, sr.numbering_level, rev.children],
+          order_by: [asc: rev.title],
+          select: %{
+            container_id: cp.container_id,
+            title: rev.title,
+            level: sr.numbering_level,
+            children: rev.children
+          }
+        )
+      )
+
+    Enum.map(all, fn %{children: children} = elem ->
+      children_from_children =
+        all
+        |> Enum.filter(fn %{container_id: container_id} -> container_id in children end)
+        |> Enum.flat_map(fn child_map ->
+          child_map[:children]
+        end)
+
+      elem = %{elem | children: children ++ children_from_children}
+
+      if elem.level == 2 do
+        Map.put(
+          elem,
+          :title,
+          "#{Map.get(Enum.find(all, fn %{children: children} -> Enum.member?(children, elem.container_id) end), :title)} / #{elem.title}"
+        )
+      else
+        elem
+      end
+    end)
+    |> Enum.sort_by(& &1.title)
+  end
+
+  defp do_get_survey(section_slug) do
+    Section
+    |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
+    |> join(:inner, [_, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:inner, [_, _, pr], rev in Revision, on: pr.revision_id == rev.id)
+    |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
+    |> where(
+      [s, spp, _, pr, proj],
+      (s.slug == ^section_slug and
+         spp.project_id == s.base_project_id and
+         spp.section_id == s.id and
+         (pr.resource_id == s.required_survey_resource_id or
+        pr.resource_id == proj.required_survey_resource_id))
+    )
+    |> select([_, _, _, rev], rev)
+  end
+
+  def get_base_project_survey(section_slug) do
+    do_get_survey(section_slug)
+    |> where([s, spp, _, pr, proj], pr.resource_id == proj.required_survey_resource_id)
+    |> Repo.one()
+  end
+
+  def get_survey(section_slug) do
+    do_get_survey(section_slug)
+    |> where([s, spp, _, pr, proj], pr.resource_id == s.required_survey_resource_id)
+    |> Repo.one()
+  end
+
+  defp update_project_required_survey_resource_id(section_id, resource_id) do
+    Section
+    |> where([s], s.id == ^section_id)
+    |> Repo.one()
+    |> Section.changeset(%{required_survey_resource_id: resource_id})
+    |> Repo.update()
+  end
+
+  def create_required_survey(section) do
+    case section.required_survey_resource_id do
+      nil -> do_create_required_survey(section)
+      _ -> {:error, "The section already has a survey"}
+    end
+  end
+
+  defp do_create_required_survey(section) do
+    case get_base_project_survey(section.slug) do
+      nil ->
+        {:error, "The parent project doesn't have a survey"}
+
+      survey ->
+        update_project_required_survey_resource_id(section.id, survey.resource_id)
+    end
+  end
+
+  def delete_required_survey(section) do
+    case section.required_survey_resource_id do
+      nil ->
+        {:error, "The section doesn't have a survey"}
+
+      _ ->
+        update_project_required_survey_resource_id(section.id, nil)
     end
   end
 end

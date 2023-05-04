@@ -1,0 +1,139 @@
+html:not(html .headerContainer) {
+  font-size: 18px;
+  font-family: OpenSans;
+  color: var(--grayDark100);
+}
+
+janus-text-flow div * {
+  /*may not use this if a text-flow can hold more than one text type (p, h1, h2, h3...)
+  margin: 0 !important;*/
+}
+
+/*-----------------------------------------
+    Headings
+-----------------------------------------*/
+
+janus-text-flow h1 {
+  font-size: 2rem;
+  font-family: MontserratBold;
+  color: $headerColor;
+  margin: 0 0 1.66rem 0;
+}
+janus-text-flow h2,
+janus-text-flow h3,
+janus-text-flow p {
+  margin-bottom: 1rem;
+  margin-top: 0;
+}
+janus-text-flow h2 {
+  font-size: 1.5rem;
+  font-family: MontserratBold;
+}
+janus-text-flow h3 {
+  font-size: 1.22rem;
+  font-family: OpenSansBold;
+  color: var(--grayDark40);
+}
+
+/*-----------------------------------------
+    Body
+-----------------------------------------*/
+janus-text-flow p {
+  margin: 0 0 1rem 0;
+}
+janus-text-flow p:last-of-type {
+  margin-bottom: 0;
+}
+janus-text-flow p b,
+janus-text-flow p strong,
+janus-text-flow p span[style*='bold'] {
+  font-family: 'OpenSansBold';
+  font-weight: bold;
+}
+janus-text-flow p i,
+janus-text-flow p em,
+janus-text-flow p span[style*='italic'] {
+  font-family: 'OpenSansItalic';
+  font-style: italic;
+}
+/*--not needed??-*/
+janus-text-flow p strong em,
+janus-text-flow p em strong {
+  font-family: 'OpenSansBoldItalic';
+  font-weight: bold;
+  font-style: italic;
+}
+
+/*-----------------------------------------
+    Link
+-----------------------------------------*/
+janus-text-flow p a {
+  color: var(--blue90);
+  text-decoration: none;
+  border-bottom: solid 1.5px;
+}
+
+/*-----------------------------------------
+    List Item
+-----------------------------------------*/
+li {
+  margin-left: 0;
+}
+
+/*-----------------------------------------
+   Block Quote
+-----------------------------------------*/
+janus-text-flow blockquote {
+  border-left: solid 4px var(--blue60);
+  padding-left: 20px;
+  box-sizing: border-box;
+}
+
+/*-----------------------------------------
+   Prompt and Answer Recall
+-----------------------------------------*/
+.prompt div,
+.recall div {
+  box-sizing: border-box;
+}
+.prompt p,
+.recall p {
+  width: 100% !important;
+}
+.prompt div {
+  padding: 10px;
+  background-color: var(--blue20) !important;
+  color: var(--blue100);
+}
+
+.recall div {
+  padding: 10px;
+  background-color: var(--grayLight20) !important;
+}
+
+/*-----------------------------------------
+   Caption
+-----------------------------------------*/
+.caption span {
+  font-size: 0.89rem !important;
+  color: var(--grayDark60);
+}
+
+/*-----------------------------------------
+   Highlight
+-----------------------------------------*/
+/*--needed??--*/
+janus-text-flow p span[style*='background-color:rgb(255, 255, 0)'] {
+  background-color: var(--yellow60) !important;
+  padding: 2px 4px;
+  box-shadow: 0 0 1px var(--grayDark100);
+}
+
+/*-----------------------------------------
+   Vocabulary term
+-----------------------------------------*/
+/*--needed??--*/
+janus-text-flow p span[style*='color:rgb(255, 153, 0)'] {
+  color: var(--orange100) !important;
+  font-family: 'OpenSansBold';
+}

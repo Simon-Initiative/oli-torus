@@ -1,5 +1,5 @@
 import React from 'react';
-import { classNames, WithClassName } from 'utils/classNames';
+import { WithClassName, classNames } from 'utils/classNames';
 import styles from './DeleteButton.modules.scss';
 
 export type DeleteButtonProps = {
@@ -21,13 +21,11 @@ export const DeleteButton = ({
     className={classNames(
       className,
       styles.deleteButton,
-      'p-0 d-flex align-items-center justify-content-center btn btn-sm btn-delete',
+      'p-0 d-flex self-center align-items-center justify-content-center btn btn-sm btn-delete',
     )}
     aria-label="delete"
     onClick={onClick}
   >
-    <span className="material-icons" aria-hidden="true">
-      delete
-    </span>
+    <i className="fa-solid fa-trash fa-lg"></i>
   </button>
 );

@@ -1,11 +1,11 @@
 import React from 'react';
-import { ActivityReference, ResourceContent } from 'data/content/resource';
-import { ActivityBlock } from './ActivityBlock';
-import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Undoable } from 'components/activities/types';
-import { EditorProps, EditorError } from './createEditor';
+import { EditorUpdate, InlineActivityEditor } from 'components/activity/InlineActivityEditor';
 import { ActivityEditContext } from 'data/content/activity';
+import { ActivityReference } from 'data/content/resource';
+import { ActivityBlock } from './ActivityBlock';
 import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
+import { EditorError, EditorProps } from './createEditor';
 
 interface ActivityEditorProps extends EditorProps {
   contentItem: ActivityReference;
@@ -75,7 +75,7 @@ export const ActivityEditorContentOutlineItem = (props: ActivityEditorContentOut
   const { activity } = props;
   return (
     <OutlineItem {...props}>
-      <Icon iconName="las la-shapes" />
+      <Icon iconName="fas fa-shapes" />
       <Description title={activity?.title}>{getActivityDescription(activity)}</Description>
     </OutlineItem>
   );

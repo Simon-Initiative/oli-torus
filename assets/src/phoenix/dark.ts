@@ -1,4 +1,4 @@
-import { isDarkMode, addDarkModeListener } from 'utils/browser';
+import { addDarkModeListener, isDarkMode } from 'utils/browser';
 
 if ((!('theme' in localStorage) && isDarkMode()) || localStorage.theme === 'dark') {
   document.documentElement.classList.add('dark');
@@ -13,5 +13,13 @@ addDarkModeListener((mode) => {
     } else {
       document.documentElement.classList.remove('dark');
     }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (isDarkMode()) {
+    [].slice
+      .call(document.querySelectorAll('.g-recaptcha'))
+      .map((recaptcha: HTMLElement) => recaptcha.setAttribute('data-theme', 'dark'));
   }
 });

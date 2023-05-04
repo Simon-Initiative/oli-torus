@@ -65,6 +65,9 @@ defmodule Oli.Resources.Revision do
     field(:page_type, :string, virtual: true)
     field(:parent_slug, :string, virtual: true)
 
+    field :purpose, Ecto.Enum, values: [:foundation, :application], default: :foundation
+    field :relates_to, {:array, :id}, default: []
+
     timestamps(type: :utc_datetime)
   end
 
@@ -92,7 +95,9 @@ defmodule Oli.Resources.Revision do
       :retake_mode,
       :parameters,
       :scoring_strategy_id,
-      :activity_type_id
+      :activity_type_id,
+      :purpose,
+      :relates_to
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)

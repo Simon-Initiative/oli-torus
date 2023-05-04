@@ -1,10 +1,10 @@
+import React from 'react';
 import { ActivityModelSchema, invokeCreationFunc } from 'components/activities';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityReference, ResourceContext } from 'data/content/resource';
-import React from 'react';
-import guid from 'utils/guid';
 import * as Persistence from 'data/persistence/activity';
+import guid from 'utils/guid';
 import { ResourceChoice } from './ResourceChoice';
 
 interface Props {

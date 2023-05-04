@@ -1,13 +1,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { isEqual } from 'lodash';
 import { bulkSaveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import { selectProjectSlug, selectReadOnly } from 'apps/authoring/store/app/slice';
 import { selectResourceId } from 'apps/authoring/store/page/slice';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
-import { isEqual } from 'lodash';
 import { selectActivityById } from '../../../../../../delivery/store/features/activities/slice';
 import { getSequenceLineage } from '../../../../../../delivery/store/features/groups/actions/sequence';
-import { DeckLayoutGroup } from '../../../../../../delivery/store/features/groups/slice';
 import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
+import { DeckLayoutGroup } from '../../../../../../delivery/store/features/groups/slice';
 
 export const updateActivityPartInheritance = createAsyncThunk(
   `${GroupsSlice}/updateActivityPartInheritance`,
@@ -32,7 +32,8 @@ export const updateActivityPartInheritance = createAsyncThunk(
           /* console.log('ACTIVITY" TO MAP: ', { activity }); */
           const activityParts = activity?.content?.partsLayout.map((part: any) => {
             const authorPartDef =
-              activity.authoring.parts.find((partDef: any) => partDef.id === part.id) || {};
+              (activity.authoring?.parts || []).find((partDef: any) => partDef.id === part.id) ||
+              {};
 
             const partDefinition = {
               ...authorPartDef,
@@ -76,7 +77,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
         return;
       }
 
-      if (!isEqual(childActivity.authoring.parts, combinedParts)) {
+      if (!isEqual(childActivity.authoring?.parts, combinedParts)) {
         const clone = JSON.parse(JSON.stringify(childActivity));
         clone.authoring.parts = combinedParts;
         activitiesToUpdate.push(clone);

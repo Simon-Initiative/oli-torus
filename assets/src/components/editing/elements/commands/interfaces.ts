@@ -1,12 +1,12 @@
+import { Editor } from 'slate';
 import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
 import { InputRef } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
-import { Editor } from 'slate';
 
 // For toolbar buttons
 export type CommandDescription = {
   type: 'CommandDesc';
-  icon: (editor: Editor) => string;
+  icon: (editor: Editor) => JSX.Element | undefined;
   command: Command;
   description: (editor: Editor) => string;
   // active: is the item in the cursor's selection

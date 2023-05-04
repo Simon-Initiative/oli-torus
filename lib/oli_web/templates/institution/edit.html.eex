@@ -1,7 +1,7 @@
 <div class="container">
   <span>
     <%= link to: Routes.institution_path(@conn, :show, @institution) do %>
-      <i class="las la-arrow-left"></i> Back
+      <i class="fas fa-arrow-left"></i> Back
     <% end %>
   </span>
 

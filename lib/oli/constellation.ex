@@ -154,6 +154,7 @@ defmodule ECL.Constellation do
     # search for available manifold kernels
     responseObject = search(auth_token, "Object.Software.ManifoldKernel", "Available = true AND ManifoldJob->Computations->Status=\"Running\"")
     results = List.first(Map.get(responseObject, "Results"))
+
     references = Map.get(results, "References")
     if length(references) < 1 do
       raise "Mathematica kernel not found! Please contact ECL for support."

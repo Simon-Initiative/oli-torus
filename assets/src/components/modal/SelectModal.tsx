@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Maybe } from 'tsmonad';
-import { lockScroll, unlockScroll } from 'components/modal/utils';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { lockScroll, unlockScroll } from 'components/modal/utils';
 
 export interface Option {
   value: string | number;
@@ -121,9 +121,12 @@ export const SelectModal = function <T extends Option>({
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">{title}</h5>
-            <button type="button" className="close" onClick={onCancel}>
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <button
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div className="modal-body">
             {error.caseOf({

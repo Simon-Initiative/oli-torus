@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Editor, Transforms } from 'slate';
-import * as ContentModel from 'data/content/model/elements/types';
-import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import { Modal } from 'components/modal/Modal';
-import { MediaManager } from 'components/media/manager/MediaManager.controller';
-import { modalActions } from 'actions/modal';
-import { MediaItem } from 'types/media';
-import { Model } from 'data/content/model/elements/factories';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { configureStore } from 'state/store';
 import { Provider } from 'react-redux';
+import { Editor, Transforms } from 'slate';
 import { Maybe } from 'tsmonad';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
+import { MediaManager } from 'components/media/manager/MediaManager.controller';
+import { Modal } from 'components/modal/Modal';
+import { modalActions } from 'actions/modal';
+import { Model } from 'data/content/model/elements/factories';
+import * as ContentModel from 'data/content/model/elements/types';
+import { configureStore } from 'state/store';
+import { MediaItem } from 'types/media';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -56,7 +56,7 @@ export function selectAudio(
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const insertAudio = (onRequestMedia: any) =>
   createButtonCommandDesc({
-    icon: 'audiotrack',
+    icon: <i className="fa-solid fa-music"></i>,
     description: 'Audio Clip',
 
     execute: (context, editor: Editor) => {

@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
+import { Provider } from 'react-redux';
 import { Transforms } from 'slate';
+import { Maybe } from 'tsmonad';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
-import { MediaItem } from 'types/media';
-import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { Model } from 'data/content/model/elements/factories';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { configureStore } from 'state/store';
-import { Provider } from 'react-redux';
+import { MediaItem } from 'types/media';
 import { VideoSource } from '../../../../data/content/model/elements/types';
-import { Maybe } from 'tsmonad';
 
 export const insertVideo = createButtonCommandDesc({
-  icon: 'play_circle_filled',
+  icon: <i className="fa-solid fa-circle-play"></i>,
   description: 'Video',
   execute: (_context, editor) => {
     const at = editor.selection;

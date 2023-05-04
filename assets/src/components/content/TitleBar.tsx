@@ -1,6 +1,6 @@
 import React from 'react';
-import { TextEditor } from '../TextEditor';
 import { classNames } from 'utils/classNames';
+import { TextEditor } from '../TextEditor';
 
 export type TitleBarProps = {
   title: string; // The title of the resource
@@ -19,7 +19,7 @@ export const TitleBar = (props: TitleBarProps) => {
     <div
       className={classNames(
         'TitleBar',
-        'd-flex flex-column flex-md-row align-items-baseline my-2',
+        'd-flex flex-row flex-md-row align-items-baseline my-2',
         className,
       )}
     >

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Rnd, Props } from 'react-rnd';
+import { Props, Rnd } from 'react-rnd';
 
 interface ResizeContainerProps {
   disabled: boolean;

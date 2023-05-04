@@ -1,11 +1,11 @@
 import React from 'react';
-import { Heading } from 'components/misc/Heading';
-import { RichTextEditor } from 'components/content/RichTextEditor';
-import { Hint } from '../types';
-import { Description } from 'components/misc/Description';
-import { CloseButton } from 'components/misc/CloseButton';
-import { ProjectSlug } from 'data/types';
 import { Descendant } from 'slate';
+import { RichTextEditor } from 'components/content/RichTextEditor';
+import { CloseButton } from 'components/misc/CloseButton';
+import { Description } from 'components/misc/Description';
+import { Heading } from 'components/misc/Heading';
+import { ProjectSlug } from 'data/types';
+import { Hint } from '../types';
 
 interface HintsProps {
   onaddCognitiveHint: () => void;
@@ -38,7 +38,7 @@ export const Hints = ({
         confused
       </Description>
       <RichTextEditor
-        className="mb-3"
+        className=""
         editMode={editMode}
         value={deerInHeadlightsHint.content}
         projectSlug={projectSlug}
@@ -52,11 +52,11 @@ export const Hints = ({
         </Description>
       </div>
       {cognitiveHints.map((hint, index) => (
-        <React.Fragment key={hint.id}>
+        <div key={hint.id} className="mb-2">
           <Description>
             <i className="fa fa-lightbulb text-warning mr-1"></i>Cognitive Hint {index + 1}
           </Description>
-          <div className="d-flex mb-3">
+          <div className="d-flex">
             <RichTextEditor
               editMode={editMode}
               value={hint.content}
@@ -71,7 +71,7 @@ export const Hints = ({
               />
             )}
           </div>
-        </React.Fragment>
+        </div>
       ))}
 
       {/* Bottom-out hint */}

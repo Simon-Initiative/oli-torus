@@ -1,18 +1,17 @@
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import EventEmitter from 'events';
+import {
+  AnyPartComponent,
+  AnyPartModel,
+  PartCapabilities,
+  defaultCapabilities,
+} from 'components/parts/types/parts';
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import {
   NotificationContext,
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import {
-  AnyPartComponent,
-  AnyPartModel,
-  defaultCapabilities,
-  PartCapabilities,
-} from 'components/parts/types/parts';
-import EventEmitter from 'events';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
 import PartComponent from '../common/PartComponent';
@@ -464,7 +463,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         </div>
         <div
           id={`active-selection-toolbar-${props.id}`}
-          className="active-selection-toolbar"
+          className={`active-selection-toolbar ${selectedPartAndCapabilities?.type}`}
           style={{
             display: selectedPartAndCapabilities && !isDragging ? 'block' : 'none',
             top: toolbarPosition.y,
@@ -474,32 +473,33 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.configure && (
             <button
               title="Edit"
+              className="configure-toolbar-button"
               onClick={() => handleToolbarPartConfigure(selectedPartAndCapabilities.id, true)}
             >
-              <i className="las la-edit"></i>
+              <i className="fas fa-edit"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.copy && (
             <button title="Copy" onClick={handleCopyComponent}>
-              <i className="las la-copy"></i>
+              <i className="fas fa-copy"></i>
             </button>
           )}
           {/* <button title="Configure" onClick={handlePartConfigure}>
-            <i className="las la-cog"></i>
+            <i className="fas fa-cog"></i>
           </button> */}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
             <button title="Move Forward" onClick={handlePartMoveForward}>
-              <i className="las la-plus"></i>
+              <i className="fas fa-plus"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
             <button title="Move Back" onClick={handlePartMoveBack}>
-              <i className="las la-minus"></i>
+              <i className="fas fa-minus"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.delete && (
             <button title="Delete" onClick={() => setShowConfirmDelete(true)}>
-              <i className="las la-trash"></i>
+              <i className="fas fa-trash"></i>
             </button>
           )}
           <ConfirmDelete

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
-import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import { setRestartLesson } from '../../store/features/adaptivity/slice';
 import {
   selectFinalizeGradedURL,
@@ -37,21 +37,35 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
     if (onRestart) {
       onRestart();
     }
+    let redirectTo = overviewURL;
     if (!isPreviewMode && graded) {
       const finalizeResult = await finalizePageAttempt(
         sectionSlug,
         revisionSlug,
         resourceAttemptGuid,
       );
-      /* console.log('finalizeResult', finalizeResult); */
+      console.log('finalize attempt result: ', finalizeResult);
+      if (finalizeResult.result === 'success') {
+        if ((finalizeResult as ActionResult).commandResult === 'failure') {
+          console.error('failed to finalize attempt', finalizeResult);
+          // try again the other way
+          redirectTo = finalizeGradedURL;
+        } else {
+          redirectTo = finalizeResult.redirectTo;
+        }
+      } else {
+        console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);
+        // try again the other way
+        redirectTo = finalizeGradedURL;
+      }
+    } else if (!isPreviewMode && !graded) {
+      const newAttemptUrl = `/sections/${sectionSlug}/page/${revisionSlug}/attempt`;
+      redirectTo = newAttemptUrl;
     }
-    if (graded || isPreviewMode) {
+    if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
-      // FIXME: for hotfix purposes, just reverting the code
-      // going fwd however it should use a parameter sent from the backend instead
-      const newAttemptUrl = `/sections/${sectionSlug}/page/${revisionSlug}/attempt`;
-      window.location.href = newAttemptUrl;
+      window.location.href = redirectTo;
     }
   };
 
@@ -66,7 +80,12 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         className="RestartLessonDialog modal in"
         data-keyboard="false"
         aria-hidden={!isOpen}
-        style={{ display: isOpen ? 'block' : 'none', top: '20%', left: '50%' }}
+        style={{
+          display: isOpen ? 'block' : 'none',
+          top: '20%',
+          left: '50%',
+          height: 'max-content',
+        }}
       >
         <div className="modal-header">
           <button

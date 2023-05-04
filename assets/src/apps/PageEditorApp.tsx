@@ -1,5 +1,5 @@
+import { globalStore } from 'state/store';
+import { registerApplication } from './app';
 import PageEditor from './page-editor/PageEditor';
 
-import { registerApplication } from './app';
-
-registerApplication('PageEditor', PageEditor);
+registerApplication('PageEditor', PageEditor, globalStore);

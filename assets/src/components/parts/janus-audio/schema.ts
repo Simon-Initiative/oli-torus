@@ -1,5 +1,6 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -67,10 +68,63 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const simpleSchema: JSONSchema7Object = {
+  src: {
+    title: 'Source',
+    type: 'string',
+  },
+  autoPlay: {
+    title: 'Auto Play',
+    type: 'boolean',
+    description: 'if set to true then audio player will play automatically',
+    default: false,
+  },
+  startTime: {
+    title: 'Start time(secs)',
+    type: 'number',
+    description: 'specifies the start time of the audio',
+    default: 0,
+  },
+  endTime: {
+    title: 'End time(secs)',
+    type: 'number',
+    description: 'specifies the end time of the audio',
+    default: 0,
+  },
+  enableReplay: {
+    title: 'Enable Replay',
+    type: 'boolean',
+    description: "specifies whether user can replay the audio once it's played",
+    default: true,
+  },
+  subtitles: {
+    title: 'Subtitles',
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        default: { type: 'boolean' },
+        language: { type: 'string' },
+        src: { type: 'string' },
+      },
+      required: ['src', 'language'],
+    },
+  },
+};
+
 export const uiSchema = {
   src: {
     'ui:widget': 'TorusAudioBrowser',
   },
+};
+
+export const simpleUISchema = {
+  'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  src: {
+    'ui:widget': 'TorusAudioBrowser',
+  },
+  startTime: { classNames: 'col-span-6' },
+  endTime: { classNames: 'col-span-6' },
 };
 
 export const adaptivitySchema = {

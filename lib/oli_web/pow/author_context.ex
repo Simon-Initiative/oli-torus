@@ -8,6 +8,7 @@ defmodule OliWeb.Pow.AuthorContext do
     user: Oli.Accounts.Author
 
   alias Oli.Repo
+  alias Oli.Accounts
   alias Oli.Accounts.Author
 
   @spec lock(map()) :: {:ok, map()} | {:error, map()}
@@ -23,4 +24,8 @@ defmodule OliWeb.Pow.AuthorContext do
     |> Author.noauth_changeset(%{locked_at: nil})
     |> Repo.update()
   end
+
+  @impl true
+  def update(author, attrs),
+    do: Accounts.update_author(author, attrs)
 end

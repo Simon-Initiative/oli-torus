@@ -1,8 +1,8 @@
 import React from 'react';
-import { Objective } from 'data/content/objective';
+import { Objectives } from 'components/resource/objectives/Objectives';
 import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
 import { ObjectiveMap } from 'data/content/activity';
-import { Objectives } from 'components/resource/objectives/Objectives';
+import { Objective } from 'data/content/objective';
 import { classNames } from 'utils/classNames';
 
 type Props = {
@@ -62,10 +62,11 @@ const MultiPartSelections = (props: Props) => (
 
 const SinglePartSelection = (props: Props) => {
   const partId = props.partIds[0];
+
   return (
     <ObjectivesSelection
       {...props}
-      selected={props.objectives[partId]}
+      selected={props.objectives[partId] || []}
       objectives={props.allObjectives}
       onEdit={(objectives) => props.onEdit({ ...props.objectives, ...{ [partId]: objectives } })}
     />

@@ -156,7 +156,7 @@ defmodule OliWeb.Common.Breadcrumb do
     [
       new(%{
         full_title: "Project Overview",
-        link: Routes.project_path(OliWeb.Endpoint, :overview, project_slug)
+        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_slug)
       }),
       new(%{
         full_title: "All Pages",
@@ -218,7 +218,7 @@ defmodule OliWeb.Common.Breadcrumb do
     [
       Breadcrumb.new(%{
         full_title: project.title,
-        link: Routes.project_path(OliWeb.Endpoint, :overview, project)
+        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
       })
     ]
   end

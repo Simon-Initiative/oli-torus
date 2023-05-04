@@ -16,10 +16,10 @@ defmodule OliWeb.Insights.TableHeader do
       phx-keyup="sort"
       phx-value-sort-by={@sort_by}
       scope="col"
-      data-trigger="hover focus"
-      data-toggle={if @tooltip do "popover" else "" end}
-      data-placement="top"
-      data-content={@tooltip}
+      data-bs-trigger="hover focus"
+      data-bs-toggle={if @tooltip do "popover" else "" end}
+      data-bs-placement="top"
+      data-bs-content={@tooltip}
     >
       <%= @title %>
       <%= sort_order_icon(@sort_by, @sort_by, @sort_order) %>

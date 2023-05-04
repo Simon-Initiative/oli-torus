@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import * as Settings from 'components/editing/elements/common/settings/Settings';
-import { selectAudio } from 'components/editing/elements/audio/audioActions';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { Tooltip } from 'components/common/Tooltip';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { Modal, ModalSize } from 'components/modal/Modal';
+import * as ContentModel from 'data/content/model/elements/types';
+import { modalActions } from '../../../../actions/modal';
+import { useAudio } from '../../../hooks/useAudio';
+import { useToggle } from '../../../hooks/useToggle';
+import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
+import { Toolbar } from '../../toolbar/Toolbar';
 import { DescriptiveButton } from '../../toolbar/buttons/DescriptiveButton';
 import { createButtonCommandDesc } from '../commands/commandFactories';
-import { modalActions } from '../../../../actions/modal';
-import { Toolbar } from '../../toolbar/Toolbar';
-import { Modal, ModalSize } from 'components/modal/Modal';
 import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
-import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
-import { useToggle } from '../../../hooks/useToggle';
-import { useAudio } from '../../../hooks/useAudio';
 
 interface SettingsButtonProps {
   model: ContentModel.Audio;
@@ -25,7 +24,7 @@ export const SettingsButton = (props: SettingsButtonProps) => {
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
-        icon: 'play_circle_filled',
+        icon: <i className="fa-solid fa-circle-play"></i>,
         description: 'Settings',
         execute: (_context, _editor, _params) =>
           dispatch(
@@ -115,18 +114,21 @@ const AudioSettingsModal = (props: AudioSettingsProps) => {
                 Select
               </button>
               {model.src && (
-                <button
-                  type="button"
-                  onClick={playAudio}
-                  className="btn btn-sm btn-outline-success btn-pronunciation-audio tool-button"
-                  data-toggle="tooltip"
-                  data-placement="top"
-                  title="Preview audio file"
-                >
-                  <span className="material-icons">
-                    {isPlaying ? 'stop_circle' : 'play_circle'}
-                  </span>
-                </button>
+                <Tooltip title="Preview audio file">
+                  <button
+                    type="button"
+                    onClick={playAudio}
+                    className="btn btn-outline-primary btn-pronunciation-audio tool-button"
+                  >
+                    <span>
+                      {isPlaying ? (
+                        <i className="fa-solid fa-circle-stop"></i>
+                      ) : (
+                        <i className="fa-solid fa-circle-play"></i>
+                      )}
+                    </span>
+                  </button>
+                </Tooltip>
               )}
             </div>
           </div>

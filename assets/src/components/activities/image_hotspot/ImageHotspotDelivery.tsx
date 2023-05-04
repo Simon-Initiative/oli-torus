@@ -1,31 +1,32 @@
 import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { getShape, Hotspot, ImageHotspotModelSchema } from './schema';
-import * as ActivityTypes from '../types';
-import { StemDelivery } from '../common/stem/delivery/StemDelivery';
-import { configureStore } from 'state/store';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import {
-  activityDeliverySlice,
   ActivityDeliveryState,
+  activityDeliverySlice,
   initializeState,
-  setSelection,
-  resetAction,
   isEvaluated,
-  listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForParentSurveySubmit,
   listenForReviewAttemptChange,
+  resetAction,
+  setSelection,
 } from 'data/activities/DeliveryState';
-import { Provider, useSelector, useDispatch } from 'react-redux';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
-import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
-import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
+import { configureStore } from 'state/store';
+import guid from 'utils/guid';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
-import { useDeliveryElementContext, DeliveryElementProvider } from '../DeliveryElementProvider';
+import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
+import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
+import { StemDelivery } from '../common/stem/delivery/StemDelivery';
 import { castPartId } from '../common/utils';
-import { drawHotspotShape, HS_COLOR } from './utils';
+import * as ActivityTypes from '../types';
+import { Hotspot, ImageHotspotModelSchema, getShape } from './schema';
+import { HS_COLOR, drawHotspotShape } from './utils';
 
 const ImageHotspotComponent: React.FC = () => {
   const {
@@ -57,6 +58,8 @@ const ImageHotspotComponent: React.FC = () => {
   const selected = partState?.studentInput;
 
   const [hovered, setHovered] = React.useState<Hotspot | null>(null);
+  // for one-time ID generation:
+  const [mapName] = React.useState<string>(guid());
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
@@ -109,8 +112,6 @@ const ImageHotspotComponent: React.FC = () => {
       onSelect(partId, hs.id);
     }
   };
-
-  const mapName = 'map' + model.choices[0].id;
 
   return (
     <div className="activity multiple-choice-activity">

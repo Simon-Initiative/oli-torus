@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
 
   import OliWeb.Common.FormatDateTime
 
-  alias OliWeb.Delivery.ManageSourceMaterials
+  alias OliWeb.Common.Utils
 
   prop changes, :map, required: true
   prop current_publication, :struct, required: true
@@ -20,15 +20,17 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
 
             <div class="modal-header">
               <h5 class="modal-title">Apply Update - {@newest_publication.project.title}</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
+              <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <i class="fa-solid fa-xmark fa-xl"></i>
               </button>
             </div>
 
             <div class="modal-body pb-0">
 
               <h6 class="mb-3">Do you want to apply this update from
-                <strong>{ManageSourceMaterials.version_number(@current_publication)}</strong> to <strong>{ManageSourceMaterials.version_number(@newest_publication)}</strong>?
+                <strong>{Utils.render_version(@current_publication.edition, @current_publication.major, @current_publication.minor)}</strong>
+                to
+                <strong>{Utils.render_version(@newest_publication.edition, @newest_publication.major, @newest_publication.minor)}</strong>?
               </h6>
 
               <small>Latest publication description</small>
@@ -43,11 +45,11 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
               <hr class="bg-light">
               <h6 class="my-3">The following materials from this project will be updated to match the latest publication</h6>
 
-              <ul>
+              <ul class="my-3">
                 {#for {status, %{revision: revision}} <- Map.values(@changes)}
                   <li>
-                    <span>{revision.title}</span>
                     <span class={"badge badge-secondary badge-#{status} mr-2"}>{status}</span>
+                    <span>{revision.title}</span>
                   </li>
                 {/for}
               </ul>
@@ -56,8 +58,8 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
             </div>
 
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-              <button class="btn btn-warning" phx-click="apply_update" phx-key="enter">Apply Update</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button class="btn btn-warning ml-2" phx-click="apply_update" phx-key="enter">Apply Update</button>
             </div>
 
           </div>

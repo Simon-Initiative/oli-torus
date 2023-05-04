@@ -108,7 +108,6 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
       |> render_submit(%{"params" => %{"name" => "Stats Package"}})
 
       # verify new alternatives group was created with no options
-      assert has_element?(view, ~s|div[class="alternatives-group border p-3 my-2"]|)
       assert has_element?(view, "b", "Stats Package")
       assert has_element?(view, "em", "There are no options in this group")
 

@@ -4,13 +4,12 @@ import {
   Draggable as DraggableDND,
   DraggableStateSnapshot,
   DraggingStyle,
-  Droppable,
   DropResult,
+  Droppable,
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
-import { classNames } from 'utils/classNames';
+import { ClassName, classNames } from 'utils/classNames';
 import guid from 'utils/guid';
-
 import styles from './DraggableColumn.modules.scss';
 
 interface DragIndicatorProps
@@ -19,18 +18,13 @@ interface DragIndicatorProps
   }> {}
 const DragIndicator: React.FC<DragIndicatorProps> = ({ isDragDisabled }) => {
   return (
-    <div
-      className={classNames(
-        styles.draggableColumnIndicator,
-        isDragDisabled && styles.disabled,
-        'material-icons',
-      )}
-    >
-      drag_indicator
+    <div className={classNames(styles.draggableColumnIndicator, isDragDisabled && styles.disabled)}>
+      <i className="fa-solid fa-grip-vertical"></i>
     </div>
   );
 };
 interface ItemProps {
+  className?: ClassName;
   id: string;
   itemAriaLabel?: string;
   item: any;
@@ -40,10 +34,12 @@ interface ItemProps {
   items?: any[];
   index?: number;
   displayOutline?: boolean;
+  color?: string;
   isDragDisabled?: boolean;
 }
 const Item: React.FC<ItemProps> = ({
   id,
+  className,
   index = 0,
   itemAriaLabel,
   item,
@@ -51,6 +47,7 @@ const Item: React.FC<ItemProps> = ({
   setItems = () => undefined,
   children,
   displayOutline,
+  color,
   isDragDisabled,
 }) => {
   return (
@@ -61,10 +58,11 @@ const Item: React.FC<ItemProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={classNames(
+            className,
             styles.draggableColumnCard,
             displayOutline ? styles.draggableColumnOutlined : null,
           )}
-          style={getStyle(provided.draggableProps.style, snapshot)}
+          style={{ ...getStyle(provided.draggableProps.style, snapshot), backgroundColor: color }}
           aria-label={itemAriaLabel || 'Item ' + index}
           onKeyDown={(e: any) => reorderByKey(e, index, items, item, setItems)}
         >

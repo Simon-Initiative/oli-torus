@@ -1,14 +1,12 @@
 import React from 'react';
-
-import { modalActions } from 'actions/modal';
+import { useDispatch } from 'react-redux';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-
+import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { modalActions } from 'actions/modal';
 import * as ContentModel from 'data/content/model/elements/types';
 import { VideoModal } from './VideoModal';
-import { useDispatch } from 'react-redux';
 
 interface SettingsProps {
   commandContext: CommandContext;
@@ -42,7 +40,7 @@ const SettingsButton = (props: SettingsButtonProps) => {
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
-        icon: 'play_circle_filled',
+        icon: <i className="fa-solid fa-video"></i>,
         description: 'Settings',
         execute: (_context, _editor, _params) =>
           dispatch(

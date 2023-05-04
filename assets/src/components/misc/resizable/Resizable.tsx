@@ -1,8 +1,8 @@
+import React, { PropsWithChildren, useEffect, useState } from 'react';
 import { BoundingRect, Handle } from 'components/misc/resizable/types';
 import { useDOMPosition } from 'components/misc/resizable/useDOMPosition';
 import { useMousePosition } from 'components/misc/resizable/useMousePosition';
 import { rectFromCursor, resizeHandleStyles } from 'components/misc/resizable/utils';
-import React, { PropsWithChildren, useEffect, useState } from 'react';
 
 interface Props {
   show: boolean;

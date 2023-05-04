@@ -5,15 +5,11 @@ import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
 import { Command, CommandContext } from '../elements/commands/interfaces';
 
-const buttonContent = (icon: string, description: string | undefined) =>
-  icon ? (
-    <span className="material-icons">{icon}</span>
-  ) : (
-    <span className="toolbar-button-text">{description}</span>
-  );
+const buttonContent = (icon: JSX.Element, description: string | undefined) =>
+  icon ? icon : <span className="toolbar-button-text">{description}</span>;
 
 export interface ToolbarButtonProps {
-  icon: (editor: Editor) => string;
+  icon: (editor: Editor) => JSX.Element;
   command: Command;
   context: CommandContext;
   description?: (editor: Editor) => string;
@@ -30,13 +26,13 @@ export interface ToolbarButtonProps {
 export const DropdownToolbarButton = (props: ToolbarButtonProps) => {
   const editor = useSlate();
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
-  const [content, setContent] = React.useState(<span></span>);
+  const [content, _setContent] = React.useState(<span></span>);
 
-  const onDone = (params: any) => {
+  const _onDone = (params: any) => {
     props.setParentPopoverOpen?.(false);
     props.command.execute(props.context, editor, params);
   };
-  const onCancel = () => {
+  const _onCancel = () => {
     props.setParentPopoverOpen?.(false);
   };
 
@@ -52,10 +48,10 @@ export const DropdownToolbarButton = (props: ToolbarButtonProps) => {
       align="start"
     >
       <button
-        data-container={`#${props.parentRef?.current?.id}`}
-        data-toggle="tooltip"
+        data-bs-container={`#${props.parentRef?.current?.id}`}
+        data-bs-toggle="tooltip"
         ref={(r) => ($(r as any) as any).tooltip()}
-        data-placement="top"
+        data-bs-placement="top"
         title={props.tooltip}
         className={classNames('btn', props.style, props.active && 'active')}
         onClick={(_e) => {

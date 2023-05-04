@@ -101,7 +101,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert Enum.empty?(user1_page_context.resource_attempts)
 
       # Start the attempt and go into the assessment
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
       {:ok,
        %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
@@ -112,7 +112,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision.slug,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -171,7 +171,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision.slug,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
@@ -399,7 +399,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       user1_activity_attempt1: activity_attempt,
       graded_page_user1_attempt1: resource_attempt1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
       # User1 has a started resource attempt, so it should be "in progress"
@@ -408,7 +408,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -436,7 +436,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
     end
@@ -448,7 +448,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       user1_part1_attempt1: part_attempt,
       user1_activity_attempt1: activity_attempt
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
       {:ok, {:in_progress, _resource_attempt}} =
@@ -456,7 +456,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -470,7 +470,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           datashop_session_id_user1
         )
 
-      {:error, "nothing to process"} =
+      {:ok, []} =
         Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
@@ -492,7 +492,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
            graded_page_user2_attempt1: user2_resource_attempt1,
            user2: user2
          } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
@@ -502,7 +502,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -529,7 +529,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user1,
-          user1.id,
+          user1,
           activity_provider
         )
 
@@ -539,7 +539,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 
@@ -569,7 +569,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           revision,
           section.slug,
           datashop_session_id_user2,
-          user2.id,
+          user2,
           activity_provider
         )
 

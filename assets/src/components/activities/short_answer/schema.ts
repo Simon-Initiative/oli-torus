@@ -1,4 +1,4 @@
-import { Part, Transformation, ActivityModelSchema, Stem } from '../types';
+import { ActivityModelSchema, Part, Stem, Transformation } from '../types';
 
 export type InputType = 'text' | 'numeric' | 'textarea' | 'math' | 'vlabvalue';
 export const isInputType = (s: string): s is InputType =>

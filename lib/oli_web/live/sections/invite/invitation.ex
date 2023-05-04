@@ -20,7 +20,7 @@ defmodule OliWeb.Sections.Invites.Invitation do
           <input readonly type="text" id={"invite-link-#{@invitation.id}"} class="form-control" placeholder="Section Invite Link" aria-label="Section Invite Link" value={Routes.delivery_url(OliWeb.Endpoint, :enroll_independent, @invitation.slug)}>
           <div class="input-group-append">
             <button id="copy-invite-link-button" class="btn btn-outline-secondary" data-clipboard-target={"#invite-link-#{@invitation.id}"} phx-hook="CopyListener">
-              <i class="lar la-clipboard"></i> Copy
+              <i class="far fa-clipboard"></i> Copy
             </button>
           </div>
         </div>

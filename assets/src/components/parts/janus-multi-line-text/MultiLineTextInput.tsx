@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import debounce from 'lodash/debounce';
-import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -19,7 +19,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
   const characterCounterRef = useRef<HTMLSpanElement>(null);
   const [text, setText] = useState<string>('');
   const [enabled, setEnabled] = useState(true);
-  const [cssClass, setCssClass] = useState('');
+  const [_cssClass, setCssClass] = useState('');
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -118,18 +118,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const {
-    label,
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    prompt,
-    showLabel,
-    showCharacterCount,
-    fontSize,
-  } = model;
+  const { label, width, height, prompt, showLabel, showCharacterCount, fontSize } = model;
 
   useEffect(() => {
     if (!props.notify) {

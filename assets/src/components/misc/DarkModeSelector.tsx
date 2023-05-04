@@ -46,15 +46,15 @@ export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) =
   return (
     <ThreeStateToggle>
       <ToggleOption id="auto" checked={isChecked(mode, 'auto')} onChange={onSelect('auto')}>
-        <i className="las la-adjust"></i>
+        <i className="fas fa-adjust"></i>
         {maybeLabel('Auto', showLabels)}
       </ToggleOption>
       <ToggleOption id="light" checked={isChecked(mode, 'light')} onChange={onSelect('light')}>
-        <i className="las la-sun"></i>
+        <i className="fas fa-sun"></i>
         {maybeLabel('Light', showLabels)}
       </ToggleOption>
       <ToggleOption id="dark" checked={isChecked(mode, 'dark')} onChange={onSelect('dark')}>
-        <i className="las la-moon"></i>
+        <i className="fas fa-moon"></i>
         {maybeLabel('Dark', showLabels)}
       </ToggleOption>
     </ThreeStateToggle>

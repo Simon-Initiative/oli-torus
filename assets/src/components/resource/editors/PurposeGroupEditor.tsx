@@ -1,6 +1,17 @@
 import React, { PropsWithChildren } from 'react';
-import { AddResource } from './AddResource';
-import { EditorProps, createEditor } from './createEditor';
+import { Purpose } from 'components/content/Purpose';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import {
+  PurposeGroupContent,
+  PurposeTypes,
+  ResourceContent,
+  groupOrDescendantHasPurpose,
+  isGroupWithPurpose,
+} from 'data/content/resource';
+import { classNames } from 'utils/classNames';
+import { AudienceModes } from './AudienceModes';
+import styles from './ContentBlock.modules.scss';
+import { GroupEditor } from './GroupEditor';
 import {
   Description,
   ExpandToggle,
@@ -8,19 +19,8 @@ import {
   OutlineGroupProps,
   resourceGroupTitle,
 } from './OutlineItem';
-import {
-  PurposeTypes,
-  ResourceContent,
-  isGroupWithPurpose,
-  groupOrDescendantHasPurpose,
-  PurposeGroupContent,
-} from 'data/content/resource';
-import { DeleteButton } from 'components/misc/DeleteButton';
-import { Purpose } from 'components/content/Purpose';
-import { classNames } from 'utils/classNames';
-import styles from './ContentBlock.modules.scss';
 import { PaginationModes } from './PaginationModes';
-import { GroupEditor } from './GroupEditor';
+import { EditorProps } from './createEditor';
 
 interface PurposeGroupEditorProps extends EditorProps {
   contentItem: PurposeGroupContent;
@@ -150,6 +150,12 @@ export const PurposeGroupBlock = ({
             mode={contentItem.paginationMode === undefined ? 'normal' : contentItem.paginationMode}
           />
         ) : null}
+        <AudienceModes
+          onEdit={(audience) => onEdit(Object.assign(contentItem, { audience }))}
+          onRemove={() => onEdit(Object.assign(contentItem, { audience: undefined }))}
+          editMode={editMode}
+          mode={contentItem.audience}
+        />
         <Purpose
           purpose={contentItem.purpose}
           editMode={editMode}

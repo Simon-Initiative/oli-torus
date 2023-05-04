@@ -1,10 +1,9 @@
-import produce from 'immer';
 import React, { useContext } from 'react';
+import produce from 'immer';
 import { Maybe } from 'tsmonad';
-import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
-import { AuthoringElementProps } from './AuthoringElement';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import { AuthoringElementProps } from './AuthoringElement';
+import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
 
 export interface AuthoringElementState<T> {
   projectSlug: string;
@@ -44,7 +43,6 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
       value={{ projectSlug, editMode, dispatch, model, onRequestMedia, authoringContext }}
     >
       <ErrorBoundary>{children}</ErrorBoundary>
-      <ModalDisplay />
     </AuthoringElementContext.Provider>
   );
 };

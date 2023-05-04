@@ -1,7 +1,7 @@
-import chroma from 'chroma-js';
-import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
-import { Environment } from 'janus-script';
 import React, { CSSProperties, useEffect, useRef } from 'react';
+import chroma from 'chroma-js';
+import { Environment } from 'janus-script';
+import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { ContextProps, InitResultProps } from './types';
 
 interface PopupWindowProps {

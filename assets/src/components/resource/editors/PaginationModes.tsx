@@ -1,4 +1,5 @@
 import React from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { PaginationMode } from 'data/content/resource';
 
 export type PaginationModesProps = {
@@ -19,27 +20,20 @@ export const PaginationModes = (props: PaginationModesProps) => {
   const current = descriptions[mode];
   const options = Object.keys(descriptions).map((m) => {
     return (
-      <button className="dropdown-item" key={m} onClick={() => onEdit(m as PaginationMode)}>
+      <Dropdown.Item key={m} onClick={() => onEdit(m as PaginationMode)}>
         {descriptions[m]}
-      </button>
+      </Dropdown.Item>
     );
   });
 
   return (
     <div className="form-inline">
-      <div className="dropdown">
-        <button
-          type="button"
-          disabled={!editMode}
-          className={'btn btn-sm dropdown-toggle btn-purpose'}
-          data-toggle="dropdown"
-          aria-haspopup="true"
-          aria-expanded="false"
-        >
+      <Dropdown className="dropdown">
+        <Dropdown.Toggle disabled={!editMode} className={'btn btn-purpose'} size="sm">
           {current}
-        </button>
-        <div className="dropdown-menu dropdown-menu-right">{options}</div>
-      </div>
+        </Dropdown.Toggle>
+        <Dropdown.Menu>{options}</Dropdown.Menu>
+      </Dropdown>
     </div>
   );
 };

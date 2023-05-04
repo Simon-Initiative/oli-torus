@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { dispatch, makeCommandInventoryEvent, Registry } from '../../../../data/events';
+import { Registry, dispatch, makeCommandInventoryEvent } from '../../../../data/events';
 import { CommandTarget, MessageEditorComponent } from './commandButtonTypes';
 
 /**

@@ -1,17 +1,17 @@
+import React from 'react';
+import { Editor, Element } from 'slate';
+import { ReactEditor, useSlate } from 'slate-react';
 import {
   CommandContext,
   CommandDescription,
 } from 'components/editing/elements/commands/interfaces';
-import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
+import { getHighestTopLevel, safeToDOMNode } from 'components/editing/slateUtils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { getHighestTopLevel, safeToDOMNode } from 'components/editing/slateUtils';
-import React from 'react';
-import { Editor, Element } from 'slate';
-import { ReactEditor, useSlate } from 'slate-react';
 import { Inlines } from 'components/editing/toolbar/editorToolbar/Inlines';
 import { BlockInsertMenu } from 'components/editing/toolbar/editorToolbar/blocks/BlockInsertMenu';
 import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/BlockSettings';
+import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
 
 interface Props {
   context: CommandContext;

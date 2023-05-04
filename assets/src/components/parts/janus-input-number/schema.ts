@@ -1,5 +1,7 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -13,6 +15,48 @@ export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCs
   showIncrementArrows: boolean;
   prompt: string;
 }
+
+export const simpleUiSchema = {
+  'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  minValue: {
+    classNames: 'col-span-6',
+  },
+  maxValue: {
+    classNames: 'col-span-6',
+  },
+  answer: correctOrRange.uiSchema,
+  advancedFeedback: numericAdvancedFeedback.uiSchema,
+};
+
+export const simpleSchema: JSONSchema7Object = {
+  label: {
+    title: 'Question Prompt',
+    type: 'string',
+    description: 'text label for the input field',
+  },
+  unitsLabel: {
+    title: 'Unit Label',
+    type: 'string',
+    description: 'text label appended to the input',
+  },
+  answer: correctOrRange.schema,
+  correctFeedback: {
+    title: 'Correct Feedback',
+    type: 'string',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incorrect Feedback',
+    type: 'string',
+    default: '',
+  },
+  advancedFeedback: numericAdvancedFeedback.schema,
+
+  // Should it be this instead of label?
+  // prompt: {
+  //   type: 'string',
+  // },
+};
 
 export const schema: JSONSchema7Object = {
   customCssClass: {

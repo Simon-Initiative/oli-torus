@@ -1,11 +1,11 @@
 import React, { ChangeEvent, useCallback } from 'react';
 import { useFocused, useSelected, useSlate } from 'slate-react';
-import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
+import * as ContentModel from 'data/content/model/elements/types';
+import { AudioClipPicker } from '../common/AudioClipPicker';
+import { useEditModelCallback } from '../utils';
 import { DropdownMenu } from './TableDropdownMenu';
 import { cellAttributes } from './table-util';
-import { useEditModelCallback } from '../utils';
-import { AudioClipPicker } from '../common/AudioClipPicker';
 
 export const TcEditor = (props: EditorProps<ContentModel.TableConjugation>) => {
   const onEdit = useEditModelCallback(props.model);

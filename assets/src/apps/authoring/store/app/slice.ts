@@ -1,16 +1,16 @@
-import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
-import { AdaptiveRule } from 'apps/authoring/components/AdaptiveRulesList/AdaptiveRulesList';
-import { selectCurrentActivity } from 'apps/delivery/store/features/activities/slice';
+import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/toolkit';
+import {
+  IAdaptiveRule,
+  selectCurrentActivity,
+} from 'apps/delivery/store/features/activities/slice';
 import {
   savePartState,
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { Objective } from '../../../../data/content/objective';
-
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
-import { saveActivity } from '../activities/actions/saveActivity';
 import { savePage } from '../page/actions/savePage';
-import { RootState } from '../rootReducer';
+import { AuthoringRootState } from '../rootReducer';
 import { acquireEditingLock } from './actions/locking';
 import { AppSlice } from './name';
 
@@ -28,7 +28,7 @@ interface PartComponentRegistration {
   authoring_script: string;
 }
 
-interface ActivityRegistration {
+export interface ActivityRegistration {
   id: string;
   slug: string;
   title: string;
@@ -38,7 +38,22 @@ interface ActivityRegistration {
   authoring_element: string;
 }
 
+/**
+ * The application can be run in the simple flowchart mode, where screens are laid out in the flowcharting tool
+ * with a limited set of options for rules, or in expert mode, which exposes the full set of options for rules, layers, and
+ * sub-screens.
+ */
+export type ApplicationMode = 'flowchart' | 'expert';
+
+/**
+ * When in flowchart mode, we might be looking at the flowchart editor or the page editor.
+ * When in expert mode, there is only the page editor.
+ */
+export type EditingMode = 'page' | 'flowchart';
+
 export interface AppState {
+  applicationMode: ApplicationMode;
+  editingMode: EditingMode;
   paths: Record<string, string> | null;
   isAdmin: boolean;
   projectSlug: string;
@@ -61,6 +76,8 @@ export interface AppState {
 }
 
 const initialState: AppState = {
+  applicationMode: 'expert',
+  editingMode: 'page',
   paths: null,
   isAdmin: false,
   projectSlug: '',
@@ -91,12 +108,23 @@ export interface AppConfig {
   activityTypes?: any[];
   allObjectives?: Objective[];
   copiedPart?: any;
+  applicationMode: ApplicationMode;
 }
 
 const slice: Slice<AppState> = createSlice({
   name: AppSlice,
   initialState,
   reducers: {
+    changeAppMode(state, action: PayloadAction<{ mode: ApplicationMode }>) {
+      state.editingMode = action.payload.mode === 'flowchart' ? 'flowchart' : 'page';
+      state.applicationMode = action.payload.mode || 'flowchart';
+    },
+    changeEditMode(state, action: PayloadAction<{ mode: EditingMode }>) {
+      state.editingMode = action.payload.mode;
+    },
+    setDebugConfig(state) {
+      state.paths = {};
+    },
     setInitialConfig(state, action: PayloadAction<AppConfig>) {
       state.paths = action.payload.paths || initialState.paths;
       state.isAdmin = !!action.payload.isAdmin;
@@ -110,6 +138,8 @@ const slice: Slice<AppState> = createSlice({
 
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
+      state.applicationMode = action.payload.applicationMode || initialState.applicationMode;
+      state.editingMode = state.applicationMode === 'flowchart' ? 'flowchart' : 'page'; // Default to the flowchart editor when in flowchart mode.
     },
     setPanelState(
       state,
@@ -163,9 +193,12 @@ const slice: Slice<AppState> = createSlice({
     builder.addCase(savePage.rejected, (state) => {
       state.hasEditingLock = false;
     });
-    builder.addCase(saveActivity.rejected, (state) => {
+
+    // TODO: This is a hack to get the saveActivity.rejected action to work around a circular dependency
+    builder.addCase(/*saveActivity.rejected*/ 'activities/saveActivity/rejected', (state) => {
       state.hasEditingLock = false;
     });
+
     builder.addCase(savePartState.rejected, (state) => {
       state.hasEditingLock = false;
     });
@@ -184,12 +217,15 @@ export const {
   setRightPanelActiveTab,
   setCurrentRule,
   setCopiedPart,
+  setDebugConfig,
   setReadonly,
   setShowDiagnosticsWindow,
+  changeAppMode,
   setShowScoringOverview,
+  changeEditMode,
 } = slice.actions;
 
-export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
+export const selectState = (state: AuthoringRootState): AppState => state[AppSlice] as AppState;
 export const selectPaths = createSelector(selectState, (state: AppState) => state.paths);
 export const selectProjectSlug = createSelector(
   selectState,
@@ -239,8 +275,13 @@ export const selectCurrentRuleId = createSelector(
 export const selectCurrentRule = createSelector(
   selectCurrentRuleId,
   selectCurrentActivity,
-  (id: any, activity: any) =>
-    activity?.authoring.rules.find((rule: AdaptiveRule) => rule.id === id) ?? id,
+  (id: any, activity: any) => {
+    return (
+      (activity?.authoring?.rules || [])
+        .filter((rule: any) => !!rule)
+        .find((rule: IAdaptiveRule) => rule.id === id) ?? id
+    );
+  },
 );
 
 export const selectCopiedPart = createSelector(selectState, (state: AppState) => state.copiedPart);
@@ -275,5 +316,12 @@ export const selectShowScoringOverview = createSelector(
 );
 
 export const selectIsAdmin = createSelector(selectState, (state: AppState) => state.isAdmin);
+
+export const selectAppMode = createSelector(
+  selectState,
+  (state: AppState) => state.applicationMode,
+);
+
+export const selectEditMode = createSelector(selectState, (state: AppState) => state.editingMode);
 
 export default slice.reducer;

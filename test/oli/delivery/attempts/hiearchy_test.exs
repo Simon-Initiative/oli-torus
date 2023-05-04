@@ -79,7 +79,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id = UUID.uuid4()
 
       {:ok, resource_attempt} =
@@ -88,7 +88,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           datashop_session_id: datashop_session_id,
-          user_id: user.id,
+          user: user,
+          audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
           publication_id: pub.id

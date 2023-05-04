@@ -57,7 +57,21 @@ export const screen: IActivity = {
       y: 0,
       z: 0,
     },
-    partsLayout: [{}],
+    partsLayout: [
+      {
+        custom: {
+          x: 10,
+          y: 10,
+          z: 10,
+          width: 10,
+          height: 10,
+          enabled: true,
+          requiresManualGrading: false,
+        },
+        id: '1',
+        type: 'other',
+      },
+    ],
   },
   title: 'Customize Avatar',
 };
@@ -104,7 +118,21 @@ export const screen1: IActivity = {
       y: 0,
       z: 0,
     },
-    partsLayout: [{}],
+    partsLayout: [
+      {
+        custom: {
+          x: 10,
+          y: 10,
+          z: 10,
+          width: 10,
+          height: 10,
+          enabled: true,
+          requiresManualGrading: false,
+        },
+        id: '1',
+        type: 'other',
+      },
+    ],
   },
   title: 'Customize Avatar',
 };
@@ -150,7 +178,21 @@ export const screen2: IActivity = {
       y: 0,
       z: 0,
     },
-    partsLayout: [{}],
+    partsLayout: [
+      {
+        custom: {
+          x: 10,
+          y: 10,
+          z: 10,
+          width: 10,
+          height: 10,
+          enabled: true,
+          requiresManualGrading: false,
+        },
+        id: '1',
+        type: 'other',
+      },
+    ],
   },
   title: 'Customize Avatar',
 };

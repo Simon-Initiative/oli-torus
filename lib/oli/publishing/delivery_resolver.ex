@@ -134,6 +134,25 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
+  def pages_with_attached_objectives(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    fn ->
+      from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
+        where:
+          rev.resource_type_id == ^page_id and
+            fragment("? != '[]'", rev.objectives["attached"]),
+        select: %{
+          resource_id: rev.resource_id,
+          objectives: rev.objectives
+        }
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :delivery], :duration)
+  end
+
   @impl Resolver
   def all_revisions(section_slug) do
     fn ->
@@ -277,6 +296,53 @@ defmodule Oli.Publishing.DeliveryResolver do
       join: spp in SectionsProjectsPublications,
       on: s.id == spp.section_id,
       select: spp.publication_id
+    )
+  end
+
+  @doc """
+  Returns the current revisions of all page resources whose purpose type matches the one it receives as parameter
+  ## Examples
+      iex> get_by_purpose(valid_section_slug, valid_purpose)
+      [%Revision{}, ...]
+
+      iex> get_by_purpose(invalid_section_slug, invalid_purpose)
+      []
+  """
+
+  def get_by_purpose(section_slug, purpose) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.all(
+      from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
+        where:
+          rev.purpose == ^purpose and rev.deleted == false and rev.resource_type_id == ^page_id,
+        select: rev,
+        order_by: [asc: :resource_id]
+      )
+    )
+  end
+
+  @doc """
+  Returns the current revisions of all page resources whose have the given resource_id in their "relates_to" attribute
+  ## Examples
+      iex> targeted_via_related_to(valid_section_slug, valid_resource_id)
+      [%Revision{}, ...]
+
+      iex> targeted_via_related_to(invalid_section_slug, invalid_resource_id)
+      []
+  """
+
+  def targeted_via_related_to(section_slug, resource_id) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    Repo.all(
+      from([sr: sr, rev: rev] in section_resource_revisions(section_slug),
+        where:
+          ^resource_id in rev.relates_to and rev.deleted == false and
+            rev.resource_type_id == ^page_id,
+        select: rev,
+        order_by: [asc: :resource_id]
+      )
     )
   end
 end

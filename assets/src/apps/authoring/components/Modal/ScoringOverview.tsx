@@ -1,14 +1,15 @@
+import React, { Fragment, useCallback, useEffect } from 'react';
+import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
 import { selectAllObjectivesMap, setShowScoringOverview } from 'apps/authoring/store/app/slice';
 import { savePage } from 'apps/authoring/store/page/actions/savePage';
 import { selectState, updatePage } from 'apps/authoring/store/page/slice';
 import { IActivity, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import { debounce } from 'lodash';
-import React, { Fragment, useCallback, useEffect } from 'react';
-import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { Objective } from '../../../../data/content/objective';
+import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 interface ScoredActivity {
   sequenceId: number;
@@ -44,7 +45,7 @@ const ScoringOverview: React.FC<{
       }
       const { maxAttempt, maxScore, trapStateScoreScheme } = activity.content?.custom;
 
-      const manualGradingDetails = activity.authoring?.parts.reduce(
+      const manualGradingDetails = (activity.authoring?.parts || []).reduce(
         (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
           const partIsManuallyGraded = part.gradingApproach === 'manual';
           if (partIsManuallyGraded) {
@@ -171,7 +172,7 @@ const ScoringOverview: React.FC<{
 
   return (
     <Fragment>
-      <Modal show={true} size="xl" onHide={handleClose}>
+      <AdvancedAuthoringModal show={true} size="xl" onHide={handleClose}>
         <Modal.Header closeButton={true}>
           <h3 className="modal-title">Scoring Overview</h3>
         </Modal.Header>
@@ -219,7 +220,7 @@ const ScoringOverview: React.FC<{
             />
           </InputGroup>
         </Modal.Body>
-      </Modal>
+      </AdvancedAuthoringModal>
     </Fragment>
   );
 };

@@ -1,24 +1,25 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 import debounce from 'lodash/debounce';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
-import { OverlayPlacements, VariablePicker } from './VariablePicker';
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ActionOperatorOption,
-  actionOperatorOptions,
   TypeOption,
+  actionOperatorOptions,
   typeOptions,
 } from './AdaptiveItemOptions';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
+  authoringContainer: React.RefObject<HTMLElement>;
 }
 
 export interface InitialState {
@@ -31,6 +32,7 @@ export interface InitialState {
 
 interface InitStateItemProps {
   state: InitialState;
+  authoringContainer: React.RefObject<HTMLElement>;
   onChange: (id: string, key: string, value: string) => void;
   onDelete: (id: string) => void;
 }
@@ -69,7 +71,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
       key={state.id}
       className="aa-action aa-mutate d-flex mb-2 form-inline align-items-center flex-nowrap"
     >
-      <div className="input-group input-group-sm flex-grow-1">
+      <div className="input-group input-group-sm flex-grow-1 flex-shrink-0">
         <div className="input-group-prepend" title="Target">
           <VariablePicker
             onTargetChange={(value) => handleTargetChange(value)}
@@ -84,7 +86,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         <input
           key={`target-${state.id}`}
           id={`target-${state.id}`}
-          className="form-control form-control-sm flex-grow-1 mr-2"
+          className="form-control form-control-sm flex-grow-1 mr-2 w-40"
           type="text"
           placeholder="Target"
           value={target}
@@ -150,7 +152,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         </label>
         <input
           type="text"
-          className="form-control form-control-sm flex-grow-1"
+          className="form-control flex-grow-1"
           key={`value-${state.id}`}
           id={`value-${state.id}`}
           value={value}
@@ -194,7 +196,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
   );
 };
 
-export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
+export const InitStateEditor: React.FC<InitStateEditorProps> = ({ authoringContainer }) => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const [initState, setInitState] = useState([]);
@@ -277,7 +279,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
         </div>
       )}
       {!isLayer && !isBank && (
-        <div className="d-flex w-100">
+        <div className="d-flex">
           <OverlayTrigger
             placement="top"
             delay={{ show: 150, hide: 150 }}
@@ -296,18 +298,19 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
             </button>
           </OverlayTrigger>
           {initState.length === 0 && (
-            <div className="d-flex flex-column w-100 border rounded p-2">
+            <div className="d-flex flex-column border rounded p-2 flex-1">
               <div className="text-center">Initial State is currently empty.</div>
             </div>
           )}
           {initState.length > 0 && (
-            <div className="w-100">
+            <div className="flex-1">
               {initState.map((state: InitialState, index: number) => (
                 <InitStateItem
                   key={index}
                   state={state}
                   onChange={handleChange}
                   onDelete={handleDelete}
+                  authoringContainer={authoringContainer}
                 />
               ))}
             </div>

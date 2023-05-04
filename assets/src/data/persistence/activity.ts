@@ -1,13 +1,13 @@
-import { ProjectSlug, ActivityTypeSlug, ResourceId } from 'data/types';
 import {
   ActivityModelSchema,
   FeedbackAction,
-  SubmissionAction,
   PartResponse,
+  SubmissionAction,
 } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
-import { makeRequest } from './common';
+import { ActivityTypeSlug, ProjectSlug, ResourceId } from 'data/types';
 import { clone } from 'utils/common';
+import { makeRequest } from './common';
 import { fixObjectiveParts } from './objectives';
 
 export type ActivityUpdate = {

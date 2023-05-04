@@ -1,5 +1,5 @@
 defmodule OliWeb.AdminLiveTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -574,7 +574,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
-             |> element("##{non_confirmed_author.id} span[data-toggle=\"tooltip\"")
+             |> element("##{non_confirmed_author.id} span[data-bs-toggle=\"tooltip\"")
              |> render() =~ "Confirmation Pending"
     end
 
@@ -585,7 +585,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
-             |> element("##{confirmed_author.id} span[data-toggle=\"tooltip\"")
+             |> element("##{confirmed_author.id} span[data-bs-toggle=\"tooltip\"")
              |> render() =~ "Email Confirmed"
     end
 
@@ -595,7 +595,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
-             |> element("##{invited_and_not_accepted_author.id} span[data-toggle=\"tooltip\"")
+             |> element("##{invited_and_not_accepted_author.id} span[data-bs-toggle=\"tooltip\"")
              |> render() =~ "Invitation Pending"
     end
 
@@ -608,7 +608,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
-             |> element("##{invited_author.id} span[data-toggle=\"tooltip\"")
+             |> element("##{invited_author.id} span[data-bs-toggle=\"tooltip\"")
              |> render() =~ "Invitation Accepted"
     end
 
@@ -626,7 +626,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert view
              |> element(
-               "##{accepted_with_different_email_author.id} span[data-toggle=\"tooltip\""
+               "##{accepted_with_different_email_author.id} span[data-bs-toggle=\"tooltip\""
              )
              |> render() =~ "Confirmation Pending"
     end
@@ -644,7 +644,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert view
              |> element(
-               "##{accepted_and_confirmed_with_different_email_author.id} span[data-toggle=\"tooltip\""
+               "##{accepted_and_confirmed_with_different_email_author.id} span[data-bs-toggle=\"tooltip\""
              )
              |> render() =~ "Email Confirmed"
     end

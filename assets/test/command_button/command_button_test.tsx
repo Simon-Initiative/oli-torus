@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-
+import { fireEvent, render, screen } from '@testing-library/react';
 import { CommandButton } from '../../src/components/common/CommandButton';
 import { CommandButton as CommandButtonModel } from '../../src/data/content/model/elements/types';
 

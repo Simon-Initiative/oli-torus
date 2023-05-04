@@ -1,13 +1,14 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import EventEmitter from 'events';
+import { AnyPartComponent } from 'components/parts/types/parts';
 import {
   NotificationContext,
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import { AnyPartComponent } from 'components/parts/types/parts';
-import EventEmitter from 'events';
-import React, { useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { clone } from 'utils/common';
+import { ModalContainer } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import LayoutEditor from './components/authoring/LayoutEditor';
@@ -17,7 +18,7 @@ const Adaptive = (
   props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },
 ) => {
   // we create this to be able to further send down notifcations that came from the parent notifier
-  const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(50));
+  const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
 
   useEffect(() => {
     if (!props.notify) {
@@ -86,7 +87,10 @@ const Adaptive = (
       }
       setSelectedPartId(partId);
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('selectPart', { id: partId });
+        const _result = await props.onCustomEvent('selectPart', {
+          activityId: props.model.id,
+          id: partId,
+        });
         /* console.log('got result from onSelect', result); */
       }
     },
@@ -97,7 +101,10 @@ const Adaptive = (
     async (selectedPart: any) => {
       /* console.log('AUTHOR PART COPY', { selectedPart }); */
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('copyPart', { copiedPart: selectedPart });
+        const _result = await props.onCustomEvent('copyPart', {
+          activityId: props.model.id,
+          copiedPart: selectedPart,
+        });
       }
       //dispatch(setCopiedPart({ copiedPart: selectedPart }));
     },
@@ -108,7 +115,8 @@ const Adaptive = (
     async (part: any, context: any) => {
       /* console.log('[AdaptiveAuthoring] PART CONFIGURE', { part, context }); */
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('configurePart', {
+        const _result = await props.onCustomEvent('configurePart', {
+          activityId: props.model.id,
           part,
           context,
         });
@@ -121,7 +129,8 @@ const Adaptive = (
     async (partId: string) => {
       /* console.log('AUTHOR PART CANCEL CONFIGURE', { partId }); */
       if (props.onCustomEvent) {
-        const result = await props.onCustomEvent('cancelConfigurePart', {
+        const _result = await props.onCustomEvent('cancelConfigurePart', {
+          activityId: props.model.id,
           partId,
         });
       }
@@ -131,21 +140,23 @@ const Adaptive = (
 
   return (
     <NotificationContext.Provider value={pusher}>
-      <LayoutEditor
-        id={props.model.id || ''}
-        hostRef={props.hostRef}
-        width={props.model.content?.custom?.width || 1000}
-        height={props.model.content?.custom?.height || 500}
-        backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
-        selected={selectedPartId}
-        parts={parts}
-        onChange={handleLayoutChange}
-        onCopyPart={handleCopyComponent}
-        onConfigurePart={handleConfigurePart}
-        onCancelConfigurePart={handleCancelConfigurePart}
-        configurePortalId={configurePortalId}
-        onSelect={handlePartSelect}
-      />
+      <ModalContainer>
+        <LayoutEditor
+          id={props.model.id || ''}
+          hostRef={props.hostRef}
+          width={props.model.content?.custom?.width || 1000}
+          height={props.model.content?.custom?.height || 500}
+          backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
+          selected={selectedPartId}
+          parts={parts}
+          onChange={handleLayoutChange}
+          onCopyPart={handleCopyComponent}
+          onConfigurePart={handleConfigurePart}
+          onCancelConfigurePart={handleCancelConfigurePart}
+          configurePortalId={configurePortalId}
+          onSelect={handlePartSelect}
+        />
+      </ModalContainer>
     </NotificationContext.Provider>
   );
 };

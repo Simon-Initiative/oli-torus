@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Popup as PopupModel } from 'data/content/model/elements/types';
-import { OverlayTrigger, Popover } from 'react-bootstrap';
-import { useAudio } from '../hooks/useAudio';
 import { isEmptyContent } from '../../data/content/utils';
+import { useAudio } from '../hooks/useAudio';
 
 interface Props {
   children: React.ReactNode;
@@ -30,8 +30,8 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
 
   const overlayContent = (
     <Popover id={popup.id}>
-      <Popover.Content className="popup__content">
-        {isEmptyContent(popup.content) ? <i className="material-icons">volume_up</i> : popupContent}
+      <Popover.Content className="popup-content">
+        {isEmptyContent(popup.content) ? <i className="fa-solid fa-volume-high"></i> : popupContent}
       </Popover.Content>
     </Popover>
   );
@@ -42,7 +42,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
         tabIndex={0}
         onClick={preventDefault}
         role="button"
-        className={`popup__anchorText${trigger.includes('hover') ? '' : ' popup__click'}`}
+        className={`popup-anchor${trigger.includes('hover') ? '' : ' popup-click'}`}
       >
         {children}
         {audioPlayer}

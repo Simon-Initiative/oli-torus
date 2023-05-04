@@ -1,5 +1,9 @@
-import { modalActions } from 'actions/modal';
-import { ActivityUndoables, ActivityUndoAction } from 'apps/page-editor/types';
+import React from 'react';
+import { connect } from 'react-redux';
+import Appsignal from '@appsignal/javascript';
+import * as Immutable from 'immutable';
+import { Dispatch, State } from 'state';
+import { Maybe } from 'tsmonad';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
 import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
@@ -9,37 +13,37 @@ import {
 } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { Banner } from 'components/messages/Banner';
+import { Page, Paging } from 'components/misc/Paging';
 import { Modal } from 'components/modal/Modal';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
+import { modalActions } from 'actions/modal';
+import { ActivityUndoAction, ActivityUndoables } from 'apps/page-editor/types';
 import { ActivityEditContext } from 'data/content/activity';
 import * as BankTypes from 'data/content/bank';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { Objective } from 'data/content/objective';
 import { ActivityMap } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
-import { createMessage, Message, Severity } from 'data/messages/messages';
+import { Message, Severity, createMessage } from 'data/messages/messages';
+import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import * as ActivityPersistence from 'data/persistence/activity';
 import * as BankPersistence from 'data/persistence/bank';
-import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import * as Lock from 'data/persistence/lock';
-import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { ProjectSlug } from 'data/types';
-import * as Immutable from 'immutable';
-import React from 'react';
-import { connect } from 'react-redux';
-import { Dispatch, State } from 'state';
 import { loadPreferences } from 'state/preferences';
-import { Maybe } from 'tsmonad';
+import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
+import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
+import { initAppSignal } from '../../utils/appsignal';
+import '../ResourceEditor.scss';
+import styles from './ActivityBank.modules.scss';
 import { CreateActivity } from './CreateActivity';
 import { EditButton } from './EditButton';
 import { LogicFilter } from './LogicFilter';
-import '../ResourceEditor.scss';
-import { arrangeObjectives } from 'components/resource/objectives/sort';
-import { Page, Paging } from 'components/misc/Paging';
-import { classNames } from 'utils/classNames';
-import styles from './ActivityBank.modules.scss';
 
 const PAGE_SIZE = 5;
 
@@ -49,6 +53,7 @@ export interface ActivityBankProps {
   allObjectives: Objective[]; // All objectives
   allTags: Tag[]; // All tags
   totalCount: number;
+  appsignalKey: string | null;
 }
 
 type ActivityBankState = {
@@ -66,6 +71,7 @@ type ActivityBankState = {
   editedSlug: Maybe<string>;
   filterExpressions: BankTypes.Expression[];
   canBeUpdated: boolean; // tracks whether or not the "Update" button should be enabled
+  appsignal: Appsignal | null;
 };
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
@@ -183,7 +189,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
   constructor(props: ActivityBankProps) {
     super(props);
 
+    const appsignal = initAppSignal(props.appsignalKey, 'Activity Bank Editor', {
+      projectSlug: props.projectSlug,
+    });
+
     this.state = {
+      appsignal,
       activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(),
       messages: [],
       persistence: 'idle',
@@ -571,80 +582,91 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     );
 
     return (
-      <div className="resource-editor row">
-        <div className="col-12">
-          <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+      <React.StrictMode>
+        <AppsignalContext.Provider value={this.state.appsignal}>
+          <ErrorBoundary>
+            <ModalDisplay />
 
-          <Banner
-            dismissMessage={(msg) =>
-              this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
-            }
-            executeAction={(message, action) => action.execute(message)}
-            messages={this.state.messages}
-          />
-          <div className="d-flex justify-content-end">
-            <PersistenceStatus persistence={this.state.persistence} />
-          </div>
-          <div className="d-flex justify-content-between">
-            {overviewLabel}
-            <CreateActivity
-              projectSlug={props.projectSlug}
-              editorMap={props.editorMap}
-              onAdd={this.onActivityAdd}
-            />
-          </div>
-          <hr />
+            <div className="resource-editor">
+              <div>
+                <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
-          <LogicFilter
-            expressions={this.state.filterExpressions}
-            editMode={true}
-            allowText={true}
-            projectSlug={props.projectSlug}
-            editorMap={props.editorMap}
-            allObjectives={this.state.allObjectives}
-            allTags={this.state.allTags}
-            onRegisterNewObjective={onRegisterNewObjective}
-            onRegisterNewTag={onRegisterNewTag}
-            onChange={(filterExpressions) => {
-              this.setState({ filterExpressions, canBeUpdated: true });
-            }}
-            onRemove={() => true}
-          />
+                <Banner
+                  dismissMessage={(msg) =>
+                    this.setState({
+                      messages: this.state.messages.filter((m) => msg.guid !== m.guid),
+                    })
+                  }
+                  executeAction={(message, action) => action.execute(message)}
+                  messages={this.state.messages}
+                />
+                <div className="d-flex justify-content-end"></div>
+                <div className="d-flex justify-content-between mb-4">
+                  <div className="flex-1 py-2">{overviewLabel}</div>
 
-          <div className="d-flex justify-content-end">
-            <button
-              className="btn btn-secondary mr-3"
-              disabled={isEmptyFilterLogic(this.state.filterExpressions)}
-              onClick={() => {
-                this.setState({ filterExpressions: defaultFilters(), canBeUpdated: true });
-              }}
-            >
-              Clear all
-            </button>
-            <button
-              className="btn btn-secondary"
-              disabled={!this.state.canBeUpdated}
-              onClick={() => {
-                this.setState({ paging: defaultPaging(), canBeUpdated: false });
-                this.fetchActivities(
-                  translateFilterToLogic(this.state.filterExpressions),
-                  defaultPaging(),
-                );
-              }}
-            >
-              Apply Filters
-            </button>
-          </div>
+                  <div className="mx-4 py-2">
+                    <PersistenceStatus persistence={this.state.persistence} />
+                  </div>
+                  <CreateActivity
+                    projectSlug={props.projectSlug}
+                    editorMap={props.editorMap}
+                    onAdd={this.onActivityAdd}
+                  />
+                </div>
 
-          <hr className="mb-4" />
+                <LogicFilter
+                  expressions={this.state.filterExpressions}
+                  editMode={true}
+                  allowText={true}
+                  projectSlug={props.projectSlug}
+                  editorMap={props.editorMap}
+                  allObjectives={this.state.allObjectives}
+                  allTags={this.state.allTags}
+                  onRegisterNewObjective={onRegisterNewObjective}
+                  onRegisterNewTag={onRegisterNewTag}
+                  onChange={(filterExpressions) => {
+                    this.setState({ filterExpressions, canBeUpdated: true });
+                  }}
+                  onRemove={() => true}
+                />
 
-          {pagingOrPlaceholder}
+                <div className="d-flex justify-end my-4">
+                  <button
+                    className="btn btn-secondary mr-3"
+                    disabled={isEmptyFilterLogic(this.state.filterExpressions)}
+                    onClick={() => {
+                      this.setState({ filterExpressions: defaultFilters(), canBeUpdated: true });
+                    }}
+                  >
+                    Clear all
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    disabled={!this.state.canBeUpdated}
+                    onClick={() => {
+                      this.setState({ paging: defaultPaging(), canBeUpdated: false });
+                      this.fetchActivities(
+                        translateFilterToLogic(this.state.filterExpressions),
+                        defaultPaging(),
+                      );
+                    }}
+                  >
+                    Apply Filters
+                  </button>
+                </div>
 
-          {activities}
+                <hr className="mb-4" />
 
-          {this.state.totalCount > 0 ? pagingOrPlaceholder : null}
-        </div>
-      </div>
+                {pagingOrPlaceholder}
+
+                {activities}
+
+                {this.state.totalCount > 0 ? pagingOrPlaceholder : null}
+              </div>
+            </div>
+          </ErrorBoundary>
+        </AppsignalContext.Provider>
+      </React.StrictMode>
     );
   }
 }

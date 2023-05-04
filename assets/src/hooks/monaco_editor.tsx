@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { render } from 'react-dom';
-import * as monaco from 'monaco-editor';
 import ReactMonacoEditor, { IMonacoEditor } from '@uiw/react-monacoeditor';
+import * as monaco from 'monaco-editor';
 import { Maybe } from 'tsmonad';
-import { surfaceHook } from 'utils/surface';
 import { registry } from 'components/monaco_lenses';
+import { surfaceHook } from 'utils/surface';
 
 export const MonacoEditor = {
   mounted() {

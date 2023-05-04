@@ -1,7 +1,7 @@
 defmodule OliWeb.Delivery.ManageSourceMaterials.ProjectInfo do
   use Surface.Component
 
-  alias OliWeb.Delivery.ManageSourceMaterials
+  alias OliWeb.Common.Utils
 
   prop project, :struct, required: true
   prop current_publication, :struct, required: true
@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ProjectInfo do
       <div class="card-title">
         <div class="d-flex align-items-center">
           <h5 class="mb-0">{@project.title}</h5>
-          <span class="badge badge-info ml-2">{ManageSourceMaterials.version_number(@current_publication)}</span>
+          <span class="badge badge-info ml-2">{Utils.render_version(@current_publication.edition, @current_publication.major, @current_publication.minor)}</span>
         </div>
       </div>
 
@@ -23,10 +23,10 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ProjectInfo do
 
       {#unless @newest_publication == nil}
         <hr class="bg-light">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mt-3">
           <div class="d-flex">
             <h6 class="mb-0">An update is available for this section</h6>
-            <span class="badge badge-success ml-2">{ManageSourceMaterials.version_number(@newest_publication)}</span>
+            <span class="badge badge-success ml-2">{Utils.render_version(@newest_publication.edition, @newest_publication.major, @newest_publication.minor)}</span>
           </div>
           {#if Map.has_key?(@updates_in_progress, @newest_publication.id)}
             <button type="button" class="btn btn-sm btn-primary" disabled>Update in progress...</button>

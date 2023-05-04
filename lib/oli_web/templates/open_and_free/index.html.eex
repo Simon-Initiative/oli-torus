@@ -5,7 +5,7 @@
   clipboard.on('success', function(e) {
       const el = $(e.trigger);
       el.html('Copied!');
-      setTimeout(() => el.html('<i class="lar la-clipboard"></i> Copy'), 5000);
+      setTimeout(() => el.html('<i class="far fa-clipboard"></i> Copy'), 5000);
   });
 </script>
 
@@ -38,7 +38,7 @@
               <div class="text-nowrap">
                 <%= external_link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug), id: "section_link_#{section.slug}", class: "mr-2" %>
                 <button class="clipboardjs btn btn-xs btn-primary" data-clipboard-target="#<%= "section_link_#{section.slug}" %>">
-                  <i class="lar la-clipboard"></i> Copy
+                  <i class="far fa-clipboard"></i> Copy
                 </button>
               </div>
             </td>

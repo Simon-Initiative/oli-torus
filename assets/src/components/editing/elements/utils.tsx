@@ -1,9 +1,9 @@
-import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
-import { ReactEditor, useSlate } from 'slate-react';
 import { Editor, Transforms } from 'slate';
-import { isActive } from '../slateUtils';
+import { ReactEditor, useSlate } from 'slate-react';
+import * as ContentModel from 'data/content/model/elements/types';
 import { SemanticElements } from '../../../data/content/model/schema';
+import { isActive } from '../slateUtils';
 
 /**
  * Updates a model element that is contained in a slate data model hierarchy.

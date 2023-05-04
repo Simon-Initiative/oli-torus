@@ -9,7 +9,11 @@ export const MuteButton: React.FC<ControlButtonProps> = ({ actions, player }) =>
 
   return (
     <button className="video-react-control video-react-button" onClick={toggle}>
-      <span className="material-icons-outlined">{muted ? 'volume_off' : 'volume_up'}</span>
+      {muted ? (
+        <i className="fa-solid fa-volume-xmark"></i>
+      ) : (
+        <i className="fa-solid fa-volume-high"></i>
+      )}
     </button>
   );
 };

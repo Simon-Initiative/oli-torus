@@ -1,4 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import flatten from 'lodash/flatten';
+import isEqual from 'lodash/isEqual';
+import uniq from 'lodash/uniq';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
   findReferencedActivitiesInActions,
@@ -15,9 +18,6 @@ import {
   getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
-import isEqual from 'lodash/isEqual';
-import flatten from 'lodash/flatten';
-import uniq from 'lodash/uniq';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import {
@@ -112,7 +112,7 @@ export const updateActivityRules = createAsyncThunk(
 
         /* console.log(`[updateActivityRules] found activity ${child.resourceId}`, { childActivity }); */
 
-        const activityRules = childActivity?.authoring.rules || [];
+        const activityRules = childActivity?.authoring?.rules || [];
         const activityRulesClone = clone(activityRules);
 
         const referencedSequenceIds: string[] = [];
@@ -158,7 +158,7 @@ export const updateActivityRules = createAsyncThunk(
           // find the key in the authoring.parts
           if (key.indexOf('stage.') === 0) {
             const [, componentId] = key.split('.');
-            const partDef = childActivity.authoring.parts.find(
+            const partDef = (childActivity.authoring?.parts || []).find(
               (part: any) => part.id === componentId,
             );
             if (partDef && partDef.inherited) {
@@ -227,7 +227,7 @@ export const updateActivityRules = createAsyncThunk(
 
         childActivityClone.authoring.rules = activityRulesClone;
         /* console.log('CLONE RULES', { childActivityClone, childActivity }); */
-        if (!isEqual(childActivity.authoring.rules, childActivityClone.authoring.rules)) {
+        if (!isEqual(childActivity.authoring?.rules, childActivityClone.authoring.rules)) {
           /* console.log('CLONE IS DIFFERENT!'); */
           // add to activitiesToUpdate if not already in there (check by id)
           if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {

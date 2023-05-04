@@ -10,7 +10,7 @@ export const ShowPage: React.FC<{
     return (
       <div className="float-right">
         <button className="btn btn-sm btn-link" onClick={(_e) => onChange(0)}>
-          Automate the reveal of a content page <i className={`tiny-icon las la-code-branch`}></i>
+          Automate the reveal of a content page <i className={`tiny-icon fas fa-code-branch`}></i>
         </button>
       </div>
     );
@@ -18,8 +18,8 @@ export const ShowPage: React.FC<{
   return (
     <div className="alert alert-info">
       <div className="d-flex">
-        <div className="col-sm-5">Display content group number:</div>
-        <div className="col-sm-2">
+        <div className="sm:col-span-5">Display content group number:</div>
+        <div className="sm:col-span-2">
           <TextInput
             editMode={editMode}
             label=""
@@ -31,11 +31,11 @@ export const ShowPage: React.FC<{
           />
         </div>
 
-        <div className="col-sm-4"></div>
+        <div className="sm:col-span-4"></div>
 
-        <div className="col-sm-1">
+        <div className="sm:col-span-1">
           <button className="float-right btn btn-sm btn-info" onClick={() => onChange(undefined)}>
-            <i className={`tiny-icon las la-trash`}></i>
+            <i className={`tiny-icon fas fa-trash`}></i>
           </button>
         </div>
       </div>

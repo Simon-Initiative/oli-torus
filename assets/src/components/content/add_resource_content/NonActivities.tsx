@@ -1,24 +1,23 @@
+import React from 'react';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { SelectModal } from 'components/modal/SelectModal';
+import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
+import { modalActions } from 'actions/modal';
+import { FeatureFlags } from 'apps/page-editor/types';
 import {
+  ResourceContext,
   createAlternatives,
   createDefaultStructuredContent,
   createGroup,
-  ResourceContext,
 } from 'data/content/resource';
-
 import {
-  createDefaultSelection,
-  createBreak,
-  createSurvey,
   ResourceContent,
+  createBreak,
+  createDefaultSelection,
+  createSurvey,
 } from 'data/content/resource';
 import * as Persistence from 'data/persistence/resource';
-import React from 'react';
 import { ResourceChoice } from './ResourceChoice';
-import { FeatureFlags } from 'apps/page-editor/types';
-import { modalActions } from 'actions/modal';
-import { SelectModal } from 'components/modal/SelectModal';
-import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
 
 interface Props {
   index: number[];
@@ -45,12 +44,10 @@ export const NonActivities: React.FC<Props> = ({
 
       <div className="resource-choices non-activities">
         <ResourceChoice
-          icon="edit"
-          label="Mixed"
+          icon="paragraph"
+          label="Paragraph"
           onHoverStart={() =>
-            onSetTip(
-              'Author mixed, HTML-like content such as paragraphs, images, tables, YouTube, etc',
-            )
+            onSetTip('Rich content such as paragraphs, images, tables, YouTube, etc')
           }
           onHoverEnd={() => onResetTip()}
           key={'static_html_content'}
@@ -71,7 +68,7 @@ export const NonActivities: React.FC<Props> = ({
         <ResourceChoice
           icon="random"
           label="Bank"
-          onHoverStart={() => onSetTip('Randomnly select questions from the activity bank')}
+          onHoverStart={() => onSetTip('Randomly select questions from the activity bank')}
           onHoverEnd={() => onResetTip()}
           key={'selection'}
           disabled={false}
@@ -129,7 +126,7 @@ const addContent = (onAddItem: AddCallback, index: number[]) => {
 };
 
 const addGroup = (onAddItem: AddCallback, index: number[]) => {
-  onAddItem(createGroup(), index);
+  onAddItem(createGroup(index.length > 1 ? 'none' : 'didigetthis'), index);
   document.body.click();
 };
 
@@ -156,17 +153,15 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         onFetchOptions={() =>
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
-              return Promise.resolve(
-                result.alternatives.map((a) => ({ value: a.id, title: a.title })),
-              );
+              return result.alternatives.map((a) => ({ value: a.id, title: a.title }));
             } else {
-              return Promise.reject(result.message);
+              throw result.message;
             }
           })
         }
         onDone={(alternativesId: string) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(createAlternatives(alternativesId), index);
+          onAddItem(createAlternatives(Number(alternativesId)), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,

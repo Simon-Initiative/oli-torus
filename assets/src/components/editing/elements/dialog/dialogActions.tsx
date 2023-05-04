@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
-
+import { Provider } from 'react-redux';
+import { Transforms } from 'slate';
+import { Maybe } from 'tsmonad';
+import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
-import { MediaItem } from 'types/media';
-import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { configureStore } from 'state/store';
-import { Provider } from 'react-redux';
-import { createButtonCommandDesc } from '../commands/commandFactories';
-import { Transforms } from 'slate';
+import { MediaItem } from 'types/media';
 import { Model } from '../../../../data/content/model/elements/factories';
-import { Maybe } from 'tsmonad';
+import { createButtonCommandDesc } from '../commands/commandFactories';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
 const store = configureStore();
 
 export const insertDialog = createButtonCommandDesc({
-  icon: 'record_voice_over',
+  icon: <i className="fa-regular fa-comment-dots"></i>,
   description: 'Dialog',
   execute: (_context, editor) => {
     const at = editor.selection;

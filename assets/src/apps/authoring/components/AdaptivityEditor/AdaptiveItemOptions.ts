@@ -174,6 +174,24 @@ export const conditionTypeOperatorCombos: ConditionTypeOperatorCombo[] = [
   },
 ];
 
+// I couldn't figure out how to turn these into a type without making temporary constants,
+//        you can't `typeof conditionTypeOperatorCombos[0].operators`, they are only here for the
+//        type definition.
+const op0 = conditionTypeOperatorCombos[0].operators;
+const op1 = conditionTypeOperatorCombos[1].operators;
+const op2 = conditionTypeOperatorCombos[2].operators;
+const op3 = conditionTypeOperatorCombos[3].operators;
+const op4 = conditionTypeOperatorCombos[4].operators;
+const op5 = conditionTypeOperatorCombos[5].operators;
+
+export type OperatorOptions =
+  | typeof op0[number]
+  | typeof op1[number]
+  | typeof op2[number]
+  | typeof op3[number]
+  | typeof op4[number]
+  | typeof op5[number];
+
 export const sessionVariables: Record<string, unknown> = {
   attemptNumber: 0,
   currentQuestionScore: 0,

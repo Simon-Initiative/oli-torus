@@ -10,8 +10,7 @@ import {
   getAssignScript,
   getEnvState,
 } from '../../../../../../adaptivity/scripting';
-import { RootState } from '../../../rootReducer';
-import { setHistoryNavigationTriggered } from '../../adaptivity/slice';
+import { DeliveryRootState } from '../../../rootReducer';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
 import {
   loadActivities,
@@ -21,7 +20,7 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { loadPageState, PageState, selectResourceAttemptGuid } from '../slice';
+import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -37,16 +36,16 @@ export const loadInitialPageState = createAsyncThunk(
     if (otherTypes.length) {
       groups.push({ type: 'group', layout: 'deck', children: [...otherTypes] });
     }
+    const isReviewMode = selectReviewMode(getState() as DeliveryRootState);
     // wait for this to resolve so that state will be updated
     await dispatch(setGroups({ groups }));
-
-    const currentGroup = selectCurrentGroup(getState() as RootState);
+    const currentGroup = selectCurrentGroup(getState() as DeliveryRootState);
     if (currentGroup?.layout === LayoutType.DECK) {
       // write initial session state (TODO: factor out elsewhere)
-      const resourceAttemptGuid = selectResourceAttemptGuid(getState() as RootState);
+      const resourceAttemptGuid = selectResourceAttemptGuid(getState() as DeliveryRootState);
       dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
-      const sequence = selectSequence(getState() as RootState);
-      const sessionState = sequence.reduce((acc, entry) => {
+      const sequence = selectSequence(getState() as DeliveryRootState);
+      const sessionState: any = sequence.reduce((acc: any, entry) => {
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
         return acc;
       }, {});
@@ -59,7 +58,6 @@ export const loadInitialPageState = createAsyncThunk(
 
       // Sets up Current Active Everapp to None
       sessionState['app.active'] = 'none';
-
       // read all user state for the assigned everapps into the session state
       /* console.log('INIT PAGE', params); */
       if (params.content.custom?.everApps) {
@@ -98,7 +96,7 @@ export const loadInitialPageState = createAsyncThunk(
 
       // update scripting env with session state
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
-      const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+      const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
       if (!params.previewMode) {
         await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
@@ -126,17 +124,10 @@ export const loadInitialPageState = createAsyncThunk(
       }: any = await dispatch(loadActivities(activityAttemptMapping));
 
       const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
-      if (shouldResume) {
+      if (shouldResume && !isReviewMode) {
         // state should be all up to date by now
         const snapshot = getEnvState(defaultGlobalEnv);
-        const visitHistory = Object.keys(snapshot)
-          .filter((key: string) => key.indexOf('session.visitTimestamps.') === 0)
-          .map((entry) => ({ id: entry.split('.')[2], ts: snapshot[entry] }))
-          .sort((a, b) => b.ts - a.ts);
         const resumeId = snapshot['session.resume'];
-
-        /* console.log('VISIT HISTORY', { visitHistory, resumeId, snapshot }); */
-
         /* console.log('RESUMING!: ', { attempts, resumeId }); */
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
@@ -173,14 +164,6 @@ export const loadInitialPageState = createAsyncThunk(
             return target;
           }, 0);
           resumeSequenceId = sequence[resumeTarget].custom.sequenceId;
-        }
-        // need to check the visitHistory to see if the resumeSequenceId is in there and is NOT the latest, then we need to set history mode to true
-        const resumeHistoryIndex = visitHistory.findIndex(
-          (entry) => entry.id === resumeSequenceId && entry.ts > 0,
-        );
-        if (resumeHistoryIndex > 0) {
-          /*  console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
-          dispatch(setHistoryNavigationTriggered({ historyModeNavigation: true }));
         }
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
         dispatch(navigateToActivity(resumeSequenceId));

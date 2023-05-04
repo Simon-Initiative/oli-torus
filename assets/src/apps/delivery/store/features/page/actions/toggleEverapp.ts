@@ -1,14 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
-import { RootState } from 'apps/delivery/store/rootReducer';
-import { selectActiveEverapp, setActiveEverapp } from '../slice';
+import { DeliveryRootState } from 'apps/delivery/store/rootReducer';
 import PageSlice from '../name';
+import { selectActiveEverapp, setActiveEverapp } from '../slice';
 
 export const toggleEverapp = createAsyncThunk(
   `${PageSlice}/toggleEverapp`,
   async (payload: { id: string }, thunkAPI) => {
     const { dispatch, getState } = thunkAPI;
-    const currentActiveApp = selectActiveEverapp(getState() as RootState);
+    const currentActiveApp = selectActiveEverapp(getState() as DeliveryRootState);
 
     // need to sync up id with scripting environment
     const { id } = payload;

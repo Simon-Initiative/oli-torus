@@ -1,30 +1,30 @@
-import { AnyAction, createSlice, Dispatch, PayloadAction, ThunkAction } from '@reduxjs/toolkit';
+import { AnyAction, Dispatch, PayloadAction, ThunkAction, createSlice } from '@reduxjs/toolkit';
+import { WritableDraft } from 'immer/dist/internal';
+import { Maybe } from 'tsmonad';
 import {
+  ActivityContext,
   EvaluationResponse,
+  PartActivityResponse,
   RequestHintResponse,
   ResetActivityResponse,
-  PartActivityResponse,
-  ActivityContext,
 } from 'components/activities/DeliveryElement';
 import {
   ActivityState,
   FeedbackAction,
-  SubmissionAction,
+  FileMetaData,
   Hint,
   PartId,
   PartResponse,
   PartState,
   StudentResponse,
+  SubmissionAction,
   Success,
-  FileMetaData,
 } from 'components/activities/types';
-import { updatePaginationState } from 'data/persistence/pagination';
-import * as Events from 'data/events';
-import { studentInputToString } from 'data/activities/utils';
-import { WritableDraft } from 'immer/dist/internal';
 import { ActivityModelSchema } from 'components/activities/types';
-import { Maybe } from 'tsmonad';
-import { initialPartInputs, isCorrect } from 'data/activities/utils';
+import { studentInputToString } from 'data/activities/utils';
+import { initialPartInputs } from 'data/activities/utils';
+import * as Events from 'data/events';
+import { updatePaginationState } from 'data/persistence/pagination';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
@@ -431,6 +431,17 @@ export const resetAndSubmitPart =
       studentResponse,
     );
     dispatch(slice.actions.partSubmissionReceived(response));
+  };
+
+export const resetPart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
+    dispatch(slice.actions.partResetRecieved(partActivityResponse));
   };
 
 export const resetAndSubmitActivity =

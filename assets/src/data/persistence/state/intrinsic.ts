@@ -1,5 +1,5 @@
-import { makeRequest } from '../common';
 import { encodeFile, getFileName } from 'data/persistence/media';
+import { makeRequest } from '../common';
 
 export type BulkAttemptRetrieved = {
   result: 'success';

@@ -193,4 +193,48 @@ defmodule Oli.CourseTest do
       assert project.publisher_id == default_publisher.id
     end
   end
+
+  describe "project surveys" do
+    setup [:base_project_with_curriculum]
+
+    test "create_survey/2 creates a new survey if the project doesn't have one", %{
+      project: project
+    } do
+      author = insert(:author)
+      Course.create_project_survey(project, author.id)
+
+      project_with_survey = Course.get_project!(project.id)
+      assert project_with_survey.required_survey_resource_id != nil
+    end
+
+    test "create_survey/2 doesn't create a new survey if the project already has one", %{
+      project: project
+    } do
+      author = insert(:author)
+      Course.create_project_survey(project, author.id)
+
+      assert {:error, "The project already has a survey"} ==
+               Course.create_project_survey(project, author.id)
+    end
+
+    test "delete_project_survey/1 deletes the project survey if it has one", %{project: project} do
+      author = insert(:author)
+      Course.create_project_survey(project, author.id)
+
+      project_with_survey = Course.get_project!(project.id)
+      assert project_with_survey.required_survey_resource_id != nil
+
+      Course.delete_project_survey(project)
+
+      project_without_survey = Course.get_project!(project.id)
+      assert project_without_survey.required_survey_resource_id == nil
+    end
+
+    test "delete_project_survey/1 doesn't delete the project survey if it doesn't have one", %{
+      project: project
+    } do
+      assert {:error, "The project doesn't have a survey"} ==
+               Course.delete_project_survey(project)
+    end
+  end
 end

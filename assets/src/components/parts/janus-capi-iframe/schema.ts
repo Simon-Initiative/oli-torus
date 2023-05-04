@@ -1,13 +1,24 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
-import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 import { formatExpression } from 'adaptivity/scripting';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
   configData: any;
   allowScrolling: boolean;
 }
+
+export const simpleSchema: JSONSchema7Object = {
+  src: {
+    title: 'Source',
+    type: 'string',
+  },
+  allowScrolling: {
+    title: 'Allow Scrolling',
+    type: 'boolean',
+  },
+};
 
 export const schema: JSONSchema7Object = {
   customCssClass: {
@@ -98,6 +109,7 @@ export const adaptivitySchema = ({
 };
 
 export const uiSchema = {};
+export const simpleUISchema = {};
 
 export const createSchema = (): Partial<CapiIframeModel> => ({
   customCssClass: '',

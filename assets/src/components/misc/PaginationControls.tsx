@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { List } from 'immutable';
-import styles from './PaginationControls.modules.scss';
-import { classNames } from 'utils/classNames';
-import * as Events from 'data/events';
 import { PaginationMode } from 'data/content/resource';
+import * as Events from 'data/events';
 import { updatePaginationState } from 'data/persistence/pagination';
+import { classNames } from 'utils/classNames';
+import styles from './PaginationControls.modules.scss';
 
 export interface PaginationControlsProps {
   forId: string;

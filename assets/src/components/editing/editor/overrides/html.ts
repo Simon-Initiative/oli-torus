@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { normalizeHref } from 'data/content/model/elements/utils';
-import { Model } from 'data/content/model/elements/factories';
-import { Hyperlink, ModelElement } from 'data/content/model/elements/types';
 import { Editor, Node } from 'slate';
 import { jsx } from 'slate-hyperscript';
+import { Model } from 'data/content/model/elements/factories';
+import { Hyperlink, ModelElement } from 'data/content/model/elements/types';
+import { normalizeHref } from 'data/content/model/elements/utils';
 
 const ELEMENT_TAGS: Record<string, (...args: any) => ModelElement> = {
   A: (el: HTMLElement): Hyperlink => Model.link(el.getAttribute('href') ?? ''),

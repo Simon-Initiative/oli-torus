@@ -1,6 +1,6 @@
 import React from 'react';
-import { CommandTarget } from './commandButtonTypes';
 import { DefaultCommandMessageEditor } from './DefaultCommandMessageEditor';
+import { CommandTarget } from './commandButtonTypes';
 
 interface Props {
   value: string;
@@ -38,7 +38,7 @@ export const CommandMessageEditor: React.FC<Props> = ({ value, target, onChange 
             ))}
           </ul>
         </div>
-        <div className="col-9">
+        <div className="col-span-9">
           <ActiveEditor onChange={onChange} value={value} />
         </div>
       </div>

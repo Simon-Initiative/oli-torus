@@ -47,5 +47,13 @@ defmodule Oli.Activities.Transformers.VariableSubstitutionTest do
       ])
 
     assert transformed["stem"] == ~s|var1 = 1\n2|
+
+    {:ok, transformed} =
+      VariableSubstitution.transform(model, nil, [
+        %{"variable" => "var1", "result" => [0, 1, 2]}
+      ])
+
+    assert transformed["stem"] == ~s|var1 = [0, 1, 2]|
+
   end
 end

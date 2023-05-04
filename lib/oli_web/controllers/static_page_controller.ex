@@ -60,7 +60,9 @@ defmodule OliWeb.StaticPageController do
     |> send_resp(200, "Ok")
   end
 
-  def update_timezone(conn, %{"timezone" => timezone, "redirect_to" => redirect_to}) do
+  def update_timezone(conn, %{
+        "timezone" => %{"timezone" => timezone, "redirect_to" => redirect_to}
+      }) do
     redirect_to = validate_path(conn, redirect_to)
 
     conn =

@@ -31,7 +31,13 @@ defmodule OliWeb.Common.Table.ColumnSpec do
             # a two element tuple, where the entries are used as args 2 and 3 of into Enum.sort_by/3
             sort_fn: nil,
             # a function that can then be used as a sort comparator
-            render_fn: nil
+            render_fn: nil,
+            # class to be applied to the th element
+            th_class: nil,
+            # class to be applied to the td element
+            td_class: nil,
+            # indicates whether a column can be sortable or not
+            sortable: true
 
   def default_sort_fn(:asc, %{name: name}),
     do: fn row1, row2 -> Map.get(row1, name) <= Map.get(row2, name) end

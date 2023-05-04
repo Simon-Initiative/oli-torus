@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
-import React, { ChangeEvent, CSSProperties, Fragment, useState } from 'react';
+import React, { CSSProperties, ChangeEvent, Fragment, useState } from 'react';
 import { useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
+import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
+
 interface JsonEditorProps {
   jsonValue: any;
   onChange: (changedJson: object) => void;
@@ -45,7 +47,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
       <Button onClick={() => setDisplayEditor(true)}>
         <i className="fas fa-edit mr-2" />
       </Button>
-      <Modal show={displayEditor} onHide={() => setDisplayEditor(false)}>
+      <AdvancedAuthoringModal show={displayEditor} onHide={() => setDisplayEditor(false)}>
         <Modal.Header closeButton={true}>
           <h4 className="modal-title">Edit JSON</h4>
         </Modal.Header>
@@ -70,7 +72,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
             Cancel
           </button>
         </Modal.Footer>
-      </Modal>
+      </AdvancedAuthoringModal>
     </Fragment>
   );
 };

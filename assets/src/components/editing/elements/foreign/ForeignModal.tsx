@@ -1,7 +1,7 @@
+import React, { useCallback } from 'react';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
-import React, { useCallback } from 'react';
 import { iso639_language_codes } from '../../../../utils/language-codes-iso639';
 
 interface Props {
@@ -27,7 +27,7 @@ export const ForeignModal = (props: Props) => {
       onOk={() => props.onDone({ lang })}
     >
       <div className="row">
-        <div className="col-12">
+        <div className="col-span-12">
           <p className="mb-4">
             Set this text as belonging to a foreign language for screen readers to pronounce
             properly. This has no visual effect for the learner. You can set a project-wide default

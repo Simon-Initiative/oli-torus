@@ -1,11 +1,11 @@
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { clone, parseBoolean } from 'utils/common';
 import { getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
@@ -22,7 +22,7 @@ const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal }) =
 });
 
 const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
-  const { id, model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
+  const { id, model, configuremode, onConfigure, onSaveConfigure } = props;
 
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   useEffect(() => {
@@ -107,20 +107,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     };
   }, [props.notify, handleNotificationSave]);
 
-  const {
-    x,
-    y,
-    z,
-    width,
-    height,
-    customCssClass,
-    openByDefault,
-    visible = true,
-    defaultURL,
-    iconURL,
-    useToggleBehavior,
-    description,
-  } = model;
+  const { z, width, height, visible = true, defaultURL, iconURL, description } = model;
 
   // need to offset the window position by the position of the parent element
   // since it's a child of the parent element and not the activity (screen) directly

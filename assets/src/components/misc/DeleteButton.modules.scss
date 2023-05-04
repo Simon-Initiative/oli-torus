@@ -1,13 +1,9 @@
-@use 'authoring/theme' as authoring;
+.deleteButton {
+  &:not([disabled]) {
+    color: rgba(var(--color-body-color), 0.8);
 
-:global(html.authoring) {
-  .deleteButton {
-    &:not([disabled]) {
-      color: rgba(authoring.$body-color, 0.8);
-
-      &:hover {
-        color: authoring.$danger;
-      }
+    &:hover {
+      color: var(--color-red-500);
     }
   }
 }

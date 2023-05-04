@@ -1,0 +1,81 @@
+
+<Components.Delivery.PageDelivery.header title={@title} page_number={@page_number} review_mode={@review_mode} />
+
+<Components.Delivery.PageDelivery.details scheduling_type={@scheduling_type} end_date={@end_date} est_reading_time={@est_reading_time} />
+
+
+<script>
+window.userToken = "<%= assigns[:user_token] %>";
+</script>
+
+<%= unless @graded && not @review_mode do %>
+  <Components.Delivery.PageDelivery.learning_objectives objectives={@objectives} />
+<% end %>
+
+<hr class="text-gray-400 my-4" />
+
+<%= if @review_mode == true do %>
+  <%= if @resource_attempt.lifecycle_state == :evaluated do  %>
+    <div class="mb-2">
+    <div class="grid grid-cols-12 justify-content-start">
+      <div class="col-span-3">Started:</div>
+      <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
+    </div>
+    <div class="grid grid-cols-12">
+      <div class="col-span-3">Submitted:</div>
+      <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
+    </div>
+    <div class="grid grid-cols-12">
+      <div class="col-span-3">Score:</div>
+      <div class="col-span-9"><%= show_score(@resource_attempt.score, @resource_attempt.out_of) %>%</div>
+    </div>
+    <div class="grid grid-cols-12">
+      <div class="col-span-3">Points:</div>
+      <div class="col-span-9"><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
+    </div>
+    </div>
+  <% end %>
+  <%= if @resource_attempt.lifecycle_state == :submitted do  %>
+    <div class="mb-2">
+    <h3>Awaiting Instructor Grading</h3>
+    <div class="grid grid-cols-12 justify-content-start">
+      <div class="col-span-3">Started:</div>
+      <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
+    </div>
+    <div class="grid grid-cols-12">
+      <div class="col-span-3">Submitted:</div>
+      <div><%= Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
+    </div>
+    </div>
+  <% end %>
+<% end %>
+
+<div id="eventIntercept" class="content">
+  <%= raw(@html) %>
+</div>
+
+<script>
+  OLI.initActivityBridge('eventIntercept');
+</script>
+
+<%= if @graded && @activity_count > 0 && @review_mode == false do %>
+  <div class="d-flex align-items-center justify-content-center">
+    <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', 'submit_answers')"}>
+      Submit Answers
+    </button>
+  </div>
+<% end %>
+
+<%= if @review_mode == true do %>
+  <div class="d-flex align-items-center justify-content-center">
+    <%= link "Continue", to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug), class: "btn btn-primary btn-lg" %>
+  </div>
+<% end %>
+
+<%= if Oli.Utils.LoadTesting.enabled?() do %>
+<!--
+__FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid)) %>__FINALIZATION_URL__
+
+__ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__
+-->
+<% end %>

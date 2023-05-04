@@ -142,13 +142,15 @@ defmodule OliWeb.ResourceController do
           transformed_content: transformed_content
         } =
           Oli.Delivery.ActivityProvider.provide(
-            revision,
+            revision.content,
             %Source{
               blacklisted_activity_ids: [],
               section_slug: project_slug,
               publication_id: Oli.Publishing.project_working_publication(project_slug).id
             },
             [],
+            nil,
+            nil,
             Oli.Publishing.AuthoringResolver
           )
 

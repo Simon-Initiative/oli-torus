@@ -1,6 +1,6 @@
-import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { PayloadAction, createSelector, createSlice } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
-import { RootState } from '../../rootReducer';
+import { DeliveryRootState } from '../../rootReducer';
 import PageSlice from './name';
 
 export interface PageState {
@@ -26,6 +26,7 @@ export interface PageState {
   finalizeGradedURL: string;
   screenIdleTimeOutInSeconds: number;
   screenIdleExpireTime?: number;
+  reviewMode?: boolean;
 }
 
 const initialState: PageState = {
@@ -50,6 +51,7 @@ const initialState: PageState = {
   overviewURL: '',
   finalizeGradedURL: '',
   screenIdleTimeOutInSeconds: 1800,
+  reviewMode: false,
 };
 
 const pageSlice = createSlice({
@@ -78,6 +80,7 @@ const pageSlice = createSlice({
       state.overviewURL = action.payload.overviewURL;
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
       state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
+      state.reviewMode = action.payload.reviewMode;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
@@ -111,14 +114,17 @@ export const {
   setScreenIdleExpirationTime,
 } = pageSlice.actions;
 
-export const selectState = (state: RootState): PageState => state[PageSlice];
+export const selectState = (state: DeliveryRootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageTitle = createSelector(selectState, (state) => state.pageTitle);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
+export const selectReviewMode = createSelector(selectState, (state) => state.reviewMode);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
+
+export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectScreenIdleTimeOutInSeconds = createSelector(
   selectState,
   (state) => state.screenIdleTimeOutInSeconds,
@@ -127,7 +133,6 @@ export const selectScreenIdleExpirationTime = createSelector(
   selectState,
   (state) => state.screenIdleExpireTime,
 );
-export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,

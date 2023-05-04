@@ -61,7 +61,6 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
            section: section,
            updates: updates,
            updates_in_progress: updates_in_progress,
-           delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(section, user_type),
            base_project_details: base_project_details,
            current_publication: current_publication,
@@ -73,7 +72,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   def render(assigns) do
     ~F"""
       {render_modal(assigns)}
-      <div class="pb-5">
+      <div class="container mx-auto pb-5">
 
         <ProjectCard
           id={"project_info_#{@base_project_details.id}"}
@@ -127,9 +126,6 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       </div>
     """
   end
-
-  def version_number(%Publication{edition: edition, major: major, minor: minor}),
-    do: "v#{edition}.#{major}.#{minor}"
 
   defp newest_publication(project_id, updates) do
     case Enum.find(updates, fn {id, _} -> id == project_id end) do

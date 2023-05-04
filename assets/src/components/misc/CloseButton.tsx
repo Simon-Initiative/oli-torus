@@ -15,6 +15,6 @@ export const CloseButton = (props: CloseButtonProps) => (
     aria-label="Close"
     onClick={props.onClick}
   >
-    <span aria-hidden="true">&times;</span>
+    <i className="fa-solid fa-xmark fa-lg"></i>
   </button>
 );

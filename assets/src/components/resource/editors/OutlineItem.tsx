@@ -1,12 +1,12 @@
 import React, { PropsWithChildren, useRef } from 'react';
 import * as Immutable from 'immutable';
+import { ActivityEditContext } from 'data/content/activity';
+import { PurposeTypes, ResourceContent, ResourceGroup } from 'data/content/resource';
 import { ClassName, classNames } from 'utils/classNames';
-import { PurposeTypes, ResourceGroup, ResourceContent } from 'data/content/resource';
+import { DragHandle } from '../DragHandle';
 import styles from './ContentOutline.modules.scss';
 import { DropTarget } from './dragndrop/DropTarget';
 import { scrollToResourceEditor } from './dragndrop/utils';
-import { DragHandle } from '../DragHandle';
-import { ActivityEditContext } from 'data/content/activity';
 
 export interface OutlineItemProps {
   className?: ClassName;
@@ -195,7 +195,7 @@ export const ExpandToggle = ({ expanded, onClick }: ExpandToggleProps) => (
       onClick();
     }}
   >
-    {expanded ? <i className="las la-chevron-down"></i> : <i className="las la-chevron-right"></i>}
+    {expanded ? <i className="fas fa-chevron-down"></i> : <i className="fas fa-chevron-right"></i>}
   </div>
 );
 

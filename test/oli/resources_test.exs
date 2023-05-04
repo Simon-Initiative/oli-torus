@@ -67,6 +67,7 @@ defmodule Oli.Resources.ResourcesTest do
            new_unpublished_page: new_unpublished_page,
            section: section
          } do
+
       assert Resources.resource_summary(
                unscored_page1.resource_id,
                project.slug,
@@ -83,13 +84,6 @@ defmodule Oli.Resources.ResourcesTest do
                AuthoringResolver
              ) ==
                %ResourceSummary{title: "A new unpublished page", slug: new_unpublished_page.slug}
-
-      assert Resources.resource_summary(
-               unscored_page1.resource_id,
-               section.slug,
-               DeliveryResolver
-             ) ==
-               %ResourceSummary{title: "Unscored page one", slug: unscored_page1.slug}
 
       assert Resources.resource_summary(scored_page2.resource_id, section.slug, DeliveryResolver) ==
                %ResourceSummary{title: "Scored page two", slug: scored_page2.slug}

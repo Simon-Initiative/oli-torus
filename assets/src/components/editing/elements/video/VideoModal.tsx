@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import * as ContentModel from 'data/content/model/elements/types';
-import { Modal, ModalSize } from 'components/modal/Modal';
-import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
-import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
-import { iso639_language_codes } from '../../../../utils/language-codes-iso639';
 import { Tab, Tabs } from 'react-bootstrap';
+import { Modal, ModalSize } from 'components/modal/Modal';
+import * as ContentModel from 'data/content/model/elements/types';
+import { iso639_language_codes } from '../../../../utils/language-codes-iso639';
+import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
+import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
 
 const MAX_DISPLAY_LENGTH = 40;
 
@@ -17,7 +17,7 @@ const VideoSRC: React.FC<{ src: ContentModel.VideoSource; onDelete: () => any }>
 }) => (
   <tr>
     <td>
-      <a href={src.url} rel="noreferrer" target="_blank">
+      <a href={src.url} className="download" rel="noreferrer" target="_blank">
         {truncateUrl(src.url)}
       </a>
     </td>

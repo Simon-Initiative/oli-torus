@@ -108,7 +108,11 @@ defmodule OliWeb.CognitoController do
     author = conn.assigns.current_author
     projects = Clone.existing_clones(project_slug, author)
 
-    render(conn, "clone_prompt.html", projects: projects, project_slug: project_slug)
+    render(conn, "clone_prompt.html",
+      title: "Clone",
+      projects: projects,
+      project_slug: project_slug
+    )
   end
 
   def prompt_create(conn, params) do
@@ -117,7 +121,10 @@ defmodule OliWeb.CognitoController do
         redirect_with_error(conn, get_error_url(%{}), "Invalid product or project")
 
       anchor ->
-        render(conn, "create_prompt.html", create_section_url: create_section_url(conn, anchor))
+        render(conn, "create_prompt.html",
+          title: "Create",
+          create_section_url: create_section_url(conn, anchor)
+        )
     end
   end
 
@@ -182,7 +189,7 @@ defmodule OliWeb.CognitoController do
   defp clone_project(conn, project_slug, author, error_url) do
     case Clone.clone_project(project_slug, author, author_in_project_title: true) do
       {:ok, dupe} ->
-        redirect(conn, to: Routes.project_path(conn, :overview, dupe.slug))
+        redirect(conn, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, dupe.slug))
 
       {:error, error} ->
         redirect_with_error(conn, error_url, snake_case_to_friendly(error))

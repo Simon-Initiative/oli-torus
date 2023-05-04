@@ -5,6 +5,7 @@ defmodule OliWeb.Products.Details.Content do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.{Form, Link}
+
   alias Surface.Components.Form.{
     Field,
     Label,
@@ -51,8 +52,8 @@ defmodule OliWeb.Products.Details.Content do
           </p>
       </div>
 
-      <div class="row my-4" id="content-form">
-        <div class="col-12">
+      <div class="grid grid-cols-12 my-4" id="content-form">
+        <div class="col-span-12">
           <Form for={@changeset} change={@save} class="d-flex">
             <div class="form-group">
               <div class="form-row">

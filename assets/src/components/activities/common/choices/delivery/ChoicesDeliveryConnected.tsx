@@ -1,9 +1,9 @@
-import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
-import { ActivityModelSchema, ChoiceId, HasChoices, PartId } from 'components/activities/types';
-import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { ActivityModelSchema, ChoiceId, HasChoices, PartId } from 'components/activities/types';
+import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 
 interface Props {
   partId: PartId;

@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
-
 import styles from './CreateAccountPopup.modules.scss';
 
 export interface CreateAccountPopupProps {
@@ -61,7 +60,7 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
             <button
               type="button"
               className="btn btn-sm btn-link dropdown-toggle dropdown-toggle-split"
-              data-toggle="dropdown"
+              data-bs-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
             >
