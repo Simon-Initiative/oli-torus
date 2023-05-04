@@ -20,6 +20,7 @@ const MCQItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
     //depending upon their needs
     //SS applies this on every MCQ. They override it with external CSS if in case this needs to be overridden.
     <div style={{ left: 18, position: 'relative', overflow: 'hidden' }}>
+      <style type="text/css">{`.content .mcq-input img{ margin-bottom:auto }`}</style>
       {nodes.map((subtree: any) => {
         const style: any = {};
         if (subtree.tag === 'p') {
