@@ -325,7 +325,7 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Calculates the students latest interaction for a given section:
   the latest :updated_at time stamp across all ResourceAccess records for each student.
-  If an enrolled student has not yet interacted, it returns nil instead of the timestamp.
+  If an enrolled student has not yet interacted, it returns the :updated_at time stamp of his enrollment.
   """
   @spec students_last_interaction(section_slug :: String.t()) :: map
   def students_last_interaction(section_slug) do
@@ -337,12 +337,13 @@ defmodule Oli.Delivery.Metrics do
         left_join: ra in ResourceAccess,
         on: e.user_id == ra.user_id,
         where: s.slug == ^section_slug,
-        group_by: e.user_id,
+        group_by: [e.user_id, e.updated_at],
         select: {
           e.user_id,
           fragment(
-            "MAX(?)",
-            ra.updated_at
+            "coalesce(MAX(?), ?)",
+            ra.updated_at,
+            e.updated_at
           )
         }
       )
@@ -354,7 +355,7 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Calculates the students latest interaction for a given section page:
   the latest :updated_at time stamp across all ResourceAccess records for each student for a given page.
-  If an enrolled student has not yet interacted in that page, it returns nil instead of the timestamp.
+  If an enrolled student has not yet interacted in that page, it returns the :updated_at time stamp of his enrollment.
   """
   @spec students_last_interaction_for_page(section_slug :: String.t(), page_id :: integer) :: map
   def students_last_interaction_for_page(section_slug, page_id) do
@@ -366,12 +367,13 @@ defmodule Oli.Delivery.Metrics do
         left_join: ra in ResourceAccess,
         on: e.user_id == ra.user_id,
         where: s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)),
-        group_by: e.user_id,
+        group_by: [e.user_id, e.updated_at],
         select: {
           e.user_id,
           fragment(
-            "MAX(?)",
-            ra.updated_at
+            "coalesce(MAX(?), ?)",
+            ra.updated_at,
+            e.updated_at
           )
         }
       )

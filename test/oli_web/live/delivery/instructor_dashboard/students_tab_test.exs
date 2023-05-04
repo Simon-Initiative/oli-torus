@@ -93,7 +93,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, %{updated_at: student_2_enrollment_timestamp}} =
+        Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       # we set 2 interactions for student_1, but only the latest one should be rendered
       set_interaction(
@@ -123,11 +125,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(2)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(2)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       assert student_1_last_interaction =~ "Apr. 05, 2023 - 12:25 PM"
-      assert student_2_last_interaction =~ "-"
+
+      assert student_2_last_interaction =~
+               Timex.format!(
+                 student_2_enrollment_timestamp,
+                 "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}"
+               )
     end
 
     test "students table gets rendered considering the given url params", %{

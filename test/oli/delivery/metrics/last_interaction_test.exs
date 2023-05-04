@@ -46,12 +46,15 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
       [student_1, student_2] = insert_pair(:user)
 
       Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, %{updated_at: student_2_enrollment_timestamp}} =
+        Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       %{
         section: section,
         student_1: student_1,
         student_2: student_2,
+        student_2_enrollment_timestamp: student_2_enrollment_timestamp,
         page_1: page_1,
         page_2: page_2
       }
@@ -61,6 +64,7 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
       section: section,
       student_1: student_1,
       student_2: student_2,
+      student_2_enrollment_timestamp: student_2_enrollment_timestamp,
       page_1: page_1,
       page_2: page_2
     } do
@@ -70,13 +74,16 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
       last_interactions = Metrics.students_last_interaction(section.slug)
 
       assert last_interactions[student_1.id] == ~U[2023-04-05 12:25:42.000000Z]
-      assert last_interactions[student_2.id] == nil
+
+      assert last_interactions[student_2.id] |> DateTime.truncate(:second) ==
+               student_2_enrollment_timestamp
     end
 
     test "students_last_interaction_for_page/2 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
+      student_2_enrollment_timestamp: student_2_enrollment_timestamp,
       page_1: page_1,
       page_2: page_2
     } do
@@ -87,7 +94,9 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
         Metrics.students_last_interaction_for_page(section.slug, page_1.id)
 
       assert last_interactions_for_page[student_1.id] == ~U[2023-04-03 12:25:42.000000Z]
-      assert last_interactions_for_page[student_2.id] == nil
+
+      assert last_interactions_for_page[student_2.id] |> DateTime.truncate(:second) ==
+               student_2_enrollment_timestamp
     end
   end
 end
