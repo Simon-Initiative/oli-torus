@@ -122,6 +122,16 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
         ~F"""
           <span>Within Grace Period</span>
         """
+
+      :instructor ->
+        ~F"""
+          <span>Instructor</span>
+        """
+
+      _ ->
+        ~F"""
+          <span>Unknown</span>
+        """
     end
   end
 end
