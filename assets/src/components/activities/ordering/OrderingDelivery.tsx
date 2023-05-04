@@ -27,6 +27,7 @@ import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryE
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
+import { elementsOfType } from 'data/content/utils';
 
 export const OrderingComponent: React.FC = () => {
   const {
@@ -95,6 +96,10 @@ export const OrderingComponent: React.FC = () => {
     }, 0);
   }, []);
 
+  // For Play All function used on ordering questions with audio choices
+  const [playingAll, setPlayingAll] = React.useState<boolean>(false);
+  const player = React.useRef<HTMLAudioElement>(null);
+
   // First render initializes state
   if (!uiState.partState) {
     return null;
@@ -111,6 +116,26 @@ export const OrderingComponent: React.FC = () => {
       ? (uiState.model as ActivityTypes.HasChoices).choices
       : studentInput.map((id) => Choices.getOne(uiState.model as OrderingSchema, id));
 
+  // collect choice audio URL list in current order for the playAll function
+  const audioUrls = choices
+    .map((c) => elementsOfType(c.content, 'audio')[0])
+    .filter((e) => e !== undefined)
+    .map((e: any) => e.src);
+
+  const playAll = ([first, ...rest]: string[]): void => {
+    if (player.current) {
+      player.current.src = first;
+      player.current.onended = () => (rest.length > 0 ? playAll(rest) : setPlayingAll(false));
+      player.current.play();
+      setPlayingAll(true);
+    }
+  };
+
+  const stopPlayingAll = () => {
+    if (player.current) player.current.pause();
+    setPlayingAll(false);
+  };
+
   return (
     <div className="activity ordering-activity">
       <div className="activity-content">
@@ -123,6 +148,18 @@ export const OrderingComponent: React.FC = () => {
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
           disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
+        {audioUrls.length > 0 && (
+          <div>
+            <button
+              className="btn btn-primary self-start mt-3 mb-3"
+              aria-label="Play All"
+              onClick={() => (playingAll ? stopPlayingAll() : playAll(audioUrls))}
+            >
+              {playingAll ? 'Stop Playing All' : 'Play All'}
+            </button>
+            <audio ref={player} />
+          </div>
+        )}
         <ResetButtonConnected
           onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
