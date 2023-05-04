@@ -1,7 +1,8 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import { WrappedMonaco } from 'components/activities/common/variables/WrappedMonaco';
 import { makeRequest, ServerError } from 'data/persistence/common';
 import * as Extrinsic from 'data/persistence/extrinsic';
+import debounce from 'lodash/debounce';
 
 interface Props {
   id: string;
@@ -80,12 +81,9 @@ export const ECLRepl: React.FC<Props> = (props) => {
 
   };
 
-  const onUpdate = (code: string) => {
-    setCode(code);
-    if (code !== props.code) {
-      Extrinsic.upsertAttempt(props.slug, props.attemptGuid, {[props.id]: code});
-    }
-  };
+  const waitTime = 800;
+  const persistChanges = useCallback(
+    debounce((val) => Extrinsic.upsertAttempt(props.slug, props.attemptGuid, {[props.id]: val}), waitTime), []);
 
   const maybeShowEditor = code !== ''
     ? <WrappedMonaco
@@ -93,7 +91,11 @@ export const ECLRepl: React.FC<Props> = (props) => {
         language="mathematica"
         model={code}
         editMode={true}
-        onEdit={(code) => onUpdate(code)}/>
+        onEdit={(code) => {
+          const paddedCode = code.trim() === '' ? '\n' : code;
+          setCode(paddedCode);
+          persistChanges(paddedCode)
+        }}/>
     : null;
 
   return (
@@ -101,8 +103,8 @@ export const ECLRepl: React.FC<Props> = (props) => {
       {maybeShowEditor}
       <div className="mt-2 mb-2 d-flex flex-row-reverse">
         <button className="btn btn-sm btn-secondary" onClick={onReset}>Reset</button>
-        <button className="btn btn-sm btn-secondary" onClick={onClear}>Clear Output</button>
-        <button className="btn btn-sm btn-primary mr-2" disabled={waiting} onClick={onRun}>{label(waiting)}</button>
+        <button className="btn btn-sm btn-secondary mr-1" onClick={onClear}>Clear Output</button>
+        <button className="btn btn-sm btn-primary mr-1" disabled={waiting} onClick={onRun}>{label(waiting)}</button>
       </div>
       <pre>
         <code>

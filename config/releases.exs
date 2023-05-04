@@ -125,6 +125,11 @@ config :oli, :vendor_property,
       "5000 Forbes Ave, Pittsburgh, PA 15213 US"
     )
 
+# optional emerald cloudlab configuration
+config :oli,
+    ecl_username: System.get_env("ECL_USERNAME", ""),
+    ecl_password: System.get_env("ECL_PASSWORD", "")
+
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
   private_secret: System.get_env("STRIPE_PRIVATE_SECRET")
