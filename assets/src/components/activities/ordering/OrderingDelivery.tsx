@@ -21,13 +21,13 @@ import {
 } from 'data/activities/DeliveryState';
 import { Choices } from 'data/activities/model/choices';
 import { initialPartInputs, studentInputToString } from 'data/activities/utils';
+import { elementsOfType } from 'data/content/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
-import { elementsOfType } from 'data/content/utils';
 
 export const OrderingComponent: React.FC = () => {
   const {
