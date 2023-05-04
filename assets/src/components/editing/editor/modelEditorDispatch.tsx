@@ -21,9 +21,8 @@ import { CommandContext } from '../elements/commands/interfaces';
 import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
 import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
 import { DescriptionListEditor } from '../elements/description/DescriptionListEditor';
-import { ECLReplEditor } from '../elements/ecl/ECLReplEditor';
-
 import { DialogEditor } from '../elements/dialog/DialogEditor';
+import { ECLReplEditor } from '../elements/ecl/ECLReplEditor';
 import { FigureEditor } from '../elements/figure/FigureEditor';
 import { ForeignEditor } from '../elements/foreign/ForeignEditor';
 import { FormulaEditor } from '../elements/formula/FormulaEditor';

@@ -177,7 +177,7 @@ export const Model = {
   ecl: (code = '') =>
     create<ECLRepl>({
       type: 'ecl',
-      code
+      code,
     }),
 
   inputRef: () => create<InputRef>({ type: 'input_ref' }),

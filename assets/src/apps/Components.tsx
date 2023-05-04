@@ -1,4 +1,5 @@
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
+import { ECLRepl } from 'components/common/ECLRepl';
 import { Navbar } from 'components/common/Navbar';
 import { UserAccountMenu } from 'components/common/UserAccountMenu';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
@@ -11,7 +12,6 @@ import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { registerApplication } from 'apps/app';
 import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
-import { ECLRepl } from 'components/common/ECLRepl';
 import { References } from './bibliography/References';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);

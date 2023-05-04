@@ -7,6 +7,7 @@ import { MathInput } from 'components/activities/common/delivery/inputs/MathInpu
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
+import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
   Audio,
@@ -23,6 +24,7 @@ import {
   DescriptionList as DescriptionListModel,
   DescriptionListTerm,
   Dialog as DialogModel,
+  ECLRepl,
   Figure,
   Foreign,
   FormulaBlock,
@@ -51,7 +53,6 @@ import {
   TableRow,
   UnorderedList,
   Video,
-  ECLRepl,
   Webpage,
   YouTube,
 } from 'data/content/model/elements/types';
@@ -59,7 +60,6 @@ import { Mark } from 'data/content/model/text';
 import { assertNever, valueOr } from 'utils/common';
 import { ContentTable } from '../../../components/ContentTable';
 import { Dialog } from '../../../components/Dialog';
-import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CommandButton } from '../../../components/common/CommandButton';
 import { Conjugation } from '../../../components/common/Conjugation';
 import { Definition } from '../../../components/common/Definition';
@@ -75,7 +75,6 @@ import { TableConjugation } from '../../../components/common/TableConjugation';
 import { cellAttributes } from '../../../components/editing/elements/table/table-util';
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';
-
 import { ContentWriter, Next, WriterImpl } from './writer';
 
 // Important: any changes to this file must be replicated
@@ -291,7 +290,14 @@ export class HtmlParser implements WriterImpl {
   }
 
   ecl(context: WriterContext, next: Next, attrs: ECLRepl) {
-    return <ECLReplView code={attrs.code} id={attrs.id} slug={context.sectionSlug as string} attemptGuid={context.resourceAttemptGuid as string}/>;
+    return (
+      <ECLReplView
+        code={attrs.code}
+        id={attrs.id}
+        slug={context.sectionSlug as string}
+        attemptGuid={context.resourceAttemptGuid as string}
+      />
+    );
   }
 
   youtube(context: WriterContext, next: Next, attrs: YouTube) {

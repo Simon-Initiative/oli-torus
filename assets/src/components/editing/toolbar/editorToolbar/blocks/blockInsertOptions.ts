@@ -1,8 +1,8 @@
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { insertAudio } from 'components/editing/elements/audio/audioActions';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
-import { insertEcl } from 'components/editing/elements/ecl/actions';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { insertEcl } from 'components/editing/elements/ecl/actions';
 import { insertImage } from 'components/editing/elements/image/imageActions';
 import { insertTable } from 'components/editing/elements/table/commands/insertTable';
 import { insertWebpage } from 'components/editing/elements/webpage/webpageActions';
@@ -10,7 +10,7 @@ import { ytCmdDesc } from 'components/editing/elements/youtube/YoutubeElement';
 import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ContentModelMode } from 'data/content/model/elements/types';
-import { ResourceContext, OptionalContentTypes } from 'data/content/resource';
+import { OptionalContentTypes, ResourceContext } from 'data/content/resource';
 import { insertCallout } from '../../../elements/callout/calloutActions';
 import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
 import { insertDefinition } from '../../../elements/definition/definitionActions';
@@ -21,7 +21,10 @@ import { insertFormula } from '../../../elements/formula/formulaActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertVideo } from '../../../elements/video/videoActions';
 
-export const extendedBlockInsertActions = (onRequestMedia: any, optionalContentTypes: OptionalContentTypes | undefined) : CommandDescription[] => {
+export const extendedBlockInsertActions = (
+  onRequestMedia: any,
+  optionalContentTypes: OptionalContentTypes | undefined,
+): CommandDescription[] => {
   const base = [
     insertTable,
     insertImage(onRequestMedia),
@@ -43,11 +46,15 @@ export const extendedBlockInsertActions = (onRequestMedia: any, optionalContentT
     return base;
   }
 
-  return [...base, optionalContentTypes.ecl ? insertEcl : null]
-    .filter((x) => x !== null) as CommandDescription[];
+  return [...base, optionalContentTypes.ecl ? insertEcl : null].filter(
+    (x) => x !== null,
+  ) as CommandDescription[];
 };
 
-export const allBlockInsertActions = (onRequestMedia: any, optionalContentTypes: OptionalContentTypes | undefined) : CommandDescription[] => {
+export const allBlockInsertActions = (
+  onRequestMedia: any,
+  optionalContentTypes: OptionalContentTypes | undefined,
+): CommandDescription[] => {
   const base = [
     insertTable,
     insertImage(onRequestMedia),
@@ -66,13 +73,13 @@ export const allBlockInsertActions = (onRequestMedia: any, optionalContentTypes:
     insertDescriptionListCommand,
   ];
 
-
   if (optionalContentTypes === undefined) {
     return base;
   }
 
-  return [...base, optionalContentTypes.ecl ? insertEcl : null]
-    .filter((x) => x !== null) as CommandDescription[];
+  return [...base, optionalContentTypes.ecl ? insertEcl : null].filter(
+    (x) => x !== null,
+  ) as CommandDescription[];
 };
 
 interface Opts {
