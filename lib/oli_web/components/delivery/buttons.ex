@@ -53,7 +53,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
   def help_button(assigns) do
     ~H"""
     <!-- Button trigger modal -->
-    <button type="button" class="btn btn-xs btn-light inline-flex items-center help-btn m-1" onclick="showHelpModal();">
+    <button type="button" class="btn btn-xs btn-light inline-flex items-center help-btn m-1" onclick="window.showHelpModal();">
       <span>Tech Support</span>
     </button>
     """
