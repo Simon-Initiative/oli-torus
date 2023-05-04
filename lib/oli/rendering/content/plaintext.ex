@@ -71,7 +71,7 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), "\n"]
   end
 
-  def ecl(%Context{} = _context, _, attrs) do
+  def ecl(%Context{} = _context, _, _attrs) do
     ["[ecl]"]
   end
 
