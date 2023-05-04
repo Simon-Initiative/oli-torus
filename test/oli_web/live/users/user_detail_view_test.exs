@@ -3,9 +3,12 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
+  import Oli.Factory
 
   alias Oli.Seeder
   alias Oli.Accounts
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Sections
 
   describe "user details live test" do
     setup [:setup_session]
@@ -86,6 +89,347 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert html =~ "LTI 1.3 details" == false
       assert html =~ "LTI users are managed by the LMS" == false
     end
+  end
+
+  describe "user cannot access when is not logged in" do
+    test "redirects to new session when accessing the user details view", %{conn: conn} do
+      student = insert(:user)
+
+      assert conn
+             |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+             |> html_response(302) =~
+               "You are being <a href=\"/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{student.id}\">redirected</a>"
+    end
+  end
+
+  describe "student" do
+    setup [:user_conn]
+
+    test "redirects to new session when accessing the user details view as student", %{conn: conn} do
+      student = insert(:user)
+
+      assert conn
+             |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+             |> html_response(302) =~
+               "You are being <a href=\"/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{student.id}\">redirected</a>"
+    end
+  end
+
+  describe "instructor" do
+    setup [:instructor_conn]
+
+    test "redirects to new session when accessing the user details view as instructor", %{
+      conn: conn
+    } do
+      student = insert(:user)
+
+      assert conn
+             |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+             |> html_response(302) =~
+               "You are being <a href=\"/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{student.id}\">redirected</a>"
+    end
+  end
+
+  describe "Enrolled sections info" do
+    setup [:admin_conn, :enrolled_student_to_sections]
+
+    test "shows enrolled sections section", %{
+      conn: conn,
+      student: student
+    } do
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+
+      assert view |> element("h4", "Enrolled Sections")
+      assert view |> element("div", "Course sections to which the student is enrolled")
+    end
+
+    test "shows message when student is not enrolled to any course section", %{
+      conn: conn
+    } do
+      student = insert(:user)
+
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+
+      assert view |> element("h6", "User is not enrolled in any course section")
+    end
+
+    test "shows enrolled sections info for a given student", %{
+      conn: conn,
+      student: student,
+      section_1: section_1,
+      section_2: section_2,
+      section_3: section_3
+    } do
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_2.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_3.title}"
+             )
+    end
+
+    test "applies searching", %{
+      conn: conn,
+      student: student,
+      section_1: section_1,
+      section_2: section_2,
+      section_3: section_3
+    } do
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_2.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_3.title}"
+             )
+
+      # searching by section
+      params = %{
+        text_search: section_2.title
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id, params)
+        )
+
+      refute has_element?(
+               view,
+               "a",
+               "#{section_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_2.title}"
+             )
+
+      refute has_element?(
+               view,
+               "a",
+               "#{section_3.title}"
+             )
+
+      # searching by other section
+      params = %{
+        text_search: "other section"
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id, params)
+        )
+
+      assert has_element?(
+               view,
+               "h6",
+               "There are no sections to show"
+             )
+    end
+
+    test "applies sorting", %{
+      conn: conn,
+      student: student,
+      section_1: section_1,
+      section_2: section_2,
+      section_3: section_3
+    } do
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> render() =~ section_1.title
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> render() =~ section_2.title
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:last-child")
+             |> render() =~ section_3.title
+
+      ## sorting by section
+      params = %{
+        sort_order: :desc
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id, params)
+        )
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:last-child")
+             |> render() =~ section_1.title
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> render() =~ section_2.title
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> render() =~ section_3.title
+    end
+
+    test "applies pagination", %{
+      conn: conn,
+      student: student,
+      section_1: section_1,
+      section_2: section_2,
+      section_3: section_3
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id)
+        )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_2.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_3.title}"
+             )
+
+      ## aplies limit
+      params = %{
+        limit: 2,
+        sort_order: "asc"
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id, params)
+        )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_1.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_2.title}"
+             )
+
+      refute has_element?(
+               view,
+               "a",
+               "#{section_3.title}"
+             )
+
+      ## aplies pagination
+      params = %{
+        limit: 2,
+        offset: 2,
+        sort_order: "asc"
+      }
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id, params)
+        )
+
+      refute has_element?(
+               view,
+               "a",
+               "#{section_1.title}"
+             )
+
+      refute has_element?(
+               view,
+               "a",
+               "#{section_2.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{section_3.title}"
+             )
+    end
+  end
+
+  defp enrolled_student_to_sections(%{conn: _conn}) do
+    section_1 =
+      insert(:section,
+        type: :enrollable,
+        start_date: yesterday(),
+        end_date: tomorrow(),
+        requires_payment: true
+      )
+
+    section_2 =
+      insert(:section,
+        type: :enrollable,
+        start_date: yesterday(),
+        end_date: tomorrow()
+      )
+
+    section_3 =
+      insert(:section,
+        type: :enrollable,
+        start_date: yesterday(),
+        end_date: tomorrow(),
+        has_grace_period: true,
+        grace_period_days: 10,
+        requires_payment: true
+      )
+
+    student = insert(:user)
+    Sections.enroll(student.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+    Sections.enroll(student.id, section_2.id, [ContextRoles.get_role(:context_learner)])
+    Sections.enroll(student.id, section_3.id, [ContextRoles.get_role(:context_learner)])
+    %{student: student, section_1: section_1, section_2: section_2, section_3: section_3}
   end
 
   defp setup_session(%{conn: conn}) do

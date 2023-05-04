@@ -454,4 +454,23 @@ defmodule Oli.Delivery.Metrics do
       end
     end)
   end
+
+  @doc """
+    Returns the last time a user accessed a section
+  """
+
+  def get_last_access_for_user_in_a_section(user_id, section_id) do
+    query =
+      from(u in User,
+        join: enr in Enrollment,
+        on: enr.user_id == u.id,
+        join: ra in ResourceAccess,
+        on: ra.user_id == enr.user_id,
+        where: u.id == ^user_id and ra.section_id == ^section_id,
+        group_by: u.name,
+        select: fragment("MAX(?)", ra.updated_at)
+      )
+
+    Repo.one(query)
+  end
 end
