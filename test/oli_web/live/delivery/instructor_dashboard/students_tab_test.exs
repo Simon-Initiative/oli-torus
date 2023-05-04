@@ -81,6 +81,55 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
                OliWeb.Common.Utils.name(user.name, user.given_name, user.family_name)
     end
 
+    test "students last interaction gets rendered (for a student with interaction and yet with no interaction)",
+         %{instructor: instructor, conn: conn} do
+      %{section: section, mod1_pages: mod1_pages} =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, _page_3] = mod1_pages
+
+      student_1 = insert(:user, %{given_name: "Commited", family_name: "Student"})
+      student_2 = insert(:user, %{given_name: "Lazy", family_name: "Student"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      # we set 2 interactions for student_1, but only the latest one should be rendered
+      set_interaction(
+        section,
+        page_1,
+        student_1,
+        ~U[2023-04-04 12:25:42Z]
+      )
+
+      set_interaction(
+        section,
+        page_2,
+        student_1,
+        ~U[2023-04-05 12:25:42Z]
+      )
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      [student_1_last_interaction] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(2)})
+        |> Enum.map(fn td -> Floki.text(td) end)
+
+      [student_2_last_interaction] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(2)})
+        |> Enum.map(fn td -> Floki.text(td) end)
+
+      assert student_1_last_interaction =~ "Apr. 05, 2023 - 12:25 PM"
+      assert student_2_last_interaction =~ "-"
+    end
+
     test "students table gets rendered considering the given url params", %{
       instructor: instructor,
       conn: conn
@@ -238,5 +287,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   defp set_progress(section_id, resource_id, user_id, progress) do
     Core.track_access(resource_id, section_id, user_id)
     |> Core.update_resource_access(%{progress: progress})
+  end
+
+  defp set_interaction(section, resource, user, timestamp) do
+    insert(:resource_access, %{
+      section: section,
+      resource: resource,
+      user: user,
+      inserted_at: timestamp,
+      updated_at: timestamp
+    })
   end
 end

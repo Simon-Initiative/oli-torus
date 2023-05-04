@@ -365,7 +365,7 @@ defmodule Oli.Delivery.Metrics do
         on: e.section_id == s.id,
         left_join: ra in ResourceAccess,
         on: e.user_id == ra.user_id,
-        where: s.slug == ^section_slug and ra.resource_id == ^page_id,
+        where: s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)),
         group_by: e.user_id,
         select: {
           e.user_id,
