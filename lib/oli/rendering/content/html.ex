@@ -121,7 +121,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp tableBorderClass(%{"border" => "hidden"}), do: "table-borderless"
-  defp tableBorderClass(_), do: ""
+  defp tableBorderClass(_), do: "table-bordered"
 
   defp tableRowClass(%{"rowstyle" => "alternating"}), do: "table-striped"
   defp tableRowClass(_), do: ""
@@ -207,7 +207,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ol(%Context{} = _context, next, _) do
-    ["<ol class=\"list-decimal list-inside pl-2\">", next.(), "</ol>\n"]
+    ["<ol class=\"list-inside pl-2\">", next.(), "</ol>\n"]
   end
 
   def dl(%Context{}, next, title, %{}) do
@@ -234,7 +234,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ul(%Context{} = _context, next, _) do
-    ["<ul class=\"list-disc list-inside pl-2\">", next.(), "</ul>\n"]
+    ["<ul class=\"list-inside pl-2\">", next.(), "</ul>\n"]
   end
 
   def li(%Context{} = _context, next, _) do
