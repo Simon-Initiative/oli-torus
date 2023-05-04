@@ -110,6 +110,8 @@
     }
   }
 
+  window.showHelpModal = showHelpModal;
+
   const helpForm = document.querySelector('#form-request-help')
   if (helpForm) {
     helpForm.addEventListener("submit", async function (event) {
