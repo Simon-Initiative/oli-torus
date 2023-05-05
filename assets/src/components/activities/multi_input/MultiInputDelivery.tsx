@@ -21,6 +21,7 @@ import {
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
+  requestHint,
   resetAction,
   resetAndSavePart,
   resetAndSubmitPart,
@@ -42,6 +43,7 @@ export const MultiInputComponent: React.FC = () => {
     onSubmitPart,
     onResetPart,
     onResetActivity,
+    onRequestHint,
     mode,
     model,
   } = useDeliveryElementContext<MultiInputSchema>();
@@ -92,10 +94,11 @@ export const MultiInputComponent: React.FC = () => {
 
   const toggleHints = (id: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+
+    dispatch(requestHint(input.partId, onRequestHint));
+
     setHintsShown((hintsShown) =>
-      hintsShown.includes(input.partId)
-        ? hintsShown.filter((id) => id !== input.partId)
-        : hintsShown.concat(input.partId),
+      hintsShown.includes(input.partId) ? hintsShown : hintsShown.concat(input.partId),
     );
   };
 
