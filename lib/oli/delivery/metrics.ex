@@ -5,7 +5,15 @@ defmodule Oli.Delivery.Metrics do
 
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Sections.{ContainedPage, Enrollment, EnrollmentContextRole, SectionResource}
+
+  alias Oli.Delivery.Sections.{
+    ContainedPage,
+    Enrollment,
+    EnrollmentContextRole,
+    Section,
+    SectionResource
+  }
+
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
 
@@ -315,6 +323,66 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Calculates the students latest interaction for a given section:
+  the latest :updated_at time stamp across all ResourceAccess records for each student.
+  If an enrolled student has not yet interacted, it returns the :updated_at time stamp of his enrollment.
+  """
+  @spec students_last_interaction(section_slug :: String.t()) :: map
+  def students_last_interaction(section_slug) do
+    query =
+      from(
+        s in Section,
+        join: e in Enrollment,
+        on: e.section_id == s.id,
+        left_join: ra in ResourceAccess,
+        on: e.user_id == ra.user_id,
+        where: s.slug == ^section_slug,
+        group_by: [e.user_id, e.updated_at],
+        select: {
+          e.user_id,
+          fragment(
+            "coalesce(MAX(?), ?)",
+            ra.updated_at,
+            e.updated_at
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculates the students latest interaction for a given section page:
+  the latest :updated_at time stamp across all ResourceAccess records for each student for a given page.
+  If an enrolled student has not yet interacted in that page, it returns the :updated_at time stamp of his enrollment.
+  """
+  @spec students_last_interaction_for_page(section_slug :: String.t(), page_id :: integer) :: map
+  def students_last_interaction_for_page(section_slug, page_id) do
+    query =
+      from(
+        s in Section,
+        join: e in Enrollment,
+        on: e.section_id == s.id,
+        left_join: ra in ResourceAccess,
+        on: e.user_id == ra.user_id,
+        where: s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)),
+        group_by: [e.user_id, e.updated_at],
+        select: {
+          e.user_id,
+          fragment(
+            "coalesce(MAX(?), ?)",
+            ra.updated_at,
+            e.updated_at
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Updates page progress to be 100% complete.
   """
   def mark_progress_completed(%ResourceAccess{} = ra) do
@@ -385,5 +453,24 @@ defmodule Oli.Delivery.Metrics do
         {:error, e} -> Oli.Repo.rollback(e)
       end
     end)
+  end
+
+  @doc """
+    Returns the last time a user accessed a section
+  """
+
+  def get_last_access_for_user_in_a_section(user_id, section_id) do
+    query =
+      from(u in User,
+        join: enr in Enrollment,
+        on: enr.user_id == u.id,
+        join: ra in ResourceAccess,
+        on: ra.user_id == enr.user_id,
+        where: u.id == ^user_id and ra.section_id == ^section_id,
+        group_by: u.name,
+        select: fragment("MAX(?)", ra.updated_at)
+      )
+
+    Repo.one(query)
   end
 end

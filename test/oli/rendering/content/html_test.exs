@@ -40,10 +40,10 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
 
       assert rendered_html_string =~
-               "<ol class=\"list-decimal list-inside pl-2\"><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
+               "<ol class=\"list-inside pl-2\"><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
 
       assert rendered_html_string =~
-               "<ul class=\"list-disc list-inside pl-2\"><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
+               "<ul class=\"list-inside pl-2\"><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
 
       assert rendered_html_string =~
                ~r/<div class=".*">\s*<iframe.* src="https:\/\/www.youtube.com\/embed\/fhdCslFcKFU"><\/iframe>\s*<\/div>/
@@ -82,7 +82,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<div class='figure'><figure><figcaption><p>Figure Title</p>\n</figcaption><div class='figure-content'><p>Figure Content</p>\n</div></figure></div>"
 
       assert rendered_html_string =~
-               "<div class=\"conjugation\"><div class=\"title\">My Term</div><div class=\"term\">El Verbo<span class='pronunciation'><p>my pronunciation</p>\n</span>\n</div><table class=' '><tr><th>form</th>\n<th>meaning</th>\n</tr>\n<tr><td>my form</td>\n<td>my meaning</td>\n</tr>\n</table>\n</div>"
+               "<div class=\"conjugation\"><div class=\"title\">My Term</div><div class=\"term\">El Verbo<span class='pronunciation'><p>my pronunciation</p>\n</span>\n</div><table class='table-bordered '><tr><th>form</th>\n<th>meaning</th>\n</tr>\n<tr><td>my form</td>\n<td>my meaning</td>\n</tr>\n</table>\n</div>"
 
       assert rendered_html_string =~
                "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</span>"
