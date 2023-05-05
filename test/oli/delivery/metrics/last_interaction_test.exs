@@ -71,7 +71,7 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
       set_interaction(section, page_1, student_1, ~U[2023-04-03 12:25:42.000000Z])
       set_interaction(section, page_2, student_1, ~U[2023-04-05 12:25:42.000000Z])
 
-      last_interactions = Metrics.students_last_interaction(section.slug)
+      last_interactions = Metrics.students_last_interaction_across(section)
 
       assert last_interactions[student_1.id] == ~U[2023-04-05 12:25:42.000000Z]
 
