@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.2 (2023-5-8)
+
+### Bug Fixes
+
+- Fixes a problem launching the tech support request window
+- Fixes a problem retrieving the required student survey
 
 ## 0.23.1 (2023-4-5)
 
