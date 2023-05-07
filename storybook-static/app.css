@@ -5542,6 +5542,10 @@ table.table-striped tbody tr:nth-child(even) {
   vertical-align: text-top;
 }
 
+.align-text-bottom {
+  vertical-align: text-bottom;
+}
+
 .text-7xl {
   font-size: 4.5rem;
   line-height: 1;
