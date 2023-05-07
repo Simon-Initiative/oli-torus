@@ -21,6 +21,8 @@ defmodule Oli.Accounts do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.AccountLookupCache
   alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
+  alias Oli.Delivery.Sections.Enrollment
+  alias Lti_1p3.DataProviders.EctoProvider
 
   def browse_users(
         %Paging{limit: limit, offset: offset},
@@ -311,6 +313,29 @@ defmodule Oli.Accounts do
       {:ok, %User{id: user_id}} ->
         AccountLookupCache.delete("user_#{user_id}")
 
+        res
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+    Updates the context role for a specific enrollment.
+  """
+
+  def toggle_context_role(enrollment, role) do
+    context_role = EctoProvider.Marshaler.to([role])
+
+    res =
+      enrollment
+      |> Repo.preload([:context_roles])
+      |> Enrollment.changeset(%{})
+      |> Ecto.Changeset.put_assoc(:context_roles, context_role)
+      |> Repo.update()
+
+    case res do
+      {:ok, %Enrollment{}} ->
         res
 
       error ->
