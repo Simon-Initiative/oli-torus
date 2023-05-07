@@ -88,6 +88,23 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(%{"active_tab" => "actions"} = params, _, socket) do
+    socket =
+      socket
+      |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
+      |> assign_new(:enrollment_info, fn ->
+        %{
+          enrollment:
+            Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id),
+          is_instructor:
+            Sections.has_instructor_role?(socket.assigns.student, socket.assigns.section.slug)
+        }
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     {:noreply,
      assign(socket,
@@ -156,6 +173,18 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         student_id={@student.id}
         context={@context}
         pages={@pages}
+      />
+    """
+  end
+
+  defp render_tab(%{active_tab: :actions} = assigns) do
+    ~H"""
+      <.live_component
+        id="actions_tab"
+        module={OliWeb.Delivery.StudentDashboard.Components.ActionsTab}
+        user={@student}
+        section_slug={@section.slug}
+        enrollment_info={@enrollment_info}
       />
     """
   end

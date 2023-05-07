@@ -76,6 +76,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             {"Learning Objectives", path_for(:learning_objectives, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
             {"Quiz Scores", path_for(:quizz_scores, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:quizz_scores, @active_tab)},
             {"Progress", path_for(:progress, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:progress, @active_tab)},
+            {"Actions", path_for(:actions, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:actions, @active_tab)},
           ] do %>
             <li class="nav-item" role="presentation">
               <.link patch={href}
