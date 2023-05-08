@@ -348,16 +348,31 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const getStatePrefix = (path: string, activityId: string | number) => {
     const parts = path.split('.');
     const partId = parts[0];
-    const ownerActivityId = currentActivityTree?.filter(
+    let ownerActivity = currentActivityTree?.filter(
       (activity: any) =>
         activity?.authoring?.parts?.filter(
-          (part: { id: string; owner: string | number }) => part?.id === partId,
+          (part: { id: string; owner: string | number }) =>
+            part?.id === partId && part?.owner == activityId,
         ).length,
     );
-    if (ownerActivityId?.length) {
-      return `${ownerActivityId[0].id}|stage`;
+    if (ownerActivity?.length) {
+      return `${ownerActivity[0].id}|stage`;
+    } else {
+      // if we are here then it means that system was not able to find the correct owner of the part in above filter. So, we need to find the owner
+      //based on the partId now and get the ownerId from there
+      ownerActivity =
+        currentActivityTree?.filter(
+          (activity: any) =>
+            activity?.authoring?.parts?.filter(
+              (part: { id: string; owner: string | number }) => part?.id === partId,
+            ).length,
+        ) || [];
+      if (ownerActivity && ownerActivity?.length && ownerActivity[0]?.authoring?.parts) {
+        return `${ownerActivity[0]?.authoring?.parts[0]?.owner}|stage`;
+      } else {
+        return `${activityId}|stage`;
+      }
     }
-    return `${activityId}|stage`;
   };
 
   const handleActivitySavePart = useCallback(
