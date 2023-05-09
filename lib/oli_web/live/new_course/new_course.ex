@@ -3,15 +3,19 @@ defmodule OliWeb.Delivery.NewCourse do
 
   alias Oli.Accounts
   alias Oli.Lti.LtiParams
+  alias Oli.Delivery.Sections.{Section}
+  alias Oli.Delivery.Sections
 
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
-  alias OliWeb.Delivery.NewCourse.SelectSource
+  alias OliWeb.Delivery.NewCourse.{NameCourse, SelectSource}
 
   alias Phoenix.LiveView.JS
 
   @form_id "open_and_free_form"
   def mount(_params, session, socket) do
+    changeset = Sections.change_independent_learner_section(%Section{registration_open: true})
+
     steps = [
       %Step{
         title: "Select your base course project or course product",
@@ -64,7 +68,8 @@ defmodule OliWeb.Delivery.NewCourse do
        current_step: 0,
        session: Map.put(session, "live_action", socket.assigns.live_action),
        current_user: current_user,
-       lti_params: lti_params
+       lti_params: lti_params,
+       changeset: changeset
      )}
   end
 
@@ -121,10 +126,8 @@ defmodule OliWeb.Delivery.NewCourse do
         <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
           <img src="/images/icons/course-creation-wizard-step-1.svg" />
           <h2>Name your course</h2>
-          <%= @step_two_prop %>
-          <.form let={f} for={:section} id="name-course-form">
-            <%= text_input f, :title, class: "torus-input" %>
-          </.form>
+          <p class="mb-0">We pulled the information we can from your LMS, but feel free to adjust it</p>
+          <NameCourse.render changeset={@changeset} />
         </div>
       </.header>
     """
@@ -162,9 +165,7 @@ defmodule OliWeb.Delivery.NewCourse do
         }
 
       1 ->
-        %{
-          step_two_prop: "Prop example 1"
-        }
+        %{changeset: assigns.changeset}
 
       _ ->
         %{
@@ -196,10 +197,15 @@ defmodule OliWeb.Delivery.NewCourse do
   # This is the response returned from the SubmitForm hook
   def handle_event(
         "js_form_data_response",
-        %{"section" => _section, "current_step" => current_step},
+        %{"section" => section, "current_step" => current_step},
         socket
       ) do
-    socket = assign(socket, current_step: current_step)
+    changeset =
+      socket.assigns.changeset
+      |> Section.changeset(section)
+
+    socket = assign(socket, changeset: changeset, current_step: current_step)
+
 
     if current_step > 2 do
       create_section(socket)
