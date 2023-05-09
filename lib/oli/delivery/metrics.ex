@@ -614,68 +614,6 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{}, fn {student_id, mastery} -> {student_id, mastery_range(mastery)} end)
   end
 
-  # def mastery_per_student_per_learning_objective(section_slug) do
-  #   query =
-  #     from(sn in Snapshot,
-  #       join: s in Section,
-  #       on: sn.section_id == s.id,
-  #       where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
-  #       group_by: [sn.objective_id, sn.user_id],
-  #       select:
-  #         {sn.user_id, sn.objective_id,
-  #          fragment(
-  #            "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-  #            sn.correct
-  #          )}
-  #     )
-
-  #   Repo.all(query)
-  #   |> Enum.reduce(%{}, fn {student_id, objective_id, mastery}, acc ->
-  #     Map.merge(
-  #       acc,
-  #       [
-  #         {student_id,
-  #          Map.merge(
-  #            Map.get(acc, student_id, %{}),
-  #            Enum.into([{objective_id, mastery_range(mastery)}], %{})
-  #          )}
-  #       ]
-  #       |> Enum.into(%{})
-  #     )
-  #   end)
-  # end
-
-  # def mastery_per_learning_objective_per_student(section_slug) do
-  #   query =
-  #     from(sn in Snapshot,
-  #       join: s in Section,
-  #       on: sn.section_id == s.id,
-  #       where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
-  #       group_by: [sn.objective_id, sn.user_id],
-  #       select:
-  #         {sn.user_id, sn.objective_id,
-  #          fragment(
-  #            "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-  #            sn.correct
-  #          )}
-  #     )
-
-  #   Repo.all(query)
-  #   |> Enum.reduce(%{}, fn {student_id, objective_id, mastery}, acc ->
-  #     Map.merge(
-  #       acc,
-  #       [
-  #         {objective_id,
-  #          Map.merge(
-  #            Map.get(acc, objective_id, %{}),
-  #            Enum.into([{student_id, mastery_range(mastery)}], %{})
-  #          )}
-  #       ]
-  #       |> Enum.into(%{})
-  #     )
-  #   end)
-  # end
-
   defp mastery_range(nil), do: "Not enough data"
   defp mastery_range(mastery) when mastery <= 0.5, do: "Low"
   defp mastery_range(mastery) when mastery <= 0.8, do: "Medium"
