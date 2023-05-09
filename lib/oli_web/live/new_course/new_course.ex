@@ -2,13 +2,17 @@ defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
   alias Oli.Accounts
+  alias Oli.Delivery
   alias Oli.Lti.LtiParams
   alias Oli.Delivery.Sections.{Section}
   alias Oli.Delivery.Sections
+  alias Oli.Repo
 
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
+
+  alias Lti_1p3.Tool.ContextRoles
 
   alias Phoenix.LiveView.JS
 
@@ -146,10 +150,6 @@ defmodule OliWeb.Delivery.NewCourse do
     """
   end
 
-  def create_section(socket) do
-    IO.inspect("Section created")
-  end
-
   defp get_step_data(assigns) do
     case assigns.current_step do
       0 ->
@@ -167,6 +167,168 @@ defmodule OliWeb.Delivery.NewCourse do
 
       _ ->
         %{changeset: assigns.changeset, on_select: "day_selection"}
+    end
+  end
+
+  def create_section(:lms_instructor, socket) do
+    section_params =
+      socket.assigns.changeset
+      |> Ecto.Changeset.apply_changes()
+      |> Map.from_struct()
+
+    case Delivery.create_section(
+           socket.assigns.source,
+           socket.assigns.current_user,
+           socket.assigns.lti_params,
+           %{
+             class_modality: section_params.class_modality,
+             class_days: section_params.class_days,
+             course_section_number: section_params.course_section_number,
+             start_date: section_params.start_date,
+             end_date: section_params.end_date
+           }
+         ) do
+      {:ok, _section} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Section successfully created.")
+         |> push_redirect(to: Routes.delivery_path(OliWeb.Endpoint, :index))}
+
+      {:error, error} ->
+        {_error_id, error_msg} = log_error("Failed to create new section", error)
+        # {:noreply, put_flash(socket, :error, error_msg)}
+        {:noreply, socket}
+    end
+  end
+
+  def create_section(_, socket) do
+    %{source: source, changeset: changeset} = socket.assigns
+
+    case source_info(source) do
+      {project, _, :project_slug} ->
+        %{id: project_id, has_experiments: has_experiments} =
+          Oli.Authoring.Course.get_project_by_slug(project.slug)
+
+        publication =
+          Oli.Publishing.get_latest_published_publication_by_slug(project.slug)
+          |> Repo.preload(:project)
+
+        customizations =
+          case publication.project.customizations do
+            nil -> nil
+            labels -> Map.from_struct(labels)
+          end
+
+        section_params =
+          changeset
+          |> Ecto.Changeset.apply_changes()
+          |> Map.from_struct()
+          |> Map.merge(%{
+            type: :enrollable,
+            base_project_id: project_id,
+            open_and_free: true,
+            context_id: UUID.uuid4(),
+            customizations: customizations,
+            has_experiments: has_experiments
+          })
+
+        case create_from_publication(socket, publication, section_params) do
+          {:ok, section} ->
+            socket = put_flash(socket, :info, "Section created successfully.")
+
+            {:noreply,
+             redirect(socket,
+               to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+             )}
+
+          {:error, _} ->
+            {:noreply, socket}
+        end
+
+      {blueprint, _, :product_slug} ->
+        project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
+
+        section_params =
+          changeset
+          |> Ecto.Changeset.apply_changes()
+          |> Map.from_struct()
+          |> Map.merge(%{
+            blueprint_id: blueprint.id,
+            type: :enrollable,
+            open_and_free: true,
+            has_experiments: project.has_experiments,
+            base_project_id: blueprint.base_project_id,
+            context_id: UUID.uuid4()
+          })
+
+        case create_from_product(socket, blueprint, section_params) do
+          {:ok, section} ->
+            socket = put_flash(socket, :info, "Section created successfully.")
+
+            {:noreply,
+             redirect(socket,
+               to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+             )}
+
+          _ ->
+            {:noreply, socket}
+        end
+    end
+  end
+
+  defp source_info(source_id) do
+    case source_id do
+      "product:" <> id ->
+        {Sections.get_section!(String.to_integer(id)), "Source Product", :product_slug}
+
+      "publication:" <> id ->
+        publication =
+          Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
+
+        {publication.project, "Source Project", :project_slug}
+
+      "project:" <> id ->
+        project = Oli.Authoring.Course.get_project!(id)
+
+        {project, "Source Project", :project_slug}
+    end
+  end
+
+  defp create_from_publication(socket, publication, section_params) do
+    Repo.transaction(fn ->
+      with {:ok, section} <- Sections.create_section(section_params),
+           {:ok, section} <- Sections.create_section_resources(section, publication),
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
+           {:ok, _enrollment} <- enroll(socket, section),
+           {:ok, updated_section} <-
+             Oli.Delivery.maybe_update_section_contains_explorations(section) do
+        updated_section
+      else
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  defp create_from_product(socket, blueprint, section_params) do
+    Repo.transaction(fn ->
+      with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
+           {:ok, _maybe_enrollment} <- enroll(socket, section) do
+        section
+      else
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  defp enroll(socket, section) do
+    if is_nil(socket.assigns.current_user) do
+      {:ok, nil}
+    else
+      Sections.enroll(socket.assigns.current_user.id, section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
     end
   end
 
@@ -217,9 +379,8 @@ defmodule OliWeb.Delivery.NewCourse do
 
     socket = assign(socket, changeset: changeset, current_step: current_step)
 
-
     if current_step > 2 do
-      create_section(socket)
+      create_section(socket.assigns.live_action, socket)
     else
       {:noreply, socket}
     end
