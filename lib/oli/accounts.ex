@@ -324,7 +324,7 @@ defmodule Oli.Accounts do
     Updates the context role for a specific enrollment.
   """
 
-  def toggle_context_role(enrollment, role) do
+  def update_user_context_role(enrollment, role) do
     context_role = EctoProvider.Marshaler.to([role])
 
     res =

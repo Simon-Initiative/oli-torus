@@ -118,7 +118,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
                "Actions"
              )
 
-      assert has_element?(view, "span", "Change role to Instructor")
+      assert has_element?(view, "span", "Change enrolled user role")
       assert has_element?(view, "input[type=checkbox]")
     end
 
@@ -130,7 +130,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       {:ok, view, _html} =
         live(conn, live_view_students_actions_route(section.slug, student.id, :actions))
 
-      assert has_element?(view, "span", "Change role to Instructor")
+      assert has_element?(view, "span", "Change enrolled user role")
       assert has_element?(view, "input[type=checkbox]")
       refute Sections.has_instructor_role?(student, section.slug)
 

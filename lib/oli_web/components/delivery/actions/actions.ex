@@ -1,15 +1,24 @@
 defmodule OliWeb.Components.Delivery.Actions do
   use Surface.LiveComponent
+  use OliWeb.Common.Modal
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts
+  alias OliWeb.Common.Confirm
+  alias Phoenix.LiveView.JS
 
-  prop enrollment_info, :map, required: true
-  prop section_slug, :string, required: true
-  prop user, :map, required: true
+  prop(enrollment_info, :map, required: true)
+  prop(section_slug, :string, required: true)
+  prop(user, :map, required: true)
 
-  data enrollment, :map, default: %{}
-  data is_instructor, :boolean, default: false
+  data(enrollment, :map, default: %{})
+  data(user_role_data, :list, default: [])
+  data(user_role_id, :integer, default: nil)
+
+  @user_role_data [
+    %{id: 3, name: :instructor, title: "Instructor"},
+    %{id: 4, name: :student, title: "Student"}
+  ]
 
   def update(
         %{user: user, section_slug: section_slug, enrollment_info: enrollment_info} = _assigns,
@@ -18,52 +27,91 @@ defmodule OliWeb.Components.Delivery.Actions do
     {:ok,
      assign(socket,
        enrollment: enrollment_info.enrollment,
-       is_instructor: enrollment_info.is_instructor,
        section_slug: section_slug,
-       user: user
+       user: user,
+       user_role_id: enrollment_info.user_role_id,
+       user_role_data: @user_role_data
      )}
   end
 
   def render(assigns) do
     ~F"""
+      {render_modal(assigns)}
       <div class="mx-10 mb-10 bg-white shadow-sm">
-
         <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
           <h4 class="pl-9 !py-2 torus-h4 mr-auto dark:!text-black">Actions</h4>
         </div>
 
         <div class="flex justify-between items-center px-14 py-8">
           <div class="flex flex-col">
-            <span class="dark:text-black">Change role to Instructor</span>
-            <span class="text-xs text-gray-400 dark:text-gray-950">If this option is enabled, the user will have the role of Instructor in this course section.</span>
+            <span class="dark:text-black">Change enrolled user role</span>
+            <span class="text-xs text-gray-400 dark:text-gray-950">Select the role to change for the user in this section.</span>
           </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              class="sr-only peer"
-              phx-click="change_user_role"
-              phx-target={@myself}
-              checked={@is_instructor}>
-            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          </label>
+          <form phx-change="display_confirm_modal" phx-target={@myself}>
+            <select class="torus-select pr-32" name="filter_by_role_id">
+              {#for elem <- @user_role_data}
+                <option selected={elem.id == @user_role_id} value={elem.id}>{elem.title}</option>
+              {/for}
+            </select>
+          </form>
         </div>
       </div>
     """
   end
 
-  def handle_event("change_user_role", _params, socket) do
-    if socket.assigns.is_instructor,
-      do:
-        Accounts.toggle_context_role(
-          socket.assigns.enrollment,
-          ContextRoles.get_role(:context_learner)
-        ),
-      else:
-        Accounts.toggle_context_role(
-          socket.assigns.enrollment,
-          ContextRoles.get_role(:context_instructor)
-        )
+  def handle_event(
+        "change_user_role",
+        %{"filter_by_role_id" => filter_by_role_id},
+        socket
+      ) do
+    context_role =
+      case String.to_integer(filter_by_role_id) do
+        3 -> ContextRoles.get_role(:context_instructor)
+        4 -> ContextRoles.get_role(:context_learner)
+      end
 
-    {:noreply, assign(socket, is_instructor: !socket.assigns.is_instructor)}
+    Accounts.update_user_context_role(
+      socket.assigns.enrollment,
+      context_role
+    )
+
+    {:noreply,
+     socket
+     |> assign(user_role_id: String.to_integer(filter_by_role_id))
+     |> hide_modal(modal_assigns: nil)}
+  end
+
+  def handle_event("display_confirm_modal", %{"filter_by_role_id" => filter_by_role_id}, socket) do
+    modal_assigns = %{
+      title: "Change role",
+      id: "change_role_modal",
+      ok:
+        JS.push("change_user_role",
+          target: socket.assigns.myself,
+          value: %{"filter_by_role_id" => filter_by_role_id}
+        ),
+      cancel: JS.push("cancel_confirm_modal", target: socket.assigns.myself)
+    }
+
+    %{given_name: given_name, family_name: family_name} = socket.assigns.user
+
+    modal = fn assigns ->
+      ~F"""
+        <Confirm {...@modal_assigns}>
+          Are you sure you want to change user role to {given_name} {family_name}?
+        </Confirm>
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event("cancel_confirm_modal", _, socket) do
+    {:noreply, socket |> hide_modal(modal_assigns: nil)}
   end
 end

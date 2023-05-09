@@ -1,10 +1,11 @@
 defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   import OliWeb.Common.Utils
 
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
-  alias alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
   alias Oli.Grading.GradebookRow
 
@@ -89,15 +90,15 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(%{"active_tab" => "actions"} = params, _, socket) do
+    enrollment = Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id)
+
     socket =
       socket
       |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
       |> assign_new(:enrollment_info, fn ->
         %{
-          enrollment:
-            Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id),
-          is_instructor:
-            Sections.has_instructor_role?(socket.assigns.student, socket.assigns.section.slug)
+          enrollment: enrollment,
+          user_role_id: Sections.get_user_role_from_enrollment(enrollment)
         }
       end)
 
