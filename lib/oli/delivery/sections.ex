@@ -2492,19 +2492,23 @@ defmodule Oli.Delivery.Sections do
       get_flatten_hierarchy(rest, resources)
   end
 
-  def get_objectives_and_subobjectives(section_slug) do
+  def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
     pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
 
-    mastery_per_learning_objective = Metrics.mastery_per_learning_objective(section_slug)
+    mastery_per_learning_objective =
+      case student_id do
+        nil -> Metrics.mastery_per_learning_objective(section_slug)
+        student_id -> Metrics.mastery_for_student_per_learning_objective(section_slug, student_id)
+      end
 
     objectives_id_list =
       pages_with_objectives
       |> Enum.into([], fn elem -> elem.objectives["attached"] end)
       |> List.flatten()
 
-    # TODO we should be able to calculate the metrics (student_mastery_obj, student_mastery_subobj and student_engagement)
+    # TODO we should be able to calculate student_engagement 's metric
     # for all students or for a specific student depending on where we are rendering the learning objectives table
     # (from instructor dashboard or student dashboard perspective)
     objectives =

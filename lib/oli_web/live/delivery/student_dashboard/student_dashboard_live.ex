@@ -47,7 +47,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
       |> assign_new(:objectives_tab, fn ->
         %{
-          objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section.slug),
+          objectives:
+            Sections.get_objectives_and_subobjectives(
+              socket.assigns.section.slug,
+              socket.assigns.student.id
+            ),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
         }

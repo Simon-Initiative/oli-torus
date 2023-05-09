@@ -444,6 +444,27 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
   end
 
+  def mastery_for_student_per_learning_objective(section_slug, student_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: sn.objective_id,
+        select:
+          {sn.objective_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
+  end
+
   @doc """
   Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
   for every container of a given section

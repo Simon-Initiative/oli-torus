@@ -398,6 +398,44 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
                nil
     end
 
+    test "mastery_for_student_per_learning_objective/2 calculates correctly", %{
+      section: section,
+      student_1: student_1,
+      student_2: student_2,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4,
+      page_1_objective: page_1_obj,
+      page_2_objective: page_2_obj,
+      page_3_objective: page_3_obj,
+      page_4_objective: page_4_obj
+    } do
+      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
+      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, true)
+
+      set_snapshot(section, page_1.resource, page_1_obj.resource, student_2, false)
+      set_snapshot(section, page_3.resource, page_3_obj.resource, student_2, false)
+      set_snapshot(section, page_4.resource, page_4_obj.resource, student_2, true)
+
+      student_1_mastery_per_learning_objective =
+        Metrics.mastery_for_student_per_learning_objective(section.slug, student_1.id)
+
+      student_2_mastery_per_learning_objective =
+        Metrics.mastery_for_student_per_learning_objective(section.slug, student_2.id)
+
+      assert student_1_mastery_per_learning_objective[page_1_obj.resource.id] == "High"
+      assert student_1_mastery_per_learning_objective[page_2_obj.resource.id] == "Low"
+      assert student_1_mastery_per_learning_objective[page_3_obj.resource.id] == "High"
+      assert student_1_mastery_per_learning_objective[page_4_obj.resource.id] == nil
+
+      assert student_2_mastery_per_learning_objective[page_1_obj.resource.id] == "Low"
+      assert student_2_mastery_per_learning_objective[page_2_obj.resource.id] == nil
+      assert student_2_mastery_per_learning_objective[page_3_obj.resource.id] == "Low"
+      assert student_2_mastery_per_learning_objective[page_4_obj.resource.id] == "High"
+    end
+
     test "mastery_per_container/1 calculates correctly", %{
       section: section,
       student_1: student_1,
