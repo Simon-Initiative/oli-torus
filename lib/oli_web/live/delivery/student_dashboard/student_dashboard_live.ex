@@ -47,7 +47,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
       |> assign_new(:objectives_tab, fn ->
         %{
-          objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section.slug),
+          objectives:
+            Sections.get_objectives_and_subobjectives(
+              socket.assigns.section.slug,
+              socket.assigns.student.id
+            ),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
         }
@@ -194,7 +198,9 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         student_id
       )
 
-    # TODO get real student engagement and student mastery values
+    mastery_per_container = Metrics.mastery_for_student_per_container(section.slug, student_id)
+
+    # TODO get real student engagement values
     # when those metrics are ready (see Oli.Delivery.Metrics)
 
     containers_with_metrics =
@@ -202,7 +208,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         Map.merge(container, %{
           progress: student_progress[container.id] || 0.0,
           student_engagement: Enum.random(["Low", "Medium", "High", "Not enough data"]),
-          student_mastery: Enum.random(["Low", "Medium", "High", "Not enough data"])
+          student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
         })
       end)
 

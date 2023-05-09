@@ -41,6 +41,7 @@ defmodule Oli.Delivery.Sections do
   alias Ecto.Multi
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Metrics
 
   require Logger
 
@@ -2491,17 +2492,23 @@ defmodule Oli.Delivery.Sections do
       get_flatten_hierarchy(rest, resources)
   end
 
-  def get_objectives_and_subobjectives(section_slug) do
+  def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
     pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
+
+    mastery_per_learning_objective =
+      case student_id do
+        nil -> Metrics.mastery_per_learning_objective(section_slug)
+        student_id -> Metrics.mastery_for_student_per_learning_objective(section_slug, student_id)
+      end
 
     objectives_id_list =
       pages_with_objectives
       |> Enum.into([], fn elem -> elem.objectives["attached"] end)
       |> List.flatten()
 
-    # TODO we should be able to calculate the metrics (student_mastery_obj, student_mastery_subobj and student_engagement)
+    # TODO we should be able to calculate student_engagement 's metric
     # for all students or for a specific student depending on where we are rendering the learning objectives table
     # (from instructor dashboard or student dashboard perspective)
     objectives =
@@ -2510,13 +2517,12 @@ defmodule Oli.Delivery.Sections do
         on: rev2.resource_id in rev.children,
         where: rev.deleted == false and rev.resource_type_id == ^page_id,
         where: rev.resource_id in ^objectives_id_list,
-        group_by: [rev2.title, rev.resource_id, rev.title],
+        group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id],
         select: %{
-          resource_id: rev.resource_id,
           objective: rev.title,
+          objective_resource_id: rev.resource_id,
           subobjective: rev2.title,
-          student_mastery_obj: "Medium",
-          student_mastery_subobj: "High",
+          subobjective_resource_id: rev2.resource_id,
           student_engagement:
             fragment("('{High,Medium,Low,Not enough data}'::text[])[ceil(random()*4)]")
         }
@@ -2536,7 +2542,15 @@ defmodule Oli.Delivery.Sections do
       end)
 
     Enum.map(objectives, fn obj ->
-      Map.put(obj, :pages_id, Map.get(objectives_pages_map, obj.resource_id))
+      Map.put(obj, :pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
+      |> Map.put(
+        :student_mastery_obj,
+        Map.get(mastery_per_learning_objective, obj.objective_resource_id, "Not enough data")
+      )
+      |> Map.put(
+        :student_mastery_subobj,
+        Map.get(mastery_per_learning_objective, obj.subobjective_resource_id, "Not enough data")
+      )
     end)
   end
 
