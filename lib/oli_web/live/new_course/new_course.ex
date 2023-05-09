@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
-  alias OliWeb.Delivery.NewCourse.{NameCourse, SelectSource}
+  alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
 
   alias Phoenix.LiveView.JS
 
@@ -139,10 +139,8 @@ defmodule OliWeb.Delivery.NewCourse do
       <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
         <img src="/images/icons/course-creation-wizard-step-2.svg" />
         <h2>Course details</h2>
-        <%= @step_three_prop %>
-        <.form let={f} for={:section} id="course-details-form">
-          <%= text_input f, :description, class: "torus-input" %>
-        </.form>
+        <p>We pulled the information we can from your LMS, but feel free to adjust it</p>
+        <CourseDetails.render on_select={@on_select} changeset={@changeset} />
       </div>
     </.header>
     """
@@ -168,14 +166,27 @@ defmodule OliWeb.Delivery.NewCourse do
         %{changeset: assigns.changeset}
 
       _ ->
-        %{
-          step_three_prop: "Prop example 1"
-        }
+        %{changeset: assigns.changeset, on_select: "day_selection"}
     end
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do
     {:noreply, assign(socket, source: source)}
+  end
+
+  def handle_event("day_selection", %{"class_days" => class_days}, socket) do
+    class_days =
+      Enum.reduce(class_days, [], fn {day, checked}, days ->
+        if String.to_atom(checked) do
+          [day | days]
+        else
+          days
+        end
+      end)
+
+    changeset = Ecto.Changeset.change(socket.assigns.changeset, %{class_days: class_days})
+
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event(
