@@ -55,3 +55,12 @@ p {
 #delivery_container a:hover {
   text-decoration: none;
 }
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

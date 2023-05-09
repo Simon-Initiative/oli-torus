@@ -18,6 +18,7 @@ import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { TooltipInit } from './tooltip';
+import { SubmitForm } from './submit_form';
 
 export const Hooks = {
   GraphNavigation,
@@ -41,4 +42,5 @@ export const Hooks = {
   HierarchySelector,
   TextareaListener,
   LiveReact,
+  SubmitForm
 };
