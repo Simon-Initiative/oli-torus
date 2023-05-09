@@ -65,6 +65,12 @@ defmodule OliWeb.Delivery.NewCourse do
         current_user_id -> Accounts.get_user!(current_user_id, preload: [:author])
       end
 
+    changeset =
+      case lti_params["https://purl.imsglobal.org/spec/lti/claim/resource_link"] do
+        nil -> changeset
+        params -> Section.changeset(changeset, %{title: params["title"]})
+      end
+
     {:ok,
      assign(socket,
        form_id: @form_id,
