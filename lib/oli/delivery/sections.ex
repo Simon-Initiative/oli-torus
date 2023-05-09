@@ -2593,8 +2593,8 @@ defmodule Oli.Delivery.Sections do
       (s.slug == ^section_slug and
          spp.project_id == s.base_project_id and
          spp.section_id == s.id and
-         pr.resource_id == s.required_survey_resource_id) or
-        pr.resource_id == proj.required_survey_resource_id
+         (pr.resource_id == s.required_survey_resource_id or
+         pr.resource_id == proj.required_survey_resource_id))
     )
     |> select([_, _, _, rev], rev)
   end
