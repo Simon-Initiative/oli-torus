@@ -16,23 +16,23 @@ defmodule OliWeb.Common.FilterBox do
 
   prop show_sort, :boolean, default: true
   prop show_more_opts, :boolean, default: true
+  prop sort, :event, default: nil
 
   def render(assigns) do
     ~F"""
-    <div class="mb-3">
+    <div class="mb-3 w-full">
       <h3>{@card_header_text}</h3>
       <div>
         <p class="mt-1 mb-4">{@card_body_text}</p>
-        <div class="block filter-opts">
-
-          <div class="pb-2">
+        <div class="filter-opts flex flex-wrap items-center gap-2">
+          <div class="w-full">
             <#slot />
           </div>
 
           {#if @show_sort}
-            <div>
-              <form :on-change="sort" class="d-flex">
-                <select name="sort_by" id="select_sort" class="custom-select mr-2">
+            <div class="flex-1">
+              <form :on-change={@sort || "sort"} class="d-flex">
+                <select name="sort_by" id="select_sort" class="custom-select mr-2 h-10">
                   <option value="" disabled selected>Sort by</option>
                   {#for column_spec <- @table_model.column_specs}
                     {#if column_spec.name != :action}
@@ -41,14 +41,14 @@ defmodule OliWeb.Common.FilterBox do
                   {/for}
                 </select>
                 <Field name="sort_order" class="control d-flex align-items-center">
-                  <div class="btn-group btn-group-toggle whitespace-nowrap">
-                    <label class={"btn btn-outline-secondary" <> if @table_model.sort_order == :desc, do: " active", else: ""}>
-                      <RadioButton value="desc" checked={@table_model.sort_order == :desc} opts={hidden: true}/>
-                      <i class='fa fa-sort-amount-down'></i>
-                    </label>
-                    <label class={"btn btn-outline-secondary" <> if @table_model.sort_order == :asc, do: " active", else: ""}>
-                      <RadioButton value="asc" checked={@table_model.sort_order == :asc} opts={hidden: true}/>
-                      <i class='fa fa-sort-amount-up'></i>
+                  <div class="flex">
+                    <label class="cursor-pointer">
+                      <RadioButton
+                        class="hidden"
+                        opts={hidden: true}
+                        value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
+                      />
+                      <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
                     </label>
                   </div>
                 </Field>

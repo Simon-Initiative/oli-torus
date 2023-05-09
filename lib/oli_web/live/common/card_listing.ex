@@ -4,18 +4,19 @@ defmodule OliWeb.Common.CardListing do
   import OliWeb.Common.SourceImage
 
   alias OliWeb.Common.Utils
-  alias OliWeb.Delivery.SelectSource.TableModel
+  alias OliWeb.Delivery.NewCourse.TableModel
 
   prop model, :struct, required: true
   prop selected, :event, required: true
+  prop selected_target, :any, default: nil
 
   def render(assigns) do
     ~F"""
     <div class="select-sources">
       <div class="card-deck mr-0 ml-0 inline-flex flex-wrap">
         {#for item <- @model.rows}
-          <a :on-click={@selected} class="course-card-link mb-2 no-underline hover:no-underline" phx-value-id={action_id(item)}>
-            <div class="card mb-2 mr-1 ml-1 h-100">
+          <a :on-click={if @selected_target, do: Map.put(@selected, :target, @selected_target), else: @selected} class="course-card-link mb-2 no-underline hover:no-underline" phx-value-id={action_id(item)}>
+            <div class={"card mb-2 mr-1 ml-1 h-100 " <> if Map.get(item, :selected), do: "!bg-delivery-primary-100 shadow-inner !border-none", else: ""}>
               <img src={cover_image(item)} class="card-img-top" alt="course image">
               <div class="card-body">
                 <h5 class="card-title mb-1" title={render_title_column(item)}>{render_title_column(item)}</h5>

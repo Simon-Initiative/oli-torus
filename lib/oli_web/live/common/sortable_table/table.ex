@@ -48,9 +48,9 @@ defmodule OliWeb.Common.SortableTable.Table do
       {#if column_spec.sortable}
         {#if @model.sort_by_spec == column_spec}
           <i class={"fas fa-sort-" <> sort_direction_cls} />
-          <span class={"data-sort-" <> sort_direction_cls} data-sort-column="true"></span>
+          <span class={"data-sort-" <> sort_direction_cls} data-sort-column="true" />
         {#else}
-          <span class="data-sort-up" data-sort-column="false"></span>
+          <span class="data-sort-up" data-sort-column="false" />
         {/if}
       {/if}
     </th>
@@ -72,7 +72,7 @@ defmodule OliWeb.Common.SortableTable.Table do
     ~F"""
     <tr
       id={id_field(row, @model)}
-      class={row_class}
+      class={row_class <> if Map.get(row, :selected), do: " bg-delivery-primary-100 shadow-inner dark:text-black", else: ""}
       :on-click={@select}
       phx-value-id={id_field(row, @model)}
     >

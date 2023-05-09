@@ -1,8 +1,12 @@
 defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
+  alias Oli.Accounts
+  alias Oli.Lti.LtiParams
+
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
+  alias OliWeb.Delivery.NewCourse.SelectSource
 
   alias Phoenix.LiveView.JS
 
@@ -37,11 +41,30 @@ defmodule OliWeb.Delivery.NewCourse do
       }
     ]
 
+    lti_params =
+      case session["lti_params_id"] do
+        nil ->
+          nil
+
+        lti_params_id ->
+          %{params: lti_params} = LtiParams.get_lti_params(lti_params_id)
+          lti_params
+      end
+
+    current_user =
+      case session["current_user_id"] do
+        nil -> nil
+        current_user_id -> Accounts.get_user!(current_user_id, preload: [:author])
+      end
+
     {:ok,
      assign(socket,
        form_id: @form_id,
        steps: steps,
        current_step: 0,
+       session: Map.put(session, "live_action", socket.assigns.live_action),
+       current_user: current_user,
+       lti_params: lti_params
      )}
   end
 
@@ -76,7 +99,17 @@ defmodule OliWeb.Delivery.NewCourse do
       <.header>
         <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
           <h2>Course details</h2>
-          <%= @step_one_prop %>
+          <p>We pulled the information we can from your LMS, but feel free to adjust it</p>
+          <.live_component
+            id="select_source_step"
+            module={SelectSource}
+            session={@session}
+            on_select={@on_select}
+            on_select_target={@on_select_target}
+            source={@source}
+            current_user={@current_user}
+            lti_params={@lti_params}
+          />
         </div>
       </.header>
     """
@@ -120,7 +153,12 @@ defmodule OliWeb.Delivery.NewCourse do
     case assigns.current_step do
       0 ->
         %{
-          step_one_prop: "Prop example 1"
+          session: assigns.session,
+          source: assigns[:source],
+          on_select: "source_selection",
+          on_select_target: "##{@form_id}",
+          current_user: assigns.current_user,
+          lti_params: assigns.lti_params
         }
 
       1 ->
@@ -133,6 +171,10 @@ defmodule OliWeb.Delivery.NewCourse do
           step_three_prop: "Prop example 1"
         }
     end
+  end
+
+  def handle_event("source_selection", %{"id" => source}, socket) do
+    {:noreply, assign(socket, source: source)}
   end
 
   def handle_event(
