@@ -337,39 +337,22 @@ defmodule Oli.Delivery.Metrics do
     }
   """
   @spec students_last_interaction_across(section :: map, container_id :: any) :: map
-  def students_last_interaction_across(section, container_id \\ nil)
+  def students_last_interaction_across(section, container_id \\ nil) do
+    on =
+      case container_id do
+        nil ->
+          dynamic([_s, e, ra], e.user_id == ra.user_id)
 
-  def students_last_interaction_across(section, container_id) when is_nil(container_id) do
-    query =
-      from(
-        s in Section,
-        join: e in Enrollment,
-        on: e.section_id == s.id,
-        left_join: ra in ResourceAccess,
-        on: e.user_id == ra.user_id,
-        where: s.slug == ^section.slug,
-        group_by: [e.user_id, e.updated_at],
-        select: {
-          e.user_id,
-          fragment(
-            "coalesce(MAX(?), ?)",
-            ra.updated_at,
-            e.updated_at
-          )
-        }
-      )
+        _ ->
+          pages_for_container =
+            from(cp in ContainedPage,
+              where: cp.section_id == ^section.id and cp.container_id == ^container_id,
+              select: cp.page_id
+            )
+            |> Repo.all()
 
-    Repo.all(query)
-    |> Enum.into(%{})
-  end
-
-  def students_last_interaction_across(section, container_id) do
-    pages_for_container =
-      from(cp in ContainedPage,
-        where: cp.section_id == ^section.id and cp.container_id == ^container_id,
-        select: cp.page_id
-      )
-      |> Repo.all()
+          dynamic([_s, e, ra], e.user_id == ra.user_id and ra.resource_id in ^pages_for_container)
+      end
 
     query =
       from(
@@ -377,7 +360,7 @@ defmodule Oli.Delivery.Metrics do
         join: e in Enrollment,
         on: e.section_id == s.id,
         left_join: ra in ResourceAccess,
-        on: e.user_id == ra.user_id and ra.resource_id in ^pages_for_container,
+        on: ^on,
         where: s.slug == ^section.slug,
         group_by: [e.user_id, e.updated_at],
         select: {
