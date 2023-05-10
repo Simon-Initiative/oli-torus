@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~F"""
-    <div>
+    <div class="w-full">
       <FilterBox
         card_header_text={nil}
         card_body_text={nil}
@@ -103,11 +103,11 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             <Form for={:view} change="update_view_type">
               <Field name={:type} class="control w-100 d-flex align-items-center">
                 <div class="flex text-white dark:text-delivery-body-color-dark">
-                  <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>
+                  <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>
                     <RadioButton class="hidden" value="card" checked={@view_type == :card} opts={hidden: true} />
                     <i class="fa fa-th" />
                   </label>
-                  <label class={"#{if @view_type == :list, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600"} cursor-pointer text-center block rounded-r-sm py-1 h-8 w-10"}>
+                  <label class={"#{if @view_type == :list, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-r-sm py-1 h-8 w-10"}>
                     <RadioButton class="hidden" value="list" checked={@view_type == :list} opts={hidden: true} />
                     <i class="fa fa-list" />
                   </label>
