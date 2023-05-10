@@ -48,9 +48,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       # live_action is :independent_learner, :admin or :lms_instructor
       live_action = session["live_action"]
 
-      sources =
-        retrieve_all_sources(live_action, %{user: current_user, lti_params: lti_params})
-        |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
+      sources = retrieve_all_sources(live_action, %{user: current_user, lti_params: lti_params})
 
       {:ok, table_model} = OliWeb.Delivery.NewCourse.TableModel.new(sources, context)
       table_model = mark_selected_row(table_model, assigns[:source])
@@ -158,8 +156,6 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         id -> String.to_integer(id)
       end
 
-    IO.inspect(source_id)
-
     table_model_rows =
       Enum.map(table_model.rows, fn row ->
         if Map.get(row, :id) == source_id do
@@ -208,10 +204,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   end
 
   def handle_event("reset_search", _, socket) do
-    filtered_rows = filter_rows(socket.assigns.sources, "")
     params = Map.put(socket.assigns.params, :query, "")
-
-    table_model = Map.put(socket.assigns.table_model, :rows, filtered_rows)
+    table_model = Map.put(socket.assigns.table_model, :rows, socket.assigns.sources)
 
     {:noreply, assign(socket, params: params, table_model: table_model)}
   end
@@ -247,14 +241,20 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         )
       end)
 
-    free_project_publications ++ products
+    Enum.with_index(free_project_publications ++ products, fn element, index ->
+      Map.put(element, :unique_id, index)
+    end)
   end
 
   defp retrieve_all_sources(:independent_learner, %{user: user}),
-    do: Publishing.retrieve_visible_sources(user, nil)
+    do:
+      Publishing.retrieve_visible_sources(user, nil)
+      |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
   defp retrieve_all_sources(:lms_instructor, %{user: user, lti_params: lti_params}),
-    do: Delivery.retrieve_visible_sources(user, lti_params)
+    do:
+      Delivery.retrieve_visible_sources(user, lti_params)
+      |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
   defp is_instructor?(:admin), do: false
   defp is_instructor?(_), do: true
