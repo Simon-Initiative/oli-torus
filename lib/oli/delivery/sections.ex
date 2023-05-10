@@ -198,6 +198,18 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+    Get the user's role in a given section.
+  """
+
+  def get_user_role_from_enrollment(enrollment) do
+    enrollment
+    |> Repo.preload(:context_roles)
+    |> Map.get(:context_roles)
+    |> List.first()
+    |> Map.get(:id)
+  end
+
+  @doc """
   Determines if a user is a platform (institution) instructor.
   """
   def is_institution_instructor?(%User{} = user) do

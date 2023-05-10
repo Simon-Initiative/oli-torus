@@ -1,10 +1,11 @@
 defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   import OliWeb.Common.Utils
 
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
-  alias alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
   alias Oli.Grading.GradebookRow
 
@@ -88,6 +89,23 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(%{"active_tab" => "actions"} = params, _, socket) do
+    enrollment = Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id)
+
+    socket =
+      socket
+      |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
+      |> assign_new(:enrollment_info, fn ->
+        %{
+          enrollment: enrollment,
+          user_role_id: Sections.get_user_role_from_enrollment(enrollment)
+        }
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     {:noreply,
      assign(socket,
@@ -99,6 +117,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+      <%= render_modal(assigns) %>
       <Helpers.section_details_header section_title={@section.title} student_name={@student.name}/>
       <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
       <Helpers.tabs active_tab={@active_tab} section_slug={@section.slug} student_id={@student.id} preview_mode={@preview_mode} />
@@ -160,6 +179,18 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     """
   end
 
+  defp render_tab(%{active_tab: :actions} = assigns) do
+    ~H"""
+      <.live_component
+        id="actions_table"
+        module={OliWeb.Components.Delivery.Actions}
+        user={@student}
+        section_slug={@section.slug}
+        enrollment_info={@enrollment_info}
+      />
+    """
+  end
+
   @impl Phoenix.LiveView
   def handle_event("breadcrumb-navigate", _unsigned_params, socket) do
     if socket.assigns.preview_mode do
@@ -185,6 +216,21 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
            )
        )}
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:hide_modal}, socket) do
+    {:noreply, hide_modal(socket)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:show_modal, modal, modal_assigns}, socket) do
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   defp get_containers(section, student_id) do
