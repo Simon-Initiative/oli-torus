@@ -144,6 +144,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       assert has_element?(view, "h6", "There are no quiz scores to show")
     end
 
+    test "loads correctly when a student has not yet finished a quiz", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      student_with_gating_condition: student,
+      graded_page_1: graded_page_1
+    } do
+      insert(:resource_access,
+        user: student,
+        section: section,
+        resource: graded_page_1.resource,
+        score: nil,
+        out_of: nil
+      )
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
+
+      assert has_element?(view, "h4", "Quiz Scores")
+    end
+
     test "applies searching", %{
       conn: conn,
       section: section,
