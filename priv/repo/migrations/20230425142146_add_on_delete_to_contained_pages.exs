@@ -13,7 +13,7 @@ defmodule Oli.Repo.Migrations.AddOnDeleteToContainedPages do
     drop(constraint(:contained_pages, "contained_pages_section_id_fkey"))
 
     alter table(:contained_pages) do
-      modify(:section_id, references(:sections, on_delete: :noting))
+      modify(:section_id, references(:sections, on_delete: :nothing))
     end
   end
 end
