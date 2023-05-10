@@ -36,7 +36,6 @@ defmodule OliWeb.Components.Delivery.Actions do
 
   def render(assigns) do
     ~F"""
-      {render_modal(assigns)}
       <div class="mx-10 mb-10 bg-white shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
           <h4 class="pl-9 !py-2 torus-h4 mr-auto dark:!text-black">Actions</h4>
@@ -90,7 +89,11 @@ defmodule OliWeb.Components.Delivery.Actions do
           target: socket.assigns.myself,
           value: %{"filter_by_role_id" => filter_by_role_id}
         ),
-      cancel: JS.push("cancel_confirm_modal", target: socket.assigns.myself)
+      cancel:
+        JS.push("cancel_confirm_modal",
+          target: socket.assigns.myself,
+          value: %{"previous_role_id" => socket.assigns.user_role_id}
+        )
     }
 
     %{given_name: given_name, family_name: family_name} = socket.assigns.user
@@ -103,15 +106,14 @@ defmodule OliWeb.Components.Delivery.Actions do
       """
     end
 
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+    send(self(), {:show_modal, modal, modal_assigns})
+
+    {:noreply, assign(socket, user_role_id: filter_by_role_id)}
   end
 
-  def handle_event("cancel_confirm_modal", _, socket) do
-    {:noreply, socket |> hide_modal(modal_assigns: nil)}
+  def handle_event("cancel_confirm_modal", %{"previous_role_id" => previous_role_id}, socket) do
+    send(self(), {:hide_modal})
+
+    {:noreply, assign(socket, user_role_id: previous_role_id)}
   end
 end
