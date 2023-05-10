@@ -84,6 +84,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
     } do
       student = insert(:user)
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       {:ok, view, _html} =
         live(
@@ -91,7 +92,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
           live_view_students_actions_route(section.slug, student.id, :actions)
         )
 
-      # Progress tab is the selected one
+      # Actions tab is the selected one
       assert has_element?(
                view,
                ~s{a[href="#{live_view_students_actions_route(section.slug, student.id, :actions)}"].border-b-2},
@@ -111,7 +112,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       {:ok, view, _html} =
         live(conn, live_view_students_actions_route(section.slug, student.id, :actions))
 
-      # Progress tab is the selected one
+      # Actions tab is the selected one
       assert has_element?(
                view,
                ~s{a[href="#{live_view_students_actions_route(section.slug, student.id, :actions)}"].border-b-2},
@@ -119,27 +120,68 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
              )
 
       assert has_element?(view, "span", "Change enrolled user role")
-      assert has_element?(view, "input[type=checkbox]")
+      assert has_element?(view, "select[name=filter_by_role_id]")
     end
 
-    test "instructor can change student role using toggle button", %{
+    test "instructor can change student role", %{
       section: section,
       conn: conn,
       student: student
     } do
+      user_role_id =
+        Sections.get_user_role_from_enrollment(Sections.get_enrollment(section.slug, student.id))
+
       {:ok, view, _html} =
         live(conn, live_view_students_actions_route(section.slug, student.id, :actions))
 
-      assert has_element?(view, "span", "Change enrolled user role")
-      assert has_element?(view, "input[type=checkbox]")
-      refute Sections.has_instructor_role?(student, section.slug)
+      assert view |> element("option[value=#{Integer.to_string(user_role_id)}]")
 
       view
-      |> element("input[type=checkbox]")
+      |> element("form[phx-change=\"display_confirm_modal\"")
+      |> render_change(%{filter_by_role_id: "3"})
+
+      assert view
+             |> element("div.modal-body")
+             |> render() =~
+               "Are you sure you want to change user role to #{student.given_name} #{student.family_name}"
+
+      view
+      |> element("button", "Ok")
       |> render_click()
 
-      assert has_element?(view, "input[type=checkbox][checked]")
-      assert Sections.has_instructor_role?(student, section.slug)
+      user_role_id_changed =
+        Sections.get_user_role_from_enrollment(Sections.get_enrollment(section.slug, student.id))
+
+      assert view |> element("option[value=#{Integer.to_string(user_role_id_changed)}]")
+    end
+
+    test "instructor can cancel the student's role change", %{
+      section: section,
+      conn: conn,
+      student: student
+    } do
+      user_role_id =
+        Sections.get_user_role_from_enrollment(Sections.get_enrollment(section.slug, student.id))
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_actions_route(section.slug, student.id, :actions))
+
+      assert view |> element("option[value=#{Integer.to_string(user_role_id)}]")
+
+      view
+      |> element("form[phx-change=\"display_confirm_modal\"")
+      |> render_change(%{filter_by_role_id: "3"})
+
+      assert view
+             |> element("div.modal-body")
+             |> render() =~
+               "Are you sure you want to change user role to #{student.given_name} #{student.family_name}"
+
+      view
+      |> element("button", "Cancel")
+      |> render_click()
+
+      assert view |> element("option[value=#{Integer.to_string(user_role_id)}]")
     end
   end
 end
