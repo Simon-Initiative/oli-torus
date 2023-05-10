@@ -153,8 +153,7 @@ export const Navbar = ({
               active:text-delivery-primary-600
               active:hover:text-delivery-primary-600
             "
-            data-bs-toggle="modal"
-            data-bs-target="#help-modal"
+            onClick={() => (window as any).showHelpModal()}
           >
             Tech Support
           </button>

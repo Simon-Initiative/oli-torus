@@ -14,6 +14,7 @@ defmodule Oli.Delivery.Metrics do
     SectionResource
   }
 
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
 
@@ -323,20 +324,44 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Calculates the students latest interaction for a given section:
-  the latest :updated_at time stamp across all ResourceAccess records for each student.
+  Calculates the students latest interaction across all pages of a given container (the max value).
+  Omitting the container_id (or specifying nil) calculates students latest interaction
+  across the entire course section.
   If an enrolled student has not yet interacted, it returns the :updated_at time stamp of his enrollment.
+
+  It returns a map:
+
+    %{student_id_1 => student_1_last_interaction,
+      ...
+      student_id_n => student_n_last_interaction
+    }
   """
-  @spec students_last_interaction(section_slug :: String.t()) :: map
-  def students_last_interaction(section_slug) do
+  @spec students_last_interaction_across(section :: map, container_id :: any) :: map
+  def students_last_interaction_across(section, container_id \\ nil) do
+    on =
+      case container_id do
+        nil ->
+          dynamic([_s, e, ra], e.user_id == ra.user_id)
+
+        _ ->
+          pages_for_container =
+            from(cp in ContainedPage,
+              where: cp.section_id == ^section.id and cp.container_id == ^container_id,
+              select: cp.page_id
+            )
+            |> Repo.all()
+
+          dynamic([_s, e, ra], e.user_id == ra.user_id and ra.resource_id in ^pages_for_container)
+      end
+
     query =
       from(
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
         left_join: ra in ResourceAccess,
-        on: e.user_id == ra.user_id,
-        where: s.slug == ^section_slug,
+        on: ^on,
+        where: s.slug == ^section.slug,
         group_by: [e.user_id, e.updated_at],
         select: {
           e.user_id,
@@ -356,6 +381,13 @@ defmodule Oli.Delivery.Metrics do
   Calculates the students latest interaction for a given section page:
   the latest :updated_at time stamp across all ResourceAccess records for each student for a given page.
   If an enrolled student has not yet interacted in that page, it returns the :updated_at time stamp of his enrollment.
+
+    It returns a map:
+
+    %{student_id_1 => student_1_last_interaction,
+      ...
+      student_id_n => student_n_last_interaction
+    }
   """
   @spec students_last_interaction_for_page(section_slug :: String.t(), page_id :: integer) :: map
   def students_last_interaction_for_page(section_slug, page_id) do
@@ -381,6 +413,215 @@ defmodule Oli.Delivery.Metrics do
     Repo.all(query)
     |> Enum.into(%{})
   end
+
+  @doc """
+  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  for every learning objective of a given section
+
+    It returns a map:
+
+    %{objective_id_1 => "High",
+      ...
+      objective_id_n => "Low"
+    }
+  """
+  def mastery_per_learning_objective(section_slug) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
+        group_by: sn.objective_id,
+        select:
+          {sn.objective_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
+  end
+
+  def mastery_for_student_per_learning_objective(section_slug, student_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: sn.objective_id,
+        select:
+          {sn.objective_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
+  end
+
+  @doc """
+  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  for every container of a given section
+
+    It returns a map:
+
+    %{container_id_1 => "High",
+      ...
+      container_id_n => "Low"
+    }
+  """
+  def mastery_per_container(section_slug) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        join: cp in ContainedPage,
+        on: cp.page_id == sn.resource_id,
+        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
+        group_by: cp.container_id,
+        select:
+          {cp.container_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {container_id, mastery} ->
+      {container_id, mastery_range(mastery)}
+    end)
+  end
+
+  @doc """
+  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  for every student across a given container.
+  Omitting the container_id (or specifying nil) calculates students learning mastery
+  across the entire course section.
+
+    It returns a map:
+
+    %{student_id_1 => "High",
+      ...
+      student_id_n => "Low"
+    }
+  """
+  def mastery_per_student_across(section, container_id \\ nil) do
+    filter_by_container =
+      case container_id do
+        nil ->
+          true
+
+        _ ->
+          pages_for_container =
+            from(cp in ContainedPage,
+              where: cp.section_id == ^section.id and cp.container_id == ^container_id,
+              select: cp.page_id
+            )
+            |> Repo.all()
+
+          dynamic([sn, _s], sn.resource_id in ^pages_for_container)
+      end
+
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section.slug,
+        where: ^filter_by_container,
+        group_by: sn.user_id,
+        select:
+          {sn.user_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, mastery} ->
+      {student_id, mastery_range(mastery)}
+    end)
+  end
+
+  @doc """
+  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  for every container of a given section for a given student
+
+    It returns a map:
+
+    %{container_id_1 => "High",
+      ...
+      container_id_n => "Low"
+    }
+  """
+  def mastery_for_student_per_container(section_slug, student_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        join: cp in ContainedPage,
+        on: sn.resource_id == cp.page_id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: cp.container_id,
+        select:
+          {cp.container_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, mastery} ->
+      {student_id, mastery_range(mastery)}
+    end)
+  end
+
+  @doc """
+  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  for each student of a given section for a specific page
+
+    It returns a map:
+
+    %{student_id_1 => "High",
+      ...
+      student_id_n => "Low"
+    }
+  """
+  def mastery_per_student_for_page(section_slug, page_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.resource_id == ^page_id,
+        group_by: sn.user_id,
+        select:
+          {sn.user_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, mastery} -> {student_id, mastery_range(mastery)} end)
+  end
+
+  defp mastery_range(nil), do: "Not enough data"
+  defp mastery_range(mastery) when mastery <= 0.5, do: "Low"
+  defp mastery_range(mastery) when mastery <= 0.8, do: "Medium"
+  defp mastery_range(_mastery), do: "High"
 
   @doc """
   Updates page progress to be 100% complete.
