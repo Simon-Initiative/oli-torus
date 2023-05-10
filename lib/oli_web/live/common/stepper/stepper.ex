@@ -18,6 +18,8 @@ defmodule OliWeb.Common.Stepper do
   attr :steps, :list, required: true
   attr :current_step, :integer, default: 0
   attr :data, :map, default: %{}
+  attr :cancel_button_label, :string, default: "Cancel"
+  attr :on_cancel, :any, default: nil
 
   def render(assigns) do
     assigns = assign(assigns, steps: Enum.with_index(assigns.steps))
@@ -39,12 +41,18 @@ defmodule OliWeb.Common.Stepper do
           <div class="bg-white dark:bg-gray-800 w-full md:w-2/3 border border-gray-200 dark:border-gray-600 flex flex-col overflow-hidden">
             <%= @selected_step.render_fn.(@data) %>
             <div class="px-9 py-4 flex items-center justify-between border-gray-200 dark:border-gray-600 border-t">
-              <button class="torus-button secondary">Cancel</button>
+              <button phx-click={@on_cancel} class="torus-button secondary">
+                <%= @cancel_button_label %>
+              </button>
               <div class="flex gap-2">
                 <%= if @current_step != 0 do %>
-                  <button phx-click={@selected_step.on_previous_step} class="torus-button secondary">Previous step</button>
+                  <button phx-click={@selected_step.on_previous_step} class="torus-button secondary">
+                    <%= @selected_step.previous_button_label || "Previous step" %>
+                  </button>
                 <% end %>
-                <button phx-click={@selected_step.on_next_step} class="torus-button primary">Next step</button>
+                <button phx-click={@selected_step.on_next_step} class="torus-button primary">
+                  <%= @selected_step.next_button_label || "Next step" %>
+                </button>
               </div>
             </div>
           </div>

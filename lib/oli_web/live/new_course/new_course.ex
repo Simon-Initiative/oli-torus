@@ -45,7 +45,8 @@ defmodule OliWeb.Delivery.NewCourse do
         on_previous_step:
           JS.push("change_step", value: %{form_id: "course-details-form", current_step: 1}),
         on_next_step:
-          JS.push("change_step", value: %{form_id: "course-details-form", current_step: 3})
+          JS.push("change_step", value: %{form_id: "course-details-form", current_step: 3}),
+        next_button_label: "Create section"
       }
     ]
 
@@ -89,6 +90,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <.live_component
           id="course_creation_stepper"
           module={Stepper}
+          on_cancel="redirect_to_courses"
           steps={@steps || []}
           current_step={@current_step}
           data={get_step_data(assigns)} />
@@ -336,6 +338,13 @@ defmodule OliWeb.Delivery.NewCourse do
         ContextRoles.get_role(:context_instructor)
       ])
     end
+  end
+
+  def handle_event("redirect_to_courses", _, socket) do
+    {:noreply,
+     redirect(socket,
+       to: Routes.delivery_path(socket, :open_and_free_index)
+     )}
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do
