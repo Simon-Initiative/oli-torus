@@ -5568,6 +5568,10 @@ table.table-striped tbody tr:nth-child(even) {
   font-size: 11px;
 }
 
+.text-\[208px\] {
+  font-size: 208px;
+}
+
 .text-base {
   font-size: 1rem;
   line-height: 1.5rem;
