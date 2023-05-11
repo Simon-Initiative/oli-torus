@@ -19,8 +19,9 @@ export const normalize = (
         return true;
       }
       if (Element.isElement(node) && !config.validChildren[node.type]) {
-        Transforms.setNodes(editor, { type: 'li' }, { at: path });
-        console.warn('Normalizing content: Changing node in list to list item type');
+        //Transforms.setNodes(editor, { type: 'li' }, { at: path });
+        Transforms.wrapNodes(editor, Model.li(), { at: path });
+        console.warn('Normalizing content: Wrapping node in list to list item type');
         return true;
       }
     }

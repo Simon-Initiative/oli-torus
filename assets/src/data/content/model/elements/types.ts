@@ -364,7 +364,7 @@ export interface TableConjugation extends TableCellType {
   pronouns?: string;
 }
 
-export interface ListItem extends SlateElement<(List | Text)[]> {
+export interface ListItem extends SlateElement<(Block | Inline | MediaBlock | TextBlock)[]> {
   type: 'li';
 }
 

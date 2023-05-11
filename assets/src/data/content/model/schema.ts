@@ -232,7 +232,12 @@ export const schema: Schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: false,
-    validChildren: toObj(['ol', 'ul']),
+    validChildren: toObj([
+      ...BlockElements,
+      ...MediaElements,
+      ...TextBlockElements,
+      ...SemanticElements,
+    ]), //toObj(['ol', 'ul']),
   },
   math: {
     isVoid: false,
