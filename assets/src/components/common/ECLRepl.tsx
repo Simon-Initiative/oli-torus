@@ -50,6 +50,8 @@ export const ECLRepl: React.FC<Props> = (props) => {
           setCode(props.code);
         }
       });
+    } else {
+      setCode(props.code);
     }
   }, []);
 
