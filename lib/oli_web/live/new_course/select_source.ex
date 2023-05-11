@@ -21,9 +21,11 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     default: %{
       offset: 0,
       limit: 20,
-      sort_by: "title",
-      sort_order: "asc",
-      query: ""
+      sort_by: :title,
+      sort_order: :asc,
+      query: "",
+      applied_query: "",
+      selection: nil
     }
 
   prop session, :map, required: true
@@ -50,12 +52,14 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
       sources = retrieve_all_sources(live_action, %{user: current_user, lti_params: lti_params})
 
-      {:ok, table_model} = OliWeb.Delivery.NewCourse.TableModel.new(sources, context)
-      table_model = mark_selected_row(table_model, assigns[:source])
+      {total_count, table_model} =
+        OliWeb.Delivery.NewCourse.TableModel.new(sources, context)
+        |> elem(1)
+        |> get_table_model_and_count(sources, socket.assigns.params)
 
       {:ok,
        assign(socket,
-         total_count: length(sources),
+         total_count: total_count,
          table_model: table_model,
          sources: sources,
          live_action: live_action,
@@ -71,9 +75,17 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
           {:ok, socket}
 
         source ->
-          table_model = mark_selected_row(socket.assigns.table_model, source)
+          params = Map.put(socket.assigns.params, :selection, source)
 
-          {:ok, assign(socket, table_model: table_model)}
+          {total_count, table_model} =
+            get_table_model_and_count(
+              socket.assigns.table_model,
+              socket.assigns.sources,
+              params
+            )
+
+          {:ok,
+           assign(socket, total_count: total_count, table_model: table_model, params: params)}
       end
     end
   end
@@ -117,7 +129,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       </FilterBox>
 
       <Listing
-        filter={@params[:query]}
+        filter={@params[:applied_query]}
         table_model={@table_model}
         total_count={@total_count}
         offset={@params[:offset]}
@@ -147,16 +159,67 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     """
   end
 
-  defp mark_selected_row(table_model, nil), do: table_model
+  defp get_table_model_and_count(
+         table_model,
+         sources,
+         params,
+         opts \\ [update_sort_params: false]
+       ) do
+    filtered_table_model = filter(table_model, sources, params)
 
-  defp mark_selected_row(table_model, source) do
+    table_model =
+      filtered_table_model
+      |> sort(params, opts)
+      |> paginate(params)
+      |> maybe_mark_selected_source(params)
+
+    {length(filtered_table_model.rows), table_model}
+  end
+
+  defp sort(table_model, params, opts) do
+    case opts[:update_sort_params] do
+      true -> SortableTableModel.update_sort_params(table_model, params.sort_by)
+      false -> table_model
+    end
+    |> SortableTableModel.update_from_params(params)
+  end
+
+  defp filter(table_model, sources, params) do
+    case params.applied_query do
+      "" ->
+        Map.put(table_model, :rows, sources)
+
+      query ->
+        rows =
+          Enum.filter(sources, fn source ->
+            title =
+              case Map.get(source, :type) do
+                nil -> source.project.title
+                :blueprint -> source.title
+              end
+
+            String.contains?(String.downcase(title), query)
+          end)
+
+        Map.put(table_model, :rows, rows)
+    end
+  end
+
+  defp paginate(table_model, params) do
+    rows = Enum.slice(table_model.rows, params.offset, params.limit)
+
+    Map.put(table_model, :rows, rows)
+  end
+
+  defp maybe_mark_selected_source(table_model, params) do
     source_id =
-      case Regex.run(~r/[^\d]*(\d*)/, source, capture: :all_but_first) |> Enum.at(0) do
+      case (Regex.run(~r/[^\d]*(\d+)/, params[:selection] || "", capture: :all_but_first) || [])
+           |> Enum.at(0) do
         nil -> nil
         id -> String.to_integer(id)
       end
 
-    table_model_rows =
+    rows =
       Enum.map(table_model.rows, fn row ->
         if Map.get(row, :id) == source_id do
           Map.put(row, :selected, true)
@@ -165,25 +228,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         end
       end)
 
-    Map.put(table_model, :rows, table_model_rows)
-  end
-
-  defp filter_rows(sources, query) do
-    case String.downcase(query) do
-      "" ->
-        sources
-
-      str ->
-        Enum.filter(sources, fn p ->
-          title =
-            case Map.get(p, :type) do
-              nil -> p.project.title
-              :blueprint -> p.title
-            end
-
-          String.contains?(String.downcase(title), str)
-        end)
-    end
+    Map.put(table_model, :rows, rows)
   end
 
   def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket),
@@ -196,37 +241,67 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   end
 
   def handle_event("apply_search", _, socket) do
-    filtered_rows = filter_rows(socket.assigns.sources, socket.assigns.params.query)
+    params = Map.put(socket.assigns.params, :applied_query, socket.assigns.params.query)
 
-    table_model = Map.put(socket.assigns.table_model, :rows, filtered_rows)
+    {total_count, table_model} =
+      get_table_model_and_count(
+        socket.assigns.table_model,
+        socket.assigns.sources,
+        params
+      )
 
-    {:noreply, assign(socket, table_model: table_model)}
+    {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
   end
 
   def handle_event("reset_search", _, socket) do
-    params = Map.put(socket.assigns.params, :query, "")
-    table_model = Map.put(socket.assigns.table_model, :rows, socket.assigns.sources)
+    params = Map.merge(socket.assigns.params, %{query: "", applied_query: ""})
 
-    {:noreply, assign(socket, params: params, table_model: table_model)}
+    {total_count, table_model} =
+      get_table_model_and_count(
+        socket.assigns.table_model,
+        socket.assigns.sources,
+        params
+      )
+
+    {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
   end
 
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
     sort_by = String.to_existing_atom(sort_by)
 
-    table_model =
-      SortableTableModel.update_sort_params(
+    params =
+      Map.merge(socket.assigns.params, %{
+        sort_by: sort_by,
+        sort_order: socket.assigns.table_model.sort_order
+      })
+
+    {total_count, table_model} =
+      get_table_model_and_count(
         socket.assigns.table_model,
-        sort_by
+        socket.assigns.sources,
+        params,
+        update_sort_params: true
       )
 
-    params =
-      Map.merge(socket.assigns.params, %{sort_by: sort_by, sort_order: table_model.sort_order})
+    {:noreply, assign(socket, table_model: table_model, total_count: total_count, params: params)}
+  end
 
-    {:noreply,
-     assign(socket,
-       params: params,
-       table_model: SortableTableModel.update_from_params(table_model, params)
-     )}
+  def handle_event("page_change", %{"offset" => offset}, socket) do
+    params =
+      Map.put(
+        socket.assigns.params,
+        :offset,
+        String.to_integer(offset)
+      )
+
+    {total_count, table_model} =
+      get_table_model_and_count(
+        socket.assigns.table_model,
+        socket.assigns.sources,
+        params
+      )
+
+    {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
   end
 
   defp retrieve_all_sources(:admin, _opts) do
