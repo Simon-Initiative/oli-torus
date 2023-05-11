@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery.Sections
   alias Oli.Repo
 
-  alias OliWeb.Common.Stepper
+  alias OliWeb.Common.{Breadcrumb, Stepper}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
 
@@ -80,9 +80,12 @@ defmodule OliWeb.Delivery.NewCourse do
        session: Map.put(session, "live_action", socket.assigns.live_action),
        current_user: current_user,
        lti_params: lti_params,
-       changeset: changeset
+       changeset: changeset,
+       breadcrumbs: breadcrumbs(socket.assigns.live_action)
      )}
   end
+
+  attr :breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})]
 
   def render(assigns) do
     ~H"""
@@ -157,6 +160,18 @@ defmodule OliWeb.Delivery.NewCourse do
     </.header>
     """
   end
+
+  def breadcrumbs(:admin) do
+    OliWeb.OpenAndFreeController.set_breadcrumbs() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Course Creation",
+          link: Routes.select_source_path(OliWeb.Endpoint, :admin)
+        })
+      ]
+  end
+
+  def breadcrumbs(_), do: []
 
   defp get_step_data(assigns) do
     case assigns.current_step do
