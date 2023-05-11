@@ -96,6 +96,7 @@ defmodule OliWeb.Delivery.NewCourse do
           on_cancel="redirect_to_courses"
           steps={@steps || []}
           current_step={@current_step}
+          next_step_disabled={next_step_disabled?(assigns)}
           data={get_step_data(assigns)} />
       </div>
     """
@@ -190,6 +191,19 @@ defmodule OliWeb.Delivery.NewCourse do
 
       _ ->
         %{changeset: assigns.changeset, on_select: "day_selection"}
+    end
+  end
+
+  defp next_step_disabled?(assigns) do
+    case assigns.current_step do
+      0 ->
+        assigns[:source] == nil
+
+      1 ->
+        false
+
+      _ ->
+        false
     end
   end
 

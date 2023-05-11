@@ -20,6 +20,7 @@ defmodule OliWeb.Common.Stepper do
   attr :data, :map, default: %{}
   attr :cancel_button_label, :string, default: "Cancel"
   attr :on_cancel, :any, default: nil
+  attr :next_step_disabled, :boolean, default: false
 
   def render(assigns) do
     assigns = assign(assigns, steps: Enum.with_index(assigns.steps))
@@ -50,7 +51,7 @@ defmodule OliWeb.Common.Stepper do
                     <%= @selected_step.previous_button_label || "Previous step" %>
                   </button>
                 <% end %>
-                <button phx-click={@selected_step.on_next_step} class="torus-button primary">
+                <button disabled={@next_step_disabled} phx-click={@selected_step.on_next_step} class="torus-button primary">
                   <%= @selected_step.next_button_label || "Next step" %>
                 </button>
               </div>
@@ -75,10 +76,10 @@ defmodule OliWeb.Common.Stepper do
   def step(%{index: index, step: %Step{}, active: active} = assigns) do
     ~H"""
     <div class="flex gap-8 items-center shrink-0 w-80 md:w-auto">
-      <div class={"flex shrink-0 items-center justify-center text-xl font-extrabold h-14 w-14 rounded-full shadow-sm #{if active, do: "bg-primary text-white", else: "bg-white dark:bg-gray-800 border text-gray-400 border-gray-300 dark:border-gray-600"}"}>
+      <div class={"flex shrink-0 items-center justify-center text-xl font-extrabold h-14 w-14 rounded-full shadow-sm #{if @active, do: "bg-primary text-white", else: "bg-white dark:bg-gray-800 border text-gray-400 border-gray-300 dark:border-gray-600"}"}>
         <%= @index %>
       </div>
-      <div class={"flex flex-col text-white #{if !active, do: "opacity-50"}"}>
+      <div class={"flex flex-col text-white #{if !@active, do: "opacity-50"}"}>
         <h4 class="font-bold"><%= @step.title %></h4>
         <p class="font-normal"><%= @step.description %></p>
       </div>
