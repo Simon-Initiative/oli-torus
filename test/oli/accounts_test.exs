@@ -7,6 +7,8 @@ defmodule Oli.AccountsTest do
   alias Oli.Accounts.{Author, AuthorPreferences, User, UserPreferences}
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
+  alias Oli.Delivery.Sections
+  alias Lti_1p3.Tool.ContextRoles
 
   describe "authors" do
     test "system role defaults to author", %{} do
@@ -350,6 +352,32 @@ defmodule Oli.AccountsTest do
 
       assert {:ok, user} = Accounts.set_user_preference(user.id, :timezone, "America/Los_Angeles")
       assert user.preferences.timezone == "America/Los_Angeles"
+    end
+
+    test "update_user_context_role/2 updates the context role for a specific enrollment" do
+      user = insert(:user)
+      section = insert(:section)
+
+      {:ok, enrollment} =
+        Sections.enroll(user.id, section.id, [
+          Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        ])
+
+      user_role_id = Sections.get_user_role_from_enrollment(enrollment)
+
+      assert user_role_id == 4
+
+      Accounts.update_user_context_role(
+        enrollment,
+        ContextRoles.get_role(:context_instructor)
+      )
+
+      enrollment = Sections.get_enrollment(section.slug, user.id)
+
+      user_role_id_changed = Sections.get_user_role_from_enrollment(enrollment)
+
+      refute user_role_id_changed == 4
+      assert user_role_id_changed == 3
     end
   end
 

@@ -99,11 +99,26 @@ $element-margin-bottom: 1.5em;
     }
   }
 
-  ul,
-  ol {
+  ul {
     padding-left: 1.5em;
     margin-bottom: $element-margin-bottom;
     list-style: disc;
+    // Nested lists without a style specified go disc->circle->square then back to disc for the rest as they indent
+    ul {
+      list-style: circle;
+      ul {
+        list-style: square;
+        ul {
+          list-style: disc;
+        }
+      }
+    }
+  }
+
+  ol {
+    padding-left: 1.5em;
+    margin-bottom: $element-margin-bottom;
+    list-style: decimal;
   }
 
   ul li,
@@ -165,6 +180,12 @@ $element-margin-bottom: 1.5em;
     tr,
     td {
       border: 0;
+    }
+  }
+
+  .table-bordered {
+    th {
+      border-right: 1px solid #e5e5e5;
     }
   }
 

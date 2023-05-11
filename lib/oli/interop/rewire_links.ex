@@ -20,12 +20,16 @@ defmodule Oli.Ingest.RewireLinks do
       end
     end
 
-    case rewire(revision.content, link_builder, page_map) do
-      {true, content} ->
-        Oli.Resources.update_revision(revision, %{content: content})
+    try do
+      case rewire(revision.content, link_builder, page_map) do
+        {true, content} ->
+          Oli.Resources.update_revision(revision, %{content: content})
 
-      {false, _} ->
-        {:ok, revision}
+        {false, _} ->
+          {:ok, revision}
+      end
+    rescue
+      _ in KeyError -> {:ok, revision}
     end
   end
 

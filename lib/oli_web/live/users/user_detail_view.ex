@@ -1,6 +1,5 @@
 defmodule OliWeb.Users.UsersDetailView do
   use OliWeb, :surface_view
-
   use OliWeb.Common.Modal
 
   import OliWeb.Common.Properties.Utils
@@ -8,6 +7,8 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Delivery.{Metrics, Paywall, Sections}
+  alias Oli.Lti.LtiParams
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -23,14 +24,13 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Users.Actions
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
-  alias Oli.Lti.LtiParams
 
   data breadcrumbs, :any
+  data changeset, :changeset
+  data csrf_token, :any
+  data modal, :any, default: nil
   data title, :string, default: "User Details"
   data user, :struct, default: nil
-  data modal, :any, default: nil
-  data csrf_token, :any
-  data changeset, :changeset
 
   defp set_breadcrumbs(user) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -61,6 +61,10 @@ defmodule OliWeb.Users.UsersDetailView do
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       user ->
+        enrolled_sections =
+          Sections.list_user_enrolled_sections(user)
+          |> add_necessary_information(user)
+
         {:ok,
          assign(socket,
            context: context,
@@ -68,11 +72,13 @@ defmodule OliWeb.Users.UsersDetailView do
            user: user,
            csrf_token: csrf_token,
            changeset: user_changeset(user),
-           user_lti_params: LtiParams.all_user_lti_params(user.id)
+           user_lti_params: LtiParams.all_user_lti_params(user.id),
+           enrolled_sections: enrolled_sections
          )}
     end
   end
 
+  @impl true
   def render(assigns) do
     ~F"""
     <div>
@@ -133,6 +139,15 @@ defmodule OliWeb.Users.UsersDetailView do
             </ul>
           </Group>
         {/if}
+        <Group label="Enrolled Sections" description="Course sections to which the student is enrolled">
+          {live_component OliWeb.Users.UserEnrolledSections,
+            id: "user_enrolled_sections",
+            user: @user,
+            params: @params,
+            context: @context,
+            enrolled_sections: @enrolled_sections
+          }
+        </Group>
         <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.independent_learner}
             <Actions user={@user} csrf_token={@csrf_token}/>
@@ -144,6 +159,15 @@ defmodule OliWeb.Users.UsersDetailView do
       </Groups>
     </div>
     """
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(params, _, socket) do
+    socket =
+      socket
+      |> assign(params: params)
+
+    {:noreply, socket}
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -295,5 +319,21 @@ defmodule OliWeb.Users.UsersDetailView do
   defp user_changeset(user, attrs \\ %{}) do
     User.noauth_changeset(user, attrs)
     |> Map.put(:action, :update)
+  end
+
+  defp add_necessary_information(sections, user) do
+    Enum.map(sections, fn section ->
+      Map.merge(
+        section,
+        %{
+          enrollment_status:
+            if(Sections.is_enrolled?(user.id, section.slug), do: "Enrolled", else: "Suspended"),
+          enrollment_role:
+            if(Sections.is_instructor?(user, section.slug), do: "Instructor", else: "Student"),
+          payment_status: Paywall.summarize_access(user, section).reason,
+          last_accessed: Metrics.get_last_access_for_user_in_a_section(user.id, section.id)
+        }
+      )
+    end)
   end
 end

@@ -74,9 +74,9 @@ export const Model = {
 
   li: () => create<ListItem>({ type: 'li' }),
 
-  ol: () => create<OrderedList>({ type: 'ol', style: 'decimal', children: [Model.li()] }),
+  ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
 
-  ul: () => create<UnorderedList>({ type: 'ul', style: 'disc', children: [Model.li()] }),
+  ul: () => create<UnorderedList>({ type: 'ul', children: [Model.li()] }),
 
   dt: () => create<DescriptionListTerm>({ type: 'dt', children: [Model.p([{ text: 'A term' }])] }),
   dd: () =>

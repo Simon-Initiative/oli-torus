@@ -24,7 +24,9 @@ export const screenFilter = [
 
 export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [activeScreenType, setActiveScreenType] = useState<string>(screenType || '');
+  const [activeScreenType, setActiveScreenType] = useState<string>(
+    screenFilter.includes(screenType || '') ? (screenType as string) : 'blank_screen',
+  );
 
   const onOk = useCallback(() => {
     if (selectedTemplate) {

@@ -88,33 +88,52 @@ defmodule OliWeb.Grades.GradebookTableModel do
   end
 
   def render_grade_score(assigns, row, _) do
-    perc = row.score / row.out_of * 100
+    perc = score(row.score) / out_of_score(row.out_of) * 100
+    has_score? = row.score != nil
 
     ~F"""
       <a
-        class={"ml-8 #{if perc < 40, do: "text-red-500", else: "text-black"}"}
-        data-score-check={if perc < 40, do: "false", else: "true"}
+        class={"ml-8 #{if has_score? and perc < 40, do: "text-red-500", else: "text-black"}"}
+        data-score-check={if has_score? and perc < 40, do: "false", else: "true"}
         href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.student_id, row.resource_id)}
       >
+        {#if has_score?}
           {row.score}/{row.out_of}
+        {#else}
+          Not Finished
+        {/if}
       </a>
     """
   end
 
   def render_student(assigns, row, _) do
-    resource_accesses_approved =
+    disapproved_count =
       Map.values(row)
-      |> Enum.filter(fn elem ->
-        is_map(elem) and Map.has_key?(elem, :score) and elem.score / elem.out_of * 100 < 40
+      |> Enum.count(fn elem ->
+        is_resource_access?(elem) and has_score?(elem) and
+          score(elem.score) / out_of_score(elem.out_of) * 100 < 40
       end)
-      |> length()
 
     ~F"""
-      <div class="ml-8" data-score-check={if resource_accesses_approved > 0, do: "false", else: "true"}>
+      <div class="ml-8" data-score-check={if disapproved_count > 0, do: "false", else: "true"}>
         {OliWeb.Common.Utils.name(row.user)}
       </div>
     """
   end
+
+  defp is_resource_access?(%Oli.Delivery.Attempts.Core.ResourceAccess{}), do: true
+  defp is_resource_access?(_), do: false
+
+  defp has_score?(%Oli.Delivery.Attempts.Core.ResourceAccess{score: nil}), do: false
+  defp has_score?(%Oli.Delivery.Attempts.Core.ResourceAccess{}), do: true
+
+  defp out_of_score(nil), do: 1
+  defp out_of_score(0), do: 1
+  defp out_of_score(0.0), do: 1
+  defp out_of_score(number), do: number
+
+  defp score(nil), do: 0
+  defp score(number), do: number
 
   def render_score(assigns, row, %ColumnSpec{name: resource_id}) do
     case Map.get(row, resource_id) do
@@ -161,12 +180,10 @@ defmodule OliWeb.Grades.GradebookTableModel do
            out_of: out_of
          }
        ) do
-    link_type = "bg-white text-red-500"
-
     if out_of == 0 or out_of == 0.0 do
       ~F"""
-      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
-        <span>{score}/{out_of} 0%</span>
+      <a class="text-red-500" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+        <span>{score}/{out_of}</span>
       </a>
       """
     else
