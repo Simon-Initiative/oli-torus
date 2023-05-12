@@ -291,12 +291,6 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       assert has_element?(
                view,
                ~s{section:has(h4[phx-click="go_down"]) span},
-               "Due by #{Timex.format!(hard_scheduled_date_for_student, "{YYYY}-{0M}-{0D}")}"
-             )
-
-      assert has_element?(
-               view,
-               ~s{section:has(h4[phx-click="go_down"]) span},
                "No due date"
              )
     end
@@ -399,11 +393,9 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   end
 
   defp create_global_hard_scheduled_date(section_id, resource_id, end_date) do
-    Gating.create_gating_condition(%{
-      type: :schedule,
-      resource_id: resource_id,
-      section_id: section_id,
-      data: %{end_datetime: end_date}
+    update_section_resource(section_id, resource_id, %{
+      end_date: end_date,
+      scheduling_type: :due_by
     })
   end
 

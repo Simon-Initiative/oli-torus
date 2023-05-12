@@ -14,10 +14,10 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :numbering_level, :integer
 
     # soft scheduling
-    field(:scheduling_type, Ecto.Enum, values: [:read_by, :inclass_activity], default: :read_by)
+    field(:scheduling_type, Ecto.Enum, values: [:due_by, :read_by, :inclass_activity], default: :read_by)
     field(:manually_scheduled, :boolean)
-    field(:start_date, :date)
-    field(:end_date, :date)
+    field(:start_date, :utc_datetime)
+    field(:end_date, :utc_datetime)
 
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []

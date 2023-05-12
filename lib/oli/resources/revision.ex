@@ -17,6 +17,9 @@ defmodule Oli.Resources.Revision do
              :graded,
              :max_attempts,
              :time_limit,
+             :late_submit,
+             :late_start,
+             :grace_period,
              :scoring_strategy_id,
              :activity_type_id
            ]}
@@ -46,7 +49,11 @@ defmodule Oli.Resources.Revision do
     field :max_attempts, :integer, default: 0
     field :recommended_attempts, :integer, default: 0
 
+    field :late_submit, Ecto.Enum, values: [:allow, :disallow], default: :allow
+    field :late_start, Ecto.Enum, values: [:allow, :disallow], default: :allow
+    field :grace_period, :integer, default: 0
     field :time_limit, :integer, default: 0
+
     field :scope, Ecto.Enum, values: [:embedded, :banked], default: :embedded
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
     field :parameters, :map
@@ -91,6 +98,9 @@ defmodule Oli.Resources.Revision do
       :max_attempts,
       :recommended_attempts,
       :time_limit,
+      :late_submit,
+      :late_start,
+      :grace_period,
       :scope,
       :retake_mode,
       :parameters,

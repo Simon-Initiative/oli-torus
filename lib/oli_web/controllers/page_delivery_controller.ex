@@ -61,6 +61,13 @@ defmodule OliWeb.PageDeliveryController do
 
             next_activities =
               Sections.get_next_activities_for_student(section_slug, user.id)
+              |> Enum.map(fn sr ->
+                case sr.scheduling_type do
+                  :read_by -> Map.put(sr, :scheduling_type, "Read by")
+                  :due_by -> Map.put(sr, :scheduling_type, "Due by")
+                  :inclass_activity -> Map.put(sr, :scheduling_type, "Class activity")
+                end
+              end)
 
             render(conn, "index.html",
               title: section.title,

@@ -6,7 +6,7 @@ defmodule OliWeb.Api.SchedulingController do
 
   alias OpenApiSpex.Schema
   alias OliWeb.Common.SessionContext
-  alias Oli.Delivery.Sections.SchedulingFacade
+  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
 
@@ -36,7 +36,7 @@ defmodule OliWeb.Api.SchedulingController do
           %{
             "id" => 1,
             "start_date" => nil,
-            "end_date" => "2023-03-19",
+            "end_date" => "2023-03-19 23:59:59",
             "scheduling_type" => "read_by"
           },
           %{
@@ -127,7 +127,7 @@ defmodule OliWeb.Api.SchedulingController do
 
     if can_access_section?(conn, section) do
       resources =
-        SchedulingFacade.retrieve(section)
+        Scheduling.retrieve(section)
         |> serialize_resource()
 
       json(conn, %{"result" => "success", "resources" => resources})
@@ -161,7 +161,7 @@ defmodule OliWeb.Api.SchedulingController do
     context = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
-      case SchedulingFacade.update(section, updates, context.local_tz) do
+      case Scheduling.update(section, updates, context.local_tz) do
         {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
         {:error, :missing_update_parameters} -> error(conn, 400, "Missing update parameters")
         e -> error(conn, 500, e)
@@ -184,14 +184,22 @@ defmodule OliWeb.Api.SchedulingController do
   end
 
   defp serialize_resource(%SectionResource{} = sr) do
+
+    just_date = fn datetime ->
+      case datetime do
+        nil -> nil
+        _ -> DateTime.to_date(datetime)
+      end
+    end
+
     %{
       "id" => sr.id,
       "title" => sr.title,
       "children" => sr.children,
       "resource_type_id" => sr.resource_type_id,
       "graded" => sr.graded,
-      "start_date" => sr.start_date,
-      "end_date" => sr.end_date,
+      "start_date" => sr.start_date |> just_date.(),
+      "end_date" => if sr.scheduling_type == :due_by do sr.end_date else sr.end_date |> just_date.() end,
       "scheduling_type" => sr.scheduling_type,
       "resource_id" => sr.resource_id,
       "manually_scheduled" => sr.manually_scheduled,

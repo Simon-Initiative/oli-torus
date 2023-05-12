@@ -2380,6 +2380,7 @@ defmodule Oli.Delivery.Sections do
       resource_type_id: rev.resource_type_id,
       resource_id: rev.resource_id,
       numbering_level: sr.numbering_level,
+      scheduling_type: sr.scheduling_type,
       children: sr.children,
       section_id: s.id,
       relates_to: rev.relates_to
