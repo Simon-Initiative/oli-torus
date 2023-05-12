@@ -64,7 +64,7 @@ defmodule Oli.Delivery do
          lti_params,
          deployment,
          registration,
-         attrs \\ %{}
+         attrs
        ) do
     Repo.transaction(fn ->
       blueprint = Oli.Delivery.Sections.get_section!(product_id)
@@ -118,7 +118,7 @@ defmodule Oli.Delivery do
          lti_params,
          deployment,
          registration,
-         attrs \\ %{}
+         attrs
        ) do
     Repo.transaction(fn ->
       publication = Publishing.get_publication!(publication_id) |> Repo.preload(:project)
