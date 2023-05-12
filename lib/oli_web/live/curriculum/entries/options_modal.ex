@@ -156,66 +156,6 @@ defmodule OliWeb.Curriculum.OptionsModal do
                 </div>
 
                 <div class="form-group">
-                  <Label>Late Submission Policy</Label>
-                  <Field name={:late_submit}>
-                    <Select
-                      options={[
-                        {"Allow: Late submissions are allowed but recorded as being 'late'", :allow},
-                        {"Disallow: Student attempts will be auto submitted at the deadline", :disallow}
-                      ]}
-                      opts={
-                        aria_describedby: "lateSubmit",
-                        placeholder: "Late Submission Policy",
-                        disabled: is_disabled(@changeset, @revision) or !@revision.graded,
-                        class: "form-control custom-select"
-                      }
-                    />
-                  </Field>
-                  <small id="lateSubmit" class="form-text text-muted">The late submission policy determines how to process late student submissions.</small>
-                </div>
-
-                <div class="form-group">
-                  <Label>Late Start Policy</Label>
-                  <Field name={:late_start}>
-                    <Select
-                      options={[
-                        {"Allow: Late starts are allowed, but will be recorded as being 'late'", :allow},
-                        {"Disallow: Students will not be able to start attempts after the deadline", :disallow}
-                      ]}
-                      opts={
-                        aria_describedby: "lateStart",
-                        placeholder: "Late Start Policy",
-                        disabled: is_disabled(@changeset, @revision) or !@revision.graded,
-                        class: "form-control custom-select"
-                      }
-                    />
-                  </Field>
-                  <small id="lateStart" class="form-text text-muted">The late start policy determines how to process attempts to start after the deadline.</small>
-                </div>
-
-                <div class="form-group">
-                  <Label>Time Limit</Label>
-                  <Field name={:time_limit}>
-                    <NumberInput
-                      class="form-control"
-                      opts={aria_describedby: "timeLimit", placeholder: "# of minutes"}
-                    />
-                  </Field>
-                  <small id="timeLimit" class="form-text text-muted">A time limit, in minutes, that students have for the attempt.</small>
-                </div>
-
-                <div class="form-group">
-                  <Label>Late Submission Grace Period</Label>
-                  <Field name={:grace_period}>
-                    <NumberInput
-                      class="form-control"
-                      opts={aria_describedby: "gracePeriod", placeholder: "# of minutes"}
-                    />
-                  </Field>
-                  <small id="gracePeriod" class="form-text text-muted">A grace period, in minutes, after the deadline before attempt considered to be 'late'.</small>
-                </div>
-
-                <div class="form-group">
                   <Label>Retake Mode</Label>
                   <Field name={:retake_mode}>
                     <Select

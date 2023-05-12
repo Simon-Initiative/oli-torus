@@ -19,6 +19,22 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field(:start_date, :utc_datetime)
     field(:end_date, :utc_datetime)
 
+    # instructor overridable page settings
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :delete
+    embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
+
+    # assessment settings
+    field :max_attempts, :integer, default: 0
+    field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
+    field :late_submit, Ecto.Enum, values: [:allow, :disallow], default: :allow
+    field :late_start, Ecto.Enum, values: [:allow, :disallow], default: :allow
+    field :time_limit, :integer, default: 0
+    field :grace_period, :integer, default: 0
+    belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
+    field :review_submission, Ecto.Enum, values: [:allow, :disallow], default: :allow
+    field :feedback_mode, Ecto.Enum, values: [:allow, :disallow, :scheduled], default: :allow
+    field :feedback_scheduled_date, :utc_datetime
+
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []
 
@@ -56,11 +72,23 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :start_date,
       :end_date,
       :manually_scheduled,
+      :max_attempts,
+      :retake_mode,
+      :late_submit,
+      :late_start,
+      :time_limit,
+      :grace_period,
+      :review_submission,
+      :feedback_mode,
+      :feedback_scheduled_date,
+      :scoring_strategy_id,
       :resource_id,
       :project_id,
       :section_id,
       :delivery_policy_id
     ])
+    |> cast_embed(:explanation_strategy)
+    |> cast_embed(:collab_space_config)
     |> validate_required([
       :slug,
       :resource_id,
