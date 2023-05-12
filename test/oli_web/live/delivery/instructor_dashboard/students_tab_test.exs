@@ -150,12 +150,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
       user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
       user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
@@ -163,6 +165,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
       set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
       set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(section.id, page_1.published_resource.resource_id, user_5.id, 0.7)
 
       ### sorting by student
       params = %{
@@ -288,6 +291,68 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
 
       assert progress == ["30%", "0%", "90%", "60%"]
+
+      ### filtering by non students option
+      params = %{filter_by: :non_students}
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+
+      [non_student_1, _non_student_2] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert non_student_1 =~ "Scaloni, Lionel"
+      refute render(view) =~ "Messi, Lionel"
+      refute render(view) =~ "Suarez, Luis"
+
+      ### filtering by not paid option
+      params = %{filter_by: :not_paid}
+
+      {:ok, section_with_payment} =
+        Sections.update_section(section, %{
+          requires_payment: true,
+          amount: %{amount: "1000", currency: "USD"},
+          has_grace_period: false
+        })
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section_with_payment.slug, params))
+
+      [not_paid_1, not_paid_2, not_paid_3, not_paid_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert not_paid_1 =~ "Di Maria, Angelito"
+      assert not_paid_2 =~ "Jr, Neymar"
+      assert not_paid_3 =~ "Messi, Lionel"
+      assert not_paid_4 =~ "Suarez, Luis"
+      refute render(view) =~ "Scaloni, Lionel"
+
+      ### filtering by paid option
+      params = %{filter_by: :paid}
+
+      enrollment_user_1 = Sections.get_enrollment(section_with_payment.slug, user_1.id)
+
+      insert(:payment, %{enrollment: enrollment_user_1, section: section_with_payment})
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section_with_payment.slug, params))
+
+      [paid_1] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert paid_1 =~ "Messi, Lionel"
+      refute render(view) =~ "Scaloni, Lionel"
+      refute render(view) =~ "Di Maria, Angelito"
+      refute render(view) =~ "Jr, Neymar"
     end
   end
 
