@@ -46,8 +46,6 @@ defmodule Oli.Delivery.Sections do
   require Logger
 
   def enrolled_students(section_slug) do
-    student_role_id = ContextRoles.get_role(:context_learner).id
-
     query =
       from(e in Enrollment,
         join: s in Section,
@@ -56,7 +54,7 @@ defmodule Oli.Delivery.Sections do
         on: e.id == ecr.enrollment_id,
         join: u in User,
         on: e.user_id == u.id,
-        where: s.slug == ^section_slug and ecr.context_role_id == ^student_role_id,
+        where: s.slug == ^section_slug,
         select: u
       )
 
