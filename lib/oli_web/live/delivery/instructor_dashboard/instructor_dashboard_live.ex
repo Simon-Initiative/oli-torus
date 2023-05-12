@@ -1,11 +1,12 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
-  alias Oli.Delivery.Metrics
-  alias OliWeb.Components.Delivery.InstructorDashboard
-  alias alias Oli.Delivery.Sections
+  use OliWeb.Common.Modal
+
+  alias Oli.Delivery.{Metrics, Paywall, Sections}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
-  use OliWeb.Common.Modal
+  alias Oli.Repo
+  alias OliWeb.Components.Delivery.InstructorDashboard
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -20,6 +21,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(params: params, active_tab: :students)
       |> assign(students: get_students(socket.assigns.section, params))
+      |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
 
     {:noreply, socket}
   end
@@ -86,6 +88,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       context={@context}
       section={@section}
       students={@students}
+      dropdown_options={@dropdown_options}
       />
     """
   end
@@ -188,6 +191,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> add_students_last_interaction(section, params.container_id)
         |> add_students_overall_mastery(section, params.container_id)
         |> add_students_engagement(section.slug)
+        |> add_enrollment_and_payment_data(section)
 
       page_id ->
         Sections.enrolled_students(section.slug)
@@ -195,6 +199,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_mastery_for_page(section.slug, page_id)
         |> add_students_engagement_for_page(section.slug, page_id)
+        |> add_enrollment_and_payment_data(section)
     end
   end
 
@@ -316,5 +321,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         engagement: Enum.random(["Low", "Medium", "High", "Not enough data"])
       })
     end)
+  end
+
+  defp add_enrollment_and_payment_data(students, section) do
+    Enum.map(students, fn student ->
+      Map.merge(
+        student,
+        %{
+          enrollment_status:
+            if(Sections.is_enrolled?(student.id, section.slug), do: "Enrolled", else: "Suspended"),
+          payment_status:
+            Paywall.summarize_access(student |> Repo.preload(:platform_roles), section).reason,
+          user_role_id:
+            Sections.get_enrollment(section.slug, student.id)
+            |> Sections.get_user_role_from_enrollment()
+        }
+      )
+    end)
+  end
+
+  defp get_dropdown_options(section) do
+    case section.requires_payment do
+      true ->
+        [
+          %{value: :enrolled, label: "Enrolled"},
+          %{value: :suspended, label: "Suspended"},
+          %{value: :paid, label: "Paid"},
+          %{value: :not_paid, label: "Not Paid"},
+          %{value: :grace_period, label: "Grace Period"},
+          %{value: :non_students, label: "Non-Students"}
+        ]
+
+      false ->
+        [
+          %{value: :enrolled, label: "Enrolled"},
+          %{value: :suspended, label: "Suspended"},
+          %{value: :non_students, label: "Non-Students"}
+        ]
+
+      _ ->
+        []
+    end
   end
 end
