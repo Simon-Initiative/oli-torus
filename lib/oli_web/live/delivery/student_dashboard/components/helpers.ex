@@ -180,7 +180,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
           <%= if @student.picture do %>
             <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
           <% else %>
-              <i class="h-52 w-52 fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-200"></i>
+            <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
           <% end %>
         </div>
         <div class="flex flex-col divide-y divide-gray-100 w-full bg-white">
