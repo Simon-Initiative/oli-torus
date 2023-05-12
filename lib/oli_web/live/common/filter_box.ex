@@ -31,7 +31,7 @@ defmodule OliWeb.Common.FilterBox do
 
           {#if @show_sort}
             <div class="flex-1">
-              <form :on-change={@sort || "sort"} class="d-flex">
+              <form id="sort" :on-change={@sort || "sort"} class="d-flex">
                 <select name="sort_by" id="select_sort" class="custom-select mr-2 h-10">
                   <option value="" disabled selected>Sort by</option>
                   {#for column_spec <- @table_model.column_specs}

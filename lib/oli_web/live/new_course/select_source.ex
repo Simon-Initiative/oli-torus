@@ -110,7 +110,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
         <:extra_opts>
           <div class="flex flex-row justify-end border-l border-l-gray-200 pl-4">
-            <Form for={:view} change="update_view_type">
+            <Form id="update_view_type" for={:view} change="update_view_type">
               <Field name={:type} class="control w-100 d-flex align-items-center">
                 <div class="flex text-white dark:text-delivery-body-color-dark">
                   <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>

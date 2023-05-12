@@ -35,9 +35,7 @@ export const SubmitForm = {
       'js_form_data_request',
       ({ form_id, target_id, ...params }: { [key: string]: any }) => {
         let formData = new FormData(document.getElementById(form_id) as HTMLFormElement);
-        console.log("form data call")
         let payload = formDataToObject(formData);
-        console.log(payload)
 
         this.pushEventTo(`#${target_id}`, 'js_form_data_response', { ...payload, ...params });
       },

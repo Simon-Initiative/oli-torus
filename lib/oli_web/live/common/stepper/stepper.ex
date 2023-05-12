@@ -73,7 +73,7 @@ defmodule OliWeb.Common.Stepper do
     {:noreply, assign(socket, current_step: String.to_integer(step))}
   end
 
-  def step(%{index: index, step: %Step{}, active: active} = assigns) do
+  def step(%{index: _index, step: %Step{}, active: _active} = assigns) do
     ~H"""
     <div class="flex gap-8 items-center shrink-0 w-80 md:w-auto">
       <div class={"flex shrink-0 items-center justify-center text-xl font-extrabold h-14 w-14 rounded-full shadow-sm #{if @active, do: "bg-primary text-white", else: "bg-white dark:bg-gray-800 border text-gray-400 border-gray-300 dark:border-gray-600"}"}>

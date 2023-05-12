@@ -1890,6 +1890,60 @@ defmodule Oli.TestHelpers do
     ]
   end
 
+  def basic_section(_, attrs \\ %{}) do
+    project = insert(:project)
+    container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [],
+        content: %{},
+        deleted: false
+      })
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: DateTime.utc_now(),
+        root_resource_id: container_resource.id
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision
+    })
+
+    section =
+      insert(
+        :section,
+        Map.merge(
+          %{
+            base_project: project,
+            open_and_free: true,
+            type: :enrollable
+          },
+          attrs
+        )
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    section_project_publication =
+      from(
+        spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        where: spp.section_id == ^section.id and spp.project_id == ^project.id,
+        limit: 1
+      )
+      |> Repo.one()
+
+    %{section: section, publication: section_project_publication}
+  end
+
   def enroll_user_to_section(user, section, role) do
     Sections.enroll(user.id, section.id, [
       ContextRoles.get_role(role)

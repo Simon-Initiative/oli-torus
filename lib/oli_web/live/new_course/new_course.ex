@@ -115,11 +115,29 @@ defmodule OliWeb.Delivery.NewCourse do
     """
   end
 
+  attr :flash, :any, default: %{}
+
+  defp render_flash(assigns) do
+    ~H"""
+      <%= if live_flash(@flash, :form_error) do %>
+        <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+
+          <%= live_flash(@flash, :form_error) %>
+
+          <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
+
+        </div>
+      <% end %>
+    """
+  end
+
   def render_step(:select_source, assigns) do
     ~H"""
       <.header>
         <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
-          <h2>Course details</h2>
+          <h2>Select source</h2>
           <p>We pulled the information we can from your LMS, but feel free to adjust it</p>
           <.live_component
             id="select_source_step"
@@ -143,6 +161,7 @@ defmodule OliWeb.Delivery.NewCourse do
           <img src="/images/icons/course-creation-wizard-step-1.svg" />
           <h2>Name your course</h2>
           <p class="mb-0">We pulled the information we can from your LMS, but feel free to adjust it</p>
+          <.render_flash flash={@flash} />
           <NameCourse.render changeset={@changeset} />
         </div>
       </.header>
@@ -156,6 +175,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <img src="/images/icons/course-creation-wizard-step-2.svg" />
         <h2>Course details</h2>
         <p>We pulled the information we can from your LMS, but feel free to adjust it</p>
+        <.render_flash flash={@flash} />
         <CourseDetails.render on_select={@on_select} changeset={@changeset} />
       </div>
     </.header>
@@ -187,10 +207,10 @@ defmodule OliWeb.Delivery.NewCourse do
         }
 
       1 ->
-        %{changeset: assigns.changeset}
+        %{changeset: assigns.changeset, flash: assigns.flash}
 
       _ ->
-        %{changeset: assigns.changeset, on_select: "day_selection"}
+        %{changeset: assigns.changeset, on_select: "day_selection", flash: assigns.flash}
     end
   end
 
@@ -198,9 +218,6 @@ defmodule OliWeb.Delivery.NewCourse do
     case assigns.current_step do
       0 ->
         assigns[:source] == nil
-
-      1 ->
-        false
 
       _ ->
         false
@@ -233,7 +250,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
       {:error, error} ->
         {_error_id, error_msg} = log_error("Failed to create new section", error)
-        # {:noreply, put_flash(socket, :error, error_msg)}
+        socket = put_flash(socket, :form_error, error_msg)
         {:noreply, socket}
     end
   end
@@ -271,14 +288,16 @@ defmodule OliWeb.Delivery.NewCourse do
 
         case create_from_publication(socket, publication, section_params) do
           {:ok, section} ->
-            socket = put_flash(socket, :info, "Section created successfully.")
+            socket = put_flash(socket, :info, "Section successfully created.")
 
             {:noreply,
              redirect(socket,
                to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
              )}
 
-          {:error, _} ->
+          {:error, error} ->
+            {_error_id, error_msg} = log_error("Failed to create new section", error)
+            socket = put_flash(socket, :form_error, error_msg)
             {:noreply, socket}
         end
 
@@ -300,14 +319,16 @@ defmodule OliWeb.Delivery.NewCourse do
 
         case create_from_product(socket, blueprint, section_params) do
           {:ok, section} ->
-            socket = put_flash(socket, :info, "Section created successfully.")
+            socket = put_flash(socket, :info, "Section successfully created.")
 
             {:noreply,
              redirect(socket,
                to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
              )}
 
-          _ ->
+          {:error, error} ->
+            {_error_id, error_msg} = log_error("Failed to create new section", error)
+            socket = put_flash(socket, :form_error, error_msg)
             {:noreply, socket}
         end
     end
@@ -421,12 +442,27 @@ defmodule OliWeb.Delivery.NewCourse do
       socket.assigns.changeset
       |> Section.changeset(section)
 
-    socket = assign(socket, changeset: changeset, current_step: current_step)
+    case current_step do
+      1 ->
+        {:noreply, assign(socket, changeset: changeset, current_step: current_step)}
 
-    if current_step > 2 do
-      create_section(socket.assigns.live_action, socket)
-    else
-      {:noreply, socket}
+      2 ->
+        if validate_fields(changeset, [:title, :course_section_number, :class_modality]) do
+          {:noreply, assign(socket, changeset: changeset, current_step: current_step)}
+        else
+          {:noreply,
+           assign(socket, changeset: changeset)
+           |> put_flash(:form_error, "Some fields require your attention")}
+        end
+
+      3 ->
+        if validate_fields(changeset, [:class_days, :start_date, :end_date]) do
+          create_section(socket.assigns.live_action, assign(socket, changeset: changeset))
+        else
+          {:noreply,
+           assign(socket, changeset: changeset)
+           |> put_flash(:form_error, "Some fields require your attention")}
+        end
     end
   end
 
@@ -436,5 +472,18 @@ defmodule OliWeb.Delivery.NewCourse do
         socket
       ) do
     {:noreply, assign(socket, current_step: current_step)}
+  end
+
+  defp validate_fields(changeset, fields) do
+    fields
+    |> Enum.map(&Ecto.Changeset.fetch_field(changeset, &1))
+    |> Enum.all?(fn field ->
+      case field do
+        {_, nil} -> false
+        {_, []} -> false
+        :error -> false
+        _ -> true
+      end
+    end)
   end
 end
