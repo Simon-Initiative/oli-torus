@@ -193,6 +193,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             },
             env,
           });
+          partInitResponseMap.clear();
         } else {
           // when calling onReady normally it would do all the init state and fill in from attempt state too
           const attemptStateMap = currentAttemptState.parts.reduce((collect: any, part: any) => {

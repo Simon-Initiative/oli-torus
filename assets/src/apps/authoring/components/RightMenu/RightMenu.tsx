@@ -416,6 +416,7 @@ const RightMenu: React.FC<any> = () => {
               uiSchema={bankUiSchema}
               value={questionBankData}
               onChangeHandler={bankPropertyChangeHandler}
+              triggerOnChange={true}
             />
           </div>
         ) : null}
