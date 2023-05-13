@@ -13,12 +13,12 @@ import { MonacoEditor } from './monaco_editor';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReviewActivity } from './review_activity';
 import { SelectListener } from './select_listener';
+import { SubmitForm } from './submit_form';
 import { SystemMessage } from './system_message';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { TooltipInit } from './tooltip';
-import { SubmitForm } from './submit_form';
 
 export const Hooks = {
   GraphNavigation,
@@ -42,5 +42,5 @@ export const Hooks = {
   HierarchySelector,
   TextareaListener,
   LiveReact,
-  SubmitForm
+  SubmitForm,
 };

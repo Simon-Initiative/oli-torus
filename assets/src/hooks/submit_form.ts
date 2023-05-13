@@ -5,7 +5,7 @@ type PlainObject = {
 function formDataToObject(formData: FormData): PlainObject {
   const obj: PlainObject = {};
   for (const [key, value] of (formData as any).entries()) {
-    const keys = key.split(/[\[\]]/).filter((k: string) => k);
+    const keys = key.split(/[\[\]]/).filter((k: string) => k); //eslint-disable-line
     keys.reduce((acc: PlainObject, key: string, index: number) => {
       if (index === keys.length - 1) {
         acc[key] =
@@ -34,8 +34,8 @@ export const SubmitForm = {
     this.handleEvent(
       'js_form_data_request',
       ({ form_id, target_id, ...params }: { [key: string]: any }) => {
-        let formData = new FormData(document.getElementById(form_id) as HTMLFormElement);
-        let payload = formDataToObject(formData);
+        const formData = new FormData(document.getElementById(form_id) as HTMLFormElement);
+        const payload = formDataToObject(formData);
 
         this.pushEventTo(`#${target_id}`, 'js_form_data_response', { ...payload, ...params });
       },
