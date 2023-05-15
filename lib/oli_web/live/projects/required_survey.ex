@@ -3,11 +3,13 @@ defmodule OliWeb.Projects.RequiredSurvey do
 
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
+  alias OliWeb.Router.Helpers, as: Routes
 
   attr :project, :map, required: true
   attr :author_id, :integer, required: false
   attr :enabled, :boolean, required: true
   attr :is_section, :boolean, default: false
+  attr :required_survey, :map, default: nil
 
   def render(assigns) do
     ~H"""
@@ -21,6 +23,11 @@ defmodule OliWeb.Projects.RequiredSurvey do
             </span>
           </label>
         </div>
+        <%= if (!@is_section and @required_survey) do %>
+          <a class="torus-button primary mt-3" href={Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @required_survey.slug)}>
+            Edit survey
+          </a>
+        <% end %>
       </form>
     </div>
     """
@@ -43,12 +50,14 @@ defmodule OliWeb.Projects.RequiredSurvey do
     %{project: project, author_id: author_id} = socket.assigns
     allow_survey = Map.has_key?(params, "survey") and String.length(params["survey"]) > 0
 
-    if allow_survey do
-      Course.create_project_survey(project, author_id)
-    else
-      Course.delete_project_survey(project)
-    end
+    required_survey =
+      if allow_survey do
+        Course.create_project_survey(project, author_id)
+      else
+        Course.delete_project_survey(project)
+        nil
+      end
 
-    {:noreply, assign(socket, enabled: allow_survey)}
+    {:noreply, assign(socket, enabled: allow_survey, required_survey: required_survey)}
   end
 end
