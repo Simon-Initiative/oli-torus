@@ -49,11 +49,13 @@ const convert = (type: any, editor: Editor) => {
       { match: (e) => Element.isElement(e) && e.type === 'p', at: editor.selection },
     );
   } else if (isList(type)) {
-    Transforms.setNodes(
-      editor,
-      { type: 'li' },
-      { match: (e) => Element.isElement(e) && e.type === 'p', mode: 'all' },
-    );
+    const newListItem = Model.li();
+    newListItem.children = [];
+
+    Transforms.wrapNodes(editor, newListItem, {
+      match: (e) => Element.isElement(e) && e.type === 'p',
+      mode: 'all',
+    });
     Transforms.wrapNodes(editor, Model.ul(), {
       match: (e) => Element.isElement(e) && e.type === 'li',
       mode: 'all',

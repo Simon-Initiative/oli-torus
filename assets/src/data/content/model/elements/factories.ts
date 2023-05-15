@@ -72,7 +72,7 @@ export const Model = {
 
   table: (children: TableRow[]) => create<Table>({ type: 'table', children }),
 
-  li: () => create<ListItem>({ type: 'li' }),
+  li: (text = '') => create<ListItem>({ type: 'li', children: [Model.p(text)] }),
 
   ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
 
