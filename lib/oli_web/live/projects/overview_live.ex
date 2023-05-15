@@ -108,9 +108,10 @@ defmodule OliWeb.Projects.OverviewLive do
         <%= if @is_admin do %>
           <OverviewSection.render title="Content Types" description="Enable optional content types.">
             <div class="form-label-group mb-3 form-check">
+              <%= checkbox f, :allow_ecl_content_type, required: false %>
               <%= label f, :allow_ecl_content_type, "ECL Code Editor", class: "control-label form-check-label" %>
-              <%= checkbox f, :allow_ecl_content_type, class: "form-control", required: false %>
             </div>
+
             <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
           </OverviewSection.render>
         <% end %>
