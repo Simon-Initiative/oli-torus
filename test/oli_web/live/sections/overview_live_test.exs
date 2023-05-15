@@ -407,6 +407,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       update_section = Oli.Delivery.Sections.get_section!(section.id)
       assert update_section.required_survey_resource_id != nil
       assert has_element?(view, "input[name=\"survey\"][checked]")
+      refute has_element?(view, "a", "Edit survey")
     end
 
     test "can disable required surveys", %{conn: conn, instructor: instructor, section: section} do

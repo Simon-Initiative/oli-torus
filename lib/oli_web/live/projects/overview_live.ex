@@ -173,7 +173,14 @@ defmodule OliWeb.Projects.OverviewLive do
       </OverviewSection.render>
 
       <OverviewSection.render title="Required Survey" description="Allows to activate and configure a survey for all students that enter the course for the first time.">
-        <.live_component module={RequiredSurvey} id="required-survey-section" project={@project} author_id={@current_author.id} enabled={@project.required_survey_resource_id} />
+        <.live_component
+          module={RequiredSurvey}
+          id="required-survey-section"
+          project={@project}
+          author_id={@current_author.id}
+          enabled={@project.required_survey_resource_id}
+          required_survey={@project.required_survey}
+        />
       </OverviewSection.render>
 
       <OverviewSection.render title="Actions" is_last={true}>
