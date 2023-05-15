@@ -168,6 +168,13 @@ const createBlankScreenRules = (
   sequence: SequenceEntry<SequenceEntryChild>[],
   defaultDestination: number,
 ): RulesAndVariables => {
+  if (screen.authoring?.flowchart?.screenType === 'end_screen') {
+    return {
+      rules: [defaultNextScreenRule()],
+      variables: [],
+    };
+  }
+
   //const notBlank = screen.authoring?.flowchart?.screenType !== 'blank';
   //notBlank && console.warn('Using generic blank screen rules for screen', screen);
   const paths = screen.authoring?.flowchart?.paths || [];
