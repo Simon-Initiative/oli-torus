@@ -1154,6 +1154,7 @@ defmodule Oli.Delivery.Sections do
         numbering_level: level,
         children: children,
         slug: Slug.generate(:section_resources, revision.title),
+        max_attempts: revision.max_attempts,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         section_id: section.id
@@ -1177,6 +1178,7 @@ defmodule Oli.Delivery.Sections do
     Repo.one(
       from(s in SectionResource,
         where: s.section_id == ^section_id and s.resource_id == ^resource_id,
+        preload: [:scoring_strategy],
         select: s
       )
     )
@@ -1222,26 +1224,6 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-  def rebuild_section_resources(
-        section: %Section{id: section_id} = section,
-        publication: publication
-      ) do
-    section
-    |> Section.changeset(%{root_section_resource_id: nil})
-    |> Repo.update!()
-
-    from(sr in SectionResource,
-      where: sr.section_id == ^section_id
-    )
-    |> Repo.delete_all()
-
-    from(spp in SectionsProjectsPublications,
-      where: spp.section_id == ^section_id
-    )
-    |> Repo.delete_all()
-
-    create_section_resources(section, publication)
-  end
 
   @doc """
   Returns a map of project_id to the latest available publication for that project
@@ -1382,6 +1364,28 @@ defmodule Oli.Delivery.Sections do
       )
     end
   end
+
+  def rebuild_section_resources(
+        section: %Section{id: section_id} = section,
+        publication: publication
+      ) do
+    section
+    |> Section.changeset(%{root_section_resource_id: nil})
+    |> Repo.update!()
+
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    from(spp in SectionsProjectsPublications,
+      where: spp.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    create_section_resources(section, publication)
+  end
+
 
   def rebuild_section_resources(
         %Section{id: section_id} = section,
@@ -1928,7 +1932,10 @@ defmodule Oli.Delivery.Sections do
             resource_id: resource_id,
             project_id: project_id,
             section_id: section_id,
-            children: Enum.reverse(children_sr_ids)
+            children: Enum.reverse(children_sr_ids),
+            max_attempts: revision.max_attempts,
+            scoring_strategy_id: revision.scoring_strategy_id,
+            retake_mode: revision.retake_mode,
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -1984,7 +1991,10 @@ defmodule Oli.Delivery.Sections do
         project_id: pub.project_id,
         section_id: section_id,
         inserted_at: now,
-        updated_at: now
+        updated_at: now,
+        max_attempts: if is_nil(revision.max_attempts) do 0 else revision.max_attempts end,
+        scoring_strategy_id: revision.scoring_strategy_id,
+        retake_mode: revision.retake_mode,
       ]
     end)
     |> then(&Repo.insert_all(SectionResource, &1))
@@ -2342,40 +2352,24 @@ defmodule Oli.Delivery.Sections do
       on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
     )
     |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
-    |> join(:left, [sr], gc in GatingCondition,
+    |> join(:left, [sr], ds in Oli.Delivery.Settings.StudentException,
       on:
-        gc.section_id == sr.section_id and gc.resource_id == sr.resource_id and
-          is_nil(gc.user_id)
+        ds.section_id == sr.section_id and ds.resource_id == sr.resource_id and
+          ds.user_id == ^user_id
     )
-    |> join(:left, [sr], gc2 in GatingCondition,
-      on:
-        gc2.section_id == sr.section_id and gc2.resource_id == sr.resource_id and
-          gc2.user_id == ^user_id
-    )
-    |> where(
-      [sr, s, _, _, _, gc, gc2],
-      s.slug == ^section_slug and (is_nil(gc) or gc.type == :schedule) and
-        (is_nil(gc2) or gc2.type == :schedule)
-    )
+    |> where([sr, s, _, _, _, ds], s.slug == ^section_slug)
     |> where(^graded_filter)
-    |> select([sr, s, _, _, rev, gc, gc2], %{
+    |> select([sr, s, _, _, rev, ds], %{
       id: sr.id,
       title: rev.title,
       slug: rev.slug,
       end_date:
         fragment(
-          "cast(coalesce(coalesce(cast(? as text), cast(? as text)), cast(? as text)) as date)",
-          gc2.data["end_datetime"],
-          gc.data["end_datetime"],
+          "coalesce(?, ?)",
+          ds.end_date,
           sr.end_date
         ),
       scheduled_type: sr.scheduling_type,
-      gate_type:
-        fragment(
-          "coalesce(coalesce(cast(? as text), cast(? as text)), NULL)",
-          gc2.type,
-          gc.type
-        ),
       graded: rev.graded,
       resource_type_id: rev.resource_type_id,
       resource_id: rev.resource_id,
@@ -2398,7 +2392,7 @@ defmodule Oli.Delivery.Sections do
       from(sp in subquery(student_pages_query),
         where:
           not is_nil(sp.end_date) and
-            sp.end_date >= ^Date.utc_today() and
+            sp.end_date >= ^DateTime.utc_now() and
             sp.resource_type_id in [
               ^ResourceType.get_id_by_type("page"),
               ^ResourceType.get_id_by_type("container")
@@ -2408,6 +2402,7 @@ defmodule Oli.Delivery.Sections do
 
     query
     |> Repo.all()
+    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
     |> Enum.map(fn activity ->
       case ResourceType.get_type_by_id(activity.resource_type_id) do
         "page" ->
@@ -2438,6 +2433,10 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  defp to_datetime(nd) do
+    DateTime.from_naive!(nd, "Etc/UTC")
+  end
+
   @doc """
     Returns the graded pages and their due dates for a given student.
   """
@@ -2454,6 +2453,7 @@ defmodule Oli.Delivery.Sections do
 
     (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
     |> append_related_resources(user_id)
+    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
   end
 
   defp get_graded_pages_without_date([]), do: []

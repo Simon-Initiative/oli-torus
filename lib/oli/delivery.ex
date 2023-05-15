@@ -1,7 +1,8 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
-  alias Oli.Delivery.{DeliverySetting, Sections}
+  alias Oli.Delivery.Settings.StudentException
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
@@ -162,7 +163,7 @@ defmodule Oli.Delivery do
       []
   """
   def search_delivery_settings(filter) do
-    from(ds in DeliverySetting, where: ^filter_conditions(filter))
+    from(ds in StudentException, where: ^filter_conditions(filter))
     |> Repo.all()
   end
 
@@ -172,14 +173,14 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> create_delivery_setting(%{field: new_value})
-      {:ok, %DeliverySetting{}}
+      {:ok, %StudentException{}}
 
       iex> create_delivery_setting(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
   def create_delivery_setting(attrs \\ %{}) do
-    %DeliverySetting{}
-    |> DeliverySetting.changeset(attrs)
+    %StudentException{}
+    |> StudentException.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -189,13 +190,13 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> get_delivery_setting_by(%{id: 1})
-      %DeliverySetting{}
+      %StudentException{}
 
       iex> get_delivery_setting_by(%{id: 123})
       nil
   """
   def get_delivery_setting_by(clauses),
-    do: Repo.get_by(DeliverySetting, clauses)
+    do: Repo.get_by(StudentException, clauses)
 
   @doc """
   Updates a delivery setting.
@@ -203,14 +204,14 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> update_delivery_setting(delivery_setting, %{field: new_value})
-      {:ok, %DeliverySetting{}}
+      {:ok, %StudentException{}}
 
       iex> update_delivery_setting(delivery_setting, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_delivery_setting(%DeliverySetting{} = delivery_setting, attrs) do
+  def update_delivery_setting(%StudentException{} = delivery_setting, attrs) do
     delivery_setting
-    |> DeliverySetting.changeset(attrs)
+    |> StudentException.changeset(attrs)
     |> Repo.update()
   end
 
@@ -220,10 +221,10 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> change_delivery_setting(delivery_setting)
-      %Ecto.Changeset{data: %DeliverySetting{}}
+      %Ecto.Changeset{data: %StudentException{}}
   """
-  def change_delivery_setting(%DeliverySetting{} = delivery_setting, attrs \\ %{}) do
-    DeliverySetting.changeset(delivery_setting, attrs)
+  def change_delivery_setting(%StudentException{} = delivery_setting, attrs \\ %{}) do
+    StudentException.changeset(delivery_setting, attrs)
   end
 
   @doc """
@@ -233,7 +234,7 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> upsert_delivery_setting(%{field: new_value})
-      {:ok, %DeliverySetting{}}
+      {:ok, %StudentException{}}
 
       iex> upsert_delivery_setting(%{field: bad_value})
       {:error, %Ecto.Changeset{}}

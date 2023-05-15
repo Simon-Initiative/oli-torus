@@ -20,7 +20,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Utils.{BibUtils, Slug, Time}
   alias Oli.Resources
-  alias Oli.Resources.{Collaboration, PageContent, Revision}
+  alias Oli.Resources.{PageContent, Revision}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
 
@@ -51,13 +51,9 @@ defmodule OliWeb.PageDeliveryController do
                 )
             )
           else
-            %{slug: revision_slug} = DeliveryResolver.root_container(section_slug)
+            revision = DeliveryResolver.root_container(section_slug)
 
-            {:ok, collab_space_config} =
-              Collaboration.get_collab_space_config_for_page_in_section(
-                revision_slug,
-                section_slug
-              )
+            effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
             next_activities =
               Sections.get_next_activities_for_student(section_slug, user.id)
@@ -78,8 +74,8 @@ defmodule OliWeb.PageDeliveryController do
               preview_mode: false,
               page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
               container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
-              collab_space_config: collab_space_config,
-              revision_slug: revision_slug,
+              collab_space_config: effective_settings.collab_space_config,
+              revision_slug: revision.slug,
               is_instructor: is_instructor,
               progress: learner_progress(section.id, user.id),
               next_activities: next_activities
@@ -306,7 +302,8 @@ defmodule OliWeb.PageDeliveryController do
            progress_state: :not_started,
            page: page,
            user: user,
-           resource_attempts: resource_attempts
+           resource_attempts: resource_attempts,
+           effective_settings: effective_settings,
          } = context,
          conn,
          section_slug,
@@ -323,12 +320,12 @@ defmodule OliWeb.PageDeliveryController do
 
     # The call to "max" here accounts for the possibility that a publication could reduce the
     # number of attempts after a student has exhausted all attempts
-    attempts_remaining = max(page.max_attempts - attempts_taken, 0)
+    attempts_remaining = max(effective_settings.max_attempts - attempts_taken, 0)
 
     # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
     # gate that prevents this learning from starting another attempt of this resource
     blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
-    allow_attempt? = (attempts_remaining > 0 or page.max_attempts == 0) and blocking_gates == []
+    allow_attempt? = (attempts_remaining > 0 or effective_settings.max_attempts == 0) and blocking_gates == []
 
     message =
       cond do
@@ -337,11 +334,11 @@ defmodule OliWeb.PageDeliveryController do
             format_datetime: format_datetime_fn(conn)
           )
 
-        page.max_attempts == 0 ->
+          effective_settings.max_attempts == 0 ->
           "You can take this scored page an unlimited number of times"
 
         true ->
-          "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
+          "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
       end
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
@@ -373,7 +370,7 @@ defmodule OliWeb.PageDeliveryController do
       message: message,
       resource_id: page.resource_id,
       slug: context.page.slug,
-      max_attempts: page.max_attempts,
+      max_attempts: effective_settings.max_attempts,
       section: section,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
@@ -479,7 +476,7 @@ defmodule OliWeb.PageDeliveryController do
 
   # This case handles :in_progress and :revised progress states, in addition to
   # handling ungraded pages and review mode
-  defp render_page(%PageContext{user: user} = context, conn, section_slug, _) do
+  defp render_page(%PageContext{user: user, effective_settings: effective_settings} = context, conn, section_slug, _) do
     section = conn.assigns.section
 
     # get_section_resource
@@ -590,11 +587,11 @@ defmodule OliWeb.PageDeliveryController do
         bib_app_params: %{
           bibReferences: context.bib_revisions
         },
-        collab_space_config: context.collab_space_config,
+        collab_space_config: effective_settings.collab_space_config,
         is_instructor: context.is_instructor,
         is_student: context.is_student,
         scheduling_type: section_resource.scheduling_type,
-        end_date: section_resource.end_date,
+        end_date: effective_settings.end_date,
         # TODO: implement reading time estimation
         est_reading_time: nil
       }
@@ -669,6 +666,9 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
+
+
+
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
         case conn.assigns.current_user do
@@ -682,11 +682,7 @@ defmodule OliWeb.PageDeliveryController do
             html =
               ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
 
-            {:ok, collab_space_config} =
-              Collaboration.get_collab_space_config_for_page_in_section(
-                revision.slug,
-                section_slug
-              )
+            effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, conn.assigns.current_user.id)
 
             conn
             |> put_root_layout({OliWeb.LayoutView, "page.html"})
@@ -713,7 +709,7 @@ defmodule OliWeb.PageDeliveryController do
                 bib_app_params: %{
                   bibReferences: []
                 },
-                collab_space_config: collab_space_config,
+                collab_space_config: effective_settings.collab_space_config,
                 is_instructor: true,
                 is_student: false
               }
@@ -832,8 +828,7 @@ defmodule OliWeb.PageDeliveryController do
 
     html = Page.render(render_context, revision.content, Page.Html)
 
-    {:ok, collab_space_config} =
-      Collaboration.get_collab_space_config_for_page_in_section(revision.slug, section_slug)
+    effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, conn.assigns.current_user.id)
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
@@ -863,7 +858,7 @@ defmodule OliWeb.PageDeliveryController do
         bib_app_params: %{
           bibReferences: bib_entrys
         },
-        collab_space_config: collab_space_config,
+        collab_space_config: effective_settings.collab_space_config,
         is_instructor: true,
         is_student: false
       }

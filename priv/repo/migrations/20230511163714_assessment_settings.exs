@@ -3,6 +3,9 @@ defmodule Oli.Repo.Migrations.AssessmentSettings do
 
   def change do
     alter table(:delivery_settings) do
+
+      add :explanation_strategy, :map
+
       add :end_date, :utc_datetime
       add :max_attempts, :integer, null: true
       add :time_limit, :integer, null: true
@@ -20,7 +23,10 @@ defmodule Oli.Repo.Migrations.AssessmentSettings do
       modify :start_date, :utc_datetime
       modify :end_date, :utc_datetime
 
-      add :max_attempts, :integer, default: 0, null: false
+      add :collab_space_config, :map
+      add :explanation_strategy, :map
+
+      add :max_attempts, :integer, default: -1, null: false
       add :time_limit, :integer, default: 0, null: false
       add :grace_period, :integer, default: 0, null: false
       add :late_submit, :string, default: "allow", null: false
@@ -31,5 +37,13 @@ defmodule Oli.Repo.Migrations.AssessmentSettings do
       add :feedback_scheduled_date, :utc_datetime, null: true
       add :scoring_strategy_id, references("scoring_strategies")
     end
+
+    flush()
+
+    execute """
+      UPDATE section_resources
+      SET scoring_strategy_id = 2
+      """
+
   end
 end

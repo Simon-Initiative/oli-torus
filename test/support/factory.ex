@@ -14,7 +14,7 @@ defmodule Oli.Factory do
     ResourceAttempt
   }
 
-  alias Oli.Delivery.DeliverySetting
+  alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Lti.LtiParams
@@ -343,7 +343,7 @@ defmodule Oli.Factory do
   end
 
   def delivery_setting_factory() do
-    %DeliverySetting{
+    %StudentException{
       user: anonymous_build(:user),
       section: anonymous_build(:section),
       resource: anonymous_build(:resource),

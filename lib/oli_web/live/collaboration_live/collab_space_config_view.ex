@@ -3,11 +3,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
   alias Oli.Authoring.Course
   alias Oli.Delivery
-  alias Oli.Delivery.{DeliverySetting, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias Oli.Delivery.Sections.SectionResource
   alias OliWeb.CollaborationLive.CollabSpaceView
   alias Phoenix.PubSub
   alias Surface.Components.Form
@@ -42,18 +43,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         topic = CollabSpaceView.channels_topic(section_slug, page_resource.id)
         PubSub.subscribe(Oli.PubSub, topic)
 
-        delivery_setting =
-          case Delivery.get_delivery_setting_by(%{
-                 section_id: section.id,
-                 resource_id: page_resource.id
-               }) do
-            nil -> %DeliverySetting{}
-            ds -> ds
-          end
+        section_resource = Sections.get_section_resource(section.id, page_resource.id)
 
         {
           DeliveryResolver.from_revision_slug(section_slug, page_slug),
-          Delivery.change_delivery_setting(delivery_setting, %{
+          SectionResource.changeset(section_resource, %{
             collab_space_config: from_struct(collab_space_config)
           }),
           section,

@@ -16,7 +16,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :historical_attempts,
     :collab_space_config,
     :is_instructor,
-    :is_student
+    :is_student,
+    :effective_settings
   ]
   defstruct [
     :user,
@@ -31,7 +32,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :historical_attempts,
     :collab_space_config,
     :is_instructor,
-    :is_student
+    :is_student,
+    :effective_settings
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -103,8 +105,11 @@ defmodule Oli.Delivery.Page.PageContext do
           {user_roles.is_instructor?, user_roles.is_student?}
       end
 
+    user_for_attempt = Attempts.get_user_from_attempt(resource_attempt)
+    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+
     %PageContext{
-      user: Attempts.get_user_from_attempt(resource_attempt),
+      user: user_for_attempt,
       review_mode: true,
       page: page_revision,
       progress_state: progress_state,
@@ -117,7 +122,8 @@ defmodule Oli.Delivery.Page.PageContext do
       historical_attempts: retrieve_historical_attempts(hd(resource_attempts)),
       collab_space_config: collab_space_config,
       is_instructor: is_instructor,
-      is_student: is_student
+      is_student: is_student,
+      effective_settings: Oli.Delivery.Settings.get_combined_settings(page_revision, section.id, user_for_attempt.id)
     }
   end
 
@@ -217,7 +223,8 @@ defmodule Oli.Delivery.Page.PageContext do
       historical_attempts: nil,
       collab_space_config: collab_space_config,
       is_instructor: user_roles.is_instructor?,
-      is_student: user_roles.is_student?
+      is_student: user_roles.is_student?,
+      effective_settings: Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
     }
   end
 
