@@ -1,4 +1,5 @@
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
+import { ECLRepl } from 'components/common/ECLRepl';
 import { Navbar } from 'components/common/Navbar';
 import { UserAccountMenu } from 'components/common/UserAccountMenu';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
@@ -25,3 +26,4 @@ registerApplication('Navbar', Navbar, globalStore);
 registerApplication('CourseContentOutline', CourseContentOutline, globalStore);
 registerApplication('UserAccountMenu', UserAccountMenu, globalStore);
 registerApplication('DeliveryElementRenderer', DeliveryElementRenderer, globalStore);
+registerApplication('ECLRepl', ECLRepl, globalStore);

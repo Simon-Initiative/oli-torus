@@ -25,6 +25,7 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
     projectSlug: props.context.projectSlug,
     bibParams: props.context.bibParams,
     learningLanguage: props.context.learningLanguage,
+    resourceAttemptGuid: props.context.pageAttemptGuid,
   });
 
   return (

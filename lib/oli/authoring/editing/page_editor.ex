@@ -246,6 +246,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
          previous_page: previous,
          next_page: next,
          collab_space_config: collab_space_config,
+         optionalContentTypes: %{
+           ecl: publication.project.allow_ecl_content_type
+         },
          appsignalKey: Application.get_env(:appsignal, :client_key)
        }}
     else

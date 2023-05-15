@@ -62,6 +62,7 @@ defmodule Oli.Rendering.Content do
   @callback math(%Context{}, next, %{}) :: [any()]
   @callback math_line(%Context{}, next, %{}) :: [any()]
   @callback code(%Context{}, next, %{}) :: [any()]
+  @callback ecl(%Context{}, next, %{}) :: [any()]
   @callback code_line(%Context{}, next, %{}) :: [any()]
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
@@ -302,6 +303,9 @@ defmodule Oli.Rendering.Content do
 
       "video" ->
         writer.video(context, next, element)
+
+      "ecl" ->
+        writer.ecl(context, next, element)
 
       "youtube" ->
         writer.youtube(context, next, element)

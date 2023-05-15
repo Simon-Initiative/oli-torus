@@ -8,6 +8,7 @@ export interface WriterContext {
   projectSlug?: string;
   bibParams?: any;
   learningLanguage?: string;
+  resourceAttemptGuid?: string;
   inputRefContext?: {
     onBlur: (id: string) => void;
     onPressEnter: (id: string) => void;

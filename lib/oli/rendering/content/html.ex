@@ -75,6 +75,21 @@ defmodule Oli.Rendering.Content.Html do
     video_player
   end
 
+  def ecl(%Context{} = context, _, attrs) do
+
+    attempt_guid = case context.resource_attempt do
+      nil -> ""
+      attempt -> attempt.attempt_guid
+    end
+
+    {:safe, ecl} =
+      ReactPhoenix.ClientSide.react_component("Components.ECLRepl",
+        %{"code" => attrs["code"], "id" => attrs["id"], "slug" => context.section_slug, "attemptGuid" => attempt_guid }
+      )
+
+    ecl
+  end
+
   def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
     iframe(
       context,

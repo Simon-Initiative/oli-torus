@@ -22,6 +22,7 @@ import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
 import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
 import { DescriptionListEditor } from '../elements/description/DescriptionListEditor';
 import { DialogEditor } from '../elements/dialog/DialogEditor';
+import { ECLReplEditor } from '../elements/ecl/ECLReplEditor';
 import { FigureEditor } from '../elements/figure/FigureEditor';
 import { ForeignEditor } from '../elements/foreign/ForeignEditor';
 import { FormulaEditor } from '../elements/formula/FormulaEditor';
@@ -96,6 +97,8 @@ export function editorFor(
       return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
       return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
+    case 'ecl':
+      return <ECLReplEditor {...(editorProps as EditorProps<ContentModel.ECLRepl>)} />;
     case 'iframe':
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':

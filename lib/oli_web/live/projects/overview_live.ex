@@ -32,6 +32,7 @@ defmodule OliWeb.Projects.OverviewLive do
         collaborators: Accounts.project_authors(project),
         activities_enabled: Activities.advanced_activities(project, is_admin?),
         can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?(),
+        is_admin: is_admin?,
         changeset: Project.changeset(project),
         latest_published_publication: latest_published_publication,
         publishers: Inventories.list_publishers(),
@@ -103,6 +104,17 @@ defmodule OliWeb.Projects.OverviewLive do
             <small>Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.</small>
           </div>
         </OverviewSection.render>
+
+        <%= if @is_admin do %>
+          <OverviewSection.render title="Content Types" description="Enable optional content types.">
+            <div class="form-label-group mb-3 form-check">
+              <%= checkbox f, :allow_ecl_content_type, required: false %>
+              <%= label f, :allow_ecl_content_type, "ECL Code Editor", class: "control-label form-check-label" %>
+            </div>
+
+            <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
+          </OverviewSection.render>
+        <% end %>
       </.form>
 
       <OverviewSection.render title="Project Labels" description="Project wide customization of labels.">
