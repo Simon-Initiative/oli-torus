@@ -26,7 +26,7 @@ defmodule Oli.Delivery.Settings do
     combine(resolved_revision, section_resource, nil)
   end
 
-  defp combine(resolved_revision, section_resource, student_exception) do
+  def combine(resolved_revision, section_resource, student_exception) do
 
     # -1 is a special value that was set by default when this field was added
     # to the section_resources schema which allows us to pull through the
