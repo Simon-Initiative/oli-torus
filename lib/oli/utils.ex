@@ -7,6 +7,15 @@ defmodule Oli.Utils do
   @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
 
   @doc """
+  Normalizes a string by removing all whitespace and replacing it with a single space
+  """
+  def normalize_whitespace(str) when is_binary(str) do
+    str
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  @doc """
   Generates a random hex string of the given length
   """
   def random_string(length) do
