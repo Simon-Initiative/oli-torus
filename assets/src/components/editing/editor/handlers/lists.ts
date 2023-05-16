@@ -105,13 +105,13 @@ export function handleOutdent(editor: SlateEditor, e?: KeyboardEvent) {
     });
 
     if (match) {
-      const [, path] = match;
-      const start = SlateEditor.start(editor, path);
+      const [, listItemPath] = match;
+      const start = SlateEditor.start(editor, listItemPath);
 
       // If the cursor is at the beginning of a list item
       if (Point.equals(editor.selection.anchor, start)) {
         // Check to see if the list item is in a nested list
-        const parentMatch = SlateEditor.parent(editor, path);
+        const parentMatch = SlateEditor.parent(editor, listItemPath);
         const [parent, parentPath] = parentMatch;
         const grandParentMatch = SlateEditor.parent(editor, parentPath);
         const [grandParent] = grandParentMatch;
@@ -119,7 +119,7 @@ export function handleOutdent(editor: SlateEditor, e?: KeyboardEvent) {
         if (isList(grandParent) && isList(parent)) {
           // Lift the current node up one level, effectively promoting
           // it up as a list item into the parent list
-          Transforms.liftNodes(editor, { at: editor.selection });
+          Transforms.liftNodes(editor, { at: listItemPath });
           e?.preventDefault();
         }
       }
