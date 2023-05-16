@@ -74,7 +74,7 @@ interface ComponentProps {
 }
 
 const Component: React.FC<ComponentProps> = (props) => {
-  const graphic = <div className="mr-2">{graphicForResultClass(props.resultClass)}</div>
+  const graphic = <div className="mr-2">{graphicForResultClass(props.resultClass)}</div>;
 
   return (
     <div aria-label="result" className={`evaluation feedback ${props.resultClass} my-1`}>
