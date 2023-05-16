@@ -161,4 +161,55 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       refute is_nil(ra2.date_submitted)
     end
   end
+
+  describe "reset ungraded page attempts" do
+    setup do
+      Seeder.base_project_with_resource2()
+      |> Seeder.create_section()
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_activity(%{title: "title 1"}, :publication, :project, :author, :activity_a)
+      |> Seeder.add_activity(%{title: "title 2"}, :publication, :project, :author, :activity_b)
+      |> Seeder.add_activity(%{title: "title 3"}, :publication, :project, :author, :activity_c)
+      |> Seeder.add_activity(%{title: "title 3"}, :publication, :project, :author, :activity_d)
+      |> Seeder.add_page(%{ungraded: true}, :ungraded_page1)
+      |> Seeder.create_section_resources()
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1},
+        :user1,
+        :ungraded_page1,
+        :attempt1
+      )
+      |> add_automatic_activity(:attempt1, :activity_a, :attempt_1a, @content_automatic)
+      |> add_automatic_activity(
+        :attempt1,
+        :activity_b,
+        :attempt_1b,
+        @content_automatic_by_default
+      )
+    end
+
+    test "finalization of ungraded page results in correct end state for resource attempts", %{
+      section: section,
+      attempt1: attempt1
+    } do
+      datashop_session_id_user1 = UUID.uuid4()
+
+      ra1 = Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
+
+      assert ra1.lifecycle_state == :active
+      assert is_nil(ra1.date_evaluated)
+      assert is_nil(ra1.date_submitted)
+
+      {:ok, %ResourceAccess{} = resource_access1} =
+        PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
+
+      ra1 = Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
+
+      # Attempt 1 should be in an "evaluated" state, with a nil score since it was ungraded
+      assert is_nil(resource_access1.score)
+      assert ra1.lifecycle_state == :evaluated
+      refute is_nil(ra1.date_evaluated)
+      refute is_nil(ra1.date_submitted)
+    end
+  end
 end
