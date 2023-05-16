@@ -13,7 +13,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   }
 
   alias Oli.Delivery.Attempts.Scoring
-  alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.ActivityLifecycle.{Evaluate, Persistence}
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
@@ -297,7 +296,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     ensure_valid_grade({score, out_of})
   end
 
-  def roll_up_resource_attempts_to_access(%{scoring_strategy_id: scoring_strategy_id}, section_slug, resource_access_id) do
+  def roll_up_resource_attempts_to_access(%{scoring_strategy_id: scoring_strategy_id}, _section_slug, resource_access_id) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)
 
     graded_attempts =

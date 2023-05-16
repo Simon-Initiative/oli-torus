@@ -252,19 +252,6 @@ defmodule Oli.Delivery do
     end
   end
 
-  def upsert_delivery_setting(attrs) do
-    section_id = attrs["section_id"] || attrs.section_id
-    resource_id = attrs["resource_id"] || attrs.resource_id
-
-    case get_delivery_setting_by(%{
-           section_id: section_id,
-           resource_id: resource_id
-         }) do
-      nil -> create_delivery_setting(attrs)
-      ds -> update_delivery_setting(ds, attrs)
-    end
-  end
-
   defp contains_explorations(section_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
