@@ -102,11 +102,16 @@ export const safeToDOMNode = (editor: Editor, node: Node): Maybe<HTMLElement> =>
 // For the current selection, walk up through the data model to find the
 // immediate block parent.
 export const getNearestBlock = (editor: Editor): Maybe<ModelElement> => {
+  const block: NodeEntry<ModelElement> | undefined = findNearestBlock(editor);
+  if (block) return Maybe.just(block[0]);
+  return Maybe.nothing();
+};
+
+export const findNearestBlock = (editor: Editor): NodeEntry<ModelElement> | undefined => {
   const block: NodeEntry<ModelElement> | undefined = Editor.above(editor, {
     match: (n) => Editor.isBlock(editor, n),
   });
-  if (block) return Maybe.just(block[0]);
-  return Maybe.nothing();
+  return block;
 };
 
 export const isActive = (editor: Editor, type: string | string[]) => {

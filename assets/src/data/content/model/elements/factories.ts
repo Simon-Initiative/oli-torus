@@ -30,6 +30,7 @@ import {
   ImageInline,
   InputRef,
   ListItem,
+  ModelElement,
   OrderedList,
   PageLink,
   Paragraph,
@@ -56,6 +57,12 @@ function create<E extends AllModelElements>(params: Partial<E>): E {
     ...params,
   } as E;
 }
+
+export const emptyChildren = (element: AllModelElements) =>
+  ({
+    ...element,
+    children: [],
+  } as ModelElement);
 
 export const Model = {
   h1: (text = '') => create<HeadingOne>({ type: 'h1', children: [{ text }] }),
