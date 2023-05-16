@@ -33,13 +33,9 @@ defmodule OliWeb.Api.PageLifecycleController do
       when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
         command_failure(conn, reason, section_slug, revision_slug)
 
-      {:error, e} ->
-        error(e)
-        command_failure(conn, e, section_slug, revision_slug)
-
       e ->
         error(e)
-        command_failure(conn, e, section_slug, revision_slug)
+        command_failure(conn, "Unable to finalize page", section_slug, revision_slug)
     end
   end
 
@@ -53,7 +49,8 @@ defmodule OliWeb.Api.PageLifecycleController do
   end
 
   defp error(reason) do
-    Logger.error("Page finalization error encountered: #{reason}")
-    Oli.Utils.Appsignal.capture_error(reason)
+    error_msg = Kernel.inspect(reason)
+    Logger.error("Page finalization error encountered: #{error_msg}")
+    Oli.Utils.Appsignal.capture_error(error_msg)
   end
 end

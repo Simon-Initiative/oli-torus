@@ -1,16 +1,21 @@
 defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
+  import Ecto.Query, warn: false
+  import Oli.Delivery.Attempts.Core
+
   alias Oli.Delivery.Attempts.Hierarchy
 
   alias Oli.Delivery.Attempts.PageLifecycle.{
     VisitContext,
     ReviewContext,
     FinalizationContext,
+    FinalizationSummary,
     AttemptState,
     Lifecycle,
     Hierarchy
   }
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
 
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
+  alias Oli.Delivery.Attempts.ActivityLifecycle.{Evaluate, Persistence}
   alias Oli.Delivery.Attempts.PageLifecycle.Common
 
   @moduledoc """
@@ -32,7 +37,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           page_revision: page_revision
         } = context
       ) do
-    if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id do
+    if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id or
+         latest_resource_attempt.lifecycle_state == :evaluated do
       case start(context) do
         {:ok, %AttemptState{} = attempt_state} ->
           {:ok, {:in_progress, attempt_state}}
@@ -49,8 +55,50 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   end
 
   @impl Lifecycle
-  def finalize(%FinalizationContext{} = _context) do
-    {:error, {:unsupported}}
+  def finalize(%FinalizationContext{
+        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
+        datashop_session_id: datashop_session_id
+      }) do
+    # Collect all of the part attempt guids for all of the activities that get finalized
+    with {:ok, part_attempt_guids} <-
+           finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
+         {:ok, resource_attempt} <- mark_resource_attempt_evaluated(resource_attempt) do
+      {:ok,
+       %FinalizationSummary{
+         lifecycle_state: :evaluated,
+         resource_access: Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id),
+         part_attempt_guids: part_attempt_guids
+       }}
+    else
+      error -> error
+    end
+  end
+
+  defp finalize_activity_and_part_attempts(resource_attempt, datashop_session_id) do
+    with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
+           Evaluate.update_part_attempts_and_get_activity_attempts(
+             resource_attempt,
+             datashop_session_id
+           ),
+         {:ok, _} <-
+           Persistence.bulk_update_activity_attempts(
+             Enum.join(activity_attempt_values, ", "),
+             activity_attempt_params
+           ) do
+      {:ok, part_attempt_guids}
+    else
+      error -> error
+    end
+  end
+
+  def mark_resource_attempt_evaluated(resource_attempt) do
+    now = DateTime.utc_now()
+
+    update_resource_attempt(resource_attempt, %{
+      date_evaluated: now,
+      date_submitted: now,
+      lifecycle_state: :evaluated
+    })
   end
 
   @impl Lifecycle
@@ -70,8 +118,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     |> update_progress(resource_attempt)
   end
 
-  defp update_progress({:ok, activity_map}, %ResourceAttempt{resource_access_id: resource_access_id}) do
-
+  defp update_progress({:ok, activity_map}, %ResourceAttempt{
+         resource_access_id: resource_access_id
+       }) do
     number_of_activities = Map.keys(activity_map) |> Enum.count()
 
     Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id)
@@ -91,5 +140,4 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   defp do_update_progress(resource_access, _) do
     Oli.Delivery.Metrics.reset_progress(resource_access)
   end
-
 end
