@@ -1699,58 +1699,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "Find all your assignments, quizzes and activities associated with graded material."
     end
 
-    test "renders the list of assignments", %{conn: conn, section: section} do
-      user = insert(:user)
-      enroll_user_to_section(user, section, :context_learner)
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(
-          Routes.page_delivery_path(
-            conn,
-            :assignments,
-            section.slug
-          )
-        )
-
-      assert html_response(conn, 200) =~ "Graded page 1 - Level 1 (w/ no date)"
-      assert html_response(conn, 200) =~ "Graded page 2 - Level 0 (w/ date)"
-      assert html_response(conn, 200) =~ "Graded page 3 - Level 1 (w/ no date)"
-      assert html_response(conn, 200) =~ "Graded page 4 - Level 0 (w/ gating condition)"
-      assert html_response(conn, 200) =~ "Due by 2023-01-12"
-      assert html_response(conn, 200) =~ "Graded page 5 - Level 0 (w/ student gating condition)"
-      assert html_response(conn, 200) =~ "Due by 2023-06-05"
-    end
-
-    test "when a student has a gating condition, it overrides the default gating condition", %{
-      conn: conn,
-      section: section,
-      student_with_gating_condition: student
-    } do
-      enroll_user_to_section(student, section, :context_learner)
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(student, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(
-          Routes.page_delivery_path(
-            conn,
-            :assignments,
-            section.slug
-          )
-        )
-
-      assert html_response(conn, 200) =~ "Graded page 1 - Level 1 (w/ no date)"
-      assert html_response(conn, 200) =~ "Graded page 2 - Level 0 (w/ date)"
-      assert html_response(conn, 200) =~ "Graded page 3 - Level 1 (w/ no date)"
-      assert html_response(conn, 200) =~ "Graded page 4 - Level 0 (w/ gating condition)"
-      assert html_response(conn, 200) =~ "Due by 2023-01-12"
-      assert html_response(conn, 200) =~ "Graded page 5 - Level 0 (w/ student gating condition)"
-      refute html_response(conn, 200) =~ "Due by 2023-06-05"
-      assert html_response(conn, 200) =~ "Due by 2023-07-08"
-    end
-
     test "related activities get rendered", %{conn: conn, section: section} do
       user = insert(:user)
       enroll_user_to_section(user, section, :context_learner)
@@ -2510,6 +2458,16 @@ defmodule OliWeb.PageDeliveryControllerTest do
         type: :enrollable
       )
 
+    Oli.Delivery.Sections.create_section_resources(section, publication)
+
+    Oli.Delivery.Sections.get_section_resource(section.id, activity_1_revision.resource_id)
+    |> Oli.Delivery.Sections.update_section_resource(
+      %{scheduling_type: :due_by, end_date: DateTime.add(DateTime.utc_now(), 1, :day)})
+
+    Oli.Delivery.Sections.get_section_resource(section.id, activity_2_revision.resource_id)
+    |> Oli.Delivery.Sections.update_section_resource(
+      %{scheduling_type: :due_by, end_date: DateTime.add(DateTime.utc_now(), 2, :day)})
+
     insert(:gating_condition, %{
       section: section,
       resource: activity_1_revision.resource,
@@ -2530,6 +2488,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       }
     })
 
-    Sections.create_section_resources(section, publication)
+    {:ok, section}
+
   end
 end

@@ -313,8 +313,13 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     case Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(
            resource_attempt_guid
          ) do
-      {:ok, %ResourceAttempt{lifecycle_state: :evaluated, resource_access_id: resource_access_id}} ->
+      {:ok, %ResourceAttempt{lifecycle_state: :evaluated, revision: revision, resource_access_id: resource_access_id}} ->
+
+        resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
+        effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, resource_access.user_id)
+
         Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_resource_attempts_to_access(
+          effective_settings,
           section.slug,
           resource_access_id
         )

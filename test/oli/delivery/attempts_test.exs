@@ -93,7 +93,8 @@ defmodule Oli.Delivery.AttemptsTest do
           audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
-          publication_id: pub.id
+          publication_id: pub.id,
+          effective_settings: Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
         })
 
       assert Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
@@ -149,6 +150,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id = UUID.uuid4()
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id)
 
@@ -159,6 +161,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -168,6 +171,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -178,6 +182,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -192,6 +197,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id,
           user1,
+          effective_settings,
           activity_provider
         )
     end
@@ -206,6 +212,8 @@ defmodule Oli.Delivery.AttemptsTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
       PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
 
@@ -216,6 +224,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -228,6 +237,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -239,6 +249,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user2,
           user2,
+          effective_settings,
           activity_provider
         )
 
@@ -249,6 +260,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user2,
           user2,
+          effective_settings,
           activity_provider
         )
 
@@ -261,6 +273,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user2,
           user2,
+          effective_settings,
           activity_provider
         )
     end
@@ -390,6 +403,8 @@ defmodule Oli.Delivery.AttemptsTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
@@ -398,6 +413,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -428,6 +444,8 @@ defmodule Oli.Delivery.AttemptsTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
@@ -436,6 +454,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -447,6 +466,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user2,
           user2,
+          effective_settings,
           activity_provider
         )
 
@@ -563,6 +583,8 @@ defmodule Oli.Delivery.AttemptsTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
@@ -571,6 +593,7 @@ defmodule Oli.Delivery.AttemptsTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 

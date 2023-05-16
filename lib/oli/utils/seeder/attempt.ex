@@ -18,6 +18,8 @@ defmodule Oli.Utils.Seeder.Attempt do
     [page_revision, section, user, datashop_session_id] =
       unpack(seeds, [page_revision, section, user, datashop_session_id])
 
+    effective_settings = %Oli.Delivery.Settings.Combined{}
+
     Core.track_access(page_revision.resource_id, section.id, user.id)
 
     {:ok,
@@ -28,6 +30,7 @@ defmodule Oli.Utils.Seeder.Attempt do
         section.slug,
         datashop_session_id,
         user,
+        effective_settings,
         &Oli.Delivery.ActivityProvider.provide/6
       )
 
@@ -49,12 +52,15 @@ defmodule Oli.Utils.Seeder.Attempt do
 
     Core.track_access(page_revision.resource_id, section.id, user.id)
 
+    effective_settings = Oli.Delivery.Settings.get_combined_settings(page_revision, section.id, user.id)
+
     {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempt_hierarchy}} =
       PageLifecycle.start(
         page_revision.slug,
         section.slug,
         datashop_session_id,
         user,
+        effective_settings,
         &Oli.Delivery.ActivityProvider.provide/6
       )
 

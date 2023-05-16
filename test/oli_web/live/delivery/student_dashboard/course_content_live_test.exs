@@ -190,8 +190,8 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
     } do
       [p1, p2, _p3] = mod1_pages
 
-      read_by_end_date = ~D[2023-10-15]
-      inclass_end_date = ~D[2023-10-01]
+      read_by_end_date = ~U[2023-10-15 12:00:00Z]
+      inclass_end_date = ~U[2023-10-01 12:00:00Z]
 
       update_section_resource(section.id, p1.published_resource.resource_id, %{
         end_date: read_by_end_date,
@@ -286,12 +286,6 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
                view,
                ~s{section:has(h4[phx-click="go_down"]) span},
                "Due by #{Timex.format!(hard_scheduled_date_1, "{YYYY}-{0M}-{0D}")}"
-             )
-
-      assert has_element?(
-               view,
-               ~s{section:has(h4[phx-click="go_down"]) span},
-               "Due by #{Timex.format!(hard_scheduled_date_for_student, "{YYYY}-{0M}-{0D}")}"
              )
 
       assert has_element?(
@@ -399,11 +393,9 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   end
 
   defp create_global_hard_scheduled_date(section_id, resource_id, end_date) do
-    Gating.create_gating_condition(%{
-      type: :schedule,
-      resource_id: resource_id,
-      section_id: section_id,
-      data: %{end_datetime: end_date}
+    update_section_resource(section_id, resource_id, %{
+      end_date: end_date,
+      scheduling_type: :due_by
     })
   end
 

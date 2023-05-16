@@ -5,8 +5,7 @@ defmodule OliWeb.CollaborationLiveTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias Oli.Delivery
-  alias Oli.Delivery.{DeliverySetting, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Resources.{Collaboration, ResourceType}
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration.Post, as: PostSchema
@@ -103,6 +102,9 @@ defmodule OliWeb.CollaborationLiveTest do
 
     section = insert(:section, base_project: project, type: :enrollable)
     {:ok, _sr} = Sections.create_section_resources(section, publication)
+
+    sr = Sections.get_section_resource(section.id, page_resource_cs.id)
+    Sections.update_section_resource(sr, %{collab_space_config: collab_space_config})
 
     first_post = insert(:post, section: section, resource: page_resource_cs, user: user)
 
@@ -428,40 +430,6 @@ defmodule OliWeb.CollaborationLiveTest do
       assert_receive {:updated_collab_space_config, %CollabSpaceConfig{status: :disabled}}
     end
 
-    test "returns the collab space config as archived when there is a delivery setting config", %{
-      conn: conn,
-      instructor: instructor,
-      section: section,
-      page_revision_cs: page_revision_cs,
-      page_resource_cs: page_resource_cs
-    } do
-      collab_space_config = build(:collab_space_config, status: :archived)
-
-      insert(:delivery_setting,
-        user: instructor,
-        section: section,
-        resource: page_resource_cs,
-        collab_space_config: collab_space_config
-      )
-
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          CollabSpaceConfigView,
-          session: %{
-            "current_user_id" => instructor.id,
-            "collab_space_config" => collab_space_config,
-            "section_slug" => section.slug,
-            "is_delivery" => true,
-            "resource_slug" => page_revision_cs.slug
-          }
-        )
-
-      assert has_element?(view, "span", "Archived")
-      assert has_element?(view, "button[phx-click=\"enable\"", "Enable")
-      assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
-    end
-
     test "shows the collab space config attrs correctly", %{
       conn: conn,
       instructor: instructor,
@@ -485,27 +453,27 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "span", "Enabled")
 
       assert view
-             |> element("#delivery_setting_collab_space_config_threaded")
+             |> element("#section_resource_collab_space_config_threaded")
              |> render() =~ "checked"
 
       assert view
-             |> element("#delivery_setting_collab_space_config_auto_accept")
+             |> element("#section_resource_collab_space_config_auto_accept")
              |> render() =~ "checked"
 
       assert view
-             |> element("#delivery_setting_collab_space_config_show_full_history")
+             |> element("#section_resource_collab_space_config_show_full_history")
              |> render() =~ "checked"
 
       assert view
-             |> element("#delivery_setting_collab_space_config_anonymous_posting")
+             |> element("#section_resource_collab_space_config_anonymous_posting")
              |> render() =~ "checked"
 
       assert view
-             |> element("#delivery_setting_collab_space_config_participation_min_replies")
+             |> element("#section_resource_collab_space_config_participation_min_replies")
              |> render() =~ "0"
 
       assert view
-             |> element("#delivery_setting_collab_space_config_participation_min_posts")
+             |> element("#section_resource_collab_space_config_participation_min_posts")
              |> render() =~ "0"
     end
 
@@ -513,8 +481,7 @@ defmodule OliWeb.CollaborationLiveTest do
       conn: conn,
       instructor: instructor,
       section: section,
-      page_revision_cs: page_revision_cs,
-      page_resource_cs: page_resource_cs
+      page_revision_cs: page_revision_cs
     } do
       {:ok, view, _html} =
         live_isolated(
@@ -532,7 +499,7 @@ defmodule OliWeb.CollaborationLiveTest do
       view
       |> element("form[phx-submit=\"save\"")
       |> render_submit(%{
-        delivery_setting: %{
+        section_resource: %{
           collab_space_config: %{
             threaded: false,
             auto_accept: false,
@@ -543,33 +510,20 @@ defmodule OliWeb.CollaborationLiveTest do
       })
 
       refute view
-             |> element("#delivery_setting_collab_space_config_threaded")
+             |> element("#section_resource_collab_space_config_threaded")
              |> render() =~ "checked"
 
       refute view
-             |> element("#delivery_setting_collab_space_config_auto_accept")
+             |> element("#section_resource_collab_space_config_auto_accept")
              |> render() =~ "checked"
 
       refute view
-             |> element("#delivery_setting_collab_space_config_anonymous_posting")
+             |> element("#section_resource_collab_space_config_anonymous_posting")
              |> render() =~ "checked"
 
       assert view
-             |> element("#delivery_setting_collab_space_config_participation_min_replies")
+             |> element("#section_resource_collab_space_config_participation_min_replies")
              |> render() =~ "2"
-
-      assert %DeliverySetting{
-               collab_space_config: %{
-                 participation_min_replies: 2,
-                 auto_accept: false,
-                 threaded: false,
-                 anonymous_posting: false
-               }
-             } =
-               Delivery.get_delivery_setting_by(%{
-                 section_id: section.id,
-                 resource_id: page_resource_cs.id
-               })
 
       assert_receive {
         :updated_collab_space_config,
@@ -603,15 +557,15 @@ defmodule OliWeb.CollaborationLiveTest do
       view
       |> element("form[phx-submit=\"save\"")
       |> render_submit(%{
-        delivery_setting: %{collab_space_config: %{participation_min_replies: -1}}
+        section_resource: %{collab_space_config: %{participation_min_replies: -1}}
       })
 
       refute view
-             |> element("#delivery_setting_collab_space_config_participation_min_replies")
+             |> element("#section_resource_collab_space_config_participation_min_replies")
              |> render() =~ "-1"
 
       assert view
-             |> element("#delivery_setting_collab_space_config_participation_min_replies")
+             |> element("#section_resource_collab_space_config_participation_min_replies")
              |> render() =~ "0"
 
       refute_receive {:updated_collab_space_config, _}

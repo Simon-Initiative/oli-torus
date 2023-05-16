@@ -45,8 +45,8 @@ defmodule Oli.Resources.Revision do
     # 0 represents "unlimited" attempts
     field :max_attempts, :integer, default: 0
     field :recommended_attempts, :integer, default: 0
-
     field :time_limit, :integer, default: 0
+
     field :scope, Ecto.Enum, values: [:embedded, :banked], default: :embedded
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
     field :parameters, :map

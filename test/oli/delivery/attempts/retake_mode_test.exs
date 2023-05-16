@@ -62,6 +62,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
+      |> Map.put(:retake_mode, :targeted)
+
       {:ok, resource_attempt} =
         Hierarchy.create(%VisitContext{
           latest_resource_attempt: nil,
@@ -72,7 +75,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
-          publication_id: pub.id
+          publication_id: pub.id,
+          effective_settings: effective_settings
         })
 
       attempts = Hierarchy.get_latest_attempts(resource_attempt.id)
@@ -99,7 +103,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
-          publication_id: pub.id
+          publication_id: pub.id,
+          effective_settings: effective_settings
         })
 
       attempts = Hierarchy.get_latest_attempts(resource_attempt2.id)
@@ -125,6 +130,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
+      |> Map.put(:retake_mode, :targeted)
+
       {:ok, resource_attempt} =
         Hierarchy.create(%VisitContext{
           latest_resource_attempt: nil,
@@ -135,7 +143,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
-          publication_id: pub.id
+          publication_id: pub.id,
+          effective_settings: effective_settings
         })
 
       attempts = Hierarchy.get_latest_attempts(resource_attempt.id)
@@ -166,7 +175,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
-          publication_id: pub.id
+          publication_id: pub.id,
+          effective_settings: effective_settings
         })
 
       attempts = Hierarchy.get_latest_attempts(resource_attempt2.id)
@@ -177,75 +187,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
       assert Map.get(part_map, "1").response == %{"input" => "this was right"}
       {_, part_map} = Map.get(attempts, a2.resource.id)
       assert Map.get(part_map, "1").response == %{"input" => "this was right, also"}
-    end
-
-    test "targeted retake mode disabled when page revision changes", %{
-      p1: p1,
-      p2: p2,
-      user1: user,
-      section: section,
-      a1: a1,
-      a2: a2,
-      publication: pub
-    } do
-      Attempts.track_access(p1.resource.id, section.id, user.id)
-
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
-      datashop_session_id = UUID.uuid4()
-
-      {:ok, resource_attempt} =
-        Hierarchy.create(%VisitContext{
-          latest_resource_attempt: nil,
-          page_revision: p1.revision,
-          section_slug: section.slug,
-          datashop_session_id: datashop_session_id,
-          user: user,
-          audience_role: :student,
-          activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
-          publication_id: pub.id
-        })
-
-      attempts = Hierarchy.get_latest_attempts(resource_attempt.id)
-      {attempt, part_map} = Map.get(attempts, a1.resource.id)
-
-      Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})
-
-      Map.get(part_map, "1")
-      |> Attempts.update_part_attempt(%{score: 1, out_of: 1, response: %{input: "this was right"}})
-
-      {attempt, part_map} = Map.get(attempts, a2.resource.id)
-      Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 3})
-
-      Map.get(part_map, "1")
-      |> Attempts.update_part_attempt(%{score: 1, out_of: 3, response: %{input: "this was wrong"}})
-
-      # We can safely simulate moving ahead to a new publication for the page by
-      # changing the revision id on the resource_attempt
-      {:ok, resource_attempt} =
-        Attempts.update_resource_attempt(resource_attempt, %{revision_id: p2.revision.id})
-
-      {:ok, resource_attempt2} =
-        Hierarchy.create(%VisitContext{
-          latest_resource_attempt: resource_attempt,
-          page_revision: p1.revision,
-          section_slug: section.slug,
-          datashop_session_id: datashop_session_id,
-          user: user,
-          audience_role: :student,
-          activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
-          publication_id: pub.id
-        })
-
-      attempts = Hierarchy.get_latest_attempts(resource_attempt2.id)
-
-      # Ensure that the new part attempt records carried forward the state of only the correct
-      # activity attempt from the previous resource attempt
-      {_, part_map} = Map.get(attempts, a1.resource.id)
-      assert Map.get(part_map, "1").response == nil
-      {_, part_map} = Map.get(attempts, a2.resource.id)
-      assert Map.get(part_map, "1").response == nil
     end
 
     test "targeted retake mode will not work for adaptive pages", %{
@@ -274,7 +215,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
-          publication_id: pub.id
+          publication_id: pub.id,
+          effective_settings: Oli.Delivery.Settings.get_combined_settings(adaptive_revision, section.id, user.id)
         })
 
       attempts = Hierarchy.get_latest_attempts(resource_attempt.id)
@@ -305,7 +247,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           audience_role: :student,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
-          publication_id: pub.id
+          publication_id: pub.id,
+          effective_settings: Oli.Delivery.Settings.get_combined_settings(adaptive_revision, section.id, user.id)
         })
 
       attempts = Hierarchy.get_latest_attempts(resource_attempt2.id)

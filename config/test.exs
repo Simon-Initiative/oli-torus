@@ -23,6 +23,7 @@ config :oli, Oli.Repo,
   database: "oli_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   timeout: 600_000,
+  pool_size: 30,
   ownership_timeout: 600_000
 
 config :oli, Oban,
