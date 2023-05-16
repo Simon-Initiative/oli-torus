@@ -4,7 +4,6 @@ defmodule Oli.DeliveryTest do
   import Oli.Factory
 
   alias Oli.Delivery
-  alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   describe "delivery settings" do
     test "maybe_update_section_contains_explorations/1 update contains_explorations field" do

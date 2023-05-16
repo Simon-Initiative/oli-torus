@@ -828,7 +828,10 @@ defmodule OliWeb.PageDeliveryController do
 
     html = Page.render(render_context, revision.content, Page.Html)
 
-    effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, conn.assigns.current_user.id)
+    effective_settings = case conn.assigns.current_user do
+      nil -> Oli.Delivery.Settings.get_combined_settings(revision, section.id)
+      user -> Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+    end
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 

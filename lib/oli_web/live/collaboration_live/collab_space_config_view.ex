@@ -2,7 +2,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   use Surface.LiveView
 
   alias Oli.Authoring.Course
-  alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Resources
@@ -158,7 +157,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     """
   end
 
-  def handle_event("save", %{"delivery_setting" => %{"collab_space_config" => attrs}}, socket) do
+  def handle_event("save", %{"section_resource" => %{"collab_space_config" => attrs}}, socket) do
     upsert_collab_space(socket.assigns.is_delivery, "updated", attrs, socket)
   end
 
@@ -194,21 +193,17 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   end
 
   # first argument is a flag that specifies whether it is delivery or not, to accordingly
-  # update the revision or the delivery_setting configuration
+  # update the revision or the section_resource configuration
   defp upsert_collab_space(true, action, attrs, socket) do
     socket = clear_flash(socket)
 
-    attrs = %{
-      "section_id" => socket.assigns.parent_entity.id,
-      "resource_id" => socket.assigns.page_resource.id,
-      "user_id" => socket.assigns.user_id,
-      "collab_space_config" => attrs
-    }
+    case Oli.Delivery.Sections.get_section_resource(socket.assigns.parent_entity.id, socket.assigns.page_resource.id)
+    |> Oli.Delivery.Sections.update_section_resource(%{collab_space_config: attrs}) do
 
-    case Delivery.upsert_delivery_setting(attrs) do
-      {:ok, delivery_setting} ->
+      {:ok, section_resource} ->
+
         socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
-        collab_space_config = delivery_setting.collab_space_config
+        collab_space_config = section_resource.collab_space_config
 
         PubSub.broadcast(
           Oli.PubSub,
@@ -218,7 +213,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
 
         {:noreply,
          assign(socket,
-           changeset: Delivery.change_delivery_setting(delivery_setting),
+           changeset: SectionResource.changeset(section_resource, %{}),
            collab_space_status: get_status(collab_space_config),
            collab_space_config: collab_space_config
          )}

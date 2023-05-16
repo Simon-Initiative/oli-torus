@@ -190,8 +190,8 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
     } do
       [p1, p2, _p3] = mod1_pages
 
-      read_by_end_date = ~D[2023-10-15]
-      inclass_end_date = ~D[2023-10-01]
+      read_by_end_date = ~U[2023-10-15 12:00:00Z]
+      inclass_end_date = ~U[2023-10-01 12:00:00Z]
 
       update_section_resource(section.id, p1.published_resource.resource_id, %{
         end_date: read_by_end_date,

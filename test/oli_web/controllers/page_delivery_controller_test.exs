@@ -2458,6 +2458,16 @@ defmodule OliWeb.PageDeliveryControllerTest do
         type: :enrollable
       )
 
+    Oli.Delivery.Sections.create_section_resources(section, publication)
+
+    Oli.Delivery.Sections.get_section_resource(section.id, activity_1_revision.resource_id)
+    |> Oli.Delivery.Sections.update_section_resource(
+      %{scheduling_type: :due_by, end_date: DateTime.add(DateTime.utc_now(), 1, :day)})
+
+    Oli.Delivery.Sections.get_section_resource(section.id, activity_2_revision.resource_id)
+    |> Oli.Delivery.Sections.update_section_resource(
+      %{scheduling_type: :due_by, end_date: DateTime.add(DateTime.utc_now(), 2, :day)})
+
     insert(:gating_condition, %{
       section: section,
       resource: activity_1_revision.resource,
@@ -2478,6 +2488,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       }
     })
 
-    Sections.create_section_resources(section, publication)
+    {:ok, section}
+
   end
 end

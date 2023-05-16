@@ -14,11 +14,16 @@ defmodule Oli.Delivery.Settings do
   user.
   """
   def get_combined_settings(%Revision{} = resolved_revision, section_id, user_id) do
-
     section_resource = Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
     student_exception = get_student_exception(resolved_revision.resource_id, section_id, user_id)
 
     combine(resolved_revision, section_resource, student_exception)
+  end
+
+  def get_combined_settings(%Revision{} = resolved_revision, section_id) do
+    section_resource = Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
+
+    combine(resolved_revision, section_resource, nil)
   end
 
   defp combine(resolved_revision, section_resource, student_exception) do
