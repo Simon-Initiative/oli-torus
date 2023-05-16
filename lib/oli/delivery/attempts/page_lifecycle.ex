@@ -49,6 +49,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         section_slug,
         datashop_session_id,
         user,
+        effective_settings,
         activity_provider
       ) do
     Repo.transaction(fn ->
@@ -72,7 +73,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             user: user,
             audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
             datashop_session_id: datashop_session_id,
-            activity_provider: activity_provider
+            activity_provider: activity_provider,
+            effective_settings: effective_settings
           }
 
           impl = determine_page_impl(page_revision.graded)
@@ -104,7 +106,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   `{:ok, {:not_started, %HistorySummary{}}}`
   """
-  @spec visit(%Revision{}, String.t(), String.t(), User.t(), any) ::
+  @spec visit(%Revision{}, String.t(), String.t(), User.t(), any, any) ::
           {:ok, {:in_progress | :revised, %AttemptState{}}}
           | {:ok, {:not_started, %HistorySummary{}}}
           | {:error, any}
@@ -113,6 +115,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         section_slug,
         datashop_session_id,
         user,
+        effective_settings,
         activity_provider
       ) do
     Repo.transaction(fn ->
@@ -132,7 +135,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         user: user,
         audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
         datashop_session_id: datashop_session_id,
-        activity_provider: activity_provider
+        activity_provider: activity_provider,
+        effective_settings: effective_settings
       }
 
       impl = determine_page_impl(graded)
@@ -199,10 +203,18 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             Repo.rollback({:not_found})
 
           resource_attempt ->
+
+            resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)
+
             context = %FinalizationContext{
               resource_attempt: resource_attempt,
               section_slug: section_slug,
-              datashop_session_id: datashop_session_id
+              datashop_session_id: datashop_session_id,
+              effective_settings: Oli.Delivery.Settings.get_combined_settings(
+                  resource_attempt.revision,
+                  resource_access.section_id,
+                  resource_access.user_id
+                )
             }
 
             impl = determine_page_impl(resource_attempt.revision.graded)

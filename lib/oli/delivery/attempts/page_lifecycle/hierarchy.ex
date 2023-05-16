@@ -91,8 +91,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
        do: []
 
   defp construct_attempt_prototypes(%VisitContext{
+         effective_settings: %{retake_mode: :targeted},
          latest_resource_attempt: latest_resource_attempt,
-         page_revision: %Revision{retake_mode: :targeted} = page_revision
+         page_revision: page_revision
        }) do
     # If the page has changed revisions between attempts, we do not allow previous
     # correct attempts to manifest as constraining prototypes.  The issue here is that

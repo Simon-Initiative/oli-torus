@@ -20,7 +20,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
     :user,
     :audience_role,
     :datashop_session_id,
-    :activity_provider
+    :activity_provider,
+    :effective_settings
   ]
 
   defstruct [
@@ -32,7 +33,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
     :user,
     :audience_role,
     :datashop_session_id,
-    :activity_provider
+    :activity_provider,
+    :effective_settings
   ]
 
   @type t() :: %__MODULE__{
@@ -44,6 +46,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
           user: Oli.Accounts.User.t() | Oli.Accounts.Author.t(),
           audience_role: :student | :instructor,
           datashop_session_id: String.t() | nil,
-          activity_provider: any()
+          activity_provider: any(),
+          effective_settings: any()
         }
 end

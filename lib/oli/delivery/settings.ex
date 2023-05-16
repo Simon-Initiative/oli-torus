@@ -55,7 +55,7 @@ defmodule Oli.Delivery.Settings do
       late_start: combine_field(:late_start, section_resource, student_exception),
       time_limit: combine_field(:time_limit, section_resource, student_exception),
       grace_period: combine_field(:grace_period, section_resource, student_exception),
-      scoring_strategy: combine_field(:scoring_strategy, section_resource, student_exception),
+      scoring_strategy_id: combine_field(:scoring_strategy_id, section_resource, student_exception),
       review_submission: combine_field(:review_submission, section_resource, student_exception),
       feedback_mode: combine_field(:feedback_mode, section_resource, student_exception),
       feedback_scheduled_date: combine_field(:feedback_scheduled_date, section_resource, student_exception),

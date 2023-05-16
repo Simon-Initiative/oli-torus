@@ -156,6 +156,7 @@ defmodule Oli.Delivery.Page.PageContext do
       ) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
+    effective_settings = Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
 
     Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
@@ -167,6 +168,7 @@ defmodule Oli.Delivery.Page.PageContext do
              section_slug,
              datashop_session_id,
              user,
+             effective_settings,
              activity_provider
            ) do
         {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->
@@ -224,7 +226,7 @@ defmodule Oli.Delivery.Page.PageContext do
       collab_space_config: collab_space_config,
       is_instructor: user_roles.is_instructor?,
       is_student: user_roles.is_student?,
-      effective_settings: Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
+      effective_settings: effective_settings
     }
   end
 

@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Settings.Combined do
     :late_start,
     :time_limit,
     :grace_period,
-    :scoring_strategy,
+    :scoring_strategy_id,
     :review_submission,
     :feedback_mode,
     :feedback_scheduled_date,

@@ -876,6 +876,7 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
+
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
     if Sections.is_enrolled?(user.id, section_slug) do
@@ -883,6 +884,7 @@ defmodule OliWeb.PageDeliveryController do
       # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
       # hitting this endpoint.
       revision = Resolver.from_revision_slug(section_slug, revision_slug)
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
       case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
         [] ->
@@ -891,6 +893,7 @@ defmodule OliWeb.PageDeliveryController do
                  section_slug,
                  datashop_session_id,
                  user,
+                 effective_settings,
                  activity_provider
                ) do
             {:ok, _} ->

@@ -110,7 +110,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   def finalize(%FinalizationContext{
         resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
         section_slug: section_slug,
-        datashop_session_id: datashop_session_id
+        datashop_session_id: datashop_session_id,
+        effective_settings: effective_settings
       }) do
     # Collect all of the part attempt guids for all of the activities that get finalized
     with {:ok, part_attempt_guids} <-
@@ -119,6 +120,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       case resource_attempt do
         %ResourceAttempt{lifecycle_state: :evaluated} ->
           case roll_up_resource_attempts_to_access(
+                 effective_settings,
                  section_slug,
                  resource_attempt.resource_access_id
                ) do
@@ -295,18 +297,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     ensure_valid_grade({score, out_of})
   end
 
-  def roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
+  def roll_up_resource_attempts_to_access(%{scoring_strategy_id: scoring_strategy_id}, section_slug, resource_access_id) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)
 
     graded_attempts =
       get_graded_attempts_from_access(access.id)
       |> Enum.filter(fn ra -> ra.lifecycle_state == :evaluated end)
 
-    %{scoring_strategy_id: strategy_id} =
-      DeliveryResolver.from_resource_id(section_slug, access.resource_id)
-
     {score, out_of} =
-      Scoring.calculate_score(strategy_id, graded_attempts)
+      Scoring.calculate_score(scoring_strategy_id, graded_attempts)
       |> ensure_valid_grade()
 
     update_resource_access(access, %{
