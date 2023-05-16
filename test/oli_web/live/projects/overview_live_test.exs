@@ -82,6 +82,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       updated_project = Oli.Authoring.Course.get_project!(project.id)
       assert updated_project.required_survey_resource_id != nil
       assert has_element?(view, "input[name=\"survey\"][checked]")
+      assert has_element?(view, "a", "Edit survey")
     end
 
     test "project can disable required surveys", %{conn: conn, author: author} do
@@ -98,6 +99,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       updated_project = Oli.Authoring.Course.get_project!(project.id)
       assert updated_project.required_survey_resource_id == nil
       refute has_element?(view, "input[name=\"survey\"][checked]")
+      refute has_element?(view, "a", "Edit survey")
     end
 
     defp create_project_with_author(author) do

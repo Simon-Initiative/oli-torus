@@ -172,6 +172,10 @@ help_provider =
 
 config :oli, :help, dispatcher: help_provider
 
+config :oli,
+  ecl_username: System.get_env("ECL_USERNAME", ""),
+  ecl_password: System.get_env("ECL_PASSWORD", "")
+
 config :lti_1p3,
   provider: Lti_1p3.DataProviders.EctoProvider,
   ecto_provider: [

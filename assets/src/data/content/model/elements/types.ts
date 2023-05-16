@@ -30,6 +30,7 @@ export type TopLevel =
   | MediaBlock
   | Table
   | Math
+  | ECLRepl
   | (CodeV1 | CodeV2)
   | Blockquote
   | FormulaBlock
@@ -323,6 +324,11 @@ export interface CodeV2 extends SlateElement<VoidChildren> {
   code: string;
   language: string;
   caption?: Caption;
+}
+
+export interface ECLRepl extends SlateElement<VoidChildren> {
+  type: 'ecl';
+  code: string;
 }
 
 export type Code = CodeV2;

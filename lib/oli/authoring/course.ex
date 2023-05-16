@@ -350,7 +350,7 @@ defmodule Oli.Authoring.Course do
     |> Kernel.!=(nil)
   end
 
-  defp get_project_survey(project_id) do
+  def get_project_survey(project_id) do
     PublishedResource
     |> join(:inner, [pr], rev in Revision, on: pr.revision_id == rev.id)
     |> join(:inner, [_, _, proj], proj in Project, on: proj.id == ^project_id)
@@ -398,6 +398,8 @@ defmodule Oli.Authoring.Course do
     update_project_required_survey_resource_id(project.id, revision.resource_id)
 
     Oli.Publishing.ChangeTracker.track_revision(project.slug, revision)
+
+    revision
   end
 
   def delete_project_survey(project) do

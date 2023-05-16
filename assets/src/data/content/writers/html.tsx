@@ -7,6 +7,7 @@ import { MathInput } from 'components/activities/common/delivery/inputs/MathInpu
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
+import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
   Audio,
@@ -23,6 +24,7 @@ import {
   DescriptionList as DescriptionListModel,
   DescriptionListTerm,
   Dialog as DialogModel,
+  ECLRepl,
   Figure,
   Foreign,
   FormulaBlock,
@@ -285,6 +287,17 @@ export class HtmlParser implements WriterImpl {
 
   video(context: WriterContext, next: Next, attrs: Video) {
     return <VideoPlayer video={attrs} />;
+  }
+
+  ecl(context: WriterContext, next: Next, attrs: ECLRepl) {
+    return (
+      <ECLReplView
+        code={attrs.code}
+        id={attrs.id}
+        slug={context.sectionSlug as string}
+        attemptGuid={context.resourceAttemptGuid as string}
+      />
+    );
   }
 
   youtube(context: WriterContext, next: Next, attrs: YouTube) {

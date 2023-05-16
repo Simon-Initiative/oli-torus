@@ -17,6 +17,7 @@ import {
   DescriptionListTerm,
   Dialog,
   DialogLine,
+  ECLRepl,
   Figure,
   Foreign,
   FormulaBlock,
@@ -171,6 +172,12 @@ export const Model = {
       type: 'code',
       code,
       language: 'Text',
+    }),
+
+  ecl: (code = '') =>
+    create<ECLRepl>({
+      type: 'ecl',
+      code,
     }),
 
   inputRef: () => create<InputRef>({ type: 'input_ref' }),

@@ -136,6 +136,10 @@ export const groupOrDescendantHasPurpose = (c: ResourceContent): boolean => {
     : false;
 };
 
+export type OptionalContentTypes = {
+  ecl: boolean;
+};
+
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
   graded: boolean; // Page or assessment?
@@ -149,6 +153,7 @@ export type ResourceContext = {
   allObjectives: Objective[]; // All objectives
   allTags: Tag[]; // All available tags
   activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
+  optionalContentTypes: OptionalContentTypes; // Optional content types
 };
 
 export enum ResourceType {

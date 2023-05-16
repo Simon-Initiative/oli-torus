@@ -36,6 +36,10 @@ config :oli, Oli.Mailer, adapter: Bamboo.LocalAdapter
 
 config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.LocalAdapter
 
+config :oli,
+  ecl_username: System.get_env("ECL_USERNAME", ""),
+  ecl_password: System.get_env("ECL_PASSWORD", "")
+
 config :oli, :stripe_provider,
   public_secret: "pk_test_TYooMQauvdEDq54NiTphI7jx",
   private_secret: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"

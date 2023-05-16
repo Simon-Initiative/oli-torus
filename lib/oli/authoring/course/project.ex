@@ -17,6 +17,7 @@ defmodule Oli.Authoring.Course.Project do
     field :allow_duplication, :boolean, default: false
     field :has_experiments, :boolean, default: false
     field :legacy_svn_root, :string
+    field :allow_ecl_content_type, :boolean, default: false
 
     embeds_one :customizations, CustomLabels, on_replace: :delete
     embeds_one :attributes, ProjectAttributes, on_replace: :delete
@@ -63,6 +64,7 @@ defmodule Oli.Authoring.Course.Project do
       :allow_duplication,
       :has_experiments,
       :legacy_svn_root,
+      :allow_ecl_content_type,
       :publisher_id,
       :required_survey_resource_id
     ])
@@ -87,6 +89,7 @@ defmodule Oli.Authoring.Course.Project do
       :allow_duplication,
       :has_experiments,
       :legacy_svn_root,
+      :allow_ecl_content_type,
       :publisher_id
     ])
     |> validate_required([:title, :version, :family_id, :publisher_id])

@@ -162,6 +162,7 @@ defmodule Oli.MixProject do
       {:html_sanitize_ex, "~> 1.4"},
       {:hound, "~> 1.0"},
       {:httpoison, "~> 1.6"},
+      {:httpoison_retry, "~> 1.1"},
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
