@@ -1,9 +1,8 @@
 defmodule Oli.Repo.Migrations.AssessmentSettings do
   use Ecto.Migration
 
-  def change do
+   def up do
     alter table(:delivery_settings) do
-
       add :explanation_strategy, :map
 
       add :end_date, :utc_datetime
@@ -43,9 +42,46 @@ defmodule Oli.Repo.Migrations.AssessmentSettings do
     flush()
 
     execute """
-      UPDATE section_resources
-      SET scoring_strategy_id = 2
-      """
-
+    UPDATE section_resources
+    SET scoring_strategy_id = 2
+    """
   end
+
+  def down do
+    alter table(:delivery_settings) do
+      remove :explanation_strategy, :map
+
+      remove :end_date, :utc_datetime
+      remove :max_attempts, :integer, null: true
+      remove :password, :string, null: true
+      remove :time_limit, :integer, null: true
+      remove :grace_period, :integer, null: true
+      remove :late_submit, :string, null: true
+      remove :late_start, :string, null: true
+      remove :review_submission, :string, null: true
+      remove :retake_mode, :string, null: true
+      remove :feedback_mode, :string, null: true
+      remove :feedback_scheduled_date, :utc_datetime, null: true
+      remove :scoring_strategy_id, references("scoring_strategies")
+    end
+
+    alter table(:section_resources) do
+      modify :start_date, :date
+      modify :end_date, :date
+
+      remove :collab_space_config, :map
+      remove :explanation_strategy, :map
+
+      remove :max_attempts, :integer, default: -1, null: false
+      remove :password, :string, null: true
+      remove :time_limit, :integer, default: 0, null: false
+      remove :grace_period, :integer, default: 0, null: false
+      remove :late_submit, :string, default: "allow", null: false
+      remove :late_start, :string, default: "allow", null: false
+      remove :review_submission, :string, default: "allow", null: false
+      remove :retake_mode, :string, default: "normal", null: false
+      remove :feedback_mode, :string, default: "allow", null: false
+      remove :feedback_scheduled_date, :utc_datetime, null: true
+      remove :scoring_strategy_id, references("scoring_strategies")
+    end
 end

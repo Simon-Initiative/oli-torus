@@ -18,21 +18,7 @@ defmodule Oli.Utils.Seeder.Attempt do
     [page_revision, section, user, datashop_session_id] =
       unpack(seeds, [page_revision, section, user, datashop_session_id])
 
-    effective_settings = %Oli.Delivery.Settings.Combined{
-      end_date: nil,
-      max_attempts: 0,
-      retake_mode: :retake_mode,
-      late_submit: :allow,
-      late_start: :allow,
-      time_limit: 0,
-      grace_period: 0,
-      scoring_strategy_id: 2,
-      review_submission: :allow,
-      feedback_mode: :allow,
-      feedback_scheduled_date: nil,
-      collab_space_config: nil,
-      explanation_strategy: nil
-    }
+    effective_settings = %Oli.Delivery.Settings.Combined{}
 
     Core.track_access(page_revision.resource_id, section.id, user.id)
 

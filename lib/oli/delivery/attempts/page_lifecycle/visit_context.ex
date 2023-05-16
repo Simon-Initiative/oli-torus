@@ -47,6 +47,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
           audience_role: :student | :instructor,
           datashop_session_id: String.t() | nil,
           activity_provider: any(),
-          effective_settings: any()
+          effective_settings: Oli.Delivery.Settings.Combined.t()
         }
 end

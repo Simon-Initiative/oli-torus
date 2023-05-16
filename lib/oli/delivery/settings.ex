@@ -67,13 +67,12 @@ defmodule Oli.Delivery.Settings do
   # This combines the settings found in the section resource with the settings
   # found in the student exception, giving precedence to the student exception when
   # there is a setting defined there.
+defp combine_field(field, section_resource, nil), do: Map.get(section_resource, field)
+
   defp combine_field(field, section_resource, student_exception) do
-    case student_exception do
+    case Map.get(student_exception, field) do
       nil -> Map.get(section_resource, field)
-      _ -> case Map.get(student_exception, field) do
-        nil -> Map.get(section_resource, field)
-        v -> v
-      end
+      v -> v
     end
   end
 

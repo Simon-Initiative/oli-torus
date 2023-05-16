@@ -24,6 +24,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.FinalizationContext do
           section_slug: String.t(),
           resource_attempt: any(),
           datashop_session_id: String.t(),
-          effective_settings: any()
+          effective_settings: Oli.Delivery.Settings.Combined.t()
         }
 end
