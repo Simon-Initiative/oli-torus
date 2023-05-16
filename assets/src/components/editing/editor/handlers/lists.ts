@@ -55,40 +55,44 @@ export function handleIndent(editor: SlateEditor, e?: KeyboardEvent) {
       match: (n) => Element.isElement(n) && n.type === 'li',
     });
 
-    if (match) {
-      const [current, path] = match;
-      const start = SlateEditor.start(editor, path);
+    if (!match) {
+      // Couldn't find an LI to indent.
+      return;
+    }
+    const [current, listItemPath] = match;
+    const start = SlateEditor.start(editor, listItemPath);
 
-      // If the cursor is at the beginning of a list item
-      if (Point.equals(editor.selection.anchor, start)) {
-        const parentMatch = SlateEditor.parent(editor, path);
-        const [parent] = parentMatch;
+    if (!Point.equals(editor.selection.anchor, start)) {
+      // Only indent if the cursor is at the start of the list item.
+      return;
+    }
 
-        if (isList(parent)) {
-          // Make sure the user is not on the first item
-          if (parent.children.length > 0 && parent.children[0] !== current) {
-            // Now find a sublist, if any
-            for (let i = 0; i < parent.children.length; i += 1) {
-              const item = parent.children[i];
-              if (isList(item)) {
-                const newList = item.type === 'ul' ? Model.ul() : Model.ol();
-                newList.children.pop();
+    const parentMatch = SlateEditor.parent(editor, listItemPath);
+    const [parent] = parentMatch;
 
-                Transforms.wrapNodes(editor, newList, { at: editor.selection });
-                e?.preventDefault();
-                return;
-              }
-            }
+    if (isList(parent)) {
+      // Make sure the user is not on the first item
+      if (parent.children.length > 0 && parent.children[0] !== current) {
+        // Now find a sibling sublist, so we can re-use the list-type from that sibling to match the type of numbering
+        for (let i = 0; i < parent.children.length; i += 1) {
+          const item = parent.children[i];
+          if (isList(item)) {
+            const newList = item.type === 'ul' ? Model.ul() : Model.ol();
+            newList.children.pop();
+
+            Transforms.wrapNodes(editor, newList, { at: listItemPath });
+            e?.preventDefault();
+            return;
           }
-
-          // Allow indent with the same list type as current parent
-          const newList = parent.type === 'ul' ? Model.ul() : Model.ol();
-          newList.children.pop();
-
-          Transforms.wrapNodes(editor, newList, { at: editor.selection });
-          e?.preventDefault();
         }
       }
+
+      // Allow indent with the same list type as current parent
+      const newList = parent.type === 'ul' ? Model.ul() : Model.ol();
+      newList.children.pop();
+
+      Transforms.wrapNodes(editor, newList, { at: listItemPath });
+      e?.preventDefault();
     }
   }
 }
