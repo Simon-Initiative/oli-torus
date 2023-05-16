@@ -6,6 +6,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   prop attempt, :struct, required: true
   prop section, :struct, required: true
   prop context, :struct, required: true
+  prop revision, :struct, required: true
 
   @spec render(
           atom
@@ -16,7 +17,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         ) :: Phoenix.LiveView.Rendered.t()
   def render(assigns), do: do_render(assigns)
 
-  def do_render(%{attempt: %{lifecycle_state: :active}} = assigns) do
+  def do_render(%{revision: %{graded: graded}, attempt: %{attempt_guid: guid, lifecycle_state: :active}} = assigns) do
     ~F"""
     <div class="list-group-item list-group-action flex-column align-items-start">
       <a href={Routes.instructor_review_path(OliWeb.Endpoint, :review_attempt, @section.slug, @attempt.attempt_guid)} class="block">
@@ -27,6 +28,9 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <p class="mb-1">Started: {Utils.render_date(@attempt, :inserted_at, @context)}</p>
         <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, DateTime.utc_now())}.</small>
       </a>
+      {#if graded}
+        <button class="btn btn-danger btn-sm" phx-click="submit_attempt" phx-value-guid={guid}>Submit Attempt on Behalf of Student</button>
+      {/if}
     </div>
     """
   end
