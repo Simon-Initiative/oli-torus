@@ -84,4 +84,5 @@ defmodule Oli.Repo.Migrations.AssessmentSettings do
       remove :feedback_scheduled_date, :utc_datetime, null: true
       remove :scoring_strategy_id, references("scoring_strategies")
     end
+  end
 end
