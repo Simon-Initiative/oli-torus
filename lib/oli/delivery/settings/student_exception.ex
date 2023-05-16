@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Settings.StudentException do
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
 
     field :end_date, :utc_datetime, null: true
+    field :password, :string, null: true
     field :max_attempts, :integer, null: true
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], null: true
     field :late_submit, Ecto.Enum, values: [:allow, :disallow], null: true
@@ -33,6 +34,7 @@ defmodule Oli.Delivery.Settings.StudentException do
       :section_id,
       :resource_id,
       :end_date,
+      :password,
       :max_attempts,
       :retake_mode,
       :late_submit,

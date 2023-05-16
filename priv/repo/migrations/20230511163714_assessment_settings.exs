@@ -8,6 +8,7 @@ defmodule Oli.Repo.Migrations.AssessmentSettings do
 
       add :end_date, :utc_datetime
       add :max_attempts, :integer, null: true
+      add :password, :string, null: true
       add :time_limit, :integer, null: true
       add :grace_period, :integer, null: true
       add :late_submit, :string, null: true
@@ -27,6 +28,7 @@ defmodule Oli.Repo.Migrations.AssessmentSettings do
       add :explanation_strategy, :map
 
       add :max_attempts, :integer, default: -1, null: false
+      add :password, :string, null: true
       add :time_limit, :integer, default: 0, null: false
       add :grace_period, :integer, default: 0, null: false
       add :late_submit, :string, default: "allow", null: false
