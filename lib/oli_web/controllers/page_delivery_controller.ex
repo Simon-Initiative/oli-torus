@@ -75,7 +75,8 @@ defmodule OliWeb.PageDeliveryController do
               revision_slug: revision_slug,
               is_instructor: is_instructor,
               progress: learner_progress(section.id, user.id),
-              next_activities: next_activities
+              next_activities: next_activities,
+              independent_learner: user.independent_learner
             )
           end
       end

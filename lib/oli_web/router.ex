@@ -765,7 +765,7 @@ defmodule OliWeb.Router do
       :require_independent_instructor
     ])
 
-    live("/independent/create", Delivery.SelectSource, :independent_learner, as: :select_source)
+    live("/independent/create", Delivery.NewCourse, :independent_learner, as: :select_source)
     resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
   end
 
@@ -1003,7 +1003,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
 
     get("/", DeliveryController, :index)
-    live("/select_project", Delivery.SelectSource, :lms_instructor, as: :select_source)
+    live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
 
     post("/research_consent", DeliveryController, :research_consent)
   end
@@ -1057,7 +1057,7 @@ defmodule OliWeb.Router do
 
     # Section Management (+ Open and Free)
     live("/sections", Sections.SectionsView)
-    live("/open_and_free/create", Delivery.SelectSource, :admin, as: :select_source)
+    live("/open_and_free/create", Delivery.NewCourse, :admin, as: :select_source)
     resources("/open_and_free", OpenAndFreeController, as: :admin_open_and_free)
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 

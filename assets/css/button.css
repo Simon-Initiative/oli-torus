@@ -9,7 +9,7 @@ button.torus-button.primary {
 }
 
 button.torus-button.secondary {
-  @apply btn bg-white text-delivery-primary hover:bg-delivery-primary-50 active:bg-delivery-primary-200 active:text-white;
+  @apply btn bg-white dark:bg-gray-800 dark:hover:bg-gray-700 text-delivery-primary hover:bg-delivery-primary-50 active:bg-delivery-primary-200 active:text-white;
 }
 
 button.torus-button.outline {

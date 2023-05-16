@@ -1,8 +1,7 @@
-defmodule OliWeb.SelectSourceTest do
+defmodule OliWeb.NewCourse.SelectSourceTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.Publications.Publication
 
@@ -34,13 +33,14 @@ defmodule OliWeb.SelectSourceTest do
     end
   end
 
-  describe "admin index" do
+  describe "Admin - Step 1" do
     setup [:admin_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       assert has_element?(view, "p", "None exist")
+      assert has_element?(view, "button[disabled]", "Next step")
     end
 
     test "loads correctly when there are sections in table view", %{conn: conn} do
@@ -48,10 +48,10 @@ defmodule OliWeb.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
-      assert has_element?(view, "button[phx-click=\"selected\"]")
+      assert has_element?(view, "h2", "Select source")
+      assert has_element?(view, "button[phx-click=\"source_selection\"]")
       refute has_element?(view, "img[alt=\"course image\"]")
-      refute has_element?(view, "#select_sort")
-      refute has_element?(view, "form[phx-change=\"update_view_type\"")
+      refute has_element?(view, "form#update_view_type")
       assert has_element?(view, "a[href=\"#{details_view(section)}\"]")
 
       assert view
@@ -66,18 +66,18 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
+      |> element("input[placeholder=\"Search...\"]")
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button", "Search")
       |> render_click()
 
       assert has_element?(view, "a[href=\"#{details_view(s1)}\"]")
       refute has_element?(view, "a[href=\"#{details_view(s2)}\"]")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button#reset_search")
       |> render_click()
 
       assert has_element?(view, "a[href=\"#{details_view(s1)}\"]")
@@ -91,7 +91,7 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-value-sort_by=\"title\"]")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -99,7 +99,7 @@ defmodule OliWeb.SelectSourceTest do
              |> render() =~ "Testing A"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-value-sort_by=\"title\"")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -116,33 +116,40 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-value-sort_by=\"title\"")
       |> render_click(%{sort_by: "title"})
 
       assert has_element?(view, "a[href=\"#{details_view(first_s)}\"]")
       refute has_element?(view, "a[href=\"#{details_view(last_s)}\"]")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element(".page-item a", "2")
       |> render_click()
 
       refute has_element?(view, "a[href=\"#{details_view(first_s)}\"]")
       assert has_element?(view, "a[href=\"#{details_view(last_s)}\"]")
     end
 
-    test "selects one section correctly", %{conn: conn} do
-      section = insert(:section, open_and_free: true)
+    test "successfully goes to the next step", %{conn: conn} do
+      section = insert(:section, open_and_free: true, type: :blueprint)
 
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
-      view
-      |> element("button[phx-click=\"selected\"]")
-      |> render_click()
+      assert has_element?(view, "button[disabled]", "Next step")
 
-      assert_redirected(
-        view,
-        Routes.admin_open_and_free_path(OliWeb.Endpoint, :new, source_id: "product:#{section.id}")
-      )
+      view
+      |> element("button[phx-click=\"source_selection\"]")
+      |> render_click(%{id: "product:#{section.id}"})
+
+      refute has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, "tbody tr:first-child.bg-delivery-primary-100")
+
+      view
+      |> element("button", "Next step")
+      |> render_click(%{current_step: 1})
+
+      refute has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Name your course")
     end
 
     test "renders datetimes using the local timezone", context do
@@ -158,13 +165,14 @@ defmodule OliWeb.SelectSourceTest do
     end
   end
 
-  describe "independent instructor index" do
-    setup [:instructor_conn]
+  describe "LMS - Step 1" do
+    setup [:lms_instructor_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
 
       assert has_element?(view, "p", "None exist")
+      assert has_element?(view, "button[disabled]", "Next step")
     end
 
     test "loads correctly when there are sections in cards view", %{conn: conn} do
@@ -173,10 +181,10 @@ defmodule OliWeb.SelectSourceTest do
 
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
-      refute has_element?(view, "button[phx-click=\"selected\"]")
+      assert has_element?(view, "h2", "Select source")
+      refute has_element?(view, "button[phx-click=\"source_selection\"]")
       assert has_element?(view, "img[alt=\"course image\"]")
-      assert has_element?(view, "#select_sort")
-      assert has_element?(view, "form[phx-change=\"update_view_type\"")
+      assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert has_element?(view, "h5", "#{section.title}")
     end
@@ -189,18 +197,18 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
+      |> element("input[placeholder=\"Search...\"]")
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button", "Search")
       |> render_click()
 
       assert has_element?(view, "h5", "#{s1.title}")
       refute has_element?(view, "h5", "#{s2.title}")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button#reset_search")
       |> render_click()
 
       assert has_element?(view, "h5", "#{s1.title}")
@@ -214,10 +222,10 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("form[phx-change=\"update_view_type\"")
+      |> element("form#update_view_type")
       |> render_change(%{"view" => %{"type" => "list"}})
 
-      assert has_element?(view, "button[phx-click=\"selected\"]")
+      assert has_element?(view, "button[phx-click=\"source_selection\"]")
       refute has_element?(view, "img[alt=\"course image\"]")
     end
 
@@ -229,7 +237,7 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("form[phx-change=\"sort\"")
+      |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
       assert view
@@ -237,7 +245,7 @@ defmodule OliWeb.SelectSourceTest do
              |> render() =~ "Testing B"
 
       view
-      |> element("form[phx-change=\"sort\"")
+      |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
       assert view
@@ -256,34 +264,41 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("form[phx-change=\"sort\"")
+      |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
       assert has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
       refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element(".page-item a", "2")
       |> render_click()
 
       refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
       assert has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
     end
 
-    test "selects one section correctly", %{conn: conn} do
+    test "successfully goes to the next step", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
 
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
-      view
-      |> element("a[phx-value-id=\"product:#{section.id}\"]")
-      |> render_click()
+      assert has_element?(view, "button[disabled]", "Next step")
 
-      assert_redirected(
-        view,
-        Routes.independent_sections_path(OliWeb.Endpoint, :new, source_id: "product:#{section.id}")
-      )
+      view
+      |> element(".card-deck a:first-child")
+      |> render_click(id: "publication:#{section.id}")
+
+      refute has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, ".card-deck a:first-child .card.shadow-inner")
+
+      view
+      |> element("button", "Next step")
+      |> render_click(%{current_step: 1})
+
+      refute has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Name your course")
     end
 
     test "renders datetimes using the local timezone", context do
@@ -301,25 +316,26 @@ defmodule OliWeb.SelectSourceTest do
     end
   end
 
-  describe "lms instructor index" do
-    setup [:lms_instructor_conn]
+  describe "Independet instructor - Step 1" do
+    setup [:instructor_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       assert has_element?(view, "p", "None exist")
+      assert has_element?(view, "button[disabled]", "Next step")
     end
 
     test "loads correctly when there are sections in cards view", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
-      refute has_element?(view, "button[phx-click=\"selected\"]")
+      assert has_element?(view, "h2", "Select source")
+      refute has_element?(view, "button[phx-click=\"source_selection\"]")
       assert has_element?(view, "img[alt=\"course image\"]")
-      assert has_element?(view, "#select_sort")
-      assert has_element?(view, "form[phx-change=\"update_view_type\"")
+      assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert has_element?(view, "h5", "#{section.title}")
     end
@@ -329,21 +345,21 @@ defmodule OliWeb.SelectSourceTest do
       s1 = insert(:section, %{base_project: project, title: "Testing"})
       s2 = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
+      |> element("input[placeholder=\"Search...\"]")
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button", "Search")
       |> render_click()
 
       assert has_element?(view, "h5", "#{s1.title}")
       refute has_element?(view, "h5", "#{s2.title}")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button#reset_search")
       |> render_click()
 
       assert has_element?(view, "h5", "#{s1.title}")
@@ -354,13 +370,13 @@ defmodule OliWeb.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("form[phx-change=\"update_view_type\"")
+      |> element("form#update_view_type")
       |> render_change(%{"view" => %{"type" => "list"}})
 
-      assert has_element?(view, "button[phx-click=\"selected\"]")
+      assert has_element?(view, "button[phx-click=\"source_selection\"]")
       refute has_element?(view, "img[alt=\"course image\"]")
     end
 
@@ -369,10 +385,10 @@ defmodule OliWeb.SelectSourceTest do
       insert(:section, %{base_project: project, title: "Testing A"})
       insert(:section, %{base_project: project, title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("form[phx-change=\"sort\"")
+      |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
       assert view
@@ -380,7 +396,7 @@ defmodule OliWeb.SelectSourceTest do
              |> render() =~ "Testing B"
 
       view
-      |> element("form[phx-change=\"sort\"")
+      |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
       assert view
@@ -399,37 +415,41 @@ defmodule OliWeb.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
-      |> element("form[phx-change=\"sort\"")
+      |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
       assert has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
       refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element(".page-item a", "2")
       |> render_click()
 
       refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
       assert has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
     end
 
-    test "selects one section correctly", %{conn: conn} do
+    test "successfully goes to the next step", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
-      section_resource = insert(:section_resource, %{section: section})
 
-      Sections.update_section(section, %{
-        root_section_resource_id: section_resource.id
-      })
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element("a[phx-value-id=\"product:#{section.id}\"]")
-      |> render_click()
+      |> element(".card-deck a:first-child")
+      |> render_click(id: "publication:#{section.id}")
 
-      assert_redirected(view, Routes.delivery_path(OliWeb.Endpoint, :index))
-      assert Sections.get_section_by(%{blueprint_id: section.id})
+      refute has_element?(view, "button[disabled]", "Next step")
+      assert has_element?(view, ".card-deck a:first-child .card.shadow-inner")
+
+      view
+      |> element("button", "Next step")
+      |> render_click(%{current_step: 1})
+
+      refute has_element?(view, "h2", "Select source")
+      assert has_element?(view, "h2", "Name your course")
     end
 
     test "renders datetimes using the local timezone", context do
@@ -438,7 +458,7 @@ defmodule OliWeb.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       assert view
              |> element(".card-deck:last-child")
