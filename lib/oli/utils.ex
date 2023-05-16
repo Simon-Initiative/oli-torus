@@ -15,6 +15,8 @@ defmodule Oli.Utils do
     |> String.trim()
   end
 
+  def normalize_whitespace(s), do: s
+
   @doc """
   Generates a random hex string of the given length
   """
