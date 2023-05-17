@@ -1,16 +1,20 @@
 defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
+  import Ecto.Query, warn: false
+  import Oli.Delivery.Attempts.Core
+
   alias Oli.Delivery.Attempts.Hierarchy
 
   alias Oli.Delivery.Attempts.PageLifecycle.{
     VisitContext,
     ReviewContext,
     FinalizationContext,
+    FinalizationSummary,
     AttemptState,
     Lifecycle,
     Hierarchy
   }
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
 
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Common
 
   @moduledoc """
@@ -32,7 +36,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           page_revision: page_revision
         } = context
       ) do
-    if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id do
+    if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id or
+         latest_resource_attempt.lifecycle_state == :evaluated do
       case start(context) do
         {:ok, %AttemptState{} = attempt_state} ->
           {:ok, {:in_progress, attempt_state}}
@@ -49,8 +54,25 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   end
 
   @impl Lifecycle
-  def finalize(%FinalizationContext{} = _context) do
-    {:error, {:unsupported}}
+  def finalize(%FinalizationContext{
+        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt
+      }) do
+    now = DateTime.utc_now()
+
+    # mark resource attempt as evaluated
+    update_resource_attempt(resource_attempt, %{
+      date_evaluated: now,
+      date_submitted: now,
+      lifecycle_state: :evaluated
+    })
+
+    {:ok,
+     %FinalizationSummary{
+       graded: false,
+       lifecycle_state: :evaluated,
+       resource_access: nil,
+       part_attempt_guids: nil
+     }}
   end
 
   @impl Lifecycle
@@ -70,8 +92,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     |> update_progress(resource_attempt)
   end
 
-  defp update_progress({:ok, activity_map}, %ResourceAttempt{resource_access_id: resource_access_id}) do
-
+  defp update_progress({:ok, activity_map}, %ResourceAttempt{
+         resource_access_id: resource_access_id
+       }) do
     number_of_activities = Map.keys(activity_map) |> Enum.count()
 
     Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id)
@@ -91,5 +114,4 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   defp do_update_progress(resource_access, _) do
     Oli.Delivery.Metrics.reset_progress(resource_access)
   end
-
 end

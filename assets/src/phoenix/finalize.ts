@@ -13,26 +13,40 @@ export function finalize(
   sectionSlug: string,
   revisionSlug: string,
   attemptGuid: string,
+  graded: boolean,
   buttonId: string | null = null,
 ) {
-  if (buttonId !== null) {
-    const el: HTMLElement | null = document.getElementById(buttonId);
-    if (el !== null) {
-      (el as HTMLButtonElement).disabled = true;
-      (el as HTMLButtonElement).innerText = 'Submitting...';
-    }
-  }
+  setButtonContent(buttonId, graded ? 'Submitting...' : 'Resetting...');
 
   PageLifecycle.finalizePageAttempt(sectionSlug, revisionSlug, attemptGuid).then((result) => {
-    if (result.result === 'success') {
-      if (result.commandResult === 'failure') {
-        console.info('Page finaliztion failure ' + result.commandResult);
-        console.info('Page finaliztion ' + result.reason);
-      }
+    if (result.result === 'success' && result.commandResult === 'success') {
       location.href = result.redirectTo;
     } else {
-      console.info('Unknown server error');
-      location.reload();
+      if (result.result === 'success' && result.commandResult === 'failure') {
+        console.info('Page finalization failure: ' + result.reason);
+      } else {
+        console.info('Page finalization failure');
+      }
+
+      setButtonContent(buttonId, 'An error occurred. Please reload the page and try again.', {
+        error: true,
+      });
     }
   });
+}
+
+function setButtonContent(id: string | null, content: string, opts?: { error?: boolean }) {
+  if (id !== null) {
+    const el: HTMLElement | null = document.getElementById(id);
+    if (el !== null) {
+      (el as HTMLButtonElement).disabled = true;
+      (el as HTMLButtonElement).innerText = content;
+
+      if (opts?.error) {
+        (el as HTMLButtonElement).classList.add('!text-danger');
+      } else {
+        (el as HTMLButtonElement).classList.remove('!text-danger');
+      }
+    }
+  }
 }

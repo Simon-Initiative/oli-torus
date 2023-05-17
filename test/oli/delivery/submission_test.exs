@@ -11,6 +11,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt, PartAttempt, StudentInput}
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
 
   describe "concurrent activity accesses with two students" do
     setup do
@@ -210,7 +211,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ])
 
       # Make sure user 2 can submit the page
-      {:ok, access} =
+      {:ok, %FinalizationSummary{resource_access: access}} =
         PageLifecycle.finalize(
           section.slug,
           user2_resource_attempt.attempt_guid,
