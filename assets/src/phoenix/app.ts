@@ -30,6 +30,7 @@ import { finalize } from './finalize';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
+import { initCountdownTimer } from './countdownTimer';
 
 (window as any).Alert = Alert;
 (window as any).Button = Button;
@@ -91,6 +92,7 @@ window.OLI = {
   retrieveCookies,
   onReady,
   finalize,
+  initCountdownTimer,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
@@ -166,6 +168,7 @@ declare global {
       retrieveCookies: typeof retrieveCookies;
       onReady: typeof onReady;
       finalize: typeof finalize;
+      initCountdownTimer: typeof initCountdownTimer;
       CreateAccountPopup: (node: any, props: any) => void;
     };
     keepAlive: () => void;

@@ -1156,6 +1156,7 @@ defmodule Oli.Delivery.Sections do
         slug: Slug.generate(:section_resources, revision.title),
         collab_space_config: revision.collab_space_config,
         max_attempts: revision.max_attempts,
+        time_limit: revision.time_limit,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         section_id: section.id
@@ -1936,6 +1937,7 @@ defmodule Oli.Delivery.Sections do
             children: Enum.reverse(children_sr_ids),
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts,
+            time_limit: revision.time_limit,
             scoring_strategy_id: revision.scoring_strategy_id,
             retake_mode: revision.retake_mode,
           })
@@ -1996,6 +1998,7 @@ defmodule Oli.Delivery.Sections do
         updated_at: now,
         collab_space_config: revision.collab_space_config,
         max_attempts: if is_nil(revision.max_attempts) do 0 else revision.max_attempts end,
+        time_limit: revision.time_limit,
         scoring_strategy_id: revision.scoring_strategy_id,
         retake_mode: revision.retake_mode,
       ]

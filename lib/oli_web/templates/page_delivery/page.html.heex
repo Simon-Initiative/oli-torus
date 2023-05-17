@@ -50,6 +50,13 @@ window.userToken = "<%= assigns[:user_token] %>";
   <% end %>
 <% end %>
 
+<%= if @review_mode == false and @time_limit > 0 do %>
+  <div id="countdown_timer_display" class="text-xl font-bold text-center sticky top-0"></div>
+  <script>
+    OLI.initCountdownTimer('countdown_timer_display', 'submit_answers', <%= @time_limit %>, <%= @attempt_start_time %>, <%= @effective_end_time %>, <%= @auto_submit %>);
+  </script>
+<% end %>
+
 <div id="eventIntercept" class="content">
   <%= raw(@html) %>
 </div>

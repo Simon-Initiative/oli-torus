@@ -3,6 +3,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
 
   alias Oli.Delivery.Attempts.AutoSubmit.Worker
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Settings
 
   @moduledoc """
@@ -13,7 +14,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
   def perform(%Oban.Job{
         args: %{"attempt_guid" => attempt_guid, "section_slug" => section_slug, "datashop_session_id" => datashop_session_id}
       }) do
-    PageLifecycle.finalize_attempt(section_slug, attempt_guid, datashop_session_id)
+    PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id)
   end
 
   @doc """
@@ -26,14 +27,14 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
   def maybe_schedule_auto_submit(effective_settings, section_slug, resource_attempt, datashop_session_id) do
 
     if needs_job?(effective_settings) do
-
       # calculate the deadline, taking into account the grace period
-      deadline = Settings.determine_effective_deadline(effective_settings, resource_attempt)
+      deadline = Settings.determine_effective_deadline(resource_attempt, effective_settings)
 
       # ensure that we only schedule for deadlines in the future
-      if deadline <= DateTime.utc_now() do
+      if DateTime.compare(deadline, DateTime.utc_now()) == :lt do
         {:ok, :not_scheduled}
       else
+
         {:ok, job} = %{attempt_guid: resource_attempt.attempt_guid, section_slug: section_slug, datashop_session_id: datashop_session_id}
         |> Worker.new(scheduled_at: deadline)
         |> Oban.insert()
@@ -57,16 +58,6 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
 
   defp has_deadline?(effective_settings) do
     effective_settings.end_date != nil or effective_settings.time_limit > 0
-  end
-
-  defp auto_submit_datetime(es, resource_attempt) do
-
-    case {es.end_date, es.time_limit} do
-      {nil, time_limit} -> nil
-      {end_date, nil} -> end_date
-      {end_date, time_limit} -> end_date + time_limit
-    end
-
   end
 
 end

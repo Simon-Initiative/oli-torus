@@ -119,7 +119,7 @@ defmodule Oli.Delivery.Settings do
   defp check_end_date(%Combined{end_date: end_date} = effective_settings) do
 
     effective_end_date = DateTime.add(end_date, effective_settings.grace_period, :minute)
-    if (effective_end_date > DateTime.utc_now() or effective_settings.late_start == :allow) do
+    if (DateTime.compare(effective_end_date, DateTime.utc_now()) == :gt or effective_settings.late_start == :allow) do
       {:allowed}
     else
       {:end_date_passed}
@@ -128,6 +128,10 @@ defmodule Oli.Delivery.Settings do
 
   def determine_effective_deadline(%ResourceAttempt{} = resource_attempt, %Combined{} = effective_settings) do
     case {effective_settings.end_date, effective_settings.time_limit} do
+
+      # no end date or time limit, no deadline
+      {nil, nil} -> nil
+
       # only a time limit, just add the minutes to the start
       {nil, time_limit} -> DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
 

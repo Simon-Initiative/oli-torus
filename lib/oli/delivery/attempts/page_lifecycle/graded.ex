@@ -18,6 +18,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
+  alias Oli.Delivery.Attempts.Core
 
   import Oli.Delivery.Attempts.Core
   import Ecto.Query, warn: false
@@ -74,7 +75,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   def start(
         %VisitContext{
           page_revision: page_revision,
-          section_slug: section_slug,
           user: user,
           effective_settings: effective_settings,
           section_slug: section_slug,
@@ -98,7 +98,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
         # We possible schedule an auto-submission job (depending on the settings)
         {:ok, resource_attempt} = case Oli.Delivery.Attempts.AutoSubmit.Worker.maybe_schedule_auto_submit(
-          effective_settings, section_slug, resource_attempt.attempt_guid, datashop_session_id) do
+          effective_settings, section_slug, resource_attempt, datashop_session_id) do
             {:ok, :not_scheduled} -> {:ok, resource_attempt}
             {:ok, auto_submit_job_id} -> Core.update_resource_attempt(resource_attempt, %{auto_submit_job_id: auto_submit_job_id})
         end
@@ -128,7 +128,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # Collect all of the part attempt guids for all of the activities that get finalized
     with {:ok, part_attempt_guids} <-
            finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
-         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt),
+         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt, effective_settings),
          {:ok, resource_attempt} <- cancel_pending_auto_submit(resource_attempt) do
       case resource_attempt do
         %ResourceAttempt{lifecycle_state: :evaluated} ->
@@ -192,8 +192,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   defp cancel_pending_auto_submit(%ResourceAttempt{auto_submit_job_id: nil} = ra), do: {:ok, ra}
-  defp cancel_pending_auto_submit(%ResourceAttempt{auto_submit_job_id: job_id} = ra) do
-    Worker.cancel_auto_submit(ra)
+  defp cancel_pending_auto_submit(%ResourceAttempt{} = ra) do
+    Oli.Delivery.Attempts.AutoSubmit.Worker.cancel_auto_submit(ra)
     Core.update_resource_attempt(ra, %{auto_submit_job_id: nil})
   end
 

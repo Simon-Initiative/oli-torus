@@ -311,7 +311,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   defp maybe_finalize_resource_attempt(section, true, resource_attempt_guid) do
 
-    resource_attempt = get_resource_attempt(attempt_guid: resource_attempt_guid)
+    resource_attempt = Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: resource_attempt_guid)
     |> Oli.Repo.preload(:revision)
 
     resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)

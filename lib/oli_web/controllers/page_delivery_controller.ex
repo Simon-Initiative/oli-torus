@@ -322,14 +322,14 @@ defmodule OliWeb.PageDeliveryController do
     # gate that prevents this learning from starting another attempt of this resource
     blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
     new_attempt_allowed = Oli.Delivery.Settings.new_attempt_allowed(effective_settings, attempts_taken, blocking_gates)
-    allow_attempt? = new_attempt_allowed == {:allow}
+    allow_attempt? = new_attempt_allowed == {:allowed}
 
     message =
       case new_attempt_allowed do
         {:blocking_gates} -> Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
         {:no_attempts_remaining} -> "You have no attempts remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
         {:end_date_passed} -> "The deadline for this assignment has passed."
-        {:allow} ->
+        {:allowed} ->
           if effective_settings.max_attempts == 0 do
             "You can take this scored page an unlimited number of times"
           else
@@ -552,6 +552,9 @@ defmodule OliWeb.PageDeliveryController do
 
     resource_attempt = hd(context.resource_attempts)
 
+    # For testing, you can uncomment to introduce a time out
+    # effective_settings = %{effective_settings | time_limit: 2, late_submit: :disallow}
+
     render(
       conn,
       "page.html",
@@ -592,12 +595,20 @@ defmodule OliWeb.PageDeliveryController do
         is_student: context.is_student,
         scheduling_type: section_resource.scheduling_type,
         time_limit: effective_settings.time_limit,
-        effective_deadline: Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings),
+        attempt_start_time: resource_attempt.inserted_at |> to_epoch,
+        effective_end_time: Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings) |> to_epoch,
         end_date: effective_settings.end_date,
+        auto_submit: effective_settings.late_submit == :disallow,
         # TODO: implement reading time estimation
         est_reading_time: nil
       }
     )
+  end
+
+  defp to_epoch(date_time) do
+    date_time
+    |> DateTime.to_unix(:second)
+    |> Kernel.*(1000)
   end
 
   # ----------------------------------------------------------
