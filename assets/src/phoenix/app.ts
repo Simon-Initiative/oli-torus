@@ -26,11 +26,11 @@ import { retrieveCookies } from 'components/cookies/utils';
 import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
+import { initCountdownTimer, initEndDateTimer } from './countdownTimer';
 import { finalize } from './finalize';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
-import { initCountdownTimer, initEndDateTimer} from './countdownTimer';
 
 (window as any).Alert = Alert;
 (window as any).Button = Button;
