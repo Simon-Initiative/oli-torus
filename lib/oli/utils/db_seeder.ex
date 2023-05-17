@@ -23,6 +23,7 @@ defmodule Oli.Seeder do
   alias Oli.Activities
   alias Oli.Delivery.Gating
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Utils.Seeder.StudentAttemptSeed
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
@@ -580,7 +581,8 @@ defmodule Oli.Seeder do
         create_sample_adaptive_page_content(activity_revision.resource_id)
       )
 
-    container_revision = attach_pages_to([page_resource], container.resource, container.revision, publication)
+    container_revision =
+      attach_pages_to([page_resource], container.resource, container.revision, publication)
 
     seed
     |> Map.put(:container, %{resource: container.resource, revision: container_revision})
@@ -1087,7 +1089,7 @@ defmodule Oli.Seeder do
     section_tag = Map.get(selector_tags, :section, :section)
     attempt_tag = Map.get(selector_tags, :attempt, :attempt)
 
-    {:ok, %ResourceAccess{} = resource_access} =
+    {:ok, %FinalizationSummary{resource_access: resource_access}} =
       PageLifecycle.finalize(
         map[section_tag].slug,
         map[attempt_tag].attempt_guid,

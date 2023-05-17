@@ -3,7 +3,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
 
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Activities.Model.{Part}
 
   @content_automatic_by_default %{
@@ -137,10 +137,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     } do
       datashop_session_id_user1 = UUID.uuid4()
 
-      {:ok, %ResourceAccess{} = resource_access1} =
+      {:ok, %FinalizationSummary{resource_access: resource_access1}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
 
-      {:ok, %ResourceAccess{} = resource_access2} =
+      {:ok, %FinalizationSummary{resource_access: resource_access2}} =
         PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)
 
       ra1 = Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
@@ -200,13 +200,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       assert is_nil(ra1.date_evaluated)
       assert is_nil(ra1.date_submitted)
 
-      {:ok, %ResourceAccess{} = resource_access1} =
+      {:ok, %FinalizationSummary{graded: false}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
 
       ra1 = Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
 
       # Attempt 1 should be in an "evaluated" state, with a nil score since it was ungraded
-      assert is_nil(resource_access1.score)
       assert ra1.lifecycle_state == :evaluated
       refute is_nil(ra1.date_evaluated)
       refute is_nil(ra1.date_submitted)

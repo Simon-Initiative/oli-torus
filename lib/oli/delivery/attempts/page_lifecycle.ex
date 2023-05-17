@@ -185,7 +185,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   If the resource attempt is successfully finalized returns:
 
-  `{:ok, %ResourceAccess{}}`
+  `{:ok, %FinalizationSummary{}}`
 
   If the resource attempt has already been finalized:
 
@@ -217,11 +217,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     case result do
       {:ok,
        %FinalizationSummary{
-         resource_access: resource_access,
+         graded: graded,
          part_attempt_guids: part_attempt_guids
-       }} ->
-        Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug)
-        {:ok, resource_access}
+       } = finalization_summary} ->
+        if graded do
+          Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug)
+        end
+
+        {:ok, finalization_summary}
 
       e ->
         e

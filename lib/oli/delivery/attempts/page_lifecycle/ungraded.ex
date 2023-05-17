@@ -14,8 +14,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     Hierarchy
   }
 
-  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
-  alias Oli.Delivery.Attempts.ActivityLifecycle.{Evaluate, Persistence}
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Common
 
   @moduledoc """
@@ -56,49 +55,24 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
 
   @impl Lifecycle
   def finalize(%FinalizationContext{
-        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
-        datashop_session_id: datashop_session_id
+        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt
       }) do
-    # Collect all of the part attempt guids for all of the activities that get finalized
-    with {:ok, part_attempt_guids} <-
-           finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
-         {:ok, resource_attempt} <- mark_resource_attempt_evaluated(resource_attempt) do
-      {:ok,
-       %FinalizationSummary{
-         lifecycle_state: :evaluated,
-         resource_access: Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id),
-         part_attempt_guids: part_attempt_guids
-       }}
-    else
-      error -> error
-    end
-  end
-
-  defp finalize_activity_and_part_attempts(resource_attempt, datashop_session_id) do
-    with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
-           Evaluate.update_part_attempts_and_get_activity_attempts(
-             resource_attempt,
-             datashop_session_id
-           ),
-         {:ok, _} <-
-           Persistence.bulk_update_activity_attempts(
-             Enum.join(activity_attempt_values, ", "),
-             activity_attempt_params
-           ) do
-      {:ok, part_attempt_guids}
-    else
-      error -> error
-    end
-  end
-
-  def mark_resource_attempt_evaluated(resource_attempt) do
     now = DateTime.utc_now()
 
+    # mark resource attempt as evaluated
     update_resource_attempt(resource_attempt, %{
       date_evaluated: now,
       date_submitted: now,
       lifecycle_state: :evaluated
     })
+
+    {:ok,
+     %FinalizationSummary{
+       graded: false,
+       lifecycle_state: :evaluated,
+       resource_access: nil,
+       part_attempt_guids: nil
+     }}
   end
 
   @impl Lifecycle

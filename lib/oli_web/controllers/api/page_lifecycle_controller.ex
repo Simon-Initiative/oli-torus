@@ -1,5 +1,6 @@
 defmodule OliWeb.Api.PageLifecycleController do
   use OliWeb, :controller
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.PageLifecycle
   require Logger
@@ -13,10 +14,29 @@ defmodule OliWeb.Api.PageLifecycleController do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
-      {:ok, %Oli.Delivery.Attempts.Core.ResourceAccess{id: id}} ->
+      {:ok,
+       %FinalizationSummary{
+         graded: true,
+         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id}
+       }} ->
+        # graded resource finalization success
         section = Sections.get_section_by(slug: section_slug)
         PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
+        json(conn, %{
+          result: "success",
+          commandResult: "success",
+          redirectTo:
+            Routes.page_delivery_path(
+              conn,
+              :page,
+              section_slug,
+              revision_slug
+            )
+        })
+
+      {:ok, %FinalizationSummary{graded: false}} ->
+        # ungraded resource finalization success
         json(conn, %{
           result: "success",
           commandResult: "success",

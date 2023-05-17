@@ -123,7 +123,7 @@ defmodule Oli.Utils.Seeder.Attempt do
     [section, resource_attempt, datashop_session_id] =
       unpack(seeds, [section, resource_attempt, datashop_session_id])
 
-    submission_result =
+    {:ok, submission_result} =
       PageLifecycle.finalize(
         section.slug,
         resource_attempt.attempt_guid,
