@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
     field(:state, :map, default: %{})
     field(:content, :map)
     field(:errors, {:array, :string}, default: [])
+    field(:was_late, :boolean, default: false)
 
     belongs_to(:resource_access, Oli.Delivery.Attempts.Core.ResourceAccess)
     belongs_to(:revision, Oli.Resources.Revision)
@@ -34,6 +35,7 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
       :lifecycle_state,
       :content,
       :errors,
+      :was_late,
       :state,
       :date_evaluated,
       :date_submitted,

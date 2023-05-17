@@ -314,32 +314,28 @@ defmodule OliWeb.PageDeliveryController do
 
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
-
     attempts_taken = length(resource_attempts)
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
-    # The call to "max" here accounts for the possibility that a publication could reduce the
-    # number of attempts after a student has exhausted all attempts
-    attempts_remaining = max(effective_settings.max_attempts - attempts_taken, 0)
-
     # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
     # gate that prevents this learning from starting another attempt of this resource
     blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
-    allow_attempt? = (attempts_remaining > 0 or effective_settings.max_attempts == 0) and blocking_gates == []
+    new_attempt_allowed = Oli.Delivery.Settings.new_attempt_allowed?(effective_settings, attempts_taken, blocking_gates)
+    allow_attempt? = new_attempt_allowed == {:allow}
 
     message =
-      cond do
-        blocking_gates != [] ->
-          Oli.Delivery.Gating.details(blocking_gates,
-            format_datetime: format_datetime_fn(conn)
-          )
-
-          effective_settings.max_attempts == 0 ->
-          "You can take this scored page an unlimited number of times"
-
-        true ->
-          "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
+      case new_attempt_allowed do
+        {:blocking_gates} -> Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
+        {:no_attempts_remaining} -> "You have no attempts remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
+        {:end_date_passed} -> "The deadline for this assignment has passed."
+        {:allow} ->
+          if effective_settings.max_attempts == 0 do
+            "You can take this scored page an unlimited number of times"
+          else
+            attempts_remaining = effective_settings.max_attempts - attempts_taken
+            "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
+          end
       end
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
@@ -372,6 +368,7 @@ defmodule OliWeb.PageDeliveryController do
       resource_id: page.resource_id,
       slug: context.page.slug,
       max_attempts: effective_settings.max_attempts,
+      effective_settings: effective_settings,
       section: section,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
