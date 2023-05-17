@@ -1409,6 +1409,209 @@ defmodule Oli.TestHelpers do
     }
   end
 
+  def section_with_deadlines(_context) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+    student = insert(:user, %{family_name: "Example", given_name: "Student1"})
+    student_2 = insert(:user, %{family_name: "Example", given_name: "Student2"})
+
+    # Create graded pages
+    graded_page_1_resource = insert(:resource)
+    graded_page_2_resource = insert(:resource)
+    graded_page_3_resource = insert(:resource)
+    graded_page_4_resource = insert(:resource)
+    graded_page_5_resource = insert(:resource)
+    graded_page_6_resource = insert(:resource)
+
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_1_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_2_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_3_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_4_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_5_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: graded_page_6_resource.id})
+
+    graded_page_1_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 1 - Level 1 (w/ no date)",
+        graded: true,
+        resource: graded_page_1_resource
+      )
+
+    graded_page_2_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 2 - Level 0 (w/ date)",
+        graded: true,
+        purpose: :application,
+        resource: graded_page_2_resource
+      )
+
+    graded_page_3_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 3 - Level 1 (w/ no date)",
+        graded: true,
+        resource: graded_page_3_resource,
+        relates_to: [graded_page_1_resource.id, graded_page_2_resource.id]
+      )
+
+    graded_page_4_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 4 - Level 0 (w/ gating condition)",
+        graded: true,
+        resource: graded_page_4_resource
+      )
+
+    graded_page_5_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 5 - Level 0 (w/ student gating condition)",
+        graded: true,
+        resource: graded_page_5_resource,
+        relates_to: [graded_page_4_resource.id]
+      )
+
+    graded_page_6_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Graded page 6 - Level 0 (w/o student gating condition)",
+        graded: true,
+        resource: graded_page_6_resource
+      )
+
+    # Create a unit inside the project
+    unit_one_resource = insert(:resource)
+
+    insert(:project_resource, %{
+      resource_id: unit_one_resource.id,
+      project_id: project.id
+    })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [graded_page_1_resource.id, graded_page_2_resource.id],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Unit #1",
+        resource: unit_one_resource,
+        slug: "first_unit"
+      })
+
+    # Create root container for the project
+    root_container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: root_container_resource.id})
+
+    root_container_revision =
+      insert(:revision, %{
+        resource: root_container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          unit_one_resource.id,
+          graded_page_3_resource.id,
+          graded_page_4_resource.id,
+          graded_page_5_resource.id,
+          graded_page_6_resource.id
+        ],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publicate project, container, pages and unit
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_container_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: root_container_resource,
+      revision: root_container_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_1_resource,
+      revision: graded_page_1_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_2_resource,
+      revision: graded_page_2_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_3_resource,
+      revision: graded_page_3_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_4_resource,
+      revision: graded_page_4_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_5_resource,
+      revision: graded_page_5_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: graded_page_6_resource,
+      revision: graded_page_6_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: unit_one_resource,
+      revision: unit_one_revision
+    })
+
+    # Create section
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    enroll_user_to_section(student, section, :context_learner)
+    enroll_user_to_section(student_2, section, :context_learner)
+
+    sr1 = Sections.get_section_resource(section.id, graded_page_4_resource.id)
+    sr2 = Sections.get_section_resource(section.id, graded_page_5_resource.id)
+
+    Sections.update_section_resource(sr1, %{scheduling_type: :due_by, end_date: ~U[2023-01-12 13:30:00Z]})
+    Sections.update_section_resource(sr2, %{scheduling_type: :due_by, end_date: ~U[2023-06-05 14:00:00Z]})
+
+    %{
+      section: section,
+      graded_page_1: graded_page_1_revision,
+      graded_page_2: graded_page_2_revision,
+      graded_page_3: graded_page_3_revision,
+      graded_page_4: graded_page_4_revision,
+      graded_page_5: graded_page_5_revision,
+      graded_page_6: graded_page_6_revision
+    }
+  end
+
   def section_without_pages(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -1888,6 +2091,60 @@ defmodule Oli.TestHelpers do
       user: user,
       page_resource_cs: page_resource_cs
     ]
+  end
+
+  def basic_section(_, attrs \\ %{}) do
+    project = insert(:project)
+    container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [],
+        content: %{},
+        deleted: false
+      })
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: DateTime.utc_now(),
+        root_resource_id: container_resource.id
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision
+    })
+
+    section =
+      insert(
+        :section,
+        Map.merge(
+          %{
+            base_project: project,
+            open_and_free: true,
+            type: :enrollable
+          },
+          attrs
+        )
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    section_project_publication =
+      from(
+        spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        where: spp.section_id == ^section.id and spp.project_id == ^project.id,
+        limit: 1
+      )
+      |> Repo.one()
+
+    %{section: section, publication: section_project_publication}
   end
 
   def enroll_user_to_section(user, section, role) do

@@ -105,6 +105,17 @@ defmodule Oli.Delivery.Sections.Section do
 
     belongs_to(:publisher, Oli.Inventories.Publisher)
 
+    # fields for course creation
+    field :class_modality, Ecto.Enum,
+      values: [:never, :online, :in_person, :hybrid],
+      default: :never
+
+    field :class_days, {:array, Ecto.Enum},
+      values: [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday],
+      default: []
+
+    field :course_section_number, :string
+
     timestamps(type: :utc_datetime)
   end
 
@@ -151,7 +162,10 @@ defmodule Oli.Delivery.Sections.Section do
       :publisher_id,
       :display_curriculum_item_numbering,
       :contains_explorations,
-      :required_survey_resource_id
+      :required_survey_resource_id,
+      :class_modality,
+      :class_days,
+      :course_section_number
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required([

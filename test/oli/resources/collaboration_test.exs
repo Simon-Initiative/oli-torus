@@ -148,40 +148,6 @@ defmodule Oli.Resources.CollaborationTest do
       assert returned_section.id == section.id
     end
 
-    test "list_collaborative_spaces_in_section/1 returns collab spaces correctly with posts configured in the delivery setting" do
-      {:ok,
-       %{
-         page_revision_cs: page_revision_cs,
-         page_resource_cs: page_resource_cs,
-         section: section
-       }} = create_project_with_collab_space_and_posts()
-
-      collab_space_config = build(:collab_space_config, status: :archived)
-
-      insert(:delivery_setting,
-        section: section,
-        resource: page_resource_cs,
-        collab_space_config: collab_space_config
-      )
-
-      assert {1,
-              [
-                %{
-                  collab_space_config: returned_collab_space_config,
-                  page: page,
-                  number_of_posts: 2,
-                  number_of_posts_pending_approval: 1,
-                  most_recent_post: _most_recent_post,
-                  section: returned_section
-                }
-              ]} = Collaboration.list_collaborative_spaces_in_section(section.slug)
-
-      assert returned_collab_space_config["status"] |> String.to_atom() == :archived
-      assert returned_collab_space_config["threaded"] == collab_space_config.threaded
-      assert page.resource_id == page_revision_cs.resource_id
-      assert returned_section.id == section.id
-    end
-
     test "list_collaborative_spaces/0 returns correctly when no collab spaces present" do
       assert [] == Collaboration.list_collaborative_spaces()
     end
@@ -247,34 +213,6 @@ defmodule Oli.Resources.CollaborationTest do
                )
 
       assert collab_space_config == returned_cs
-    end
-
-    test "get_collab_space_config_for_page_in_section/2 returns the delivery setting collab space when present" do
-      {:ok,
-       %{
-         page_revision_cs: page_revision_cs,
-         collab_space_config: collab_space_config,
-         section: section
-       }} = create_project_with_collab_space_and_posts()
-
-      ds_collab_space = params_for(:collab_space_config, status: :archived)
-
-      insert(
-        :delivery_setting,
-        section: section,
-        resource: page_revision_cs.resource,
-        collab_space_config: ds_collab_space
-      )
-
-      assert {:ok, %CollabSpaceConfig{} = returned_cs} =
-               Collaboration.get_collab_space_config_for_page_in_section(
-                 page_revision_cs.slug,
-                 section.slug
-               )
-
-      refute collab_space_config == returned_cs
-      refute collab_space_config.status == returned_cs.status
-      assert ds_collab_space.status == returned_cs.status
     end
 
     test "get_collab_space_config_for_page_in_project/2 returns nil when no collab space is present" do

@@ -1,7 +1,8 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
-  alias Oli.Delivery.{DeliverySetting, Sections}
+  alias Oli.Delivery.Settings.StudentException
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
@@ -28,7 +29,7 @@ defmodule Oli.Delivery do
     Publishing.retrieve_visible_sources(user, institution)
   end
 
-  def create_section(source_id, user, lti_params) do
+  def create_section(source_id, user, lti_params, attrs \\ %{}) do
     # guard against creating a new section if one already exists
     case Sections.get_section_from_lti_params(lti_params) do
       nil ->
@@ -43,13 +44,13 @@ defmodule Oli.Delivery do
         {create_fn, id} =
           case source_id do
             "publication:" <> publication_id ->
-              {&create_from_publication/6, String.to_integer(publication_id)}
+              {&create_from_publication/7, String.to_integer(publication_id)}
 
             "product:" <> product_id ->
-              {&create_from_product/6, String.to_integer(product_id)}
+              {&create_from_product/7, String.to_integer(product_id)}
           end
 
-        create_fn.(id, user, institution, lti_params, deployment, registration)
+        create_fn.(id, user, institution, lti_params, deployment, registration, attrs)
 
       section ->
         # a section already exists, redirect to index
@@ -57,7 +58,15 @@ defmodule Oli.Delivery do
     end
   end
 
-  defp create_from_product(product_id, user, institution, lti_params, deployment, registration) do
+  defp create_from_product(
+         product_id,
+         user,
+         institution,
+         lti_params,
+         deployment,
+         registration,
+         attrs
+       ) do
     Repo.transaction(fn ->
       blueprint = Oli.Delivery.Sections.get_section!(product_id)
 
@@ -73,21 +82,27 @@ defmodule Oli.Delivery do
       project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
 
       {:ok, section} =
-        Oli.Delivery.Sections.Blueprint.duplicate(blueprint, %{
-          type: :enrollable,
-          title: lti_params[@context_claims]["title"],
-          context_id: lti_params[@context_claims]["id"],
-          institution_id: institution.id,
-          lti_1p3_deployment_id: deployment.id,
-          blueprint_id: blueprint.id,
-          has_experiments: project.has_experiments,
-          amount: amount,
-          pay_by_institution: blueprint.pay_by_institution,
-          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params, registration),
-          nrps_enabled: NRPS.nrps_enabled?(lti_params),
-          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
-        })
+        Oli.Delivery.Sections.Blueprint.duplicate(
+          blueprint,
+          Map.merge(
+            %{
+              type: :enrollable,
+              title: lti_params[@context_claims]["title"],
+              context_id: lti_params[@context_claims]["id"],
+              institution_id: institution.id,
+              lti_1p3_deployment_id: deployment.id,
+              blueprint_id: blueprint.id,
+              has_experiments: project.has_experiments,
+              amount: amount,
+              pay_by_institution: blueprint.pay_by_institution,
+              grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+              line_items_service_url: AGS.get_line_items_url(lti_params, registration),
+              nrps_enabled: NRPS.nrps_enabled?(lti_params),
+              nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
+            },
+            attrs
+          )
+        )
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
@@ -103,7 +118,8 @@ defmodule Oli.Delivery do
          institution,
          lti_params,
          deployment,
-         registration
+         registration,
+         attrs
        ) do
     Repo.transaction(fn ->
       publication = Publishing.get_publication!(publication_id) |> Repo.preload(:project)
@@ -115,20 +131,25 @@ defmodule Oli.Delivery do
         end
 
       {:ok, section} =
-        Sections.create_section(%{
-          type: :enrollable,
-          title: lti_params[@context_claims]["title"],
-          context_id: lti_params[@context_claims]["id"],
-          institution_id: institution.id,
-          base_project_id: publication.project_id,
-          has_experiments: publication.project.has_experiments,
-          lti_1p3_deployment_id: deployment.id,
-          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params, registration),
-          nrps_enabled: NRPS.nrps_enabled?(lti_params),
-          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
-          customizations: customizations
-        })
+        Sections.create_section(
+          Map.merge(
+            %{
+              type: :enrollable,
+              title: lti_params[@context_claims]["title"],
+              context_id: lti_params[@context_claims]["id"],
+              institution_id: institution.id,
+              base_project_id: publication.project_id,
+              has_experiments: publication.project.has_experiments,
+              lti_1p3_deployment_id: deployment.id,
+              grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+              line_items_service_url: AGS.get_line_items_url(lti_params, registration),
+              nrps_enabled: NRPS.nrps_enabled?(lti_params),
+              nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
+              customizations: customizations
+            },
+            attrs
+          )
+        )
 
       {:ok, %Section{} = section} = Sections.create_section_resources(section, publication)
       {:ok, _} = Sections.rebuild_contained_pages(section)
@@ -162,7 +183,7 @@ defmodule Oli.Delivery do
       []
   """
   def search_delivery_settings(filter) do
-    from(ds in DeliverySetting, where: ^filter_conditions(filter))
+    from(ds in StudentException, where: ^filter_conditions(filter))
     |> Repo.all()
   end
 
@@ -172,14 +193,14 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> create_delivery_setting(%{field: new_value})
-      {:ok, %DeliverySetting{}}
+      {:ok, %StudentException{}}
 
       iex> create_delivery_setting(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
   def create_delivery_setting(attrs \\ %{}) do
-    %DeliverySetting{}
-    |> DeliverySetting.changeset(attrs)
+    %StudentException{}
+    |> StudentException.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -189,13 +210,13 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> get_delivery_setting_by(%{id: 1})
-      %DeliverySetting{}
+      %StudentException{}
 
       iex> get_delivery_setting_by(%{id: 123})
       nil
   """
   def get_delivery_setting_by(clauses),
-    do: Repo.get_by(DeliverySetting, clauses)
+    do: Repo.get_by(StudentException, clauses)
 
   @doc """
   Updates a delivery setting.
@@ -203,14 +224,14 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> update_delivery_setting(delivery_setting, %{field: new_value})
-      {:ok, %DeliverySetting{}}
+      {:ok, %StudentException{}}
 
       iex> update_delivery_setting(delivery_setting, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_delivery_setting(%DeliverySetting{} = delivery_setting, attrs) do
+  def update_delivery_setting(%StudentException{} = delivery_setting, attrs) do
     delivery_setting
-    |> DeliverySetting.changeset(attrs)
+    |> StudentException.changeset(attrs)
     |> Repo.update()
   end
 
@@ -220,10 +241,10 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> change_delivery_setting(delivery_setting)
-      %Ecto.Changeset{data: %DeliverySetting{}}
+      %Ecto.Changeset{data: %StudentException{}}
   """
-  def change_delivery_setting(%DeliverySetting{} = delivery_setting, attrs \\ %{}) do
-    DeliverySetting.changeset(delivery_setting, attrs)
+  def change_delivery_setting(%StudentException{} = delivery_setting, attrs \\ %{}) do
+    StudentException.changeset(delivery_setting, attrs)
   end
 
   @doc """
@@ -233,7 +254,7 @@ defmodule Oli.Delivery do
   ## Examples
 
       iex> upsert_delivery_setting(%{field: new_value})
-      {:ok, %DeliverySetting{}}
+      {:ok, %StudentException{}}
 
       iex> upsert_delivery_setting(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
@@ -305,7 +326,7 @@ defmodule Oli.Delivery do
     |> select([r, s], %{
       resource_access_id: r.id,
       section_id: r.section_id,
-      project_id: s.base_project_id,
+      project_id: s.base_project_id
     })
     |> Repo.one()
   end

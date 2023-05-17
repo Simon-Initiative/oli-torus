@@ -41,6 +41,7 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
     """
   end
 
+  defp scheduling_type_label(:due_by), do: "Due by"
   defp scheduling_type_label(:read_by), do: "Read by"
   defp scheduling_type_label(:inclass_activity), do: "In-class activity"
 

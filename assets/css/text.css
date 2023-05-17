@@ -17,3 +17,8 @@ small.torus-small {
 p.torus-p {
   @apply text-delivery-body-color dark:text-delivery-body-color-dark font-normal m-0;
 }
+
+span[required]:after, label[required]:after {
+  @apply text-delivery-primary font-bold;
+  content:" *";
+}

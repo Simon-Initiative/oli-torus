@@ -14,6 +14,7 @@ defmodule OliWeb.Common.Listing do
   prop additional_table_class, :string, default: "table-sm"
   prop cards_view, :boolean, default: false
   prop selected, :event
+  prop selected_target, :any, default: nil
   prop with_body, :boolean, default: false
   slot default
 
@@ -44,11 +45,11 @@ defmodule OliWeb.Common.Listing do
   defp render_table(assigns) do
     ~F"""
       {#if @cards_view}
-        <CardListing model={@table_model} selected={@selected}/>
+        <CardListing model={@table_model} selected={@selected} selected_target={@selected_target} />
       {#elseif @with_body}
         <#slot />
       {#else}
-        <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class}/>
+        <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class} select={nil}/>
       {/if}
     """
   end

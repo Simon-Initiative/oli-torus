@@ -3,8 +3,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Publishing
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver, Publication, PublishedResource}
   alias Oli.Publishing.Publications.Publication
-  alias Oli.Delivery
-  alias Oli.Delivery.{DeliverySetting, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Resources
   alias Oli.Resources.{ResourceType, Revision}
@@ -94,14 +93,10 @@ defmodule Oli.Resources.Collaboration do
       on:
         published_resource.publication_id == section_project_publication.publication_id and
           published_resource.revision_id == page_revision.id,
-      left_join: delivery_setting in DeliverySetting,
-      on:
-        delivery_setting.section_id == section.id and
-          delivery_setting.resource_id == page_revision.resource_id,
       where:
         section.slug == ^section_slug and
           (not is_nil(page_revision.collab_space_config) or
-             not is_nil(delivery_setting.collab_space_config)),
+             not is_nil(section_resource.collab_space_config)),
       select: %{
         id: fragment("concat(?, '_', ?)", section.id, page_revision.id),
         section: section,
@@ -109,9 +104,9 @@ defmodule Oli.Resources.Collaboration do
         collab_space_config:
           fragment(
             "case when ? is null then ? else ? end",
-            delivery_setting.collab_space_config,
+            section_resource.collab_space_config,
             page_revision.collab_space_config,
-            delivery_setting.collab_space_config
+            section_resource.collab_space_config
           ),
         number_of_posts:
           fragment(
@@ -222,17 +217,12 @@ defmodule Oli.Resources.Collaboration do
            resource_id: resource_id,
            collab_space_config: revision_collab_space_config
          } <- DeliveryResolver.from_revision_slug(section_slug, page_slug) do
-      {:ok,
-       case Delivery.get_delivery_setting_by(%{
-              section_id: section_id,
-              resource_id: resource_id
-            }) do
-         nil ->
-           revision_collab_space_config
 
-         %DeliverySetting{collab_space_config: ds_collab_space_config} ->
-           ds_collab_space_config
-       end}
+      case Sections.get_section_resource(section_id, resource_id) do
+        %{collab_space_config: nil} -> {:ok, revision_collab_space_config}
+        %{collab_space_config: sr_collab_space_config} -> {:ok, sr_collab_space_config}
+      end
+
     else
       _ -> {:error, :not_found}
     end

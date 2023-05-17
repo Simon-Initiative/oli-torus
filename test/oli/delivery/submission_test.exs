@@ -93,6 +93,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       # Open the graded page as user 1 to get the prologue
       user1_page_context =
         PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
@@ -113,6 +115,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -172,6 +175,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user2,
           user2,
+          effective_settings,
           activity_provider
         )
 
@@ -402,6 +406,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       # User1 has a started resource attempt, so it should be "in progress"
       {:ok, {:in_progress, _resource_attempt}} =
         PageLifecycle.visit(
@@ -409,6 +415,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -437,6 +444,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
     end
@@ -451,12 +459,15 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id_user1 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       {:ok, {:in_progress, _resource_attempt}} =
         PageLifecycle.visit(
           revision,
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -496,6 +507,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
+      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
       # User 1
       {:ok, {:in_progress, resource_attempt_user1}} =
         PageLifecycle.visit(
@@ -503,6 +516,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -530,6 +544,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user1,
           user1,
+          effective_settings,
           activity_provider
         )
 
@@ -540,6 +555,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user2,
           user2,
+          effective_settings,
           activity_provider
         )
 
@@ -570,6 +586,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           section.slug,
           datashop_session_id_user2,
           user2,
+          effective_settings,
           activity_provider
         )
 

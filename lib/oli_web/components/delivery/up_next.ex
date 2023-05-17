@@ -25,6 +25,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
                 title={activity.title}
                 percent_complete={activity.progress}
                 complete_by_date={format_date(activity.end_date)}
+                scheduling_type={activity.scheduling_type}
                 open_href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, activity.slug)}
                 percent_students_completed={Float.floor(activity.completion_percentage) |> trunc()}
                 />
@@ -43,6 +44,8 @@ defmodule OliWeb.Components.Delivery.UpNext do
   attr(:open_href, :string, required: true)
   attr(:percent_students_completed, :integer, required: true)
   attr(:request_extension_href, :string)
+  attr(:scheduling_type, :string)
+
 
   def card(assigns) do
     ~H"""
@@ -58,7 +61,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
       <.progress_bar width="200px" percent={@percent_complete} />
       <div class="my-2 flex flex-row">
         <div class="flex-1 bg-delivery-header-700 rounded p-2 text-center">
-          Read by <%= @complete_by_date %>
+          <%= @scheduling_type %> <%= @complete_by_date %>
         </div>
         <div class="text-white">
           <a href={@open_href} class="btn text-white hover:text-white inline-flex ml-2 bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>

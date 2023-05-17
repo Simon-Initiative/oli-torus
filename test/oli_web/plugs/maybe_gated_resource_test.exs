@@ -206,7 +206,10 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
          } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      Oli.Resources.update_revision(revision, %{graded: true, max_attempts: 2})
+      Oli.Resources.update_revision(revision, %{graded: true})
+
+      Sections.get_section_resource(section.id, revision.resource_id)
+      |> Sections.update_section_resource(%{max_attempts: 2})
 
       ra = Core.track_access(revision.resource_id, section.id, user.id)
       Core.update_resource_access(ra, %{score: 5, out_of: 10})
