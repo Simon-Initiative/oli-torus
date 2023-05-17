@@ -105,7 +105,6 @@ $element-margin-bottom: 1.5em;
     list-style: disc;
     // Nested lists without a style specified go disc->circle->square then back to disc for the rest as they indent
     ul {
-      margin-bottom: 0px; // Nested lists should not have margin
       list-style: circle;
       ul {
         list-style: square;
@@ -117,9 +116,6 @@ $element-margin-bottom: 1.5em;
   }
 
   ol {
-    ol {
-      margin-bottom: 0px; // Nested lists should not have margin
-    }
     padding-left: 1.5em;
     margin-bottom: $element-margin-bottom;
     list-style: decimal;
@@ -128,6 +124,14 @@ $element-margin-bottom: 1.5em;
   ul li,
   ol li {
     margin-bottom: 0.25rem;
+  }
+
+  ul,
+  ol {
+    ul,
+    ol {
+      margin-bottom: 0px; // Nested lists should not have bottom margin
+    }
   }
 
   .dl-title {
