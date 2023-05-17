@@ -451,20 +451,17 @@ $element-margin-bottom: 1.5em;
   }
 
   .popup-anchor {
-    color: var(--color-green-600);
+    color: var(--color-emerald-600);
     font-style: italic;
     cursor: pointer;
     font-weight: bold;
-  }
 
-  .popup-click {
-    text-decoration: underline;
+    &.popup-click {
+      text-decoration: underline;
+    }
   }
 
   .popup-content {
-    &.show {
-      max-width: 100% !important;
-    }
     p:last-of-type {
       margin: 0;
     }
@@ -473,7 +470,7 @@ $element-margin-bottom: 1.5em;
   .popup-anchor,
   span.term {
     font-weight: bold;
-    color: #63a372;
+    color: var(--color-emerald-600);
     font-style: italic;
   }
 

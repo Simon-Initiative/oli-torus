@@ -52,7 +52,10 @@ export const PopupEditor = (props: Props) => {
       }
     >
       <span>
-        <span {...props.attributes} className="popup-anchor">
+        <span
+          {...props.attributes}
+          className={`popup-anchor${props.model.trigger === 'hover' ? '' : ' popup-click'}`}
+        >
           <InlineChromiumBugfix />
           {props.children}
           <InlineChromiumBugfix />
