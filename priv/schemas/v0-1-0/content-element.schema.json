@@ -450,7 +450,7 @@
                 "$ref": "#/$defs/inline"
               },
               {
-                "$ref": "#/$defs/list"
+                "$ref": "#/$defs/block"
               }
             ]
           }

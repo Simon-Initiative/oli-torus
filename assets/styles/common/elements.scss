@@ -126,6 +126,14 @@ $element-margin-bottom: 1.5em;
     margin-bottom: 0.25rem;
   }
 
+  ul,
+  ol {
+    ul,
+    ol {
+      margin-bottom: 0px; // Nested lists should not have bottom margin
+    }
+  }
+
   .dl-title {
     color: var(--color-green-400);
     font-size: 1.3em;

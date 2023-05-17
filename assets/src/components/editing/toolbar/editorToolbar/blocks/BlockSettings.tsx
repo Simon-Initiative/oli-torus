@@ -32,8 +32,14 @@ export const BlockSettings = (_props: BlockSettingProps) => {
     'Code Block': CodeBlock,
   };
 
-  if (component[type] !== undefined) {
-    return <Toolbar.Group>{(component[type] as any)()}</Toolbar.Group>;
+  const Component = component[type];
+
+  if (Component) {
+    return (
+      <Toolbar.Group>
+        <Component />
+      </Toolbar.Group>
+    );
   }
   return null;
 };
