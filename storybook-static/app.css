@@ -5743,6 +5743,11 @@ table.table-striped tbody tr:nth-child(even) {
   letter-spacing: 0.025em;
 }
 
+.\!text-danger {
+  --tw-text-opacity: 1 !important;
+  color: rgb(231 76 60 / var(--tw-text-opacity)) !important;
+}
+
 .\!text-delivery-primary {
   --tw-text-opacity: 1 !important;
   color: rgb(59 118 211 / var(--tw-text-opacity)) !important;
