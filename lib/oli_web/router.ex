@@ -893,6 +893,18 @@ defmodule OliWeb.Router do
     get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
   end
 
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery_protected
+    ])
+
+    live_session :load_section,
+      on_mount: [Oli.LiveSessionPlugs.SetSection] do
+      live("/:section_slug", Delivery.StudentOnboarding.Wizard)
+    end
+  end
+
   ### Sections - Management
   scope "/sections", OliWeb do
     pipe_through([
@@ -902,7 +914,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    live("/:section_slug", Sections.OverviewView)
+    # live("/:section_slug", Sections.OverviewView)
 
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
