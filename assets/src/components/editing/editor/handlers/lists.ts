@@ -62,8 +62,9 @@ export function handleIndent(editor: SlateEditor, e?: KeyboardEvent) {
     const [current, listItemPath] = match;
     const start = SlateEditor.start(editor, listItemPath);
 
-    if (!Point.equals(editor.selection.anchor, start)) {
+    if (e && !Point.equals(editor.selection.anchor, start)) {
       // Only indent if the cursor is at the start of the list item.
+      // Only need to check this if it's a keyboard based operation, if the user is clicking the toolbar button allow it anywhere.
       return;
     }
 
@@ -108,20 +109,22 @@ export function handleOutdent(editor: SlateEditor, e?: KeyboardEvent) {
       const [, listItemPath] = match;
       const start = SlateEditor.start(editor, listItemPath);
 
-      // If the cursor is at the beginning of a list item
-      if (Point.equals(editor.selection.anchor, start)) {
-        // Check to see if the list item is in a nested list
-        const parentMatch = SlateEditor.parent(editor, listItemPath);
-        const [parent, parentPath] = parentMatch;
-        const grandParentMatch = SlateEditor.parent(editor, parentPath);
-        const [grandParent] = grandParentMatch;
+      if (e && !Point.equals(editor.selection.anchor, start)) {
+        // If the cursor is at the beginning of a list item
+        // Only need to check this if it's a keyboard based operation, if the user is clicking the toolbar button allow it anywhere.
+        return;
+      }
+      // Check to see if the list item is in a nested list
+      const parentMatch = SlateEditor.parent(editor, listItemPath);
+      const [parent, parentPath] = parentMatch;
+      const grandParentMatch = SlateEditor.parent(editor, parentPath);
+      const [grandParent] = grandParentMatch;
 
-        if (isList(grandParent) && isList(parent)) {
-          // Lift the current node up one level, effectively promoting
-          // it up as a list item into the parent list
-          Transforms.liftNodes(editor, { at: listItemPath });
-          e?.preventDefault();
-        }
+      if (isList(grandParent) && isList(parent)) {
+        // Lift the current node up one level, effectively promoting
+        // it up as a list item into the parent list
+        Transforms.liftNodes(editor, { at: listItemPath });
+        e?.preventDefault();
       }
     }
   }
@@ -153,11 +156,10 @@ function handleEnter(editor: SlateEditor, e: KeyboardEvent) {
     if (listItemMatch) {
       const [listItemNode, listItemPath] = listItemMatch;
       if (isEmpty(listItemNode) && isLastListItem(editor, listItemPath)) {
-        // TODO: We should only terminate if it's the last list item, right now, this does weird things when hitting enter on an empty LI in the middle of the list.
-        console.info('Terminate list');
+        // console.info('Terminate list');
         terminateList(editor, listItemPath, e);
       } else {
-        console.info('append list item');
+        // console.info('append list item');
         createListItem(editor, listItemPath, e);
       }
     }
@@ -194,33 +196,28 @@ const createListItem = (editor: SlateEditor, listItemPath: Path, e: KeyboardEven
 
     // If the cursor is at the beginning of a list item
     if (isAtStartOfListItem(editor, listItemPath)) {
-      console.info('Inserting LI before current LI', listItemPath);
+      // console.info('Inserting LI before current LI', listItemPath);
       Transforms.insertNodes(editor, Model.li(), { at: listItemPath });
     } else if (isAtEndOfListItem(editor, listItemPath)) {
-      console.info('Inserting LI after current LI', listItemPath);
+      // console.info('Inserting LI after current LI', listItemPath);
       Editor.withoutNormalizing(editor, () => {
         const newListItemPath = Path.next(listItemPath);
         Transforms.insertNodes(editor, Model.li(), { at: newListItemPath, select: true });
       });
     } else {
-      console.info('MID?');
       const nearestBlock = findNearestBlock(editor);
       if (!nearestBlock) return;
-      console.info({ nearestBlock });
       Editor.withoutNormalizing(editor, () => {
         const [, /*bottomElement*/ bottomElementPath] = nearestBlock;
         const newListItemPath = Path.next(listItemPath);
-        console.info('Children start', editor.children[1]);
 
         // Split the current block into two blocks, the second one gets moved into the new LI below.
         Transforms.splitNodes(editor);
-        console.info('Children after split', editor.children[1]);
 
         // A new list item that we'll move content into.
         Transforms.insertNodes(editor, Model.li(), {
           at: newListItemPath,
         });
-        console.info('Children after insert li', editor.children[1]);
 
         const newlySplitNodePath = Path.next(bottomElementPath);
         let count = 0;
@@ -240,7 +237,6 @@ const createListItem = (editor: SlateEditor, listItemPath: Path, e: KeyboardEven
             at: newlySplitNodePath,
             to: [...newListItemPath, count++],
           });
-          console.info('Children after move', editor.children[1]);
         }
 
         Transforms.removeNodes(editor, { at: [...newListItemPath, count] }); // Get rid of the empty paragraph, can't do this before moving in nodes or slate errors.
@@ -248,7 +244,6 @@ const createListItem = (editor: SlateEditor, listItemPath: Path, e: KeyboardEven
           path: [...newListItemPath, 0, 0],
           offset: 0,
         }); // Put cursor in right spot
-        console.info('Children after trim', editor.children[1]);
       });
     }
   }
