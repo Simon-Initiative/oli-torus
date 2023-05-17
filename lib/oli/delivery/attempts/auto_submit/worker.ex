@@ -35,8 +35,12 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
         {:ok, :not_scheduled}
       else
 
+        # we schedule the auto submit job 1 minute past the actual deadline to allow for a client side
+        # auto submit to take place and cancel this job.
+        deadline_with_slack = DateTime.add(deadline, 1, :minute)
+
         {:ok, job} = %{attempt_guid: resource_attempt.attempt_guid, section_slug: section_slug, datashop_session_id: datashop_session_id}
-        |> Worker.new(scheduled_at: deadline)
+        |> Worker.new(scheduled_at: deadline_with_slack)
         |> Oban.insert()
 
         {:ok, job.id}
