@@ -550,6 +550,8 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, {previous, next, current}, _} =
       PreviousNextIndex.retrieve(section, context.page.resource_id)
 
+    resource_attempt = hd(context.resource_attempts)
+
     render(
       conn,
       "page.html",
@@ -573,8 +575,8 @@ defmodule OliWeb.PageDeliveryController do
         html: html,
         objectives: context.objectives,
         slug: context.page.slug,
-        resource_attempt: hd(context.resource_attempts),
-        attempt_guid: hd(context.resource_attempts).attempt_guid,
+        resource_attempt: resource_attempt,
+        attempt_guid: resource_attempt.attempt_guid,
         latest_attempts: context.latest_attempts,
         section: section,
         children: context.page.children,
@@ -589,6 +591,8 @@ defmodule OliWeb.PageDeliveryController do
         is_instructor: context.is_instructor,
         is_student: context.is_student,
         scheduling_type: section_resource.scheduling_type,
+        time_limit: effective_settings.time_limit,
+        effective_deadline: Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings),
         end_date: effective_settings.end_date,
         # TODO: implement reading time estimation
         est_reading_time: nil
