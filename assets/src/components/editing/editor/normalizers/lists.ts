@@ -16,7 +16,7 @@ export const normalize = (
     if (parent.type === 'li') {
       if (Text.isText(node)) {
         Transforms.wrapNodes(editor, Model.p(), { at: path });
-        console.warn('🔥 Normalizing content: Wrapping text in list item with paragraph');
+        console.warn('Normalizing content: Wrapping text in list item with paragraph');
         return true;
       }
     }
