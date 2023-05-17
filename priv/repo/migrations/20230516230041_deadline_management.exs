@@ -4,6 +4,7 @@ defmodule Oli.Repo.Migrations.DeadlineManagement do
   def up do
     alter table(:resource_attempts) do
       add :was_late, :boolean, default: false, null: false
+      add :auto_submit_job_id, :integer
     end
     alter table(:resource_accesses) do
       add :was_late, :boolean, default: false, null: false
@@ -13,6 +14,7 @@ defmodule Oli.Repo.Migrations.DeadlineManagement do
   def down do
     alter table(:resource_attempts) do
       remove :was_late, :boolean
+      remove :auto_submit_job_id, :boolean
     end
     alter table(:resource_accesses) do
       remove :was_late, :boolean

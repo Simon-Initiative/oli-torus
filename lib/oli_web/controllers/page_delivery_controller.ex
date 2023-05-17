@@ -321,7 +321,7 @@ defmodule OliWeb.PageDeliveryController do
     # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
     # gate that prevents this learning from starting another attempt of this resource
     blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
-    new_attempt_allowed = Oli.Delivery.Settings.new_attempt_allowed?(effective_settings, attempts_taken, blocking_gates)
+    new_attempt_allowed = Oli.Delivery.Settings.new_attempt_allowed(effective_settings, attempts_taken, blocking_gates)
     allow_attempt? = new_attempt_allowed == {:allow}
 
     message =

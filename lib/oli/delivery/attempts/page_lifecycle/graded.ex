@@ -75,7 +75,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         %VisitContext{
           page_revision: page_revision,
           section_slug: section_slug,
-          user: user
+          user: user,
+          effective_settings: effective_settings,
+          section_slug: section_slug,
+          datashop_session_id: datashop_session_id
         } = context
       ) do
     {_, resource_attempts} =
@@ -90,7 +93,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     case {page_revision.max_attempts > length(resource_attempts) or
             page_revision.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
       {true, false} ->
+
         {:ok, resource_attempt} = Hierarchy.create(context)
+
+        # We possible schedule an auto-submission job (depending on the settings)
+        {:ok, resource_attempt} = case Oli.Delivery.Attempts.AutoSubmit.Worker.maybe_schedule_auto_submit(
+          effective_settings, section_slug, resource_attempt.attempt_guid, datashop_session_id) do
+            {:ok, :not_scheduled} -> {:ok, resource_attempt}
+            {:ok, auto_submit_job_id} -> Core.update_resource_attempt(resource_attempt, %{auto_submit_job_id: auto_submit_job_id})
+        end
+
         AttemptState.fetch_attempt_state(resource_attempt, page_revision)
 
       {true, true} ->
@@ -116,7 +128,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # Collect all of the part attempt guids for all of the activities that get finalized
     with {:ok, part_attempt_guids} <-
            finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
-         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt) do
+         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt),
+         {:ok, resource_attempt} <- cancel_pending_auto_submit(resource_attempt) do
       case resource_attempt do
         %ResourceAttempt{lifecycle_state: :evaluated} ->
           case roll_up_resource_attempts_to_access(
@@ -178,11 +191,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  def roll_up_activities_to_resource_attempt(resource_attempt_guid)
-      when is_binary(resource_attempt_guid) do
-    get_resource_attempt(attempt_guid: resource_attempt_guid)
-    |> Oli.Repo.preload(:revision)
-    |> roll_up_activities_to_resource_attempt
+  defp cancel_pending_auto_submit(%ResourceAttempt{auto_submit_job_id: nil} = ra), do: {:ok, ra}
+  defp cancel_pending_auto_submit(%ResourceAttempt{auto_submit_job_id: job_id} = ra) do
+    Worker.cancel_auto_submit(ra)
+    Core.update_resource_attempt(ra, %{auto_submit_job_id: nil})
   end
 
   def roll_up_activities_to_resource_attempt(resource_attempt, %Combined{} = effective_settings) do
