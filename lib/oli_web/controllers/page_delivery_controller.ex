@@ -605,6 +605,7 @@ defmodule OliWeb.PageDeliveryController do
     )
   end
 
+  defp to_epoch(nil), do: nil
   defp to_epoch(date_time) do
     date_time
     |> DateTime.to_unix(:second)
