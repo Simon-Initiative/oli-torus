@@ -143,7 +143,7 @@ defmodule OliWeb.Projects.OverviewLive do
                   form: f.id %>
               </div>
             </div>
-            <div class="input-group mb-3">
+            <div id="recaptcha" class="input-group mb-3" phx-update="ignore">
               <div class="g-recaptcha" data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]} />
             </div>
             <%= error_tag f, :captcha %>
