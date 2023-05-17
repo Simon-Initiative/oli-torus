@@ -153,7 +153,13 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   def render_step(%{current_step_label: @explorations_step} = assigns) do
     ~H"""
-      <div>Explorations</div>
+      <.header section={@section}>
+        <div class="h-full text-center">
+          <h2>Exploration Activities</h2>
+          <span class="text-gray-500 text-sm">Explorations dig into how the course subject matter affects you</span>
+          <p class="mt-14">You’ll have access to both simulations and digital versions of tools used in the real world to help you explore the topics brought up in the course from a real-world perspective.</p>
+        </div>
+      </.header>
     """
   end
 
@@ -203,6 +209,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   end
 
   defp has_explorations(section) do
-    section.contains_explorations
+    # section.contains_explorations
+    true
   end
 end
