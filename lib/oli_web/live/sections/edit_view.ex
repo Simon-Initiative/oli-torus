@@ -86,7 +86,7 @@ defmodule OliWeb.Sections.EditView do
         {#if @section.open_and_free}
           <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
         {#else}
-          <LtiSettings section={@section} id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
+          <LtiSettings section={@section}/>
         {/if}
 
         <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)}/>
