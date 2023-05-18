@@ -1,11 +1,11 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
-  alias Oli.Delivery.Metrics
-  alias OliWeb.Components.Delivery.InstructorDashboard
-  alias alias Oli.Delivery.Sections
+  use OliWeb.Common.Modal
+
+  alias Oli.Delivery.{Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
-  use OliWeb.Common.Modal
+  alias OliWeb.Components.Delivery.InstructorDashboard
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -20,6 +20,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(params: params, active_tab: :students)
       |> assign(students: get_students(socket.assigns.section, params))
+      |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
 
     {:noreply, socket}
   end
@@ -86,6 +87,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       context={@context}
       section={@section}
       students={@students}
+      dropdown_options={@dropdown_options}
       />
     """
   end
@@ -316,5 +318,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         engagement: Enum.random(["Low", "Medium", "High", "Not enough data"])
       })
     end)
+  end
+
+  defp get_dropdown_options(section) do
+    case section.requires_payment do
+      true ->
+        [
+          %{value: :enrolled, label: "Enrolled"},
+          %{value: :suspended, label: "Suspended"},
+          %{value: :paid, label: "Paid"},
+          %{value: :not_paid, label: "Not Paid"},
+          %{value: :grace_period, label: "Grace Period"},
+          %{value: :non_students, label: "Non-Students"}
+        ]
+
+      false ->
+        [
+          %{value: :enrolled, label: "Enrolled"},
+          %{value: :suspended, label: "Suspended"},
+          %{value: :non_students, label: "Non-Students"}
+        ]
+
+      _ ->
+        []
+    end
   end
 end

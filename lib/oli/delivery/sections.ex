@@ -42,25 +42,39 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Paywall
 
   require Logger
 
   def enrolled_students(section_slug) do
-    student_role_id = ContextRoles.get_role(:context_learner).id
+    section = get_section_by_slug(section_slug)
 
-    query =
-      from(e in Enrollment,
-        join: s in Section,
-        on: e.section_id == s.id,
-        join: ecr in EnrollmentContextRole,
-        on: e.id == ecr.enrollment_id,
-        join: u in User,
-        on: e.user_id == u.id,
-        where: s.slug == ^section_slug and ecr.context_role_id == ^student_role_id,
-        select: u
-      )
-
-    Repo.all(query)
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      left_join: p in Payment,
+      on: p.enrollment_id == e.id,
+      where: s.slug == ^section_slug,
+      select: {u, ecr.id, e, p},
+      preload: [user: :platform_roles],
+      distinct: u.id
+    )
+    |> Repo.all()
+    |> Enum.map(fn {user, context_role_id, enrollment, payment} ->
+      Map.merge(user, %{
+        enrollment_status: enrollment.status,
+        user_role_id: context_role_id,
+        payment_status:
+          Paywall.summarize_access(
+            enrollment.user,
+            section,
+            context_role_id,
+            enrollment,
+            payment
+          ).reason
+      })
+    end)
   end
 
   def browse_enrollments(
@@ -2620,11 +2634,11 @@ defmodule Oli.Delivery.Sections do
     |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
     |> where(
       [s, spp, _, pr, proj],
-      (s.slug == ^section_slug and
-         spp.project_id == s.base_project_id and
-         spp.section_id == s.id and
-         (pr.resource_id == s.required_survey_resource_id or
-         pr.resource_id == proj.required_survey_resource_id))
+      s.slug == ^section_slug and
+        spp.project_id == s.base_project_id and
+        spp.section_id == s.id and
+        (pr.resource_id == s.required_survey_resource_id or
+           pr.resource_id == proj.required_survey_resource_id)
     )
     |> select([_, _, _, rev], rev)
   end
