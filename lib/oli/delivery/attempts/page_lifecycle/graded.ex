@@ -155,7 +155,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  graded: true,
                  lifecycle_state: :evaluated,
                  resource_access: resource_access,
-                 part_attempt_guids: part_attempt_guids
+                 part_attempt_guids: part_attempt_guids,
+                 effective_settings: effective_settings
                }}
 
             error ->
@@ -168,7 +169,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
              graded: true,
              lifecycle_state: :submitted,
              resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
-             part_attempt_guids: part_attempt_guids
+             part_attempt_guids: part_attempt_guids,
+             effective_settings: effective_settings
            }}
       end
     else

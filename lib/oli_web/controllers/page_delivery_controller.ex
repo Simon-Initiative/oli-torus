@@ -960,8 +960,16 @@ defmodule OliWeb.PageDeliveryController do
 
     if Oli.Accounts.is_admin?(author) or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
-      PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
-      |> render_page(conn, section_slug, false)
+
+      page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
+
+      # enforce review_submission
+      case {page_context.effective_settings.review_submission, page_context.is_instructor} do
+        {_, true} -> render_page(page_context, conn, section_slug, false)
+        {:allow, _} -> render_page(page_context, conn, section_slug, false)
+        _ -> render(conn, "not_authorized.html")
+      end
+
     else
       render(conn, "not_authorized.html")
     end

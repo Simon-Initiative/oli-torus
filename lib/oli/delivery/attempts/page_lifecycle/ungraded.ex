@@ -55,7 +55,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
 
   @impl Lifecycle
   def finalize(%FinalizationContext{
-        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt
+        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
+        effective_settings: effective_settings
       }) do
     now = DateTime.utc_now()
 
@@ -71,7 +72,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
        graded: false,
        lifecycle_state: :evaluated,
        resource_access: nil,
-       part_attempt_guids: nil
+       part_attempt_guids: nil,
+       effective_settings: effective_settings
      }}
   end
 
