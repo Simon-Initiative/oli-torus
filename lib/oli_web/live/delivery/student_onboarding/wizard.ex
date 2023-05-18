@@ -1,10 +1,9 @@
 defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   use Phoenix.LiveView
 
-  import OliWeb.Common.SourceImage
-
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
+  alias OliWeb.Delivery.StudentOnboarding.{Explorations, Intro, Survey}
   alias Phoenix.LiveView.JS
 
   @intro_step :intro
@@ -125,40 +124,23 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   def render_step(%{current_step_label: @intro_step} = assigns) do
     ~H"""
       <.header section={@section}>
-        <div class="flex flex-col gap-6">
-          <img class="object-cover h-80 w-full" src={cover_image(@section)} />
-          <h2>Welcome to <%= @section.title %>!</h2>
-          <div>
-            <p class="font-bold mb-0">Here's what to expect</p>
-            <ul class="list-disc ml-6">
-              <%= if has_required_survey(@section) do %>
-                <li>A 5 minute survey to help shape learning your experience and let your instructor get to know you</li>
-              <% end %>
-              <%= if has_explorations(@section) do %>
-                <li>Learning about the new 'Exploration' activities that provide real-world examples</li>
-              <% end %>
-              <li>A personalized <%= @section.title %> experience based on your skillsets</li>
-            </ul>
-          </div>
-        </div>
+        <Intro.render section={@section} />
       </.header>
     """
   end
 
   def render_step(%{current_step_label: @survey_step} = assigns) do
     ~H"""
-      <div>Survey</div>
+      <.header section={@section}>
+        <Survey.render />
+      </.header>
     """
   end
 
   def render_step(%{current_step_label: @explorations_step} = assigns) do
     ~H"""
       <.header section={@section}>
-        <div class="h-full text-center">
-          <h2>Exploration Activities</h2>
-          <span class="text-gray-500 text-sm">Explorations dig into how the course subject matter affects you</span>
-          <p class="mt-14">You’ll have access to both simulations and digital versions of tools used in the real world to help you explore the topics brought up in the course from a real-world perspective.</p>
-        </div>
+        <Explorations.render />
       </.header>
     """
   end
@@ -204,12 +186,11 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     end
   end
 
-  defp has_required_survey(section) do
+  def has_required_survey(section) do
     !is_nil(section.required_survey_resource_id)
   end
 
-  defp has_explorations(section) do
-    # section.contains_explorations
-    true
+  def has_explorations(section) do
+    section.contains_explorations
   end
 end
