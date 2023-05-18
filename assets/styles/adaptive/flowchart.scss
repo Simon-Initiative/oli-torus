@@ -166,37 +166,6 @@ p span[style*='font-size:12px'] {
 }
 
 /*-------------------------------
-  janus-mcq
--------------------------------*/
-/*-- input --*/
-janus-mcq .mcq-input input {
-  margin-top: 2px !important;
-}
-janus-mcq .mcq-input > div {
-  margin: 0 9px 10px 0 !important;
-}
-[type='checkbox'],
-[type='radio'] {
-  border-color: currentColor !important;
-}
-[type='checkbox']:checked,
-[type='radio']:checked {
-  color: #2c6abf; /*is this the correct blue we are using now?????? I honestly dont recall*/
-}
-/*-- checkbox --*/
-janus-mcq .mcq-input input[type='checkbox'] {
-  border-radius: 4px !important;
-}
-
-/*-- label --*/
-janus-mcq .mcq-input label div {
-  left: 12px !important;
-}
-janus-mcq label p {
-  line-height: 18px !important;
-}
-
-/*-------------------------------
   janus-dropdown
 -------------------------------*/
 janus-dropdown label:empty {
