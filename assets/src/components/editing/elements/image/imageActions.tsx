@@ -75,12 +75,13 @@ const insertAction = (
   at: BaseSelection,
   type: 'img' | 'img_inline',
   src: undefined | string = undefined,
-) =>
-  Transforms.insertNodes(
+) => {
+  return Transforms.insertNodes(
     editor,
     type === 'img' ? Model.image(src) : Model.imageInline(src),
     at ? { at } : undefined,
   );
+};
 
 // Block images insert the placeholder block by default
 const execute =

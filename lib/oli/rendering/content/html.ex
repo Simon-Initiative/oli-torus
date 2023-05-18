@@ -76,15 +76,21 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def ecl(%Context{} = context, _, attrs) do
-
-    attempt_guid = case context.resource_attempt do
-      nil -> ""
-      attempt -> attempt.attempt_guid
-    end
+    attempt_guid =
+      case context.resource_attempt do
+        nil -> ""
+        attempt -> attempt.attempt_guid
+      end
 
     {:safe, ecl} =
-      ReactPhoenix.ClientSide.react_component("Components.ECLRepl",
-        %{"code" => attrs["code"], "id" => attrs["id"], "slug" => context.section_slug, "attemptGuid" => attempt_guid }
+      ReactPhoenix.ClientSide.react_component(
+        "Components.ECLRepl",
+        %{
+          "code" => attrs["code"],
+          "id" => attrs["id"],
+          "slug" => context.section_slug,
+          "attemptGuid" => attempt_guid
+        }
       )
 
     ecl
@@ -698,9 +704,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def popup(%Context{}, _next, element) do
     {:safe, rendered} =
-      ReactPhoenix.ClientSide.react_component("Components.DeliveryElementRenderer", %{
-        "element" => element
-      })
+      ReactPhoenix.ClientSide.react_component(
+        "Components.DeliveryElementRenderer",
+        %{
+          "element" => element
+        },
+        html_element: "span"
+      )
 
     rendered
   end

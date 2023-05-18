@@ -30,6 +30,7 @@ import {
   ImageInline,
   InputRef,
   ListItem,
+  ModelElement,
   OrderedList,
   PageLink,
   Paragraph,
@@ -57,6 +58,12 @@ function create<E extends AllModelElements>(params: Partial<E>): E {
   } as E;
 }
 
+export const emptyChildren = (element: AllModelElements) =>
+  ({
+    ...element,
+    children: [],
+  } as ModelElement);
+
 export const Model = {
   h1: (text = '') => create<HeadingOne>({ type: 'h1', children: [{ text }] }),
 
@@ -72,7 +79,7 @@ export const Model = {
 
   table: (children: TableRow[]) => create<Table>({ type: 'table', children }),
 
-  li: () => create<ListItem>({ type: 'li' }),
+  li: (text = '') => create<ListItem>({ type: 'li', children: [Model.p(text)] }),
 
   ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
 

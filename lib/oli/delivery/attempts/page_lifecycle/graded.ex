@@ -128,6 +128,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
               {:ok,
                %FinalizationSummary{
+                 graded: true,
                  lifecycle_state: :evaluated,
                  resource_access: resource_access,
                  part_attempt_guids: part_attempt_guids
@@ -140,6 +141,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->
           {:ok,
            %FinalizationSummary{
+             graded: true,
              lifecycle_state: :submitted,
              resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
              part_attempt_guids: part_attempt_guids

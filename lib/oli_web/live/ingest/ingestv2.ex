@@ -132,7 +132,7 @@ defmodule OliWeb.Admin.IngestV2 do
     ~F"""
       {#if @progress_step != ""}
       <div class="alert alert-secondary" role="alert">
-        <h4 class="alert-heading">{@progress_step}</h4>
+        <h4 class="alert-heading"><i class="fas fa-circle-notch fa-spin fa-1x fa-fw mr-2" /> {@progress_step}</h4>
 
       {#if @progress_total_tasks > 0}
         <div class="progress">
