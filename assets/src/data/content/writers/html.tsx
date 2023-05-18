@@ -69,9 +69,9 @@ import {
   MathJaxLatexFormula,
   MathJaxMathMLFormula,
 } from '../../../components/common/MathJaxFormula';
-import { Popup } from '../../../components/common/Popup';
 import { Pronunciation } from '../../../components/common/Pronunciation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
+import { Popup } from '../../../components/content/Popup';
 import { cellAttributes } from '../../../components/editing/elements/table/table-util';
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';

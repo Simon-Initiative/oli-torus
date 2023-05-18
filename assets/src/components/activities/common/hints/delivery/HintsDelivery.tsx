@@ -41,11 +41,7 @@ export const HintsDelivery: React.FC<Props> = ({
             className="d-flex align-items-center mb-2"
           >
             <span className="mr-2">{index + 1}.</span>
-            <HtmlContentModelRenderer
-              content={hint.content}
-              context={context}
-              style={{ width: '100%' }}
-            />
+            <HtmlContentModelRenderer content={hint.content} context={context} />
           </div>
         ))}
         {hasMoreHints && (

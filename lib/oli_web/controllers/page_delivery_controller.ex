@@ -157,7 +157,8 @@ defmodule OliWeb.PageDeliveryController do
         "assignments.html",
         assignments: assignments,
         section_slug: section_slug,
-        preview_mode: false
+        preview_mode: false,
+        format_datetime_fn: format_datetime_fn(conn)
       )
     else
       case section do

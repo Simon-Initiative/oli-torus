@@ -12,6 +12,15 @@ export const normalize = (
   const [parent] = Editor.parent(editor, path);
   if (Element.isElement(parent)) {
     const config = schema[parent.type];
+
+    if (parent.type === 'li') {
+      if (Text.isText(node)) {
+        Transforms.wrapNodes(editor, Model.p(), { at: path });
+        console.warn('Normalizing content: Wrapping text in list item with paragraph');
+        return true;
+      }
+    }
+
     if (['ol', 'ul'].includes(parent.type)) {
       if (Text.isText(node)) {
         Transforms.wrapNodes(editor, Model.li(), { at: path });
@@ -19,8 +28,9 @@ export const normalize = (
         return true;
       }
       if (Element.isElement(node) && !config.validChildren[node.type]) {
-        Transforms.setNodes(editor, { type: 'li' }, { at: path });
-        console.warn('Normalizing content: Changing node in list to list item type');
+        //Transforms.setNodes(editor, { type: 'li' }, { at: path });
+        Transforms.wrapNodes(editor, Model.li(), { at: path });
+        console.warn('Normalizing content: Wrapping node in list to list item type');
         return true;
       }
     }

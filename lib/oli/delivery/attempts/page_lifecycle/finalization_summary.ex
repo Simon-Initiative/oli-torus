@@ -11,18 +11,21 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary do
   @enforce_keys [
     :resource_access,
     :part_attempt_guids,
-    :lifecycle_state
+    :lifecycle_state,
+    :graded
   ]
 
   defstruct [
     :resource_access,
     :part_attempt_guids,
-    :lifecycle_state
+    :lifecycle_state,
+    :graded
   ]
 
   @type t() :: %__MODULE__{
           resource_access: any(),
           part_attempt_guids: list(),
-          lifecycle_state: atom()
+          lifecycle_state: atom(),
+          graded: boolean()
         }
 end

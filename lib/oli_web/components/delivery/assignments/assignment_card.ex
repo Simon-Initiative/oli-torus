@@ -4,16 +4,13 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
   alias OliWeb.Router.Helpers, as: Routes
 
   defp due_date_label(assignment) do
-    case assignment.gate_type do
-      nil ->
-        case assignment.scheduled_type do
-          :read_by -> "Suggested by"
-          _ -> "In class activity"
-        end
 
-      _ ->
-        "Due by"
+    case assignment.scheduled_type do
+      :due_by -> "Due by"
+      :read_by -> "Read by"
+      _ -> "In class activity"
     end
+
   end
 
   def render(assigns) do
@@ -28,9 +25,9 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
             <h3 class="text-white text-xl"><%= @assignment.title %></h3>
           </div>
           <div class="flex gap-2">
-            <span class="bg-white bg-opacity-10 rounded-sm text-white text-center w-56 py-2">
+            <span class="bg-white bg-opacity-10 rounded-sm text-white text-center w-110 p-2">
               <%= if @assignment.end_date do %>
-                <%= due_date_label(@assignment) %> <%= @assignment.end_date %>
+                <%= due_date_label(@assignment) %> <%= @format_datetime_fn.(@assignment.end_date) %>
               <% else %>
                 No due date
               <% end %>
@@ -82,7 +79,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
         <td class="w-1/3 border-none"><%= @page.title %></td>
         <td class={"w-1/3 border-none text-center #{if !@page.progress, do: "text-red-600"}"}>
           <%= if @page.progress do %>
-            <%= @page.progress %>% Completed
+            <%= (@page.progress * 100.0) %>% Completed
           <% else %>
             Not attempted
           <% end %>

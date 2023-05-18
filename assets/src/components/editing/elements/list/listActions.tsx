@@ -6,6 +6,7 @@ import { Command, CommandDescription } from 'components/editing/elements/command
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
 import { isActive, isTopLevel } from 'components/editing/slateUtils';
 import guid from 'utils/guid';
+import { Model } from '../../../../data/content/model/elements/factories';
 import {
   OrderedListStyle,
   OrderedListStyles,
@@ -21,7 +22,10 @@ const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
 
         // Not a list, create one
         if (!active) {
-          Transforms.setNodes(editor, { type: 'li' });
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const newListItem = Model.li();
+          newListItem.children = [];
+          Transforms.wrapNodes(editor, newListItem);
           Transforms.wrapNodes(editor, { type: listType, id: guid(), children: [] });
           return;
         }
@@ -48,6 +52,7 @@ const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
 
         // Transforms.setNodes(editor, { type: 'p' });
       });
+      Editor.normalize(editor, { force: true });
     },
     precondition: (editor) => {
       return (isTopLevel(editor) && isActive(editor, ['p'])) || isActiveList(editor);
