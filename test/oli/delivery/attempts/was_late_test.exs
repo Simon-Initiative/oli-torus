@@ -3,9 +3,9 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
 
   @content_manual %{
     "stem" => "2",
@@ -72,7 +72,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       {:ok, _} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [ra.id])
 
-      {:ok, %ResourceAccess{} = resource_access} =
+      {:ok, %FinalizationSummary{resource_access: resource_access}} =
         PageLifecycle.finalize(section.slug, ra.attempt_guid, datashop_session_id_user1)
 
       ra1 = Core.get_resource_attempt_by(attempt_guid: ra.attempt_guid)
@@ -105,7 +105,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       {:ok, _} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [ra.id])
 
-      {:ok, %ResourceAccess{} = resource_access} =
+      {:ok, %FinalizationSummary{resource_access: resource_access}} =
         PageLifecycle.finalize(section.slug, ra.attempt_guid, datashop_session_id_user1)
 
       ra1 = Core.get_resource_attempt_by(attempt_guid: ra.attempt_guid)
@@ -132,7 +132,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       {:ok, %AttemptState{resource_attempt: ra}} = PageLifecycle.start(page.revision.slug, section.slug, datashop_session_id_user1, user, effective_settings, activity_provider)
 
-      {:ok, %ResourceAccess{} = resource_access} =
+      {:ok, %FinalizationSummary{resource_access: resource_access}} =
         PageLifecycle.finalize(section.slug, ra.attempt_guid, datashop_session_id_user1)
 
       ra1 = Core.get_resource_attempt_by(attempt_guid: ra.attempt_guid)
