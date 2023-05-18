@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Sections.Enrollment do
     belongs_to :section, Oli.Delivery.Sections.Section
 
     field :state, :map, default: %{}
+    field :status, Ecto.Enum, values: [:enrolled, :suspended], default: :enrolled
 
     many_to_many :context_roles, Lti_1p3.DataProviders.EctoProvider.ContextRole,
       join_through: "enrollments_context_roles",
@@ -18,7 +19,7 @@ defmodule Oli.Delivery.Sections.Enrollment do
   @doc false
   def changeset(enrollment, attrs) do
     enrollment
-    |> cast(attrs, [:user_id, :section_id, :state])
+    |> cast(attrs, [:user_id, :section_id, :state, :status])
     |> validate_required([:user_id, :section_id])
   end
 end
