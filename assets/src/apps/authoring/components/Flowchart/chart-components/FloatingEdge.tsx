@@ -9,7 +9,7 @@ import { FlowchartEventContext } from '../FlowchartEventContext';
 import { FlowchartEdgeData } from '../flowchart-utils';
 import { screenTypes } from '../screens/screen-factories';
 
-const boxSize = 24;
+const boxSize = 35;
 
 interface FloatingEdgeProps {
   id: string;
@@ -155,7 +155,7 @@ const DropSpot: React.FC<{ source: number; target: number }> = ({ source, target
   const className = hover ? 'edgeDropSpot hover' : 'edgeDropSpot';
   return (
     <div className={className} ref={drop}>
-      {hover && <Icon icon="add" />}
+      <div className="edgeDropInner">{hover && <Icon icon="add" />}</div>
     </div>
   );
 };
