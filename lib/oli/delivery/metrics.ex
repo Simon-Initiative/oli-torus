@@ -123,7 +123,7 @@ defmodule Oli.Delivery.Metrics do
   def completion_for(section_id, container_id) do
     completions =
       User
-      |> join(:inner, [u], e in Enrollment, on: u.id == e.user_id and e.section_id == ^section_id)
+      |> join(:inner, [u], e in Enrollment, on: u.id == e.user_id and e.section_id == ^section_id and e.status == :enrolled)
       |> join(:inner, [u, e], ecr in EnrollmentContextRole,
         on:
           ecr.enrollment_id == e.id and
@@ -361,7 +361,7 @@ defmodule Oli.Delivery.Metrics do
         on: e.section_id == s.id,
         left_join: ra in ResourceAccess,
         on: ^on,
-        where: s.slug == ^section.slug,
+        where: s.slug == ^section.slug and e.status == :enrolled,
         group_by: [e.user_id, e.updated_at],
         select: {
           e.user_id,
@@ -398,7 +398,7 @@ defmodule Oli.Delivery.Metrics do
         on: e.section_id == s.id,
         left_join: ra in ResourceAccess,
         on: e.user_id == ra.user_id,
-        where: s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)),
+        where: s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)) and e.status == :enrolled,
         group_by: [e.user_id, e.updated_at],
         select: {
           e.user_id,
@@ -707,7 +707,7 @@ defmodule Oli.Delivery.Metrics do
         on: enr.user_id == u.id,
         join: ra in ResourceAccess,
         on: ra.user_id == enr.user_id,
-        where: u.id == ^user_id and ra.section_id == ^section_id,
+        where: u.id == ^user_id and ra.section_id == ^section_id and enr.status == :enrolled,
         group_by: u.name,
         select: fragment("MAX(?)", ra.updated_at)
       )
