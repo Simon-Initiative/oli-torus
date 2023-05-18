@@ -183,6 +183,14 @@ export const validatePathSetNone = (paths: AllPaths[]): ReactNode[] => {
   }
 };
 
+const checkForTooManyConditions = (paths: AllPaths[], optionCount: number): string[] => {
+  const errorOptions = paths.filter(isOptionCommonErrorPath);
+  if (errorOptions.length >= optionCount) {
+    return ['There are too many incorrect answer paths'];
+  }
+  return [];
+};
+
 const findMissingConditions = (paths: AllPaths[], optionCount: number): string[] => {
   const exit = paths.filter((path) => path.type === 'end-of-activity');
   const always = paths.filter((path) => path.type === 'always-go-to');
@@ -240,6 +248,15 @@ const validateDeterminateQuestion = (paths: AllPaths[], optionCount: number): Re
             <li key={index}>{condition}</li>
           ))}
         </ul>
+      </ValidationError>,
+    );
+  }
+
+  const extraConditions = checkForTooManyConditions(paths, optionCount);
+  if (extraConditions.length > 0) {
+    validations.push(
+      <ValidationError key="outgoing-extra" title="Too many outgoing paths">
+        {extraConditions[0]}
       </ValidationError>,
     );
   }
