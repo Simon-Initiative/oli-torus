@@ -86,7 +86,7 @@ defmodule Oli.Delivery.Settings do
   end
 
   def was_late?(%ResourceAttempt{} = resource_attempt, %Combined{} = effective_settings, now) do
-    now > determine_effective_deadline(resource_attempt, effective_settings)
+    DateTime.compare(now, determine_effective_deadline(resource_attempt, effective_settings)) == :gt
   end
 
   @doc """

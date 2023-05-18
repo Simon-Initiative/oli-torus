@@ -81,6 +81,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           datashop_session_id: datashop_session_id
         } = context
       ) do
+
     {_, resource_attempts} =
       get_resource_attempt_history(page_revision.resource_id, section_slug, user.id)
 

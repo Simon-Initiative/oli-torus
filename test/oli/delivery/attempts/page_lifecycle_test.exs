@@ -5,6 +5,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Activities.Model.{Part}
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
+
 
   @content_automatic_by_default %{
     "stem" => "1",
