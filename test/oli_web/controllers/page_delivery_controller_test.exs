@@ -416,7 +416,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
-      assert html_response(conn, 200) =~ "You have 0 attempts remaining out of 1 total attempt"
+      assert html_response(conn, 200) =~ "You have no attempts remaining out of 1 total attempt"
 
       assert html_response(conn, 200) =~ "Attempt 1 of 1"
       assert html_response(conn, 200) =~ Utils.render_date(attempt, :inserted_at, session_context)
