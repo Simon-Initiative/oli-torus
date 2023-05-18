@@ -2533,11 +2533,6 @@ defmodule Oli.Delivery.Sections do
         student_id -> Metrics.mastery_for_student_per_learning_objective(section_slug, student_id)
       end
 
-    objectives_id_list =
-      pages_with_objectives
-      |> Enum.into([], fn elem -> elem.objectives["attached"] end)
-      |> List.flatten()
-
     objectives =
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         left_join: rev2 in Revision,
