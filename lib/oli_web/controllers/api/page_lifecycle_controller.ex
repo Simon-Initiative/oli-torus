@@ -17,21 +17,27 @@ defmodule OliWeb.Api.PageLifecycleController do
       {:ok,
        %FinalizationSummary{
          graded: true,
-         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id}
+         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id},
+         effective_settings: effective_settings
        }} ->
         # graded resource finalization success
         section = Sections.get_section_by(slug: section_slug)
         PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
-        review_attempt_path = Routes.page_delivery_path(conn, :review_attempt, section_slug, revision_slug, attempt_guid)
-
-        # page path will be the route when users are not allowed to review their attempts
-        # page_path = Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
+        redirectTo = case effective_settings.review_submission do
+          :allow -> Routes.page_delivery_path(conn, :review_attempt, section_slug, revision_slug, attempt_guid)
+          _ ->  Routes.page_delivery_path(
+            conn,
+            :page,
+            section_slug,
+            revision_slug
+          )
+        end
 
         json(conn, %{
           result: "success",
           commandResult: "success",
-          redirectTo: review_attempt_path
+          redirectTo: redirectTo
         })
 
       {:ok, %FinalizationSummary{graded: false}} ->

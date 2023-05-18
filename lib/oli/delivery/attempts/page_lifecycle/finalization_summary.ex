@@ -12,20 +12,23 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary do
     :resource_access,
     :part_attempt_guids,
     :lifecycle_state,
-    :graded
+    :graded,
+    :effective_settings
   ]
 
   defstruct [
     :resource_access,
     :part_attempt_guids,
     :lifecycle_state,
-    :graded
+    :graded,
+    :effective_settings
   ]
 
   @type t() :: %__MODULE__{
           resource_access: any(),
           part_attempt_guids: list(),
           lifecycle_state: atom(),
-          graded: boolean()
+          graded: boolean(),
+          effective_settings: struct()
         }
 end

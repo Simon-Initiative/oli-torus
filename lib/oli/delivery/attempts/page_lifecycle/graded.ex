@@ -11,12 +11,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     Lifecycle,
     Hierarchy
   }
-
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Attempts.Scoring
   alias Oli.Delivery.Attempts.ActivityLifecycle.{Evaluate, Persistence}
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
+  alias Oli.Delivery.Attempts.Core
 
   import Oli.Delivery.Attempts.Core
   import Ecto.Query, warn: false
@@ -73,10 +75,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   def start(
         %VisitContext{
           page_revision: page_revision,
+          user: user,
+          effective_settings: effective_settings,
           section_slug: section_slug,
-          user: user
+          datashop_session_id: datashop_session_id
         } = context
       ) do
+
     {_, resource_attempts} =
       get_resource_attempt_history(page_revision.resource_id, section_slug, user.id)
 
@@ -86,18 +91,35 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     resource_attempts =
       Enum.filter(resource_attempts, fn a -> a.revision.graded == page_revision.graded end)
 
-    case {page_revision.max_attempts > length(resource_attempts) or
+    case Oli.Delivery.Settings.check_end_date(effective_settings) do
+      {:allowed} ->
+        case {page_revision.max_attempts > length(resource_attempts) or
             page_revision.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
-      {true, false} ->
-        {:ok, resource_attempt} = Hierarchy.create(context)
-        AttemptState.fetch_attempt_state(resource_attempt, page_revision)
+          {true, false} ->
 
-      {true, true} ->
-        {:error, {:active_attempt_present}}
+            {:ok, resource_attempt} = Hierarchy.create(context)
 
-      {false, _} ->
-        {:error, {:no_more_attempts}}
+            # We possible schedule an auto-submission job (depending on the settings)
+            {:ok, resource_attempt} = case Oli.Delivery.Attempts.AutoSubmit.Worker.maybe_schedule_auto_submit(
+              effective_settings, section_slug, resource_attempt, datashop_session_id) do
+                {:ok, :not_scheduled} -> {:ok, resource_attempt}
+                {:ok, auto_submit_job_id} -> Core.update_resource_attempt(resource_attempt, %{auto_submit_job_id: auto_submit_job_id})
+            end
+
+            AttemptState.fetch_attempt_state(resource_attempt, page_revision)
+
+          {true, true} ->
+            {:error, {:active_attempt_present}}
+
+          {false, _} ->
+            {:error, {:no_more_attempts}}
+        end
+
+      {:end_date_passed} ->
+          {:error, {:end_date_passed}}
     end
+
+
   end
 
   @impl Lifecycle
@@ -115,13 +137,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     # Collect all of the part attempt guids for all of the activities that get finalized
     with {:ok, part_attempt_guids} <-
            finalize_activity_and_part_attempts(resource_attempt, datashop_session_id),
-         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt) do
+         {:ok, resource_attempt} <- roll_up_activities_to_resource_attempt(resource_attempt, effective_settings),
+         {:ok, resource_attempt} <- cancel_pending_auto_submit(resource_attempt) do
       case resource_attempt do
         %ResourceAttempt{lifecycle_state: :evaluated} ->
           case roll_up_resource_attempts_to_access(
                  effective_settings,
                  section_slug,
-                 resource_attempt.resource_access_id
+                 resource_attempt.resource_access_id,
+                 resource_attempt.was_late
                ) do
             {:ok, resource_access} ->
               {:ok, _} = Oli.Delivery.Metrics.mark_progress_completed(resource_access)
@@ -131,7 +155,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  graded: true,
                  lifecycle_state: :evaluated,
                  resource_access: resource_access,
-                 part_attempt_guids: part_attempt_guids
+                 part_attempt_guids: part_attempt_guids,
+                 effective_settings: effective_settings
                }}
 
             error ->
@@ -144,7 +169,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
              graded: true,
              lifecycle_state: :submitted,
              resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
-             part_attempt_guids: part_attempt_guids
+             part_attempt_guids: part_attempt_guids,
+             effective_settings: effective_settings
            }}
       end
     else
@@ -178,14 +204,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  def roll_up_activities_to_resource_attempt(resource_attempt_guid)
-      when is_binary(resource_attempt_guid) do
-    get_resource_attempt(attempt_guid: resource_attempt_guid)
-    |> Oli.Repo.preload(:revision)
-    |> roll_up_activities_to_resource_attempt
+  defp cancel_pending_auto_submit(%ResourceAttempt{auto_submit_job_id: nil} = ra), do: {:ok, ra}
+  defp cancel_pending_auto_submit(%ResourceAttempt{} = ra) do
+    Oli.Delivery.Attempts.AutoSubmit.Worker.cancel_auto_submit(ra)
+    Core.update_resource_attempt(ra, %{auto_submit_job_id: nil})
   end
 
-  def roll_up_activities_to_resource_attempt(resource_attempt) do
+  def roll_up_activities_to_resource_attempt(resource_attempt, %Combined{} = effective_settings) do
     # It is necessary to refetch the resource attempt so that we have the latest view
     # of its state, and to separately fetch the list of most recent attempts for each
     # activity.
@@ -201,17 +226,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       end
 
     if is_evaluated?(activity_attempts) do
-      apply_evaluation(resource_attempt, activity_attempts)
+      apply_evaluation(resource_attempt, activity_attempts, effective_settings)
     else
       if is_submitted?(activity_attempts) do
-        apply_submission(resource_attempt)
+        apply_submission(resource_attempt, effective_settings)
       else
         {:ok, resource_attempt}
       end
     end
   end
 
-  defp apply_evaluation(resource_attempt, activity_attempts) do
+  defp apply_evaluation(resource_attempt, activity_attempts, %Combined{} = effective_settings) do
     {score, out_of} =
       activity_attempts
       |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
@@ -226,18 +251,20 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       out_of: out_of,
       date_evaluated: now,
       date_submitted: now,
-      lifecycle_state: :evaluated
+      lifecycle_state: :evaluated,
+      was_late: Settings.was_late?(resource_attempt, effective_settings, now)
     })
   end
 
-  defp apply_submission(resource_attempt) do
+  defp apply_submission(resource_attempt, %Combined{} = effective_settings) do
     case resource_attempt.lifecycle_state do
       :active ->
         now = DateTime.utc_now()
 
         update_resource_attempt(resource_attempt, %{
           date_submitted: now,
-          lifecycle_state: :submitted
+          lifecycle_state: :submitted,
+          was_late: Settings.was_late?(resource_attempt, effective_settings, now)
         })
 
       _ ->
@@ -298,7 +325,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     ensure_valid_grade({score, out_of})
   end
 
-  def roll_up_resource_attempts_to_access(%{scoring_strategy_id: scoring_strategy_id}, _section_slug, resource_access_id) do
+  def roll_up_resource_attempts_to_access(%{scoring_strategy_id: scoring_strategy_id}, _section_slug, resource_access_id, was_late) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)
 
     graded_attempts =
@@ -310,6 +337,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       |> ensure_valid_grade()
 
     update_resource_access(access, %{
+      was_late: was_late,
       score: score,
       out_of: out_of,
       date_evaluated: DateTime.utc_now()
