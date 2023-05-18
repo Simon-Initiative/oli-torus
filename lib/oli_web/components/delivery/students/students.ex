@@ -3,15 +3,14 @@ defmodule OliWeb.Components.Delivery.Students do
 
   alias Phoenix.LiveView.JS
 
-  alias OliWeb.Common.{PagedTable, SearchInput}
+  alias OliWeb.Common.{PagedTable, SearchInput, Params, Utils}
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
-  alias OliWeb.Common.Params
-  alias OliWeb.Common.Utils
   alias OliWeb.Router.Helpers, as: Routes
 
-  prop(params, :map, required: true)
-  prop(total_count, :number, required: true)
-  prop(table_model, :struct, required: true)
+  prop params, :map, required: true
+  prop total_count, :number, required: true
+  prop table_model, :struct, required: true
+  prop dropdown_options, :list, required: true
 
   @default_params %{
     offset: 0,
@@ -20,11 +19,18 @@ defmodule OliWeb.Components.Delivery.Students do
     page_id: nil,
     sort_order: :asc,
     sort_by: :name,
-    text_search: nil
+    text_search: nil,
+    filter_by: :enrolled
   }
 
   def update(
-        %{params: params, section: section, context: context, students: students} = _assigns,
+        %{
+          params: params,
+          section: section,
+          context: context,
+          students: students,
+          dropdown_options: dropdown_options
+        } = _assigns,
         socket
       ) do
     {total_count, rows} = apply_filters(students, params)
@@ -44,7 +50,8 @@ defmodule OliWeb.Components.Delivery.Students do
        total_count: total_count,
        table_model: table_model,
        params: params,
-       section_slug: section.slug
+       section_slug: section.slug,
+       dropdown_options: dropdown_options
      )}
   end
 
@@ -52,6 +59,7 @@ defmodule OliWeb.Components.Delivery.Students do
     students =
       students
       |> maybe_filter_by_text(params.text_search)
+      |> maybe_filter_by_option(params.filter_by)
       |> sort_by(params.sort_by, params.sort_order)
 
     {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -67,6 +75,49 @@ defmodule OliWeb.Components.Delivery.Students do
         String.downcase(text_search)
       )
     end)
+  end
+
+  defp maybe_filter_by_option(students, dropdown_value) do
+    case dropdown_value do
+      :enrolled ->
+        Enum.filter(students, fn student ->
+          student.enrollment_status == :enrolled and
+            student.user_role_id == 4
+        end)
+
+      :suspended ->
+        Enum.filter(students, fn student ->
+          student.enrollment_status == :suspended and
+            student.user_role_id == 4
+        end)
+
+      :paid ->
+        Enum.filter(students, fn student ->
+          student.enrollment_status == :enrolled and
+            student.user_role_id == 4 and student.payment_status == :paid
+        end)
+
+      :not_paid ->
+        Enum.filter(students, fn student ->
+          student.enrollment_status == :enrolled and
+            student.user_role_id == 4 and student.payment_status == :not_paid
+        end)
+
+      :grace_period ->
+        Enum.filter(students, fn student ->
+          student.enrollment_status == :enrolled and
+            student.user_role_id == 4 and student.payment_status == :within_grace_period
+        end)
+
+      :non_students ->
+        Enum.filter(students, fn student ->
+          student.enrollment_status == :enrolled and
+            student.user_role_id != 4
+        end)
+
+      _ ->
+        students
+    end
   end
 
   defp sort_by(students, sort_by, sort_order) do
@@ -102,9 +153,21 @@ defmodule OliWeb.Components.Delivery.Students do
   def render(assigns) do
     ~F"""
     <div class="mx-10 mb-10 bg-white shadow-sm">
-      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
-        <h4 class="pl-9 torus-h4 mr-auto">Students</h4>
-        <form for="search" phx-target={@myself} phx-change="search_student" class="pb-6 ml-9 sm:pb-0">
+      <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-center px-6 py-4 border instructor_dashboard_table">
+        <h4 class="sm:pl-9 torus-h4 sm:mr-auto">Students</h4>
+        <div class="flex sm:items-end gap-2">
+          <form phx-change="filter_by" phx-target={@myself}>
+            <label class="cursor-pointer inline-flex flex-col gap-1">
+              <small class="torus-small uppercase">Filter by</small>
+              <select class="torus-select pr-32" name="filter">
+                {#for elem <- @dropdown_options}
+                  <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
+                {/for}
+              </select>
+            </label>
+          </form>
+        </div>
+        <form for="search" phx-target={@myself} phx-change="search_student" class="sm:ml-9">
           <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
         </form>
       </div>
@@ -165,6 +228,20 @@ defmodule OliWeb.Components.Delivery.Students do
      )}
   end
 
+  def handle_event("filter_by", %{"filter" => filter}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           :students,
+           update_params(socket.assigns.params, %{filter_by: String.to_existing_atom(filter)})
+         )
+     )}
+  end
+
   def decode_params(params) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
@@ -180,7 +257,14 @@ defmodule OliWeb.Components.Delivery.Students do
           [:name, :last_interaction, :progress, :overall_mastery, :engagement],
           @default_params.sort_by
         ),
-      text_search: Params.get_param(params, "text_search", @default_params.text_search)
+      text_search: Params.get_param(params, "text_search", @default_params.text_search),
+      filter_by:
+        Params.get_atom_param(
+          params,
+          "filter_by",
+          [:enrolled, :suspended, :paid, :not_paid, :grace_period, :non_students],
+          @default_params.filter_by
+        )
     }
   end
 

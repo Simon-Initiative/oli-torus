@@ -1,5 +1,10 @@
 defmodule OliWeb.Progress.StudentResourceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+
+  alias Oli.Repo
+  import Ecto.Query, warn: false
+  alias Oli.Delivery.Attempts.Core.{PartAttempt, ResourceAttempt, ActivityAttempt}
+
   alias OliWeb.Common.{Breadcrumb, SessionContext, Utils}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
@@ -10,6 +15,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Progress.Passback
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias OliWeb.Common.{Confirm}
 
   data(breadcrumbs, :any)
   data(title, :string, default: "Student Progress")
@@ -17,6 +23,8 @@ defmodule OliWeb.Progress.StudentResourceView do
   data(changeset, :any)
   data(resource_access, :any)
   data(last_failed, :any)
+  data(show_confirm, :boolean, default: false)
+  data(attempt_guid, :string, default: nil)
 
   data(revision, :any)
   data(user, :any)
@@ -169,9 +177,14 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
       {/if}
       <Group label="Attempt History" description="">
-        <AttemptHistory section={@section} resource_attempts={@resource_access.resource_attempts} {=@context}/>
+        <AttemptHistory revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} {=@context}/>
       </Group>
     </Groups>
+    {#if @show_confirm}
+      <Confirm title="Confirm Attempt Submit" id="dialog" ok="do_submit_attempt" cancel="cancel_modal">
+        Are you sure that you wish to finalize this attempt on behalf of the student?
+      </Confirm>
+    {/if}
     """
   end
 
@@ -193,6 +206,49 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
     </Groups>
     """
+  end
+
+  def handle_event("cancel_modal", _, socket) do
+    {:noreply, assign(socket, show_confirm: false)}
+  end
+
+  def handle_event("submit_attempt", %{"guid" => attempt_guid}, socket) do
+    {:noreply, assign(socket, show_confirm: true, attempt_guid: attempt_guid)}
+  end
+
+  def handle_event("phx_modal.unmount", _, socket) do
+    {:noreply, assign(socket, show_confirm: false)}
+  end
+
+  def handle_event("do_submit_attempt", _, socket) do
+
+    attempt_guid = socket.assigns.attempt_guid
+
+    datashop_session_id = case get_datashop_session_id(attempt_guid) do
+      nil -> UUID.uuid4()
+      id -> id
+    end
+
+    case Oli.Delivery.Attempts.PageLifecycle.finalize(socket.assigns.section.slug, attempt_guid, datashop_session_id) do
+      {:ok, _} ->
+         resource_access = get_resource_access(socket.assigns.revision.resource_id, socket.assigns.section.slug, socket.assigns.user.id)
+
+         socket = socket
+         |> put_flash(:info, "Attempt submitted.")
+         |> assign(resource_access: resource_access)
+
+         {:noreply, socket}
+      _ ->
+
+        resource_access = get_resource_access(socket.assigns.revision.resource_id, socket.assigns.section.slug, socket.assigns.user.id)
+
+        socket = socket
+         |> put_flash(:error, "Unable to submit attempt.")
+         |> assign(resource_access: resource_access)
+
+         {:noreply, socket}
+    end
+
   end
 
   def handle_event("enable_score_edit", _, socket) do
@@ -321,6 +377,24 @@ defmodule OliWeb.Progress.StudentResourceView do
       nil -> Map.delete(params, key)
       "" -> Map.delete(params, key)
       _ -> params
+    end
+  end
+
+  defp get_datashop_session_id(resource_attempt_guid) do
+    part_attempts = Repo.all(
+      from(
+        part_attempt in PartAttempt,
+        join: aa in ActivityAttempt, on: aa.id == part_attempt.activity_attempt_id,
+        join: resource_attempt in ResourceAttempt, on: resource_attempt.id == aa.resource_attempt_id,
+        where: resource_attempt.attempt_guid == ^resource_attempt_guid,
+        limit: 1,
+        select: part_attempt.datashop_session_id
+      )
+    )
+
+    case part_attempts do
+      [] -> nil
+      [id] -> id
     end
   end
 end

@@ -152,6 +152,10 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     refute eval("!(input contains {cat})", "the cat in the hat")
   end
 
+  test "evaluating string with normalization" do
+    assert eval("input equals {my cat}", "my     cat   ")
+  end
+
   test "evaluating string equals" do
     assert eval("input equals {cat}", "cat")
     refute eval("input equals {Cat}", "cat")
@@ -161,7 +165,6 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("input equals {the CaT in the HAT}", "the CaT in the HAT")
     refute eval("input equals {the cat in the HAT}", "the CaT in the HAT")
     refute eval("input equals { the cat in the hat}", "the cat in the hat")
-    refute eval("input equals {the cat in the hat}", "the cat in the hat ")
 
     assert eval("!(input equals {cat})", "the cat in the hat")
     refute eval("!(input equals {the cat in the hat})", "the cat in the hat")
@@ -178,7 +181,6 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
     assert eval("input iequals {the cat in the HAT}", "the CaT in the HAT")
     refute eval("input iequals { the cat in the hat}", "the cat in the hat")
-    refute eval("input iequals {the cat in the hat}", "the cat in the hat ")
 
     assert eval("!(input iequals {cat})", "the cat in the hat")
     refute eval("!(input iequals {the cat in the hat})", "the cat in the hat")
