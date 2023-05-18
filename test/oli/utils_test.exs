@@ -16,6 +16,15 @@ defmodule Oli.UtilsTest do
     end
   end
 
+  describe "normalize_whitespace" do
+    test "removes whitespace" do
+      assert Utils.normalize_whitespace("  test  ") == "test"
+      assert Utils.normalize_whitespace("  test test  ") == "test test"
+      assert Utils.normalize_whitespace("  test   test  ") == "test test"
+    end
+  end
+
+
   describe "ensure_absolute_url" do
     test "returns an absolute url" do
       assert Utils.ensure_absolute_url("test") == "https://localhost/test"
