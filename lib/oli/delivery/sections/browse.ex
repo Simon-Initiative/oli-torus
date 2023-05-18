@@ -84,7 +84,7 @@ defmodule Oli.Delivery.Sections.Browse do
         join: e in Enrollment,
         on: e.user_id == u.id,
         join: ecr in "enrollments_context_roles",
-        on: ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id,
+        on: ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id and e.status == :enrolled,
         select: %{
           name: fragment("array_to_string((array_agg(?)), ', ')", u.name),
           section_id: e.section_id

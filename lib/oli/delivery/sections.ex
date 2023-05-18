@@ -165,7 +165,9 @@ defmodule Oli.Delivery.Sections do
       e in Enrollment,
       join: s in Section,
       on: e.section_id == s.id,
-      where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+      where:
+        e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+          e.status == :enrolled,
       preload: :context_roles
     )
     |> Repo.one()
@@ -318,7 +320,9 @@ defmodule Oli.Delivery.Sections do
           Enum.filter(enrollment.context_roles, &(!Enum.member?(context_roles, &1)))
 
         if Enum.count(other_context_roles) == 0 do
-          Repo.delete(enrollment)
+          enrollment
+          |> Enrollment.changeset(%{status: :suspended})
+          |> Repo.update()
         else
           enrollment
           |> Enrollment.changeset(%{section_id: section_id})
@@ -345,7 +349,9 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active
+        where:
+          e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+            e.status == :enrolled
       )
 
     case Repo.one(query) do
@@ -364,7 +370,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: s.slug == ^section_slug and s.status == :active,
+        where: s.slug == ^section_slug and s.status == :active and e.status == :enrolled,
         preload: [:user, :context_roles],
         select: e
       )
@@ -387,7 +393,9 @@ defmodule Oli.Delivery.Sections do
         on: e.id == e_cr.enrollment_id,
         join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
         on: e_cr.context_role_id == cr.id,
-        where: s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids,
+        where:
+          s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids and
+            e.status == :enrolled,
         select: count(e)
       )
 
@@ -415,7 +423,9 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+        where:
+          e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+            e.status == :enrolled,
         select: e
       )
 
@@ -437,7 +447,9 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.open_and_free == true and s.status == :active,
+        where:
+          e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
+            e.status == :enrolled,
         preload: [:base_project],
         select: s
       )
@@ -454,7 +466,7 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.status == :active,
+        where: e.user_id == ^user_id and s.status == :active and e.status == :enrolled,
         select: s
       )
 
