@@ -81,37 +81,37 @@ defmodule OliWeb.Components.Delivery.Students do
     case dropdown_value do
       :enrolled ->
         Enum.filter(students, fn student ->
-          String.to_atom(String.downcase(student.enrollment_status)) == :enrolled and
+          student.enrollment_status == :enrolled and
             student.user_role_id == 4
         end)
 
       :suspended ->
         Enum.filter(students, fn student ->
-          String.to_atom(String.downcase(student.enrollment_status)) == :suspended and
+          student.enrollment_status == :suspended and
             student.user_role_id == 4
         end)
 
       :paid ->
         Enum.filter(students, fn student ->
-          String.to_atom(String.downcase(student.enrollment_status)) == :enrolled and
+          student.enrollment_status == :enrolled and
             student.user_role_id == 4 and student.payment_status == :paid
         end)
 
       :not_paid ->
         Enum.filter(students, fn student ->
-          String.to_atom(String.downcase(student.enrollment_status)) == :enrolled and
+          student.enrollment_status == :enrolled and
             student.user_role_id == 4 and student.payment_status == :not_paid
         end)
 
       :grace_period ->
         Enum.filter(students, fn student ->
-          String.to_atom(String.downcase(student.enrollment_status)) == :enrolled and
+          student.enrollment_status == :enrolled and
             student.user_role_id == 4 and student.payment_status == :within_grace_period
         end)
 
       :non_students ->
         Enum.filter(students, fn student ->
-          String.to_atom(String.downcase(student.enrollment_status)) == :enrolled and
+          student.enrollment_status == :enrolled and
             student.user_role_id != 4
         end)
 

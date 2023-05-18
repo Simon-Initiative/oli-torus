@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Paywall do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions.Institution
   alias Oli.Delivery.Paywall.AccessSummary
+  alias Lti_1p3.Tool.ContextRoles
 
   @maximum_batch_size 500
 
@@ -45,6 +46,46 @@ defmodule Oli.Delivery.Paywall do
         else
           case has_paid?(enrollment) do
             true ->
+              AccessSummary.paid()
+
+            _ ->
+              case within_grace_period?(enrollment, section) do
+                true ->
+                  grace_period_seconds_remaining(enrollment, section)
+                  |> AccessSummary.within_grace()
+
+                _ ->
+                  AccessSummary.not_paid()
+              end
+          end
+        end
+      end
+    end
+  end
+
+  def summarize_access(_, %Section{requires_payment: false}, _, _, _),
+    do: AccessSummary.build_no_paywall()
+
+  def summarize_access(
+        %User{} = user,
+        %Section{slug: slug, requires_payment: true} = section,
+        user_role_id,
+        enrollment,
+        payment
+      ) do
+    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
+
+    if user_role_id == instructor_context_role_id or Sections.is_admin?(user, slug) do
+      AccessSummary.instructor()
+    else
+      if is_nil(enrollment) and section.requires_enrollment do
+        AccessSummary.not_enrolled()
+      else
+        if section.pay_by_institution do
+          AccessSummary.pay_by_institution()
+        else
+          case payment do
+            %Payment{} ->
               AccessSummary.paid()
 
             _ ->
