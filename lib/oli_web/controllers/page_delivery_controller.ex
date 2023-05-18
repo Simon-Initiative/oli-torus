@@ -914,6 +914,10 @@ defmodule OliWeb.PageDeliveryController do
               redirect(conn,
                 to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
               )
+            {:error, {:end_date_passed}} ->
+              redirect(conn,
+                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
+              )
 
             {:error, {:active_attempt_present}} ->
               redirect(conn,

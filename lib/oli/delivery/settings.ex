@@ -115,8 +115,8 @@ defmodule Oli.Delivery.Settings do
     end
   end
 
-  defp check_end_date(%Combined{end_date: nil}), do: {:allowed}
-  defp check_end_date(%Combined{end_date: end_date} = effective_settings) do
+  def check_end_date(%Combined{end_date: nil}), do: {:allowed}
+  def check_end_date(%Combined{end_date: end_date} = effective_settings) do
 
     effective_end_date = DateTime.add(end_date, effective_settings.grace_period, :minute)
     if (DateTime.compare(effective_end_date, DateTime.utc_now()) == :gt or effective_settings.late_start == :allow) do

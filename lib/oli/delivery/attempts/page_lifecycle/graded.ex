@@ -91,27 +91,35 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     resource_attempts =
       Enum.filter(resource_attempts, fn a -> a.revision.graded == page_revision.graded end)
 
-    case {page_revision.max_attempts > length(resource_attempts) or
+    case Oli.Delivery.Settings.check_end_date(effective_settings) do
+      {:allowed} ->
+        case {page_revision.max_attempts > length(resource_attempts) or
             page_revision.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
-      {true, false} ->
+          {true, false} ->
 
-        {:ok, resource_attempt} = Hierarchy.create(context)
+            {:ok, resource_attempt} = Hierarchy.create(context)
 
-        # We possible schedule an auto-submission job (depending on the settings)
-        {:ok, resource_attempt} = case Oli.Delivery.Attempts.AutoSubmit.Worker.maybe_schedule_auto_submit(
-          effective_settings, section_slug, resource_attempt, datashop_session_id) do
-            {:ok, :not_scheduled} -> {:ok, resource_attempt}
-            {:ok, auto_submit_job_id} -> Core.update_resource_attempt(resource_attempt, %{auto_submit_job_id: auto_submit_job_id})
+            # We possible schedule an auto-submission job (depending on the settings)
+            {:ok, resource_attempt} = case Oli.Delivery.Attempts.AutoSubmit.Worker.maybe_schedule_auto_submit(
+              effective_settings, section_slug, resource_attempt, datashop_session_id) do
+                {:ok, :not_scheduled} -> {:ok, resource_attempt}
+                {:ok, auto_submit_job_id} -> Core.update_resource_attempt(resource_attempt, %{auto_submit_job_id: auto_submit_job_id})
+            end
+
+            AttemptState.fetch_attempt_state(resource_attempt, page_revision)
+
+          {true, true} ->
+            {:error, {:active_attempt_present}}
+
+          {false, _} ->
+            {:error, {:no_more_attempts}}
         end
 
-        AttemptState.fetch_attempt_state(resource_attempt, page_revision)
-
-      {true, true} ->
-        {:error, {:active_attempt_present}}
-
-      {false, _} ->
-        {:error, {:no_more_attempts}}
+      {:end_date_passed} ->
+          {:error, {:end_date_passed}}
     end
+
+
   end
 
   @impl Lifecycle
