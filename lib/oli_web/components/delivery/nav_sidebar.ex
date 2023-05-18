@@ -19,7 +19,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   def main_with_nav(assigns) do
     ~H"""
-      <main role="main" class="h-screen flex flex-col relative lg:flex-row z-0">
+      <main role="main" class="flex flex-col relative lg:flex-row z-0">
         <.navbar {assigns} path_info={@conn.path_info} />
 
         <div class="flex-1 flex flex-col lg:pl-[200px] z-10">
@@ -88,17 +88,19 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         active: true
       },
       %{name: "Discussion", href: "#", active: false},
-      %{name: "Assignments", href: "#", active: false},
-
+      %{name: "Assignments", href: "#", active: false}
     ]
     |> then(fn links ->
       case section do
         %Section{contains_explorations: true} ->
-          links ++ [%{
-            name: "Exploration",
-            href: "#",
-            active: false
-          }]
+          links ++
+            [
+              %{
+                name: "Exploration",
+                href: "#",
+                active: false
+              }
+            ]
 
         _ ->
           links
@@ -109,7 +111,8 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   defp get_preview_links(assigns) do
     project = assigns[:project]
 
-    hierarchy = AuthoringResolver.full_hierarchy(project.slug)
+    hierarchy =
+      AuthoringResolver.full_hierarchy(project.slug)
       |> translate_to_outline()
 
     [
@@ -122,7 +125,12 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         name: "Course Content",
         popout: %{
           component: "Components.CourseContentOutline",
-          props: %{hierarchy: hierarchy, sectionSlug: nil, projectSlug: project.slug, isPreview: true}
+          props: %{
+            hierarchy: hierarchy,
+            sectionSlug: nil,
+            projectSlug: project.slug,
+            isPreview: true
+          }
         },
         active: true
       },
@@ -288,30 +296,31 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           resource_type_id: ^container_id,
           title: title,
           slug: slug
-      }} ->
+        }
+      } ->
         # container
         %{
           type: "container",
           children: Enum.map(children, fn c -> translate_to_outline(c) end),
           title: title,
           id: id,
-          slug: slug,
+          slug: slug
         }
+
       %{
         uuid: id,
         revision: %Revision{
           title: title,
           slug: slug
-      }} ->
+        }
+      } ->
         # page
         %{
           type: "page",
           title: title,
           id: id,
-          slug: slug,
+          slug: slug
         }
-
     end
   end
-
 end
