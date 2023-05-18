@@ -23,16 +23,15 @@ defmodule OliWeb.Api.PageLifecycleController do
         section = Sections.get_section_by(slug: section_slug)
         PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
+        review_attempt_path = Routes.page_delivery_path(conn, :review_attempt, section_slug, revision_slug, attempt_guid)
+
+        # page path will be the route when users are not allowed to review their attempts
+        # page_path = Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
+
         json(conn, %{
           result: "success",
           commandResult: "success",
-          redirectTo:
-            Routes.page_delivery_path(
-              conn,
-              :page,
-              section_slug,
-              revision_slug
-            )
+          redirectTo: review_attempt_path
         })
 
       {:ok, %FinalizationSummary{graded: false}} ->
