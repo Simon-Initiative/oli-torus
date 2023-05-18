@@ -7559,8 +7559,16 @@ p {
     margin-bottom: 0px;
   }
 
+  .sm\:ml-9 {
+    margin-left: 2.25rem;
+  }
+
   .sm\:mr-6 {
     margin-right: 1.5rem;
+  }
+
+  .sm\:mr-auto {
+    margin-right: auto;
   }
 
   .sm\:flex-row {
@@ -7587,6 +7595,10 @@ p {
 
   .sm\:pb-0 {
     padding-bottom: 0px;
+  }
+
+  .sm\:pl-9 {
+    padding-left: 2.25rem;
   }
 }
 
