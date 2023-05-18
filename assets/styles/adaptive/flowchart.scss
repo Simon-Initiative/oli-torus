@@ -22,7 +22,7 @@ $headerColor: $darkForeground;
 @import 'layout/background';
 
 /*-- Activity Types --*/
-@import 'activities/text-flow';
+@import 'flowchart/text-flow';
 @import 'activities/image';
 @import 'activities/navigation-button';
 @import 'flowchart/mcq';
@@ -111,61 +111,6 @@ html [type='button'],
 ================================*/
 
 /*-------------------------------
-    janus-text-flow
--------------------------------*/
-/* Heading 1 */
-h1 {
-  font-family: 'Open Sans' !important;
-  font-size: 80px !important;
-  line-height: 90px !important;
-}
-
-/* Heading 2 */
-h2 {
-  font-family: 'Open Sans' !important;
-  font-weight: 700 !important;
-  font-size: 40px !important;
-  line-height: 120% !important;
-}
-
-/* Heading 3 */
-h3 {
-  font-family: 'Open Sans' !important;
-}
-
-/* Heading 4 */
-h4 {
-  font-size: 20px !important;
-  font-weight: 700 !important;
-  line-height: 100% !important;
-}
-
-/* Heading 6 */
-h5 {
-  font-weight: 700 !important;
-  font-size: 16px !important;
-  line-height: 100% !important;
-}
-
-/* Heading 6 */
-h6 {
-  font-size: 16px !important;
-  line-height: 100% !important;
-  text-align: right !important;
-}
-
-/* Paragraph */
-p {
-  font-size: 14px !important;
-  line-height: 22px !important;
-}
-
-/* Paragraph with small font */
-p span[style*='font-size:12px'] {
-  line-height: 20px;
-}
-
-/*-------------------------------
   janus-dropdown
 -------------------------------*/
 janus-dropdown label:empty {
@@ -252,24 +197,24 @@ janus-audio audio {
   height: inherit;
 }
 
-/*-------------------------------
-  For testing purposes only
-  Do not include
--------------------------------*/
-.headerContainer .lessonTitle {
-  font-family: OpenSansBold, sans-serif !important;
-  font-size: 1rem !important;
-}
-janus-text-flow.text-align-bottom div[data-janus-type='janus-text-flow'],
-janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
-  display: flex !important;
-}
-janus-text-flow.text-align-bottom div[data-janus-Type='janus-text-flow'] {
-  align-items: flex-end;
-}
-janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
-  align-items: center;
-}
+// /*-------------------------------
+//   For testing purposes only
+//   Do not include
+// -------------------------------*/
+// .headerContainer .lessonTitle {
+//   font-family: OpenSansBold, sans-serif !important;
+//   font-size: 1rem !important;
+// }
+// janus-text-flow.text-align-bottom div[data-janus-type='janus-text-flow'],
+// janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
+//   display: flex !important;
+// }
+// janus-text-flow.text-align-bottom div[data-janus-Type='janus-text-flow'] {
+//   align-items: flex-end;
+// }
+// janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
+//   align-items: center;
+// }
 
 janus-image,
 janus-image-carousel,
