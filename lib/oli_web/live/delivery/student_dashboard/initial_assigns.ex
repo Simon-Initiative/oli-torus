@@ -45,7 +45,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
   end
 
   defp add_students_metrics(student, section_id) do
-    # TODO get real engagement metric when developed in Oli.Delivery.Metrics
+
     progress = Metrics.progress_for(section_id, student.id) |> Map.get(student.id, 0.0)
 
     avg_score =
@@ -54,8 +54,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
 
     Map.merge(student, %{
       avg_score: avg_score,
-      progress: progress,
-      engagement: Enum.random(["Low", "Medium", "High"])
+      progress: progress
     })
   end
 

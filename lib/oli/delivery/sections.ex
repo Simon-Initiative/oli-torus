@@ -2538,23 +2538,17 @@ defmodule Oli.Delivery.Sections do
       |> Enum.into([], fn elem -> elem.objectives["attached"] end)
       |> List.flatten()
 
-    # TODO we should be able to calculate student_engagement 's metric
-    # for all students or for a specific student depending on where we are rendering the learning objectives table
-    # (from instructor dashboard or student dashboard perspective)
     objectives =
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         left_join: rev2 in Revision,
         on: rev2.resource_id in rev.children,
         where: rev.deleted == false and rev.resource_type_id == ^page_id,
-        where: rev.resource_id in ^objectives_id_list,
         group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id],
         select: %{
           objective: rev.title,
           objective_resource_id: rev.resource_id,
           subobjective: rev2.title,
-          subobjective_resource_id: rev2.resource_id,
-          student_engagement:
-            fragment("('{High,Medium,Low,Not enough data}'::text[])[ceil(random()*4)]")
+          subobjective_resource_id: rev2.resource_id
         }
       )
       |> Repo.all()

@@ -246,14 +246,12 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
     mastery_per_container = Metrics.mastery_for_student_per_container(section.slug, student_id)
 
-    # TODO get real student engagement values
     # when those metrics are ready (see Oli.Delivery.Metrics)
 
     containers_with_metrics =
       Enum.map(containers, fn container ->
         Map.merge(container, %{
           progress: student_progress[container.id] || 0.0,
-          student_engagement: Enum.random(["Low", "Medium", "High", "Not enough data"]),
           student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
         })
       end)

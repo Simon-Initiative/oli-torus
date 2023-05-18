@@ -181,7 +181,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp get_students(section, params) do
-    # TODO get real student engagement
+
     # when that metric is ready (see Oli.Delivery.Metrics)
     case params.page_id do
       nil ->
@@ -189,14 +189,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> add_students_progress(section.id, params.container_id)
         |> add_students_last_interaction(section, params.container_id)
         |> add_students_overall_mastery(section, params.container_id)
-        |> add_students_engagement(section.slug)
 
       page_id ->
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_mastery_for_page(section.slug, page_id)
-        |> add_students_engagement_for_page(section.slug, page_id)
     end
   end
 
@@ -213,14 +211,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     mastery_per_container = Metrics.mastery_per_container(section.slug)
 
-    # TODO get real student engagement values
     # when those metrics are ready (see Oli.Delivery.Metrics)
 
     containers_with_metrics =
       Enum.map(containers, fn container ->
         Map.merge(container, %{
           progress: student_progress[container.id] || 0.0,
-          student_engagement: Enum.random(["Low", "Medium", "High", "Not enough data"]),
           student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
         })
       end)
@@ -300,22 +296,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     Enum.map(students, fn student ->
       Map.merge(student, %{
         overall_mastery: Map.get(mastery_per_student_for_page, student.id, "Not enough data")
-      })
-    end)
-  end
-
-  defp add_students_engagement(students, _section_slug) do
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        engagement: Enum.random(["Low", "Medium", "High", "Not enough data"])
-      })
-    end)
-  end
-
-  defp add_students_engagement_for_page(students, _section_slug, _page_id) do
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        engagement: Enum.random(["Low", "Medium", "High", "Not enough data"])
       })
     end)
   end
