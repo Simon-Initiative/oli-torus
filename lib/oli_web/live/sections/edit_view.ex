@@ -2,6 +2,7 @@ defmodule OliWeb.Sections.EditView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Branding
+  alias OliWeb.Sections.StartEnd
   alias Oli.Delivery.Sections
   alias OliWeb.Common.{Breadcrumb, SessionContext, FormatDateTime, CustomLabelsForm}
   alias OliWeb.Common.Properties.{Groups, Group}
@@ -78,12 +79,16 @@ defmodule OliWeb.Sections.EditView do
         <Group label="Settings" description="Manage the course section settings">
           <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
         </Group>
+        <Group label="Schedule" description="Edit the start and end dates for scheduling purposes">
+          <StartEnd id="start_end_editing" changeset={@changeset} disabled={false} is_admin={@is_admin} context={@context}/>
+        </Group>
 
         {#if @section.open_and_free}
           <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
         {#else}
-          <LtiSettings section={@section}/>
+          <LtiSettings section={@section} id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
         {/if}
+
         <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)}/>
         <ContentSettings changeset={@changeset}/>
       </Groups>
