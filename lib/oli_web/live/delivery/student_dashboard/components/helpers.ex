@@ -193,10 +193,6 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
               <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">course completion</h4>
               <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}><%= format_percentage(@student.progress) %></span>
             </div>
-            <div class="flex flex-col justify-between">
-              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">platform engagement <i class="fa fa-info-circle text-primary h-3 w-3 ml-2"></i></h4>
-              <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:engagement, @student.engagement)}"}><%= @student.engagement %></span>
-            </div>
           </div>
           <%= if length(@survey_responses) > 0 do%>
             <div class="grid grid-cols-5 gap-4 w-full p-8">
@@ -232,15 +228,6 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
       nil -> "text-gray-800"
       value when value < 0.5 -> "text-red-600"
       value when value < 0.8 -> "text-yellow-600"
-      _ -> "text-green-700"
-    end
-  end
-
-  defp text_color(:engagement, metric_value) do
-    case metric_value do
-      nil -> "text-gray-800"
-      "Low" -> "text-red-600"
-      "Medium" -> "text-yellow-600"
       _ -> "text-green-700"
     end
   end

@@ -158,8 +158,7 @@ defmodule OliWeb.Components.Delivery.Content do
             :numbering_index,
             :container_name,
             :student_completion,
-            :student_mastery,
-            :student_engagement
+            :student_mastery
           ],
           @default_params.sort_by
         ),
@@ -238,9 +237,6 @@ defmodule OliWeb.Components.Delivery.Content do
 
       :student_mastery ->
         Enum.sort_by(containers, fn container -> container.student_mastery end, sort_order)
-
-      :student_engagement ->
-        Enum.sort_by(containers, fn container -> container.student_engagement end, sort_order)
 
       _ ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)

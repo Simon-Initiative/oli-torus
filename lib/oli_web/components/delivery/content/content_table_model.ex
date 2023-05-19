@@ -28,12 +28,6 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
         label: "STUDENT MASTERY",
         render_fn: &__MODULE__.stub_student_mastery/3,
         th_class: "instructor_dashboard_th"
-      },
-      %ColumnSpec{
-        name: :student_engagement,
-        label: "STUDENT ENGAGEMENT",
-        render_fn: &__MODULE__.stub_student_engagement/3,
-        th_class: "instructor_dashboard_th"
       }
     ]
 
@@ -99,14 +93,6 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
     ~H"""
       <div class={if @container.student_mastery == "Low", do: "text-red-600 font-bold"}><%= @container.student_mastery %></div>
-    """
-  end
-
-  def stub_student_engagement(assigns, container, _) do
-    assigns = Map.merge(assigns, %{container: container})
-
-    ~H"""
-      <div class={if @container.student_engagement == "Low", do: "text-red-600 font-bold"}><%= @container.student_engagement %></div>
     """
   end
 
