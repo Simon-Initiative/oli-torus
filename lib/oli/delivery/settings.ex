@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Settings do
-
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Resources.Revision
@@ -15,40 +14,46 @@ defmodule Oli.Delivery.Settings do
   user.
   """
   def get_combined_settings(%Revision{} = resolved_revision, section_id, user_id) do
-    section_resource = Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
+    section_resource =
+      Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
+
     student_exception = get_student_exception(resolved_revision.resource_id, section_id, user_id)
 
     combine(resolved_revision, section_resource, student_exception)
   end
 
   def get_combined_settings(%Revision{} = resolved_revision, section_id) do
-    section_resource = Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
+    section_resource =
+      Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
 
     combine(resolved_revision, section_resource, nil)
   end
 
   def combine(resolved_revision, section_resource, student_exception) do
-
     # -1 is a special value that was set by default when this field was added
     # to the section_resources schema which allows us to pull through the
     # current revision max_attempts, until the section_resource is updated via
     # actual instructor customization
-    max_attempts = case combine_field(:max_attempts, section_resource, student_exception) do
-      -1 -> resolved_revision.max_attempts
-      value -> value
-    end
+    max_attempts =
+      case combine_field(:max_attempts, section_resource, student_exception) do
+        -1 -> resolved_revision.max_attempts
+        value -> value
+      end
 
-    explanation_strategy = case combine_field(:explanation_strategy, section_resource, student_exception) do
-      nil -> resolved_revision.explanation_strategy
-      v -> v
-    end
+    explanation_strategy =
+      case combine_field(:explanation_strategy, section_resource, student_exception) do
+        nil -> resolved_revision.explanation_strategy
+        v -> v
+      end
 
-    collab_space_config = case combine_field(:collab_space_config, section_resource, student_exception) do
-      nil -> resolved_revision.collab_space_config
-      v -> v
-    end
+    collab_space_config =
+      case combine_field(:collab_space_config, section_resource, student_exception) do
+        nil -> resolved_revision.collab_space_config
+        v -> v
+      end
 
     %Combined{
+      resource_id: resolved_revision.resource_id,
       end_date: combine_field(:end_date, section_resource, student_exception),
       max_attempts: max_attempts,
       retake_mode: combine_field(:retake_mode, section_resource, student_exception),
@@ -56,11 +61,12 @@ defmodule Oli.Delivery.Settings do
       late_start: combine_field(:late_start, section_resource, student_exception),
       time_limit: combine_field(:time_limit, section_resource, student_exception),
       grace_period: combine_field(:grace_period, section_resource, student_exception),
-      password: combine_field(:password, section_resource, student_exception),
-      scoring_strategy_id: combine_field(:scoring_strategy_id, section_resource, student_exception),
+      scoring_strategy_id:
+        combine_field(:scoring_strategy_id, section_resource, student_exception),
       review_submission: combine_field(:review_submission, section_resource, student_exception),
       feedback_mode: combine_field(:feedback_mode, section_resource, student_exception),
-      feedback_scheduled_date: combine_field(:feedback_scheduled_date, section_resource, student_exception),
+      feedback_scheduled_date:
+        combine_field(:feedback_scheduled_date, section_resource, student_exception),
       collab_space_config: collab_space_config,
       explanation_strategy: explanation_strategy
     }
@@ -87,18 +93,17 @@ defmodule Oli.Delivery.Settings do
   end
 
   def was_late?(%ResourceAttempt{} = resource_attempt, %Combined{} = effective_settings, now) do
-    DateTime.compare(now, determine_effective_deadline(resource_attempt, effective_settings)) == :gt
+    DateTime.compare(now, determine_effective_deadline(resource_attempt, effective_settings)) ==
+      :gt
   end
 
   @doc """
   Determine if a new attempt is allowed to be started.
   """
   def new_attempt_allowed(%Combined{} = effective_settings, num_attempts_taken, blocking_gates) do
-
     with {:allowed} <- check_blocking_gates(blocking_gates),
-      {:allowed} <- check_num_attempts(effective_settings, num_attempts_taken),
-      {:allowed} <- check_end_date(effective_settings)
-    do
+         {:allowed} <- check_num_attempts(effective_settings, num_attempts_taken),
+         {:allowed} <- check_end_date(effective_settings) do
       {:allowed}
     else
       reason -> reason
@@ -117,27 +122,34 @@ defmodule Oli.Delivery.Settings do
   end
 
   def check_end_date(%Combined{end_date: nil}), do: {:allowed}
-  def check_end_date(%Combined{end_date: end_date} = effective_settings) do
 
+  def check_end_date(%Combined{end_date: end_date} = effective_settings) do
     effective_end_date = DateTime.add(end_date, effective_settings.grace_period, :minute)
-    if (DateTime.compare(effective_end_date, DateTime.utc_now()) == :gt or effective_settings.late_start == :allow) do
+
+    if DateTime.compare(effective_end_date, DateTime.utc_now()) == :gt or
+         effective_settings.late_start == :allow do
       {:allowed}
     else
       {:end_date_passed}
     end
   end
 
-  def determine_effective_deadline(%ResourceAttempt{} = resource_attempt, %Combined{} = effective_settings) do
+  def determine_effective_deadline(
+        %ResourceAttempt{} = resource_attempt,
+        %Combined{} = effective_settings
+      ) do
     case {effective_settings.end_date, effective_settings.time_limit} do
-
       # no end date or time limit, no deadline
-      {nil, nil} -> nil
+      {nil, nil} ->
+        nil
 
       # only a time limit, just add the minutes to the start
-      {nil, time_limit} -> DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+      {nil, time_limit} ->
+        DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
 
       # only an end date, use that
-      {end_date, 0} -> end_date
+      {end_date, 0} ->
+        end_date
 
       # both an end date and a time limit, use the earlier of the two
       {end_date, time_limit} ->
@@ -152,9 +164,10 @@ defmodule Oli.Delivery.Settings do
 
   def show_feedback?(%Combined{feedback_mode: :allow}), do: true
   def show_feedback?(%Combined{feedback_mode: :disallow}), do: false
+
   def show_feedback?(%Combined{feedback_scheduled_date: date}) do
     DateTime.compare(date, DateTime.utc_now()) == :lt
   end
-  def show_feedback?(nil), do: true
 
+  def show_feedback?(nil), do: true
 end
