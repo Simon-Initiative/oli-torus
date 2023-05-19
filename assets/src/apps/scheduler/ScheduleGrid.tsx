@@ -46,7 +46,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset 
       </div>
 
       <div className="w-full overflow-x-auto">
-        <table className="mx-auto select-none table-striped border-t-0" style={{ minWidth }}>
+        <table className="select-none table-striped border-t-0">
           <thead>
             <ScheduleHeaderRow
               labels={true}
