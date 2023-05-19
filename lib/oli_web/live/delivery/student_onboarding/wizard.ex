@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   @explorations_label "Go to explorations"
   @course_label "Go to course"
 
-  def mount(_params, _session, socket) do
+  def mount(_params, %{"datashop_session_id" => datashop_session_id}, socket) do
     section = socket.assigns.section
 
     has_required_survey = has_required_survey(section)
@@ -83,7 +83,13 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
         _ -> [introduction_step]
       end
 
-    {:ok, assign(socket, steps: steps, current_step_label: @intro_step, current_step_index: 0)}
+    {:ok,
+     assign(socket,
+       steps: steps,
+       current_step_label: @intro_step,
+       current_step_index: 0,
+       datashop_session_id: datashop_session_id
+     )}
   end
 
   attr :section, :map, required: true
@@ -111,7 +117,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   defp header(assigns) do
     ~H"""
       <h5 class="px-9 py-4 border-gray-200 dark:border-gray-600 border-b text-sm font-semibold">
-         <%= @section.title %> Set Up
+        <%= @section.title %> Set Up
       </h5>
       <div class="overflow-y-auto scrollbar-hide relative h-full px-10 py-4">
         <%= render_slot(@inner_block) %>
@@ -132,7 +138,10 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   def render_step(%{current_step_label: @survey_step} = assigns) do
     ~H"""
       <.header section={@section}>
-        <Survey.render />
+        <.live_component
+          id="onboarding_wizard_survey"
+          module={Survey}
+          user={@user} section={@section} survey={@survey} datashop_session_id={@datashop_session_id} />
       </.header>
     """
   end
@@ -176,6 +185,15 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
         %{
           section: assigns.section,
           current_step_label: assigns.current_step_label
+        }
+
+      @survey_step ->
+        %{
+          section: assigns.section,
+          current_step_label: assigns.current_step_label,
+          user: assigns.current_user,
+          survey: assigns.section.required_survey,
+          datashop_session_id: assigns.datashop_session_id
         }
 
       _ ->

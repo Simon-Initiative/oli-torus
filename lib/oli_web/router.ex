@@ -705,8 +705,6 @@ defmodule OliWeb.Router do
     post("/ecl", Api.ECLController, :eval)
   end
 
-
-
   scope "/api/v1/lti", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
@@ -900,8 +898,16 @@ defmodule OliWeb.Router do
     ])
 
     live_session :load_section,
-      on_mount: [Oli.LiveSessionPlugs.SetSection] do
-      live("/:section_slug", Delivery.StudentOnboarding.Wizard)
+      on_mount: [
+        Oli.LiveSessionPlugs.SetSection,
+        Oli.LiveSessionPlugs.SetCurrentUser,
+        Oli.LiveSessionPlugs.RequireEnrollment
+      ] do
+      live(
+        "/:section_slug/welcome",
+        Delivery.StudentOnboarding.Wizard,
+        as: :student_onboarding_wizard
+      )
     end
   end
 
@@ -914,7 +920,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    # live("/:section_slug", Sections.OverviewView)
+    live("/:section_slug", Sections.OverviewView)
 
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
@@ -1253,7 +1259,6 @@ defmodule OliWeb.Router do
       ])
 
       get("/flame_graphs", DevController, :flame_graphs)
-
     end
   end
 end
