@@ -540,7 +540,8 @@ defmodule OliWeb.PageDeliveryController do
       bib_app_params: context.bib_revisions,
       submitted_surveys: submitted_surveys,
       historical_attempts: context.historical_attempts,
-      learning_language: base_project_attributes.learning_language
+      learning_language: base_project_attributes.learning_language,
+      effective_settings: effective_settings
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -586,6 +587,7 @@ defmodule OliWeb.PageDeliveryController do
         latest_attempts: context.latest_attempts,
         section: section,
         children: context.page.children,
+        show_feedback: Oli.Delivery.Settings.show_feedback?(effective_settings),
         page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
         container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
         revision: context.page,
@@ -683,8 +685,6 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
-
-
 
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
