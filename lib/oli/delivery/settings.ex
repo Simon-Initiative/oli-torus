@@ -149,4 +149,10 @@ defmodule Oli.Delivery.Settings do
     |> DateTime.add(effective_settings.grace_period, :minute)
   end
 
+  def show_feedback?(%Combined{feedback_mode: :allow}), do: true
+  def show_feedback?(%Combined{feedback_mode: :disallow}), do: false
+  def show_feedback?(%Combined{feedback_scheduled_date: date}) do
+    DateTime.compare(date, DateTime.utc_now()) == :lt
+  end
+
 end

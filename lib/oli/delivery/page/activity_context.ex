@@ -38,7 +38,9 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
       # the activity type this revision pertains to
       type = Map.get(reg_map, revision.activity_type_id)
+
       state = Map.get(activity_states, id)
+      |> prune_feedback_from_state(Keyword.get(opts, :show_feedback, true))
 
       {id,
        %ActivitySummary{
@@ -56,6 +58,18 @@ defmodule Oli.Delivery.Page.ActivityContext do
        }}
     end)
     |> Map.new()
+  end
+
+  defp prune_feedback_from_state(state, true), do: state
+  defp prune_feedback_from_state(state, false) do
+    %Oli.Activities.State.ActivityState{state |
+      parts: prune_feedback_from_parts(state.parts), score: nil, outOf: nil}
+  end
+
+  defp prune_feedback_from_parts(parts) do
+    Enum.map(parts, fn part ->
+      %Oli.Activities.State.PartState{part | feedback: nil}
+    end)
   end
 
   defp create_ordinal_assignment_fn(false, _), do: fn _ -> nil end

@@ -24,7 +24,7 @@ defstruct end_date: nil,
           grace_period: integer(),
           scoring_strategy_id: integer(),
           review_submission: :allow | :disallow,
-          feedback_mode: :allow | :disallow,
+          feedback_mode: :allow | :disallow | :scheduled,
           feedback_scheduled_date: DateTime.t(),
           collab_space_config: Oli.Resources.Collaboration.CollabSpaceConfig.t(),
           explanation_strategy: Oli.Resources.ExplanationStrategy.t()
