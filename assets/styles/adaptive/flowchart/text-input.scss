@@ -10,7 +10,7 @@ janus-multi-line-text > div {
 janus-input-text label,
 janus-input-number label,
 janus-multi-line-text label {
-  font-family: 'OpenSansBold';
+  font-family: 'Open Sans';
   font-weight: 700;
   color: $darkForeground;
   display: inline-block;
@@ -28,7 +28,6 @@ janus-multi-line-text textarea {
   font-family: 'Open Sans';
   font-weight: 400;
   padding: 5px;
-  border: none;
   box-sizing: border-box;
   border-radius: 4px;
   min-height: 44px;
@@ -37,7 +36,7 @@ janus-multi-line-text textarea {
   color: $lightForeground;
   font-size: 14px;
   line-height: 18px;
-  outline: none;
+  @include control-border;
 }
 
 janus-input-text input::placeholder,
