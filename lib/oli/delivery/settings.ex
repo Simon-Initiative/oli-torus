@@ -154,5 +154,6 @@ defmodule Oli.Delivery.Settings do
   def show_feedback?(%Combined{feedback_scheduled_date: date}) do
     DateTime.compare(date, DateTime.utc_now()) == :lt
   end
+  def show_feedback?(nil), do: true
 
 end

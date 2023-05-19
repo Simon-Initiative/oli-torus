@@ -29,6 +29,7 @@ describe('check all that apply delivery', () => {
         sectionSlug: '',
         projectSlug: '',
         bibParams: [],
+        showFeedback: true,
       },
       preview: false,
     };
