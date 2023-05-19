@@ -10,13 +10,15 @@ defmodule OliWeb.PaymentController do
   """
   def guard(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
+    section = conn.assigns.section
 
     if user.guest do
       render(conn, "require_account.html", section_slug: section_slug)
     else
       render(conn, "guard.html",
-        section_slug: section_slug,
-        direct_payments_enabled: direct_payments_enabled?()
+        pay_by_card?: direct_payments_enabled?() and (section.payment_options == :direct or section.payment_options == :direct_and_deferred),
+        pay_by_code?: section.payment_options == :deferred or section.payment_options == :direct_and_deferred,
+        section_slug: section_slug
       )
     end
   end

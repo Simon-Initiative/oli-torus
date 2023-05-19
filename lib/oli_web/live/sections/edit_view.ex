@@ -98,7 +98,6 @@ defmodule OliWeb.Sections.EditView do
 
   def handle_event("validate", %{"section" => params}, socket) do
     params = convert_dates(params, socket.assigns.context)
-
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
