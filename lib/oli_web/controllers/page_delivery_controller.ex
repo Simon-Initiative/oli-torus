@@ -370,11 +370,13 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       max_attempts: effective_settings.max_attempts,
       effective_settings: effective_settings,
+      requires_password?: effective_settings.password != nil and effective_settings.password != "",
       section: section,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
       resource_slug: context.page.slug,
+
       bib_app_params: %{
         bibReferences: context.bib_revisions
       }
@@ -886,61 +888,81 @@ defmodule OliWeb.PageDeliveryController do
   # ----------------------------------------------------------
   # END PREVIEW
 
+  def start_attempt_protected(conn, params) do
+    start_attempt(conn, params)
+  end
+
   def start_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
-    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-
-
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    password = Map.get(conn.body_params, "password", nil)
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      # We must check gating conditions here to account for gates that activated after
-      # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
-      # hitting this endpoint.
+
       revision = Resolver.from_revision_slug(section_slug, revision_slug)
       effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
-      case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
-        [] ->
-          case PageLifecycle.start(
-                 revision_slug,
-                 section_slug,
-                 datashop_session_id,
-                 user,
-                 effective_settings,
-                 activity_provider
-               ) do
-            {:ok, _} ->
-              redirect(conn,
-                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
-              )
-            {:error, {:end_date_passed}} ->
-              redirect(conn,
-                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
-              )
-
-            {:error, {:active_attempt_present}} ->
-              redirect(conn,
-                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
-              )
-
-            {:error, {:no_more_attempts}} ->
-              redirect(conn,
-                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
-              )
-
-            _ ->
-              render(conn, "error.html")
-          end
-
+      case effective_settings.password do
+        nil -> do_start_attempt(conn, section, user, revision, effective_settings)
+        "" -> do_start_attempt(conn, section, user, revision, effective_settings)
+        ^password -> do_start_attempt(conn, section, user, revision, effective_settings)
         _ ->
-          # In the case where a gate exists we want to redirect to this page display, which will
-          # then pick up the gate and show that feedback to the user
-          redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
+          conn
+          |> put_flash(:error, "Incorrect password")
+          |> redirect(to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+
       end
+
     else
       render(conn, "not_authorized.html")
+    end
+  end
+
+  defp do_start_attempt(conn, section, user, revision, effective_settings) do
+
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+    # We must check gating conditions here to account for gates that activated after
+    # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
+    # hitting this endpoint.
+    case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
+      [] ->
+        case PageLifecycle.start(
+               revision.slug,
+               section.slug,
+               datashop_session_id,
+               user,
+               effective_settings,
+               activity_provider
+             ) do
+          {:ok, _} ->
+            redirect(conn,
+              to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
+            )
+          {:error, {:end_date_passed}} ->
+            redirect(conn,
+              to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
+            )
+
+          {:error, {:active_attempt_present}} ->
+            redirect(conn,
+              to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
+            )
+
+          {:error, {:no_more_attempts}} ->
+            redirect(conn,
+              to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
+            )
+
+          _ ->
+            render(conn, "error.html")
+        end
+
+      _ ->
+        # In the case where a gate exists we want to redirect to this page display, which will
+        # then pick up the gate and show that feedback to the user
+        redirect(conn, to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
     end
   end
 
