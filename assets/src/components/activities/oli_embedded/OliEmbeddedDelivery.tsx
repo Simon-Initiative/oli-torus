@@ -115,7 +115,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           id={activityState.attemptGuid}
           src={context.src_url}
           width="100%"
-          style={{resize:'vertical', border: 'none'}}
+          style={{ resize: 'vertical', border: 'none' }}
           height={iframeHeight}
           data-authenticationtoken="none"
           data-sessionid="1958e2f50a0000562295c9a569354ab5"
@@ -129,7 +129,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           data-partids={context.part_ids}
           data-mode="oli"
           onLoad={(event: any) => {
-            const { contentWindow, contentDocument  } = event.target;
+            const { contentWindow, contentDocument } = event.target;
             const embed = contentWindow.document.body.querySelector('#oli-embed');
 
             // Observe any size changes in the content and update the iframe height
