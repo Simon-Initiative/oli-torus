@@ -10,6 +10,7 @@ import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
 import { ReadOnlyWarning } from './ReadOnlyWarning';
 import { ModalContainer } from './components/AdvancedAuthoringModal';
 import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
+import KeepAlive from './components/Flowchart/KeepAlive';
 import { onboardWizardComplete } from './components/Flowchart/flowchart-actions/onboard-wizard-complete';
 import { OnboardWizard } from './components/Flowchart/onboard-wizard/OnboardWizard';
 import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
@@ -287,6 +288,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           {shouldShowOnboarding && (
             <OnboardWizard onSetupComplete={onOnboardComplete} initialTitle={props.content.title} />
           )}
+
+          <KeepAlive />
         </ModalContainer>
       </ErrorBoundary>
     </AppsignalContext.Provider>
