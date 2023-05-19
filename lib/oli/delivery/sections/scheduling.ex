@@ -16,7 +16,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   For a given course section, return a list of all soft schedulable
   section resources (that is, all containers and pages).
   """
-  def retrieve(%Section{id: section_id}, timezone) do
+  def retrieve(%Section{id: section_id}) do
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
@@ -41,11 +41,6 @@ defmodule Oli.Delivery.Sections.Scheduling do
       })
 
     Repo.all(query)
-    |> Enum.map(fn sr ->
-      Map.put(sr, :end_date, adjust_for_tz(sr.end_date, timezone))
-      |> Map.put(:start_date, adjust_for_tz(sr.start_date, timezone))
-    end)
-
   end
 
   @doc """
@@ -141,19 +136,6 @@ defmodule Oli.Delivery.Sections.Scheduling do
         DateTime.truncate(date_time, :second)
 
     end
-
-  end
-
-  defp adjust_for_tz(nil, _) do
-    nil
-  end
-
-  defp adjust_for_tz(date_time, timezone) do
-
-    date = DateTime.to_date(date_time)
-    time = DateTime.to_time(date_time)
-    {:ok , dt} = DateTime.new(date, time, "Etc/UTC")
-    dt
 
   end
 

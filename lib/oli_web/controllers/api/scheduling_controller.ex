@@ -124,11 +124,10 @@ defmodule OliWeb.Api.SchedulingController do
        }
   def index(conn, _) do
     section = conn.assigns.section
-    context = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
       resources =
-        Scheduling.retrieve(section, context.local_tz)
+        Scheduling.retrieve(section)
         |> serialize_resource()
 
       json(conn, %{"result" => "success", "resources" => resources})

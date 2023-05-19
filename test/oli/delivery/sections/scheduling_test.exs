@@ -31,7 +31,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
         |> then(fn {:ok, section} -> section end)
         |> Sections.create_section_resources(initial_pub)
 
-      scheduled_resources = Scheduling.retrieve(section, "Etc/UTC")
+      scheduled_resources = Scheduling.retrieve(section)
 
       by_slug = fn srs, slug ->
         result = Enum.find(srs, fn sr -> sr.slug == slug end)
@@ -63,7 +63,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
         %{id: page_one.id, scheduling_type: "inclass_activity", start_date: nil, end_date: "2023-02-06", manually_scheduled: false}
       ], "Etc/UTC")
 
-      scheduled_resources = Scheduling.retrieve(section, "Etc/UTC")
+      scheduled_resources = Scheduling.retrieve(section)
 
       assert Enum.count(scheduled_resources) == 3
 
@@ -118,7 +118,7 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
         |> then(fn {:ok, section} -> section end)
         |> Sections.create_section_resources(initial_pub)
 
-      scheduled_resources = Scheduling.retrieve(section1, "Etc/UTC")
+      scheduled_resources = Scheduling.retrieve(section1)
 
       by_slug = fn srs, slug ->
         result = Enum.find(srs, fn sr -> sr.slug == slug end)
