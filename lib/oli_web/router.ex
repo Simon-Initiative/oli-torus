@@ -211,6 +211,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.AuthorizeCommunity)
   end
 
+  pipeline :ensure_user_section_visit do
+    plug(Oli.Plugs.EnsureUserSectionVisit)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -841,6 +845,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
+      :ensure_user_section_visit,
       :force_required_survey,
       :require_exploration_pages,
       :delivery_protected,
@@ -905,8 +910,7 @@ defmodule OliWeb.Router do
       ] do
       live(
         "/:section_slug/welcome",
-        Delivery.StudentOnboarding.Wizard,
-        as: :student_onboarding_wizard
+        Delivery.StudentOnboarding.Wizard
       )
     end
   end

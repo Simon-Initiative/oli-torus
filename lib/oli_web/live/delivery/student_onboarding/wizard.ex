@@ -4,6 +4,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   alias OliWeb.Common.Stepper
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Delivery.StudentOnboarding.{Explorations, Intro, Survey}
+  alias OliWeb.Router.Helpers, as: Routes
+
   alias Phoenix.LiveView.JS
 
   @intro_step :intro
@@ -36,13 +38,13 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
       on_next_step:
         case true do
           ^has_required_survey ->
-            JS.push("change_step", value: %{current_step_label: @survey_step})
+            JS.push("change_step", value: %{current_step_name: @survey_step})
 
           ^has_explorations ->
-            JS.push("change_step", value: %{current_step_label: @explorations_step})
+            JS.push("change_step", value: %{current_step_name: @explorations_step})
 
           _ ->
-            JS.push("change_step", value: %{current_step_label: @course_step})
+            JS.push("change_step", value: %{current_step_name: @course_step})
         end
     }
 
@@ -55,10 +57,10 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
       next_button_label: if(has_explorations, do: @explorations_label, else: @course_label),
       on_next_step:
         case has_explorations do
-          true -> JS.push("change_step", value: %{current_step_label: @explorations_step})
-          _ -> JS.push("change_step", value: %{current_step_label: @course_step})
+          true -> JS.push("change_step", value: %{current_step_name: @explorations_step})
+          _ -> JS.push("change_step", value: %{current_step_name: @course_step})
         end,
-      on_previous_step: JS.push("change_step", value: %{current_step_label: @intro_step})
+      on_previous_step: JS.push("change_step", value: %{current_step_name: @intro_step})
     }
 
     exploration_step = %Step{
@@ -67,11 +69,11 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
       render_fn: &render_step/1,
       data: %{},
       next_button_label: @course_label,
-      on_next_step: JS.push("change_step", value: %{current_step_label: @course_step}),
+      on_next_step: JS.push("change_step", value: %{current_step_name: @course_step}),
       on_previous_step:
         case has_required_survey do
-          true -> JS.push("change_step", value: %{current_step_label: @survey_step})
-          _ -> JS.push("change_step", value: %{current_step_label: @intro_step})
+          true -> JS.push("change_step", value: %{current_step_name: @survey_step})
+          _ -> JS.push("change_step", value: %{current_step_name: @intro_step})
         end
     }
 
@@ -86,7 +88,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     {:ok,
      assign(socket,
        steps: steps,
-       current_step_label: @intro_step,
+       current_step_name: @intro_step,
        current_step_index: 0,
        datashop_session_id: datashop_session_id
      )}
@@ -94,7 +96,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   attr :section, :map, required: true
   attr :steps, :list, default: []
-  attr :current_step_label, :atom, default: @intro_step
+  attr :current_step_name, :atom, default: @intro_step
   attr :current_step_index, :integer, default: 0
 
   def render(assigns) do
@@ -127,7 +129,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   attr :section, :map, required: true
 
-  def render_step(%{current_step_label: @intro_step} = assigns) do
+  def render_step(%{current_step_name: @intro_step} = assigns) do
     ~H"""
       <.header section={@section}>
         <Intro.render section={@section} />
@@ -135,7 +137,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     """
   end
 
-  def render_step(%{current_step_label: @survey_step} = assigns) do
+  def render_step(%{current_step_name: @survey_step} = assigns) do
     ~H"""
       <.header section={@section}>
         <.live_component
@@ -146,7 +148,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     """
   end
 
-  def render_step(%{current_step_label: @explorations_step} = assigns) do
+  def render_step(%{current_step_name: @explorations_step} = assigns) do
     ~H"""
       <.header section={@section}>
         <Explorations.render />
@@ -169,28 +171,40 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     end
   end
 
-  def handle_event("change_step", %{"current_step_label" => current_step_label}, socket) do
-    current_step_label = String.to_existing_atom(current_step_label)
+  def handle_event("change_step", %{"current_step_name" => current_step_name}, socket) do
+    current_step_name = String.to_existing_atom(current_step_name)
 
-    {:noreply,
-     assign(socket,
-       current_step_label: current_step_label,
-       current_step_index: get_step_index(current_step_label, socket)
-     )}
+    if current_step_name == @course_step do
+      Oli.Delivery.Sections.mark_section_visited_for_student(
+        socket.assigns.section,
+        socket.assigns.current_user
+      )
+
+      {:noreply,
+       push_navigate(socket,
+         to: Routes.page_delivery_path(socket, :index, socket.assigns.section.slug)
+       )}
+    else
+      {:noreply,
+       assign(socket,
+         current_step_name: current_step_name,
+         current_step_index: get_step_index(current_step_name, socket)
+       )}
+    end
   end
 
   defp get_step_data(assigns) do
-    case assigns.current_step_label do
+    case assigns.current_step_name do
       @intro_step ->
         %{
           section: assigns.section,
-          current_step_label: assigns.current_step_label
+          current_step_name: assigns.current_step_name
         }
 
       @survey_step ->
         %{
           section: assigns.section,
-          current_step_label: assigns.current_step_label,
+          current_step_name: assigns.current_step_name,
           user: assigns.current_user,
           survey: assigns.section.required_survey,
           datashop_session_id: assigns.datashop_session_id
@@ -199,7 +213,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
       _ ->
         %{
           section: assigns.section,
-          current_step_label: assigns.current_step_label
+          current_step_name: assigns.current_step_name
         }
     end
   end

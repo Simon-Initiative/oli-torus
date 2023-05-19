@@ -2725,4 +2725,49 @@ defmodule Oli.Delivery.Sections do
         update_project_required_survey_resource_id(section.id, nil)
     end
   end
+
+  @spec has_visited_section(map, map) :: boolean
+  def has_visited_section(section, user) do
+    has_resource_accesses =
+      ResourceAccess
+      |> where(
+        [ra],
+        ra.user_id == ^user.id and ra.section_id == ^section.id and
+          ra.resource_id != ^section.required_survey_resource_id
+      )
+      |> select([ra], ra.id)
+      |> Repo.all()
+      |> length()
+      |> Kernel.>(0)
+
+    # If th
+    case has_resource_accesses do
+      # If the user already has a resource access, they have already visited the section
+      true ->
+        true
+
+      # If the user doesn't, check if the visited flag in the enrollment state is true
+      false ->
+        visited_section_key = Oli.Delivery.ExtrinsicState.Key.has_visited_once()
+
+        state =
+          case Oli.Delivery.ExtrinsicState.read_section(user.id, section.slug) do
+            {:ok, state} -> state
+            _ -> %{}
+          end
+
+        !is_nil(state[visited_section_key])
+    end
+  end
+
+  @spec mark_section_visited_for_student(map, map) :: {:ok, map}
+  def mark_section_visited_for_student(section, user) do
+    visited_section_key = Oli.Delivery.ExtrinsicState.Key.has_visited_once()
+
+    Oli.Delivery.ExtrinsicState.upsert_section(
+      user.id,
+      section.slug,
+      Map.put(%{}, visited_section_key, true)
+    )
+  end
 end
