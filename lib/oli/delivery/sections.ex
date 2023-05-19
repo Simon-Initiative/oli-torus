@@ -1055,11 +1055,8 @@ defmodule Oli.Delivery.Sections do
 
       # The relates_to field is an array of resource ids, to be future proof
       # to how relates_to is used, we will follow these 'links' in both directions
-      links = Enum.reduce(relates_to, links, fn target_id, links ->
-        MapSet.put(links, {source_id, target_id})
-      end)
       Enum.reduce(relates_to, links, fn target_id, links ->
-        MapSet.put(links, {target_id, source_id})
+        MapSet.put(links, {source_id, target_id}) |> MapSet.put({target_id, source_id})
       end)
     end)
   end
