@@ -174,24 +174,22 @@ defmodule OliWeb.Curriculum.OptionsModal do
                   <small id="retakeMode" class="form-text text-muted">The retake mode determines how subsequent attempts are presented to students.</small>
                 </div>
 
-                {#if !@revision.graded}
-                  <div class="form-group">
-                    <Label>Purpose</Label>
-                    <Field name={:purpose}>
-                      <Select
-                        options={[
-                          {"Foundation", :foundation},
-                          {"Exploration", :application}
-                        ]}
-                        opts={
-                          aria_describedby: "purpose",
-                          placeholder: "Purpose",
-                          class: "form-control custom-select"
-                        }
-                      />
-                    </Field>
-                  </div>
-                {/if}
+                <div class="form-group">
+                  <Label>Purpose</Label>
+                  <Field name={:purpose}>
+                    <Select
+                      options={[
+                        {"Foundation", :foundation},
+                        {"Exploration", :application}
+                      ]}
+                      opts={
+                        aria_describedby: "purpose",
+                        placeholder: "Purpose",
+                        class: "form-control custom-select"
+                      }
+                    />
+                  </Field>
+                </div>
 
                 <div class="form-group">
                   <Label>Related Resources</Label>
