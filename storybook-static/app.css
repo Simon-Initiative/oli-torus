@@ -4449,10 +4449,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 5rem;
 }
 
-.w-3 {
-  width: 0.75rem;
-}
-
 .w-4 {
   width: 1rem;
 }
@@ -6970,7 +6966,7 @@ button.torus-button.secondary:disabled {
   --tw-bg-opacity: 0.2;
 }
 
-.instructor_dashboard_table tr:has(div[data-engagement-check='false']) {
+.instructor_dashboard_table tr:has(div[data-mastery-check='false']) {
   background-color: rgb(254 202 202 / var(--tw-bg-opacity));
   --tw-bg-opacity: 0.2;
 }
