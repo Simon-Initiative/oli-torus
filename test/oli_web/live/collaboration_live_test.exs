@@ -106,6 +106,10 @@ defmodule OliWeb.CollaborationLiveTest do
     sr = Sections.get_section_resource(section.id, page_resource_cs.id)
     Sections.update_section_resource(sr, %{collab_space_config: collab_space_config})
 
+    Sections.enroll(user.id, section.id, [
+      Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+    ])
+
     first_post = insert(:post, section: section, resource: page_resource_cs, user: user)
 
     second_post =
@@ -1680,7 +1684,8 @@ defmodule OliWeb.CollaborationLiveTest do
             "current_user_id" => user.id,
             "collab_space_config" => collab_space_config,
             "section_slug" => section.slug,
-            "resource_slug" => page_revision_cs.slug
+            "resource_slug" => page_revision_cs.slug,
+            "is_student" => true
           }
         )
 
