@@ -299,7 +299,10 @@ export const MultiInputComponent: React.FC = () => {
         ))}
         <Evaluation
           shouldShow={
-            context.showFeedback == true && anyEvaluated(uiState) && surveyId === null && (!context.graded || mode === 'review')
+            context.showFeedback == true &&
+            anyEvaluated(uiState) &&
+            surveyId === null &&
+            (!context.graded || mode === 'review')
           }
           attemptState={uiState.attemptState}
           context={writerContext}
