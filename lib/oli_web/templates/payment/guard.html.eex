@@ -6,7 +6,7 @@
   </p>
 
   <div class="card-deck mt-5">
-    <%= if @direct_payments_enabled do %>
+    <%= if @pay_by_card? do %>
     <a href="<%= Routes.payment_path(@conn, :make_payment, @section_slug) %>" class="card btn-card">
       <div class="card-body">
         <h5 class="card-title">Pay now</h5>
@@ -14,11 +14,13 @@
       </div>
     </a>
     <% end %>
+    <%= if @pay_by_code? do %>
     <a href="<%= Routes.payment_path(@conn, :use_code, @section_slug) %>" class="card btn-card">
       <div class="card-body">
         <h5 class="card-title">Use a payment code</h5>
         <p class="card-text">Enter a payment code that you purchased from a bookstore or other provider.</p>
       </div>
     </a>
+    <% end %>
   </div>
 </div>

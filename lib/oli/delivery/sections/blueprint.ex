@@ -145,6 +145,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "end_date" => nil,
             "title" => title,
             "requires_payment" => false,
+            "payment_options" => "direct_and_deferred",
             "pay_by_institution" => false,
             "registration_open" => false,
             "grace_period_days" => 1,
