@@ -13,7 +13,7 @@ export const EvaluationConnected: React.FC = () => {
   return (
     <>
       <Evaluation
-        shouldShow={(context.showFeedback == true) && isEvaluated(uiState) && surveyId === null}
+        shouldShow={context.showFeedback == true && isEvaluated(uiState) && surveyId === null}
         attemptState={uiState.attemptState}
         context={writerContext}
       />
