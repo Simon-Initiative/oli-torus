@@ -911,7 +911,8 @@ defmodule Oli.Delivery.Sections do
 
   # For a given section id and the list of resource ids that exist in its hiearchy,
   # determine and return the list of page resource ids that are not reachable from that
-  # hierarchy and linked pages.
+  # hierarchy, taking into account links from pages to other pages and the 'relates_to'
+  # relationship between pages.
   defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
     # Start with all pages
     unreachable =
@@ -924,7 +925,12 @@ defmodule Oli.Delivery.Sections do
     # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
     # links to a page outside the hierarchy.
     all_links =
-      MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
+      [
+        get_all_page_links(publication_ids),
+        get_activity_references(publication_ids),
+        get_relates_to(publication_ids)
+      ]
+      |> Enum.reduce(MapSet.new(), fn links, acc -> MapSet.union(links, acc) end)
       |> MapSet.to_list()
 
     link_map =
@@ -1025,6 +1031,36 @@ defmodule Oli.Delivery.Sections do
 
     Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
       MapSet.put(links, {source_id, content["activity_id"]})
+    end)
+  end
+
+  # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
+  # representing the relates_to relationship between pages.
+  defp get_relates_to(publication_ids) do
+    joined_publication_ids = Enum.join(publication_ids, ",")
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    sql = """
+    select
+      rev.resource_id, rev.relates_to
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where rev.resource_type_id = #{page_type_id} and array_length(rev.relates_to, 1) > 0 and mapping.publication_id IN (#{joined_publication_ids})
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.reduce(results, MapSet.new(), fn [source_id, relates_to], links ->
+
+      # The relates_to field is an array of resource ids, to be future proof
+      # to how relates_to is used, we will follow these 'links' in both directions
+      links = Enum.reduce(relates_to, links, fn target_id, links ->
+        MapSet.put(links, {source_id, target_id})
+      end)
+      Enum.reduce(relates_to, links, fn target_id, links ->
+        MapSet.put(links, {target_id, source_id})
+      end)
     end)
   end
 
