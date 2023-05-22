@@ -121,7 +121,7 @@ defmodule Oli.SectionsTest do
       assert length(Sections.list_enrollments(section.slug)) > 0
     end
 
-    test "unenroll/3 deletes an enrollment if all context roles are removed", %{
+    test "unenroll/3 soft delete an enrollment if all context roles are removed", %{
       section: section,
       user1: user1
     } do
@@ -132,7 +132,7 @@ defmodule Oli.SectionsTest do
       assert Sections.list_enrollments(section.slug) == []
     end
 
-    test "unenroll_learner/2 deletes an enrollment if the user is only a student", %{
+    test "unenroll_learner/2 soft delete an enrollment if the user is only a student", %{
       section: section,
       user1: user1
     } do
@@ -141,6 +141,32 @@ defmodule Oli.SectionsTest do
       Sections.unenroll_learner(user1.id, section.id)
 
       assert Sections.list_enrollments(section.slug) == []
+    end
+
+    test "unenroll/3 changes enrollment status if all context roles are removed", %{
+      section: section,
+      user1: user1
+    } do
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      Sections.unenroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      [head | _] = Sections.enrolled_students(section.slug)
+
+      assert head.enrollment_status == :suspended
+    end
+
+    test "unenroll_learner/2 changes enrollment status if the user is only a student", %{
+      section: section,
+      user1: user1
+    } do
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.unenroll_learner(user1.id, section.id)
+
+      [head | _] = Sections.enrolled_students(section.slug)
+
+      assert head.enrollment_status == :suspended
     end
   end
 

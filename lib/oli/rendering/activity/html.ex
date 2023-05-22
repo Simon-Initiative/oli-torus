@@ -140,7 +140,8 @@ defmodule Oli.Rendering.Activity.Html do
            resource_attempt: resource_attempt,
            group_id: group_id,
            survey_id: survey_id,
-           learning_language: learning_language
+           learning_language: learning_language,
+           effective_settings: effective_settings
          } = context,
          %ActivitySummary{
            state: state,
@@ -159,6 +160,7 @@ defmodule Oli.Rendering.Activity.Html do
         groupId: group_id,
         bibParams: bib_params,
         learningLanguage: learning_language,
+        showFeedback: Oli.Delivery.Settings.show_feedback?(effective_settings),
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""

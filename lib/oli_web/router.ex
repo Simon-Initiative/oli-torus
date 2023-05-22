@@ -860,6 +860,7 @@ defmodule OliWeb.Router do
     get("/page/:revision_slug", PageDeliveryController, :page)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
     get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
+    post("/page/:revision_slug/attempt_protected", PageDeliveryController, :start_attempt_protected)
 
     get(
       "/page/:revision_slug/attempt/:attempt_guid/review",

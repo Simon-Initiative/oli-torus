@@ -1,11 +1,11 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
-  alias Oli.Delivery.Metrics
-  alias OliWeb.Components.Delivery.InstructorDashboard
-  alias alias Oli.Delivery.Sections
+  use OliWeb.Common.Modal
+
+  alias Oli.Delivery.{Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
-  use OliWeb.Common.Modal
+  alias OliWeb.Components.Delivery.InstructorDashboard
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -20,6 +20,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       socket
       |> assign(params: params, active_tab: :students)
       |> assign(students: get_students(socket.assigns.section, params))
+      |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
 
     {:noreply, socket}
   end
@@ -86,6 +87,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       context={@context}
       section={@section}
       students={@students}
+      dropdown_options={@dropdown_options}
       />
     """
   end
@@ -179,7 +181,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp get_students(section, params) do
-    # TODO get real student engagement
+
     # when that metric is ready (see Oli.Delivery.Metrics)
     case params.page_id do
       nil ->
@@ -187,14 +189,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> add_students_progress(section.id, params.container_id)
         |> add_students_last_interaction(section, params.container_id)
         |> add_students_overall_mastery(section, params.container_id)
-        |> add_students_engagement(section.slug)
 
       page_id ->
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_mastery_for_page(section.slug, page_id)
-        |> add_students_engagement_for_page(section.slug, page_id)
     end
   end
 
@@ -211,14 +211,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     mastery_per_container = Metrics.mastery_per_container(section.slug)
 
-    # TODO get real student engagement values
     # when those metrics are ready (see Oli.Delivery.Metrics)
 
     containers_with_metrics =
       Enum.map(containers, fn container ->
         Map.merge(container, %{
           progress: student_progress[container.id] || 0.0,
-          student_engagement: Enum.random(["Low", "Medium", "High", "Not enough data"]),
           student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
         })
       end)
@@ -302,19 +300,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end)
   end
 
-  defp add_students_engagement(students, _section_slug) do
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        engagement: Enum.random(["Low", "Medium", "High", "Not enough data"])
-      })
-    end)
-  end
+  defp get_dropdown_options(section) do
+    case section.requires_payment do
+      true ->
+        [
+          %{value: :enrolled, label: "Enrolled"},
+          %{value: :suspended, label: "Suspended"},
+          %{value: :paid, label: "Paid"},
+          %{value: :not_paid, label: "Not Paid"},
+          %{value: :grace_period, label: "Grace Period"},
+          %{value: :non_students, label: "Non-Students"}
+        ]
 
-  defp add_students_engagement_for_page(students, _section_slug, _page_id) do
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        engagement: Enum.random(["Low", "Medium", "High", "Not enough data"])
-      })
-    end)
+      false ->
+        [
+          %{value: :enrolled, label: "Enrolled"},
+          %{value: :suspended, label: "Suspended"},
+          %{value: :non_students, label: "Non-Students"}
+        ]
+
+      _ ->
+        []
+    end
   end
 end

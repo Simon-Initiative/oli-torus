@@ -59,6 +59,7 @@ export interface ActivityContext {
   bibParams: any;
   pageAttemptGuid: string;
   pageState?: any;
+  showFeedback: boolean | null;
 }
 
 /**

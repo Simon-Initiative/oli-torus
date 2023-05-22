@@ -3,8 +3,88 @@ defmodule Oli.Delivery.SettingsTest do
 
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Settings
+  alias Oli.Delivery.Settings.Combined
   alias Oli.Resources.Revision
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Settings.StudentException
+
+  test "new_attempt_allowed/3 determines if a new attempt is allowed" do
+    assert {:no_attempts_remaining} == Settings.new_attempt_allowed(%Combined{max_attempts: 5}, 5, [])
+    assert {:blocking_gates} == Settings.new_attempt_allowed(%Combined{max_attempts: 5}, 1, [1])
+    assert {:end_date_passed} == Settings.new_attempt_allowed(%Combined{max_attempts: 5, late_start: :disallow, end_date: ~U[2020-01-01 00:00:00Z]}, 1, [])
+    assert {:allowed} == Settings.new_attempt_allowed(%Combined{max_attempts: 5, late_start: :allow, end_date: ~U[2020-01-01 00:00:00Z]}, 1, [])
+  end
+
+  test "was_late/2 determines lateness correctly when only a time limit" do
+
+    ra = %ResourceAttempt{
+      inserted_at: ~U[2020-01-01 00:00:00Z],
+    }
+    settings_with_grace_period = %Combined{
+      end_date: nil,
+      time_limit: 30,
+      grace_period: 5
+    }
+
+    settings_with_no_grace_period = %Combined{
+      end_date: nil,
+      time_limit: 30,
+      grace_period: 0
+    }
+
+    refute Settings.was_late?(ra, settings_with_grace_period, DateTime.add(ra.inserted_at, 20, :minute))
+    refute Settings.was_late?(ra, settings_with_grace_period, DateTime.add(ra.inserted_at, 31, :minute))
+    assert Settings.was_late?(ra, settings_with_grace_period, DateTime.add(ra.inserted_at, 36, :minute))
+
+    refute Settings.was_late?(ra, settings_with_no_grace_period, DateTime.add(ra.inserted_at, 20, :minute))
+    assert Settings.was_late?(ra, settings_with_no_grace_period, DateTime.add(ra.inserted_at, 31, :minute))
+
+  end
+
+  test "was_late/2 determines lateness correctly when only a due date" do
+
+    ra = %ResourceAttempt{
+      inserted_at: ~U[2020-01-01 01:00:00Z],
+    }
+    settings_with_grace_period = %Combined{
+      end_date: ~U[2020-01-01 02:00:00Z],
+      grace_period: 5
+    }
+
+    settings_with_no_grace_period = %Combined{
+      end_date: ~U[2020-01-01 02:00:00Z],
+      grace_period: 0
+    }
+
+    refute Settings.was_late?(ra, settings_with_grace_period, DateTime.add(ra.inserted_at, 59, :minute))
+    refute Settings.was_late?(ra, settings_with_grace_period, DateTime.add(ra.inserted_at, 64, :minute))
+    assert Settings.was_late?(ra, settings_with_grace_period, DateTime.add(ra.inserted_at, 66, :minute))
+
+    refute Settings.was_late?(ra, settings_with_no_grace_period, DateTime.add(ra.inserted_at, 59, :minute))
+    assert Settings.was_late?(ra, settings_with_no_grace_period, DateTime.add(ra.inserted_at, 61, :minute))
+
+  end
+
+  test "was_late/2 determines lateness correctly with both due date and time limit" do
+
+    ra1 = %ResourceAttempt{
+      inserted_at: ~U[2020-01-01 01:00:00Z],
+    }
+    settings = %Combined{
+      end_date: ~U[2020-01-01 02:00:00Z],
+      time_limit: 30
+    }
+
+    refute Settings.was_late?(ra1, settings, DateTime.add(ra1.inserted_at, 29, :minute))
+    assert Settings.was_late?(ra1, settings, DateTime.add(ra1.inserted_at, 31, :minute))
+
+    ra2 = %ResourceAttempt{
+      inserted_at: ~U[2020-01-01 01:45:00Z],
+    }
+    refute Settings.was_late?(ra2, settings, DateTime.add(ra2.inserted_at, 14, :minute))
+    assert Settings.was_late?(ra2, settings, DateTime.add(ra2.inserted_at, 16, :minute))
+
+  end
 
   test "combine/3 honors the inline -1 for max_attempts" do
 

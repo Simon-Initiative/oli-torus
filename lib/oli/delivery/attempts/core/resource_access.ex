@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
     field(:score, :float)
     field(:out_of, :float)
     field(:progress, :float)
+    field(:was_late, :boolean, default: false)
 
     # Completed LMS grade updates
     field(:last_successful_grade_update_id, :integer)
@@ -30,6 +31,7 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
       :score,
       :out_of,
       :progress,
+      :was_late,
       :last_successful_grade_update_id,
       :last_grade_update_id,
       :user_id,

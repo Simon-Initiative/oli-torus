@@ -55,7 +55,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
 
   @impl Lifecycle
   def finalize(%FinalizationContext{
-        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt
+        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
+        effective_settings: effective_settings
       }) do
     now = DateTime.utc_now()
 
@@ -71,7 +72,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
        graded: false,
        lifecycle_state: :evaluated,
        resource_access: nil,
-       part_attempt_guids: nil
+       part_attempt_guids: nil,
+       effective_settings: effective_settings
      }}
   end
 
@@ -92,15 +94,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     |> update_progress(resource_attempt)
   end
 
-  defp update_progress({:ok, activity_map}, %ResourceAttempt{
+  defp update_progress({:ok, state}, %ResourceAttempt{
          resource_access_id: resource_access_id
        }) do
-    number_of_activities = Map.keys(activity_map) |> Enum.count()
+    number_of_activities = Map.keys(state.attempt_hierarchy) |> Enum.count()
 
     Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id)
     |> do_update_progress(number_of_activities)
 
-    {:ok, activity_map}
+    {:ok, state}
   end
 
   defp update_progress(other, _) do

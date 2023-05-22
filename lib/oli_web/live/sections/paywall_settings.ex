@@ -26,6 +26,14 @@ defmodule OliWeb.Sections.PaywallSettings do
     ]
   end
 
+  defp payment_options_choices do
+    [
+      {"Pay by credit card only", "direct"},
+      {"Pay by payment code only", "deferred"},
+      {"Pay by credit card or payment code", "direct_and_deferred"}
+    ]
+  end
+
   def render(assigns) do
     ~F"""
     <Group label="Payment Settings" description="Settings related to requried student fee and optional grace periody">
@@ -36,6 +44,13 @@ defmodule OliWeb.Sections.PaywallSettings do
       <Field name={:amount} class="mt-2 form-label-group">
         <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
         <TextInput class="form-control" opts={disabled: @disabled or !get_field(@changeset, :requires_payment)}/>
+      </Field>
+      <Field name={:payment_options}>
+        <Label/>
+        <Select
+          class="form-control" form="section" field="payment_options"
+          opts={disabled: @disabled or !get_field(@changeset, :payment_options) or !get_field(@changeset, :payment_options)}
+          options={payment_options_choices()} selected={get_field(@changeset, :payment_options)}/>
       </Field>
       {#unless get_field(@changeset, :open_and_free)}
         <Field name={:pay_by_institution} class="form-check">
@@ -56,7 +71,7 @@ defmodule OliWeb.Sections.PaywallSettings do
         <Select
           class="form-control" form="section" field="grace_period_strategy"
           opts={disabled: @disabled or !get_field(@changeset, :requires_payment) or !get_field(@changeset, :has_grace_period)}
-          options={strategies()} selected={@changeset.data.grace_period_strategy}/>
+          options={strategies()} selected={get_field(@changeset, :grace_period_strategy)}/>
       </Field>
 
       <button class="btn btn-primary mt-3" type="submit">Save</button>

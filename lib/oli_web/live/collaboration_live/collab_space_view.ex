@@ -88,6 +88,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     resource = Resources.get_resource_from_slug(resource_slug)
     is_instructor = Map.get(session, "is_instructor", false)
     is_student = Map.get(session, "is_student", false)
+
     title = Map.get(session, "title", "Discussion")
 
     topic = channels_topic(section_slug, resource.id)
@@ -258,7 +259,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
     socket = clear_flash(socket)
 
     attrs =
-      if not socket.assigns.collab_space_config.auto_accept,
+      if not socket.assigns.collab_space_config.auto_accept and socket.assigns.is_student,
         do: Map.put(attrs, "status", :submitted),
         else: attrs
 

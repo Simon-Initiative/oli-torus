@@ -8,11 +8,13 @@ import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 import { isCorrect } from 'data/activities/utils';
 
 export const GradedPointsConnected: React.FC = () => {
-  const { graded, surveyId } = useDeliveryElementContext().context;
+  const { graded, surveyId, showFeedback } = useDeliveryElementContext().context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   return (
     <GradedPoints
-      shouldShow={uiState.attemptState.score !== null && graded && surveyId === null}
+      shouldShow={
+        showFeedback == true && uiState.attemptState.score !== null && graded && surveyId === null
+      }
       icon={isCorrect(uiState.attemptState) ? <Checkmark /> : <Cross />}
       attemptState={uiState.attemptState}
     />

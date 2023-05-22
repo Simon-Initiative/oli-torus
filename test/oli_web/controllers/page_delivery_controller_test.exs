@@ -416,7 +416,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
-      assert html_response(conn, 200) =~ "You have 0 attempts remaining out of 1 total attempt"
+      assert html_response(conn, 200) =~ "You have no attempts remaining out of 1 total attempt"
 
       assert html_response(conn, 200) =~ "Attempt 1 of 1"
       assert html_response(conn, 200) =~ Utils.render_date(attempt, :inserted_at, session_context)
@@ -442,6 +442,68 @@ defmodule OliWeb.PageDeliveryControllerTest do
         )
 
       assert html_response(conn, 200) =~ "(Review)"
+    end
+
+    test "requires correct password to start an attempt", %{
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      sr = Sections.get_section_resource(section.id, page_revision.resource_id)
+      Sections.update_section_resource(sr, %{password: "password"})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "This assessment requires a password to begin"
+
+      # now start the attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        post(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt_protected, section.slug, page_revision.slug),
+          %{password: "wrong"}
+        )
+
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+      assert html_response(conn, 200) =~ "Incorrect password"
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        post(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt_protected, section.slug, page_revision.slug),
+          %{password: "password"}
+        )
+
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of the page, which should contain a button
+      # that says 'Submit Answers'
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+      assert html_response(conn, 200) =~ "Submit Answers"
+
     end
 
     test "changing a page from graded to ungraded allows the graded attempt to continue", %{

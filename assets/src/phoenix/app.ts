@@ -26,6 +26,7 @@ import { retrieveCookies } from 'components/cookies/utils';
 import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
+import { initCountdownTimer, initEndDateTimer } from './countdownTimer';
 import { finalize } from './finalize';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
@@ -91,6 +92,8 @@ window.OLI = {
   retrieveCookies,
   onReady,
   finalize,
+  initCountdownTimer,
+  initEndDateTimer,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
@@ -166,6 +169,8 @@ declare global {
       retrieveCookies: typeof retrieveCookies;
       onReady: typeof onReady;
       finalize: typeof finalize;
+      initCountdownTimer: typeof initCountdownTimer;
+      initEndDateTimer: typeof initEndDateTimer;
       CreateAccountPopup: (node: any, props: any) => void;
     };
     keepAlive: () => void;

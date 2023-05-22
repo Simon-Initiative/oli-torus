@@ -12,13 +12,13 @@ export const FocusedFeedback: React.FC<FocusedFeedbackProps> = (props: FocusedFe
   const { focusedPart } = props;
   const {
     mode,
-    context: { graded, surveyId },
+    context: { graded, surveyId, showFeedback },
     writerContext,
   } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
 
   // if this is within a survey or if it is graded but not in review mode, do not show feedback
-  if (surveyId || (graded && mode !== 'review')) {
+  if (surveyId || (graded && mode !== 'review') || showFeedback == false) {
     return null;
   }
 

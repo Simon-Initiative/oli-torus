@@ -39,6 +39,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:visibility, Ecto.Enum, values: [:selected, :global], default: :global)
     field(:requires_payment, :boolean, default: false)
+    field(:payment_options, Ecto.Enum, values: [:direct, :deferred, :direct_and_deferred], default: :direct_and_deferred)
     field(:pay_by_institution, :boolean, default: false)
     field(:amount, Money.Ecto.Map.Type)
     field(:has_grace_period, :boolean, default: true)
@@ -139,6 +140,7 @@ defmodule Oli.Delivery.Sections.Section do
       :cover_image,
       :visibility,
       :requires_payment,
+      :payment_options,
       :pay_by_institution,
       :amount,
       :has_grace_period,

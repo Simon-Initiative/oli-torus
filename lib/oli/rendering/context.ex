@@ -27,5 +27,6 @@ defmodule Oli.Rendering.Context do
             alternatives_groups_fn: nil,
             alternatives_selector_fn: nil,
             extrinsic_read_section_fn: nil,
-            learning_language: nil
+            learning_language: nil,
+            effective_settings: nil
 end

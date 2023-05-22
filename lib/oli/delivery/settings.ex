@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Settings do
   alias Oli.Resources.Revision
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Settings.StudentException
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
 
   @doc """
   For a resolved delivery revision of a page and a course section id and user id, return
@@ -55,6 +56,7 @@ defmodule Oli.Delivery.Settings do
       late_start: combine_field(:late_start, section_resource, student_exception),
       time_limit: combine_field(:time_limit, section_resource, student_exception),
       grace_period: combine_field(:grace_period, section_resource, student_exception),
+      password: combine_field(:password, section_resource, student_exception),
       scoring_strategy_id: combine_field(:scoring_strategy_id, section_resource, student_exception),
       review_submission: combine_field(:review_submission, section_resource, student_exception),
       feedback_mode: combine_field(:feedback_mode, section_resource, student_exception),
@@ -67,7 +69,7 @@ defmodule Oli.Delivery.Settings do
   # This combines the settings found in the section resource with the settings
   # found in the student exception, giving precedence to the student exception when
   # there is a setting defined there.
-defp combine_field(field, section_resource, nil), do: Map.get(section_resource, field)
+  defp combine_field(field, section_resource, nil), do: Map.get(section_resource, field)
 
   defp combine_field(field, section_resource, student_exception) do
     case Map.get(student_exception, field) do
@@ -83,5 +85,76 @@ defp combine_field(field, section_resource, nil), do: Map.get(section_resource, 
     |> where(user_id: ^user_id)
     |> Repo.one()
   end
+
+  def was_late?(%ResourceAttempt{} = resource_attempt, %Combined{} = effective_settings, now) do
+    DateTime.compare(now, determine_effective_deadline(resource_attempt, effective_settings)) == :gt
+  end
+
+  @doc """
+  Determine if a new attempt is allowed to be started.
+  """
+  def new_attempt_allowed(%Combined{} = effective_settings, num_attempts_taken, blocking_gates) do
+
+    with {:allowed} <- check_blocking_gates(blocking_gates),
+      {:allowed} <- check_num_attempts(effective_settings, num_attempts_taken),
+      {:allowed} <- check_end_date(effective_settings)
+    do
+      {:allowed}
+    else
+      reason -> reason
+    end
+  end
+
+  defp check_blocking_gates([]), do: {:allowed}
+  defp check_blocking_gates(_), do: {:blocking_gates}
+
+  defp check_num_attempts(settings, num_attempts_taken) do
+    if max(settings.max_attempts - num_attempts_taken, 0) > 0 or settings.max_attempts == 0 do
+      {:allowed}
+    else
+      {:no_attempts_remaining}
+    end
+  end
+
+  def check_end_date(%Combined{end_date: nil}), do: {:allowed}
+  def check_end_date(%Combined{end_date: end_date} = effective_settings) do
+
+    effective_end_date = DateTime.add(end_date, effective_settings.grace_period, :minute)
+    if (DateTime.compare(effective_end_date, DateTime.utc_now()) == :gt or effective_settings.late_start == :allow) do
+      {:allowed}
+    else
+      {:end_date_passed}
+    end
+  end
+
+  def determine_effective_deadline(%ResourceAttempt{} = resource_attempt, %Combined{} = effective_settings) do
+    case {effective_settings.end_date, effective_settings.time_limit} do
+
+      # no end date or time limit, no deadline
+      {nil, nil} -> nil
+
+      # only a time limit, just add the minutes to the start
+      {nil, time_limit} -> DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+
+      # only an end date, use that
+      {end_date, 0} -> end_date
+
+      # both an end date and a time limit, use the earlier of the two
+      {end_date, time_limit} ->
+        if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute) do
+          end_date
+        else
+          DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+        end
+    end
+    |> DateTime.add(effective_settings.grace_period, :minute)
+  end
+
+  def show_feedback?(%Combined{feedback_mode: :allow}), do: true
+  def show_feedback?(%Combined{feedback_mode: :disallow}), do: false
+  def show_feedback?(%Combined{feedback_scheduled_date: date}) do
+    DateTime.compare(date, DateTime.utc_now()) == :lt
+  end
+  def show_feedback?(nil), do: true
 
 end

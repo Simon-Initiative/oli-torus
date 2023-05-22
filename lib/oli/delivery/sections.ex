@@ -42,25 +42,39 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Paywall
 
   require Logger
 
   def enrolled_students(section_slug) do
-    student_role_id = ContextRoles.get_role(:context_learner).id
+    section = get_section_by_slug(section_slug)
 
-    query =
-      from(e in Enrollment,
-        join: s in Section,
-        on: e.section_id == s.id,
-        join: ecr in EnrollmentContextRole,
-        on: e.id == ecr.enrollment_id,
-        join: u in User,
-        on: e.user_id == u.id,
-        where: s.slug == ^section_slug and ecr.context_role_id == ^student_role_id,
-        select: u
-      )
-
-    Repo.all(query)
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      left_join: p in Payment,
+      on: p.enrollment_id == e.id,
+      where: s.slug == ^section_slug,
+      select: {u, ecr.id, e, p},
+      preload: [user: :platform_roles],
+      distinct: u.id
+    )
+    |> Repo.all()
+    |> Enum.map(fn {user, context_role_id, enrollment, payment} ->
+      Map.merge(user, %{
+        enrollment_status: enrollment.status,
+        user_role_id: context_role_id,
+        payment_status:
+          Paywall.summarize_access(
+            enrollment.user,
+            section,
+            context_role_id,
+            enrollment,
+            payment
+          ).reason
+      })
+    end)
   end
 
   def browse_enrollments(
@@ -151,7 +165,9 @@ defmodule Oli.Delivery.Sections do
       e in Enrollment,
       join: s in Section,
       on: e.section_id == s.id,
-      where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+      where:
+        e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+          e.status == :enrolled,
       preload: :context_roles
     )
     |> Repo.one()
@@ -304,7 +320,9 @@ defmodule Oli.Delivery.Sections do
           Enum.filter(enrollment.context_roles, &(!Enum.member?(context_roles, &1)))
 
         if Enum.count(other_context_roles) == 0 do
-          Repo.delete(enrollment)
+          enrollment
+          |> Enrollment.changeset(%{status: :suspended})
+          |> Repo.update()
         else
           enrollment
           |> Enrollment.changeset(%{section_id: section_id})
@@ -331,7 +349,9 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active
+        where:
+          e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+            e.status == :enrolled
       )
 
     case Repo.one(query) do
@@ -350,7 +370,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: s.slug == ^section_slug and s.status == :active,
+        where: s.slug == ^section_slug and s.status == :active and e.status == :enrolled,
         preload: [:user, :context_roles],
         select: e
       )
@@ -373,7 +393,9 @@ defmodule Oli.Delivery.Sections do
         on: e.id == e_cr.enrollment_id,
         join: cr in Lti_1p3.DataProviders.EctoProvider.ContextRole,
         on: e_cr.context_role_id == cr.id,
-        where: s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids,
+        where:
+          s.slug == ^section_slug and s.status == :active and cr.id in ^role_ids and
+            e.status == :enrolled,
         select: count(e)
       )
 
@@ -401,7 +423,9 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+        where:
+          e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
+            e.status == :enrolled,
         select: e
       )
 
@@ -423,7 +447,9 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.open_and_free == true and s.status == :active,
+        where:
+          e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
+            e.status == :enrolled,
         preload: [:base_project],
         select: s
       )
@@ -440,7 +466,7 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.status == :active,
+        where: e.user_id == ^user_id and s.status == :active and e.status == :enrolled,
         select: s
       )
 
@@ -885,7 +911,8 @@ defmodule Oli.Delivery.Sections do
 
   # For a given section id and the list of resource ids that exist in its hiearchy,
   # determine and return the list of page resource ids that are not reachable from that
-  # hierarchy and linked pages.
+  # hierarchy, taking into account links from pages to other pages and the 'relates_to'
+  # relationship between pages.
   defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
     # Start with all pages
     unreachable =
@@ -898,7 +925,12 @@ defmodule Oli.Delivery.Sections do
     # we want to be able to handle cases where a page from the hierarhcy embeds an activity which
     # links to a page outside the hierarchy.
     all_links =
-      MapSet.union(get_all_page_links(publication_ids), get_activity_references(publication_ids))
+      [
+        get_all_page_links(publication_ids),
+        get_activity_references(publication_ids),
+        get_relates_to(publication_ids)
+      ]
+      |> Enum.reduce(MapSet.new(), fn links, acc -> MapSet.union(links, acc) end)
       |> MapSet.to_list()
 
     link_map =
@@ -999,6 +1031,33 @@ defmodule Oli.Delivery.Sections do
 
     Enum.reduce(results, MapSet.new(), fn [source_id, content], links ->
       MapSet.put(links, {source_id, content["activity_id"]})
+    end)
+  end
+
+  # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
+  # representing the relates_to relationship between pages.
+  defp get_relates_to(publication_ids) do
+    joined_publication_ids = Enum.join(publication_ids, ",")
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    sql = """
+    select
+      rev.resource_id, rev.relates_to
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where rev.resource_type_id = #{page_type_id} and array_length(rev.relates_to, 1) > 0 and mapping.publication_id IN (#{joined_publication_ids})
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.reduce(results, MapSet.new(), fn [source_id, relates_to], links ->
+
+      # The relates_to field is an array of resource ids, to be future proof
+      # to how relates_to is used, we will follow these 'links' in both directions
+      Enum.reduce(relates_to, links, fn target_id, links ->
+        MapSet.put(links, {source_id, target_id}) |> MapSet.put({target_id, source_id})
+      end)
     end)
   end
 
@@ -2519,28 +2578,17 @@ defmodule Oli.Delivery.Sections do
         student_id -> Metrics.mastery_for_student_per_learning_objective(section_slug, student_id)
       end
 
-    objectives_id_list =
-      pages_with_objectives
-      |> Enum.into([], fn elem -> elem.objectives["attached"] end)
-      |> List.flatten()
-
-    # TODO we should be able to calculate student_engagement 's metric
-    # for all students or for a specific student depending on where we are rendering the learning objectives table
-    # (from instructor dashboard or student dashboard perspective)
     objectives =
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         left_join: rev2 in Revision,
         on: rev2.resource_id in rev.children,
         where: rev.deleted == false and rev.resource_type_id == ^page_id,
-        where: rev.resource_id in ^objectives_id_list,
         group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id],
         select: %{
           objective: rev.title,
           objective_resource_id: rev.resource_id,
           subobjective: rev2.title,
-          subobjective_resource_id: rev2.resource_id,
-          student_engagement:
-            fragment("('{High,Medium,Low,Not enough data}'::text[])[ceil(random()*4)]")
+          subobjective_resource_id: rev2.resource_id
         }
       )
       |> Repo.all()
@@ -2620,11 +2668,11 @@ defmodule Oli.Delivery.Sections do
     |> join(:inner, [s], proj in Project, on: proj.id == s.base_project_id)
     |> where(
       [s, spp, _, pr, proj],
-      (s.slug == ^section_slug and
-         spp.project_id == s.base_project_id and
-         spp.section_id == s.id and
-         (pr.resource_id == s.required_survey_resource_id or
-         pr.resource_id == proj.required_survey_resource_id))
+      s.slug == ^section_slug and
+        spp.project_id == s.base_project_id and
+        spp.section_id == s.id and
+        (pr.resource_id == s.required_survey_resource_id or
+           pr.resource_id == proj.required_survey_resource_id)
     )
     |> select([_, _, _, rev], rev)
   end

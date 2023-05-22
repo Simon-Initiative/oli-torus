@@ -17,22 +17,24 @@ window.userToken = "<%= assigns[:user_token] %>";
 <%= if @review_mode == true do %>
   <%= if @resource_attempt.lifecycle_state == :evaluated do  %>
     <div class="mb-2">
-    <div class="grid grid-cols-12 justify-content-start">
-      <div class="col-span-3">Started:</div>
-      <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
-    </div>
-    <div class="grid grid-cols-12">
-      <div class="col-span-3">Submitted:</div>
-      <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
-    </div>
-    <div class="grid grid-cols-12">
-      <div class="col-span-3">Score:</div>
-      <div class="col-span-9"><%= show_score(@resource_attempt.score, @resource_attempt.out_of) %>%</div>
-    </div>
-    <div class="grid grid-cols-12">
-      <div class="col-span-3">Points:</div>
-      <div class="col-span-9"><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
-    </div>
+      <div class="grid grid-cols-12 justify-content-start">
+        <div class="col-span-3">Started:</div>
+        <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
+      </div>
+      <div class="grid grid-cols-12">
+        <div class="col-span-3">Submitted:</div>
+        <div class="col-span-9"><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
+      </div>
+      <%= if @show_feedback do %>
+        <div class="grid grid-cols-12">
+          <div class="col-span-3">Score:</div>
+          <div class="col-span-9"><%= show_score(@resource_attempt.score, @resource_attempt.out_of) %>%</div>
+        </div>
+        <div class="grid grid-cols-12">
+          <div class="col-span-3">Points:</div>
+          <div class="col-span-9"><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
+        </div>
+      <% end %>
     </div>
   <% end %>
   <%= if @resource_attempt.lifecycle_state == :submitted do  %>
@@ -47,6 +49,20 @@ window.userToken = "<%= assigns[:user_token] %>";
       <div><%= Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
     </div>
     </div>
+  <% end %>
+<% end %>
+
+<%= if @review_mode == false and @time_limit > 0 do %>
+  <div id="countdown_timer_display" class="text-xl font-bold text-center sticky top-0"></div>
+  <script>
+    OLI.initCountdownTimer('countdown_timer_display', 'submit_answers', <%= @time_limit %>, <%= @attempt_start_time %>, <%= @effective_end_time %>, <%= @auto_submit %>);
+  </script>
+<% else %>
+  <%= if @review_mode == false and !is_nil(@effective_end_time) do %>
+    <div id="countdown_timer_display" class="text-xl font-bold text-center sticky top-0"></div>
+    <script>
+      OLI.initEndDateTimer('countdown_timer_display', 'submit_answers', <%= @effective_end_time %>, <%= @auto_submit %>);
+    </script>
   <% end %>
 <% end %>
 
