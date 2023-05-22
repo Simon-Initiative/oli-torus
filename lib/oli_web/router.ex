@@ -705,8 +705,6 @@ defmodule OliWeb.Router do
     post("/ecl", Api.ECLController, :eval)
   end
 
-
-
   scope "/api/v1/lti", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
@@ -812,8 +810,24 @@ defmodule OliWeb.Router do
   end
 
   ### Sections - Instructor Dashboard
+  #### preview routes must come before the non-preview routes to properly match
+  scope "/sections/:section_slug/instructor_dashboard/preview/:view", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery_and_admin,
+      :maybe_gated_resource,
+      :pow_email_layout
+    ])
 
-  scope "/sections/:section_slug/instructor_dashboard", OliWeb do
+    live_session :instructor_dashboard_preview,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
+      live("/", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
+      live("/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
+    end
+  end
+
+  scope "/sections/:section_slug/instructor_dashboard/:view", OliWeb do
     pipe_through([
       :browser,
       :delivery_and_admin,
@@ -823,17 +837,8 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
-    end
-
-    live_session :instructor_dashboard_preview,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
-      live(
-        "/preview/:active_tab",
-        Delivery.InstructorDashboard.InstructorDashboardLive,
-        :preview
-      )
     end
   end
 
@@ -860,7 +865,12 @@ defmodule OliWeb.Router do
     get("/page/:revision_slug", PageDeliveryController, :page)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
     get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
-    post("/page/:revision_slug/attempt_protected", PageDeliveryController, :start_attempt_protected)
+
+    post(
+      "/page/:revision_slug/attempt_protected",
+      PageDeliveryController,
+      :start_attempt_protected
+    )
 
     get(
       "/page/:revision_slug/attempt/:attempt_guid/review",
@@ -1241,7 +1251,6 @@ defmodule OliWeb.Router do
       ])
 
       get("/flame_graphs", DevController, :flame_graphs)
-
     end
   end
 end

@@ -30,66 +30,47 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           }
   end
 
-  attr :current_user, User
-  attr :section, Section
-  attr :breadcrumbs, :list, required: true
-  attr :socket_or_conn, :any, required: true
-  attr :preview_mode, :boolean, default: false
+  attr(:current_user, User)
+  attr(:section, Section)
+  attr(:breadcrumbs, :list, required: true)
+  attr(:socket_or_conn, :any, required: true)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:view, :atom, required: true)
 
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header current_user={@current_user} section={@section} preview_mode={@preview_mode} />
+        <.header socket_or_conn={@socket_or_conn} view={@view} current_user={@current_user} section={@section} preview_mode={@preview_mode} />
         <.section_details_header section={@section}/>
         <Header.delivery_breadcrumb {assigns} />
 
-        <div class="flex-1 flex flex-col">
+        <div class="relative flex-1 flex flex-col pt-4 pb-[60px]">
 
-          <.actions />
+          <%= render_slot(@inner_block) %>
 
-          <div class="relative flex-1 flex flex-col pb-[60px]">
-
-            <%= render_slot(@inner_block) %>
-
-            <%= Phoenix.View.render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
-          </div>
+          <%= Phoenix.View.render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
         </div>
       </div>
     """
   end
 
-  defp path_for(active_tab, section_slug, _preview_mode = true) do
-    Routes.instructor_dashboard_path(
-      OliWeb.Endpoint,
-      :preview,
-      section_slug,
-      active_tab
-    )
-  end
-
-  defp path_for(active_tab, section_slug, _preview_mode = false) do
-    Routes.live_path(
-      OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-      section_slug,
-      active_tab
-    )
-  end
-
-  attr :active_tab, :atom,
-    required: true,
-    values: [
-      :learning_objectives,
-      :students,
-      :content,
-      :discussions,
-      :course_discussion,
-      :assignments,
-      :manage
+  defmodule TabLink do
+    defstruct [
+      :label,
+      :path,
+      :badge,
+      :active
     ]
 
-  attr :section_slug, :string, required: true
-  attr :preview_mode, :boolean, required: true
+    @type t() :: %__MODULE__{
+            label: String.t(),
+            path: String.t(),
+            badge: Integer.t(),
+            active: Boolean.t()
+          }
+  end
+
+  attr(:tabs, :list, required: true)
 
   def tabs(assigns) do
     ~H"""
@@ -97,24 +78,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
           role="tablist">
 
-          <%= for {label, href, badge, active} <- [
-            {"Content", path_for(:content, @section_slug, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
-            {"Students", path_for(:students, @section_slug, @preview_mode), nil, is_active_tab?(:students, @active_tab)},
-            {"Learning Objectives", path_for(:learning_objectives, @section_slug, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
-            {"Quiz Scores", path_for(:quiz_scores, @section_slug, @preview_mode), nil, is_active_tab?(:quiz_scores, @active_tab)},
-            {"Discussion Activity", path_for(:discussions, @section_slug, @preview_mode), nil, is_active_tab?(:discussions, @active_tab)},
-            {"Course Discussion", path_for(:course_discussion, @section_slug, @preview_mode), nil, is_active_tab?(:course_discussion, @active_tab)},
-            {"Assignments", path_for(:assignments, @section_slug, @preview_mode), nil, is_active_tab?(:assignments, @active_tab)},
-            {"Manage", path_for(:manage, @section_slug, @preview_mode), nil, is_active_tab?(:manage, @active_tab)},
-          ] do %>
+          <%= for %TabLink{label: label, path: path, badge: badge, active: active} <- @tabs do %>
             <li class="nav-item" role="presentation">
-              <.link patch={href}
+              <.link patch={path}
                 class={"
                   block
                   border-x-0 border-t-0 border-b-2
-                  px-1
+                  px-3
                   py-3
-                  m-2
+                  my-2
                   text-body-color
                   dark:text-body-color-dark
                   bg-transparent
@@ -122,7 +94,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   hover:text-body-color
                   hover:border-delivery-primary-200
                   focus:border-delivery-primary-200
-                  #{if active, do: "border-delivery-primary", else: "border-transparent"}
+                  #{if active, do: "!border-delivery-primary", else: "border-transparent"}
                 "}>
                   <%= label %>
                   <%= if badge do %>
@@ -137,8 +109,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  defp is_active_tab?(tab, active_tab), do: tab == active_tab
-
   defp logo_link(nil, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
 
   defp logo_link(section, preview_mode) do
@@ -149,25 +119,79 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     end
   end
 
-  attr :current_user, User
-  attr :section, Section
-  attr :preview_mode, :boolean, default: false
+  attr(:path, :string, required: true)
+  attr(:active, :boolean, default: false)
+  slot(:inner_block)
+
+  defp header_link(assigns) do
+    ~H"""
+      <.link
+        href={@path}
+        class={"
+          flex
+          flex-col
+          justify-center
+          px-2
+          text-white
+          hover:text-white
+          hover:no-underline
+          cursor-pointer
+          border-b-4
+          #{if @active, do: "!border-white/75", else: "border-transparent"}
+          hover:border-white/50
+        "}>
+        <div class="mx-2"><%= render_slot(@inner_block) %></div>
+      </.link>
+    """
+  end
+
+  defp header_link_path(socket_or_conn, %Section{slug: slug}, view, _preview_mode = false) do
+    Routes.live_path(
+      socket_or_conn,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      slug,
+      view
+    )
+  end
+
+  defp header_link_path(_socket_or_conn, %Section{slug: slug}, view, _preview_mode = true) do
+    Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, slug, view)
+  end
+
+  defp is_active?(current_view, view), do: current_view == view
+
+  attr(:current_user, User)
+  attr(:section, Section)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:socket_or_conn, :any, required: true)
+  attr(:view, :atom, required: true)
 
   def header(assigns) do
     ~H"""
       <div class="w-full bg-delivery-header text-white border-b border-slate-600">
-        <div class="container mx-auto py-2 flex flex-row justify-between">
-          <div class="flex-1 flex items-center">
+        <div class="container mx-auto flex flex-row">
+          <div class="flex items-center">
             <a class="navbar-brand dark torus-logo my-1 mr-auto" href={logo_link(@section, @preview_mode)}>
               <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
             </a>
           </div>
-          <%= if @preview_mode do %>
-            <UserAccountMenu.preview_user />
-          <% else %>
-            <UserAccountMenu.menu current_user={@current_user} />
-          <% end %>
-          <div class="flex items-center border-l border-slate-300">
+
+          <div class="flex flex-1 flex-row justify-center">
+            <.header_link path={header_link_path(@socket_or_conn, @section, :overview, @preview_mode)} active={is_active?(@view, :overview)}>Overview</.header_link>
+            <.header_link path={header_link_path(@socket_or_conn, @section, :reports, @preview_mode)} active={is_active?(@view, :reports)}>Reports</.header_link>
+            <.header_link path={header_link_path(@socket_or_conn, @section, :manage, @preview_mode)} active={is_active?(@view, :manage)}>Manage</.header_link>
+            <.header_link path={header_link_path(@socket_or_conn, @section, :discussion, @preview_mode)} active={is_active?(@view, :discussion)}>Discussion Activity</.header_link>
+          </div>
+
+          <div>
+            <%= if @preview_mode do %>
+              <UserAccountMenu.preview_user />
+            <% else %>
+              <UserAccountMenu.menu current_user={@current_user} />
+            <% end %>
+          </div>
+
+          <div class="flex items-center border-l border-slate-300 my-2">
             <button
               class="
                 btn
@@ -189,7 +213,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  attr :section, Section
+  attr(:section, Section)
 
   def section_details_header(%{section: nil}), do: nil
 
@@ -221,7 +245,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     <.actions actions=[%PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }] />
     ```
   """
-  attr :actions, :list, default: []
+  attr(:actions, :list, default: [])
 
   def actions(assigns) do
     ~H"""
@@ -242,7 +266,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  attr :action, PriorityAction, required: true
+  attr(:action, PriorityAction, required: true)
 
   def action_card(assigns) do
     ~H"""

@@ -13,6 +13,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   prop(units_modules, :map)
   prop(student_id, :integer)
   prop(patch_url_type, :atom, required: true)
+  prop(view, :atom)
 
   @default_params %{
     offset: 0,
@@ -54,7 +55,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        student_id: assigns[:student_id],
        patch_url_type: assigns.patch_url_type,
        section_slug: section_slug,
-       units_modules: units_modules
+       units_modules: units_modules,
+       view: assigns[:view]
      )}
   end
 
@@ -243,6 +245,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       socket,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       socket.assigns.section_slug,
+      socket.assigns.view,
       :learning_objectives,
       update_params(socket.assigns.params, new_params)
     )
