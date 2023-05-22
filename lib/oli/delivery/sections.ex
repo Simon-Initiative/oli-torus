@@ -54,7 +54,7 @@ defmodule Oli.Delivery.Sections do
       join: ecr in assoc(e, :context_roles),
       join: u in assoc(e, :user),
       left_join: p in Payment,
-      on: p.enrollment_id == e.id,
+      on: p.enrollment_id == e.id and not is_nil(p.application_date),
       where: s.slug == ^section_slug,
       select: {u, ecr.id, e, p},
       preload: [user: :platform_roles],
@@ -72,7 +72,8 @@ defmodule Oli.Delivery.Sections do
             context_role_id,
             enrollment,
             payment
-          ).reason
+          ).reason,
+        payment_date: if(!is_nil(payment), do: payment.application_date, else: nil)
       })
     end)
   end

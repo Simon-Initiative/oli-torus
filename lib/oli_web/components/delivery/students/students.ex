@@ -21,7 +21,8 @@ defmodule OliWeb.Components.Delivery.Students do
     sort_order: :asc,
     sort_by: :name,
     text_search: nil,
-    filter_by: :enrolled
+    filter_by: :enrolled,
+    payment_status: nil
   }
 
   def update(
@@ -140,6 +141,12 @@ defmodule OliWeb.Components.Delivery.Students do
       :overall_mastery ->
         Enum.sort_by(students, fn student -> student.overall_mastery end, sort_order)
 
+      :engagement ->
+        Enum.sort_by(students, fn student -> student.engagement end, sort_order)
+
+      :payment_status ->
+        Enum.sort_by(students, fn student -> student.payment_status end, sort_order)
+
       _ ->
         Enum.sort_by(
           students,
@@ -257,7 +264,7 @@ defmodule OliWeb.Components.Delivery.Students do
         Params.get_atom_param(
           params,
           "sort_by",
-          [:name, :last_interaction, :progress, :overall_mastery],
+          [:name, :last_interaction, :progress, :overall_mastery, :engagement, :payment_status],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
