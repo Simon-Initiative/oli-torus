@@ -49,6 +49,11 @@ export interface OptionCommonErrorPath extends ComponentPath {
   selectedOption: number;
 }
 
+export interface OptionSpecificPath extends ComponentPath {
+  type: 'option-specific';
+  selectedOption: number;
+}
+
 export interface AlwaysGoToPath extends DestinationPath {
   type: 'always-go-to';
 }
@@ -75,6 +80,7 @@ export type ComponentPaths =
   | CorrectPath
   | IncorrectPath
   | OptionCommonErrorPath
+  | OptionSpecificPath
   | NumericCommonErrorPath;
 
 export type DestinationPaths = ComponentPaths | AlwaysGoToPath | UnknownPathWithDestination;
@@ -88,6 +94,7 @@ export const ruleTypes = [
   'incorrect',
   'numeric-common-error',
   'option-common-error',
+  'option-specific',
   'end-of-activity',
   'exit-activity',
   'unknown-reason-path',

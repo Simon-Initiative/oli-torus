@@ -221,7 +221,11 @@ const hasExitPath = (paths: AllPaths[]): boolean => {
 };
 
 const validateMCQQuestion = (paths: AllPaths[], question: IMCQPartLayout): ReactNode[] => {
-  return validateDeterminateQuestion(paths, question.custom.mcqItems.length);
+  if (question.custom.anyCorrectAnswer) {
+    return validateAnyCorrectMCQQuestion(paths, question.custom.mcqItems.length);
+  } else {
+    return validateDeterminateQuestion(paths, question.custom.mcqItems.length);
+  }
 };
 
 const validateDropdownQuestion = (
@@ -233,6 +237,57 @@ const validateDropdownQuestion = (
 
 const hasMultipleAlwaysPaths = (paths: AllPaths[]): boolean => {
   return paths.filter((path) => path.type === 'always-go-to').length > 1;
+};
+
+const validateAnyCorrectMCQQuestion = (paths: AllPaths[], optionCount: number): ReactNode[] => {
+  const always = paths.filter((path) => path.type === 'always-go-to');
+  const exit = paths.filter((path) => path.type === 'end-of-activity');
+  const specific = paths.filter((path) => path.type === 'option-specific');
+  const unknownPaths = paths.filter(
+    (path) => !['always-go-to', 'end-of-activity', 'option-specific'].includes(path.type),
+  );
+
+  const validations: ReactNode[] = [];
+
+  if (unknownPaths.length > 0) {
+    console.info('unknown paths', unknownPaths);
+    validations.push(
+      <ValidationError key="badpaths" title="Bad path">
+        These paths are not valid for this screen:
+        <ul>
+          {unknownPaths.map((path) => (
+            <li key={path.id}>{path.label}</li>
+          ))}
+        </ul>
+      </ValidationError>,
+    );
+  }
+
+  if (hasExitPath(paths) && paths.length > 1) {
+    validations.push(
+      <ValidationError key="exit-plus-path" title="Exit Activity with other paths">
+        You can not have both an exit-activity and another path out of this screen.
+      </ValidationError>,
+    );
+  }
+
+  if (hasMultipleAlwaysPaths(paths)) {
+    validations.push(
+      <ValidationError key="many-always" title="Multiple always paths">
+        You can not have multiple always-go-to paths.
+      </ValidationError>,
+    );
+  }
+
+  if (exit.length === 0 && always.length === 0 && specific.length !== optionCount) {
+    validations.push(
+      <ValidationError key="required-paths" title="Outgoing paths are not all defined">
+        Some conditions that might lead out of this screen have no path.
+      </ValidationError>,
+    );
+  }
+
+  return validations;
 };
 
 const validateDeterminateQuestion = (paths: AllPaths[], optionCount: number): ReactNode[] => {

@@ -15,6 +15,7 @@ import {
   IncorrectPath,
   NumericCommonErrorPath,
   OptionCommonErrorPath,
+  OptionSpecificPath,
   UnknownPathWithDestination,
 } from './path-types';
 
@@ -71,6 +72,24 @@ export const createDropdownCommonErrorPath = (
     selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: dropdown.id,
     label: 'Selected option ' + optionLabel.substring(0, 20),
+    priority: 4,
+  };
+};
+
+export const createMCQSpecificPath = (
+  mcq: IMCQPartLayout,
+  selectedOption: number,
+  destinationScreenId: number | null = null,
+): OptionSpecificPath => {
+  const optionLabel =
+    getNodeText(mcq.custom?.mcqItems[selectedOption].nodes) || `Option #${selectedOption + 1}`;
+
+  return {
+    ...createDestinationPathTemplate(`mcq-specific-${selectedOption}`, destinationScreenId),
+    type: 'option-specific',
+    selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
+    componentId: mcq.id,
+    label: 'Selected Option: ' + optionLabel.substring(0, 20),
     priority: 4,
   };
 };

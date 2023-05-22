@@ -169,7 +169,7 @@ export interface IMCQPartLayout extends IBasePartLayout {
     overrideHeight: boolean;
     multipleSelection: boolean;
     showOnAnswersReport: boolean;
-
+    anyCorrectAnswer?: boolean;
     correctAnswer?: boolean[];
     correctFeedback?: string;
     incorrectFeedback?: string;

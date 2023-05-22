@@ -87,6 +87,13 @@ const getSimplifiedComponentSchema = (instance: any): JSONSchema7 => {
       newSchema.definitions = customPartSchema.definitions;
       delete newSchema.properties.custom.properties.definitions;
     }
+
+    if (customPartSchema.allOf) {
+      // This is getting into hacky territory, a better solution would be if each component returned the full schema instead of just the
+      // properties part of the schema, then each component could actually control it's whole schema.
+      newSchema.properties.custom.allOf = customPartSchema.allOf;
+      delete newSchema.properties.custom.properties.allOf;
+    }
     return newSchema;
   }
 

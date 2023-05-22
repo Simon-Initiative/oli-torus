@@ -97,7 +97,14 @@ export const simpleSchema: JSONSchema7Object = {
   mcqItems: {
     title: 'MCQ Items',
     type: 'array',
-    items: {},
+    items: {
+      type: 'string',
+    },
+  },
+  anyCorrectAnswer: {
+    title: 'Any answer is correct',
+    type: 'boolean',
+    default: false,
   },
   correctAnswer: {
     // To support multiple selection, this is an array of whether each option is correct
@@ -113,11 +120,6 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     default: '',
   },
-  incorrectFeedback: {
-    title: 'Incorrect Feedback',
-    type: 'string',
-    default: '',
-  },
   commonErrorFeedback: {
     title: 'Advanced Feedback',
     type: 'array',
@@ -126,6 +128,26 @@ export const simpleSchema: JSONSchema7Object = {
       type: 'string',
     },
   },
+  allOf: [
+    {
+      if: {
+        properties: {
+          anyCorrectAnswer: {
+            const: false,
+          },
+        },
+      },
+      then: {
+        properties: {
+          incorrectFeedback: {
+            title: 'Incorrect Feedback',
+            type: 'string',
+            default: '',
+          },
+        },
+      },
+    },
+  ],
 };
 
 export const simpleUiSchema = {
@@ -134,6 +156,7 @@ export const simpleUiSchema = {
     'layoutType',
     'mcqItems',
     'multipleSelection',
+    'anyCorrectAnswer',
     'correctAnswer',
     'randomize',
     'correctFeedback',

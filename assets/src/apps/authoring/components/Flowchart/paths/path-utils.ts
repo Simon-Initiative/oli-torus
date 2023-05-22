@@ -100,6 +100,9 @@ export const isNumericCommonErrorPath = (path: AllPaths): path is NumericCommonE
 export const isOptionCommonErrorPath = (path: AllPaths): path is OptionCommonErrorPath =>
   path.type === 'option-common-error';
 
+export const isOptionSpecificPath = (path: AllPaths): path is OptionCommonErrorPath =>
+  path.type === 'option-specific';
+
 export const isUnknownPath = (path: AllPaths): path is UnknownPathWithDestination =>
   path.type === 'unknown-reason-path';
 
