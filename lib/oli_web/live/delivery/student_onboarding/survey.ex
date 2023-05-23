@@ -99,7 +99,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
   attr :datashop_session_id, :string, required: true
   def render(assigns) do
     ~H"""
-      <div id="eventIntercept" phx-hook="LoadSurveyScripts" class="h-full">
+      <div id="eventIntercept" phx-target={@myself} phx-hook="LoadSurveyScripts" class="h-full">
         <script>
           window.userToken = "<%= assigns[:user_token] %>";
         </script>

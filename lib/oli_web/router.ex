@@ -845,12 +845,12 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
-      :ensure_user_section_visit,
-      :force_required_survey,
       :require_exploration_pages,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
+      :ensure_user_section_visit,
+      :force_required_survey,
       :pow_email_layout
     ])
 

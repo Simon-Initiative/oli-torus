@@ -2728,13 +2728,18 @@ defmodule Oli.Delivery.Sections do
 
   @spec has_visited_section(map, map) :: boolean
   def has_visited_section(section, user) do
+    required_survey_filter =
+      if section.required_survey_resource_id,
+        do: dynamic([ra], ra.resource_id != ^section.required_survey_resource_id),
+        else: true
+
     has_resource_accesses =
       ResourceAccess
       |> where(
         [ra],
-        ra.user_id == ^user.id and ra.section_id == ^section.id and
-          ra.resource_id != ^section.required_survey_resource_id
+        ra.user_id == ^user.id and ra.section_id == ^section.id
       )
+      |> where(^required_survey_filter)
       |> select([ra], ra.id)
       |> Repo.all()
       |> length()
