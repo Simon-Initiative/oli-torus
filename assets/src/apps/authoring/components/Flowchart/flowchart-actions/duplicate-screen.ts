@@ -33,7 +33,7 @@ import {
   setUnknownPathDestination,
 } from '../paths/path-utils';
 import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
-import { sortScreens } from '../screens/screen-utils';
+import { getFirstScreenInSequence, sortScreens } from '../screens/screen-utils';
 import { replaceIds } from '../template-utils';
 
 interface DuplicateFlowchartScreenPayload {
@@ -106,7 +106,8 @@ export const duplicateFlowchartScreen = createAsyncThunk(
 
       // Get the last non-end screen
       const getLastScreenId = (): number | undefined => {
-        const orderedScreens = sortScreens(otherActivities, sequence).filter(
+        const firstScreen = getFirstScreenInSequence(otherActivities, sequence);
+        const orderedScreens = sortScreens(otherActivities, firstScreen).filter(
           (s) => s.authoring?.flowchart?.screenType !== 'end_screen',
         );
         if (orderedScreens.length === 0) {

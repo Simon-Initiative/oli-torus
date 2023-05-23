@@ -145,6 +145,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
   }, [activities, dispatch, sequence, url, windowName]);
 
   const onAcceptInvalid = useCallback(() => {
+    setInvalidScreens([]);
     window.open(url, windowName);
   }, [url, windowName]);
 
