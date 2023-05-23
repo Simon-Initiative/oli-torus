@@ -2745,7 +2745,6 @@ defmodule Oli.Delivery.Sections do
       |> length()
       |> Kernel.>(0)
 
-    # If th
     case has_resource_accesses do
       # If the user already has a resource access, they have already visited the section
       true ->
