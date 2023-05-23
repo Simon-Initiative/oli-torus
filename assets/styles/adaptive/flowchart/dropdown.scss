@@ -1,3 +1,7 @@
+/*-------------------------------
+  janus-dropdown
+-------------------------------*/
+
 janus-dropdown {
   height: auto !important;
 }
@@ -12,6 +16,10 @@ janus-dropdown label {
   margin-bottom: 8px;
 }
 
+janus-dropdown label:empty {
+  display: none !important;
+}
+
 /*-- dropdown --*/
 janus-dropdown select {
   max-width: initial !important;
@@ -21,7 +29,6 @@ janus-dropdown select {
   color: $lightForeground;
   font-weight: 600;
 
-  border: 1px solid $lightBackgroundGrey;
   min-height: 44px;
   padding: 5px 8px;
   appearance: none;
@@ -29,6 +36,10 @@ janus-dropdown select {
   -moz-appearance: none;
   cursor: pointer;
   font-family: OpenSans;
+
+  @include control-border // font-size: 12px;
+    // line-height: 18px;
+;
 }
 /*-- dropdown arrow --*/
 janus-dropdown .dropdown-input::before {
@@ -51,17 +62,15 @@ janus-dropdown .dropdown-input::before {
   z-index: 10;
 }
 
-/*-- dropdown focused --*/
-janus-dropdown select:focus,
-janus-dropdown select:active,
-janus-dropdown select:focus-visible,
-janus-dropdown:active select,
-janus-dropdown:focus select,
-janus-dropdown:focus-within select {
-  border: 1px solid $primary;
-  box-shadow: none;
-  outline: none;
-}
+// /*-- dropdown focused --*/
+// janus-dropdown select:focus,
+// janus-dropdown select:active,
+// janus-dropdown select:focus-visible,
+// janus-dropdown:active select,
+// janus-dropdown:focus select,
+// janus-dropdown:focus-within select {
+
+// }
 
 /*-- dropdown disabled --*/
 janus-dropdown select:disabled {

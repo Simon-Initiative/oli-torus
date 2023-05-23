@@ -15,7 +15,9 @@ import {
   isCorrectPath,
   isIncorrectPath,
   isOptionCommonErrorPath,
+  isOptionSpecificPath,
 } from '../paths/path-utils';
+import { generateAllCorrectWorkflow } from './create-all-correct-workflow';
 import { createCondition } from './create-condition';
 import {
   DEFAULT_CORRECT_FEEDBACK,
@@ -43,8 +45,12 @@ export const generateMultipleChoiceRules = (
   const commonErrorPaths = (screen.authoring?.flowchart?.paths || []).filter(
     isOptionCommonErrorPath,
   );
+  const specificConditionsFeedback = (screen.authoring?.flowchart?.paths || []).filter(
+    isOptionSpecificPath,
+  );
 
   const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
+  const isAlwaysCorrect = !!question.custom?.anyCorrectAnswer;
 
   const correct: Required<IConditionWithFeedback> = {
     conditions: createMCQCorrectCondition(question),
@@ -68,7 +74,7 @@ export const generateMultipleChoiceRules = (
 
   const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
     conditions: createMCQCommonErrorCondition(path, question),
-    feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_INCORRECT_FEEDBACK,
+    feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_CORRECT_FEEDBACK,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
 
@@ -123,6 +129,18 @@ export const generateMultipleChoiceRules = (
     'equal',
   );
 
+  if (isAlwaysCorrect) {
+    return generateAllCorrectWorkflow(
+      correct,
+      specificConditionsFeedback.map((path) => ({
+        conditions: createMCQCommonErrorCondition(path, question),
+        feedback: correct.feedback || DEFAULT_CORRECT_FEEDBACK,
+        destinationId: getSequenceIdFromDestinationPath(path, sequence),
+      })),
+      disableAction,
+    );
+  }
+
   return generateThreeTryWorkflow(
     correct,
     incorrect,
@@ -165,6 +183,6 @@ const createMCQCommonErrorCondition = (path: OptionCommonErrorPath, question: IM
       createCondition(`stage.${question.id}.selectedChoice`, String(path.selectedOption), 'equal'),
     ];
   }
-  console.warn("Couldn't find correct answer for dropdown question", question);
+  console.warn("Couldn't find incorrect answer for dropdown question", question);
   return [createNeverCondition()];
 };

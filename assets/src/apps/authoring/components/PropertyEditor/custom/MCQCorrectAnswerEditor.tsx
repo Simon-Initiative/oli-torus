@@ -34,6 +34,7 @@ export const MCQCorrectAnswerEditor: React.FC<Props> = ({ value, onChange, id, o
   const activityTree = useSelector(selectCurrentActivityTree);
   const part = getPartDef(activityTree, currentPartSelection) as IMCQPartLayout;
   const multiSelect = !!part?.custom?.multipleSelection;
+  const anyCorrectAnswer = !!part?.custom?.anyCorrectAnswer; // Any answer is correct.
   const options = useMemo(
     () => part?.custom?.mcqItems.map((v) => getNodeText(v.nodes)) || ['Option 1', 'Option 2'],
     [part],
@@ -48,6 +49,10 @@ export const MCQCorrectAnswerEditor: React.FC<Props> = ({ value, onChange, id, o
     },
     [id, onBlur, onChange, options],
   );
+
+  if (anyCorrectAnswer) {
+    return null;
+  }
 
   if (multiSelect)
     return (

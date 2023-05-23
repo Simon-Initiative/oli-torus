@@ -35,6 +35,12 @@ export const addPath = createAsyncThunk(
       if (!paths) return null;
 
       const newPath = createEndOfActivityPath();
+
+      let id = 0;
+      while (screen.authoring.flowchart.paths.find((p) => p.id === newPath.id)) {
+        newPath.id = newPath.id + String(id++);
+      }
+
       const newPaths = [...paths, newPath];
       screen.authoring.flowchart.paths = newPaths;
 

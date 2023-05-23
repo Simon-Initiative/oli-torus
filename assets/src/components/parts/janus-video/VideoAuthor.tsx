@@ -15,7 +15,12 @@ const VideoAuthor: React.FC<AuthorPartComponentProps<VideoModel>> = (props) => {
   return (
     <div
       data-janus-type={tagName}
-      style={{ width: '100%', height: height, background: 'black', textAlign: 'center' }}
+      style={{
+        width: props.model.width || '100%',
+        height: height,
+        background: 'black',
+        textAlign: 'center',
+      }}
     >
       <style>
         {`

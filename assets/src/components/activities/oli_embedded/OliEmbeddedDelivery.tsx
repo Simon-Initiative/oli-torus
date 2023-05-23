@@ -34,6 +34,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
 
   const [context, setContext] = useState<Context>();
   const [preview, setPreview] = useState<boolean>(false);
+  const [iframeHeight, setIframeHeight] = useState(0);
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -47,25 +48,6 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     );
 
     fetchContext();
-    setInterval(() => {
-      const iframe: HTMLIFrameElement = document.querySelector(
-        '[data-activityguid="' + activityState.attemptGuid + '"]',
-      ) as HTMLIFrameElement;
-      if (iframe) {
-        const htmlElement = iframe.contentWindow?.document?.querySelector('html');
-        if (htmlElement) {
-          htmlElement.style.height = '';
-        }
-        const frameHeight = iframe.contentDocument?.body?.scrollHeight + 'px';
-        if (frameHeight) {
-          iframe.style.height = frameHeight;
-          const htmlElement = iframe.contentWindow?.document?.querySelector('html');
-          if (htmlElement) {
-            htmlElement.style.height = frameHeight;
-          }
-        }
-      }
-    }, 1000);
   }, []);
 
   const fetchContext = () => {
@@ -133,8 +115,8 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           id={activityState.attemptGuid}
           src={context.src_url}
           width="100%"
-          // height="700"
-          frameBorder={0}
+          style={{ resize: 'vertical', border: 'none' }}
+          height={iframeHeight}
           data-authenticationtoken="none"
           data-sessionid="1958e2f50a0000562295c9a569354ab5"
           data-resourcetypeid={context.activity_type}
@@ -146,6 +128,21 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           data-userguid={context.user_guid}
           data-partids={context.part_ids}
           data-mode="oli"
+          onLoad={(event: any) => {
+            const { contentWindow, contentDocument } = event.target;
+            const embed = contentWindow.document.body.querySelector('#oli-embed');
+
+            // Observe any size changes in the content and update the iframe height
+            const resizeObserver = new ResizeObserver((entries) => {
+              // This limit to 700px prevents uncontrolled iframe height growth.
+              // A bug where for some content layouts settings the iframe height results in a run away height growth loop
+              if (contentDocument.body.scrollHeight < 700) {
+                setIframeHeight(contentDocument.body.scrollHeight);
+              }
+            });
+
+            resizeObserver.observe(embed);
+          }}
         ></iframe>
       )}
       {preview && <h4>OLI Embedded activity does not yet support preview</h4>}

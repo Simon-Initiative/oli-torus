@@ -62,7 +62,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
     if (columns === 1) {
-      mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+      mcqItemStyles.width = `calc(${Math.floor(100 / totalItems)}% - 6px)`;
     } else {
       mcqItemStyles.width = `calc(100% / ${columns} - 6px)`;
     }
@@ -885,7 +885,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   }
 
   return ready ? (
-    <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
+    <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
       {options?.map((item, index) => (
         <MCQItem
           idx={index}

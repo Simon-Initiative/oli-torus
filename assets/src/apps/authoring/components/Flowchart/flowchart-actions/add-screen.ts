@@ -14,6 +14,7 @@ import {
   IActivityTemplate,
   createActivityTemplate,
 } from '../../../store/activities/templates/activity';
+import { createSimpleText } from '../../../store/activities/templates/simpleText';
 import {
   ActivityRegistration,
   selectActivityTypes,
@@ -85,6 +86,7 @@ export const addFlowchartScreen = createAsyncThunk(
         width: currentLesson.custom.defaultScreenWidth,
         height: currentLesson.custom.defaultScreenHeight,
       };
+      activity.model.partsLayout = [await createSimpleText('Hello World')];
 
       activity.model.custom.maxAttempt = 2;
 

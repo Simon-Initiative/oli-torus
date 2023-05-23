@@ -262,7 +262,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     <React.Fragment>
       {editOptionClicked && portalEl && <Editor type={1} html="" tree={tree} portal={portalEl} />}
       {
-        <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
+        <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
           <style>
             {`
           .mcq-input>div {

@@ -49,7 +49,7 @@ export const MCQCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> = ({
     () => part?.custom?.mcqItems?.map((v: any) => getNodeText(v.nodes)) || ['Option 1', 'Option 2'],
     [part],
   );
-
+  const anyCorrectAnswer = !!part?.custom?.anyCorrectAnswer; // Any answer is correct.
   const correctIndex = (part?.custom?.correctAnswer || []).indexOf(true) || 0;
 
   const OnOptionChanged = useCallback(
@@ -73,6 +73,10 @@ export const MCQCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> = ({
   const showOption = (index: number) => {
     return multiSelect || index !== correctIndex;
   };
+
+  if (anyCorrectAnswer) {
+    return null;
+  }
 
   return (
     <div className="d-flex justify-content-between flex-column">
