@@ -15,6 +15,7 @@ import {
   createIncorrectPath,
   createInputNumberCommonErrorPath,
   createMCQCommonErrorPath,
+  createMCQSpecificPath,
   createUnknownPathWithDestination,
 } from './path-factories';
 import { AllPaths } from './path-types';
@@ -102,12 +103,18 @@ const createMultipleChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
     const multipleSelection = !!mcq.custom?.multipleSelection;
     const correct = mcq.custom?.correctAnswer || [];
 
-    const commonErrorOptions = (mcq.custom?.mcqItems || [])
-      .map((_, index) => index)
-      .filter((index) => multipleSelection || !correct[index])
-      .map((index) => createMCQCommonErrorPath(mcq, index));
-
-    return [...commonErrorOptions, createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
+    if (mcq.custom.anyCorrectAnswer) {
+      const pathOptions = (mcq.custom?.mcqItems || [])
+        .map((_, index) => index)
+        .map((index) => createMCQSpecificPath(mcq, index));
+      return [...pathOptions, createAlwaysGoToPath()];
+    } else {
+      const commonErrorOptions = (mcq.custom?.mcqItems || [])
+        .map((_, index) => index)
+        .filter((index) => multipleSelection || !correct[index])
+        .map((index) => createMCQCommonErrorPath(mcq, index));
+      return [...commonErrorOptions, createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
+    }
   }
   return [];
 };

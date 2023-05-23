@@ -9,6 +9,12 @@ $primary: #2c6abf;
 
 $headerColor: $darkForeground;
 
+@mixin control-border {
+  border: 1px solid $primary;
+  box-shadow: none;
+  outline: none;
+}
+
 /*-- Misc. --*/
 @import 'misc/normalize';
 @import 'misc/font-families';
@@ -22,7 +28,7 @@ $headerColor: $darkForeground;
 @import 'layout/background';
 
 /*-- Activity Types --*/
-@import 'activities/text-flow';
+@import 'flowchart/text-flow';
 @import 'activities/image';
 @import 'activities/navigation-button';
 @import 'flowchart/mcq';
@@ -111,106 +117,6 @@ html [type='button'],
 ================================*/
 
 /*-------------------------------
-    janus-text-flow
--------------------------------*/
-/* Heading 1 */
-h1 {
-  font-family: 'Open Sans' !important;
-  font-size: 80px !important;
-  line-height: 90px !important;
-}
-
-/* Heading 2 */
-h2 {
-  font-family: 'Open Sans' !important;
-  font-weight: 700 !important;
-  font-size: 40px !important;
-  line-height: 120% !important;
-}
-
-/* Heading 3 */
-h3 {
-  font-family: 'Open Sans' !important;
-}
-
-/* Heading 4 */
-h4 {
-  font-size: 20px !important;
-  font-weight: 700 !important;
-  line-height: 100% !important;
-}
-
-/* Heading 6 */
-h5 {
-  font-weight: 700 !important;
-  font-size: 16px !important;
-  line-height: 100% !important;
-}
-
-/* Heading 6 */
-h6 {
-  font-size: 16px !important;
-  line-height: 100% !important;
-  text-align: right !important;
-}
-
-/* Paragraph */
-p {
-  font-size: 14px !important;
-  line-height: 22px !important;
-}
-
-/* Paragraph with small font */
-p span[style*='font-size:12px'] {
-  line-height: 20px;
-}
-
-/*-------------------------------
-  janus-mcq
--------------------------------*/
-/*-- input --*/
-janus-mcq .mcq-input input {
-  margin-top: 2px !important;
-}
-janus-mcq .mcq-input > div {
-  margin: 0 9px 10px 0 !important;
-}
-[type='checkbox'],
-[type='radio'] {
-  border-color: currentColor !important;
-}
-[type='checkbox']:checked,
-[type='radio']:checked {
-  color: #2c6abf; /*is this the correct blue we are using now?????? I honestly dont recall*/
-}
-/*-- checkbox --*/
-janus-mcq .mcq-input input[type='checkbox'] {
-  border-radius: 4px !important;
-}
-
-/*-- label --*/
-janus-mcq .mcq-input label div {
-  left: 12px !important;
-}
-janus-mcq label p {
-  line-height: 18px !important;
-}
-
-/*-------------------------------
-  janus-dropdown
--------------------------------*/
-janus-dropdown label:empty {
-  display: none !important;
-}
-janus-dropdown select {
-  font-size: 12px;
-  line-height: 18px;
-}
-janus-dropdown .dropdown-input:before {
-  border-width: 1.5px;
-}
-
-/*-------------------------------
   janus-multi-line-text
 -------------------------------*/
 janus-multi-line-text > div {
@@ -229,30 +135,10 @@ janus-multi-line-text textarea {
   padding: 12px 16px;
 }
 
-/*-------------------------------
-  janus-input-text
--------------------------------*/
-janus-input-text input {
-  border-radius: 4px !important;
-  background-color: #f3f5f8 !important;
-  border: 1px solid #f3f5f8 !important;
-}
 /* NOTE: This does not work as expected since a "&nsp;" is present when label is blank */
 janus-input-text label:empty,
 janus-input-text label span:empty {
   display: none !important;
-}
-
-/*-------------------------------
-  janus-input-number
--------------------------------*/
-janus-input-number input {
-  border-radius: 4px !important;
-  background-color: #f3f5f8 !important;
-  border: 1px solid #f3f5f8 !important;
-  font-size: 12px !important;
-  color: #373a44 !important;
-  font-weight: 600;
 }
 
 /*-------------------------------
@@ -283,24 +169,24 @@ janus-audio audio {
   height: inherit;
 }
 
-/*-------------------------------
-  For testing purposes only
-  Do not include
--------------------------------*/
-.headerContainer .lessonTitle {
-  font-family: OpenSansBold, sans-serif !important;
-  font-size: 1rem !important;
-}
-janus-text-flow.text-align-bottom div[data-janus-type='janus-text-flow'],
-janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
-  display: flex !important;
-}
-janus-text-flow.text-align-bottom div[data-janus-Type='janus-text-flow'] {
-  align-items: flex-end;
-}
-janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
-  align-items: center;
-}
+// /*-------------------------------
+//   For testing purposes only
+//   Do not include
+// -------------------------------*/
+// .headerContainer .lessonTitle {
+//   font-family: OpenSansBold, sans-serif !important;
+//   font-size: 1rem !important;
+// }
+// janus-text-flow.text-align-bottom div[data-janus-type='janus-text-flow'],
+// janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
+//   display: flex !important;
+// }
+// janus-text-flow.text-align-bottom div[data-janus-Type='janus-text-flow'] {
+//   align-items: flex-end;
+// }
+// janus-text-flow.text-align-middle div[data-janus-type='janus-text-flow'] {
+//   align-items: center;
+// }
 
 janus-image,
 janus-image-carousel,

@@ -18,7 +18,7 @@ interface Props {
 export const OnboardWizard: React.FC<Props> = ({ startStep, onSetupComplete, initialTitle }) => {
   const [step, setStep] = useState(startStep || 0);
   const [builderVersion, setBuilderVersion] = useState(0);
-  const [lessonType, setLessonType] = useState(0);
+  const [lessonType, setLessonType] = useState(1);
   const [title, setTitle] = useState(initialTitle || '');
 
   const commitChanges = () => {

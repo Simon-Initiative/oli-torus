@@ -48,7 +48,10 @@ export const generateThreeTryWorkflow = (
 ): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
 
-  const options = { threeTimesFeedback: DEFAULT_FILLED_IN_FEEDBACK, ...extraOptions };
+  const options = {
+    threeTimesFeedback: DEFAULT_FILLED_IN_FEEDBACK,
+    ...extraOptions,
+  };
 
   const disableIfTrue = (val: boolean) => (val ? [disableAction] : []);
 

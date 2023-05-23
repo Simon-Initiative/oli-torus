@@ -4,6 +4,7 @@ import {
   ComponentPath,
   NumericCommonErrorPath,
   OptionCommonErrorPath,
+  OptionSpecificPath,
 } from './path-types';
 
 export const validatePath = (path: AllPaths) => {
@@ -23,6 +24,7 @@ export const validatePath = (path: AllPaths) => {
       return validateNumericCommonError(path);
 
     case 'option-common-error':
+    case 'option-specific':
       return validateSelectedOption(path);
 
     case 'unknown-reason-path':
@@ -40,7 +42,7 @@ const validateNumericCommonError = (path: NumericCommonErrorPath) => {
   return validateComponentRule(path) && path.destinationScreenId !== null;
 };
 
-const validateSelectedOption = (path: OptionCommonErrorPath) => {
+const validateSelectedOption = (path: OptionCommonErrorPath | OptionSpecificPath) => {
   return validateComponentRule(path) && path.selectedOption !== null;
 };
 
