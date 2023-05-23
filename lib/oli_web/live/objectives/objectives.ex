@@ -27,24 +27,24 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  data title, :string, default: "Objectives"
-  data breadcrumbs, :any
+  data(title, :string, default: "Objectives")
+  data(breadcrumbs, :any)
 
-  data modal, :any, default: nil
-  data project, :any, default: %{}
-  data objectives, :list, default: []
-  data objectives_attachments, :list, default: []
+  data(modal, :any, default: nil)
+  data(project, :any, default: %{})
+  data(objectives, :list, default: [])
+  data(objectives_attachments, :list, default: [])
 
-  data filter, :any, default: %{}
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
-  data show_bottom_paging, :boolean, default: false
-  data additional_table_class, :string, default: "table-sm text-center"
-  data selected, :string, default: ""
+  data(filter, :any, default: %{})
+  data(query, :string, default: "")
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: 20)
+  data(sort, :string, default: "sort")
+  data(page_change, :string, default: "page_change")
+  data(show_bottom_paging, :boolean, default: false)
+  data(additional_table_class, :string, default: "table-sm text-center")
+  data(selected, :string, default: "")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -498,7 +498,11 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     objectives =
       Enum.reduce(socket.assigns.objectives, [], fn rev, acc ->
         resource_id = rev.resource_id
-        children = Enum.map(rev.children, & &1.resource_id)
+
+        children =
+          rev.children
+          |> Enum.filter(&(!is_nil(&1)))
+          |> Enum.map(& &1.resource_id)
 
         all_page_attachments =
           Enum.filter(objectives_attachments, fn
