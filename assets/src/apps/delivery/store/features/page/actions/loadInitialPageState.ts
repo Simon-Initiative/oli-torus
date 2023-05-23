@@ -61,9 +61,9 @@ export const loadInitialPageState = createAsyncThunk(
       // read all user state for the assigned everapps into the session state
       /* console.log('INIT PAGE', params); */
       const everApps = params.content.custom?.everApps;
-      let everAppIds:any = [];
-      if(everApps){
-         everAppIds = params.content.custom.everApps.map((everApp: any) => everApp.id);
+      let everAppIds: any = [];
+      if (everApps) {
+        everAppIds = params.content.custom.everApps.map((everApp: any) => everApp.id);
       }
       if (everAppIds && Array.isArray(everAppIds)) {
         const userState = await readGlobalUserState(everAppIds, params.previewMode);
