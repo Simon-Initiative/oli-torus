@@ -281,7 +281,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :discussion} = assigns) do
+  def render(%{view: :discussions} = assigns) do
     ~H"""
       <.live_component
         id="discussion_activity_table"

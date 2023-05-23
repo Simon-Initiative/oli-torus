@@ -180,7 +180,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             <.header_link path={header_link_path(@socket_or_conn, @section, :overview, @preview_mode)} active={is_active?(@view, :overview)}>Overview</.header_link>
             <.header_link path={header_link_path(@socket_or_conn, @section, :reports, @preview_mode)} active={is_active?(@view, :reports)}>Reports</.header_link>
             <.header_link path={header_link_path(@socket_or_conn, @section, :manage, @preview_mode)} active={is_active?(@view, :manage)}>Manage</.header_link>
-            <.header_link path={header_link_path(@socket_or_conn, @section, :course_discussion, @preview_mode)} active={is_active?(@view, :course_discussion)}>Discussion Activity</.header_link>
+            <.header_link path={header_link_path(@socket_or_conn, @section, :discussions, @preview_mode)} active={is_active?(@view, :discussions)}>Discussion Activity</.header_link>
           </div>
 
           <div>
