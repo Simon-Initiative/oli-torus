@@ -811,7 +811,7 @@ defmodule OliWeb.Router do
 
   ### Sections - Instructor Dashboard
   #### preview routes must come before the non-preview routes to properly match
-  scope "/sections/:section_slug/instructor_dashboard/preview/:view", OliWeb do
+  scope "/sections/:section_slug/instructor_dashboard/preview", OliWeb do
     pipe_through([
       :browser,
       :delivery_and_admin,
@@ -823,11 +823,12 @@ defmodule OliWeb.Router do
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
-      live("/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
+      live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
+      live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
     end
   end
 
-  scope "/sections/:section_slug/instructor_dashboard/:view", OliWeb do
+  scope "/sections/:section_slug/instructor_dashboard", OliWeb do
     pipe_through([
       :browser,
       :delivery_and_admin,
@@ -836,9 +837,11 @@ defmodule OliWeb.Router do
     ])
 
     live_session :instructor_dashboard,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns do
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
-      live("/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
+      live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
+      live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
     end
   end
 

@@ -69,6 +69,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     allowed_routes = [
+      {nil, nil},
       {"overview", nil},
       {"reports", nil},
       {"reports", "content"},
@@ -77,11 +78,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"reports", "quiz_scores"},
       {"reports", "course_discussion"},
       {"manage", nil},
-      {"discussion", nil}
+      {"discussions", nil}
     ]
 
     if {params["view"], params["active_tab"]} in allowed_routes do
-      view = String.to_existing_atom(params["view"])
+      view =
+        case params["view"] do
+          nil -> :overview
+          tab -> String.to_existing_atom(tab)
+        end
 
       active_tab =
         case params["active_tab"] do

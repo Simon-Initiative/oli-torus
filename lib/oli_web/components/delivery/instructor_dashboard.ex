@@ -145,17 +145,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  defp header_link_path(socket_or_conn, %Section{slug: slug}, view, _preview_mode = false) do
+  defp header_link_path(_socket_or_conn, %Section{slug: slug}, view, _preview_mode = true) do
+    Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, slug, view)
+  end
+
+  defp header_link_path(socket_or_conn, %Section{slug: slug}, view, _preview_mode) do
     Routes.live_path(
       socket_or_conn,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       slug,
       view
     )
-  end
-
-  defp header_link_path(_socket_or_conn, %Section{slug: slug}, view, _preview_mode = true) do
-    Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, slug, view)
   end
 
   defp is_active?(current_view, view), do: current_view == view
@@ -180,7 +180,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             <.header_link path={header_link_path(@socket_or_conn, @section, :overview, @preview_mode)} active={is_active?(@view, :overview)}>Overview</.header_link>
             <.header_link path={header_link_path(@socket_or_conn, @section, :reports, @preview_mode)} active={is_active?(@view, :reports)}>Reports</.header_link>
             <.header_link path={header_link_path(@socket_or_conn, @section, :manage, @preview_mode)} active={is_active?(@view, :manage)}>Manage</.header_link>
-            <.header_link path={header_link_path(@socket_or_conn, @section, :discussion, @preview_mode)} active={is_active?(@view, :discussion)}>Discussion Activity</.header_link>
+            <.header_link path={header_link_path(@socket_or_conn, @section, :course_discussion, @preview_mode)} active={is_active?(@view, :course_discussion)}>Discussion Activity</.header_link>
           </div>
 
           <div>

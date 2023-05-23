@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       OliWeb.Endpoint,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
+      :reports,
       :quiz_scores,
       params
     )
@@ -76,7 +77,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fquiz_scores"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Freports%2Fquiz_scores"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_quiz_scores_route(section.slug))

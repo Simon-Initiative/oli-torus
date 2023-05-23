@@ -15,7 +15,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
       OliWeb.Endpoint,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
-      :discussions
+      :reports,
+      :course_discussion
     )
   end
 
@@ -165,7 +166,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fdiscussions"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Freports%2Fcourse_discussion"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_discussions_route(section.slug))

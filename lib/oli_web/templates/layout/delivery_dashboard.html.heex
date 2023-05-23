@@ -8,7 +8,7 @@
   socket_or_conn={OliWeb.Components.Delivery.Utils.socket_or_conn(assigns)}
   current_user={@current_user}
   section={@section}
-  view={@view}
+  view={assigns[:view]}
   preview_mode={assigns[:preview_mode]}
   breadcrumbs={assigns[:breadcrumbs]}>
   <%= @inner_content %>
