@@ -3,8 +3,15 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import useHover from '../../../../../components/hooks/useHover';
 import guid from '../../../../../utils/guid';
-import { selectCurrentActivity } from '../../../../delivery/store/features/activities/slice';
-import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
+import {
+  IActivity,
+  selectAllActivities,
+  selectCurrentActivity,
+} from '../../../../delivery/store/features/activities/slice';
+import {
+  selectCurrentActivityTree,
+  selectSequence,
+} from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   selectPartComponentTypes,
   selectPaths,
@@ -18,6 +25,8 @@ import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
 import { getScreenQuestionType } from '../paths/path-options';
+import { validateScreen } from '../screens/screen-validation';
+import { InvalidScreenWarning } from './InvalidScreenWarning';
 import { PreviewIcon } from './PreviewIcon';
 import { RedoIcon } from './RedoIcon';
 import { ScoringIcon } from './ScoringIcon';
@@ -95,10 +104,14 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
+  const activities = useSelector(selectAllActivities);
+  const sequence = useSelector(selectSequence);
+
   const dispatch = useDispatch();
 
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
+  const [invalidScreens, setInvalidScreens] = React.useState<IActivity[]>([]);
 
   const handleUndo = () => {
     dispatch(undo(null));
@@ -121,8 +134,19 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
 
   const previewLesson = useCallback(async () => {
     await dispatch(verifyFlowchartLesson({}));
+    const invalidScreens = activities.filter(
+      (activity) => validateScreen(activity, activities, sequence).length > 0,
+    );
+    if (invalidScreens.length > 0) {
+      setInvalidScreens(invalidScreens);
+    } else {
+      window.open(url, windowName);
+    }
+  }, [activities, dispatch, sequence, url, windowName]);
+
+  const onAcceptInvalid = useCallback(() => {
     window.open(url, windowName);
-  }, [dispatch, url, windowName]);
+  }, [url, windowName]);
 
   const handleScoringOverviewClick = () => {
     dispatch(setShowScoringOverview({ show: true }));
@@ -309,6 +333,13 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
             )}
           </div>
         </div> */}
+        {invalidScreens.length > 0 && (
+          <InvalidScreenWarning
+            screens={invalidScreens}
+            onAccept={onAcceptInvalid}
+            onCancel={() => setInvalidScreens([])}
+          />
+        )}
       </div>
     )
   );
