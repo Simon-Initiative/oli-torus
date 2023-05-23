@@ -78,12 +78,12 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  def browse_enrollments(
-        %Section{id: section_id},
+  def browse_enrollments_query(
+    %Section{id: section_id},
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
         %EnrollmentBrowseOptions{} = options
-      ) do
+  ) do
     instructor_role_id = ContextRoles.get_role(:context_instructor).id
 
     filter_by_role =
@@ -154,8 +154,35 @@ defmodule Oli.Delivery.Sections do
         :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
         _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
       end
+  end
 
-    Repo.all(query)
+
+  def browse_enrollments(
+        %Section{id: section_id} = section,
+        %Paging{limit: limit, offset: offset} = paging,
+        %Sorting{field: field, direction: direction} = sorting,
+        %EnrollmentBrowseOptions{} = options
+      ) do
+        browse_enrollments_query(
+          section, paging, sorting, options
+        ) |> Repo.all()
+
+  end
+
+  def browse_enrollments_with_context_roles(
+        %Section{id: section_id} = section,
+        %Paging{limit: limit, offset: offset} = paging,
+        %Sorting{field: field, direction: direction} = sorting,
+        %EnrollmentBrowseOptions{} = options
+      ) do
+        browse_enrollments_query(
+          section, paging, sorting, options
+        )
+        |> join(:left, [e, _, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
+        |> join(:left, [_, u], pr in "users_platform_roles", on: pr.user_id == u.id)
+        |> group_by([_, _, _, ecr], [ecr.context_role_id])
+        |> preload([_, u, _, _, pr], user: {u, platform_roles: pr})
+        |> select_merge([e, u, p, ecr], %{context_role_id: ecr.context_role_id, payment: p, enrollment: e}) |> Repo.all()
   end
 
   @doc """
