@@ -40,6 +40,14 @@ defmodule Oli.Publishing.DeliveryResolver do
     )
   end
 
+  def graded_pages_revisions_and_section_resources(section_slug) do
+    from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
+      where: rev.resource_type_id == 1 and rev.graded == true,
+      select: {rev, sr}
+    )
+    |> Repo.all()
+  end
+
   @behaviour Resolver
 
   @impl Resolver
@@ -58,14 +66,6 @@ defmodule Oli.Publishing.DeliveryResolver do
     end
     |> run()
     |> emit([:oli, :resolvers, :delivery], :duration)
-  end
-
-  def graded_pages_revisions_and_section_resources(section_slug) do
-    from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
-      where: rev.resource_type_id == 1 and rev.graded == true,
-      select: {rev, sr}
-    )
-    |> Repo.all()
   end
 
   @impl Resolver

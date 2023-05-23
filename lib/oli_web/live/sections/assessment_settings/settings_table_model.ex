@@ -1,9 +1,10 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.FormatDateTime
   use Phoenix.Component
 
-  def new(assessments, section_slug) do
+  def new(assessments, section_slug, context) do
     column_specs = [
       %ColumnSpec{
         name: :assessment,
@@ -85,7 +86,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        section_slug: section_slug
+        section_slug: section_slug,
+        context: context
       }
     )
   end
@@ -99,85 +101,121 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   end
 
   def render_due_date_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{due_date: assessment.end_date})
+    assigns = Map.merge(assigns, %{due_date: assessment.end_date, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @due_date %></div>
+      <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @context)}/>
     """
   end
 
   def render_attempts_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{attempts: assessment.max_attempts})
+    assigns = Map.merge(assigns, %{attempts: assessment.max_attempts, id: assessment.resource_id})
 
     ~H"""
-      <select class="torus-select pr-32" name="attempts">
-        <option selected={false} value={"all"}>All</option>
-        <option selected={true} value={5}><%= @attempts %></option>
-      </select>
+      <div class="relative">
+        <input class="mr-3 w-28" type="number" min="0" value={@attempts} phx-debounce={300} name={"max_attempts-#{@id}"} />
+        <%= if @attempts == 0 do %>
+          <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
+        <% end %>
+      </div>
     """
   end
 
   def render_time_limit_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{time_limit: assessment.time_limit})
+    assigns = Map.merge(assigns, %{time_limit: assessment.time_limit, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @time_limit %></div>
+      <div class="relative">
+        <input class="mr-3 w-28" type="number" min="0" value={@time_limit} phx-debounce={300} name={"time_limit-#{@id}"} />
+        <%= if @time_limit == 0 do %>
+          <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
+        <% end %>
+      </div>
     """
   end
 
   def render_late_submit_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{late_submit: assessment.late_submit})
+    assigns =
+      Map.merge(assigns, %{late_submit: assessment.late_submit, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @late_submit %></div>
+      <select class="torus-select pr-32" name={"late_submit-#{@id}"}>
+        <option selected={@late_submit == :allow} value={:allow}>Allow</option>
+        <option selected={@late_submit == :disallow} value={:disallow}>Disallow</option>
+      </select>
     """
   end
 
   def render_late_start_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{late_start: assessment.late_start})
+    assigns = Map.merge(assigns, %{late_start: assessment.late_start, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @late_start %></div>
+      <select class="torus-select pr-32" name={"late_start-#{@id}"}>
+        <option selected={@late_start == :allow} value={:allow}>Allow</option>
+        <option selected={@late_start == :disallow} value={:disallow}>Disallow</option>
+      </select>
     """
   end
 
   def render_scoring_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{scoring: assessment.scoring_strategy_id})
+    assigns =
+      Map.merge(assigns, %{scoring: assessment.scoring_strategy_id, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @scoring %></div>
+      <select class="torus-select pr-32" name={"scoring_strategy_id-#{@id}"}>
+        <option selected={@scoring == 1} value={1}>Average</option>
+        <option selected={@scoring == 2} value={2}>Best</option>
+        <option selected={@scoring == 3} value={3}>Last</option>
+      </select>
     """
   end
 
   def render_grace_period_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{grace_period: assessment.grace_period})
+    assigns =
+      Map.merge(assigns, %{grace_period: assessment.grace_period, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @grace_period %></div>
+      <input class="w-28" type="number" min="0" value={@grace_period} phx-debounce={500} name={"grace_period-#{@id}"} />
     """
   end
 
   def render_retake_mode_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{retake_mode: assessment.retake_mode})
+    assigns =
+      Map.merge(assigns, %{retake_mode: assessment.retake_mode, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @retake_mode %></div>
+      <select class="torus-select pr-32" name={"retake_mode-#{@id}"}>
+        <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
+        <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
+      </select>
     """
   end
 
   def render_view_feedback_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{view_feedback: assessment.feedback_mode})
+    assigns =
+      Map.merge(assigns, %{view_feedback: assessment.feedback_mode, id: assessment.resource_id})
 
     ~H"""
-    <div><%= @view_feedback %></div>
+      <select class="torus-select pr-32" name={"feedback_mode-#{@id}"}>
+        <option selected={@view_feedback == :allow} value={:allow}>Allow</option>
+        <option selected={@view_feedback == :disallow} value={:disallow}>Disallow</option>
+        <option selected={@view_feedback == :scheduled} value={:scheduled}>Scheduled</option>
+      </select>
     """
   end
 
   def render_view_answers_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{view_answers: assessment.feedback_scheduled_date})
+    assigns =
+      Map.merge(assigns, %{
+        view_answers: assessment.feedback_scheduled_date,
+        id: assessment.resource_id
+      })
 
     ~H"""
-    <div><%= @view_answers %></div>
+      <select class="torus-select pr-32" name={"review_submission-#{@id}"}>
+        <option selected={@view_answers == :allow} value={:allow}>Allow</option>
+        <option selected={@view_answers == :disallow} value={:disallow}>Disallow</option>
+      </select>
     """
   end
 
@@ -185,21 +223,24 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns =
       Map.merge(assigns, %{
         exceptions_count: assessment.exceptions_count,
-        assessment_id: assessment.resource_id
+        id: assessment.resource_id
       })
 
     ~H"""
     <div>
-      <%= if @exceptions_count > 0 do %>
-        <.link
-          class="ml-6 text-gray-600 underline hover:text-gray-700"
-          navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.AssessmentSettings.SettingsLive, @section_slug, :student_exceptions, @assessment_id)}>
-          <%= @exceptions_count %>
-        </.link>
-      <% else %>
+      <.link
+        class="ml-6 text-gray-600 underline hover:text-gray-700"
+        navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.AssessmentSettings.SettingsLive, @section_slug, :student_exceptions, @id)}>
         <%= @exceptions_count %>
-      <% end %>
+      </.link>
     </div>
     """
+  end
+
+  defp value_from_datetime(datetime, context) do
+    datetime
+    |> FormatDateTime.convert_datetime(context)
+    |> DateTime.to_iso8601()
+    |> String.slice(0, 16)
   end
 end

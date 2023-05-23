@@ -1,20 +1,19 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   use Phoenix.LiveView
+  use OliWeb.Common.Modal
 
   import Ecto.Query
   alias Oli.Repo
 
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
-  alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Settings
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Settings.StudentException
-  alias OliWeb.Sections.AssessmentSettings.AssessmentSetting
 
   @impl true
-  def mount(%{"section_slug" => section_slug} = params, session, socket) do
+  def mount(%{"section_slug" => section_slug} = _params, session, socket) do
     case Mount.for(section_slug, session) do
       {:error, error} ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
@@ -62,6 +61,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     {:noreply, socket}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
       <div class="container mx-auto my-4">
@@ -102,7 +102,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             module={OliWeb.Sections.AssessmentSettings.SettingsTable}
             assessments={@assessments}
             params={@params}
-            section_slug={@section.slug}
+            section={@section}
+            context={@context}
           />
         <% else %>
         <.live_component
@@ -131,6 +132,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            :all
          )
      )}
+  end
+
+  @impl true
+  def handle_info({:assessment_updated, updated_assessment}, socket) do
+    updated_assessments =
+      socket.assigns.assessments
+      |> Enum.into([], fn assessment ->
+        if assessment.resource_id == updated_assessment.resource_id,
+          do: updated_assessment,
+          else: assessment
+      end)
+
+    {:noreply,
+     socket
+     |> assign(assessments: updated_assessments)}
   end
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
