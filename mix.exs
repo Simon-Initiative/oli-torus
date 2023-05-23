@@ -137,7 +137,7 @@ defmodule Oli.MixProject do
       {:bcrypt_elixir, "~> 2.2"},
       {:cachex, "~> 3.5"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:csv, "~> 2.3"},
+      {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.7.0"},

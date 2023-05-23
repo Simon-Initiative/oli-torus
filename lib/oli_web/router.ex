@@ -835,6 +835,12 @@ defmodule OliWeb.Router do
         :preview
       )
     end
+
+    get(
+      "/downloads/progress/:container_id",
+      MetricsController,
+      :download_container_progress
+    )
   end
 
   ### Sections - Student Course Delivery

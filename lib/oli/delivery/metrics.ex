@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Metrics do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
-
+  alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core
 
@@ -17,6 +17,36 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
+
+  def progress_datatable_for(section_id, container_id) do
+    learner_id = ContextRoles.get_role(:context_learner).id
+
+    users = from(e in Enrollment,
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      where: e.section_id == ^section_id,
+      where: ecr.id == ^learner_id,
+      select: u,
+      distinct: u
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn user, acc -> Map.put(acc, user.id, user) end)
+
+    user_ids = Map.keys(users)
+
+    progress_for(section_id, user_ids, container_id)
+    |> Enum.reduce([], fn {user_id, progress}, acc ->
+      [%{
+        id: user_id,
+        name: users[user_id].name,
+        email: users[user_id].email,
+        progress: progress
+      } | acc]
+    end)
+    |> DataTable.new()
+    |> DataTable.headers([:id, :name, :email, :progress])
+
+  end
 
   @doc """
   Calculate the progress for a specific student (or a list of students),
