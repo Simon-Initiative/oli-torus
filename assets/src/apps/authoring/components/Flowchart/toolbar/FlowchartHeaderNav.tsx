@@ -1,6 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import useHover from '../../../../../components/hooks/useHover';
 import guid from '../../../../../utils/guid';
 import {
@@ -13,20 +14,24 @@ import {
   selectSequence,
 } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
+  selectCopiedPart,
   selectPartComponentTypes,
   selectPaths,
   selectProjectSlug,
   selectRevisionSlug,
+  setRightPanelActiveTab,
   setShowScoringOverview,
 } from '../../../store/app/slice';
 import { redo } from '../../../store/history/actions/redo';
 import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
+import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
 import { getScreenQuestionType } from '../paths/path-options';
 import { validateScreen } from '../screens/screen-validation';
 import { InvalidScreenWarning } from './InvalidScreenWarning';
+import PasteIcon from './PasteIcon';
 import { PreviewIcon } from './PreviewIcon';
 import { RedoIcon } from './RedoIcon';
 import { ScoringIcon } from './ScoringIcon';
@@ -122,6 +127,8 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
   };
 
   const paths = useSelector(selectPaths);
+  const copiedPart = useSelector(selectCopiedPart);
+  const imgsPath = paths?.images || '';
 
   //const isReadOnly = useSelector(selectReadOnly);
   const currentActivity = useSelector(selectCurrentActivity);
@@ -148,6 +155,24 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
     setInvalidScreens([]);
     window.open(url, windowName);
   }, [url, windowName]);
+
+  const addPartToCurrentScreen = (newPartData: any) => {
+    if (currentActivityTree) {
+      const [currentActivity] = currentActivityTree.slice(-1);
+      dispatch(addPart({ activityId: currentActivity.id, newPartData }));
+    }
+  };
+  const handlePartPasteClick = () => {
+    const newPartData = {
+      id: `${copiedPart.type}-${guid()}`,
+      type: copiedPart.type,
+      custom: copiedPart.custom,
+    };
+    addPartToCurrentScreen(newPartData);
+    dispatch(setCurrentSelection({ selection: newPartData.id }));
+
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+  };
 
   const handleScoringOverviewClick = () => {
     dispatch(setShowScoringOverview({ show: true }));
@@ -241,12 +266,47 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
         <div className="toolbar-column" style={{ flexBasis: '14%' }}>
           <label>Overview</label>
           <div className="toolbar-buttons">
-            <button onClick={previewLesson} className="component-button">
-              <PreviewIcon />
-            </button>
-            <button onClick={handleScoringOverviewClick} className="component-button">
-              <ScoringIcon />
-            </button>
+            <OverlayTrigger
+              placement="bottom"
+              delay={{ show: 150, hide: 150 }}
+              overlay={
+                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  Preview Lesson
+                </Tooltip>
+              }
+            >
+              <button onClick={previewLesson} className="component-button">
+                <PreviewIcon />
+              </button>
+            </OverlayTrigger>
+            <OverlayTrigger
+              placement="bottom"
+              delay={{ show: 150, hide: 150 }}
+              overlay={
+                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  Scoring Overview
+                </Tooltip>
+              }
+            >
+              <button onClick={handleScoringOverviewClick} className="component-button">
+                <ScoringIcon />
+              </button>
+            </OverlayTrigger>
+            {copiedPart && (
+              <OverlayTrigger
+                placement="bottom"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    Paste Component
+                  </Tooltip>
+                }
+              >
+                <button className="component-button" onClick={handlePartPasteClick}>
+                  <PasteIcon size={18} color="#222439" />
+                </button>
+              </OverlayTrigger>
+            )}
           </div>
         </div>
 
