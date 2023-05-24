@@ -13,6 +13,8 @@ defmodule Oli.Delivery.Sections.Enrollment do
       join_through: "enrollments_context_roles",
       on_replace: :delete
 
+    field :user_platform_roles, {:array, :map}, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
