@@ -203,8 +203,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
       |> add_students_progress(section.id, nil)
       |> add_payment_status(section)
 
-      IO.inspect enrollments
-
     total_count = determine_total(enrollments)
 
     {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
@@ -219,12 +217,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
       Map.merge(user, %{progress: Map.get(users_progress, user.id)})
     end)
   end
-
-  # defp add_payment_status(users, section) do
-  #   Enum.map(users, fn user ->
-  #     Map.merge(user, %{payment_status: :paid, payment_date: DateTime.utc_now()})
-  #   end)
-  # end
 
   defp add_payment_status(users, section) do
     Enum.map(users, fn user ->

@@ -37,12 +37,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :engagement,
-        label: "COURSE ENGAGEMENT",
-        render_fn: &__MODULE__.render_engagement_column/3,
-        th_class: "instructor_dashboard_th"
-      },
-      %ColumnSpec{
         name: :payment_status,
         label: "PAYMENT STATUS",
         render_fn: &__MODULE__.render_payment_status/3,
