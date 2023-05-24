@@ -212,6 +212,11 @@ defmodule Oli.Delivery.ExtrinsicState do
     Returns the key for alternatives preference state
     """
     def alternatives_preference(alternatives_id), do: "alt_pref_#{alternatives_id}"
+
+    @doc """
+    Returns the key for checking if the user has visited a section
+    """
+    def has_visited_once(), do: "has_visited_once"
   end
 
   defp filter_keys(state, nil), do: state

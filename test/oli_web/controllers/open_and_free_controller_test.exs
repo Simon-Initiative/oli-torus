@@ -134,6 +134,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       assert html_response(conn, 302) =~ "/sections/#{section.slug}/enroll"
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      ensure_user_visit(user, section)
 
       conn =
         conn

@@ -211,6 +211,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.AuthorizeCommunity)
   end
 
+  pipeline :ensure_user_section_visit do
+    plug(Oli.Plugs.EnsureUserSectionVisit)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -851,11 +855,12 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
-      :force_required_survey,
       :require_exploration_pages,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
+      :ensure_user_section_visit,
+      :force_required_survey,
       :pow_email_layout
     ])
 
@@ -904,6 +909,25 @@ defmodule OliWeb.Router do
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery_protected
+    ])
+
+    live_session :load_section,
+      on_mount: [
+        Oli.LiveSessionPlugs.SetSection,
+        Oli.LiveSessionPlugs.SetCurrentUser,
+        Oli.LiveSessionPlugs.RequireEnrollment
+      ] do
+      live(
+        "/:section_slug/welcome",
+        Delivery.StudentOnboarding.Wizard
+      )
+    end
   end
 
   ### Sections - Management
