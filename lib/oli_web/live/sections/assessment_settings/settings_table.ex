@@ -1,10 +1,12 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   use Surface.LiveComponent
 
+  import Phoenix.HTML.Form
+  import OliWeb.ErrorHelpers
+
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.{PagedTable, SearchInput}
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{DateTimeLocalInput, Submit}
+
   alias OliWeb.Sections.AssessmentSettings.SettingsTableModel
   alias OliWeb.Common.Params
   alias Phoenix.LiveView.JS
@@ -18,10 +20,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   prop(section, :map, required: true)
   prop(context, :map, required: true)
 
-  data(show_modal, :boolean)
-  data(scheduled_assessment_changeset, :map)
   data(flash, :map)
   data(table_model, :map)
+  data(modal_assigns, :map)
   data(total_count, :integer)
 
   @default_params %{
@@ -33,11 +34,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   }
 
   def mount(socket) do
-    {:ok,
-     assign(socket,
-       show_modal: false
-       #  scheduled_assessment_changeset: %{}
-     )}
+    {:ok, assign(socket, modal_assigns: %{show: false})}
   end
 
   def update(assigns, socket) do
@@ -52,7 +49,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         rows: rows,
         sort_order: params.sort_order,
         sort_by_spec:
-          Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
+          Enum.find(table_model.column_specs, fn col_spec ->
+            col_spec.name == params.sort_by
+          end)
       })
 
     {:ok,
@@ -68,76 +67,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   def render(assigns) do
     ~F"""
     <div class="mx-10 mb-10 bg-white shadow-sm">
-      {#if @show_modal}
-        <div
-          id="scheduled_modal"
-          class="modal fade show"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          phx-hook="ModalLaunch"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Set scheduled date</h5>
-              </div>
-              <div class="modal-body">
-                <Form for={@scheduled_assessment_changeset} submit="set_scheduled_date">
-                  <DateTimeLocalInput field={:feedback_scheduled_date} class="form-control w-75" />
-                  <Submit class="btn btn-primary mt-3" label="Save" />
-                  <button
-                    phx-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
-                    phx-key="Escape"
-                    id="scheduled_cancel_button"
-                    class="btn btn-primary mt-3"
-                    phx-click="cancel_scheduled_modal"
-                    phx-target={@myself}
-                  >Cancel</button>
-                </Form>
-              </div>
-            </div>
-          </div>
-        </div>
-      {/if}
-
+      {modal(@modal_assigns)}
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>
         </div>
-        {#if live_flash(@flash, :info)}
-          <div class="alert alert-info flex flex-row justify-between" role="alert">
-            {live_flash(@flash, :info)}
-            <button
-              type="button"
-              class="close ml-4"
-              data-bs-dismiss="alert"
-              aria-label="Close"
-              phx-click="lv:clear-flash"
-              phx-target={@myself}
-              phx-value-key="info"
-            >
-              <i class="fa-solid fa-xmark fa-lg" />
-            </button>
-          </div>
-        {/if}
-        {#if live_flash(@flash, :error)}
-          <div class="alert alert-danger flex flex-row justify-between" role="alert">
-            {live_flash(@flash, :error)}
-            <button
-              type="button"
-              class="close ml-4"
-              data-bs-dismiss="alert"
-              aria-label="Close"
-              phx-click="lv:clear-flash"
-              phx-target={@myself}
-              phx-value-key="error"
-            >
-              <i class="fa-solid fa-xmark fa-lg" />
-            </button>
-          </div>
-        {/if}
+        {flash_message(%{flash: @flash, myself: @myself})}
         <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 ml-9 sm:pb-0">
           <SearchInput.render
             id="assessments_search_input"
@@ -163,7 +99,110 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     """
   end
 
-  def handle_event("search_assessment", %{"assessment_name" => assessment_name}, socket) do
+  def flash_message(assigns) do
+    ~F"""
+    {#if live_flash(@flash, :info)}
+      <div class="alert alert-info flex flex-row justify-between" role="alert">
+        {live_flash(@flash, :info)}
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-target={@myself}
+          phx-value-key="info"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
+    {/if}
+    {#if live_flash(@flash, :error)}
+      <div class="alert alert-danger flex flex-row justify-between" role="alert">
+        {live_flash(@flash, :error)}
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-target={@myself}
+          phx-value-key="error"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
+    {/if}
+    """
+  end
+
+  def modal(%{show: true} = assigns) do
+    ~H"""
+     <div
+          id="scheduled_modal"
+          class="modal fade show bg-gray-900 bg-opacity-50"
+          tabindex="-1"
+          role="dialog"
+          aria-hidden="true"
+          style="display: block;"
+          phx-window-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
+          phx-key="Escape"
+        >
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">View Feedback</h5>
+                <button
+                  type="button"
+                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+                  aria-label="Close"
+                  phx-click={JS.dispatch("click", to: "#scheduled_cancel_button")}
+                >
+                  <i class="fa-solid fa-xmark fa-xl" />
+                </button>
+              </div>
+              <div class="modal-body">
+                <.form
+                  for={@changeset}
+                  phx-submit="submit_scheduled_date"
+                  phx-change="validate_scheduled_date"
+                  phx-target={@myself}
+                  :let={f}
+                >
+                  <div class="flex flex-col space-y-2">
+                    <%= label f, :feedback_scheduled_date, "Scheduled Date", class: "control-label" %>
+                    <%= datetime_local_input f, :feedback_scheduled_date, class: "mr-auto" %>
+                    <%= error_tag f, :feedback_scheduled_date, true %>
+                  </div>
+                  <div class="flex space-x-3 mt-6 justify-end">
+                    <button
+                      type="button"
+                      id="scheduled_cancel_button"
+                      class="btn btn-link"
+                      phx-click="cancel_scheduled_modal"
+                      phx-target={@myself}
+                    >Cancel</button>
+
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                    >Save</button>
+                  </div>
+                </.form>
+              </div>
+            </div>
+          </div>
+        </div>
+    """
+  end
+
+  def modal(%{show: false}), do: nil
+
+  def handle_event(
+        "search_assessment",
+        %{"assessment_name" => assessment_name},
+        socket
+      ) do
     {:noreply,
      push_patch(socket,
        to:
@@ -178,7 +217,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
      )}
   end
 
-  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+  def handle_event(
+        "paged_table_page_change",
+        %{"limit" => limit, "offset" => offset},
+        socket
+      ) do
     {:noreply,
      push_patch(socket,
        to:
@@ -193,7 +236,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
      )}
   end
 
-  def handle_event("paged_table_sort", %{"sort_by" => sort_by} = _params, socket) do
+  def handle_event(
+        "paged_table_sort",
+        %{"sort_by" => sort_by} = _params,
+        socket
+      ) do
     {:noreply,
      push_patch(socket,
        to:
@@ -203,7 +250,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            socket.assigns.section.slug,
            :settings,
            :all,
-           update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
+           update_params(socket.assigns.params, %{
+             sort_by: String.to_existing_atom(sort_by)
+           })
          )
      )}
   end
@@ -211,17 +260,37 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   def handle_event("update_setting", params, socket) do
     case decode_target(params, socket.assigns.context) do
       {:feedback_mode, assessment_setting_id, :scheduled} ->
-        # TODO fix escape press key...
-        # do we set the feedback_scheduled_date to nil when a scheduled feedback_mode is set to other value?
-        # if not, we should format the string considering the timezone in the context (as we did on settings_table_model)
-        changeset =
-          Sections.get_section_resource(socket.assigns.section.id, assessment_setting_id)
-          |> SectionResource.changeset(%{feedback_mode: :scheduled})
+        assessment_for_scheduled =
+          Sections.get_section_resource(
+            socket.assigns.section.id,
+            assessment_setting_id
+          )
+          |> Map.update(
+            :feedback_scheduled_date,
+            nil,
+            fn scheduled_date -> value_from_datetime(scheduled_date, socket.assigns.context) end
+          )
 
-        {:noreply, assign(socket, show_modal: true, scheduled_assessment_changeset: changeset)}
+        changeset =
+          SectionResource.changeset(assessment_for_scheduled, %{
+            feedback_mode: :scheduled
+          })
+
+        {:noreply,
+         assign(socket,
+           modal_assigns: %{
+             show: true,
+             changeset: changeset,
+             assessment_for_scheduled: assessment_for_scheduled,
+             myself: socket.assigns.myself
+           }
+         )}
 
       {key, assessment_setting_id, new_value} when new_value != "" ->
-        Sections.get_section_resource(socket.assigns.section.id, assessment_setting_id)
+        Sections.get_section_resource(
+          socket.assigns.section.id,
+          assessment_setting_id
+        )
         |> SectionResource.changeset(Map.new([{key, new_value}]))
         |> Repo.update()
         |> case do
@@ -245,11 +314,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   def handle_event("cancel_scheduled_modal", _params, socket) do
-    {:noreply, assign(socket, show_modal: false, scheduled_assessment_changeset: %{})}
+    {:noreply, assign(socket, modal_assigns: %{show: false})}
   end
 
   def handle_event(
-        "set_scheduled_date",
+        "validate_scheduled_date",
+        %{
+          "section_resource" => %{
+            "feedback_scheduled_date" => feedback_scheduled_date
+          }
+        },
+        socket
+      ) do
+    changeset =
+      socket.assigns.modal_assigns.assessment_for_scheduled
+      |> SectionResource.changeset(%{
+        feedback_scheduled_date: feedback_scheduled_date
+      })
+      |> Ecto.Changeset.validate_required(:feedback_scheduled_date)
+      |> Map.put(:action, :validate)
+
+    {:noreply,
+     assign(socket,
+       modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
+     )}
+  end
+
+  def handle_event(
+        "submit_scheduled_date",
         %{
           "section_resource" => %{
             "feedback_scheduled_date" => feedback_scheduled_date
@@ -258,21 +350,36 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         socket
       ) do
     utc_datetime =
-      FormatDateTime.datestring_to_utc_datetime(feedback_scheduled_date, socket.assigns.context)
+      FormatDateTime.datestring_to_utc_datetime(
+        feedback_scheduled_date,
+        socket.assigns.context
+      )
 
-    socket.assigns.scheduled_assessment_changeset
-    |> Ecto.Changeset.change(feedback_scheduled_date: utc_datetime)
+    socket.assigns.modal_assigns.assessment_for_scheduled
+    |> SectionResource.changeset(%{feedback_scheduled_date: utc_datetime})
+    |> Ecto.Changeset.validate_required(:feedback_scheduled_date)
     |> Repo.update()
+    |> case do
+      {:error, changeset} ->
+        {:noreply,
+         assign(socket,
+           modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
+         )}
 
-    {:noreply,
-     socket
-     |> update_assessments(
-       socket.assigns.scheduled_assessment_changeset.data.resource_id,
-       [{:feedback_scheduled_date, utc_datetime}, {:feedback_mode, :scheduled}]
-     )
-     |> clear_flash()
-     |> put_flash(:info, "Setting updated!")
-     |> assign(show_modal: false)}
+      {:ok, _section_resource} ->
+        {:noreply,
+         socket
+         |> update_assessments(
+           socket.assigns.modal_assigns.changeset.data.resource_id,
+           [
+             {:feedback_scheduled_date, utc_datetime},
+             {:feedback_mode, :scheduled}
+           ]
+         )
+         |> clear_flash()
+         |> put_flash(:info, "Setting updated!")
+         |> assign(modal_assigns: %{show: false})}
+    end
   end
 
   defp update_assessments(socket, assessment_setting_id, key_value_list) do
@@ -304,7 +411,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           String.to_existing_atom(value)
 
         {key, value}
-        when key in ["scoring_strategy_id", "time_limit", "max_attempts"] and value != "" ->
+        when key in ["scoring_strategy_id", "time_limit", "max_attempts"] and
+               value != "" ->
           abs(String.to_integer(value))
 
         {"end_date", value} ->
@@ -322,7 +430,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       sort_order:
-        Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
+        Params.get_atom_param(
+          params,
+          "sort_order",
+          [:asc, :desc],
+          @default_params.sort_order
+        ),
       sort_by:
         Params.get_atom_param(
           params,
@@ -378,9 +491,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     end
   end
 
-  defp update_params(%{sort_by: current_sort_by, sort_order: current_sort_order} = params, %{
-         sort_by: new_sort_by
-       })
+  defp update_params(
+         %{sort_by: current_sort_by, sort_order: current_sort_order} = params,
+         %{
+           sort_by: new_sort_by
+         }
+       )
        when current_sort_by == new_sort_by do
     toggled_sort_order = if current_sort_order == :asc, do: :desc, else: :asc
     update_params(params, %{sort_order: toggled_sort_order})
@@ -396,5 +512,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     Map.filter(params, fn {key, value} ->
       @default_params[key] != value
     end)
+  end
+
+  defp value_from_datetime(nil, _context), do: nil
+
+  defp value_from_datetime(datetime, context) do
+    datetime
+    |> FormatDateTime.convert_datetime(context)
+    |> DateTime.to_iso8601()
+    |> String.slice(0, 16)
   end
 end

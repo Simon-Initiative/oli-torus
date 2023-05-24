@@ -207,7 +207,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   def render_view_answers_column(assigns, assessment, _) do
     assigns =
       Map.merge(assigns, %{
-        view_answers: assessment.feedback_scheduled_date,
+        view_answers: assessment.review_submission,
         id: assessment.resource_id
       })
 
@@ -236,6 +236,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     </div>
     """
   end
+
+  defp value_from_datetime(nil, _context), do: nil
 
   defp value_from_datetime(datetime, context) do
     datetime
