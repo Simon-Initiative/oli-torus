@@ -4205,6 +4205,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 2.5rem;
 }
 
+.mt-14 {
+  margin-top: 3.5rem;
+}
+
 .mt-2 {
   margin-top: 0.5rem;
 }
@@ -4373,6 +4377,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 2rem;
 }
 
+.h-80 {
+  height: 20rem;
+}
+
 .h-9 {
   height: 2.25rem;
 }
@@ -4439,6 +4447,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-14 {
   width: 3.5rem;
+}
+
+.w-16 {
+  width: 4rem;
 }
 
 .w-2 {
@@ -4654,6 +4666,10 @@ table.table-striped tbody tr:nth-child(even) {
   list-style-type: decimal;
 }
 
+.list-disc {
+  list-style-type: disc;
+}
+
 .list-none {
   list-style-type: none;
 }
@@ -4746,6 +4762,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-4 {
   gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
 }
 
 .gap-8 {
@@ -5305,6 +5325,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-repeat: no-repeat;
 }
 
+.object-cover {
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+
 .p-0 {
   padding: 0px;
 }
@@ -5471,6 +5496,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-0 {
   padding-bottom: 0px;
+}
+
+.pb-1 {
+  padding-bottom: 0.25rem;
 }
 
 .pb-2 {
