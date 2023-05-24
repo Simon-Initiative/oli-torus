@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.Students do
   prop total_count, :number, required: true
   prop table_model, :struct, required: true
   prop dropdown_options, :list, required: true
+  prop(view, :atom)
 
   @default_params %{
     offset: 0,
@@ -30,7 +31,7 @@ defmodule OliWeb.Components.Delivery.Students do
           context: context,
           students: students,
           dropdown_options: dropdown_options
-        } = _assigns,
+        } = assigns,
         socket
       ) do
     {total_count, rows} = apply_filters(students, params)
@@ -51,7 +52,8 @@ defmodule OliWeb.Components.Delivery.Students do
        table_model: table_model,
        params: params,
        section_slug: section.slug,
-       dropdown_options: dropdown_options
+       dropdown_options: dropdown_options,
+       view: assigns[:view]
      )}
   end
 
@@ -191,6 +193,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket,
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           socket.assigns.view,
            :students,
            update_params(socket.assigns.params, %{text_search: student_name})
          )
@@ -205,6 +208,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket,
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           socket.assigns.view,
            :students,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
@@ -219,6 +223,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket,
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           socket.assigns.view,
            :students,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
@@ -233,6 +238,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket,
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
+           socket.assigns.view,
            :students,
            update_params(socket.assigns.params, %{filter_by: String.to_existing_atom(filter)})
          )

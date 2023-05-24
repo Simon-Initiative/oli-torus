@@ -18,7 +18,7 @@
           end}_sidebar.html", assigns %>
       </div>
       <div class="workspace-right">
-        <main role="main" id="main-content">
+        <main role="main" id="main-content flex-1">
           <%= @inner_content %>
         </main>
         <%= render OliWeb.LayoutView, "_footer.html", assigns %>

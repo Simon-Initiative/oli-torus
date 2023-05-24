@@ -81,8 +81,8 @@ defmodule OliWeb.Components.Header do
     """
   end
 
-  attr :breadcrumbs, :list, required: true
-  attr :socket_or_conn, :any, required: true
+  attr(:breadcrumbs, :list, required: true)
+  attr(:socket_or_conn, :any, required: true)
 
   def delivery_breadcrumb(assigns) do
     ~H"""

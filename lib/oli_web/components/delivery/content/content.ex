@@ -15,6 +15,7 @@ defmodule OliWeb.Components.Delivery.Content do
   prop(table_model, :struct, required: true)
   prop(options_for_container_select, :list)
   prop(patch_url_type, :atom, required: true)
+  prop(view, :atom)
 
   @default_params %{
     offset: 0,
@@ -38,7 +39,13 @@ defmodule OliWeb.Components.Delivery.Content do
     {total_count, column_name, rows} = apply_filters(containers, params)
 
     {:ok, table_model} =
-      ContentTableModel.new(rows, column_name, assigns.section_slug, assigns.patch_url_type)
+      ContentTableModel.new(
+        rows,
+        column_name,
+        assigns.section_slug,
+        assigns[:view],
+        assigns.patch_url_type
+      )
 
     table_model =
       Map.merge(table_model, %{
@@ -56,7 +63,8 @@ defmodule OliWeb.Components.Delivery.Content do
        student_id: assigns[:student_id],
        patch_url_type: assigns.patch_url_type,
        section_slug: assigns.section_slug,
-       options_for_container_select: options_for_container_select(containers)
+       options_for_container_select: options_for_container_select(containers),
+       view: assigns[:view]
      )}
   end
 
@@ -274,6 +282,7 @@ defmodule OliWeb.Components.Delivery.Content do
       socket,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       socket.assigns.section_slug,
+      socket.assigns.view,
       :content,
       update_params(socket.assigns.params, new_params)
     )

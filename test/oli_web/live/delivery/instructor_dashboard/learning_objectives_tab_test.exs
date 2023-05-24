@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       OliWeb.Endpoint,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
+      :reports,
       :learning_objectives,
       params
     )
@@ -24,7 +25,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Flearning_objectives"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Freports%2Flearning_objectives"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_learning_objectives_route(section.slug))
@@ -149,7 +150,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
              |> render() =~ obj_revision_2.title
 
-             assert view
+      assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
              |> render() =~ obj_revision_1.title
     end
