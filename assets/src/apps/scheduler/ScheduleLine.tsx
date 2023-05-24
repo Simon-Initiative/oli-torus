@@ -28,6 +28,14 @@ interface ScheduleLineProps {
 }
 
 export const ScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeometry }) => {
+  return item.resource_type_id === ScheduleItemType.Page ? (
+    <PageScheduleLine item={item} indent={indent} dayGeometry={dayGeometry} />
+  ) : (
+    <ContainerScheduleLine item={item} indent={indent} dayGeometry={dayGeometry} />
+  );
+};
+
+const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeometry }) => {
   const [expanded, toggleExpanded] = useToggle(false);
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
