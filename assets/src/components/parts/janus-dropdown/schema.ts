@@ -1,4 +1,5 @@
 import { JSONSchema7Object } from 'json-schema';
+import { CustomArrayFieldTemplate } from 'apps/authoring/components/PropertyEditor/custom/CustomArrayFieldTemplate';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -26,10 +27,11 @@ export const simpleUISchema = {
   },
   optionLabels: {
     classNames: 'dropdown-options-field',
-    items: {
-      classNames: 'dropdown-options-field',
-      'ui:emptyValue': '',
-    },
+    'ui:widget': 'DropdownOptionsEditor',
+  },
+  items: {
+    classNames: 'dropdown-options-field',
+    'ui:emptyValue': '',
   },
 };
 
@@ -55,7 +57,6 @@ export const simpleSchema: JSONSchema7Object = {
   optionLabels: {
     title: 'Option Labels',
     type: 'array',
-    description: 'list of options',
     items: {
       type: 'string',
     },
