@@ -4943,6 +4943,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-width: 2px;
 }
 
+.border-b-4 {
+  border-bottom-width: 4px;
+}
+
 .border-l {
   border-left-width: 1px;
 }
@@ -4998,6 +5002,10 @@ table.table-striped tbody tr:nth-child(even) {
 .\!border-delivery-primary {
   --tw-border-opacity: 1 !important;
   border-color: rgb(59 118 211 / var(--tw-border-opacity)) !important;
+}
+
+.\!border-white\/75 {
+  border-color: rgb(255 255 255 / 0.75) !important;
 }
 
 .border-black {
@@ -7123,6 +7131,10 @@ p {
 .hover\:border-delivery-primary-200:hover {
   --tw-border-opacity: 1;
   border-color: rgb(159 188 233 / var(--tw-border-opacity));
+}
+
+.hover\:border-white\/50:hover {
+  border-color: rgb(255 255 255 / 0.5);
 }
 
 .hover\:bg-delivery-header-700:hover {
