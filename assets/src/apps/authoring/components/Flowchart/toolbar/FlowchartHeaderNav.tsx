@@ -103,7 +103,7 @@ const ToolbarOption: React.FC<{ disabled?: boolean; component: string; onClick: 
   );
 };
 
-export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
+export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const availablePartComponents = useSelector(selectPartComponentTypes);
@@ -128,7 +128,6 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavPro
 
   const paths = useSelector(selectPaths);
   const copiedPart = useSelector(selectCopiedPart);
-  const imgsPath = paths?.images || '';
 
   //const isReadOnly = useSelector(selectReadOnly);
   const currentActivity = useSelector(selectCurrentActivity);

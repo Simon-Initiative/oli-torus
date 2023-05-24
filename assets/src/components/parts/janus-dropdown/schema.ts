@@ -1,5 +1,4 @@
 import { JSONSchema7Object } from 'json-schema';
-import { CustomArrayFieldTemplate } from 'apps/authoring/components/PropertyEditor/custom/CustomArrayFieldTemplate';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
