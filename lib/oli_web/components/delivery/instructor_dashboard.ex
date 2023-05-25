@@ -94,7 +94,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   hover:text-body-color
                   hover:border-delivery-primary-200
                   focus:border-delivery-primary-200
-                  #{if active, do: "!border-delivery-primary", else: "border-transparent"}
+                  #{if active, do: "!border-delivery-primary active", else: "border-transparent"}
                 "}>
                 <%= if is_function(label), do: label.(), else: label %>
                   <%= if badge do %>
