@@ -133,12 +133,6 @@ export const MultiInputComponent: React.FC = () => {
     ]),
   );
 
-  console.log(
-    '(uiState.model as MultiInputSchema).inputs, inputs',
-    (uiState.model as MultiInputSchema).inputs,
-    inputs,
-  );
-
   const handlePerPartSubmission = (partId: string, input: string | null = null) => {
     const partState = uiState.partState[partId];
     const part = uiState.attemptState.parts.find((p) => p.partId === partId);
