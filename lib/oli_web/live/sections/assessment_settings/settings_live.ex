@@ -8,7 +8,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Delivery.Settings
+  alias Oli.Delivery.{Settings, Sections}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Settings.StudentException
 
@@ -32,6 +32,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            preview_mode: socket.assigns[:live_action] == :preview,
            section: section,
            student_exceptions: student_exceptions,
+           students:
+             Sections.enrolled_students(section.slug)
+             |> Enum.reject(fn s -> s.user_role_id != 4 end),
            assessments: get_assessments(section.slug, student_exceptions)
          )}
     end
@@ -110,9 +113,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             id="student_exeptions_table"
             module={OliWeb.Sections.AssessmentSettings.StudentExceptionsTable}
             student_exceptions={@student_exceptions}
+            students={@students}
             assessments={@assessments}
             params={@params}
-            section_slug={@section.slug}
+            section={@section}
+            context={@context}
           />
         <% end %>
       </div>
@@ -149,6 +154,47 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
      |> assign(assessments: updated_assessments)}
   end
 
+  @impl true
+  def handle_info({:student_exception, action, student_exceptions}, socket)
+      when is_list(student_exceptions) do
+    updated_student_exceptions =
+      case action do
+        :updated ->
+          socket.assigns.student_exceptions
+          |> Enum.into([], fn se ->
+            Enum.find(student_exceptions, se, fn s_ex -> s_ex.id == se.id end)
+          end)
+
+        :added ->
+          student_exceptions ++ socket.assigns.student_exceptions
+
+        :deleted ->
+          ids = Enum.map(student_exceptions, fn se -> se.id end)
+
+          Enum.reject(socket.assigns.student_exceptions, fn se ->
+            se.id in ids
+          end)
+      end
+
+    updated_assessments =
+      socket.assigns.assessments
+      |> update_assessments_students_exception_count(updated_student_exceptions)
+
+    {:noreply,
+     socket
+     |> assign(student_exceptions: updated_student_exceptions, assessments: updated_assessments)}
+  end
+
+  defp update_assessments_students_exception_count(assessments, student_exceptions) do
+    exceptions_resource_id = Enum.group_by(student_exceptions, fn se -> se.resource_id end)
+
+    assessments
+    |> Enum.map(fn a ->
+      exceptions_count = Map.get(exceptions_resource_id, a.resource_id, []) |> length()
+      Map.merge(a, %{exceptions_count: exceptions_count})
+    end)
+  end
+
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
   defp get_assessments(section_slug, student_exceptions) do
@@ -157,6 +203,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       Settings.combine(rev, sr, nil)
       |> Map.merge(%{
         name: rev.title,
+        scheduling_type: sr.scheduling_type,
         exceptions_count:
           Enum.count(student_exceptions, fn se -> se.resource_id == rev.resource_id end)
       })

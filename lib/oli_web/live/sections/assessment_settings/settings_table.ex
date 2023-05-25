@@ -356,7 +356,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       )
 
     socket.assigns.modal_assigns.assessment_for_scheduled
-    |> SectionResource.changeset(%{feedback_scheduled_date: utc_datetime})
+    |> SectionResource.changeset(%{
+      feedback_scheduled_date: utc_datetime,
+      feedback_mode: :scheduled
+    })
     |> Ecto.Changeset.validate_required(:feedback_scheduled_date)
     |> Repo.update()
     |> case do

@@ -59,3 +59,7 @@
 .instructor_dashboard_table tr:has(a[data-score-check='false']) {
   @apply bg-red-200 bg-opacity-20;
 }
+
+.instructor_dashboard_table td:has(div.highlight-exception) {
+  @apply bg-blue-100 rounded-md bg-opacity-50;
+}

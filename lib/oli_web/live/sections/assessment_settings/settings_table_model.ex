@@ -10,7 +10,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         name: :assessment,
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
-        th_class: "pl-10 instructor_dashboard_th"
+        th_class: "pl-10 instructor_dashboard_th sticky left-0 bg-white z-10",
+        td_class: "sticky left-0 bg-white z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :due_date,
@@ -96,15 +97,24 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns = Map.merge(assigns, %{assessment: assessment.name})
 
     ~H"""
-      <div class="pl-9"><%= @assessment %></div>
+      <div class="pl-9 pr-4"><%= @assessment %></div>
     """
   end
 
   def render_due_date_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{due_date: assessment.end_date, id: assessment.resource_id})
+    assigns =
+      Map.merge(assigns, %{
+        due_date: assessment.end_date,
+        id: assessment.resource_id,
+        scheduling_type: assessment.scheduling_type
+      })
 
     ~H"""
-      <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @context)}/>
+      <%= if @scheduling_type == :due_by do %>
+        <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @context)}/>
+      <% else %>
+        No due date
+      <% end %>
     """
   end
 

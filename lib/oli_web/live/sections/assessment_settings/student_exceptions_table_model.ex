@@ -1,16 +1,23 @@
 defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Utils
+  alias OliWeb.Common.FormatDateTime
   use Phoenix.Component
 
-  def new(student_exceptions, section_slug, selected_assessment, target) do
+  def new(
+        student_exceptions,
+        section_slug,
+        selected_assessment,
+        target,
+        selected_student_exceptions,
+        context
+      ) do
     column_specs = [
       %ColumnSpec{
         name: :student,
         label: "STUDENT",
         render_fn: &__MODULE__.render_student_column/3,
-        th_class: "pl-10 instructor_dashboard_th"
+        th_class: "pl-10 instructor_dashboard_th sticky left-0 bg-white z-10",
+        td_class: "sticky left-0 bg-white z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :due_date,
@@ -82,7 +89,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       data: %{
         section_slug: section_slug,
         selected_assessment: selected_assessment,
-        target: target
+        target: target,
+        selected_student_exceptions: selected_student_exceptions,
+        context: context
       }
     )
   end
@@ -92,97 +101,205 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       Map.merge(assigns, %{name: student_exception.user.name, id: student_exception.user_id})
 
     ~H"""
-      <div class="pl-9">
-      <input type="checkbox" phx-click="row_selected" phx-target={@target} phx-value-user_id={@id}/>
-      <%= @name %>
-
+      <div class="pl-1 pr-4">
+        <input class="mr-2" type="checkbox" checked={@id in @selected_student_exceptions} name={"checkbox-#{@id}"} />
+        <%= @name %>
       </div>
     """
   end
 
   def render_due_date_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{due_date: student_exception.end_date})
+    assigns =
+      Map.merge(assigns, %{
+        due_date: student_exception.end_date,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div class={data_class(@selected_assessment.end_date, @due_date)}><%= @due_date %></div>
+    <div class={data_class(@selected_assessment.end_date, @due_date)}>
+      <%= if @selected_assessment.scheduling_type == :due_by do %>
+        <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @context)} placeholder="-" />
+      <% else %>
+        No due date
+      <% end %>
+    </div>
     """
   end
 
   def render_attempts_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{attempts: student_exception.max_attempts})
+    assigns =
+      Map.merge(assigns, %{
+        attempts: student_exception.max_attempts,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div class={data_class(@selected_assessment.max_attempts, @attempts)}><%= @attempts %></div>
+    <div class={data_class(@selected_assessment.max_attempts, @attempts)}>
+      <div class="relative">
+        <input class="w-28" type="number" min="0" value={@attempts} placeholder="-" phx-debounce={300} name={"max_attempts-#{@id}"} />
+        <%= if @attempts == 0 do %>
+          <span class="text-[10px] absolute -ml-20 mt-3">(Unlimited)</span>
+        <% end %>
+      </div>
+    </div>
     """
   end
 
   def render_time_limit_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{time_limit: student_exception.time_limit})
+    assigns =
+      Map.merge(assigns, %{
+        time_limit: student_exception.time_limit,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @time_limit %></div>
+    <div class={data_class(@selected_assessment.time_limit, @time_limit)}>
+      <div class="relative">
+        <input class="w-28" type="number" min="0" value={@time_limit} placeholder="-" phx-debounce={300} name={"time_limit-#{@id}"} />
+        <%= if @time_limit == 0 do %>
+          <span class="text-[10px] absolute -ml-20 mt-3">(Unlimited)</span>
+        <% end %>
+      </div>
+    </div>
     """
   end
 
   def render_late_submit_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{late_submit: student_exception.late_submit})
+    assigns =
+      Map.merge(assigns, %{
+        late_submit: student_exception.late_submit,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @late_submit %></div>
+    <div class={data_class(@selected_assessment.late_submit, @late_submit)}>
+      <select class="torus-select pr-32" name={"late_submit-#{@id}"}>
+        <option disabled selected={@late_submit == nil} hidden value="">-</option>
+        <option selected={@late_submit == :allow} value={:allow}>Allow</option>
+        <option selected={@late_submit == :disallow} value={:disallow}>Disallow</option>
+      </select>
+    </div>
     """
   end
 
   def render_late_start_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{late_start: student_exception.late_start})
+    assigns =
+      Map.merge(assigns, %{
+        late_start: student_exception.late_start,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @late_start %></div>
+    <div class={data_class(@selected_assessment.late_start, @late_start)}>
+      <select class="torus-select pr-32" name={"late_start-#{@id}"}>
+        <option disabled selected={@late_start == nil} hidden value="">-</option>
+        <option selected={@late_start == :allow} value={:allow}>Allow</option>
+        <option selected={@late_start == :disallow} value={:disallow}>Disallow</option>
+      </select>
+    </div>
     """
   end
 
   def render_scoring_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{scoring: student_exception.scoring_strategy_id})
+    assigns =
+      Map.merge(assigns, %{
+        scoring: student_exception.scoring_strategy_id,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @scoring %></div>
+    <div class={data_class(@selected_assessment.scoring_strategy_id, @scoring)}>
+      <select class="torus-select pr-32" name={"scoring_strategy_id-#{@id}"}>
+        <option disabled selected={@scoring == nil} hidden value="">-</option>
+        <option selected={@scoring == 1} value={1}>Average</option>
+        <option selected={@scoring == 2} value={2}>Best</option>
+        <option selected={@scoring == 3} value={3}>Last</option>
+      </select>
+    </div>
     """
   end
 
   def render_grace_period_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{grace_period: student_exception.grace_period})
+    assigns =
+      Map.merge(assigns, %{
+        grace_period: student_exception.grace_period,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @grace_period %></div>
+    <div class={data_class(@selected_assessment.grace_period, @grace_period)}>
+      <input class="w-28" type="number" min="0" value={@grace_period} placeholder="-" phx-debounce={500} name={"grace_period-#{@id}"} />
+    </div>
     """
   end
 
   def render_retake_mode_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{retake_mode: student_exception.retake_mode})
+    assigns =
+      Map.merge(assigns, %{
+        retake_mode: student_exception.retake_mode,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @retake_mode %></div>
+    <div class={data_class(@selected_assessment.retake_mode, @retake_mode)}>
+      <select class="torus-select pr-32" name={"retake_mode-#{@id}"}>
+        <option disabled selected={@retake_mode == nil} hidden value="">-</option>
+        <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
+        <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
+      </select>
+    </div>
     """
   end
 
   def render_view_feedback_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{view_feedback: student_exception.feedback_mode})
+    assigns =
+      Map.merge(assigns, %{
+        view_feedback: student_exception.feedback_mode,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @view_feedback %></div>
+    <div class={data_class(@selected_assessment.feedback_mode, @view_feedback)}>
+      <select class="torus-select pr-32" name={"feedback_mode-#{@id}"}>
+        <option disabled selected={@view_feedback == nil} hidden value="">-</option>
+        <option selected={@view_feedback == :allow} value={:allow}>Allow</option>
+        <option selected={@view_feedback == :disallow} value={:disallow}>Disallow</option>
+        <option selected={@view_feedback == :scheduled} value={:scheduled}>Scheduled</option>
+      </select>
+    </div>
     """
   end
 
   def render_view_answers_column(assigns, student_exception, _) do
-    assigns = Map.merge(assigns, %{view_answers: student_exception.feedback_scheduled_date})
+    assigns =
+      Map.merge(assigns, %{
+        view_answers: student_exception.review_submission,
+        id: student_exception.user_id
+      })
 
     ~H"""
-    <div><%= @view_answers %></div>
+    <div class={data_class(@selected_assessment.review_submission, @view_answers)}>
+      <select class="torus-select pr-32" name={"review_submission-#{@id}"}>
+        <option disabled selected={@view_answers == nil} hidden value="">-</option>
+        <option selected={@view_answers == :allow} value={:allow}>Allow</option>
+        <option selected={@view_answers == :disallow} value={:disallow}>Disallow</option>
+      </select>
+    </div>
     """
   end
 
   defp data_class(assessment_data, student_exception_data)
-       when assessment_data != student_exception_data,
-       do: "bg-green-300"
+       when assessment_data != student_exception_data and student_exception_data != nil,
+       do: "highlight-exception"
 
   defp data_class(_assessment_data, _student_exception_data), do: ""
+
+  defp value_from_datetime(nil, _context), do: nil
+
+  defp value_from_datetime(datetime, context) do
+    datetime
+    |> FormatDateTime.convert_datetime(context)
+    |> DateTime.to_iso8601()
+    |> String.slice(0, 16)
+  end
 end
