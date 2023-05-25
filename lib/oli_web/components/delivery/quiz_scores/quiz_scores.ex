@@ -9,12 +9,13 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
-  prop params, :map, required: true
-  prop total_count, :number, required: true
-  prop grades_table_model, :struct, required: true
-  prop student_id, :integer, default: nil
-  prop scores, :map, default: %{}
-  prop patch_url_type, :atom, default: nil
+  prop(params, :map, required: true)
+  prop(total_count, :number, required: true)
+  prop(grades_table_model, :struct, required: true)
+  prop(student_id, :integer, default: nil)
+  prop(scores, :map, default: %{})
+  prop(patch_url_type, :atom, default: nil)
+  prop(view, :atom)
 
   @default_params %{
     offset: 0,
@@ -35,12 +36,14 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     params = decode_params(params)
 
     if is_nil(assigns[:student_id]),
-      do: get_grades_all_students(section, assigns[:patch_url_type], params, socket),
+      do:
+        get_grades_all_students(section, assigns[:view], assigns[:patch_url_type], params, socket),
       else:
         get_scores_for_student(
           assigns[:scores].scores,
           assigns[:student_id],
           section,
+          assigns[:view],
           assigns[:patch_url_type],
           params,
           socket
@@ -85,7 +88,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     """
   end
 
-  defp get_scores_for_student(scores, student_id, section, patch_url_type, params, socket) do
+  defp get_scores_for_student(scores, student_id, section, view, patch_url_type, params, socket) do
     {total_count, rows} = apply_filters(scores, params)
 
     {:ok, table_model} =
@@ -113,11 +116,12 @@ defmodule OliWeb.Components.Delivery.QuizScores do
        params: params,
        section_slug: section.slug,
        patch_url_type: patch_url_type,
-       student_id: student_id
+       student_id: student_id,
+       view: view
      )}
   end
 
-  defp get_grades_all_students(section, patch_url_type, params, socket) do
+  defp get_grades_all_students(section, view, patch_url_type, params, socket) do
     enrollments =
       Sections.browse_enrollments(
         section,
@@ -163,7 +167,8 @@ defmodule OliWeb.Components.Delivery.QuizScores do
        grades_table_model: table_model,
        params: params,
        section_slug: section.slug,
-       patch_url_type: patch_url_type
+       patch_url_type: patch_url_type,
+       view: view
      )}
   end
 
@@ -306,6 +311,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
       socket,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       socket.assigns.section_slug,
+      socket.assigns.view,
       :quiz_scores,
       update_params(socket.assigns.params, new_params)
     )

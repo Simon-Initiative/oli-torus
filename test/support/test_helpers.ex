@@ -1598,8 +1598,15 @@ defmodule Oli.TestHelpers do
     sr1 = Sections.get_section_resource(section.id, graded_page_4_resource.id)
     sr2 = Sections.get_section_resource(section.id, graded_page_5_resource.id)
 
-    Sections.update_section_resource(sr1, %{scheduling_type: :due_by, end_date: ~U[2023-01-12 13:30:00Z]})
-    Sections.update_section_resource(sr2, %{scheduling_type: :due_by, end_date: ~U[2023-06-05 14:00:00Z]})
+    Sections.update_section_resource(sr1, %{
+      scheduling_type: :due_by,
+      end_date: ~U[2023-01-12 13:30:00Z]
+    })
+
+    Sections.update_section_resource(sr2, %{
+      scheduling_type: :due_by,
+      end_date: ~U[2023-06-05 14:00:00Z]
+    })
 
     %{
       section: section,
@@ -1646,13 +1653,14 @@ defmodule Oli.TestHelpers do
       author: author
     })
 
-    section = insert(:section,
-      base_project: project,
-      context_id: UUID.uuid4(),
-      open_and_free: true,
-      registration_open: true,
-      type: :enrollable
-    )
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
 
@@ -2095,6 +2103,15 @@ defmodule Oli.TestHelpers do
 
   def basic_section(_, attrs \\ %{}) do
     project = insert(:project)
+
+    page_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Basic Page"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+
     container_resource = insert(:resource)
     insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
 
@@ -2103,7 +2120,7 @@ defmodule Oli.TestHelpers do
         resource: container_resource,
         objectives: %{},
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [],
+        children: [page_revision.resource.id],
         content: %{},
         deleted: false
       })
@@ -2119,6 +2136,12 @@ defmodule Oli.TestHelpers do
       publication: publication,
       resource: container_resource,
       revision: container_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
     })
 
     section =
@@ -2144,13 +2167,28 @@ defmodule Oli.TestHelpers do
       )
       |> Repo.one()
 
-    %{section: section, publication: section_project_publication}
+    %{section: section, publication: section_project_publication, section_page: page_revision}
   end
 
   def enroll_user_to_section(user, section, role) do
     Sections.enroll(user.id, section.id, [
       ContextRoles.get_role(role)
     ])
+  end
+
+  def ensure_user_visit(user, section) do
+    case Sections.Enrollment
+         |> where([e], e.user_id == ^user.id and e.section_id == ^section.id)
+         |> limit(1)
+         |> Repo.one() do
+      nil ->
+        {:error, nil}
+
+      enrollment ->
+        enrollment
+        |> Sections.Enrollment.changeset(%{state: %{has_visited_once: true}})
+        |> Repo.update()
+    end
   end
 
   def set_timezone(%{conn: conn}) do

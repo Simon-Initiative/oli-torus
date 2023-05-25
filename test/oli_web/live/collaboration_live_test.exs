@@ -271,8 +271,8 @@ defmodule OliWeb.CollaborationLiveTest do
          } do
       assert conn
              |> get(live_view_student_page(section.slug, page_revision.slug))
-             |> html_response(200) =~
-               "Not authorized"
+             |> html_response(302) =~
+               "You are being <a href=\"/unauthorized\">redirected</a>"
     end
   end
 
@@ -286,6 +286,7 @@ defmodule OliWeb.CollaborationLiveTest do
       page_revision: page_revision
     } do
       enroll_user_to_section(user, section, :context_instructor)
+      ensure_user_visit(user, section)
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
       refute html_response(conn, 200) =~ "<div class=\"card-title h5\">Collaborative Space</div>"
@@ -342,7 +343,7 @@ defmodule OliWeb.CollaborationLiveTest do
       conn: conn,
       admin: admin,
       section: section,
-      page_revision_cs: page_revision_cs,
+      page_revision_cs: page_revision_cs
     } do
       conn =
         conn
@@ -847,7 +848,6 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("tr:nth-child(2) > td:nth-child(2)")
              |> render() =~
                "Other revision B"
-
     end
 
     test "renders datetimes using the local timezone", context = %{second_post: second_post} do
@@ -960,7 +960,6 @@ defmodule OliWeb.CollaborationLiveTest do
              |> element("tr:nth-child(2) > td:first-child")
              |> render() =~
                "Other revision B"
-
     end
   end
 

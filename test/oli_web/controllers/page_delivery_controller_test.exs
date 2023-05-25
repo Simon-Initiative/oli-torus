@@ -9,7 +9,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Oli.Resources.Collaboration
-  alias Lti_1p3.Tool.ContextRoles
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -175,7 +174,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
@@ -190,7 +189,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
@@ -205,7 +204,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
@@ -222,7 +221,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
            section: section,
            ungraded_page_revision: ungraded_page_revision
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
@@ -237,7 +236,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
@@ -256,7 +255,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
-      assert html_response(conn, 200) =~ "Not authorized"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/unauthorized\">redirected</a>"
     end
 
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
@@ -264,7 +263,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "Not authorized"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/unauthorized\">redirected</a>"
     end
 
     test "handles student access who is not enrolled when section requires enrollment", %{
@@ -300,7 +299,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           has_grace_period: false
         })
 
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         get(
@@ -325,7 +324,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           pay_by_institution: true
         })
 
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         get(
@@ -342,7 +341,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -450,7 +449,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       sr = Sections.get_section_resource(section.id, page_revision.resource_id)
       Sections.update_section_resource(sr, %{password: "password"})
@@ -514,7 +513,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -627,7 +626,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
            section: section,
            page_revision: page_revision
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       # Change the page to ungraded, and issue a publication
       toggle_graded = %{graded: false, title: "This is now ungraded"}
@@ -754,7 +753,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       Sections.update_section_project_publication(section, project.id, pub.id)
       Oli.Delivery.Sections.rebuild_section_resources(section: section, publication: pub)
 
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -797,7 +796,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
            page_revision: graded_page_revision,
            ungraded_page_revision: ungraded_page_revision
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         get(conn, Routes.page_delivery_path(conn, :page, section.slug, graded_page_revision.slug))
@@ -844,7 +843,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
            section: section,
            collab_space_page_revision: page_revision
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -858,7 +857,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
            section: section,
            page_revision: page_revision
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -872,7 +871,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
            section: section,
            disabled_collab_space_page_revision: page_revision
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -884,7 +883,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user: user,
       section: section
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
@@ -900,7 +899,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user: user
     } do
       {:ok, section} = section_with_upcoming_activities()
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         conn
@@ -951,6 +950,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                Routes.page_delivery_path(conn, :index, section.slug)
 
       user = Pow.Plug.current_user(conn)
+      ensure_user_visit(user, section)
 
       # make the same request with a user logged in
       conn =
@@ -981,8 +981,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       enrolled_user = user_fixture()
       other_user = user_fixture()
 
-      {:ok, _enrollment} =
-        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: enrolled_user})
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
@@ -1032,11 +1031,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       enrolled_user = user_fixture()
       another_user = user_fixture()
 
-      {:ok, _enrollment} =
-        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
-
-      {:ok, _enrollment} =
-        Sections.enroll(another_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: enrolled_user})
+      enroll_as_student(%{section: section, user: another_user})
 
       {:ok, _} = Oli.Accounts.delete_author(author)
       {:ok, _} = Oli.Accounts.delete_user(another_user)
@@ -1114,7 +1110,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           requires_enrollment: true
         })
 
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1140,7 +1136,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       {:ok, section} = Sections.create_section_resources(section, publication)
 
-      enroll_user_to_section(user, section, :context_learner)
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1188,7 +1184,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       {:ok, section} = Sections.create_section_resources(section, publication)
 
-      enroll_user_to_section(user, section, :context_learner)
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1231,8 +1227,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
       section = insert(:section, open_and_free: true)
 
-      {:ok, enrollment} =
-        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, enrollment: enrollment} = enroll_as_student(%{section: section, user: user})
 
       conn =
         post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
@@ -1264,8 +1259,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       user = insert(:user)
 
-      {:ok, enrollment} =
-        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, enrollment: enrollment} = enroll_as_student(%{section: section, user: user})
 
       conn =
         post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
@@ -1302,8 +1296,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       user = insert(:user)
 
-      {:ok, enrollment} =
-        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, enrollment: enrollment} = enroll_as_student(%{section: section, user: user})
 
       conn =
         post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
@@ -1335,8 +1328,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       user = insert(:user)
 
-      {:ok, enrollment} =
-        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, enrollment: enrollment} = enroll_as_student(%{section: section, user: user})
 
       conn =
         post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
@@ -1462,7 +1454,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: _page_revision} =
         section_with_assessment(%{})
 
-      enroll_user_to_section(user, section, :context_instructor)
+      enroll_as_instructor(%{user: user, section: section})
 
       conn =
         get(
@@ -1529,7 +1521,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "student can access if is enrolled in the section", %{conn: conn, section: section} do
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1541,7 +1533,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1584,7 +1576,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       other_revision: other_revision
     } do
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1602,7 +1594,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         section_with_assessment(%{})
 
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1619,7 +1611,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         section_with_assessment(%{})
 
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1636,7 +1628,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         section_with_assessment(%{})
 
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1652,7 +1644,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "student can access if is enrolled in the section", %{conn: conn, section: section} do
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1664,7 +1656,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1679,7 +1671,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       user: user
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1701,7 +1693,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       user: user
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1726,7 +1718,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         section_with_assessment(%{})
 
       user = insert(:user)
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1742,7 +1734,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "student can access if is enrolled in the section", %{conn: conn, section: section} do
       user = insert(:user)
-      enroll_user_to_section(user, section, :context_learner)
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1763,7 +1755,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "related activities get rendered", %{conn: conn, section: section} do
       user = insert(:user)
-      enroll_user_to_section(user, section, :context_learner)
+      enroll_as_student(%{section: section, user: user})
 
       conn =
         recycle(conn)
@@ -1800,7 +1792,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       survey: survey,
       survey_questions: survey_questions
     } do
-      enroll_user_to_section(user, section, :context_learner)
+      enroll_as_student(%{section: section, user: user})
 
       create_survey_access(user, section, survey, survey_questions)
 
@@ -1817,7 +1809,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user: user,
       section: section
     } do
-      enroll_user_to_section(user, section, :context_instructor)
+      enroll_as_instructor(%{user: user, section: section})
 
       conn =
         conn
@@ -1834,7 +1826,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       survey: survey,
       survey_questions: survey_questions
     } do
-      enroll_user_to_section(user, section, :context_learner)
+      enroll_as_student(%{section: section, user: user})
 
       complete_student_survey(user, section, survey, survey_questions)
 
@@ -2035,9 +2027,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "student sees the appropriate content according to audience", map do
       %{
         page_with_audience_groups: page_with_audience_groups,
-        section: section
+        section: section,
+        student1: user
       } = map
 
+      ensure_user_visit(user, section)
+
       %{conn: conn} =
         map
         |> Oli.Utils.Seeder.Session.login_as_user(ref(:student1))
@@ -2055,9 +2050,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "group content with never audience"
     end
 
-    test "instructor sees the appropriate content according to audience", map do
+    test "instructor sees the appropriate content according to audience",
+         %{student1: user} = map do
       %{page_with_audience_groups: page_with_audience_groups, section: section} = map
 
+      ensure_user_visit(user, section)
+
       %{conn: conn} =
         map
         |> Oli.Utils.Seeder.Session.login_as_user(ref(:student1))
@@ -2075,9 +2073,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "group content with never audience"
     end
 
-    test "student sees the appropriate content according to audience during review", map do
+    test "student sees the appropriate content according to audience during review",
+         %{student1: user} = map do
       %{graded_page_with_audience_groups: graded_page_with_audience_groups, section: section} =
         map
+
+      ensure_user_visit(user, section)
 
       datashop_session_id_user1 = UUID.uuid4()
 
@@ -2169,8 +2170,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   defp enroll_as_student(%{section: section, user: user}) do
-    enroll_user_to_section(user, section, :context_learner)
-    []
+    {:ok, enrollment} = enroll_user_to_section(user, section, :context_learner)
+    ensure_user_visit(user, section)
+    {:ok, [enrollment: enrollment]}
   end
 
   defp enroll_as_instructor(%{section: section, user: user}) do
@@ -2523,12 +2525,16 @@ defmodule OliWeb.PageDeliveryControllerTest do
     Oli.Delivery.Sections.create_section_resources(section, publication)
 
     Oli.Delivery.Sections.get_section_resource(section.id, activity_1_revision.resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(
-      %{scheduling_type: :due_by, end_date: DateTime.add(DateTime.utc_now(), 1, :day)})
+    |> Oli.Delivery.Sections.update_section_resource(%{
+      scheduling_type: :due_by,
+      end_date: DateTime.add(DateTime.utc_now(), 1, :day)
+    })
 
     Oli.Delivery.Sections.get_section_resource(section.id, activity_2_revision.resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(
-      %{scheduling_type: :due_by, end_date: DateTime.add(DateTime.utc_now(), 2, :day)})
+    |> Oli.Delivery.Sections.update_section_resource(%{
+      scheduling_type: :due_by,
+      end_date: DateTime.add(DateTime.utc_now(), 2, :day)
+    })
 
     insert(:gating_condition, %{
       section: section,
@@ -2551,6 +2557,5 @@ defmodule OliWeb.PageDeliveryControllerTest do
     })
 
     {:ok, section}
-
   end
 end

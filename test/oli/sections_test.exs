@@ -1311,4 +1311,71 @@ defmodule Oli.SectionsTest do
       assert sections == []
     end
   end
+
+  describe "has_visited_section/2" do
+    setup do
+      student = insert(:user)
+      section = insert(:section)
+
+      {:ok, %{student: student, section: section}}
+    end
+
+    test "when user has a resource access associated to the section, it returns true", %{
+      student: student,
+      section: section
+    } do
+      resource = insert(:resource)
+
+      insert(:resource_access, %{
+        access_count: 0,
+        user: student,
+        resource: resource,
+        section: section
+      })
+
+      assert Sections.has_visited_section(section, student) == true
+    end
+
+    test "when user has the \"visited\" flag in its enrollment, it returns true", %{
+      student: student,
+      section: section
+    } do
+      insert(:enrollment, %{user: student, section: section})
+      |> Sections.Enrollment.changeset(%{state: %{has_visited_once: true}})
+      |> Repo.update()
+
+      assert Sections.has_visited_section(section, student) == true
+    end
+
+    test "when user doesn't have a resource access nor the \"visited\" flag in its enrollment, it returns false",
+         %{student: student, section: section} do
+      assert Sections.has_visited_section(section, student) == false
+    end
+  end
+
+  describe "mark_section_visited_for_student/2" do
+    setup do
+      student = insert(:user)
+      section = insert(:section)
+
+      {:ok, %{student: student, section: section}}
+    end
+
+    test "updates the \"visited\" flag in the enrollment state when called", %{
+      student: student,
+      section: section
+    } do
+      enrollment = insert(:enrollment, %{user: student, section: section})
+
+      Sections.mark_section_visited_for_student(section, student)
+
+      updated_state =
+        Sections.Enrollment
+        |> where([e], e.id == ^enrollment.id)
+        |> select([e], e.state)
+        |> Repo.one()
+
+      assert updated_state["has_visited_once"] == true
+    end
+  end
 end

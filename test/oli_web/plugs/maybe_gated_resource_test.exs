@@ -32,6 +32,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
       section: section
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      ensure_user_visit(user, section)
 
       conn =
         conn
@@ -47,6 +48,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
       section: section
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      ensure_user_visit(user, section)
 
       _gating_condition =
         gating_condition_fixture(%{

@@ -62,13 +62,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
 
       {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
 
-      # Manage tab is the selected one
-      assert has_element?(
-               view,
-               ~s{a[href="#{live_view_manage_route(section.slug)}"].border-b-2},
-               "Manage"
-             )
-
       # Manage tab content gets rendered
       assert has_element?(view, ~s{div[id="overview"]})
 

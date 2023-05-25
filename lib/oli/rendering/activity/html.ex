@@ -178,7 +178,7 @@ defmodule Oli.Rendering.Activity.Html do
       |> HtmlEntities.encode()
 
     [
-      ~s|<#{tag} phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
+      ~s|<#{tag} phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}" id=#{UUID.uuid4()}></#{tag}>\n|
     ]
   end
 

@@ -15,6 +15,7 @@ defmodule OliWeb.SessionController do
     |> delete_pow_user(String.to_atom(type))
     |> delete_session_data(type)
     |> delete_session("completed_section_surveys")
+    |> delete_session("visited_sections")
     |> redirect(to: Routes.static_page_path(conn, :index))
   end
 
