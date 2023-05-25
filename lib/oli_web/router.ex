@@ -847,6 +847,12 @@ defmodule OliWeb.Router do
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
     end
+
+    get(
+      "/downloads/progress/:container_id",
+      MetricsController,
+      :download_container_progress
+    )
   end
 
   ### Sections - Student Course Delivery
