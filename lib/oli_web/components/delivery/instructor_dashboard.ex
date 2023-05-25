@@ -9,27 +9,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Header
 
-  defmodule PriorityAction do
-    @enforce_keys [:type, :title, :description, :action_link]
-
-    defstruct [
-      :type,
-      :title,
-      :description,
-      :action_link
-    ]
-
-    @type link_label() :: String.t()
-    @type link_href() :: String.t()
-
-    @type t() :: %__MODULE__{
-            type: :email | :grade | :review,
-            title: String.t(),
-            description: String.t(),
-            action_link: {link_label(), link_href()}
-          }
-  end
-
   attr(:current_user, User)
   attr(:section, Section)
   attr(:breadcrumbs, :list, required: true)
@@ -236,71 +215,4 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     </div>
     """
   end
-
-  @doc """
-  Takes a list of actions and renders a set of action cards
-
-  E.g.
-    ```
-    <.actions actions=[%PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }] />
-    ```
-  """
-  attr(:actions, :list, default: [])
-
-  def actions(assigns) do
-    ~H"""
-      <%= if Enum.count(@actions) > 0 do %>
-          <div class="w-full py-4">
-            <div class="container mx-auto flex-col">
-              <div class="py-4 font-bold">
-                Top priority actions to take for this class
-              </div>
-              <div class="flex flex-row overflow-x-auto">
-                <%= for action <- @actions do %>
-                  <.action_card action={action} />
-                <% end %>
-              </div>
-            </div>
-          </div>
-      <% end %>
-    """
-  end
-
-  attr(:action, PriorityAction, required: true)
-
-  def action_card(assigns) do
-    ~H"""
-      <div class="flex flex-col bg-white dark:bg-gray-800 shadow p-4 mr-4 max-w-[300px] shrink-0">
-        <div class="flex my-2">
-          <span class={"rounded-full py-1 px-6 #{badge_bg_color(@action.type)} text-white"}>
-            <%= badge_title(@action.type) %>
-          </span>
-        </div>
-        <div class="font-semibold my-2">
-          <%= @action.title %>
-        </div>
-        <div class="flex-1 text-gray-500 my-2">
-          <%= @action.description %>
-        </div>
-        <div class="flex flex-row mt-4">
-          <a href={@action.action_link |> elem(1)} class="btn flex-1 bg-delivery-primary hover:bg-delivery-primary-700 text-white hover:text-white text-center">
-            <%= @action.action_link |> elem(0) %>
-          </a>
-          <button class="btn btn-link text-delivery-primary hover:text-delivery-primary-700">
-            Dismiss
-          </button>
-        </div>
-      </div>
-    """
-  end
-
-  defp badge_title(:email), do: "Email"
-  defp badge_title(:grade), do: "Grade"
-  defp badge_title(:review), do: "Review"
-  defp badge_title(_), do: "Action"
-
-  defp badge_bg_color(:email), do: "bg-green-700"
-  defp badge_bg_color(:grade), do: "bg-red-700"
-  defp badge_bg_color(:review), do: "bg-fuchsia-700"
-  defp badge_bg_color(_), do: "bg-gray-700"
 end

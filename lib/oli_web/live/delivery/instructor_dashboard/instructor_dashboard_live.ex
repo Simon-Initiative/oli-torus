@@ -245,19 +245,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ]
   end
 
-  defp render_actions(assigns) do
-    ~H"""
-      <InstructorDashboard.actions actions={[
-        %InstructorDashboard.PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }
-      ]} />
-    """
-  end
-
   @impl Phoenix.LiveView
   def render(%{view: :overview, active_tab: :course_content} = assigns) do
     ~H"""
-      <.render_actions assigns={assigns} />
-
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
       <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
@@ -268,8 +258,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :scored_activities} = assigns) do
     ~H"""
-      <.render_actions assigns={assigns} />
-
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
       <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
@@ -280,8 +268,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :recommended_actions} = assigns) do
     ~H"""
-      <.render_actions assigns={assigns} />
-
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
       <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
