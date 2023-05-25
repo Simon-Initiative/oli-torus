@@ -63,7 +63,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     ]
 
     @type t() :: %__MODULE__{
-            label: String.t(),
+            label: String.t() | Function.t(),
             path: String.t(),
             badge: Integer.t(),
             active: Boolean.t()
@@ -96,7 +96,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   focus:border-delivery-primary-200
                   #{if active, do: "!border-delivery-primary", else: "border-transparent"}
                 "}>
-                  <%= label %>
+                <%= if is_function(label), do: label.(), else: label %>
                   <%= if badge do %>
                   <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
                   <% end %>
