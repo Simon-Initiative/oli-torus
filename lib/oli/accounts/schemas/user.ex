@@ -71,6 +71,9 @@ defmodule Oli.Accounts.User do
     field :enrollment_date, :utc_datetime, virtual: true
     field :payment_date, :utc_datetime, virtual: true
     field :payment_id, :integer, virtual: true
+    field :payment, :map, virtual: true
+    field :context_role_id, :integer, virtual: true
+    field :enrollment, :map, virtual: true
 
     field :enroll_after_email_confirmation, :string, virtual: true
 

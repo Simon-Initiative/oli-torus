@@ -54,7 +54,7 @@ defmodule Oli.Delivery.Sections do
       join: ecr in assoc(e, :context_roles),
       join: u in assoc(e, :user),
       left_join: p in Payment,
-      on: p.enrollment_id == e.id,
+      on: p.enrollment_id == e.id and not is_nil(p.application_date),
       where: s.slug == ^section_slug,
       select: {u, ecr.id, e, p},
       preload: [user: :platform_roles],
@@ -72,12 +72,13 @@ defmodule Oli.Delivery.Sections do
             context_role_id,
             enrollment,
             payment
-          ).reason
+          ).reason,
+        payment_date: if(!is_nil(payment), do: payment.application_date, else: nil)
       })
     end)
   end
 
-  def browse_enrollments(
+  def browse_enrollments_query(
         %Section{id: section_id},
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -89,7 +90,7 @@ defmodule Oli.Delivery.Sections do
       case options do
         %EnrollmentBrowseOptions{is_student: true} ->
           dynamic(
-            [e, u],
+            [u, e],
             fragment(
               "(NOT EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
               e.id,
@@ -99,7 +100,7 @@ defmodule Oli.Delivery.Sections do
 
         %EnrollmentBrowseOptions{is_instructor: true} ->
           dynamic(
-            [e, u],
+            [u, e],
             fragment(
               "(EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
               e.id,
@@ -116,7 +117,7 @@ defmodule Oli.Delivery.Sections do
         true
       else
         dynamic(
-          [_, s],
+          [s, _],
           ilike(s.name, ^"%#{options.text_search}%") or
             ilike(s.email, ^"%#{options.text_search}%") or
             ilike(s.given_name, ^"%#{options.text_search}%") or
@@ -129,32 +130,67 @@ defmodule Oli.Delivery.Sections do
       end
 
     query =
-      Enrollment
-      |> join(:left, [e], u in User, on: u.id == e.user_id)
-      |> join(:left, [e, _], p in Payment, on: p.enrollment_id == e.id)
+      User
+      |> join(:left, [u], e in Enrollment, on: u.id == e.user_id)
+      |> join(:left, [_, e], p in Payment, on: p.enrollment_id == e.id)
       |> where(^filter_by_text)
       |> where(^filter_by_role)
-      |> where([e, _], e.section_id == ^section_id)
+      |> where([u, e], e.section_id == ^section_id)
       |> limit(^limit)
       |> offset(^offset)
-      |> group_by([e, u, p], [e.id, u.id, p.id])
-      |> select([_, u], u)
-      |> select_merge([e, _, p], %{
+      |> group_by([u, e, p], [e.id, u.id, p.id])
+      |> select([u, _], u)
+      |> select_merge([_, e, p], %{
         total_count: fragment("count(*) OVER()"),
         enrollment_date: e.inserted_at,
         payment_date: p.application_date,
         payment_id: p.id
       })
 
-    query =
-      case field do
-        :enrollment_date -> order_by(query, [e, _, _], {^direction, e.inserted_at})
-        :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
-        :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
-        _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
-      end
+    case field do
+      :enrollment_date -> order_by(query, [_, e, _], {^direction, e.inserted_at})
+      :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
+      :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
+      _ -> order_by(query, [u, _, _], {^direction, field(u, ^field)})
+    end
+  end
 
-    Repo.all(query)
+  def browse_enrollments(
+        %Section{id: _section_id} = section,
+        %Paging{limit: _limit, offset: _offset} = paging,
+        %Sorting{field: _field, direction: _direction} = sorting,
+        %EnrollmentBrowseOptions{} = options
+      ) do
+    browse_enrollments_query(
+      section,
+      paging,
+      sorting,
+      options
+    )
+    |> Repo.all()
+  end
+
+  def browse_enrollments_with_context_roles(
+        %Section{id: _section_id} = section,
+        %Paging{limit: _limit, offset: _offset} = paging,
+        %Sorting{field: _field, direction: _direction} = sorting,
+        %EnrollmentBrowseOptions{} = options
+      ) do
+    browse_enrollments_query(
+      section,
+      paging,
+      sorting,
+      options
+    )
+    |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
+    |> group_by([_, _, _, ecr], [ecr.context_role_id])
+    |> preload([u], :platform_roles)
+    |> select_merge([u, e, p, ecr], %{
+      context_role_id: ecr.context_role_id,
+      payment: p,
+      enrollment: e
+    })
+    |> Repo.all()
   end
 
   @doc """
