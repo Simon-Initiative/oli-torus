@@ -227,7 +227,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
                  :reports,
-                 :students,
+                 :content,
                  %{container_id: unit1_resource.id}
                ),
                Routes.live_path(
@@ -235,7 +235,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
                  :reports,
-                 :students,
+                 :content,
                  %{container_id: unit2_resource.id}
                )
              ]
@@ -266,7 +266,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
 
-      ### links to students tab with unit_id as url param
+      ### links to content tab with unit_id as url param
       links =
         view
         |> render()
@@ -280,7 +280,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
                  :reports,
-                 :students,
+                 :content,
                  %{container_id: unit1_resource.id}
                ),
                Routes.live_path(
@@ -288,7 +288,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
                  :reports,
-                 :students,
+                 :content,
                  %{container_id: unit2_resource.id}
                )
              ]
@@ -359,7 +359,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
                  :reports,
-                 :students,
+                 :content,
                  %{page_id: page1.id}
                ),
                Routes.live_path(
@@ -367,7 +367,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
                  :reports,
-                 :students,
+                 :content,
                  %{page_id: page2.id}
                )
              ]
@@ -381,6 +381,56 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         |> Floki.attribute("value")
 
       assert options_for_select == ["pages"]
+    end
+
+    test "content tab shows the container details view when a student is clicked on the contents table",
+         %{
+           instructor: instructor,
+           conn: conn
+         } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages,
+        unit1_resource: unit1_resource,
+        unit2_resource: unit2_resource
+      } = Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Diego", family_name: "Forlán"})
+      user_2 = insert(:user, %{given_name: "Federico", family_name: "Valverde"})
+      user_3 = insert(:user, %{given_name: "Rodrigo", family_name: "Bentancur"})
+      user_4 = insert(:user, %{given_name: "Diego", family_name: "Lugano"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
+      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
+      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
+      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      view
+      |> element(".instructor_dashboard_table tbody tr:first-of-type a")
+      |> render_click()
+
+      assert has_element?(view, "h4", "Unit 1")
+      assert has_element?(view, "a", "Download student progress CSV")
+      assert has_element?(view, "th", "STUDENT NAME")
+      assert has_element?(view, "th", "LAST INTERACTED")
+      assert has_element?(view, "th", "COURSE PROGRESS")
+      assert has_element?(view, "th", "OVERALL COURSE MASTERY")
+      assert has_element?(view, "tbody tr td", "Forlán, Diego")
+      assert has_element?(view, "tbody tr td", "Valverde, Federico")
+      assert has_element?(view, "tbody tr td", "Bentancur, Rodrigo")
+      assert has_element?(view, "tbody tr td", "Lugano, Diego")
     end
   end
 

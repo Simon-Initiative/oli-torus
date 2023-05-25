@@ -13,22 +13,47 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:ok, socket}
   end
 
-  @impl Phoenix.LiveView
-  def handle_params(
-        %{"view" => "reports", "active_tab" => "students"} = params,
-        _,
-        socket
-      ) do
+  defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
     params = OliWeb.Components.Delivery.Students.decode_params(params)
 
     socket =
       socket
-      |> assign(params: params, view: :reports, active_tab: :students)
+      |> assign(params: params, view: :reports, active_tab: String.to_existing_atom(active_tab))
       |> assign(students: get_students(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
 
+    socket =
+      if params.container_id do
+        selected_container =
+          socket.assigns.section
+          |> get_containers()
+          |> elem(1)
+          |> Enum.find(&(&1.id == params.container_id))
+
+        assign(socket, :selected_container, selected_container)
+      else
+        socket
+      end
+
     {:noreply, socket}
   end
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "reports", "active_tab" => "content", "container_id" => _container_id} =
+          params,
+        uri,
+        socket
+      ),
+      do: do_handle_students_params(params, uri, socket)
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "reports", "active_tab" => "students"} = params,
+        uri,
+        socket
+      ),
+      do: do_handle_students_params(params, uri, socket)
 
   @impl Phoenix.LiveView
   def handle_params(
@@ -125,6 +150,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
+  defp container_details_tab(section_slug, preview_mode, selected_container) do
+    [
+      %TabLink{
+        label: fn -> render_container_tab_detail(%{title: selected_container.title}) end,
+        path: path_for(:reports, :content, section_slug, preview_mode),
+        badge: nil,
+        active: true
+      }
+    ]
+  end
+
+  defp render_container_tab_detail(assigns) do
+    ~H"""
+    <div class="flex gap-2 items-center">
+      <i class="fa-solid fa-chevron-left" />
+      <span><%= @title %></span>
+    </div>
+    """
+  end
+
   defp reports_tabs(section_slug, preview_mode, active_tab) do
     [
       %TabLink{
@@ -166,6 +211,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       <InstructorDashboard.actions actions={[
         %InstructorDashboard.PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }
       ]} />
+    """
+  end
+
+  def render(
+        %{view: :reports, active_tab: :content, params: %{container_id: _container_id}} = assigns
+      ) do
+    ~H"""
+      <InstructorDashboard.tabs tabs={container_details_tab(@section_slug, @preview_mode, @selected_container)} />
+
+      <.live_component
+        id="container_details_table"
+        module={OliWeb.Components.Delivery.Students}
+        title={@selected_container.title}
+        tab_name={@active_tab}
+        show_progress_csv_download={true}
+        params={@params}
+        context={@context}
+        section={@section}
+        view={@view}
+        students={@students}
+        dropdown_options={@dropdown_options}
+      />
     """
   end
 
