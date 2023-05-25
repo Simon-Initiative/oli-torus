@@ -6876,6 +6876,10 @@ button.torus-button.secondary:disabled {
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
+a {
+  cursor: pointer;
+}
+
 .instructor_dashboard_table {
   border-right-width: 0px;
   border-left-width: 0px;
