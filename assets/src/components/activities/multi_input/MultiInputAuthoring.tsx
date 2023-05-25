@@ -78,7 +78,7 @@ export const MultiInputComponent = () => {
           </TabbedNavigation.Tab>
           <ActivitySettings
             settings={[
-              shuffleAnswerChoiceSetting(model, dispatch),
+              shuffleAnswerChoiceSetting(model, dispatch, input),
               changePerPartSubmission(model, dispatch),
             ]}
           />

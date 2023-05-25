@@ -10,7 +10,7 @@ import { SubmitButtonConnected } from 'components/activities/common/delivery/sub
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
-import { Manifest, PartId } from 'components/activities/types';
+import { Choice, Manifest, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
   ActivityDeliveryState,
@@ -102,6 +102,16 @@ export const MultiInputComponent: React.FC = () => {
     );
   };
 
+  const choiceIdToChoiceMap: Record<string, Choice> = (
+    uiState.model as MultiInputSchema
+  ).choices.reduce(
+    (acc, choice) => ({
+      ...acc,
+      [choice.id]: choice,
+    }),
+    {},
+  );
+
   const inputs = new Map(
     (uiState.model as MultiInputSchema).inputs.map((input) => [
       input.id,
@@ -111,18 +121,22 @@ export const MultiInputComponent: React.FC = () => {
             ? {
                 id: input.id,
                 inputType: input.inputType,
-                options: (uiState.model as MultiInputSchema).choices
-                  .filter((c) => input.choiceIds.includes(c.id))
-                  .map((choice) => ({
-                    value: choice.id,
-                    displayValue: toSimpleText(choice.content),
-                  })),
+                options: input.choiceIds.map((choiceId) => ({
+                  value: choiceId,
+                  displayValue: toSimpleText(choiceIdToChoiceMap[choiceId].content),
+                })),
               }
             : { id: input.id, inputType: input.inputType },
         value: (uiState.partState[input.partId]?.studentInput || [''])[0],
         hasHints: uiState.partState[input.partId].hasMoreHints,
       },
     ]),
+  );
+
+  console.log(
+    '(uiState.model as MultiInputSchema).inputs, inputs',
+    (uiState.model as MultiInputSchema).inputs,
+    inputs,
   );
 
   const handlePerPartSubmission = (partId: string, input: string | null = null) => {

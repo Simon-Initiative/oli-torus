@@ -7,19 +7,23 @@ import {
   makeTransformation,
 } from '../types';
 
-export const isShuffled = (transformations: Transformation[]): boolean =>
-  !!transformations.find((xform) => xform.operation === Transform.shuffle);
+export const isShuffled = (transformations: Transformation[], partId?: string): boolean =>
+  partId
+    ? !!transformations.find(
+        (xform) => xform.operation === Transform.shuffle && xform.partId === partId,
+      )
+    : !!transformations.find((xform) => xform.operation === Transform.shuffle);
 
-export const toggleAnswerChoiceShuffling = () => {
+export const toggleAnswerChoiceShuffling = (partId?: string) => {
   return (model: { authoring: { transformations: Transformation[] } }): void => {
     const transformations = model.authoring.transformations;
 
-    isShuffled(transformations)
+    isShuffled(transformations, partId)
       ? (model.authoring.transformations = transformations.filter(
-          (xform) => xform.operation !== Transform.shuffle,
+          (xform) => xform.operation !== Transform.shuffle && xform.partId === partId,
         ))
       : model.authoring.transformations.push(
-          makeTransformation('choices', Transform.shuffle, true),
+          makeTransformation('choices', Transform.shuffle, true, partId),
         );
   };
 };
