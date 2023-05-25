@@ -5202,11 +5202,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(29 68 129 / var(--tw-bg-opacity));
 }
 
-.bg-fuchsia-700 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(162 28 175 / var(--tw-bg-opacity));
-}
-
 .bg-fuchsia-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(134 25 143 / var(--tw-bg-opacity));
@@ -5225,11 +5220,6 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-gray-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(115 115 115 / var(--tw-bg-opacity));
-}
-
-.bg-gray-700 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(64 64 64 / var(--tw-bg-opacity));
 }
 
 .bg-green-100 {
@@ -5275,11 +5265,6 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-red-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(220 38 38 / var(--tw-bg-opacity));
-}
-
-.bg-red-700 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(185 28 28 / var(--tw-bg-opacity));
 }
 
 .bg-slate-200 {
