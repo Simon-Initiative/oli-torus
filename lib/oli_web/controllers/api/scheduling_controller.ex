@@ -157,7 +157,6 @@ defmodule OliWeb.Api.SchedulingController do
        }
   def update(conn, %{"updates" => updates}) do
     section = conn.assigns.section
-
     context = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do

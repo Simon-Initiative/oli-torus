@@ -120,6 +120,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
         {:ok, time} = Time.new(h, n, s)
 
         {:ok, date_time} = DateTime.new(date, time, timezone)
+        {:ok, date_time} = DateTime.shift_zone(date_time, "Etc/UTC")
         DateTime.truncate(date_time, :second)
 
       false ->
@@ -131,6 +132,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
         {:ok, time} = Time.new(23, 59, 59)
 
         {:ok, date_time} = DateTime.new(date, time, timezone)
+        {:ok, date_time} = DateTime.shift_zone(date_time, "Etc/UTC")
         DateTime.truncate(date_time, :second)
 
     end
