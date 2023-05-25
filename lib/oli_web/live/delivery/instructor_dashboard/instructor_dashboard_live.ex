@@ -92,10 +92,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(%{"view" => "overview"} = params, _, socket) do
+    active_tab =
+      case params["active_tab"] do
+        nil -> :course_content
+        tab -> String.to_existing_atom(tab)
+      end
+
+    socket =
+      socket
+      |> assign(params: params, view: :overview, active_tab: active_tab)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     allowed_routes = [
       {nil, nil},
-      {"overview", nil},
+      {"overview", "course_content"},
+      {"overview", "scored_activities"},
+      {"overview", "recommended_actions"},
       {"reports", nil},
       {"reports", "content"},
       {"reports", "students"},
@@ -149,6 +166,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
+
+  defp overview_tabs(section_slug, preview_mode, active_tab) do
+    [
+      %TabLink{
+        label: "Course Content",
+        path: path_for(:overview, :course_content, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:course_content, active_tab)
+      },
+      %TabLink{
+        label: "Scored Activities",
+        path: path_for(:overview, :scored_activities, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:scored_activities, active_tab)
+      },
+      %TabLink{
+        label: "Recommended Actions",
+        path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:recommended_actions, active_tab)
+      }
+    ]
+  end
 
   defp container_details_tab(section_slug, preview_mode, selected_container) do
     [
@@ -206,11 +246,33 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def render(%{view: :overview} = assigns) do
+  def render(%{view: :overview, active_tab: :course_content} = assigns) do
     ~H"""
-      <InstructorDashboard.actions actions={[
-        %InstructorDashboard.PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }
-      ]} />
+      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+      <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
+        Not implemented
+      </div>
+    """
+  end
+
+  def render(%{view: :overview, active_tab: :scored_activities} = assigns) do
+    ~H"""
+      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+      <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
+        Not implemented
+      </div>
+    """
+  end
+
+  def render(%{view: :overview, active_tab: :recommended_actions} = assigns) do
+    ~H"""
+      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+      <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
+        Not implemented
+      </div>
     """
   end
 
