@@ -20,7 +20,7 @@ defmodule OliWeb.MetricsControllerTest do
           Routes.metrics_path(conn, :download_container_progress, section.slug, unit1.resource.id)
         )
 
-      Enum.any?(conn.resp_headers, fn h -> h == {"content-disposition", "attachment; filename=\"progress.csv\""} end)
+      Enum.any?(conn.resp_headers, fn h -> h == {"content-disposition", "attachment; filename=\"progress_#{section.slug}_#{unit1.resource.id}_.csv\""} end)
       Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
       assert response(conn, 200)
 
