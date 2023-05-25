@@ -68,37 +68,40 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   def render(assigns) do
     ~H"""
       <div class="container mx-auto my-4">
-        <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
-          role="tablist">
+        <div class="flex">
+          <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
+            role="tablist">
 
-          <%= for {label, tab_name, active} <- [
-            {"Assessment Settings", :settings, is_active_tab?(:settings, @active_tab)},
-            {"Student Exceptions", :student_exceptions, is_active_tab?(:student_exceptions, @active_tab)},
-          ] do %>
-            <li class="nav-item" role="presentation">
-              <a
-              phx-click="change_tab"
-              phx-value-selected_tab={tab_name}
-                class={"
-                  block
-                  border-x-0 border-t-0 border-b-2
-                  px-1
-                  py-3
-                  m-2
-                  text-body-color
-                  dark:text-body-color-dark
-                  bg-transparent
-                  hover:no-underline
-                  hover:text-body-color
-                  hover:border-delivery-primary-200
-                  focus:border-delivery-primary-200
-                  #{if active, do: "border-delivery-primary", else: "border-transparent"}
-                "}>
-                  <%= label %>
-              </a>
-            </li>
-          <% end %>
-        </ul>
+            <%= for {label, tab_name, active} <- [
+              {"Assessment Settings", :settings, is_active_tab?(:settings, @active_tab)},
+              {"Student Exceptions", :student_exceptions, is_active_tab?(:student_exceptions, @active_tab)},
+            ] do %>
+              <li class="nav-item" role="presentation">
+                <a
+                phx-click="change_tab"
+                phx-value-selected_tab={tab_name}
+                  class={"
+                    block
+                    border-x-0 border-t-0 border-b-2
+                    px-1
+                    py-3
+                    m-2
+                    text-body-color
+                    dark:text-body-color-dark
+                    bg-transparent
+                    hover:no-underline
+                    hover:text-body-color
+                    hover:border-delivery-primary-200
+                    focus:border-delivery-primary-200
+                    #{if active, do: "border-delivery-primary", else: "border-transparent"}
+                  "}>
+                    <%= label %>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+          <div class="ml-auto"><.flash_message flash={@flash} /></div>
+        </div>
         <%= if @active_tab == :settings do %>
           <.live_component
             id="assessment_settings_table"
@@ -137,6 +140,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            :all
          )
      )}
+  end
+
+  @impl true
+  def handle_info({:flash_message, type, message}, socket) do
+    {:noreply, socket |> clear_flash |> put_flash(type, message)}
   end
 
   @impl true
@@ -215,5 +223,40 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     |> where(section_id: ^section_id)
     |> preload(:user)
     |> Repo.all()
+  end
+
+  defp flash_message(assigns) do
+    ~H"""
+    <%= if live_flash(@flash, :info) do %>
+      <div class="alert alert-info flex flex-row justify-between" role="alert">
+        <%= live_flash(@flash, :info) %>
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="info"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
+    <% end %>
+    <%= if live_flash(@flash, :error) do %>
+      <div class="alert alert-danger flex flex-row justify-between" role="alert">
+        {live_flash(@flash, :error)}
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="error"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
+    <% end %>
+    """
   end
 end

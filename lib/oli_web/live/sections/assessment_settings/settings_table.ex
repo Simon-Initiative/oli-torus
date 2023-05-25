@@ -78,7 +78,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           <h4 class="torus-h4">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>
         </div>
-        {flash_message(%{flash: @flash, myself: @myself})}
         <form
           for="bulk_apply_settings"
           phx-target={@myself}
@@ -118,43 +117,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         />
       </form>
     </div>
-    """
-  end
-
-  def flash_message(assigns) do
-    ~F"""
-    {#if live_flash(@flash, :info)}
-      <div class="alert alert-info flex flex-row justify-between" role="alert">
-        {live_flash(@flash, :info)}
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-target={@myself}
-          phx-value-key="info"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    {/if}
-    {#if live_flash(@flash, :error)}
-      <div class="alert alert-danger flex flex-row justify-between" role="alert">
-        {live_flash(@flash, :error)}
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-target={@myself}
-          phx-value-key="error"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    {/if}
     """
   end
 
@@ -445,15 +407,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           {:error, _changeset} ->
             {:noreply,
              socket
-             |> clear_flash()
-             |> put_flash(:error, "ERROR: Setting could not be updated")}
+             |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
 
           {:ok, _section_resource} ->
             {:noreply,
              socket
              |> update_assessments(assessment_setting_id, [{key, new_value}])
-             |> clear_flash()
-             |> put_flash(:info, "Setting updated!")}
+             |> flash_to_liveview(:info, "Setting updated!")}
         end
 
       _ ->
@@ -527,8 +487,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
              {:feedback_mode, :scheduled}
            ]
          )
-         |> clear_flash()
-         |> put_flash(:info, "Setting updated!")
+         |> flash_to_liveview(:info, "Setting updated!")
          |> assign(modal_assigns: %{show: false})}
     end
   end
@@ -672,5 +631,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     |> FormatDateTime.convert_datetime(context)
     |> DateTime.to_iso8601()
     |> String.slice(0, 16)
+  end
+
+  defp flash_to_liveview(socket, type, message) do
+    send(self(), {:flash_message, type, message})
+    socket
   end
 end

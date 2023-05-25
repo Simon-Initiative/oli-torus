@@ -403,8 +403,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           {:error, _changeset} ->
             {:noreply,
              socket
-             |> clear_flash()
-             |> put_flash(:error, "ERROR: Student Exception could not be updated")}
+             |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
 
           {:ok, updated_student_exception} ->
             update_liveview_student_exceptions(
@@ -414,8 +413,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
             {:noreply,
              socket
-             |> clear_flash()
-             |> put_flash(:info, "Student Exception updated!")}
+             |> flash_to_liveview(:info, "Student Exception updated!")}
         end
 
       _ ->
@@ -443,8 +441,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
     {:noreply,
      socket
-     |> clear_flash()
-     |> put_flash(:info, "Student Exception/s removed!")
+     |> flash_to_liveview(:info, "Student Exception/s removed!")
      |> assign(modal_assigns: %{show: false}, selected_student_exceptions: [])}
   end
 
@@ -464,8 +461,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       {:error, _changeset} ->
         {:noreply,
          socket
-         |> clear_flash()
-         |> put_flash(:error, "ERROR: Student Exception could not be updated")
+         |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
          |> assign(modal_assigns: %{show: false})}
 
       {:ok, student_exception} ->
@@ -476,8 +472,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
         {:noreply,
          socket
-         |> clear_flash()
-         |> put_flash(:info, "Student Exception added!")
+         |> flash_to_liveview(:info, "Student Exception added!")
          |> assign(modal_assigns: %{show: false})}
     end
   end
@@ -542,8 +537,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
         {:noreply,
          socket
-         |> clear_flash()
-         |> put_flash(:info, "Student Exception updated!")
+         |> flash_to_liveview(:info, "Student Exception updated!")
          |> assign(modal_assigns: %{show: false})}
     end
   end
@@ -762,5 +756,10 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       end
 
     {String.to_existing_atom(key), String.to_integer(id), value}
+  end
+
+  defp flash_to_liveview(socket, type, message) do
+    send(self(), {:flash_message, type, message})
+    socket
   end
 end
