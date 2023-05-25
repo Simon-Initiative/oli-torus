@@ -61,6 +61,15 @@ defmodule Oli.Activities.TransformersTest do
         }
       }
     end
+
+    # Shuffle fifty times.  If none of the shuffles result in
+    # the first element changing - we likely have a broken shuffle impl.
+    assert Enum.any?(1..50, fn _ ->
+             [{:ok, transformed}] =
+               Transformers.apply_transforms([as_revision(1, create_model.())])
+
+             transformed["choices"] |> Enum.at(0) |> Map.get("id") != "1"
+           end)
   end
 
   test "applying shuffle for specific part" do
@@ -130,7 +139,7 @@ defmodule Oli.Activities.TransformersTest do
 
     # Shuffle fifty times.  If none of the shuffles result in
     # the first element changing - we likely have a broken shuffle impl.
-    assert Enum.any?(1..1, fn _ ->
+    assert Enum.any?(1..50, fn _ ->
              [{:ok, transformed}] =
                Transformers.apply_transforms([as_revision(1, create_model.())])
 
