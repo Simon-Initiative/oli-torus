@@ -11,38 +11,45 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   end
 
   def new(users, section, context) do
-    column_specs = [
-      %ColumnSpec{
-        name: :name,
-        label: "STUDENT NAME",
-        render_fn: &__MODULE__.render_name_column/3,
-        th_class: "pl-10 instructor_dashboard_th"
-      },
-      %ColumnSpec{
-        name: :last_interaction,
-        label: "LAST INTERACTED",
-        render_fn: &__MODULE__.render_last_interaction_column/3,
-        th_class: "instructor_dashboard_th"
-      },
-      %ColumnSpec{
-        name: :progress,
-        label: "COURSE PROGRESS",
-        render_fn: &__MODULE__.render_progress_column/3,
-        th_class: "instructor_dashboard_th"
-      },
-      %ColumnSpec{
-        name: :overall_mastery,
-        label: "OVERALL COURSE MASTERY",
-        render_fn: &__MODULE__.render_overall_mastery_column/3,
-        th_class: "instructor_dashboard_th"
-      },
-      %ColumnSpec{
-        name: :payment_status,
-        label: "PAYMENT STATUS",
-        render_fn: &__MODULE__.render_payment_status/3,
-        th_class: "instructor_dashboard_th"
-      }
-    ]
+    column_specs =
+      [
+        %ColumnSpec{
+          name: :name,
+          label: "STUDENT NAME",
+          render_fn: &__MODULE__.render_name_column/3,
+          th_class: "pl-10 instructor_dashboard_th"
+        },
+        %ColumnSpec{
+          name: :last_interaction,
+          label: "LAST INTERACTED",
+          render_fn: &__MODULE__.render_last_interaction_column/3,
+          th_class: "instructor_dashboard_th"
+        },
+        %ColumnSpec{
+          name: :progress,
+          label: "COURSE PROGRESS",
+          render_fn: &__MODULE__.render_progress_column/3,
+          th_class: "instructor_dashboard_th"
+        },
+        %ColumnSpec{
+          name: :overall_mastery,
+          label: "OVERALL COURSE MASTERY",
+          render_fn: &__MODULE__.render_overall_mastery_column/3,
+          th_class: "instructor_dashboard_th"
+        }
+      ] ++
+        if section.requires_payment do
+          [
+            %ColumnSpec{
+              name: :payment_status,
+              label: "PAYMENT STATUS",
+              render_fn: &__MODULE__.render_payment_status/3,
+              th_class: "instructor_dashboard_th"
+            }
+          ]
+        else
+          []
+        end
 
     SortableTableModel.new(
       rows: users,
