@@ -33,16 +33,14 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
   @default_params %{
     offset: 0,
-    limit: 25,
+    limit: 10,
     sort_order: :asc,
     sort_by: :student
   }
 
   # TODO
-  # add other pending sort fields
+  # add other sort options
   # improve assessment naming
-  # add bulk edition
-  # implement Repo.delete_all()
   # tests
   def mount(socket) do
     {:ok, assign(socket, selected_student_exceptions: [], modal_assigns: %{show: false})}
