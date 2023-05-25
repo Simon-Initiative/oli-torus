@@ -6,19 +6,27 @@ import {
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { isDestinationPath } from '../paths/path-utils';
 
-export const sortScreens = (
+export const getFirstScreenInSequence = (
   screens: IActivity[],
   sequence: SequenceEntry<SequenceEntryChild>[],
-): IActivity[] => {
-  const firstActivity = sequence.find((c) => !!c.resourceId);
-  const firstScreen = screens.find((s) => s.resourceId === firstActivity?.resourceId);
-  const screensLeft = screens.filter((s) => s.resourceId !== firstScreen?.resourceId);
+): IActivity | undefined => {
+  const firstScreenId = sequence[0]?.resourceId;
+  return screens.find((s) => s.resourceId === firstScreenId);
+};
 
-  if (!firstScreen) return screens;
+export const sortScreens = (screens: IActivity[], firstScreen?: IActivity): IActivity[] => {
+  const sortedByTitle: IActivity[] = screens.sort((a, b) => {
+    if (!a.title || !b.title) return 0;
+    return a.title.localeCompare(b.title);
+  });
+
+  const screensLeft = sortedByTitle.filter((s) => s.resourceId !== firstScreen?.resourceId);
+
+  if (!firstScreen) return sortedByTitle;
 
   const sortedScreens = [firstScreen, ...getOrderedPath(firstScreen, screensLeft)];
 
-  const unlinkedScreens = screens.filter((s) => !sortedScreens.includes(s));
+  const unlinkedScreens = sortedByTitle.filter((s) => !sortedScreens.includes(s));
   const pathSorted = [...sortedScreens, ...unlinkedScreens];
 
   // Make sure the welcome screen is first and the end screen is last.

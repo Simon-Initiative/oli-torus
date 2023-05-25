@@ -18,7 +18,7 @@ import { duplicateFlowchartScreen } from '../Flowchart/flowchart-actions/duplica
 import { BlankScreenIcon } from '../Flowchart/screen-icons/BlankScreenIcon';
 import { ScreenValidationColors, screenTypeToIcon } from '../Flowchart/screen-icons/screen-icons';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
-import { sortScreens } from '../Flowchart/screens/screen-utils';
+import { getFirstScreenInSequence, sortScreens } from '../Flowchart/screens/screen-utils';
 import { InfoIcon } from '../Flowchart/sidebar/InfoIcon';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { AddScreenModal } from './AddScreenModal';
@@ -71,7 +71,10 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
 
   const sequence = useSelector(selectSequence);
 
-  const sortedActivities = useMemo(() => sortScreens(activities, sequence), [activities, sequence]);
+  const sortedActivities = useMemo(() => {
+    const firstScreen = getFirstScreenInSequence(activities, sequence);
+    return sortScreens(activities, firstScreen);
+  }, [activities, sequence]);
 
   const isEndScreen = useCallback(
     (resourceId: EntityId) => {
