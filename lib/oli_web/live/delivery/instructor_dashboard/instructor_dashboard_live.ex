@@ -92,16 +92,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(%{"view" => "overview"} = params, _, socket) do
-    active_tab =
-      case params["active_tab"] do
-        nil -> :course_content
-        tab -> String.to_existing_atom(tab)
-      end
-
+  def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = params, _, socket) do
     socket =
-      socket
-      |> assign(params: params, view: :overview, active_tab: active_tab)
+      case params["active_tab"] do
+        value when value in [nil, "course_content"] ->
+          socket =
+            assign_new(socket, :hierarchy, fn ->
+              section =
+                socket.assigns.section
+                |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+              %{"children" => Sections.build_hierarchy(section).children}
+            end)
+
+          socket
+          |> assign(
+            params: params,
+            view: :overview,
+            active_tab: :course_content,
+            current_position: 0,
+            current_level: 0,
+            breadcrumbs_tree: [{0, 0, "Curriculum"}],
+            current_level_nodes: socket.assigns.hierarchy["children"]
+          )
+
+        tab ->
+          socket
+          |> assign(active_tab: String.to_existing_atom(tab))
+      end
 
     {:noreply, socket}
   end
@@ -246,16 +264,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def render(%{view: :overview, active_tab: :course_content} = assigns) do
-    ~H"""
-      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
-
-      <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
-        Not implemented
-      </div>
-    """
-  end
-
   def render(%{view: :overview, active_tab: :scored_activities} = assigns) do
     ~H"""
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
@@ -272,6 +280,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
       <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
         Not implemented
+      </div>
+    """
+  end
+
+  def render(%{view: :overview} = assigns) do
+    ~H"""
+      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+      <div class="mx-10 mb-10bg-white shadow-sm">
+        <.live_component
+          module={OliWeb.Delivery.CourseContent}
+          id="course_content_tab"
+          hierarchy={assigns.hierarchy}
+          current_position={assigns.current_position}
+          current_level={assigns.current_level}
+          breadcrumbs_tree={assigns.breadcrumbs_tree}
+          current_level_nodes={assigns.current_level_nodes}
+          section={assigns.section}
+          is_instructor={true}
+        />
       </div>
     """
   end
