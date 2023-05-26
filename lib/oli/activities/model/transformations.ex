@@ -1,5 +1,5 @@
 defmodule Oli.Activities.Model.Transformation do
-  defstruct [:id, :path, :operation, :data, :first_attempt_only]
+  defstruct [:id, :path, :operation, :data, :first_attempt_only, :part_id]
 
   def parse(%{"operation" => operation_str} = json) do
     id = Map.get(json, "id", UUID.uuid4())
@@ -11,6 +11,7 @@ defmodule Oli.Activities.Model.Transformation do
            data: nil,
            id: id,
            path: Map.get(json, "path"),
+           part_id: Map.get(json, "partId"),
            first_attempt_only: Map.get(json, "firstAttemptOnly", true),
            operation: :shuffle
          }}

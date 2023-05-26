@@ -399,6 +399,7 @@ export interface Transformation extends Identifiable {
   path: string;
   operation: Transform;
   firstAttemptOnly: boolean;
+  partId?: string;
 }
 /**
  * Marker interface for an entity that has transformations.
@@ -423,12 +424,22 @@ export const makeTransformation = (
   path: string,
   operation: Transform,
   firstAttemptOnly: boolean,
-): Transformation => ({
-  id: guid(),
-  path,
-  operation,
-  firstAttemptOnly,
-});
+  partId?: string,
+): Transformation =>
+  partId
+    ? {
+        id: guid(),
+        path,
+        operation,
+        firstAttemptOnly,
+        partId,
+      }
+    : {
+        id: guid(),
+        path,
+        operation,
+        firstAttemptOnly,
+      };
 
 /**
  * Defines a response.
