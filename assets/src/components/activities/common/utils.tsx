@@ -20,7 +20,7 @@ export const toggleAnswerChoiceShuffling = (partId?: string) => {
 
     isShuffled(transformations, partId)
       ? (model.authoring.transformations = transformations.filter(
-          (xform) => xform.operation !== Transform.shuffle && xform.partId === partId,
+          (xform) => !(xform.operation === Transform.shuffle && xform.partId === partId),
         ))
       : model.authoring.transformations.push(
           makeTransformation('choices', Transform.shuffle, true, partId),

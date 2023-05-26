@@ -13,9 +13,11 @@ import {
   Part,
   PostUndoable,
   Stem,
+  Transform,
   makeChoice,
   makeHint,
   makePart,
+  makeTransformation,
   makeUndoable,
 } from 'components/activities/types';
 import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/slateUtils';
@@ -169,11 +171,17 @@ export const MultiInputActions = {
       if (input.inputType === 'dropdown') {
         MultiInputActions.removeTargetedMappingsForPart(part)(model);
         MultiInputActions.removeChoicesForInput(input)(model);
+        MultiInputActions.removeShuffleTransformationForInput(input)(model);
       }
 
       if (type === 'dropdown') {
         model.choices.push(...choices);
         (input as Dropdown).choiceIds = choices.map(({ id }) => id);
+
+        // shuffle the choices by default
+        model.authoring.transformations.push(
+          makeTransformation('choices', Transform.shuffle, true, input.partId),
+        );
       }
 
       part.responses = {
@@ -206,6 +214,14 @@ export const MultiInputActions = {
   removeChoicesForInput(dropdown: Dropdown) {
     return (model: MultiInputSchema) => {
       model.choices = model.choices.filter((c) => !dropdown.choiceIds.includes(c.id));
+    };
+  },
+
+  removeShuffleTransformationForInput(dropdown: Dropdown) {
+    return (model: MultiInputSchema) => {
+      model.authoring.transformations = model.authoring.transformations.filter(
+        (t) => t.partId !== dropdown.partId,
+      );
     };
   },
 
