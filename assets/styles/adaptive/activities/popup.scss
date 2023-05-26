@@ -2,7 +2,7 @@
   Popup Button
 ----------------------------------*/
 //Base Style
-janus-popup {
+janus-popup:has(input) {
   input {
     cursor: pointer;
   }
