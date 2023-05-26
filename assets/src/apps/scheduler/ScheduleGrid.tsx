@@ -6,7 +6,6 @@ import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
 import { generateDayGeometry } from './date-utils';
 import { getTopLevelSchedule } from './schedule-selectors';
-import { ScheduleItemType } from './scheduler-slice';
 
 interface GridProps {
   startDate: string;
@@ -47,11 +46,9 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset 
             />
           </thead>
           <tbody>
-            {schedule
-              .filter((item) => item.resource_type_id !== ScheduleItemType.Page)
-              .map((item) => (
-                <ScheduleLine key={item.id} indent={0} item={item} dayGeometry={dayGeometry} />
-              ))}
+            {schedule.map((item) => (
+              <ScheduleLine key={item.id} indent={0} item={item} dayGeometry={dayGeometry} />
+            ))}
           </tbody>
         </table>
       </div>
