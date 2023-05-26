@@ -26,10 +26,11 @@ export const simpleUISchema = {
   },
   optionLabels: {
     classNames: 'dropdown-options-field',
-    items: {
-      classNames: 'dropdown-options-field',
-      'ui:emptyValue': '',
-    },
+    'ui:widget': 'DropdownOptionsEditor',
+  },
+  items: {
+    classNames: 'dropdown-options-field',
+    'ui:emptyValue': '',
   },
 };
 
@@ -55,7 +56,6 @@ export const simpleSchema: JSONSchema7Object = {
   optionLabels: {
     title: 'Option Labels',
     type: 'array',
-    description: 'list of options',
     items: {
       type: 'string',
     },

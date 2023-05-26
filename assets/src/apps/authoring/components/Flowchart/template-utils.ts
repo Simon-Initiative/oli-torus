@@ -24,7 +24,7 @@ export const replaceIds =
       return part;
     }
 
-    const newId = guid();
+    const newId = part.id + guid();
     idMap[part.id] = newId;
     part.id = newId;
     return part;

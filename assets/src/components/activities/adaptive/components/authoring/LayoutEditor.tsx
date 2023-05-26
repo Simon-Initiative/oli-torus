@@ -434,8 +434,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           }
           .active-selection-toolbar {
             position: absolute;
+            background-color: #fafafa;
             z-index: 999;
-            min-width: 160px;
+            min-width: 110px;
           }
           .part-config-container {
             position: absolute;

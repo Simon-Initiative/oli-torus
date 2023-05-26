@@ -41,7 +41,7 @@ import {
   setUnknownPathDestination,
 } from '../paths/path-utils';
 import { getActivitySlugFromScreenResourceId } from '../rules/create-generic-rule';
-import { sortScreens } from '../screens/screen-utils';
+import { getFirstScreenInSequence, sortScreens } from '../screens/screen-utils';
 
 interface AddFlowchartScreenPayload {
   fromScreenId?: number;
@@ -119,7 +119,8 @@ export const addFlowchartScreen = createAsyncThunk(
       }
 
       const getLastScreenId = (): number | undefined => {
-        const orderedScreens = sortScreens(otherActivities, sequence).filter(
+        const firstScreen = getFirstScreenInSequence(otherActivities, sequence);
+        const orderedScreens = sortScreens(otherActivities, firstScreen).filter(
           (s) => s.authoring?.flowchart?.screenType !== 'end_screen',
         );
         if (orderedScreens.length === 0) {

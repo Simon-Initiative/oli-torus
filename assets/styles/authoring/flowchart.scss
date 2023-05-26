@@ -708,4 +708,16 @@ $hover: #dce7f9;
   }
 }
 
+.invalid-screen-list {
+  margin-left: 3rem;
+  margin-top: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+
+  li {
+    list-style: circle;
+    list-style-position: inside;
+  }
+}
+
 @import 'react-flow.scss';

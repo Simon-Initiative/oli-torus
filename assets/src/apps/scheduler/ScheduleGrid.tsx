@@ -29,14 +29,6 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset 
     [rect?.width, startDate, endDate],
   );
 
-  // Lets go ahead and say you need at least x pixels per day
-  const minWidth = useMemo(() => {
-    if (!dayGeometry) {
-      return 300;
-    }
-    return (dayGeometry.end.getDaysSinceEpoch() - dayGeometry.start.getDaysSinceEpoch()) * 10 + 192;
-  }, [dayGeometry]);
-
   return (
     <div className="pb-20">
       <div className="flex container justify-end">
@@ -46,7 +38,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset 
       </div>
 
       <div className="w-full overflow-x-auto">
-        <table className="mx-auto select-none table-striped border-t-0" style={{ minWidth }}>
+        <table className="select-none table-striped border-t-0">
           <thead>
             <ScheduleHeaderRow
               labels={true}

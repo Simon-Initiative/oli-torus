@@ -4,6 +4,7 @@ import PartsLayoutRenderer from '../../../../components/activities/adaptive/comp
 import { RightArrow } from './onboard-wizard/RightArrow';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { Template } from './template-types';
+import { replaceIds } from './template-utils';
 import { templates } from './templates';
 
 interface Props {
@@ -85,7 +86,7 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
               <div className="picker-thumb ">
                 <div className="parts-layout-container">
                   <PartsLayoutRenderer
-                    parts={template.partsLayout}
+                    parts={template.partsLayout.map((part) => replaceIds({})(part))}
                     onPartInit={() => true}
                     onPartReady={() => true}
                     onPartSave={() => true}

@@ -6,6 +6,7 @@ import { JSONSchema7 } from 'json-schema';
 import { at } from 'lodash';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
+import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
@@ -35,6 +36,7 @@ const widgets: any = {
   OptionsCustomErrorFeedbackAuthoring: OptionsCustomErrorFeedbackAuthoring,
   MCQCorrectAnswerEditor: MCQCorrectAnswerEditor,
   MCQOptionsEditor: MCQOptionsEditor,
+  DropdownOptionsEditor: DropdownOptionsEditor,
   MCQCustomErrorFeedbackAuthoring: MCQCustomErrorFeedbackAuthoring,
 };
 

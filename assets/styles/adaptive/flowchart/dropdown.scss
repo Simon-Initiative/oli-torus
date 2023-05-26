@@ -8,12 +8,16 @@ janus-dropdown {
 
 /*-- label --*/
 janus-dropdown label {
-  font-family: 'OpenSansBold';
+  font-family: 'Open Sans';
   font-weight: 700;
   font-size: 16px;
   color: $darkForeground;
   display: block;
   margin-bottom: 8px;
+}
+
+janus-dropdown .dropdown-input {
+  position: relative;
 }
 
 janus-dropdown label:empty {
@@ -35,7 +39,7 @@ janus-dropdown select {
   -webkit-appearance: none;
   -moz-appearance: none;
   cursor: pointer;
-  font-family: OpenSans;
+  font-family: "Open Sans";
 
   @include control-border // font-size: 12px;
     // line-height: 18px;

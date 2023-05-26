@@ -70,7 +70,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
               OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
               @section_slug,
               @view,
-              :students,
+              :content,
               @url_params
             )
           }

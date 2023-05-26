@@ -7,21 +7,27 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
 
+  prop title, :string, default: "Students"
+  prop tab_name, :atom, default: :students
+  prop section_slug, :string, default: :nil
   prop params, :map, required: true
   prop total_count, :number, required: true
   prop table_model, :struct, required: true
   prop dropdown_options, :list, required: true
+  prop show_progress_csv_download, :boolean, default: false
   prop(view, :atom)
 
   @default_params %{
     offset: 0,
     limit: 25,
     container_id: nil,
+    section_slug: nil,
     page_id: nil,
     sort_order: :asc,
     sort_by: :name,
     text_search: nil,
-    filter_by: :enrolled
+    filter_by: :enrolled,
+    payment_status: nil
   }
 
   def update(
@@ -53,7 +59,10 @@ defmodule OliWeb.Components.Delivery.Students do
        params: params,
        section_slug: section.slug,
        dropdown_options: dropdown_options,
-       view: assigns[:view]
+       view: assigns[:view],
+       title: Map.get(assigns, :title, "Students"),
+       tab_name: Map.get(assigns, :tab_name, :students),
+       show_progress_csv_download: Map.get(assigns, :show_progress_csv_download, false)
      )}
   end
 
@@ -140,6 +149,12 @@ defmodule OliWeb.Components.Delivery.Students do
       :overall_mastery ->
         Enum.sort_by(students, fn student -> student.overall_mastery end, sort_order)
 
+      :engagement ->
+        Enum.sort_by(students, fn student -> student.engagement end, sort_order)
+
+      :payment_status ->
+        Enum.sort_by(students, fn student -> student.payment_status end, sort_order)
+
       _ ->
         Enum.sort_by(
           students,
@@ -152,8 +167,16 @@ defmodule OliWeb.Components.Delivery.Students do
   def render(assigns) do
     ~F"""
     <div class="mx-10 mb-10 bg-white shadow-sm">
-      <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-center px-6 py-4 border instructor_dashboard_table">
-        <h4 class="sm:pl-9 torus-h4 sm:mr-auto">Students</h4>
+      {#if @show_progress_csv_download}
+        <div class="flex justify-end p-2">
+          <a href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
+            <i class="fa-solid fa-download mr-1" />
+            Download student progress CSV
+          </a>
+        </div>
+      {/if}
+      <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
+        <h4 class="sm:pl-9 torus-h4 sm:mr-auto self-center">{@title}</h4>
         <div class="flex sm:items-end gap-2">
           <form phx-change="filter_by" phx-target={@myself}>
             <label class="cursor-pointer inline-flex flex-col gap-1">
@@ -194,7 +217,7 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
+           socket.assigns.tab_name,
            update_params(socket.assigns.params, %{text_search: student_name})
          )
      )}
@@ -209,7 +232,7 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
+           socket.assigns.tab_name,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
@@ -224,7 +247,7 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
+           socket.assigns.tab_name,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
      )}
@@ -239,7 +262,7 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
+           socket.assigns.tab_name,
            update_params(socket.assigns.params, %{filter_by: String.to_existing_atom(filter)})
          )
      )}
@@ -250,6 +273,7 @@ defmodule OliWeb.Components.Delivery.Students do
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       container_id: Params.get_int_param(params, "container_id", @default_params.container_id),
+      section_slug: Params.get_int_param(params, "section_slug", @default_params.section_slug),
       page_id: Params.get_int_param(params, "page_id", @default_params.page_id),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
@@ -257,7 +281,7 @@ defmodule OliWeb.Components.Delivery.Students do
         Params.get_atom_param(
           params,
           "sort_by",
-          [:name, :last_interaction, :progress, :overall_mastery],
+          [:name, :last_interaction, :progress, :overall_mastery, :engagement, :payment_status],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),

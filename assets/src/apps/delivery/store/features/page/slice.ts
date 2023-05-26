@@ -115,6 +115,10 @@ export const {
 } = pageSlice.actions;
 
 export const selectState = (state: DeliveryRootState): PageState => state[PageSlice];
+export const selectDeliveryContentMode = createSelector(
+  selectState,
+  (state) => state.content?.custom?.contentMode,
+);
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageTitle = createSelector(selectState, (state) => state.pageTitle);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
