@@ -93,7 +93,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
               >{assessment.name}</option>
             {/for}
           </select>
-          <button type="submit" class="torus-button flex justify-center primary h-9 px-4">Bulk apply</button>
+          <button type="submit" class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap">Bulk apply</button>
         </form>
         <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 ml-9 sm:pb-0">
           <SearchInput.render
