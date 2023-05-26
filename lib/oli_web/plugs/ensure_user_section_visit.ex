@@ -16,7 +16,11 @@ defmodule Oli.Plugs.EnsureUserSectionVisit do
     if !has_visited_section_key(conn) do
       if Sections.is_enrolled?(user.id, section.slug) do
         if Sections.has_instructor_role?(user, section.slug) do
-          put_session(conn, @visited_sections_key, true)
+          visited_sections =
+            Map.get(get_session(conn), @visited_sections_key, %{})
+            |> Map.put(section.slug, true)
+
+          put_session(conn, @visited_sections_key, visited_sections)
         else
           if Sections.has_visited_section(section, user) do
             visited_sections =
