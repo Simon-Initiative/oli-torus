@@ -93,17 +93,19 @@ const Menu: React.FC<MenuProps> = ({ children }) => {
 export type Setting = { isEnabled: boolean; onToggle: () => void; label: string };
 
 export const ActivitySettings: React.FC<{
-  settings: Setting[];
+  settings: (Setting | false)[];
 }> = ({ settings }) => {
   const { editMode } = useAuthoringElementContext();
 
   return (
     <Menu>
-      {settings.map(({ isEnabled, onToggle, label }, i) => (
-        <Setting key={i} isEnabled={isEnabled} onToggle={onToggle} editMode={editMode}>
-          {label}
-        </Setting>
-      ))}
+      {settings
+        .filter((s) => !!s)
+        .map(({ isEnabled, onToggle, label }: Setting, i) => (
+          <Setting key={i} isEnabled={isEnabled} onToggle={onToggle} editMode={editMode}>
+            {label}
+          </Setting>
+        ))}
     </Menu>
   );
 };
