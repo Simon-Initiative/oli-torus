@@ -53,6 +53,7 @@ defmodule Oli.Plugs.EnsureUserSectionVisit do
 
     case Map.get(get_session(conn), @visited_sections_key) do
       nil -> false
+      bool when is_boolean(bool) -> bool
       completed_section_surveys -> Map.get(completed_section_surveys, section_slug)
     end
   end
