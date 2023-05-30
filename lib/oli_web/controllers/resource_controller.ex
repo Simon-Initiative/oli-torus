@@ -12,9 +12,9 @@ defmodule OliWeb.ResourceController do
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.ResourceType
 
-  plug :fetch_project
-  plug :authorize_project
-  plug :put_root_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview]
+  plug(:fetch_project)
+  plug(:authorize_project)
+  plug(:put_root_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview])
 
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
@@ -95,6 +95,79 @@ defmodule OliWeb.ResourceController do
     )
   end
 
+  defp preview_advanced(conn, author, project, revision) do
+    # When we're previewing advanced content, there can be two render modes,
+    # either full screen, or within the torus lesson chrome. When it's inside the
+    # chrome, we actually render a page with the crome and an iframe inside it that
+    # renders the equivalent of the full screen content.
+    activity_types = Activities.activities_for_project(project)
+    IO.puts("🤡🤡🤡🤡")
+    IO.inspect(revision)
+
+    put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
+    |> render("advanced_page_preview.html",
+      additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+      activity_types: activity_types,
+      scripts: Activities.get_activity_scripts(:delivery_script),
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+      user: author,
+      project_slug: project.slug,
+      title: revision.title,
+      preview_mode: true,
+      display_curriculum_item_numbering: true,
+      app_params: %{
+        activityTypes: activity_types,
+        resourceId: revision.resource_id,
+        sectionSlug: project.slug,
+        userId: author.id,
+        pageSlug: revision.slug,
+        pageTitle: revision.title,
+        content: revision.content,
+        graded: revision.graded,
+        resourceAttemptState: nil,
+        resourceAttemptGuid: nil,
+        activityGuidMapping: nil,
+        previousPageURL: nil,
+        nextPageURL: nil,
+        previewMode: true
+      }
+    )
+  end
+
+  defp render_content_html(
+         revision,
+         project_slug,
+         transformed_content,
+         author,
+         options \\ []
+       )
+
+  defp render_content_html(
+         %{content: %{"advancedDelivery" => true}, slug: revision_slug},
+         project_slug,
+         transformed_content,
+         author,
+         options
+       ) do
+    "<iframe width=\"1100\" height=\"860\" src=\"/authoring/project/#{project_slug}/preview_fullscreen/#{revision_slug}\" class=\"advanced-delivery\"></iframe>"
+  end
+
+  defp render_content_html(_, project_slug, transformed_content, author, options) do
+    PageEditor.render_page_html(project_slug, transformed_content, author, options)
+  end
+
+  def preview_fullscreen(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
+    case AuthoringResolver.from_revision_slug(project_slug, revision_slug) do
+      nil ->
+        render_not_found(conn, project_slug)
+
+      revision ->
+        author = conn.assigns[:current_author]
+        project = conn.assigns.project
+        preview_advanced(conn, author, project, revision)
+    end
+  end
+
   def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
     project = conn.assigns.project
@@ -103,37 +176,8 @@ defmodule OliWeb.ResourceController do
       nil ->
         render_not_found(conn, project_slug)
 
-      %{content: %{"advancedDelivery" => true}} = revision ->
-        activity_types = Activities.activities_for_project(project)
-
-        put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
-        |> render("advanced_page_preview.html",
-          additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
-          activity_types: activity_types,
-          scripts: Activities.get_activity_scripts(:delivery_script),
-          part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-          user: author,
-          project_slug: project_slug,
-          title: revision.title,
-          preview_mode: true,
-          display_curriculum_item_numbering: true,
-          app_params: %{
-            activityTypes: activity_types,
-            resourceId: revision.resource_id,
-            sectionSlug: project_slug,
-            userId: author.id,
-            pageSlug: revision.slug,
-            pageTitle: revision.title,
-            content: revision.content,
-            graded: revision.graded,
-            resourceAttemptState: nil,
-            resourceAttemptGuid: nil,
-            activityGuidMapping: nil,
-            previousPageURL: nil,
-            nextPageURL: nil,
-            previewMode: true
-          }
-        )
+      %{content: %{"advancedDelivery" => true}, display_mode: :fullscreen} = revision ->
+        preview_advanced(conn, author, project, revision)
 
       revision ->
         %Oli.Delivery.ActivityProvider.Result{
@@ -172,7 +216,11 @@ defmodule OliWeb.ResourceController do
                   project_slug
                 ),
               content_html:
-                PageEditor.render_page_html(project_slug, transformed_content, author,
+                render_content_html(
+                  revision,
+                  project_slug,
+                  transformed_content,
+                  author,
                   preview: true,
                   graded: revision.graded,
                   bib_app_params: bib_references

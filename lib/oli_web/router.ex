@@ -425,6 +425,7 @@ defmodule OliWeb.Router do
     # Preview
     get("/:project_id/preview", ResourceController, :preview)
     get("/:project_id/preview/:revision_slug", ResourceController, :preview)
+    get("/:project_id/preview_fullscreen/:revision_slug", ResourceController, :preview_fullscreen)
     get("/:project_id/preview/:revision_slug/page/:page", ResourceController, :preview)
 
     # Editors
