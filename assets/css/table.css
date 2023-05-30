@@ -63,3 +63,7 @@
 .instructor_dashboard_table td:has(div.highlight-exception) {
   @apply bg-blue-100 rounded-md bg-opacity-50;
 }
+
+div:has(.instructor_dashboard_table) #header_paging {
+  @apply sticky left-0;
+}

@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :attempts,
+        name: :max_attempts,
         label: "# ATTEMPTS",
         render_fn: &__MODULE__.render_attempts_column/3,
         th_class: "instructor_dashboard_th"
@@ -50,7 +50,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :scoring,
+        name: :scoring_strategy_id,
         label: "SCORING",
         render_fn: &__MODULE__.render_scoring_column/3,
         th_class: "instructor_dashboard_th"
@@ -68,13 +68,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :view_feedback,
+        name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :view_answers,
+        name: :review_submission,
         label: "VIEW ANSWERS",
         render_fn: &__MODULE__.render_view_answers_column/3,
         th_class: "instructor_dashboard_th"
@@ -129,15 +129,15 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   def render_attempts_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
-        attempts: student_exception.max_attempts,
+        max_attempts: student_exception.max_attempts,
         id: student_exception.user_id
       })
 
     ~H"""
-    <div class={data_class(@selected_assessment.max_attempts, @attempts)}>
+    <div class={data_class(@selected_assessment.max_attempts, @max_attempts)}>
       <div class="relative">
-        <input class="w-28" type="number" min="0" value={@attempts} placeholder="-" phx-debounce={300} name={"max_attempts-#{@id}"} />
-        <%= if @attempts == 0 do %>
+        <input class="w-28" type="number" min="0" value={@max_attempts} placeholder="-" phx-debounce={300} name={"max_attempts-#{@id}"} />
+        <%= if @max_attempts == 0 do %>
           <span class="text-[10px] absolute -ml-20 mt-3">(Unlimited)</span>
         <% end %>
       </div>
@@ -203,17 +203,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   def render_scoring_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
-        scoring: student_exception.scoring_strategy_id,
+        scoring_strategy_id: student_exception.scoring_strategy_id,
         id: student_exception.user_id
       })
 
     ~H"""
-    <div class={data_class(@selected_assessment.scoring_strategy_id, @scoring)}>
+    <div class={data_class(@selected_assessment.scoring_strategy_id, @scoring_strategy_id)}>
       <select class="torus-select pr-32" name={"scoring_strategy_id-#{@id}"}>
-        <option disabled selected={@scoring == nil} hidden value="">-</option>
-        <option selected={@scoring == 1} value={1}>Average</option>
-        <option selected={@scoring == 2} value={2}>Best</option>
-        <option selected={@scoring == 3} value={3}>Last</option>
+        <option disabled selected={@scoring_strategy_id == nil} hidden value="">-</option>
+        <option selected={@scoring_strategy_id == 1} value={1}>Average</option>
+        <option selected={@scoring_strategy_id == 2} value={2}>Best</option>
+        <option selected={@scoring_strategy_id == 3} value={3}>Last</option>
       </select>
     </div>
     """
@@ -254,17 +254,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   def render_view_feedback_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
-        view_feedback: student_exception.feedback_mode,
+        feedback_mode: student_exception.feedback_mode,
         id: student_exception.user_id
       })
 
     ~H"""
-    <div class={data_class(@selected_assessment.feedback_mode, @view_feedback)}>
+    <div class={data_class(@selected_assessment.feedback_mode, @feedback_mode)}>
       <select class="torus-select pr-32" name={"feedback_mode-#{@id}"}>
-        <option disabled selected={@view_feedback == nil} hidden value="">-</option>
-        <option selected={@view_feedback == :allow} value={:allow}>Allow</option>
-        <option selected={@view_feedback == :disallow} value={:disallow}>Disallow</option>
-        <option selected={@view_feedback == :scheduled} value={:scheduled}>Scheduled</option>
+        <option disabled selected={@feedback_mode == nil} hidden value="">-</option>
+        <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
+        <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
+        <option selected={@feedback_mode == :scheduled} value={:scheduled}>Scheduled</option>
       </select>
     </div>
     """
@@ -273,16 +273,16 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   def render_view_answers_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
-        view_answers: student_exception.review_submission,
+        review_submission: student_exception.review_submission,
         id: student_exception.user_id
       })
 
     ~H"""
-    <div class={data_class(@selected_assessment.review_submission, @view_answers)}>
+    <div class={data_class(@selected_assessment.review_submission, @review_submission)}>
       <select class="torus-select pr-32" name={"review_submission-#{@id}"}>
-        <option disabled selected={@view_answers == nil} hidden value="">-</option>
-        <option selected={@view_answers == :allow} value={:allow}>Allow</option>
-        <option selected={@view_answers == :disallow} value={:disallow}>Disallow</option>
+        <option disabled selected={@review_submission == nil} hidden value="">-</option>
+        <option selected={@review_submission == :allow} value={:allow}>Allow</option>
+        <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
       </select>
     </div>
     """

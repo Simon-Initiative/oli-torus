@@ -30,6 +30,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   data(students, :list)
   data(selected_student_exceptions, :list)
   data(modal_assigns, :map)
+  data(form_id, :string)
 
   @default_params %{
     offset: 0,
@@ -38,10 +39,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     sort_by: :student
   }
 
-  # TODO
-  # add other sort options
-  # improve assessment naming
-  # tests
   def mount(socket) do
     {:ok, assign(socket, selected_student_exceptions: [], modal_assigns: %{show: false})}
   end
@@ -49,11 +46,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    selected_assessment =
-      Enum.find(assigns.assessments, fn a -> a.resource_id == params.selected_assessment_id end)
+    selected_assessment = Enum.find(assigns.assessments, fn a -> a.resource_id == params.selected_assessment_id end)
 
-    {total_count, rows, assessment_student_exceptions} =
-      apply_filters(assigns.student_exceptions, params)
+    {total_count, rows, assessment_student_exceptions} = apply_filters(assigns.student_exceptions, params)
 
     {:ok, table_model} =
       StudentExceptionsTableModel.new(
@@ -69,21 +64,20 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       Map.merge(table_model, %{
         rows: rows,
         sort_order: params.sort_order,
-        sort_by_spec:
-          Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
+        sort_by_spec: Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
 
     {:ok,
      assign(socket,
        table_model: table_model,
        total_count: total_count,
-       total_exceptions:
-         get_total_exceptions_count(selected_assessment, assigns.student_exceptions),
+       total_exceptions: get_total_exceptions_count(selected_assessment, assigns.student_exceptions),
        params: params,
        section: assigns.section,
        context: assigns.context,
        assessments: assigns.assessments,
        students: assigns.students,
+       form_id: UUID.uuid4(),
        assessment_student_exceptions: assessment_student_exceptions,
        options_for_select: Enum.map(assigns.assessments, fn a -> {a.name, a.resource_id} end)
      )}
@@ -123,7 +117,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           >Add New</button>
         </div>
       </div>
-      <form for="students_exception_table" phx-target={@myself} phx-change="update_student_exception">
+      <form id={"form-#{@form_id}"} for="students_exception_table" phx-target={@myself} phx-change="update_student_exception">
         <PagedTable
           table_model={@table_model}
           total_count={@total_count}
@@ -324,8 +318,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         {:noreply, assign(socket, modal_assigns: common_modal_assings)}
 
       "add_student_exception" ->
-        student_with_exceptions =
-          Enum.map(socket.assigns.assessment_student_exceptions, fn se -> se.user_id end)
+        student_with_exceptions = Enum.map(socket.assigns.assessment_student_exceptions, fn se -> se.user_id end)
 
         student_options =
           socket.assigns.students
@@ -408,7 +401,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           {:ok, updated_student_exception} ->
             update_liveview_student_exceptions(
               :updated,
-              [Repo.preload(updated_student_exception, :user)]
+              [Repo.preload(updated_student_exception, :user)],
+              false
             )
 
             {:noreply,
@@ -436,7 +430,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
     update_liveview_student_exceptions(
       :deleted,
-      selected_student_exceptions
+      selected_student_exceptions,
+      true
     )
 
     {:noreply,
@@ -467,7 +462,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       {:ok, student_exception} ->
         update_liveview_student_exceptions(
           :added,
-          [Repo.preload(student_exception, :user)]
+          [Repo.preload(student_exception, :user)],
+          true
         )
 
         {:noreply,
@@ -532,7 +528,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       {:ok, updated_student_exception} ->
         update_liveview_student_exceptions(
           :updated,
-          [Repo.preload(updated_student_exception, :user)]
+          [Repo.preload(updated_student_exception, :user)],
+          false
         )
 
         {:noreply,
@@ -540,21 +537,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
          |> flash_to_liveview(:info, "Student Exception updated!")
          |> assign(modal_assigns: %{show: false})}
     end
-  end
-
-  def handle_event("search_assessment", %{"assessment_name" => assessment_name}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         Routes.live_path(
-           socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :student_exceptions,
-           socket.assigns.assessment_id,
-           update_params(socket.assigns.params, %{text_search: assessment_name})
-         )
-     )}
   end
 
   def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
@@ -566,7 +548,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
            OliWeb.Sections.AssessmentSettings.SettingsLive,
            socket.assigns.section.slug,
            :student_exceptions,
-           socket.assigns.assessment_id,
+           socket.assigns.params.selected_assessment_id,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
@@ -581,7 +563,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
            OliWeb.Sections.AssessmentSettings.SettingsLive,
            socket.assigns.section.slug,
            :student_exceptions,
-           socket.assigns.assessment_id,
+           socket.assigns.params.selected_assessment_id,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
      )}
@@ -609,13 +591,26 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
-      sort_order:
-        Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
+      sort_order: Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
       sort_by:
         Params.get_atom_param(
           params,
           "sort_by",
-          [:assessment],
+          [
+            :name,
+            :due_date,
+            :max_attempts,
+            :time_limit,
+            :late_submit,
+            :late_start,
+            :scoring,
+            :grace_period,
+            :retake_mode,
+            :feedback_mode,
+            :review_submission,
+            :exceptions_count,
+            :scoring_strategy_id
+          ],
           @default_params.sort_by
         ),
       selected_assessment_id: Params.get_int_param(params, "assessment_id", 0)
@@ -628,8 +623,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       |> filter_by_selected_assessment(params.selected_assessment_id)
       |> sort_by(params.sort_by, params.sort_order)
 
-    {length(student_exceptions),
-     student_exceptions |> Enum.drop(params.offset) |> Enum.take(params.limit),
+    {length(student_exceptions), student_exceptions |> Enum.drop(params.offset) |> Enum.take(params.limit),
      student_exceptions}
   end
 
@@ -638,25 +632,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   defp sort_by(student_exceptions, sort_by, sort_order) do
-    case sort_by do
-      :student ->
-        Enum.sort_by(
-          student_exceptions,
-          fn student_exception ->
-            student_exception.user.name
-          end,
-          sort_order
-        )
-
-      _ ->
-        Enum.sort_by(
-          student_exceptions,
-          fn student_exception ->
-            student_exception.user.name
-          end,
-          sort_order
-        )
-    end
+    Enum.sort_by(student_exceptions, fn se -> Map.get(se, sort_by) end, sort_order)
   end
 
   defp update_params(%{sort_by: current_sort_by, sort_order: current_sort_order} = params, %{
@@ -697,8 +673,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         ]
       end)
 
-    assessment_student_exceptions =
-      filter_by_selected_assessment(student_exceptions, selected_assessment.resource_id)
+    assessment_student_exceptions = filter_by_selected_assessment(student_exceptions, selected_assessment.resource_id)
 
     Enum.reduce(assessment_student_exceptions, 0, fn se, acc ->
       acc +
@@ -724,8 +699,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     |> String.slice(0, 16)
   end
 
-  defp update_liveview_student_exceptions(action, student_exceptions) do
-    send(self(), {:student_exception, action, student_exceptions})
+  defp update_liveview_student_exceptions(action, student_exceptions, update_sort_order) do
+    send(self(), {:student_exception, action, student_exceptions, update_sort_order})
   end
 
   defp decode_target(params, context) do

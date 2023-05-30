@@ -46,7 +46,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       socket
       |> assign(
         params: params,
-        active_tab: :settings
+        active_tab: :settings,
+        update_sort_order: true
       )
 
     {:noreply, socket}
@@ -58,7 +59,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       socket
       |> assign(
         params: params,
-        active_tab: :student_exceptions
+        active_tab: :student_exceptions,
+        update_sort_order: true
       )
 
     {:noreply, socket}
@@ -67,8 +69,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   @impl true
   def render(assigns) do
     ~H"""
-      <div class="container mx-auto my-4">
-        <div class="flex">
+      <div class="mx-auto my-4">
+        <div class="flex mx-10">
           <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
             role="tablist">
 
@@ -110,6 +112,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             params={@params}
             section={@section}
             context={@context}
+            update_sort_order={@update_sort_order}
           />
         <% else %>
         <.live_component
@@ -148,7 +151,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   end
 
   @impl true
-  def handle_info({:assessment_updated, updated_assessment}, socket) do
+  def handle_info({:assessment_updated, updated_assessment, update_sort_order}, socket) do
     updated_assessments =
       socket.assigns.assessments
       |> Enum.into([], fn assessment ->
@@ -159,11 +162,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
     {:noreply,
      socket
-     |> assign(assessments: updated_assessments)}
+     |> assign(
+       assessments: updated_assessments,
+       update_sort_order: update_sort_order
+     )}
   end
 
   @impl true
-  def handle_info({:student_exception, action, student_exceptions}, socket)
+  def handle_info({:student_exception, action, student_exceptions, update_sort_order}, socket)
       when is_list(student_exceptions) do
     updated_student_exceptions =
       case action do
@@ -190,7 +196,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
     {:noreply,
      socket
-     |> assign(student_exceptions: updated_student_exceptions, assessments: updated_assessments)}
+     |> assign(
+       student_exceptions: updated_student_exceptions,
+       assessments: updated_assessments,
+       update_sort_order: update_sort_order
+     )}
   end
 
   defp update_assessments_students_exception_count(assessments, student_exceptions) do

@@ -7,7 +7,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   def new(assessments, section_slug, context) do
     column_specs = [
       %ColumnSpec{
-        name: :assessment,
+        name: :name,
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
         th_class: "pl-10 instructor_dashboard_th sticky left-0 bg-white z-10",
@@ -20,7 +20,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :attempts,
+        name: :max_attempts,
         label: "# ATTEMPTS",
         render_fn: &__MODULE__.render_attempts_column/3,
         th_class: "instructor_dashboard_th"
@@ -44,7 +44,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :scoring,
+        name: :scoring_strategy_id,
         label: "SCORING",
         render_fn: &__MODULE__.render_scoring_column/3,
         th_class: "instructor_dashboard_th"
@@ -62,19 +62,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :view_feedback,
+        name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :view_answers,
+        name: :review_submission,
         label: "VIEW ANSWERS",
         render_fn: &__MODULE__.render_view_answers_column/3,
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :exceptions,
+        name: :exceptions_count,
         label: "EXCEPTIONS",
         render_fn: &__MODULE__.render_exceptions_column/3,
         th_class: "instructor_dashboard_th"
@@ -94,10 +94,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   end
 
   def render_assessment_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{assessment: assessment.name})
+    assigns = Map.merge(assigns, %{name: assessment.name})
 
     ~H"""
-      <div class="pl-9 pr-4"><%= @assessment %></div>
+      <div class="pl-9 pr-4"><%= @name %></div>
     """
   end
 
@@ -119,12 +119,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   end
 
   def render_attempts_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{attempts: assessment.max_attempts, id: assessment.resource_id})
+    assigns =
+      Map.merge(assigns, %{max_attempts: assessment.max_attempts, id: assessment.resource_id})
 
     ~H"""
       <div class="relative">
-        <input class="mr-3 w-28" type="number" min="0" value={@attempts} phx-debounce={300} name={"max_attempts-#{@id}"} />
-        <%= if @attempts == 0 do %>
+        <input class="mr-3 w-28" type="number" min="0" value={@max_attempts} phx-debounce={300} name={"max_attempts-#{@id}"} />
+        <%= if @max_attempts == 0 do %>
           <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
         <% end %>
       </div>
@@ -169,13 +170,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
   def render_scoring_column(assigns, assessment, _) do
     assigns =
-      Map.merge(assigns, %{scoring: assessment.scoring_strategy_id, id: assessment.resource_id})
+      Map.merge(assigns, %{
+        scoring_strategy_id: assessment.scoring_strategy_id,
+        id: assessment.resource_id
+      })
 
     ~H"""
-      <select class="torus-select pr-32" name={"scoring_strategy_id-#{@id}"}>
-        <option selected={@scoring == 1} value={1}>Average</option>
-        <option selected={@scoring == 2} value={2}>Best</option>
-        <option selected={@scoring == 3} value={3}>Last</option>
+      <select class="torus-select pr-32" name={"scoring_strategy_id-#{@id}"} id={"scoring_strategy_id-#{@id}"}>
+        <option selected={@scoring_strategy_id == 1} value={1}>Average</option>
+        <option selected={@scoring_strategy_id == 2} value={2}>Best</option>
+        <option selected={@scoring_strategy_id == 3} value={3}>Last</option>
       </select>
     """
   end
@@ -203,13 +207,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
   def render_view_feedback_column(assigns, assessment, _) do
     assigns =
-      Map.merge(assigns, %{view_feedback: assessment.feedback_mode, id: assessment.resource_id})
+      Map.merge(assigns, %{feedback_mode: assessment.feedback_mode, id: assessment.resource_id})
 
     ~H"""
       <select class="torus-select pr-32" name={"feedback_mode-#{@id}"}>
-        <option selected={@view_feedback == :allow} value={:allow}>Allow</option>
-        <option selected={@view_feedback == :disallow} value={:disallow}>Disallow</option>
-        <option selected={@view_feedback == :scheduled} value={:scheduled}>Scheduled</option>
+        <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
+        <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
+        <option selected={@feedback_mode == :scheduled} value={:scheduled}>Scheduled</option>
       </select>
     """
   end
@@ -217,14 +221,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   def render_view_answers_column(assigns, assessment, _) do
     assigns =
       Map.merge(assigns, %{
-        view_answers: assessment.review_submission,
+        review_submission: assessment.review_submission,
         id: assessment.resource_id
       })
 
     ~H"""
       <select class="torus-select pr-32" name={"review_submission-#{@id}"}>
-        <option selected={@view_answers == :allow} value={:allow}>Allow</option>
-        <option selected={@view_answers == :disallow} value={:disallow}>Disallow</option>
+        <option selected={@review_submission == :allow} value={:allow}>Allow</option>
+        <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
       </select>
     """
   end

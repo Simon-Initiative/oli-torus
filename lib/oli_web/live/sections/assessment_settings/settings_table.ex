@@ -21,23 +21,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   prop(params, :map, required: true)
   prop(section, :map, required: true)
   prop(context, :map, required: true)
+  prop(update_sort_order, :boolean, required: true)
 
   data(flash, :map)
   data(table_model, :map)
   data(modal_assigns, :map)
   data(total_count, :integer)
+  data(form_id, :string)
   data(bulk_apply_selected_assessment_id, :integer)
 
   @default_params %{
     offset: 0,
     limit: 10,
     sort_order: :asc,
-    sort_by: :assessment,
+    sort_by: :name,
     text_search: nil
   }
 
   def mount(socket) do
     {:ok, assign(socket, modal_assigns: %{show: false})}
+  end
+
+  def update(%{update_sort_order: false} = _assigns, socket) do
+    {:ok, socket}
   end
 
   def update(assigns, socket) do
@@ -65,6 +71,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        section: assigns.section,
        context: assigns.context,
        assessments: assigns.assessments,
+       form_id: UUID.uuid4(),
        bulk_apply_selected_assessment_id: hd(assigns.assessments).resource_id
      )}
   end
@@ -103,7 +110,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           />
         </form>
       </div>
-      <form for="settings_table" phx-target={@myself} phx-change="update_setting">
+      <form id={"form-#{@form_id}"} for="settings_table" phx-target={@myself} phx-change="update_setting">
         <PagedTable
           table_model={@table_model}
           total_count={@total_count}
@@ -410,10 +417,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
              |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
 
           {:ok, _section_resource} ->
-            {:noreply,
-             socket
-             |> update_assessments(assessment_setting_id, [{key, new_value}])
-             |> flash_to_liveview(:info, "Setting updated!")}
+            {
+              :noreply,
+              socket
+              |> update_assessments(assessment_setting_id, [{key, new_value}], false)
+              |> flash_to_liveview(:info, "Setting updated!")
+            }
         end
 
       _ ->
@@ -485,23 +494,43 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            [
              {:feedback_scheduled_date, utc_datetime},
              {:feedback_mode, :scheduled}
-           ]
+           ],
+           false
          )
          |> flash_to_liveview(:info, "Setting updated!")
          |> assign(modal_assigns: %{show: false})}
     end
   end
 
-  defp update_assessments(socket, assessment_setting_id, key_value_list) do
-    updated_assessment =
-      Enum.find(socket.assigns.table_model.rows, fn assessment ->
-        assessment.resource_id == assessment_setting_id
+  defp update_assessments(socket, assessment_setting_id, key_value_list, update_sort_order) do
+    {updated_assessment, updated_assessments} =
+      Enum.reduce(socket.assigns.assessments, {nil, []}, fn assessment, acc ->
+        {current_assesment, current_assessments} = acc
+
+        if assessment.resource_id == assessment_setting_id do
+          updated_assessment = assessment |> Map.merge(Map.new(key_value_list))
+
+          {updated_assessment, [updated_assessment | current_assessments]}
+        else
+          {current_assesment, [assessment | current_assessments]}
+        end
       end)
-      |> Map.merge(Map.new(key_value_list))
 
-    send(self(), {:assessment_updated, updated_assessment})
+    updated_rows =
+      Enum.reduce(socket.assigns.table_model.rows, [], fn row, acc ->
+        if row.resource_id == assessment_setting_id do
+          [updated_assessment | acc]
+        else
+          [row | acc]
+        end
+      end)
+      |> Enum.reverse()
 
-    socket
+    updated_table_model = Map.merge(socket.assigns.table_model, %{rows: updated_rows})
+
+    send(self(), {:assessment_updated, updated_assessment, update_sort_order})
+
+    assign(socket, assessments: updated_assessments, table_model: updated_table_model)
   end
 
   defp decode_target(params, context) do
@@ -550,7 +579,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         Params.get_atom_param(
           params,
           "sort_by",
-          [:assessment],
+          [
+            :name,
+            :due_date,
+            :max_attempts,
+            :time_limit,
+            :late_submit,
+            :late_start,
+            :scoring,
+            :grace_period,
+            :retake_mode,
+            :feedback_mode,
+            :review_submission,
+            :exceptions_count,
+            :scoring_strategy_id
+          ],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search)
@@ -579,26 +622,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   defp sort_by(assessments, sort_by, sort_order) do
-    # TODO set other sort options
-    case sort_by do
-      :assessment ->
-        Enum.sort_by(
-          assessments,
-          fn assessment ->
-            assessment.name
-          end,
-          sort_order
-        )
-
-      _ ->
-        Enum.sort_by(
-          assessments,
-          fn assessment ->
-            assessment.name
-          end,
-          sort_order
-        )
-    end
+    Enum.sort_by(assessments, fn a -> Map.get(a, sort_by) end, sort_order)
   end
 
   defp update_params(
