@@ -101,8 +101,6 @@ defmodule OliWeb.ResourceController do
     # chrome, we actually render a page with the crome and an iframe inside it that
     # renders the equivalent of the full screen content.
     activity_types = Activities.activities_for_project(project)
-    IO.puts("🤡🤡🤡🤡")
-    IO.inspect(revision)
 
     put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
     |> render("advanced_page_preview.html",
@@ -149,7 +147,7 @@ defmodule OliWeb.ResourceController do
          author,
          options
        ) do
-    "<iframe width=\"1100\" height=\"860\" src=\"/authoring/project/#{project_slug}/preview_fullscreen/#{revision_slug}\" class=\"advanced-delivery\"></iframe>"
+    "<iframe width=\"1100\" height=\"860\" src=\"/authoring/project/#{project_slug}/preview_fullscreen/#{revision_slug}\" class=\"mx-auto mb-4\"></iframe>"
   end
 
   defp render_content_html(_, project_slug, transformed_content, author, options) do
@@ -176,7 +174,7 @@ defmodule OliWeb.ResourceController do
       nil ->
         render_not_found(conn, project_slug)
 
-      %{content: %{"advancedDelivery" => true}, display_mode: :fullscreen} = revision ->
+      %{content: %{"advancedDelivery" => true, "displayApplicationChrome" => false}} = revision ->
         preview_advanced(conn, author, project, revision)
 
       revision ->

@@ -48,7 +48,9 @@ const slice: Slice<PageState> = createSlice({
       state.resourceId = action.payload.resourceId || initialState.resourceId;
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
 
-      // for now don't need to set advancedAuthoring or advancedDelivery or displayApplicationChrome
+      // for now don't need to set advancedAuthoring or advancedDelivery
+      state.displayApplicationChrome =
+        action.payload.displayApplicationChrome || initialState.displayApplicationChrome;
       state.additionalStylesheets =
         action.payload.additionalStylesheets || initialState.additionalStylesheets;
       state.customCss = action.payload.customCss || initialState.customCss;
@@ -79,6 +81,9 @@ const slice: Slice<PageState> = createSlice({
       }
       if (action.payload.additionalStylesheets !== undefined) {
         state.additionalStylesheets = action.payload.additionalStylesheets;
+      }
+      if (action.payload.displayApplicationChrome !== undefined) {
+        state.displayApplicationChrome = action.payload.displayApplicationChrome;
       }
       /* if (action.payload.revisionSlug !== undefined) {
         state.revisionSlug = action.payload.revisionSlug;
