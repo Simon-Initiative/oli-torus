@@ -131,6 +131,26 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   end
 
   @impl true
+  def handle_event("change_tab", %{"selected_tab" => "student_exceptions"}, socket) do
+    first_assessment_id =
+      if socket.assigns.assessments == [],
+        do: :all,
+        else: hd(socket.assigns.assessments).resource_id
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           socket.assigns.section.slug,
+           "student_exceptions",
+           first_assessment_id
+         )
+     )}
+  end
+
+  @impl true
   def handle_event("change_tab", %{"selected_tab" => selected_tab}, socket) do
     {:noreply,
      push_patch(socket,
