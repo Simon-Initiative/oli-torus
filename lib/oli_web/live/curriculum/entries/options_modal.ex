@@ -10,17 +10,17 @@ defmodule OliWeb.Curriculum.OptionsModal do
   alias Surface.Components.Form
   alias Surface.Components.Form.{TextInput, Label, Field, Select, Inputs, NumberInput}
 
-  prop(redirect_url, :string, required: true)
-  prop(revision, :struct, required: true)
-  prop(changeset, :struct, required: true)
-  prop(project, :struct, required: true)
-  prop(project_hierarchy, :struct, required: true)
-  prop(validate, :event, required: true)
-  prop(submit, :event, required: true)
+  prop redirect_url, :string, required: true
+  prop revision, :struct, required: true
+  prop changeset, :struct, required: true
+  prop project, :struct, required: true
+  prop project_hierarchy, :struct, required: true
+  prop validate, :event, required: true
+  prop submit, :event, required: true
 
-  data(mounted, :boolean, default: false)
-  data(attempt_options, :list, default: [])
-  data(selected_resources, :list, default: [])
+  data mounted, :boolean, default: false
+  data attempt_options, :list, default: []
+  data selected_resources, :list, default: []
 
   def update(assigns, socket) do
     assigns =
@@ -199,24 +199,6 @@ defmodule OliWeb.Curriculum.OptionsModal do
                       id="related-resources-selector"
                       items={@project_hierarchy.children}
                       initial_values={@selected_resources}
-                    />
-                  </Field>
-                </div>
-              {/if}
-              {#if is_adaptive_page?(@revision)}
-                <div class="form-group">
-                  <Label>Display Mode</Label>
-                  <Field name={:display_mode}>
-                    <Select
-                      options={[
-                        {"Full Screen", :fullscreen},
-                        {"With Navigation", :with_nav}
-                      ]}
-                      opts={
-                        aria_describedby: "display mode",
-                        placeholder: "How this page will be displayed to the learner.",
-                        class: "form-control custom-select"
-                      }
                     />
                   </Field>
                 </div>

@@ -41,7 +41,6 @@ defmodule Oli.Resources.Revision do
     field :tags, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
-    field :display_mode, Ecto.Enum, values: [fullscreen: 1, with_nav: 2], default: :fullscreen
 
     # 0 represents "unlimited" attempts
     field :max_attempts, :integer, default: 0
@@ -54,9 +53,7 @@ defmodule Oli.Resources.Revision do
 
     embeds_one :legacy, Oli.Resources.Legacy, on_replace: :delete
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
-
-    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig,
-      on_replace: :delete
+    embeds_one :collab_space_config, Oli.Resources.Collaboration.CollabSpaceConfig, on_replace: :delete
 
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
@@ -100,8 +97,7 @@ defmodule Oli.Resources.Revision do
       :scoring_strategy_id,
       :activity_type_id,
       :purpose,
-      :relates_to,
-      :display_mode
+      :relates_to
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)
