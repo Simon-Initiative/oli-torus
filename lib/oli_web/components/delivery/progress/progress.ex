@@ -24,7 +24,7 @@ defmodule OliWeb.Components.Delivery.Progress do
           student_id: student_id,
           section_slug: section_slug,
           params: params,
-          context: context,
+          ctx: ctx,
           pages: pages
         } = _assigns,
         socket
@@ -38,7 +38,7 @@ defmodule OliWeb.Components.Delivery.Progress do
         rows,
         section_slug,
         student_id,
-        context
+        ctx
       )
 
     table_model =

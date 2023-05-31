@@ -14,14 +14,14 @@ defmodule OliWeb.Progress.StudentView do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Router.Helpers, as: Routes
 
-  data breadcrumbs, :any
-  data title, :string, default: "Student Progress"
-  data section, :any, default: nil
-  data user, :any
-  data text_search, :string
-  data table_model, :struct
-  data resource_accesses, :map
-  data page_nodes, :list
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Student Progress")
+  data(section, :any, default: nil)
+  data(user, :any)
+  data(text_search, :string)
+  data(table_model, :struct)
+  data(resource_accesses, :map)
+  data(page_nodes, :list)
 
   def set_breadcrumbs(type, section, user_id) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -48,7 +48,7 @@ defmodule OliWeb.Progress.StudentView do
         Mount.handle_error(socket, {:error, e})
 
       {:ok, user} ->
-        context = SessionContext.init(session)
+        context = SessionContext.init_live(session)
 
         case Mount.for(section_slug, session) do
           {:error, e} ->

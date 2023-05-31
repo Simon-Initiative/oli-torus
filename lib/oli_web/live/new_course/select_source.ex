@@ -11,13 +11,13 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, RadioButton}
 
-  data sources, :list, default: []
-  data table_model, :struct
-  data total_count, :integer, default: 0
-  data view_type, :atom, default: :card
-  data live_action, :atom
+  data(sources, :list, default: [])
+  data(table_model, :struct)
+  data(total_count, :integer, default: 0)
+  data(view_type, :atom, default: :card)
+  data(live_action, :atom)
 
-  data params, :map,
+  data(params, :map,
     default: %{
       offset: 0,
       limit: 20,
@@ -27,12 +27,13 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       applied_query: "",
       selection: nil
     }
+  )
 
-  prop session, :map, required: true
-  prop on_select, :event, required: true
-  prop on_select_target, :any, required: true
-  prop current_user, :map, required: true
-  prop lti_params, :map, required: true
+  prop(session, :map, required: true)
+  prop(on_select, :event, required: true)
+  prop(on_select_target, :any, required: true)
+  prop(current_user, :map, required: true)
+  prop(lti_params, :map, required: true)
 
   def update(
         %{
@@ -45,7 +46,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         socket
       ) do
     if !socket.assigns[:loaded] do
-      context = SessionContext.init(session)
+      context = SessionContext.init_live(session)
 
       # live_action is :independent_learner, :admin or :lms_instructor
       live_action = session["live_action"]

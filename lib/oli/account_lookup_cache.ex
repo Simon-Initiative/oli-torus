@@ -8,6 +8,8 @@ defmodule Oli.AccountLookupCache do
   use GenServer
 
   alias Phoenix.PubSub
+  alias Oli.Accounts
+  alias Oli.Accounts.{Author, User}
 
   @cache_name :cache_account_lookup
 
@@ -25,6 +27,69 @@ defmodule Oli.AccountLookupCache do
 
   def put(key, value),
     do: GenServer.call(__MODULE__, {:put, key, value})
+
+  @doc """
+  Gets an author from the cache. If the user is not found in the cache, it will be loaded from the database
+  """
+  def get_author(author_id) do
+    case get("author_#{author_id}") do
+      {:ok, %Author{}} = response ->
+        response
+
+      _ ->
+        case Accounts.get_author_with_community_admin_count(author_id) do
+          nil ->
+            {:error, :not_found}
+
+          author ->
+            put("author_#{author_id}", author)
+
+            {:ok, author}
+        end
+    end
+  end
+
+  def get_author!(author_id) do
+    case get_author(author_id) do
+      {:ok, author} ->
+        author
+
+      _ ->
+        raise "Author not found"
+    end
+  end
+
+  @doc """
+  Gets a user from the cache. If the user is not found in the cache, it will be loaded from the database.
+  User is returned preloaded with roles.
+  """
+  def get_user(user_id) do
+    case get("user_#{user_id}") do
+      {:ok, %User{}} = response ->
+        response
+
+      _ ->
+        case Accounts.get_user_with_roles(user_id) do
+          nil ->
+            {:error, :not_found}
+
+          user ->
+            put("user_#{user_id}", user)
+
+            {:ok, user}
+        end
+    end
+  end
+
+  def get_user!(user_id) do
+    case get_user(user_id) do
+      {:ok, user} ->
+        user
+
+      _ ->
+        raise "User not found"
+    end
+  end
 
   # ----------------
   # Server callbacks

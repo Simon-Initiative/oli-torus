@@ -54,7 +54,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        context = SessionContext.init(session)
+        context = SessionContext.init_live(session)
 
         options = default_options(section)
 

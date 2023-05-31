@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
   alias OliWeb.Progress.ResourceTitle
   alias OliWeb.Common.Utils
 
-  def new(rows, section_slug, student_id, context) do
+  def new(rows, section_slug, student_id, ctx) do
     SortableTableModel.new(
       rows: rows,
       column_specs: [
@@ -66,13 +66,13 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
       data: %{
         section_slug: section_slug,
         user_id: student_id,
-        context: context
+        ctx: ctx
       }
     )
   end
 
   def custom_render_date(assigns, row, col_spec) do
-    Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :context))
+    Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :ctx))
   end
 
   def custom_render(assigns, row, %ColumnSpec{name: :title}) do

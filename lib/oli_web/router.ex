@@ -71,6 +71,7 @@ defmodule OliWeb.Router do
     )
 
     plug(Oli.Plugs.SetCurrentUser)
+    plug(OliWeb.Plugs.SessionCtx)
 
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
@@ -84,6 +85,7 @@ defmodule OliWeb.Router do
     )
 
     plug(Oli.Plugs.SetCurrentUser)
+    plug(OliWeb.Plugs.SessionCtx)
   end
 
   # set the layout to be workspace

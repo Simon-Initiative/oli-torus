@@ -17,15 +17,15 @@ defmodule OliWeb.Users.AuthorsView do
     text_search: ""
   }
 
-  prop author, :any
-  data breadcrumbs, :any
-  data title, :string, default: "All Authors"
-  data authors, :list, default: []
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
+  prop(author, :any)
+  data(breadcrumbs, :any)
+  data(title, :string, default: "All Authors")
+  data(authors, :list, default: [])
+  data(tabel_model, :struct)
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: @limit)
+  data(options, :any)
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -52,7 +52,7 @@ defmodule OliWeb.Users.AuthorsView do
         @default_options
       )
 
-    context = SessionContext.init(session)
+    context = SessionContext.init_live(session)
     total_count = SortableTableModel.determine_total(authors)
     {:ok, table_model} = AuthorsTableModel.new(authors, context)
 

@@ -9,15 +9,15 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes
 
-  data title, :string, default: "Community Associate New"
-  data breadcrumbs, :any
+  data(title, :string, default: "Community Associate New")
+  data(breadcrumbs, :any)
 
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
+  data(query, :string, default: "")
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: 20)
+  data(sort, :string, default: "sort")
+  data(page_change, :string, default: "page_change")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -60,7 +60,7 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   end
 
   def mount(%{"community_id" => community_id}, session, socket) do
-    context = SessionContext.init(session)
+    context = SessionContext.init_live(session)
     sources = retrieve_all_sources(community_id)
     {:ok, table_model} = TableModel.new(sources, context)
 

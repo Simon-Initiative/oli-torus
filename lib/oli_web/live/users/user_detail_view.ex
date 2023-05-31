@@ -53,7 +53,7 @@ defmodule OliWeb.Users.UsersDetailView do
         %{"csrf_token" => csrf_token} = session,
         socket
       ) do
-    context = SessionContext.init(session)
+    context = SessionContext.init_live(session)
     user = user_with_platform_roles(user_id)
 
     case user do

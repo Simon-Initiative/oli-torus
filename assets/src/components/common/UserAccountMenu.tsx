@@ -42,8 +42,7 @@ interface UserAccountMenuProps {
   preview: boolean;
   routes: Routes;
   sectionSlug?: string;
-  browserTimezone: string;
-  defaultTimezone: string;
+  selectedTimezone: string;
   timezones: [string, string][];
 }
 
@@ -52,10 +51,18 @@ export const UserAccountMenu = ({
   user,
   routes,
   sectionSlug,
-  browserTimezone,
-  defaultTimezone,
+  selectedTimezone,
   timezones,
 }: UserAccountMenuProps) => {
+  console.log('UserAccountMenu', {
+    preview,
+    user,
+    routes,
+    sectionSlug,
+    selectedTimezone,
+    timezones,
+  });
+
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const csrfToken = (document as any)
@@ -69,6 +76,7 @@ export const UserAccountMenu = ({
       isOpen={isPopoverOpen}
       onClickOutside={() => setIsPopoverOpen(false)}
       positions={['top', 'bottom', 'left', 'right']}
+      containerClassName="flex"
       content={
         <Dropdown>
           <>
@@ -146,9 +154,8 @@ export const UserAccountMenu = ({
                 Timezone
                 <br />
                 <SelectTimezone
-                  selectedTimezone={user.selectedTimezone || defaultTimezone}
+                  selectedTimezone={selectedTimezone}
                   timezones={timezones}
-                  browserTimezone={browserTimezone}
                   submitAction={routes.updateTimezone}
                 />
               </div>
@@ -204,7 +211,7 @@ export const UserAccountMenu = ({
         "
         onClick={() => setIsPopoverOpen(!isPopoverOpen)}
       >
-        <div className="user-icon mr-4">
+        <div className="user-icon mr-4 self-center">
           <UserIcon user={user} />
         </div>
 

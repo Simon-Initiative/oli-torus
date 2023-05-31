@@ -23,23 +23,23 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   @limit 25
 
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Projects"})]
-  data title, :string, default: "Projects"
-  data payments, :list, default: []
+  data(breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Projects"})])
+  data(title, :string, default: "Projects")
+  data(payments, :list, default: [])
 
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data show_all, :boolean, default: true
-  data show_deleted, :boolean, default: false
-  data text_search, :string, default: ""
+  data(tabel_model, :struct)
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: @limit)
+  data(show_all, :boolean, default: true)
+  data(show_deleted, :boolean, default: false)
+  data(text_search, :string, default: "")
 
-  data author, :any
-  data is_admin, :boolean, default: false
+  data(author, :any)
+  data(is_admin, :boolean, default: false)
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = context = SessionContext.init(session)
+    %SessionContext{author: author} = context = SessionContext.init_live(session)
     is_admin = Accounts.is_admin?(author)
 
     show_all =

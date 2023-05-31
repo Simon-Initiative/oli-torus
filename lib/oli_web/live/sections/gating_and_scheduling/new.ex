@@ -23,7 +23,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
             id -> {id, "Create Student Exception"}
           end
 
-        context = SessionContext.init(session)
+        context = SessionContext.init_live(session)
 
         {:ok,
          GatingConditionStore.init(

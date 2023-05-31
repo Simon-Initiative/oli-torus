@@ -316,8 +316,8 @@ defmodule OliWeb.AdminLiveTest do
                last_user.given_name
     end
 
-    test "renders datetimes using the local timezone", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+    test "renders datetimes using the local timezone", map do
+      {:ok, conn: conn, ctx: session_context} = set_timezone(map)
       user = insert(:user, email_confirmed_at: DateTime.utc_now())
 
       {:ok, view, _html} = live(conn, @live_view_users_route)
@@ -332,8 +332,8 @@ defmodule OliWeb.AdminLiveTest do
   describe "user detail" do
     setup [:admin_conn, :create_user]
 
-    test "loads correctly with user data", %{user: user} = context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+    test "loads correctly with user data", %{user: user} = map do
+      {:ok, conn: conn, ctx: session_context} = set_timezone(map)
       {:ok, view, _} = live(conn, live_view_user_detail_route(user.id))
 
       assert has_element?(view, "input[value=\"#{user.sub}\"]")
@@ -649,8 +649,8 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~ "Email Confirmed"
     end
 
-    test "renders datetimes using the local timezone", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+    test "renders datetimes using the local timezone", map do
+      {:ok, conn: conn, ctx: session_context} = set_timezone(map)
 
       author = insert(:author, email_confirmed_at: DateTime.utc_now())
 

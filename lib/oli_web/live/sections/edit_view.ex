@@ -20,13 +20,13 @@ defmodule OliWeb.Sections.EditView do
   alias Surface.Components.Form
   alias Oli.Branding.CustomLabels
 
-  data breadcrumbs, :any
-  data title, :string, default: "Edit Section Details"
-  data section, :any, default: nil
-  data changeset, :any
-  data is_admin, :boolean
-  data brands, :list
-  data labels, :map, default: Map.from_struct(CustomLabels.default())
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Edit Section Details")
+  data(section, :any, default: nil)
+  data(changeset, :any)
+  data(is_admin, :boolean)
+  data(brands, :list)
+  data(labels, :map, default: Map.from_struct(CustomLabels.default()))
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -61,7 +61,7 @@ defmodule OliWeb.Sections.EditView do
 
         {:ok,
          assign(socket,
-           context: SessionContext.init(session),
+           ctx: SessionContext.init_live(session),
            brands: available_brands,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
@@ -80,11 +80,11 @@ defmodule OliWeb.Sections.EditView do
           <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
         </Group>
         <Group label="Schedule" description="Edit the start and end dates for scheduling purposes">
-          <StartEnd id="start_end_editing" changeset={@changeset} disabled={false} is_admin={@is_admin} context={@context}/>
+          <StartEnd id="start_end_editing" changeset={@changeset} disabled={false} is_admin={@is_admin} ctx={@ctx}/>
         </Group>
 
         {#if @section.open_and_free}
-          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
+          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@ctx}/>
         {#else}
           <LtiSettings section={@section}/>
         {/if}

@@ -22,7 +22,7 @@ defmodule OliWeb.StaticPageController do
     |> send_resp(200, "Ok")
   end
 
-  def timezone(conn, %{"local_tz" => browser_timezone}) do
+  def timezone(conn, %{"browser_timezone" => browser_timezone}) do
     conn
     |> put_session("browser_timezone", browser_timezone)
     |> send_resp(200, "Ok")

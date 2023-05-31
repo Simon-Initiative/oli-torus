@@ -1,5 +1,5 @@
 // update server session timezone if timezone has not already been set for this browser session
-const local_tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const browser_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 fetch('/timezone', {
   method: 'post',
@@ -7,12 +7,12 @@ fetch('/timezone', {
     Accept: 'application/json, text/plain, */*',
     'Content-Type': 'application/json',
   },
-  body: JSON.stringify({ local_tz }),
+  body: JSON.stringify({ browser_timezone }),
 })
   .then((_res) => {
-    sessionStorage.setItem('local_tz', local_tz);
-    console.log('local timezone information updated', local_tz);
+    sessionStorage.setItem('browser_timezone', browser_timezone);
+    console.log('local timezone information updated', browser_timezone);
   })
-  .catch((_res) => console.error('failed to update local timezone information', local_tz));
+  .catch((_res) => console.error('failed to update local timezone information', browser_timezone));
 
 export {};

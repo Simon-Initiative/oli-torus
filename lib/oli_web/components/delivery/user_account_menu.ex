@@ -1,40 +1,32 @@
 defmodule OliWeb.Components.Delivery.UserAccountMenu do
   use Phoenix.Component
 
-  import OliWeb.Components.Delivery.Utils
   import PhoenixLiveReact
+
+  import OliWeb.Components.Delivery.Utils
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
+  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.React
 
-  attr :current_user, User
-  attr :is_liveview, :boolean, default: false
+  attr(:ctx, SessionContext)
 
   def menu(assigns) do
     assigns = user_account_menu_assigns(assigns)
 
+    # For some reason the react_live_component no longer works here (fails silently)
+    # so for now, just render this component as if it were in a static page - is_liveview: false
+
     ~H"""
-      <div id="menu">
-        <%= if @is_liveview do %>
-          <%= live_react_component("Components.UserAccountMenu", [user: @user,
+      <%= React.component(%SessionContext{@ctx | is_liveview: false }, "Components.UserAccountMenu", %{
+          user: @user,
           preview: @preview,
           routes: @routes,
           sectionSlug: @section_slug,
-          browserTimezone: @browser_timezone,
-          defaultTimezone: @default_timezone,
-          timezones: Enum.map(@timezones, &Tuple.to_list/1)], id: "menu-live-react") %>
-        <% else %>
-          <%= ReactPhoenix.ClientSide.react_component("Components.UserAccountMenu", %{
-            user: @user,
-            preview: @preview,
-            routes: @routes,
-            sectionSlug: @section_slug,
-            browserTimezone: @browser_timezone,
-            defaultTimezone: @default_timezone,
-            timezones: Enum.map(@timezones, &Tuple.to_list/1),
-          }) %>
-        <% end %>
-      </div>
+          selectedTimezone: @selected_timezone,
+          timezones: @timezones,
+        }, id: "menu") %>
     """
   end
 
@@ -42,8 +34,8 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
     assigns
     |> assign(
       :user,
-      case assigns do
-        %{current_user: user_or_admin} when not is_nil(user_or_admin) ->
+      case assigns.ctx do
+        %SessionContext{user: user_or_admin} when not is_nil(user_or_admin) ->
           %{
             picture: user_or_admin.picture,
             name: user_name(user_or_admin),
@@ -84,7 +76,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   def preview_user(assigns) do
     ~H"""
-      <div>
+      <div class="flex">
         <button
           class="
             dropdown-toggle

@@ -5,21 +5,21 @@ defmodule OliWeb.Sections.StartEnd do
   alias Surface.Components.Form.{Field, Label, DateTimeLocalInput, ErrorTag}
   alias OliWeb.Common.FormatDateTime
 
-  prop changeset, :any, required: true
-  prop disabled, :boolean, required: true
-  prop is_admin, :boolean, required: true
-  prop context, :struct, required: true
+  prop(changeset, :any, required: true)
+  prop(disabled, :boolean, required: true)
+  prop(is_admin, :boolean, required: true)
+  prop(ctx, :struct, required: true)
 
   def render(assigns) do
     start_date =
       assigns.changeset
       |> Ecto.Changeset.get_field(:start_date)
-      |> FormatDateTime.convert_datetime(assigns.context)
+      |> FormatDateTime.convert_datetime(assigns.ctx)
 
     end_date =
       assigns.changeset
       |> Ecto.Changeset.get_field(:end_date)
-      |> FormatDateTime.convert_datetime(assigns.context)
+      |> FormatDateTime.convert_datetime(assigns.ctx)
 
     ~F"""
       <div class="form-row mt-4">

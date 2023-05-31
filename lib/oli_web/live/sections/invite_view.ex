@@ -6,14 +6,14 @@ defmodule OliWeb.Sections.InviteView do
   alias Oli.Delivery.Sections.SectionInvites
   alias OliWeb.Sections.Invites.Invitation
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Sections.Mount
 
-  data breadcrumbs, :any
-  data title, :string, default: "Invite Students"
-  data section, :any, default: nil
-  data show_confirm, :boolean, default: false
-  data to_delete, :integer, default: nil
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Invite Students")
+  data(section, :any, default: nil)
+  data(show_confirm, :boolean, default: false)
+  data(to_delete, :integer, default: nil)
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -38,7 +38,6 @@ defmodule OliWeb.Sections.InviteView do
       {type, _, section} ->
         {:ok,
          assign(socket,
-           context: SessionContext.init(session),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            invitations: SectionInvites.list_section_invites(section.id)
@@ -64,7 +63,7 @@ defmodule OliWeb.Sections.InviteView do
     {#if length(@invitations) > 0}
       <div class="list-group">
       {#for invitation <- @invitations}
-        <Invitation id={invitation.id} invitation={invitation} delete="request_delete" {=@context}/>
+        <Invitation id={invitation.id} invitation={invitation} delete="request_delete" {=@ctx}/>
       {/for}
       </div>
     {/if}

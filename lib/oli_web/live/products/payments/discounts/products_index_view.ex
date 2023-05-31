@@ -9,22 +9,24 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Link
 
-  data title, :string, default: "Discounts"
-  data breadcrumbs, :any
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
-  data show_bottom_paging, :boolean, default: false
-  data additional_table_class, :string, default: ""
+  data(title, :string, default: "Discounts")
+  data(breadcrumbs, :any)
+  data(query, :string, default: "")
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: 20)
+  data(sort, :string, default: "sort")
+  data(page_change, :string, default: "page_change")
+  data(show_bottom_paging, :boolean, default: false)
+  data(additional_table_class, :string, default: "")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
   def filter_rows(socket, _, _), do: socket.assigns.discounts
-  def live_path(socket, params), do: Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
+
+  def live_path(socket, params),
+    do: Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
 
   def set_breadcrumbs(product) do
     OliWeb.Products.DetailsView.set_breadcrumbs(product) ++
@@ -40,20 +42,25 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
     case Sections.get_section_by_slug(product_slug) do
       %Section{type: :blueprint} = product ->
         discounts = Paywall.get_product_discounts(product.id)
-        context = SessionContext.init(session)
+        context = SessionContext.init_live(session)
 
         {:ok, table_model} = TableModel.new(discounts, context)
 
-        {:ok, assign(socket,
-          context: context,
-          breadcrumbs: set_breadcrumbs(product),
-          discounts: discounts,
-          table_model: table_model,
-          total_count: length(discounts),
-          product: product
-        )}
+        {:ok,
+         assign(socket,
+           context: context,
+           breadcrumbs: set_breadcrumbs(product),
+           discounts: discounts,
+           table_model: table_model,
+           total_count: length(discounts),
+           product: product
+         )}
 
-      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      _ ->
+        {:ok,
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
     end
   end
 
@@ -91,9 +98,9 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
         {:ok, table_model} = TableModel.new(discounts, socket.assigns.context)
 
         {:noreply,
-          socket
-          |> put_flash(:info, "Discount successfully removed.")
-          |> assign(discounts: discounts, table_model: table_model, total_count: length(discounts))}
+         socket
+         |> put_flash(:info, "Discount successfully removed.")
+         |> assign(discounts: discounts, table_model: table_model, total_count: length(discounts))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Discount couldn't be removed.")}

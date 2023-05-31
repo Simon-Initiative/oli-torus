@@ -119,7 +119,7 @@ defmodule OliWeb.Sections.InviteViewTest do
     end
 
     test "creates an invitation link expiring after one day", %{section: section} = context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
@@ -136,7 +136,7 @@ defmodule OliWeb.Sections.InviteViewTest do
     end
 
     test "creates an invitation link expiring after one week", %{section: section} = context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
@@ -153,7 +153,7 @@ defmodule OliWeb.Sections.InviteViewTest do
     end
 
     test "creates an invitation link expiring when the section starts", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       section = insert(:section_with_dates)
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
@@ -170,7 +170,7 @@ defmodule OliWeb.Sections.InviteViewTest do
     end
 
     test "creates an invitation link expiring when the section ends", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       section = insert(:section_with_dates)
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))

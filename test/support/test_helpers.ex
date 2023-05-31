@@ -2194,7 +2194,7 @@ defmodule Oli.TestHelpers do
   def set_timezone(%{conn: conn}) do
     conn = Plug.Test.init_test_session(conn, %{browser_timezone: "America/New_York"})
 
-    {:ok, conn: conn, context: SessionContext.init(conn)}
+    {:ok, conn: conn, ctx: SessionContext.init(conn)}
   end
 
   def utc_datetime_to_localized_datestring(utc_datetime, timezone) do

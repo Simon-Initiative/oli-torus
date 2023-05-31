@@ -173,7 +173,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         params={@params}
         section_slug={@section.slug}
         student_id={@student.id}
-        context={@context}
+        ctx={@ctx}
         pages={@pages}
       />
     """

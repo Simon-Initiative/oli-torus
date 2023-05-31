@@ -66,7 +66,7 @@ defmodule OliWeb.Resources.PagesView do
       with {:ok, author} <- Accounts.get_author(author_id) |> trap_nil(),
            {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project) do
-        context = SessionContext.init(session)
+        context = SessionContext.init_live(session)
 
         pages =
           PageBrowse.browse_pages(

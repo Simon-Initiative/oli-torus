@@ -109,7 +109,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   end
 
   def assign_defaults(socket, section, session, parent_gate, title, user_type) do
-    context = SessionContext.init(session)
+    context = SessionContext.init_live(session)
 
     rows =
       Gating.browse_gating_conditions(

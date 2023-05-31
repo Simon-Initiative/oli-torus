@@ -2,7 +2,7 @@ defmodule OliWeb.Common.SessionContext do
   @moduledoc """
   Session Context is a common interface for both Conn-based static views and LiveViews.
 
-  This module help bridge the interoperability gap between static views and LiveViews by
+  This module helps to bridge the interoperability gap between static views and LiveViews by
   providing a common abstraction that can be used in both types of views, as opposed to
   directly accessing Plug.Conn or LiveView.Socket.
 
@@ -17,89 +17,102 @@ defmodule OliWeb.Common.SessionContext do
   in LiveViews. The result can then be passed in to a view via assigns.
   """
 
-  alias Oli.Accounts
-  alias Oli.Accounts.Author
-  alias Oli.Accounts.User
+  alias Oli.AccountLookupCache
   alias OliWeb.Common.FormatDateTime
 
   @enforce_keys [
+    :browser_timezone,
     :local_tz,
     :author,
-    :user
+    :user,
+    :is_liveview
   ]
 
   defstruct [
+    :browser_timezone,
     :local_tz,
     :author,
-    :user
+    :user,
+    :is_liveview
   ]
 
   @type t() :: %__MODULE__{
+          browser_timezone: String.t(),
           local_tz: String.t(),
           author: Author.t(),
-          user: User.t()
+          user: User.t(),
+          is_liveview: boolean()
         }
 
   def init() do
     %__MODULE__{
+      browser_timezone: nil,
       local_tz: nil,
       author: nil,
-      user: nil
+      user: nil,
+      is_liveview: false
     }
   end
 
+  @doc """
+  Initialize a SessionContext struct from a Plug.Conn struct. User or Author structs are loaded
+  from the current assigns (previously loaded by set_user plug)
+  """
   def init(%Plug.Conn{assigns: assigns} = conn) do
-    browser_timezone =
-      Plug.Conn.get_session(conn, "browser_timezone") || FormatDateTime.default_timezone()
+    browser_timezone = Plug.Conn.get_session(conn, "browser_timezone")
 
     author = Map.get(assigns, :current_author)
     user = Map.get(assigns, :current_user)
 
     %__MODULE__{
-      local_tz: local_tz(author, user, browser_timezone),
+      browser_timezone: browser_timezone,
+      local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
       author: author,
-      user: user
+      user: user,
+      is_liveview: false
     }
   end
 
-  def init(%{} = session) do
-    browser_timezone = Map.get(session, "browser_timezone", FormatDateTime.default_timezone())
+  @doc """
+  Initialize a SessionContext struct from a LiveView session map. If User or Author structs are
+  given as options (previously loaded by set_user plug), they will be used instead of looking up
+  the user/author from the session map and making a cache lookup/database call.
+  """
+  def init_live(%{} = session, opts \\ []) do
+    browser_timezone = Map.get(session, "browser_timezone")
 
     author =
-      case Map.get(session, "current_author_id") do
-        nil ->
-          nil
+      Keyword.get(
+        opts,
+        :author,
+        case Map.get(session, "current_author_id") do
+          nil ->
+            nil
 
-        author_id ->
-          Accounts.get_author!(author_id)
-      end
+          author_id ->
+            AccountLookupCache.get_author!(author_id)
+        end
+      )
 
     user =
-      case Map.get(session, "current_user_id") do
-        nil ->
-          nil
+      Keyword.get(
+        opts,
+        :user,
+        case Map.get(session, "current_user_id") do
+          nil ->
+            nil
 
-        user_id ->
-          Accounts.get_user!(user_id)
-      end
+          user_id ->
+            AccountLookupCache.get_user!(user_id)
+        end
+      )
 
     %__MODULE__{
-      local_tz: local_tz(author, user, browser_timezone),
+      browser_timezone: browser_timezone,
+      local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
       author: author,
-      user: user
+      user: user,
+      is_liveview: true
     }
-  end
-
-  defp local_tz(author, user, browser_timezone) do
-    cond do
-      not is_nil(author) ->
-        Accounts.get_author_preference(author, :timezone, browser_timezone)
-
-      not is_nil(user) ->
-        Accounts.get_user_preference(user, :timezone, browser_timezone)
-
-      true ->
-        browser_timezone
-    end
   end
 end

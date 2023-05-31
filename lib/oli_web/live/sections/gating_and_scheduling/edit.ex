@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
             %{parent_id: parent_id} -> {parent_id, "Edit Student Exception"}
           end
 
-        context = SessionContext.init(session)
+        context = SessionContext.init_live(session)
 
         {:ok,
          GatingConditionStore.init(
