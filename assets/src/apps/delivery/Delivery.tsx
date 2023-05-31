@@ -132,6 +132,8 @@ const Delivery: React.FC<DeliveryProps> = ({
   }
   const dialogImageUrl = content?.custom?.logoutPanelImageURL;
   const dialogMessage = content?.custom?.logoutMessage;
+  const fullscreen = !content?.displayApplicationChrome;
+
   // this is something SS does...
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
@@ -145,7 +147,11 @@ const Delivery: React.FC<DeliveryProps> = ({
         <RestartLessonDialog onRestart={setInitialPageState} />
       ) : null}
       {isLessonEnded && !reviewMode ? (
-        <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
+        <LessonFinishedDialog
+          imageUrl={dialogImageUrl}
+          message={dialogMessage}
+          hideCloseButton={!fullscreen}
+        />
       ) : null}
       {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
     </div>

@@ -13,14 +13,13 @@ import {
 interface LessonFinishedDialogProps {
   imageUrl?: string;
   message: string;
+  hideCloseButton?: boolean;
 }
 
 const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
   imageUrl,
   message,
-}: {
-  imageUrl: string;
-  message: string;
+  hideCloseButton,
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const isPreviewMode = useSelector(selectPreviewMode);
@@ -109,14 +108,16 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
         }}
       >
         <div className="modal-header" style={{ border: 'none', marginBottom: '50px' }}>
-          <button
-            onClick={handleCloseModalClick}
-            type="button"
-            className="close icon-clear"
-            title="Close feedback window"
-            aria-label="Close feedback window"
-            data-dismiss="modal"
-          />
+          {hideCloseButton || (
+            <button
+              onClick={handleCloseModalClick}
+              type="button"
+              className="close icon-clear"
+              title="Close feedback window"
+              aria-label="Close feedback window"
+              data-dismiss="modal"
+            />
+          )}
         </div>
         <div
           id="lessonFinishedDialogContent"
