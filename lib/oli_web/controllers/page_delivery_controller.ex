@@ -23,6 +23,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.{PageContent, Revision}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.AdaptiveIFrame
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -53,7 +54,8 @@ defmodule OliWeb.PageDeliveryController do
           else
             revision = DeliveryResolver.root_container(section_slug)
 
-            effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+            effective_settings =
+              Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
             next_activities =
               Sections.get_next_activities_for_student(section_slug, user.id)
@@ -286,6 +288,22 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  #
+  def page_fullscreen(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      IO.puts("🤡🤡🤡 Rendering page fullscreen")
+
+      PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
+      |> render_page(conn, section_slug, false, true)
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
@@ -299,17 +317,35 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  @spec render_page_html(any, any) :: any
+  def render_page_html(
+        %{section_slug: section_slug} = context,
+        %{"displayApplicationChrome" => true, "advancedDelivery" => true}
+      ) do
+    # Render the internal page iframe for adaptive delivery within the torus navigation
+    AdaptiveIFrame.delivery(section_slug, context.resource_attempt.revision)
+  end
+
+  def render_page_html(render_context, content) do
+    # Render a basic page content.  This is the default for all pages that do not have
+    # displayApplicationChrome set to true
+    Page.render(render_context, content, Page.Html)
+  end
+
+  defp render_page(context, conn, section_slug, preview_mode, fullscreen \\ false)
+
   defp render_page(
          %PageContext{
            progress_state: :not_started,
            page: page,
            user: user,
            resource_attempts: resource_attempts,
-           effective_settings: effective_settings,
+           effective_settings: effective_settings
          } = context,
          conn,
          section_slug,
-         _
+         _preview_mode,
+         _fullscreeen
        ) do
     section = conn.assigns.section
 
@@ -322,19 +358,33 @@ defmodule OliWeb.PageDeliveryController do
     # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
     # gate that prevents this learning from starting another attempt of this resource
     blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
-    new_attempt_allowed = Oli.Delivery.Settings.new_attempt_allowed(effective_settings, attempts_taken, blocking_gates)
+
+    new_attempt_allowed =
+      Oli.Delivery.Settings.new_attempt_allowed(
+        effective_settings,
+        attempts_taken,
+        blocking_gates
+      )
+
     allow_attempt? = new_attempt_allowed == {:allowed}
 
     message =
       case new_attempt_allowed do
-        {:blocking_gates} -> Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
-        {:no_attempts_remaining} -> "You have no attempts remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
-        {:end_date_passed} -> "The deadline for this assignment has passed."
+        {:blocking_gates} ->
+          Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
+
+        {:no_attempts_remaining} ->
+          "You have no attempts remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
+
+        {:end_date_passed} ->
+          "The deadline for this assignment has passed."
+
         {:allowed} ->
           if effective_settings.max_attempts == 0 do
             "You can take this scored page an unlimited number of times"
           else
             attempts_remaining = effective_settings.max_attempts - attempts_taken
+
             "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
           end
       end
@@ -370,13 +420,13 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       max_attempts: effective_settings.max_attempts,
       effective_settings: effective_settings,
-      requires_password?: effective_settings.password != nil and effective_settings.password != "",
+      requires_password?:
+        effective_settings.password != nil and effective_settings.password != "",
       section: section,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
       resource_slug: context.page.slug,
-
       bib_app_params: %{
         bibReferences: context.bib_revisions
       }
@@ -385,18 +435,24 @@ defmodule OliWeb.PageDeliveryController do
 
   # Advanced / adaptive lesson page rendering
   defp render_page(
-         %PageContext{user: user, page: %{content: %{"advancedDelivery" => true}}} = context,
+         %PageContext{
+           user: user,
+           page: %{
+             content: %{
+               "advancedDelivery" => true,
+               "displayApplicationChrome" => displayApplicationChrome
+             }
+           }
+         } = context,
          conn,
          section_slug,
-         preview_mode
-       ) do
+         preview_mode,
+         fullscreen
+       )
+       when displayApplicationChrome == false or fullscreen do
     section = conn.assigns.section
 
-    layout =
-      case Map.get(context.page.content, "displayApplicationChrome", true) do
-        true -> "page.html"
-        false -> "chromeless.html"
-      end
+    layout = "chromeless.html"
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
 
@@ -471,13 +527,25 @@ defmodule OliWeb.PageDeliveryController do
     })
   end
 
-  defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
+  defp render_page(
+         %PageContext{progress_state: :error},
+         conn,
+         _section_slug,
+         _preview_mode,
+         _fullscreen
+       ) do
     render(conn, "error.html")
   end
 
   # This case handles :in_progress and :revised progress states, in addition to
   # handling ungraded pages and review mode
-  defp render_page(%PageContext{user: user, effective_settings: effective_settings} = context, conn, section_slug, _) do
+  defp render_page(
+         %PageContext{user: user, effective_settings: effective_settings} = context,
+         conn,
+         section_slug,
+         _preview_mode,
+         _fullscreen
+       ) do
     section = conn.assigns.section
 
     # get_section_resource
@@ -545,8 +613,7 @@ defmodule OliWeb.PageDeliveryController do
     }
 
     this_attempt = context.resource_attempts |> hd
-    html = Page.render(render_context, this_attempt.content, Page.Html)
-
+    html = render_page_html(render_context, this_attempt.content)
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
     all_activities = Activities.list_activity_registrations()
@@ -601,7 +668,9 @@ defmodule OliWeb.PageDeliveryController do
         scheduling_type: section_resource.scheduling_type,
         time_limit: effective_settings.time_limit,
         attempt_start_time: resource_attempt.inserted_at |> to_epoch,
-        effective_end_time: Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings) |> to_epoch,
+        effective_end_time:
+          Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings)
+          |> to_epoch,
         end_date: effective_settings.end_date,
         auto_submit: effective_settings.late_submit == :disallow,
         # TODO: implement reading time estimation
@@ -611,6 +680,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp to_epoch(nil), do: nil
+
   defp to_epoch(date_time) do
     date_time
     |> DateTime.to_unix(:second)
@@ -685,7 +755,6 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
-
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
         case conn.assigns.current_user do
@@ -699,7 +768,12 @@ defmodule OliWeb.PageDeliveryController do
             html =
               ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
 
-            effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, conn.assigns.current_user.id)
+            effective_settings =
+              Oli.Delivery.Settings.get_combined_settings(
+                revision,
+                section.id,
+                conn.assigns.current_user.id
+              )
 
             conn
             |> put_root_layout({OliWeb.LayoutView, "page.html"})
@@ -845,10 +919,11 @@ defmodule OliWeb.PageDeliveryController do
 
     html = Page.render(render_context, revision.content, Page.Html)
 
-    effective_settings = case conn.assigns.current_user do
-      nil -> Oli.Delivery.Settings.get_combined_settings(revision, section.id)
-      user -> Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
-    end
+    effective_settings =
+      case conn.assigns.current_user do
+        nil -> Oli.Delivery.Settings.get_combined_settings(revision, section.id)
+        user -> Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+      end
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
@@ -898,28 +973,32 @@ defmodule OliWeb.PageDeliveryController do
     password = Map.get(conn.body_params, "password", nil)
 
     if Sections.is_enrolled?(user.id, section_slug) do
-
       revision = Resolver.from_revision_slug(section_slug, revision_slug)
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
       case effective_settings.password do
-        nil -> do_start_attempt(conn, section, user, revision, effective_settings)
-        "" -> do_start_attempt(conn, section, user, revision, effective_settings)
-        ^password -> do_start_attempt(conn, section, user, revision, effective_settings)
+        nil ->
+          do_start_attempt(conn, section, user, revision, effective_settings)
+
+        "" ->
+          do_start_attempt(conn, section, user, revision, effective_settings)
+
+        ^password ->
+          do_start_attempt(conn, section, user, revision, effective_settings)
+
         _ ->
           conn
           |> put_flash(:error, "Incorrect password")
           |> redirect(to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
-
       end
-
     else
       render(conn, "not_authorized.html")
     end
   end
 
   defp do_start_attempt(conn, section, user, revision, effective_settings) do
-
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
@@ -940,6 +1019,7 @@ defmodule OliWeb.PageDeliveryController do
             redirect(conn,
               to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
             )
+
           {:error, {:end_date_passed}} ->
             redirect(conn,
               to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
@@ -982,7 +1062,6 @@ defmodule OliWeb.PageDeliveryController do
 
     if Oli.Accounts.is_admin?(author) or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
-
       page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
 
       # enforce review_submission
@@ -991,7 +1070,6 @@ defmodule OliWeb.PageDeliveryController do
         {:allow, _} -> render_page(page_context, conn, section_slug, false)
         _ -> render(conn, "not_authorized.html")
       end
-
     else
       render(conn, "not_authorized.html")
     end

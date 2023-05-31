@@ -878,6 +878,7 @@ defmodule OliWeb.Router do
     get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
+    get("/page_fullscreen/:revision_slug", PageDeliveryController, :page_fullscreen)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
     get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 

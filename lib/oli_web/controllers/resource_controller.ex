@@ -11,6 +11,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.PartComponents
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.ResourceType
+  alias Oli.Delivery.AdaptiveIFrame
 
   plug(:fetch_project)
   plug(:authorize_project)
@@ -141,16 +142,16 @@ defmodule OliWeb.ResourceController do
        )
 
   defp render_content_html(
-         %{content: %{"advancedDelivery" => true}, slug: revision_slug},
+         %{content: %{"advancedDelivery" => true}} = revision,
          project_slug,
-         transformed_content,
-         author,
-         options
+         _transformed_content,
+         _author,
+         _options
        ) do
-    "<iframe width=\"1100\" height=\"860\" src=\"/authoring/project/#{project_slug}/preview_fullscreen/#{revision_slug}\" class=\"mx-auto mb-4\"></iframe>"
+    AdaptiveIFrame.preview(project_slug, revision)
   end
 
-  defp render_content_html(_, project_slug, transformed_content, author, options) do
+  defp render_content_html(_revision, project_slug, transformed_content, author, options) do
     PageEditor.render_page_html(project_slug, transformed_content, author, options)
   end
 
