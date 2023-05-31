@@ -441,7 +441,6 @@ defmodule Oli.Delivery.Attempts.Core do
         distinct: true,
         select: r
       )
-      |> Oli.Utils.Database.explain()
       |> Repo.all()
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
