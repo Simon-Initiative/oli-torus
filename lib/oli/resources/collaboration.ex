@@ -430,6 +430,27 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Returns the posts that are pending of approval for a given section.
+
+  ## Examples
+
+      iex> pending_approval_posts("example_section")
+      [%Post{status: :archived}, ...]
+
+      iex> pending_approval_posts("example_section")
+      []
+  """
+  def pending_approval_posts(section_slug) do
+    do_list_posts_in_section_for_instructor(
+      section_slug,
+      0,
+      nil
+    )
+    |> where([p], p.status == :submitted)
+    |> Repo.all()
+  end
+
+  @doc """
   Returns the list of all posts across a section given a certain criteria.
 
   ## Examples
@@ -487,9 +508,15 @@ defmodule Oli.Resources.Collaboration do
     {first_post.count, Enum.map(posts, &Map.delete(&1, :count))}
   end
 
-  defp do_list_posts_in_section_for_instructor(section_slug, offset, limit) do
+  defp do_list_posts_in_section_for_instructor(section_id_or_slug, offset, limit) do
+    section_join =
+      case is_number(section_id_or_slug) do
+        true -> dynamic([_, s], s.id == ^section_id_or_slug)
+        false -> dynamic([_, s], s.slug == ^section_id_or_slug)
+      end
+
     Post
-    |> join(:inner, [p], s in Section, on: s.slug == ^section_slug)
+    |> join(:inner, [p], s in Section, on: ^section_join)
     |> join(:inner, [p], sr in SectionResource,
       on:
         sr.resource_id == p.resource_id and sr.section_id == p.section_id
