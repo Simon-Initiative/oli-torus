@@ -81,27 +81,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     ~F"""
     <div class="mx-10 mb-10 bg-white shadow-sm">
       {modal(@modal_assigns)}
-      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
-        <div class="flex flex-col pl-9 mr-auto">
-          <h4 class="torus-h4">Assessment Settings</h4>
+      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 bg-white">
+        <div class="flex flex-col pl-9">
+          <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>
         </div>
         <form
           for="bulk_apply_settings"
           phx-target={@myself}
           phx-submit="bulk_apply"
-          class="pb-6 ml-9 sm:pb-0 flex space-x-4 items-center"
+          class="ml-9 flex space-x-4 items-center lg:flex-col lg:pb-0 lg:pt-6 lg:items-start lg:space-x-0"
         >
           <label>Copy and apply settings from one assessment to all:</label>
-          <select class="torus-select pr-32" name="assessment_id">
-            {#for assessment <- @assessments}
-              <option
-                selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
-                value={assessment.resource_id}
-              >{assessment.name}</option>
-            {/for}
-          </select>
-          <button type="submit" class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap">Bulk apply</button>
+          <div class="flex lg:space-x-4 lg:mt-2">
+            <select class="torus-select" name="assessment_id">
+              {#for assessment <- @assessments}
+                <option
+                  selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
+                  value={assessment.resource_id}
+                >{assessment.name}</option>
+              {/for}
+            </select>
+            <button type="submit" class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4">Bulk apply</button>
+          </div>
         </form>
         <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 ml-9 sm:pb-0">
           <SearchInput.render
