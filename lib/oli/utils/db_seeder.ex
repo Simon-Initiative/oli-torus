@@ -1267,6 +1267,7 @@ defmodule Oli.Seeder do
     %{
       "advancedDelivery" => true,
       "advancedAuthoring" => true,
+      "displayApplicationChrome" => false,
       "model" => [
         %{
           "id" => "1649184696677",
