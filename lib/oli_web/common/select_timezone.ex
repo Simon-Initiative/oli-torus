@@ -27,7 +27,7 @@ defmodule OliWeb.Common.SelectTimezone do
 
     timezones =
       [
-        {"Use Browser Timezone (#{browser_timezone})", nil}
+        {"Use Browser Timezone (#{browser_timezone})", "browser"}
         | Enum.map(Tzdata.zone_list(), fn tz ->
             {tz, tz}
           end)

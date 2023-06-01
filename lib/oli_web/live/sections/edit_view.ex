@@ -102,12 +102,12 @@ defmodule OliWeb.Sections.EditView do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.context)
+    params = convert_dates(params, socket.assigns.ctx)
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
   def handle_event("save", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.context)
+    params = convert_dates(params, socket.assigns.ctx)
 
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
@@ -143,9 +143,9 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
-  defp convert_dates(params, context) do
-    utc_start_date = FormatDateTime.datestring_to_utc_datetime(params["start_date"], context)
-    utc_end_date = FormatDateTime.datestring_to_utc_datetime(params["end_date"], context)
+  defp convert_dates(params, ctx) do
+    utc_start_date = FormatDateTime.datestring_to_utc_datetime(params["start_date"], ctx)
+    utc_end_date = FormatDateTime.datestring_to_utc_datetime(params["end_date"], ctx)
 
     params
     |> Map.put("start_date", utc_start_date)

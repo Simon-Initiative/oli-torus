@@ -8,18 +8,18 @@ defmodule OliWeb.PublisherLive.IndexView do
   alias Oli.Inventories
   alias Surface.Components.Link
 
-  data title, :string, default: "Publishers"
-  data breadcrumbs, :any
+  data(title, :string, default: "Publishers")
+  data(breadcrumbs, :any)
 
-  data filter, :any, default: %{}
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
-  data show_bottom_paging, :boolean, default: false
-  data additional_table_class, :string, default: ""
+  data(filter, :any, default: %{})
+  data(query, :string, default: "")
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: 20)
+  data(sort, :string, default: "sort")
+  data(page_change, :string, default: "page_change")
+  data(show_bottom_paging, :boolean, default: false)
+  data(additional_table_class, :string, default: "")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -46,10 +46,10 @@ defmodule OliWeb.PublisherLive.IndexView do
   end
 
   def mount(_, session, socket) do
-    context = SessionContext.init_live(session)
+    ctx = SessionContext.init_live(session)
     publishers = Inventories.list_publishers()
 
-    {:ok, table_model} = TableModel.new(publishers, context)
+    {:ok, table_model} = TableModel.new(publishers, ctx)
 
     {:ok,
      assign(socket,

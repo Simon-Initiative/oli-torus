@@ -11,7 +11,7 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
     """
   end
 
-  def new(sections, user, context) do
+  def new(sections, user, ctx) do
     SortableTableModel.new(
       rows: sections,
       column_specs: [
@@ -59,7 +59,7 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context,
+        ctx: ctx,
         user: user
       }
     )
@@ -74,13 +74,13 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
 
       _ ->
         ~F"""
-          <span>{Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :context))}</span>
+          <span>{Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :ctx))}</span>
         """
     end
   end
 
   def custom_render_date(assigns, row, col_spec) do
-    Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :context))
+    Utils.render_relative_date(row, col_spec.name, Map.get(assigns, :ctx))
   end
 
   def render_title_column(assigns, row, _col_spec) do

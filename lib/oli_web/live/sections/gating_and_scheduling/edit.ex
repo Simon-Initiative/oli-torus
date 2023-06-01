@@ -26,14 +26,14 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
             %{parent_id: parent_id} -> {parent_id, "Edit Student Exception"}
           end
 
-        context = SessionContext.init_live(session)
+        ctx = SessionContext.init_live(session)
 
         {:ok,
          GatingConditionStore.init(
            socket,
            __MODULE__,
            section,
-           context,
+           ctx,
            title,
            parent_gate_id,
            user_type,
@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
     <div class="container">
       <h3>{@title}</h3>
 
-      <Form id="new_gating_contition" section={@section} gating_condition={@gating_condition} parent_gate={@parent_gate} count_exceptions={@count_exceptions} create_or_update={:update} {=@context}/>
+      <Form id="new_gating_contition" section={@section} gating_condition={@gating_condition} parent_gate={@parent_gate} count_exceptions={@count_exceptions} create_or_update={:update} {=@ctx}/>
     </div>
     """
   end

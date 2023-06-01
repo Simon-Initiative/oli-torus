@@ -104,8 +104,8 @@ defmodule OliWeb.Products.ProductsView do
   defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket, session) do
     total_count = length(products)
 
-    context = SessionContext.init_live(session)
-    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, context)
+    ctx = SessionContext.init_live(session)
+    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
 
     published? =
       case project do

@@ -1,8 +1,6 @@
 defmodule OliWeb.Components.Delivery.UserAccountMenu do
   use Phoenix.Component
 
-  import PhoenixLiveReact
-
   import OliWeb.Components.Delivery.Utils
 
   alias OliWeb.Router.Helpers, as: Routes

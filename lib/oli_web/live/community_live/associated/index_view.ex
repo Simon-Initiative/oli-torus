@@ -43,14 +43,14 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   end
 
   def mount(%{"community_id" => community_id}, session, socket) do
-    context = SessionContext.init_live(session)
+    ctx = SessionContext.init_live(session)
 
     associations = Groups.list_community_visibilities(community_id)
-    {:ok, table_model} = TableModel.new(associations, context, :id, "remove")
+    {:ok, table_model} = TableModel.new(associations, ctx, :id, "remove")
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        breadcrumbs: breadcrumb(community_id),
        associations: associations,
        community_id: community_id,
@@ -94,7 +94,7 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
     case Groups.delete_community_visibility(id) do
       {:ok, _community_visibility} ->
         associations = Groups.list_community_visibilities(socket.assigns.community_id)
-        {:ok, table_model} = TableModel.new(associations, socket.assigns.context, :id, "remove")
+        {:ok, table_model} = TableModel.new(associations, socket.assigns.ctx, :id, "remove")
 
         socket =
           put_flash(socket, :info, "Association successfully removed.")

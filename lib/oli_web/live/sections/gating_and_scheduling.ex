@@ -109,7 +109,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   end
 
   def assign_defaults(socket, section, session, parent_gate, title, user_type) do
-    context = SessionContext.init_live(session)
+    ctx = SessionContext.init_live(session)
 
     rows =
       Gating.browse_gating_conditions(
@@ -125,12 +125,12 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
     total_count = determine_total(rows)
 
-    {:ok, table_model} = TableModel.new(context, rows, section, is_nil(parent_gate))
+    {:ok, table_model} = TableModel.new(ctx, rows, section, is_nil(parent_gate))
 
     socket
     |> assign(
       title: title,
-      context: context,
+      ctx: ctx,
       section: section,
       breadcrumbs: set_breadcrumbs(section, parent_gate, user_type),
       table_model: table_model,

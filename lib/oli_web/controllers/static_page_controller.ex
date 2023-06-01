@@ -65,9 +65,17 @@ defmodule OliWeb.StaticPageController do
       }) do
     redirect_to = validate_path(conn, redirect_to)
 
+    # "browser" is a special value which means "use the browser's timezone"
+    # internally, this is the default and is represented as nil in the user's preferences
+    timezone =
+      case timezone do
+        "browser" -> nil
+        _ -> timezone
+      end
+
     conn =
-      with {:ok, conn} <- maybe_update_author(conn, timezone),
-           {:ok, conn} <- maybe_update_user(conn, timezone) do
+      with {:ok, conn} <- maybe_update_author_preference(conn, :timezone, timezone),
+           {:ok, conn} <- maybe_update_user_preference(conn, :timezone, timezone) do
         put_flash(conn, :info, "Timezone updated successfully.")
       else
         {:error, _} ->
@@ -80,23 +88,31 @@ defmodule OliWeb.StaticPageController do
   defp validate_path(_, "/" <> _ = path), do: path
   defp validate_path(conn, _), do: Routes.static_page_path(conn, :index)
 
-  defp maybe_update_author(%Plug.Conn{assigns: %{current_author: author}} = conn, timezone)
+  defp maybe_update_author_preference(
+         %Plug.Conn{assigns: %{current_author: author}} = conn,
+         key,
+         value
+       )
        when not is_nil(author) do
-    case Accounts.set_author_preference(author, :timezone, timezone) do
+    case Accounts.set_author_preference(author, key, value) do
       {:ok, _} -> {:ok, conn}
       {:error, error} -> {:error, error}
     end
   end
 
-  defp maybe_update_author(conn, _timezone), do: {:ok, conn}
+  defp maybe_update_author_preference(conn, _key, _value), do: {:ok, conn}
 
-  defp maybe_update_user(%Plug.Conn{assigns: %{current_user: user}} = conn, timezone)
+  defp maybe_update_user_preference(
+         %Plug.Conn{assigns: %{current_user: user}} = conn,
+         key,
+         value
+       )
        when not is_nil(user) do
-    case Accounts.set_user_preference(user, :timezone, timezone) do
+    case Accounts.set_user_preference(user, key, value) do
       {:ok, _} -> {:ok, conn}
       {:error, error} -> {:error, error}
     end
   end
 
-  defp maybe_update_user(conn, _timezone), do: {:ok, conn}
+  defp maybe_update_user_preference(conn, _key, _value), do: {:ok, conn}
 end

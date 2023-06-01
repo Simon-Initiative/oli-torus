@@ -47,7 +47,6 @@ interface NavbarProps {
   preview: boolean;
   routes: Routes;
   sectionSlug: string;
-  selectedTimezone: string;
   timezones: [string, string][];
 }
 
@@ -63,7 +62,6 @@ export const Navbar = ({
   preview,
   routes,
   sectionSlug,
-  selectedTimezone,
   timezones,
 }: NavbarProps) => {
   const [showNavbar, setShowNavbar] = useState(false);
@@ -163,7 +161,6 @@ export const Navbar = ({
             user={user}
             routes={routes}
             sectionSlug={sectionSlug}
-            selectedTimezone={selectedTimezone}
             timezones={timezones}
           />
         </div>

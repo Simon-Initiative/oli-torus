@@ -14,6 +14,7 @@ defmodule Oli.Plugs.SetCurrentUser do
     |> set_author
     |> set_user
     |> set_user_token
+    |> update_ctx
   end
 
   def set_author(conn) do
@@ -65,5 +66,17 @@ defmodule Oli.Plugs.SetCurrentUser do
         token = Phoenix.Token.sign(conn, "user socket", user.sub)
         assign(conn, :user_token, token)
     end
+  end
+
+  defp update_ctx(conn) do
+    conn
+    |> assign(
+      :ctx,
+      OliWeb.Common.SessionContext.set_user_author(
+        conn.assigns.ctx,
+        conn.assigns.current_user,
+        conn.assigns.current_author
+      )
+    )
   end
 end

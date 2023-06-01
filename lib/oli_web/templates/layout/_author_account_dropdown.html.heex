@@ -18,8 +18,8 @@
     data-bs-toggle="dropdown"
     aria-expanded="false">
     <div class="user block lg:inline-block lg:mt-0 text-grey-darkest no-underline mr-4">
-      <div class="username"><%= @current_author.name %></div>
-      <div class={"role text-right #{author_role_color(@current_author)}"}><%= author_role_text @current_author %></div>
+      <div class="username"><%= @ctx.author.name %></div>
+      <div class={"role text-right #{author_role_color(@ctx.author)}"}><%= author_role_text @ctx.author %></div>
     </div>
     <div class="user-icon"><%= author_icon(assigns) %></div>
 

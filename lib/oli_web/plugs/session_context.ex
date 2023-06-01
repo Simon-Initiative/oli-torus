@@ -1,4 +1,4 @@
-defmodule OliWeb.Plugs.SessionCtx do
+defmodule OliWeb.Plugs.SessionContext do
   import Plug.Conn
 
   alias OliWeb.Common.SessionContext

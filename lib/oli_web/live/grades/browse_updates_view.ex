@@ -54,7 +54,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        context = SessionContext.init_live(session)
+        ctx = SessionContext.init_live(session)
 
         options = default_options(section)
 
@@ -67,11 +67,11 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
 
         total_count = determine_total(updates)
 
-        {:ok, table_model} = UpdatesTableModel.new(updates, context)
+        {:ok, table_model} = UpdatesTableModel.new(updates, ctx)
 
         {:ok,
          assign(socket,
-           context: context,
+           ctx: ctx,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,

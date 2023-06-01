@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.SectionsView do
   end
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = context = SessionContext.init_live(session)
+    %SessionContext{author: author} = ctx = SessionContext.init_live(session)
 
     sections =
       Browse.browse_sections(
@@ -58,11 +58,11 @@ defmodule OliWeb.Sections.SectionsView do
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(context, sections)
+    {:ok, table_model} = SectionsTableModel.new(ctx, sections)
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        breadcrumbs: set_breadcrumbs(),
        author: author,
        sections: sections,

@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         socket
       ) do
     if !socket.assigns[:loaded] do
-      context = SessionContext.init_live(session)
+      ctx = SessionContext.init_live(session)
 
       # live_action is :independent_learner, :admin or :lms_instructor
       live_action = session["live_action"]
@@ -54,7 +54,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       sources = retrieve_all_sources(live_action, %{user: current_user, lti_params: lti_params})
 
       {total_count, table_model} =
-        OliWeb.Delivery.NewCourse.TableModel.new(sources, context)
+        OliWeb.Delivery.NewCourse.TableModel.new(sources, ctx)
         |> elem(1)
         |> get_table_model_and_count(sources, socket.assigns.params)
 

@@ -48,7 +48,7 @@ defmodule OliWeb.Progress.StudentView do
         Mount.handle_error(socket, {:error, e})
 
       {:ok, user} ->
-        context = SessionContext.init_live(session)
+        ctx = SessionContext.init_live(session)
 
         case Mount.for(section_slug, session) do
           {:error, e} ->
@@ -82,11 +82,11 @@ defmodule OliWeb.Progress.StudentView do
               end)
 
             {:ok, table_model} =
-              StudentTabelModel.new(page_nodes, resource_accesses, section, user, context)
+              StudentTabelModel.new(page_nodes, resource_accesses, section, user, ctx)
 
             {:ok,
              assign(socket,
-               context: context,
+               ctx: ctx,
                text_search: "",
                table_model: table_model,
                page_nodes: page_nodes,
@@ -117,7 +117,7 @@ defmodule OliWeb.Progress.StudentView do
         socket.assigns.resource_accesses,
         socket.assigns.section,
         socket.assigns.user,
-        socket.assigns.context
+        socket.assigns.ctx
       )
 
     # Updating from params is what will apply the sort
@@ -143,7 +143,7 @@ defmodule OliWeb.Progress.StudentView do
 
   def render(assigns) do
     ~F"""
-      <div>
+      <div class="container mx-auto mb-5">
         <h3>Progress Details for {name(@user)}</h3>
         <TextSearch id="text_search" text={@text_search}/>
         <div class="mt-4"/>

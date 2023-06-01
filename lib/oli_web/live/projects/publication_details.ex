@@ -4,7 +4,7 @@ defmodule OliWeb.Projects.PublicationDetails do
   alias OliWeb.Common.Utils
 
   prop active_publication_changes, :any, required: true
-  prop context, :struct, required: true
+  prop ctx, :struct, required: true
   prop has_changes, :boolean, required: true
   prop latest_published_publication, :any, required: true
   prop parent_pages, :map, required: true
@@ -37,11 +37,11 @@ defmodule OliWeb.Projects.PublicationDetails do
           <h6 class="my-3"><strong>This project has not been published yet</strong></h6>
         {#match {false, _}}
           <h6 class="my-3">
-            Published <strong>{Utils.render_date(@latest_published_publication, :published, @context)}</strong>.
+            Published <strong>{Utils.render_date(@latest_published_publication, :published, @ctx)}</strong>.
             There are <strong>no changes</strong> since the latest publication.
           </h6>
         {#match {true, changes}}
-          <div class="my-3">Last published <strong>{Utils.render_date(@latest_published_publication, :published, @context)}</strong>.
+          <div class="my-3">Last published <strong>{Utils.render_date(@latest_published_publication, :published, @ctx)}</strong>.
           There {if change_count(changes) == 1 do "is" else "are" end} <strong>{change_count(changes)}</strong> pending {if change_count(changes) == 1 do "change" else "changes" end} since last publish:</div>
           {#for {status, %{revision: revision}}  <- Map.values(changes)}
             <div class="flex items-center my-2">

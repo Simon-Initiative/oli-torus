@@ -5,7 +5,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Link
 
-  def new(discounts, context) do
+  def new(discounts, ctx) do
     SortableTableModel.new(
       rows: discounts,
       column_specs: [
@@ -39,7 +39,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -53,10 +53,9 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
 
   def sort_value_column(sort_order, sort_spec) do
     {fn
-      %{type: :percentage} = item -> %{value: item.percentage}
-      %{type: :fixed_amount} = item -> %{value: item.amount}
-    end,
-    ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+       %{type: :percentage} = item -> %{value: item.percentage}
+       %{type: :fixed_amount} = item -> %{value: item.amount}
+     end, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
   def render_actions_column(assigns, item, _) do

@@ -42,7 +42,6 @@ interface UserAccountMenuProps {
   preview: boolean;
   routes: Routes;
   sectionSlug?: string;
-  selectedTimezone: string;
   timezones: [string, string][];
 }
 
@@ -51,18 +50,8 @@ export const UserAccountMenu = ({
   user,
   routes,
   sectionSlug,
-  selectedTimezone,
   timezones,
 }: UserAccountMenuProps) => {
-  console.log('UserAccountMenu', {
-    preview,
-    user,
-    routes,
-    sectionSlug,
-    selectedTimezone,
-    timezones,
-  });
-
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const csrfToken = (document as any)
@@ -154,26 +143,26 @@ export const UserAccountMenu = ({
                 Timezone
                 <br />
                 <SelectTimezone
-                  selectedTimezone={selectedTimezone}
+                  selectedTimezone={user.selectedTimezone}
                   timezones={timezones}
                   submitAction={routes.updateTimezone}
                 />
               </div>
             </DropdownItem>
 
-            <hr className="dropdown-divider" />
-
             {(user.isIndependentLearner || user.isIndependentInstructor) && (
               <>
+                <hr className="dropdown-divider" />
+
                 <DropdownItem>
                   <a href={routes.openAndFreeIndex} className="py-1 block w-full">
                     My Courses
                   </a>
                 </DropdownItem>
-
-                <hr className="dropdown-divider" />
               </>
             )}
+
+            <hr className="dropdown-divider" />
 
             <DropdownItem>
               <a

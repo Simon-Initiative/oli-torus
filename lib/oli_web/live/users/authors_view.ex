@@ -52,9 +52,9 @@ defmodule OliWeb.Users.AuthorsView do
         @default_options
       )
 
-    context = SessionContext.init_live(session)
+    ctx = SessionContext.init_live(session)
     total_count = SortableTableModel.determine_total(authors)
-    {:ok, table_model} = AuthorsTableModel.new(authors, context)
+    {:ok, table_model} = AuthorsTableModel.new(authors, ctx)
 
     {:ok,
      assign(socket,

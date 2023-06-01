@@ -20,13 +20,13 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug}, session, socket) do
-    context = SessionContext.init_live(session)
+    ctx = SessionContext.init_live(session)
     project = Course.get_project_by_slug(project_slug)
 
     {:ok, alternatives} =
       ResourceEditor.list(
         project.slug,
-        context.author,
+        ctx.author,
         @alternatives_type_id
       )
 
@@ -38,9 +38,9 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        project: project,
-       author: context.author,
+       author: ctx.author,
        can_add_decision_point: can_add_decision_point,
        title: "Alternatives | " <> project.title,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives"})],

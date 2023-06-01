@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         socket,
         module,
         section,
-        context,
+        ctx,
         title,
         parent_gate_id,
         user_type,
@@ -96,7 +96,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     socket
     |> assign(
       parent_gate: parent_gate,
-      context: context,
+      ctx: ctx,
       count_exceptions: count_exceptions(parent_gate_id, gating_condition_id),
       title: title,
       section: section,
@@ -128,12 +128,12 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   defp count_exceptions(_, _), do: nil
 
   def handle_event("show-user-picker", _, socket) do
-    %{section: section, context: context} = socket.assigns
+    %{section: section, ctx: ctx} = socket.assigns
 
     modal_assigns = %{
       id: "select_user",
       section: section,
-      context: context,
+      ctx: ctx,
       on_select: "select_user",
       on_cancel: "cancel_select_user"
     }
@@ -464,10 +464,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     %{
       gating_condition: %{data: data} = gating_condition,
-      context: context
+      ctx: ctx
     } = socket.assigns
 
-    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, context)
+    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, ctx)
     data = Map.put(data, :start_datetime, utc_datetime)
 
     {:noreply, assign(socket, gating_condition: %{gating_condition | data: data})}
@@ -480,10 +480,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     %{
       gating_condition: %{data: data} = gating_condition,
-      context: context
+      ctx: ctx
     } = socket.assigns
 
-    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, context)
+    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, ctx)
     data = Map.put(data, :end_datetime, utc_datetime)
 
     {:noreply, assign(socket, gating_condition: %{gating_condition | data: data})}

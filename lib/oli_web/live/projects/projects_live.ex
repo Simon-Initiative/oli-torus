@@ -39,7 +39,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   data(is_admin, :boolean, default: false)
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = context = SessionContext.init_live(session)
+    %SessionContext{author: author} = ctx = SessionContext.init_live(session)
     is_admin = Accounts.is_admin?(author)
 
     show_all =
@@ -60,14 +60,14 @@ defmodule OliWeb.Projects.ProjectsLive do
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(context, projects)
+    {:ok, table_model} = TableModel.new(ctx, projects)
 
     total_count = determine_total(projects)
 
     {:ok,
      assign(
        socket,
-       context: context,
+       ctx: ctx,
        author: author,
        projects: projects,
        table_model: table_model,

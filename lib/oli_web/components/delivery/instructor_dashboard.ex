@@ -14,7 +14,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
   attr(:preview_mode, :boolean, default: false)
-  attr(:view, :atom, required: true)
+  attr(:view, :atom, default: nil)
 
   def main_layout(assigns) do
     ~H"""
@@ -143,7 +143,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   attr(:section, Section)
   attr(:preview_mode, :boolean, default: false)
   attr(:socket_or_conn, :any, required: true)
-  attr(:view, :atom, required: true)
+  attr(:view, :atom)
 
   def header(assigns) do
     ~H"""

@@ -1,6 +1,6 @@
 defmodule OliWeb.Common.SessionContext do
   @moduledoc """
-  Session Context is a common interface for both Conn-based static views and LiveViews.
+  Session Context (`ctx`) is a common interface for both Conn-based static views and LiveViews.
 
   This module helps to bridge the interoperability gap between static views and LiveViews by
   providing a common abstraction that can be used in both types of views, as opposed to
@@ -19,6 +19,7 @@ defmodule OliWeb.Common.SessionContext do
 
   alias Oli.AccountLookupCache
   alias OliWeb.Common.FormatDateTime
+  alias Oli.Accounts.{User, Author}
 
   @enforce_keys [
     :browser_timezone,
@@ -114,5 +115,15 @@ defmodule OliWeb.Common.SessionContext do
       user: user,
       is_liveview: true
     }
+  end
+
+  def set_user_author(%__MODULE__{} = ctx, user, author) do
+    ctx
+    |> Map.put(:user, user)
+    |> Map.put(:author, author)
+    |> Map.put(
+      :local_tz,
+      FormatDateTime.tz_preference_or_default(author, user, ctx.browser_timezone)
+    )
   end
 end

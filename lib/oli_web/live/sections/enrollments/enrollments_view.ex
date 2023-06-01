@@ -56,14 +56,13 @@ defmodule OliWeb.Sections.EnrollmentsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        context = SessionContext.init_live(session)
+        ctx = SessionContext.init_live(session)
 
-        %{total_count: total_count, table_model: table_model} =
-          enrollment_assigns(section, context)
+        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section, ctx)
 
         {:ok,
          assign(socket,
-           context: context,
+           ctx: ctx,
            changeset: Sections.change_section(section),
            breadcrumbs: set_breadcrumbs(type, section),
            is_admin: type == :admin,
@@ -170,12 +169,11 @@ defmodule OliWeb.Sections.EnrollmentsView do
   end
 
   def handle_event("unenroll", %{"id" => user_id}, socket) do
-    %{section: section, context: context} = socket.assigns
+    %{section: section, ctx: ctx} = socket.assigns
 
     case Sections.unenroll_learner(user_id, section.id) do
       {:ok, _} ->
-        %{total_count: total_count, table_model: table_model} =
-          enrollment_assigns(section, context)
+        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section, ctx)
 
         {:noreply, assign(socket, total_count: total_count, table_model: table_model)}
 
@@ -192,7 +190,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
     ])
   end
 
-  def enrollment_assigns(section, context) do
+  def enrollment_assigns(section, ctx) do
     enrollments =
       Sections.browse_enrollments_with_context_roles(
         section,
@@ -205,7 +203,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
 
     total_count = determine_total(enrollments)
 
-    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
+    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, ctx)
 
     %{total_count: total_count, table_model: table_model}
   end

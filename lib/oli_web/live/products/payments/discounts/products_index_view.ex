@@ -42,13 +42,13 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
     case Sections.get_section_by_slug(product_slug) do
       %Section{type: :blueprint} = product ->
         discounts = Paywall.get_product_discounts(product.id)
-        context = SessionContext.init_live(session)
+        ctx = SessionContext.init_live(session)
 
-        {:ok, table_model} = TableModel.new(discounts, context)
+        {:ok, table_model} = TableModel.new(discounts, ctx)
 
         {:ok,
          assign(socket,
-           context: context,
+           ctx: ctx,
            breadcrumbs: set_breadcrumbs(product),
            discounts: discounts,
            table_model: table_model,
@@ -95,7 +95,7 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
     case Paywall.delete_discount(discount) do
       {:ok, _discount} ->
         discounts = Paywall.get_product_discounts(socket.assigns.product.id)
-        {:ok, table_model} = TableModel.new(discounts, socket.assigns.context)
+        {:ok, table_model} = TableModel.new(discounts, socket.assigns.ctx)
 
         {:noreply,
          socket

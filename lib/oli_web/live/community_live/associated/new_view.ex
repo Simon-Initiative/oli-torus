@@ -60,13 +60,13 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   end
 
   def mount(%{"community_id" => community_id}, session, socket) do
-    context = SessionContext.init_live(session)
+    ctx = SessionContext.init_live(session)
     sources = retrieve_all_sources(community_id)
-    {:ok, table_model} = TableModel.new(sources, context)
+    {:ok, table_model} = TableModel.new(sources, ctx)
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        breadcrumbs: breadcrumb(community_id),
        sources: sources,
        table_model: table_model,
@@ -117,7 +117,7 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
     case Groups.create_community_visibility(attrs) do
       {:ok, _community_visibility} ->
         sources = retrieve_all_sources(socket.assigns.community_id)
-        {:ok, table_model} = TableModel.new(sources, socket.assigns.context)
+        {:ok, table_model} = TableModel.new(sources, socket.assigns.ctx)
 
         socket =
           put_flash(socket, :info, "Association to #{type} successfully added.")

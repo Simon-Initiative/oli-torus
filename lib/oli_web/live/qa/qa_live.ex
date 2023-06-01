@@ -22,7 +22,7 @@ defmodule OliWeb.Qa.QaLive do
         %{"current_author_id" => _} = session,
         socket
       ) do
-    context = SessionContext.init_live(session)
+    ctx = SessionContext.init_live(session)
     project = Course.get_project_by_slug(project_slug)
 
     subscribe(project.slug)
@@ -30,7 +30,7 @@ defmodule OliWeb.Qa.QaLive do
     {:ok,
      assign(
        socket,
-       State.initialize_state(context, project, read_current_review(project))
+       State.initialize_state(ctx, project, read_current_review(project))
      )}
   end
 
@@ -159,7 +159,7 @@ defmodule OliWeb.Qa.QaLive do
         <div class="grid grid-cols-12 mt-4">
           <div class="col-span-12">
             <p class="mb-3">
-              Last reviewed <strong><%= Utils.render_date(hd(@qa_reviews), :inserted_at, @context) %></strong>,
+              Last reviewed <strong><%= Utils.render_date(hd(@qa_reviews), :inserted_at, @ctx) %></strong>,
               with <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %> found.
             </p>
             <%= if !Enum.empty?(@warnings_by_type) do %>

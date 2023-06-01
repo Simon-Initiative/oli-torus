@@ -60,7 +60,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             Mount.handle_error(socket, {:error, e})
 
           {type, _, section} ->
-            context = SessionContext.init_live(session)
+            ctx = SessionContext.init_live(session)
             resource_access = get_resource_access(resource_id, section_slug, user_id)
 
             changeset =
@@ -82,7 +82,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
             {:ok,
              assign(socket,
-               context: context,
+               ctx: ctx,
                changeset: changeset,
                breadcrumbs: set_breadcrumbs(type, section, user_id),
                section: section,
@@ -177,7 +177,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
       {/if}
       <Group label="Attempt History" description="">
-        <AttemptHistory revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} {=@context}/>
+        <AttemptHistory revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} {=@ctx}/>
       </Group>
     </Groups>
     {#if @show_confirm}

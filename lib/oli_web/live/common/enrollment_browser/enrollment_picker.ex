@@ -19,7 +19,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
   }
 
   prop section, :any, default: nil
-  prop context, :any
+  prop ctx, :struct
   data table_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
@@ -28,13 +28,13 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
 
   def update(assigns, socket) do
     %{total_count: total_count, table_model: table_model} =
-      enrollment_assigns(assigns.section, assigns.context)
+      enrollment_assigns(assigns.section, assigns.ctx)
 
     {:ok,
      assign(socket,
        id: assigns.id,
        section: assigns.section,
-       context: assigns.context,
+       ctx: assigns.ctx,
        total_count: total_count,
        table_model: table_model,
        options: @default_options
@@ -137,7 +137,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
     ])
   end
 
-  def enrollment_assigns(section, context) do
+  def enrollment_assigns(section, ctx) do
     enrollments =
       Sections.browse_enrollments(
         section,
@@ -147,7 +147,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
       )
 
     total_count = determine_total(enrollments)
-    {:ok, table_model} = TableModel.new(enrollments, section, context)
+    {:ok, table_model} = TableModel.new(enrollments, section, ctx)
 
     %{total_count: total_count, table_model: table_model}
   end
