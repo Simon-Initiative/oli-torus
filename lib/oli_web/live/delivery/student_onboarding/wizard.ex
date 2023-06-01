@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     introduction_step = %Step{
       title: "Introduction",
       description:
-        "Welcome to Chemistry 101! Here's what you can expect during this set up process.",
+        "Welcome to #{section.title}! Here's what you can expect during this set up process.",
       render_fn: &render_step/1,
       data: %{},
       next_button_label:
@@ -65,7 +65,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
     exploration_step = %Step{
       title: "Explorations",
-      description: "An introduction to Explorations -- real world chemistry applications.",
+      description: "An introduction to Explorations -- real world applications.",
       render_fn: &render_step/1,
       data: %{},
       next_button_label: @course_label,
