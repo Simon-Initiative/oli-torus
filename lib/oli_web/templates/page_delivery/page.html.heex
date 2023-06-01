@@ -76,7 +76,7 @@ window.userToken = "<%= assigns[:user_token] %>";
   OLI.initActivityBridge('eventIntercept');
 </script>
 
-<%= if @graded && @activity_count > 0 && @review_mode == false do %>
+<%= if @graded && @activity_count > 0 && @review_mode == false && @adaptive == false do %>
   <div class="d-flex align-items-center justify-content-center">
     <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'submit_answers')"}>
       Submit Answers
@@ -85,7 +85,7 @@ window.userToken = "<%= assigns[:user_token] %>";
 <% end %>
 
 
-<%= if @graded == false && @activity_count > 0 && @review_mode == false && not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
+<%= if @graded == false && @activity_count > 0 && @review_mode == false && not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) && @adaptive == false do %>
   <div class="d-flex align-items-center justify-content-center">
     <button id="reset_answers" class="btn btn-link btn-sm text-center" onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'reset_answers')"}>
       <i class="fa-solid fa-rotate-right mr-2"></i> Reset Answers
