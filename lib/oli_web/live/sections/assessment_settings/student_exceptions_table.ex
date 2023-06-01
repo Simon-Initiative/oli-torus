@@ -46,9 +46,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    selected_assessment = Enum.find(assigns.assessments, fn a -> a.resource_id == params.selected_assessment_id end)
+    selected_assessment =
+      Enum.find(assigns.assessments, fn a -> a.resource_id == params.selected_assessment_id end)
 
-    {total_count, rows, assessment_student_exceptions} = apply_filters(assigns.student_exceptions, params)
+    {total_count, rows, assessment_student_exceptions} =
+      apply_filters(assigns.student_exceptions, params)
 
     {:ok, table_model} =
       StudentExceptionsTableModel.new(
@@ -64,14 +66,16 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       Map.merge(table_model, %{
         rows: rows,
         sort_order: params.sort_order,
-        sort_by_spec: Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
+        sort_by_spec:
+          Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
 
     {:ok,
      assign(socket,
        table_model: table_model,
        total_count: total_count,
-       total_exceptions: get_total_exceptions_count(selected_assessment, assigns.student_exceptions),
+       total_exceptions:
+         get_total_exceptions_count(selected_assessment, assigns.student_exceptions),
        params: params,
        section: assigns.section,
        context: assigns.context,
@@ -117,7 +121,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           >Add New</button>
         </div>
       </div>
-      <form id={"form-#{@form_id}"} for="students_exception_table" phx-target={@myself} phx-change="update_student_exception">
+      <form id={"form-#{@form_id}"} for="student_exceptions_table" phx-target={@myself} phx-change="update_student_exception">
         <PagedTable
           table_model={@table_model}
           total_count={@total_count}
@@ -318,7 +322,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         {:noreply, assign(socket, modal_assigns: common_modal_assings)}
 
       "add_student_exception" ->
-        student_with_exceptions = Enum.map(socket.assigns.assessment_student_exceptions, fn se -> se.user_id end)
+        student_with_exceptions =
+          Enum.map(socket.assigns.assessment_student_exceptions, fn se -> se.user_id end)
 
         student_options =
           socket.assigns.students
@@ -591,7 +596,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
-      sort_order: Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
+      sort_order:
+        Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
       sort_by:
         Params.get_atom_param(
           params,
@@ -623,7 +629,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       |> filter_by_selected_assessment(params.selected_assessment_id)
       |> sort_by(params.sort_by, params.sort_order)
 
-    {length(student_exceptions), student_exceptions |> Enum.drop(params.offset) |> Enum.take(params.limit),
+    {length(student_exceptions),
+     student_exceptions |> Enum.drop(params.offset) |> Enum.take(params.limit),
      student_exceptions}
   end
 
@@ -673,7 +680,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         ]
       end)
 
-    assessment_student_exceptions = filter_by_selected_assessment(student_exceptions, selected_assessment.resource_id)
+    assessment_student_exceptions =
+      filter_by_selected_assessment(student_exceptions, selected_assessment.resource_id)
 
     Enum.reduce(assessment_student_exceptions, 0, fn se, acc ->
       acc +

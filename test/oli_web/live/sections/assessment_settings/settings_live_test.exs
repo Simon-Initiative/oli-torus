@@ -223,7 +223,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
     # publish project and resources
     publication =
-      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_revision.resource_id
+      })
 
     insert(:published_resource, %{
       publication: publication,
@@ -383,6 +386,82 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     [section: section]
   end
 
+  defp get_assessments(section_slug, student_exceptions) do
+    DeliveryResolver.graded_pages_revisions_and_section_resources(section_slug)
+    |> Enum.map(fn {rev, sr} ->
+      Settings.combine(rev, sr, nil)
+      |> Map.merge(%{
+        name: rev.title,
+        scheduling_type: sr.scheduling_type,
+        exceptions_count:
+          Enum.count(student_exceptions, fn se ->
+            se.resource_id == rev.resource_id
+          end)
+      })
+    end)
+  end
+
+  defp table_as_list_of_maps(view, tab_name) do
+    keys =
+      case tab_name do
+        :settings ->
+          [
+            :name,
+            :due_date,
+            :max_attempts,
+            :time_limit,
+            :late_submit,
+            :late_start,
+            :scoring_strategy_id,
+            :grace_period,
+            :retake_mode,
+            :feedback_mode,
+            :review_submission,
+            :exceptions_count
+          ]
+
+        :student_exceptions ->
+          [
+            :student,
+            :due_date,
+            :max_attempts,
+            :time_limit,
+            :late_submit,
+            :late_start,
+            :scoring_strategy_id,
+            :grace_period,
+            :retake_mode,
+            :feedback_mode,
+            :review_submission,
+            :exceptions_count
+          ]
+      end
+
+    assessments =
+      view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{.instructor_dashboard_table tbody tr})
+      |> Enum.map(fn row ->
+        Floki.find(row, "td")
+        |> Enum.map(fn data ->
+          case Floki.find(data, "select") do
+            [] ->
+              Floki.text(data)
+
+            select ->
+              Floki.find(select, "option[selected]")
+              |> Floki.text()
+          end
+        end)
+      end)
+
+    Enum.map(assessments, fn a ->
+      Enum.zip(keys, a)
+      |> Enum.into(%{})
+    end)
+  end
+
   describe "user cannot access when is not logged in" do
     setup [:create_section]
 
@@ -401,10 +480,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         live(conn, live_view_overview_route(section.slug, "settings", "all"))
     end
 
-    test "redirects to new session when accessing the student_exceptions view", %{
-      conn: conn,
-      section: section
-    } do
+    test "redirects to new session when accessing the student_exceptions view",
+         %{
+           conn: conn,
+           section: section
+         } do
       section_slug = section.slug
       active_tab = "student_exceptions"
       assessment_id = "all"
@@ -413,7 +493,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fassessment_settings%2F#{active_tab}%2F#{assessment_id}&section=#{section_slug}"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, live_view_overview_route(section.slug, "student_exceptions", "all"))
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
     end
   end
 
@@ -431,12 +514,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert redirected_to(conn, 302) =~ redirect_path
     end
 
-    test "redirects to new session when accessing the student_exceptions view", %{
-      conn: conn
-    } do
+    test "redirects to new session when accessing the student_exceptions view",
+         %{
+           conn: conn
+         } do
       section = insert(:section, %{type: :enrollable})
 
-      conn = get(conn, live_view_overview_route(section.slug, "student_exceptions", "all"))
+      conn =
+        get(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
 
       redirect_path = "/unauthorized"
       assert redirected_to(conn, 302) =~ redirect_path
@@ -451,7 +539,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       user: user
     } do
       section = insert(:section, %{type: :enrollable})
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(user.id, section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
 
       conn = get(conn, live_view_overview_route(section.slug, "settings", "all"))
 
@@ -459,14 +550,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert redirected_to(conn, 302) =~ redirect_path
     end
 
-    test "redirects to new session when accessing the student_exceptions view", %{
-      conn: conn,
-      user: user
-    } do
+    test "redirects to new session when accessing the student_exceptions view",
+         %{
+           conn: conn,
+           user: user
+         } do
       section = insert(:section, %{type: :enrollable})
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = get(conn, live_view_overview_route(section.slug, "student_exceptions", "all"))
+      Sections.enroll(user.id, section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      conn =
+        get(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
 
       redirect_path = "/unauthorized"
       assert redirected_to(conn, 302) =~ redirect_path
@@ -493,7 +592,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> Floki.find(~s{.instructor_dashboard_table tbody tr})
         |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
 
-      assert view |> has_element?("p", "These are your current assessment settings.")
+      assert view
+             |> has_element?("p", "These are your current assessment settings.")
+
       assert assessment_1 == page_1.title
       assert assessment_2 == page_2.title
       assert assessment_3 == page_3.title
@@ -505,7 +606,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       section: section
     } do
       {:ok, view, _html} =
-        live(conn, live_view_overview_route(section.slug, "student_exceptions", "all"))
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
 
       assert view
              |> has_element?(
@@ -515,7 +619,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     end
   end
 
-  describe "settings tab assessments" do
+  describe "settings tab" do
     setup [:user_conn, :create_project]
 
     test "gets a correct exception count", %{
@@ -547,7 +651,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
-        table_assessments_as_list_of_maps(view)
+        table_as_list_of_maps(view, :settings)
 
       assert assessment_1.exceptions_count =~ "4"
       assert assessment_2.exceptions_count =~ "3"
@@ -555,12 +659,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4.exceptions_count =~ "1"
     end
 
-    test "exception count links to corresponding student exceptions for that assessment", %{
-      conn: conn,
-      section: section,
-      student_1: student_1,
-      page_1: page_1
-    } do
+    test "exception count links to corresponding student exceptions for that assessment",
+         %{
+           conn: conn,
+           section: section,
+           student_1: student_1,
+           page_1: page_1
+         } do
       set_student_exception(section, page_1.resource, student_1)
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
@@ -583,16 +688,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                )
     end
 
-    test "changing an assessment setting updates that record on the DB and on the UI", %{
-      conn: conn,
-      section: section,
-      page_1: page_1
-    } do
+    test "changing an assessment setting updates that record on the DB and on the UI",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       page_1_assessment_settings =
         get_assessments(section.slug, [])
-        |> Enum.find(fn assessment -> assessment.resource_id == page_1.resource.id end)
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
+        end)
 
       assert page_1_assessment_settings.late_submit == :allow
 
@@ -605,7 +713,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       updated_page_1_assessment_settings =
         get_assessments(section.slug, [])
-        |> Enum.find(fn assessment -> assessment.resource_id == page_1.resource.id end)
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
+        end)
 
       assert view
              |> has_element?("div .alert-info", "Setting updated!")
@@ -613,11 +723,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert updated_page_1_assessment_settings.late_submit == :disallow
     end
 
-    test "clicking on bulk apply button shows the confirm modal for the selected assessment", %{
-      conn: conn,
-      section: section,
-      page_2: page_2
-    } do
+    test "clicking on bulk apply button shows the confirm modal for the selected assessment",
+         %{
+           conn: conn,
+           section: section,
+           page_2: page_2
+         } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       refute element(view, "#confirm_bulk_apply_modal")
@@ -644,7 +755,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
-        table_assessments_as_list_of_maps(view)
+        table_as_list_of_maps(view, :settings)
 
       assert assessment_1.late_submit == "Allow"
       assert assessment_2.late_submit == "Allow"
@@ -676,7 +787,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
-        table_assessments_as_list_of_maps(view)
+        table_as_list_of_maps(view, :settings)
 
       assert assessment_1.late_submit == "Disallow"
       assert assessment_2.late_submit == "Disallow"
@@ -700,8 +811,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
          } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      [initial_assessment_1, initial_assessment_2, initial_assessment_3, initial_assessment_4] =
-        table_assessments_as_list_of_maps(view)
+      [
+        initial_assessment_1,
+        initial_assessment_2,
+        initial_assessment_3,
+        initial_assessment_4
+      ] = table_as_list_of_maps(view, :settings)
 
       # open bulk apply modal for page 3
       view
@@ -719,8 +834,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       refute element(view, "#confirm_bulk_apply_modal")
              |> has_element?()
 
-      [final_assessment_1, final_assessment_2, final_assessment_3, final_assessment_4] =
-        table_assessments_as_list_of_maps(view)
+      [
+        final_assessment_1,
+        final_assessment_2,
+        final_assessment_3,
+        final_assessment_4
+      ] = table_as_list_of_maps(view, :settings)
 
       assert initial_assessment_1 == final_assessment_1
       assert initial_assessment_2 == final_assessment_2
@@ -739,7 +858,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> form(~s{form[for="search"]})
       |> render_change(%{"assessment_name" => "Page 3"})
 
-      assessments = table_assessments_as_list_of_maps(view)
+      assessments = table_as_list_of_maps(view, :settings)
 
       assert length(assessments) == 1
       assert hd(assessments).name == "Page 3"
@@ -753,13 +872,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
          } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      [initial_a1, initial_a2, initial_a3, initial_a4] = table_assessments_as_list_of_maps(view)
+      [initial_a1, initial_a2, initial_a3, initial_a4] = table_as_list_of_maps(view, :settings)
 
       view
       |> element("th[phx-value-sort_by=name]")
       |> render_click()
 
-      [sorted_1, sorted_2, sorted_3, sorted_4] = table_assessments_as_list_of_maps(view)
+      [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
 
       assert initial_a4 == sorted_1
       assert initial_a3 == sorted_2
@@ -778,7 +897,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> element("th[phx-value-sort_by=late_submit]")
       |> render_click()
 
-      [sorted_1, sorted_2, sorted_3, sorted_4] = table_assessments_as_list_of_maps(view)
+      [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
 
       assert initial_a3.name == sorted_1.name
       assert sorted_1.late_submit == "Disallow"
@@ -803,11 +922,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> element("th[phx-value-sort_by=late_submit]")
       |> render_click()
 
-      [sorted_1, sorted_2, sorted_3, sorted_4] = table_assessments_as_list_of_maps(view)
+      [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
 
       # change the late_submit value of the second listed assessment
       second_listed_page =
-        Enum.find([page_1, page_2, page_3, page_4], fn page -> page.title == sorted_2.name end)
+        Enum.find([page_1, page_2, page_3, page_4], fn page ->
+          page.title == sorted_2.name
+        end)
 
       view
       |> form(~s{form[for="settings_table"]})
@@ -817,7 +938,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       })
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
-        table_assessments_as_list_of_maps(view)
+        table_as_list_of_maps(view, :settings)
 
       assert sorted_1 == assessment_1
       assert sorted_2.name == assessment_2.name
@@ -825,59 +946,504 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert sorted_3 == assessment_3
       assert sorted_4 == assessment_4
     end
-  end
 
-  defp get_assessments(section_slug, student_exceptions) do
-    DeliveryResolver.graded_pages_revisions_and_section_resources(section_slug)
-    |> Enum.map(fn {rev, sr} ->
-      Settings.combine(rev, sr, nil)
-      |> Map.merge(%{
-        name: rev.title,
-        scheduling_type: sr.scheduling_type,
-        exceptions_count:
-          Enum.count(student_exceptions, fn se -> se.resource_id == rev.resource_id end)
-      })
-    end)
-  end
+    test "if feedback_mode value is set to :scheduled a model is shown to set the scheduled date",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-  defp table_assessments_as_list_of_maps(view) do
-    keys = [
-      :name,
-      :due_date,
-      :max_attempts,
-      :time_limit,
-      :late_submit,
-      :late_start,
-      :scoring_strategy_id,
-      :grace_period,
-      :retake_mode,
-      :feedback_mode,
-      :review_submission,
-      :exceptions_count
-    ]
-
-    assessments =
-      view
-      |> render()
-      |> Floki.parse_fragment!()
-      |> Floki.find(~s{.instructor_dashboard_table tbody tr})
-      |> Enum.map(fn row ->
-        Floki.find(row, "td")
-        |> Enum.map(fn data ->
-          case Floki.find(data, "select") do
-            [] ->
-              Floki.text(data)
-
-            select ->
-              Floki.find(select, "option[selected]")
-              |> Floki.text()
-          end
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
         end)
-      end)
 
-    Enum.map(assessments, fn a ->
-      Enum.zip(keys, a)
-      |> Enum.into(%{})
-    end)
+      assert page_1_assessment_settings.feedback_mode == :allow
+      assert page_1_assessment_settings.feedback_scheduled_date == nil
+
+      refute has_element?(view, "div[id=scheduled_modal]")
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["feedback_mode-#{page_1.resource.id}"],
+        "feedback_mode-#{page_1.resource.id}" => "scheduled"
+      })
+
+      assert has_element?(view, "div[id=scheduled_modal]")
+    end
+
+    test "an error is shown if the scheduled modal is confirmed without providing a scheduled date",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
+        end)
+
+      assert page_1_assessment_settings.feedback_mode == :allow
+      assert page_1_assessment_settings.feedback_scheduled_date == nil
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["feedback_mode-#{page_1.resource.id}"],
+        "feedback_mode-#{page_1.resource.id}" => "scheduled"
+      })
+
+      view
+      |> form(~s{form[phx-submit=submit_scheduled_date]})
+      |> render_submit()
+
+      assert has_element?(
+               view,
+               ~s{form[phx-submit=submit_scheduled_date] span},
+               "can't be blank"
+             )
+    end
+
+    test "a scheduled date is set when the modal is confirmed and updated in the UI",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
+        end)
+
+      assert page_1_assessment_settings.feedback_mode == :allow
+      assert page_1_assessment_settings.feedback_scheduled_date == nil
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["feedback_mode-#{page_1.resource.id}"],
+        "feedback_mode-#{page_1.resource.id}" => "scheduled"
+      })
+
+      view
+      |> form(~s{form[phx-submit=submit_scheduled_date]})
+      |> render_submit(%{
+        "section_resource" => %{
+          "feedback_scheduled_date" => "2023-05-29T21:50"
+        }
+      })
+
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
+        end)
+
+      [ass_1, _ass_2, _ass_3, _ass_4] = table_as_list_of_maps(view, :settings)
+
+      assert ass_1.feedback_mode == "Scheduled"
+      assert page_1_assessment_settings.feedback_mode == :scheduled
+
+      assert page_1_assessment_settings.feedback_scheduled_date ==
+               ~U[2023-05-29 21:50:00Z]
+    end
+
+    test "feedback_mode value is not set to :scheduled when the modal is cancelled and the modal closes",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
+        end)
+
+      assert page_1_assessment_settings.feedback_mode == :allow
+      assert page_1_assessment_settings.feedback_scheduled_date == nil
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["feedback_mode-#{page_1.resource.id}"],
+        "feedback_mode-#{page_1.resource.id}" => "scheduled"
+      })
+
+      assert has_element?(view, "div[id=scheduled_modal]")
+
+      view
+      |> element(~s{button[id=scheduled_cancel_button]})
+      |> render_click()
+
+      refute has_element?(view, "div[id=scheduled_modal]")
+
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(fn assessment ->
+          assessment.resource_id == page_1.resource.id
+        end)
+
+      assert page_1_assessment_settings.feedback_mode == :allow
+      assert page_1_assessment_settings.feedback_scheduled_date == nil
+    end
+  end
+
+  describe "student exceptions tab" do
+    setup [:user_conn, :create_project]
+
+    test "user can filter by assessment",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           student_1: student_1,
+           student_2: student_2
+         } do
+      set_student_exception(section, page_1.resource, student_1)
+      set_student_exception(section, page_1.resource, student_2)
+      set_student_exception(section, page_2.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
+
+      # select assessment 1
+      view
+      |> form(~s{form[id=assessment_select]})
+      |> render_change(%{"assessments" => %{"assessment_id" => page_1.resource.id}})
+
+      assert [se_1, se_2] = table_as_list_of_maps(view, :student_exceptions)
+      assert se_1.student =~ student_1.name
+      assert se_2.student =~ student_2.name
+      refute render(view) =~ "None exist"
+
+      # select assessment 2
+      view
+      |> form(~s{form[id=assessment_select]})
+      |> render_change(%{"assessments" => %{"assessment_id" => page_2.resource.id}})
+
+      assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
+      assert se_1.student =~ student_1.name
+      refute render(view) =~ "None exist"
+
+      # select assessment 3
+      view
+      |> form(~s{form[id=assessment_select]})
+      |> render_change(%{"assessments" => %{"assessment_id" => page_3.resource.id}})
+
+      assert [] = table_as_list_of_maps(view, :student_exceptions)
+      assert render(view) =~ "None exist"
+    end
+
+    test "the remove button is disbled if no student exception is selected", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
+
+      assert has_element?(
+               view,
+               ~s{button[phx-click=show_modal][disabled=disabled]},
+               "Remove Selected"
+             )
+    end
+
+    test "a student exception can be removed", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      student_1: student_1
+    } do
+      set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      [student_exception] = table_as_list_of_maps(view, :student_exceptions)
+
+      assert student_exception.student =~ student_1.name
+
+      # check the student exception
+      view
+      |> form(~s{form[for="student_exceptions_table"]})
+      |> render_change(%{
+        "_target" => ["checkbox-#{student_1.id}"],
+        "checkbox-#{student_1.id}" => "on"
+      })
+
+      # click the remove button (that has been enabled)
+      view
+      |> element(
+        ~s{button[phx-click=show_modal]},
+        "Remove Selected"
+      )
+      |> render_click()
+
+      # the confirm modal is shown
+      assert has_element?(view, ~s{div[id=confirm_removal_modal]})
+
+      assert element(view, ~s{div[id=confirm_removal_modal]})
+             |> render() =~
+               "Are you sure you want to remove the selected exceptions?"
+
+      # user confirms removal
+      view
+      |> form(~s{form[phx-submit=remove_student_exceptions]})
+      |> render_submit()
+
+      # a flash message confirms the removal and the exception is not listed anymore
+      assert has_element?(
+               view,
+               ~s{div.alert.alert-info},
+               "Student Exception/s removed!"
+             )
+
+      assert table_as_list_of_maps(view, :student_exceptions) == []
+      assert render(view) =~ "None exist"
+    end
+
+    test "a student exception is not removed if the confirm modal is cancelled",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      [initial_student_exception] = table_as_list_of_maps(view, :student_exceptions)
+
+      # check the student exception
+      view
+      |> form(~s{form[for="student_exceptions_table"]})
+      |> render_change(%{
+        "_target" => ["checkbox-#{student_1.id}"],
+        "checkbox-#{student_1.id}" => "on"
+      })
+
+      # click the remove button (that has been enabled)
+      view
+      |> element(
+        ~s{button[phx-click=show_modal]},
+        "Remove Selected"
+      )
+      |> render_click()
+
+      # the confirm modal is shown
+      assert has_element?(view, ~s{div[id=confirm_removal_modal]})
+
+      assert element(view, ~s{div[id=confirm_removal_modal]})
+             |> render() =~
+               "Are you sure you want to remove the selected exceptions?"
+
+      # user cancels removal
+      view
+      |> element(~s{button[id=cancel_removal_button]})
+      |> render_click()
+
+      # modal is hidden and the student exception is still listed
+      [listed_student_exception] = table_as_list_of_maps(view, :student_exceptions)
+
+      refute has_element?(view, ~s{div[id=confirm_removal_modal]})
+      assert initial_student_exception == listed_student_exception
+    end
+
+    test "a student exception can be added",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      assert [] = table_as_list_of_maps(view, :student_exceptions)
+      assert render(view) =~ "None exist"
+
+      view
+      |> element(~s{button[phx-value-modal_name=add_student_exception]}, "Add New")
+      |> render_click()
+
+      # the modal is shown
+      assert has_element?(view, ~s{div[id="add_student_exception_modal"]})
+
+      # student one is selected and the form is submitted
+      view
+      |> form(~s{form[phx-submit=add_student_exception]})
+      |> render_submit(%{"student_exception" => %{"student_id" => student_1.id}})
+
+      assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
+      assert se_1.student =~ student_1.name
+      refute render(view) =~ "None exist"
+    end
+
+    test "the add button is disabled if all students already have an exception for the given assessment",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1,
+           student_2: student_2,
+           student_3: student_3,
+           student_4: student_4
+         } do
+      set_student_exception(section, page_1.resource, student_1)
+      set_student_exception(section, page_1.resource, student_2)
+      set_student_exception(section, page_1.resource, student_3)
+      set_student_exception(section, page_1.resource, student_4)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      assert has_element?(
+               view,
+               ~s{button[disabled=disabled][phx-value-modal_name=add_student_exception]},
+               "Add New"
+             )
+    end
+
+    test "a student exception value can be set",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      [student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
+
+      assert student_exception_1.late_submit == "-"
+
+      view
+      |> form(~s{form[for="student_exceptions_table"]})
+      |> render_change(%{
+        "_target" => ["late_submit-#{student_1.id}"],
+        "late_submit-#{student_1.id}" => "disallow"
+      })
+
+      [updated_student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
+      assert updated_student_exception_1.late_submit == "Disallow"
+      assert student_exception_1.student == updated_student_exception_1.student
+    end
+
+    test "the current exceptions count works correctly",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1,
+           student_2: student_2
+         } do
+      set_student_exception(section, page_1.resource, student_1)
+      set_student_exception(section, page_1.resource, student_2)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      assert has_element?(
+               view,
+               "p",
+               "Current exceptions: 2 students, 0 exceptions"
+             )
+
+      # set an exception for student 1
+      view
+      |> form(~s{form[for="student_exceptions_table"]})
+      |> render_change(%{
+        "_target" => ["late_submit-#{student_1.id}"],
+        "late_submit-#{student_1.id}" => "disallow"
+      })
+
+      assert has_element?(
+               view,
+               "p",
+               "Current exceptions: 2 students, 1 exception"
+             )
+
+      # set an exception for student 2
+      view
+      |> form(~s{form[for="student_exceptions_table"]})
+      |> render_change(%{
+        "_target" => ["late_submit-#{student_2.id}"],
+        "late_submit-#{student_2.id}" => "disallow"
+      })
+
+      assert has_element?(
+               view,
+               "p",
+               "Current exceptions: 2 students, 2 exceptions"
+             )
+    end
   end
 end
