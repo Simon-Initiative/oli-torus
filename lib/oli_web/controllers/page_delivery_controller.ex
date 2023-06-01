@@ -288,7 +288,8 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  #
+  # Route to render adaptive pages in a full screen mode with no torus navigation.
+  # Used within an iframe when the adaptive page is embedded in a torus page.
   def page_fullscreen(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
@@ -615,7 +616,8 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   # Renders an adaptive page fullscreen with no torus nav around it.
-  #   Used in the
+  #   Used in adaptive delivery full screen mode and when displayApplicationChrome is true
+  #   inside an iframe.
   defp render_adaptive_chromeless_page(
          context,
          conn,

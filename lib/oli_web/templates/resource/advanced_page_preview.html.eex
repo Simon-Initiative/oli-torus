@@ -13,10 +13,6 @@
 
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
-<div>
-<%= @app_params.content["displayApplicationChrome"] %>
-
-</div>
 <div id="delivery_container">
   <%= react_component("Components.Delivery", @app_params) %>
 </div>
