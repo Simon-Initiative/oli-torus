@@ -35,7 +35,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   def render(assigns) do
     ~H"""
       <.live_component
-        module={OliWeb.Delivery.CourseContent}
+        module={OliWeb.Components.Delivery.CourseContent}
         id="course_content_tab"
         hierarchy={assigns.hierarchy}
         current_position={assigns.current_position}

@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.CourseContent do
+defmodule OliWeb.Components.Delivery.CourseContent do
   use Phoenix.LiveComponent
 
   alias Oli.Delivery.Metrics
