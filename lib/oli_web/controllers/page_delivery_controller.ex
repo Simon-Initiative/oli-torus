@@ -478,7 +478,11 @@ defmodule OliWeb.PageDeliveryController do
   # This renders the page with navigation and the content inside it. The content might be either
   # core torus content or an iframe pointing to adaptive content which is determined in render_content_html
   def render_page_body(
-        %PageContext{user: user, effective_settings: effective_settings} = context,
+        %PageContext{
+          user: user,
+          effective_settings: effective_settings,
+          page: %{content: content}
+        } = context,
         conn,
         section_slug
       ) do
@@ -558,6 +562,8 @@ defmodule OliWeb.PageDeliveryController do
 
     resource_attempt = hd(context.resource_attempts)
 
+    adaptive = Map.get(content, "advancedDelivery", false)
+
     # For testing, you can uncomment to introduce a time out
     # effective_settings = %{effective_settings | time_limit: 2, late_submit: :disallow}
 
@@ -565,7 +571,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
-        adaptive: false,
+        adaptive: adaptive,
         context: context,
         page: context.page,
         review_mode: context.review_mode,
