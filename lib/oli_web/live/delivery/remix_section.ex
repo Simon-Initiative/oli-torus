@@ -386,7 +386,8 @@ defmodule OliWeb.Delivery.RemixSection do
       selection: [],
       preselected: preselected,
       publications: available_publications,
-      selected_publication: nil
+      selected_publication: nil,
+      active_tab: :curriculum
     }
 
     modal = fn assigns ->
@@ -525,6 +526,14 @@ defmodule OliWeb.Delivery.RemixSection do
             {publication.id, item.revision.resource_id}
           )
     }
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}, socket) do
+    %{modal_assigns: modal_assigns} = socket.assigns
+
+    modal_assigns = Map.put(modal_assigns, :active_tab, String.to_existing_atom(tab_name))
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end

@@ -32,12 +32,14 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   sort_items_fn:          Sorting function applied to items shown. Default is to sort containers first.
   publications:           The list of publications that items can be selected from (used in multi-pub mode)
   selected_publication:   The currently selected publication (used in multi-pub mode)
+  active_tab:             The currently selected tab (:curriculum or :all_pages)
 
   ## Events:
   "HierarchyPicker.update_active", %{"uuid" => uuid}
   "HierarchyPicker.select", %{"uuid" => uuid}
   "HierarchyPicker.select_publication", %{"id" => id}
   "HierarchyPicker.clear_publication", %{"id" => id}
+  "HiearachyPicker.HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}
 
   """
   use Phoenix.LiveComponent
@@ -46,8 +48,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   alias Oli.Resources.Numbering
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Hierarchy.HierarchyNode
-  alias Oli.Publishing.Publications.Publication
-  alias Oli.Authoring.Course.Project
 
   def render(
         %{
@@ -59,15 +59,27 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
     ~H"""
     <div id={@id} class="hierarchy-picker">
-      <div class="hierarchy-navigation">
-        <%= render_breadcrumb assigns %>
-      </div>
-      <div class="hierarchy">
-        <%# filter out the item being moved from the options, sort all containers first  %>
-        <%= for child <- @children |> filter_items(assigns) |> sort_items(assigns) do %>
-          <%= render_child(assigns, child) %>
-        <% end %>
-      </div>
+      <%= if !is_nil(assigns[:selected_publication] || assigns[:active_tab]) do %>
+        <.render_back_to_publications />
+        <div class="flex mb-2">
+          <.render_hierarchy_tab tab_name={:curriculum} tab_label="Curriculum" active_tab={assigns[:active_tab]} />
+          <.render_hierarchy_tab tab_name={:all_pages} tab_label="All pages" active_tab={assigns[:active_tab]} />
+        </div>
+      <% end %>
+
+      <%= if assigns[:active_tab] == :all_pages do %>
+        All pages
+      <% else %>
+        <div class="hierarchy-navigation">
+          <%= render_breadcrumb assigns %>
+        </div>
+        <div class="hierarchy">
+          <%# filter out the item being moved from the options, sort all containers first  %>
+          <%= for child <- @children |> filter_items(assigns) |> sort_items(assigns) do %>
+            <%= render_child(assigns, child) %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
     """
   end
@@ -196,22 +208,12 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       |> assign(:maybe_disabled, maybe_disabled(breadcrumbs))
 
     ~H"""
-      <ol class="breadcrumb custom-breadcrumb p-1 px-2">
-        <%= case assigns[:selected_publication] do %>
-          <% nil -> %>
-
-          <% selected_publication -> %>
-            <div class="border-right border-light">
-              <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication"><i class="fas fa-book"></i> <%= publication_title(selected_publication) %></button>
-            </div>
-        <% end %>
-
-        <button class="btn btn-sm btn-link" {@maybe_disabled} phx-click="HierarchyPicker.update_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="fas fa-arrow-left"></i></button>
-
+      <ol class="flex items-center gap-2 bg-gray-100 p-2 rounded overflow-x-scroll scrollbar-hide">
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <.breadcrumb_item
             breadcrumb={breadcrumb}
             show_short={length(@breadcrumbs) > 3}
+            is_first={index == 0}
             is_last={length(@breadcrumbs) - 1 == index} />
         <% end %>
       </ol>
@@ -220,11 +222,47 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   defp breadcrumb_item(assigns) do
     ~H"""
-    <li class="breadcrumb-item self-center pl-2">
-      <button class="btn btn-xs btn-link px-0" disabled={@is_last} phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
-        <%= get_title(@breadcrumb, @show_short) %>
-      </button>
+    <li class={"flex gap-2 items-center whitespace-nowrap #{if !@is_last, do: "text-gray-400"}"}>
+      <%= case {@is_first, @is_last} do %>
+        <% {true, true} -> %>
+          <div class="h-6">
+            <i class="fa-solid fa-house" />
+          </div>
+        <% {true, false} -> %>
+          <button class="btn btn-link p-0" phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
+            <i class="fa-solid fa-house" />
+          </button>
+          <span>/</span>
+        <% {_, true} -> %>
+          <span><%= get_title(@breadcrumb, @show_short) %></span>
+        <% _ -> %>
+          <button class="btn btn-link p-0" disabled={@is_last} phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
+            <%= get_title(@breadcrumb, @show_short) %>
+          </button>
+          <span>/</span>
+      <% end %>
     </li>
+    """
+  end
+
+  defp render_back_to_publications(assigns) do
+    ~H"""
+      <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication">
+        <i class="fas fa-arrow-left mr-1"></i>
+        Back to publications
+      </button>
+    """
+  end
+
+  defp render_hierarchy_tab(assigns) do
+    ~H"""
+      <button
+        phx-click="HierarchyPicker.update_hierarchy_tab"
+        phx-value-tab_name={@tab_name}
+        class={"py-3 px-2 border-b-4 #{if @active_tab == @tab_name, do: "border-b-delivery-primary", else: "hover:border-b-4 hover:border-b-delivery-primary/25"}"}
+      >
+        <%= @tab_label %>
+      </button>
     """
   end
 
@@ -258,14 +296,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   defp get_title(breadcrumb, true = _show_short), do: breadcrumb.short_title
   defp get_title(breadcrumb, false = _show_short), do: breadcrumb.full_title
-
-  defp publication_title(%Publication{project: %Project{title: title}}) do
-    if String.length(title) > 16 do
-      String.slice(title, 0, 16) <> "..."
-    else
-      title
-    end
-  end
 
   defp resource_link(assigns, %HierarchyNode{
          uuid: uuid,
@@ -337,10 +367,5 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       {type_a, type_b} when type_a == type_b -> true
       _ -> false
     end
-  end
-
-  defp previous_uuid(breadcrumbs) do
-    previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)
-    previous.slug
   end
 end
