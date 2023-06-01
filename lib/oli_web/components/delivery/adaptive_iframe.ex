@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.AdaptiveIFrame do
+defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
   alias OliWeb.Router.Helpers, as: Routes
   @default_height 860
   @default_width 1100

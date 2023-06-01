@@ -11,7 +11,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.PartComponents
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.ResourceType
-  alias Oli.Delivery.AdaptiveIFrame
+  alias OliWeb.Components.Delivery.AdaptiveIFrame
 
   plug(:fetch_project)
   plug(:authorize_project)

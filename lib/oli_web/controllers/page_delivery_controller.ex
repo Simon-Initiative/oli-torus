@@ -23,7 +23,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.{PageContent, Revision}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
-  alias Oli.Delivery.AdaptiveIFrame
+  alias OliWeb.Components.Delivery.AdaptiveIFrame
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
