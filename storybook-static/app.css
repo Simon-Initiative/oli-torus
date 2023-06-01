@@ -4688,6 +4688,10 @@ table.table-striped tbody tr:nth-child(even) {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .grid-cols-5 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -5541,6 +5545,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pl-5 {
   padding-left: 1.25rem;
+}
+
+.pl-8 {
+  padding-left: 2rem;
 }
 
 .pl-9 {
@@ -7175,6 +7183,11 @@ p {
   background-color: rgb(93 141 219 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-delivery-primary-50:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(209 223 245 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-delivery-primary-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
@@ -7329,6 +7342,11 @@ p {
   background-color: rgb(82 82 107 / var(--tw-bg-opacity));
 }
 
+.active\:bg-delivery-primary:active {
+  --tw-bg-opacity: 1;
+  background-color: rgb(59 118 211 / var(--tw-bg-opacity));
+}
+
 .active\:bg-delivery-primary-600:active {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
@@ -7352,6 +7370,11 @@ p {
 .active\:text-delivery-primary-700:active {
   --tw-text-opacity: 1;
   color: rgb(29 68 129 / var(--tw-text-opacity));
+}
+
+.active\:text-white:active {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 .active\:hover\:text-delivery-primary-600:hover:active {
@@ -7380,6 +7403,11 @@ p {
 
 .disabled\:opacity-30:disabled {
   opacity: 0.3;
+}
+
+.group:active .group-active\:text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 .group.collapsed .group-\[\.collapsed\]\:block {
