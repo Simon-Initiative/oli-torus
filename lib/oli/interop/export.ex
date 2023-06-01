@@ -21,6 +21,8 @@ defmodule Oli.Interop.Export do
        tags(resources) ++
        objectives(resources) ++
        activities(resources) ++
+       bib_entries(resources) ++
+       alternatives(resources) ++
        pages(resources))
     |> Utils.zip("export.zip")
   end
@@ -114,7 +116,47 @@ defmodule Oli.Interop.Export do
         unresolvedReferences: [],
         content: r.content,
         objectives: Map.get(r.objectives, "attached", []) |> Enum.map(fn id -> "#{id}" end),
-        isGraded: r.graded
+        isGraded: r.graded,
+        purpose: r.purpose,
+        relatesTo: r.relates_to |> Enum.map(fn id -> "#{id}" end),
+      }
+      |> entry("#{r.resource_id}.json")
+    end)
+  end
+
+  defp bib_entries(resources) do
+    Enum.filter(resources, fn r ->
+      r.resource_type_id == ResourceType.get_id_by_type("bibentry")
+    end)
+    |> Enum.map(fn r ->
+      %{
+        type: "Bibentry",
+        id: Integer.to_string(r.resource_id, 10),
+        originalFile: "",
+        title: r.title,
+        tags: transform_tags(r),
+        unresolvedReferences: [],
+        content: r.content,
+        objectives: []
+      }
+      |> entry("#{r.resource_id}.json")
+    end)
+  end
+
+  defp alternatives(resources) do
+    Enum.filter(resources, fn r ->
+      r.resource_type_id == ResourceType.get_id_by_type("alternatives")
+    end)
+    |> Enum.map(fn r ->
+      %{
+        type: "Alternatives",
+        id: Integer.to_string(r.resource_id, 10),
+        originalFile: "",
+        title: r.title,
+        tags: transform_tags(r),
+        unresolvedReferences: [],
+        content: r.content,
+        objectives: []
       }
       |> entry("#{r.resource_id}.json")
     end)

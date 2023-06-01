@@ -18,7 +18,8 @@ defmodule Oli.Interop.Ingest.Processor do
     BibEntries,
     Hyperlinks,
     PublishedResources,
-    MediaItems
+    MediaItems,
+    Alternatives
   }
 
   def process(%State{} = state) do
@@ -28,6 +29,7 @@ defmodule Oli.Interop.Ingest.Processor do
       |> Project.process()
       |> bulk_allocate_resources
       |> Tags.process()
+      |> Alternatives.process()
       |> Objectives.process()
       |> BibEntries.process()
       |> Activities.process()
