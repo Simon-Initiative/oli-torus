@@ -295,8 +295,6 @@ defmodule OliWeb.PageDeliveryController do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      IO.puts("🤡🤡🤡 Rendering page fullscreen")
-
       PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
       |> render_page(conn, section_slug, false, true)
     else
@@ -317,16 +315,16 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  @spec render_page_html(any, any) :: any
   def render_page_html(
         %{section_slug: section_slug} = context,
-        %{"displayApplicationChrome" => true, "advancedDelivery" => true}
+        %{"displayApplicationChrome" => true, "advancedDelivery" => true} = content,
+        page_slug
       ) do
     # Render the internal page iframe for adaptive delivery within the torus navigation
-    AdaptiveIFrame.delivery(section_slug, context.resource_attempt.revision)
+    AdaptiveIFrame.delivery(section_slug, page_slug, content)
   end
 
-  def render_page_html(render_context, content) do
+  def render_page_html(render_context, content, _page_slug) do
     # Render a basic page content.  This is the default for all pages that do not have
     # displayApplicationChrome set to true
     Page.render(render_context, content, Page.Html)
@@ -613,7 +611,7 @@ defmodule OliWeb.PageDeliveryController do
     }
 
     this_attempt = context.resource_attempts |> hd
-    html = render_page_html(render_context, this_attempt.content)
+    html = render_page_html(render_context, this_attempt.content, context.page.slug)
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
     all_activities = Activities.list_activity_registrations()
@@ -630,6 +628,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        adaptive: true,
         context: context,
         page: context.page,
         review_mode: context.review_mode,

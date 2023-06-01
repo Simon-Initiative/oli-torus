@@ -5,28 +5,28 @@ defmodule Oli.Delivery.AdaptiveIFrame do
   @chrome_height 175
   @chrome_width 150
 
-  defp get_size(revision) do
-    content_height = Map.get(revision.content["custom"], "defaultScreenHeight", @default_height)
-    content_width = Map.get(revision.content["custom"], "defaultScreenWidth", @default_width)
+  defp get_size(content) do
+    content_height = Map.get(content["custom"], "defaultScreenHeight", @default_height)
+    content_width = Map.get(content["custom"], "defaultScreenWidth", @default_width)
 
     {content_width + @chrome_width, content_height + @chrome_height}
   end
 
   def preview(project_slug, revision) do
-    size = get_size(revision)
+    size = get_size(revision.content)
     url = Routes.resource_path(OliWeb.Endpoint, :preview_fullscreen, project_slug, revision.slug)
     iframe(url, size)
   end
 
-  def delivery(section_slug, revision) do
-    size = get_size(revision)
+  def delivery(section_slug, revision_slug, content) do
+    size = get_size(content)
 
     url =
       Routes.page_delivery_path(
         OliWeb.Endpoint,
         :page_fullscreen,
         section_slug,
-        revision.slug
+        revision_slug
       )
 
     iframe(url, size)
