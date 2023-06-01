@@ -134,14 +134,6 @@ defmodule OliWeb.ResourceController do
   end
 
   defp render_content_html(
-         revision,
-         project_slug,
-         transformed_content,
-         author,
-         options \\ []
-       )
-
-  defp render_content_html(
          %{content: %{"advancedDelivery" => true}} = revision,
          project_slug,
          _transformed_content,
