@@ -3,17 +3,22 @@ defmodule OliWeb.Components.Delivery.Actions do
   use OliWeb.Common.Modal
 
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Accounts
+  alias Oli.{Accounts, Repo}
   alias OliWeb.Common.Confirm
   alias Phoenix.LiveView.JS
+  alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Paywall.Payment
 
   prop(enrollment_info, :map, required: true)
-  prop(section_slug, :string, required: true)
+  prop(section, :map, required: true)
   prop(user, :map, required: true)
 
   data(enrollment, :map, default: %{})
   data(user_role_data, :list, default: [])
   data(user_role_id, :integer, default: nil)
+  data(has_payment, :boolean, default: false)
+  data(current_user, :map, default: %{})
+  data(is_admin, :boolean, default: false)
 
   @user_role_data [
     %{id: 3, name: :instructor, title: "Instructor"},
@@ -21,16 +26,32 @@ defmodule OliWeb.Components.Delivery.Actions do
   ]
 
   def update(
-        %{user: user, section_slug: section_slug, enrollment_info: enrollment_info} = _assigns,
+        %{
+          user: user,
+          section: section,
+          enrollment_info: enrollment_info
+        } = _assigns,
         socket
       ) do
+    %{enrollment: enrollment, user_role_id: user_role_id, current_user: current_user} =
+      enrollment_info
+
+    has_payment =
+      case Repo.get_by(Payment, enrollment_id: enrollment.id) do
+        nil -> false
+        _ -> true
+      end
+
     {:ok,
      assign(socket,
-       enrollment: enrollment_info.enrollment,
-       section_slug: section_slug,
+       enrollment: enrollment,
+       section: section,
        user: user,
-       user_role_id: enrollment_info.user_role_id,
-       user_role_data: @user_role_data
+       user_role_id: user_role_id,
+       user_role_data: @user_role_data,
+       has_payment: has_payment,
+       current_user: current_user,
+       is_admin: Accounts.is_admin?(current_user)
      )}
   end
 
@@ -54,9 +75,28 @@ defmodule OliWeb.Components.Delivery.Actions do
             </select>
           </form>
         </div>
+
+        {#if @section.requires_payment and @is_admin}
+          <div class="flex justify-between items-center px-14 py-8">
+            <div class="flex flex-col">
+              <span class="dark:text-black">Bypass payment</span>
+              <span class="text-xs text-gray-400 dark:text-gray-950">Apply bypass payment</span>
+            </div>
+              <button
+                class="torus-button flex justify-center primary h-9 w-48"
+                disabled={@has_payment}
+                phx-click="display_bypass_modal"
+                phx-target={@myself}
+              >
+                Apply Bypass Payment
+              </button>
+          </div>
+        {/if}
       </div>
     """
   end
+
+  # Change user role
 
   def handle_event(
         "change_user_role",
@@ -115,5 +155,66 @@ defmodule OliWeb.Components.Delivery.Actions do
     send(self(), {:hide_modal})
 
     {:noreply, assign(socket, user_role_id: previous_role_id)}
+  end
+
+  # Bypass payment
+
+  def handle_event(
+        "bypass_payment",
+        %{"current_user_id" => current_user_id, "enrollment_id" => enrollment_id},
+        socket
+      ) do
+    case Paywall.create_payment(%{
+           type: :bypass,
+           generation_date: DateTime.utc_now(),
+           amount: Money.new(0, "USD"),
+           section_id: socket.assigns.section.id,
+           enrollment_id: enrollment_id,
+           bypassed_by_user_id: current_user_id
+         }) do
+      {:ok, _payment} ->
+        {:noreply, assign(socket, has_payment: !socket.assigns.has_payment)}
+
+      {:error, _} ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("display_bypass_modal", _params, socket) do
+    modal_assigns = %{
+      title: "Bypass payment",
+      id: "bypass_payment_modal",
+      ok:
+        JS.push("bypass_payment",
+          target: socket.assigns.myself,
+          value: %{
+            "current_user_id" => socket.assigns.current_user.id,
+            "enrollment_id" => socket.assigns.enrollment.id
+          }
+        ),
+      cancel:
+        JS.push("cancel_confirm_modal",
+          target: socket.assigns.myself
+        )
+    }
+
+    %{given_name: given_name, family_name: family_name} = socket.assigns.user
+
+    modal = fn assigns ->
+      ~F"""
+        <Confirm {...@modal_assigns}>
+          Are you sure you want to bypass payment for {given_name} {family_name}?
+        </Confirm>
+      """
+    end
+
+    send(self(), {:show_modal, modal, modal_assigns})
+    {:noreply, socket}
+  end
+
+  def handle_event("cancel_confirm_modal", _params, socket) do
+    send(self(), {:hide_modal})
+
+    {:noreply, socket}
   end
 end
