@@ -14,7 +14,6 @@
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
 <div>
-HI!
 <%= @app_params.content["displayApplicationChrome"] %>
 
 </div>

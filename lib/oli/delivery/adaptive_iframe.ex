@@ -6,8 +6,9 @@ defmodule Oli.Delivery.AdaptiveIFrame do
   @chrome_width 150
 
   defp get_size(content) do
-    content_height = Map.get(content["custom"], "defaultScreenHeight", @default_height)
-    content_width = Map.get(content["custom"], "defaultScreenWidth", @default_width)
+    custom_content = Map.get(content, "custom", %{})
+    content_height = Map.get(custom_content, "defaultScreenHeight", @default_height)
+    content_width = Map.get(custom_content, "defaultScreenWidth", @default_width)
 
     {content_width + @chrome_width, content_height + @chrome_height}
   end
