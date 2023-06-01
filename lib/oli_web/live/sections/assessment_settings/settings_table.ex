@@ -72,7 +72,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        context: assigns.context,
        assessments: assigns.assessments,
        form_id: UUID.uuid4(),
-       bulk_apply_selected_assessment_id: hd(assigns.assessments).resource_id
+       bulk_apply_selected_assessment_id:
+         if(assigns.assessments != [], do: hd(assigns.assessments).resource_id, else: nil)
      )}
   end
 
