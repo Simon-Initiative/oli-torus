@@ -19,7 +19,8 @@ defmodule Oli.Interop.Ingest.Processor do
     Hyperlinks,
     PublishedResources,
     MediaItems,
-    Alternatives
+    Alternatives,
+    InternalActivityRefs
   }
 
   def process(%State{} = state) do
@@ -35,6 +36,7 @@ defmodule Oli.Interop.Ingest.Processor do
       |> Activities.process()
       |> Pages.process()
       |> PublishedResources.process()
+      |> InternalActivityRefs.process()
       |> Hyperlinks.process()
       |> Hierarchy.process()
       |> Products.process()
