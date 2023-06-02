@@ -30,11 +30,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            context: SessionContext.init(session),
            current_user: current_user,
            preview_mode: socket.assigns[:live_action] == :preview,
+           title: "Assessment Settings",
            section: section,
            student_exceptions: student_exceptions,
            students:
              Sections.enrolled_students(section.slug)
-             |> Enum.reject(fn s -> s.user_role_id != 4 end),
+             |> Enum.reject(fn s -> s.user_role_id != 4 end)
+             |> Enum.sort(),
            assessments: get_assessments(section.slug, student_exceptions)
          )}
     end
