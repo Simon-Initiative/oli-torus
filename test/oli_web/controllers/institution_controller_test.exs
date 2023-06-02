@@ -146,8 +146,8 @@ defmodule OliWeb.InstitutionControllerTest do
              end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
     end
 
-    test "displays pending registration data", %{conn: conn} do
-      {:ok, conn: conn, ctx: session_context} = set_timezone(conn)
+    test "displays pending registration data", map do
+      {:ok, conn: conn, ctx: session_context} = set_timezone(map)
 
       pending_registration = pending_registration_fixture()
 

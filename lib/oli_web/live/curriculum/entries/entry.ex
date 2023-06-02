@@ -11,6 +11,7 @@ defmodule OliWeb.Curriculum.EntryLive do
   alias OliWeb.Common.Links
   alias Surface.Components.Link
 
+  prop ctx, :struct, required: true
   prop child, :struct, required: true
   prop index, :integer, required: true
   prop selected, :boolean, required: true

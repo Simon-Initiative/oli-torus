@@ -67,7 +67,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
 
   def mount(params, session, socket) do
     live_action = socket.assigns.live_action
-    ctx = SessionContext.init(session)
+    ctx = SessionContext.init_live(session)
     section_slug = params["section_slug"]
 
     do_mount = fn ->
