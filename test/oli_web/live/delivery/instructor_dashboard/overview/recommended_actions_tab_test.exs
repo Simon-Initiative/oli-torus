@@ -52,7 +52,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
-      assert has_element?(view, "h4", "Soft Scheduling")
+      assert has_element?(view, "h4", "Scheduling")
       assert has_element?(view, "span", "You have not define a schedule for your course content")
     end
 
