@@ -793,7 +793,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
@@ -820,7 +819,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
@@ -837,7 +835,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
