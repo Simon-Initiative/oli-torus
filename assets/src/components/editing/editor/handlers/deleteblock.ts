@@ -1,5 +1,5 @@
 import { KeyboardEvent } from 'react';
-import { Editor, Path, Range, Editor as SlateEditor, Transforms } from 'slate';
+import { Path, Range, Editor as SlateEditor, Transforms } from 'slate';
 
 const blocksToDelete: string[] = ['table'];
 const internalBlocks: string[] = ['td', 'th'];
@@ -7,6 +7,14 @@ const internalBlocks: string[] = ['td', 'th'];
 const matchBlockToDelete = (node: any) => blocksToDelete.includes(node.type);
 const matchInternalBlock = (node: any) => internalBlocks.includes(node.type);
 
+/**
+ * Some blocks (tables) have internal blocks (table cells). By default, if you put the cursor after the table and then backspace
+ * into it, the cursor moves into the last cell. Instead, we want it to delete the entire table. Likewise, if you select it with the
+ * mouse and then hit delete, it should be removed.
+ *
+ * Right now this is just tables, but we can add to the list if other similar cases come to light.
+ *
+ */
 const deleteOrBackspaceBlock = (
   editor: SlateEditor,
   e: KeyboardEvent,
@@ -36,6 +44,8 @@ const deleteOrBackspaceBlock = (
         }
       }
     } else if (editor.selection && Range.isCollapsed(editor.selection)) {
+      // If the selection is collapsed, we delete the table if the cursor would move from outside to
+      // inside the table upon pressing the key.
       const [currentCursorPosition] = Range.edges(editor.selection);
 
       const nextCursorPosition =
@@ -51,7 +61,7 @@ const deleteOrBackspaceBlock = (
         match: matchBlockToDelete,
       });
 
-      // If the cursor would end up inside a deletable block, delete the whole block.
+      // If the cursor would end up inside a deletable block, delete that block.
       const nextDeletableItem = SlateEditor.above(editor, {
         at: nextCursorPosition,
         match: matchBlockToDelete,
