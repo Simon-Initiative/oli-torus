@@ -96,6 +96,8 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
       explanation_strategy: get_explanation_strategy(graded),
       collab_space_config: read_collab_space(resource),
+      purpose: Map.get(resource, "purpose", "foundation"),
+      relates_to: Map.get(resource, "relatesTo", []),
       graded: graded,
       max_attempts:
         if graded do

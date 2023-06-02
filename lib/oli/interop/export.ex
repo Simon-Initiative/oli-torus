@@ -23,7 +23,7 @@ defmodule Oli.Interop.Export do
        activities(resources) ++
        bib_entries(resources) ++
        alternatives(resources) ++
-       pages(resources))
+       pages(resources, project))
     |> Utils.zip("export.zip")
   end
 
@@ -101,8 +101,33 @@ defmodule Oli.Interop.Export do
     end)
   end
 
+  defp update_content(content, project) do
+    Oli.Resources.PageContent.map(content, fn c ->
+      case Map.get(c, "type") do
+        "alternatives" ->
+          Map.put(c, "group", "#{Map.get(c, "alternatives_id")}")
+        "page_link" ->
+          Map.put(c, "idref", "#{Map.get(c, "idref")}")
+        "a" ->
+          case Map.get(c, "href") do
+            "/course/link/" <> slug ->
+              case Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, slug) do
+                nil ->
+                  c
+                %Oli.Resources.Revision{revision_id: revision_id} ->
+                  Map.put(c, "idref", "#{revision_id}")
+              end
+            _ ->
+              c
+          end
+        _ ->
+          c
+      end
+    end)
+  end
+
   # create entries for all pages
-  defp pages(resources) do
+  defp pages(resources, project) do
     Enum.filter(resources, fn r ->
       r.resource_type_id == ResourceType.get_id_by_type("page")
     end)
@@ -114,11 +139,12 @@ defmodule Oli.Interop.Export do
         title: r.title,
         tags: transform_tags(r),
         unresolvedReferences: [],
-        content: r.content,
+        content: update_content(r.content, project),
         objectives: Map.get(r.objectives, "attached", []) |> Enum.map(fn id -> "#{id}" end),
         isGraded: r.graded,
         purpose: r.purpose,
         relatesTo: r.relates_to |> Enum.map(fn id -> "#{id}" end),
+        collabSpace: r.collab_space_config
       }
       |> entry("#{r.resource_id}.json")
     end)
