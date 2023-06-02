@@ -2167,7 +2167,7 @@ defmodule Oli.TestHelpers do
       )
       |> Repo.one()
 
-    %{section: section, publication: section_project_publication, section_page: page_revision}
+    %{section: section, publication: section_project_publication, project: project, section_page: page_revision}
   end
 
   def enroll_user_to_section(user, section, role) do

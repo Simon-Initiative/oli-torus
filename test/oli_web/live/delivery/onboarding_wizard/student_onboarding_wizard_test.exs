@@ -59,18 +59,18 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
     setup [:user_conn]
 
     test "the introduction step gets rendered", %{conn: conn, user: student} do
-      %{section: section} = basic_section(nil, %{title: "Chemistry 101"})
+      %{section: section} = basic_section(nil, %{title: "Chemistry 201"})
       enroll_student(student, section)
 
       {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
 
-      assert has_element?(view, "h5", "Chemistry 101 Set Up")
-      assert has_element?(view, "h2", "Welcome to Chemistry 101!")
+      assert has_element?(view, "h5", "Chemistry 201 Set Up")
+      assert has_element?(view, "h2", "Welcome to Chemistry 201!")
 
       assert has_element?(
                view,
                "li",
-               "A personalized Chemistry 101 experience based on your skillsets"
+               "A personalized Chemistry 201 experience based on your skillsets"
              )
 
       refute has_element?(

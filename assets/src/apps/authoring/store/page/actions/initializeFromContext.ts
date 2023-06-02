@@ -35,6 +35,7 @@ export const initializeFromContext = createAsyncThunk(
       customCss: params.context.content.customCss,
       customScript: params.context.content.customScript,
       custom: params.context.content.custom || {},
+      displayApplicationChrome: params.context.content.displayApplicationChrome,
     };
     if (!params.context.content.model.length && !pageState.custom.themeId) {
       pageState.custom.themeId = 'torus-default-light';

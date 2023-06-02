@@ -431,6 +431,7 @@ defmodule OliWeb.Router do
     # Preview
     get("/:project_id/preview", ResourceController, :preview)
     get("/:project_id/preview/:revision_slug", ResourceController, :preview)
+    get("/:project_id/preview_fullscreen/:revision_slug", ResourceController, :preview_fullscreen)
     get("/:project_id/preview/:revision_slug/page/:page", ResourceController, :preview)
 
     # Editors
@@ -798,7 +799,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
@@ -825,7 +825,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
@@ -842,7 +841,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
@@ -883,6 +881,7 @@ defmodule OliWeb.Router do
     get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
+    get("/page_fullscreen/:revision_slug", PageDeliveryController, :page_fullscreen)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
     get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
