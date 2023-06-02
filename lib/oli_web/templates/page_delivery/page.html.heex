@@ -1,5 +1,7 @@
 
-<Components.Delivery.PageDelivery.header title={@title} page_number={@page_number} review_mode={@review_mode} />
+<%= if not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
+  <Components.Delivery.PageDelivery.header title={@title} page_number={@page_number} review_mode={@review_mode} />
+<% end %>
 
 <Components.Delivery.PageDelivery.details scheduling_type={@scheduling_type} end_date={@end_date} est_reading_time={@est_reading_time} />
 
@@ -74,7 +76,7 @@ window.userToken = "<%= assigns[:user_token] %>";
   OLI.initActivityBridge('eventIntercept');
 </script>
 
-<%= if @graded && @activity_count > 0 && @review_mode == false do %>
+<%= if @graded && @activity_count > 0 && @review_mode == false && not @adaptive do %>
   <div class="d-flex align-items-center justify-content-center">
     <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'submit_answers')"}>
       Submit Answers
@@ -82,7 +84,8 @@ window.userToken = "<%= assigns[:user_token] %>";
   </div>
 <% end %>
 
-<%= if @graded == false && @activity_count > 0 && @review_mode == false do %>
+
+<%= if @graded == false && @activity_count > 0 && @review_mode == false && not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) && not @adaptive do %>
   <div class="d-flex align-items-center justify-content-center">
     <button id="reset_answers" class="btn btn-link btn-sm text-center" onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'reset_answers')"}>
       <i class="fa-solid fa-rotate-right mr-2"></i> Reset Answers

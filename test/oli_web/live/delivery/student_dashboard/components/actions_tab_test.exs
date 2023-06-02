@@ -29,6 +29,16 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
     %{student: student}
   end
 
+  defp create_section_with_requires_payment(_) do
+    section =
+      insert(:section, %{
+        requires_payment: true,
+        amount: %{amount: "1000", currency: "USD"}
+      })
+
+    [section: section]
+  end
+
   describe "user" do
     test "cannot access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
@@ -101,7 +111,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
     end
   end
 
-  describe "Actions tab" do
+  describe "Change enrrolled user role" do
     setup [:instructor_conn, :section_without_pages, :enrolled_student_and_instructor]
 
     test "gets rendered correctly", %{
@@ -182,6 +192,105 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       |> render_click()
 
       assert view |> element("option[value=#{Integer.to_string(user_role_id)}]")
+    end
+  end
+
+  describe "Bypass payment as an admin user" do
+    setup [:admin_conn, :create_section_with_requires_payment]
+
+    test "gets rendered correctly", %{
+      conn: conn,
+      section: section
+    } do
+      student = insert(:user)
+
+      Sections.enroll(student.id, section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section.slug, student.id, :actions)
+        )
+
+      # Actions tab is the selected one
+      assert has_element?(
+               view,
+               ~s{a[href="#{live_view_students_actions_route(section.slug, student.id, :actions)}"].border-b-2},
+               "Actions"
+             )
+
+      assert has_element?(view, "span", "Bypass payment")
+      assert has_element?(view, "button", "Apply Bypass Payment")
+    end
+
+    test "allow bypass payment for a user", %{conn: conn, section: section} do
+      student = insert(:user)
+
+      Sections.enroll(student.id, section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section.slug, student.id, :actions)
+        )
+
+      assert has_element?(view, "button", "Apply Bypass Payment")
+
+      # Button to bypass payment is enabled by default
+      view
+      |> element("button[phx-click=\"display_bypass_modal\"]")
+      |> render_click()
+
+      assert view
+             |> element("div.modal-body")
+             |> render() =~
+               "Are you sure you want to bypass payment for #{student.given_name} #{student.family_name}"
+
+      view
+      |> element("button", "Ok")
+      |> render_click()
+
+      # Button to byppas payment is disabled after bypassing payment
+      assert view
+             |> element("button[phx-click=\"display_bypass_modal\"][disabled]")
+             |> render() =~
+               "Apply Bypass Payment"
+    end
+  end
+
+  describe "Bypass payment as an instructor user" do
+    setup [:instructor_conn, :section_without_pages, :enrolled_student_and_instructor]
+
+    test "button to bypass payment is not rendered if the user is not an admin user", %{
+      conn: conn,
+      student: student,
+      section: section
+    } do
+      {:ok, updated_section} =
+        Sections.update_section(section, %{
+          requires_payment: true,
+          amount: %{amount: "1000", currency: "USD"}
+        })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(updated_section.slug, student.id, :actions)
+        )
+
+      # Actions tab is the selected one
+      assert has_element?(
+               view,
+               ~s{a[href="#{live_view_students_actions_route(updated_section.slug, student.id, :actions)}"].border-b-2},
+               "Actions"
+             )
+
+      refute has_element?(view, "span", "Bypass payment")
+      refute has_element?(view, "button", "Apply Bypass Payment")
     end
   end
 end

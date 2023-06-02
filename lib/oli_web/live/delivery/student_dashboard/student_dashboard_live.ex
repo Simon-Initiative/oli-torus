@@ -98,7 +98,8 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       |> assign_new(:enrollment_info, fn ->
         %{
           enrollment: enrollment,
-          user_role_id: Sections.get_user_role_from_enrollment(enrollment)
+          user_role_id: Sections.get_user_role_from_enrollment(enrollment),
+          current_user: socket.assigns.current_user
         }
       end)
 
@@ -185,7 +186,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         id="actions_table"
         module={OliWeb.Components.Delivery.Actions}
         user={@student}
-        section_slug={@section.slug}
+        section={@section}
         enrollment_info={@enrollment_info}
       />
     """

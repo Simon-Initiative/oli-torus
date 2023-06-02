@@ -54,6 +54,11 @@ const lessonSchema: JSONSchema7 = {
               type: 'boolean',
               title: 'Scale Background Image to Fit',
             },
+            displayApplicationChrome: {
+              type: 'boolean',
+              title: 'Display Torus Navigation',
+              default: 'false',
+            },
           },
         },
         FinishPanel: {
@@ -124,6 +129,17 @@ export const simpleLessonSchema: JSONSchema7 = {
           type: 'string',
           title: 'Title',
           readOnly: true,
+        },
+
+        Appearance: {
+          type: 'object',
+          properties: {
+            displayApplicationChrome: {
+              type: 'boolean',
+              title: 'Display Torus Navigation',
+              default: 'false',
+            },
+          },
         },
 
         FinishPanel: {
@@ -215,6 +231,7 @@ export const transformModelToSchema = (model: any) => {
         customCssUrl,
         backgroundImageURL: model.custom.backgroundImageURL,
         backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
+        displayApplicationChrome: model.displayApplicationChrome,
       },
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
@@ -258,6 +275,7 @@ export const transformSchemaToModel = (schema: any) => {
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
     },
+    displayApplicationChrome: schema.Properties.Appearance.displayApplicationChrome,
     additionalStylesheets,
     title: schema.Properties.title,
     customCss: schema.Properties.customCSS || '',

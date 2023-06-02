@@ -20,7 +20,7 @@ defmodule Oli.Delivery.Paywall.Payment do
   """
 
   schema "payments" do
-    field :type, Ecto.Enum, values: [:direct, :deferred], default: :direct
+    field :type, Ecto.Enum, values: [:direct, :deferred, :bypass], default: :direct
     field :code, :integer
     field :generation_date, :utc_datetime
     field :application_date, :utc_datetime
@@ -30,6 +30,7 @@ defmodule Oli.Delivery.Paywall.Payment do
     field :provider_payload, :map
     field :pending_user_id, :integer
     field :pending_section_id, :integer
+    field :bypassed_by_user_id, :integer
 
     belongs_to :section, Oli.Delivery.Sections.Section
     belongs_to :enrollment, Oli.Delivery.Sections.Enrollment
@@ -52,7 +53,8 @@ defmodule Oli.Delivery.Paywall.Payment do
       :pending_user_id,
       :pending_section_id,
       :section_id,
-      :enrollment_id
+      :enrollment_id,
+      :bypassed_by_user_id
     ])
     |> validate_required([:type, :generation_date, :amount, :section_id])
   end
