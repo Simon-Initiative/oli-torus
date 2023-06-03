@@ -991,6 +991,11 @@ defmodule OliWeb.Router do
     live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor,
       as: :collab_spaces_index
     )
+
+    live(
+      "/:section_slug/assessment_settings/:active_tab/:assessment_id",
+      Sections.AssessmentSettings.SettingsLive
+    )
   end
 
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
