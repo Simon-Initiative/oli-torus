@@ -4073,6 +4073,14 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -2.5rem;
 }
 
+.-ml-20 {
+  margin-left: -5rem;
+}
+
+.-ml-24 {
+  margin-left: -6rem;
+}
+
 .-mt-1 {
   margin-top: -0.25rem;
 }
@@ -4465,6 +4473,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 5rem;
 }
 
+.w-28 {
+  width: 7rem;
+}
+
 .w-4 {
   width: 1rem;
 }
@@ -4811,6 +4823,24 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-space-x-reverse: 0;
   margin-right: calc(0.75rem * var(--tw-space-x-reverse));
   margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(1rem * var(--tw-space-x-reverse));
+  margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
 }
 
 .divide-x > :not([hidden]) ~ :not([hidden]) {
@@ -5230,6 +5260,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(115 115 115 / var(--tw-bg-opacity));
 }
 
+.bg-gray-900 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(23 23 23 / var(--tw-bg-opacity));
+}
+
 .bg-green-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(220 252 231 / var(--tw-bg-opacity));
@@ -5300,6 +5335,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-opacity-10 {
   --tw-bg-opacity: 0.1;
+}
+
+.bg-opacity-50 {
+  --tw-bg-opacity: 0.5;
 }
 
 .bg-contain {
@@ -7024,6 +7063,17 @@ a {
   --tw-bg-opacity: 0.2;
 }
 
+.instructor_dashboard_table td:has(div.highlight-exception) {
+  border-radius: 0.375rem;
+  background-color: rgb(193 211 241 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.5;
+}
+
+div:has(.instructor_dashboard_table) #header_paging {
+  position: sticky;
+  left: 0px;
+}
+
 /**
  * Automatically style all links with blue text and underline on hover.
  * External links will automatically get an arrow icon appended.
@@ -7835,6 +7885,10 @@ p {
     margin-top: 0px;
   }
 
+  .lg\:mt-2 {
+    margin-top: 0.5rem;
+  }
+
   .lg\:block {
     display: block;
   }
@@ -7883,8 +7937,38 @@ p {
     flex-direction: row;
   }
 
+  .lg\:flex-col {
+    flex-direction: column;
+  }
+
   .lg\:items-start {
     align-items: flex-start;
+  }
+
+  .lg\:items-center {
+    align-items: center;
+  }
+
+  .lg\:justify-between {
+    justify-content: space-between;
+  }
+
+  .lg\:space-x-0 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(0px * var(--tw-space-x-reverse));
+    margin-left: calc(0px * calc(1 - var(--tw-space-x-reverse)));
+  }
+
+  .lg\:space-x-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(1rem * var(--tw-space-x-reverse));
+    margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
+  }
+
+  .lg\:space-y-0 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0px * var(--tw-space-y-reverse));
   }
 
   .lg\:border-l {
@@ -7893,6 +7977,10 @@ p {
 
   .lg\:bg-white\/80 {
     background-color: rgb(255 255 255 / 0.8);
+  }
+
+  .lg\:pb-0 {
+    padding-bottom: 0px;
   }
 
   .lg\:pl-3 {
@@ -7905,6 +7993,10 @@ p {
 
   .lg\:pr-3 {
     padding-right: 0.75rem;
+  }
+
+  .lg\:pt-6 {
+    padding-top: 1.5rem;
   }
 
   .lg\:shadow-lg {
