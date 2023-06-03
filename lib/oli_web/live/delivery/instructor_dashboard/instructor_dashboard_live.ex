@@ -367,7 +367,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         tab_name={@active_tab}
         show_progress_csv_download={true}
         params={@params}
-        context={@context}
+        ctx={@ctx}
         section={@section}
         view={@view}
         students={@students}
@@ -400,7 +400,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         id="students_table"
         module={OliWeb.Components.Delivery.Students}
         params={@params}
-        context={@context}
+        ctx={@ctx}
         section={@section}
         view={@view}
         students={@students}

@@ -153,7 +153,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
 
     test "renders datetimes using the local timezone", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
       section = insert(:section, open_and_free: true)
 
       {:ok, view, _html} = live(conn, @live_view_admin_route)
@@ -302,7 +302,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
 
     test "renders datetimes using the local timezone", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
@@ -453,7 +453,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
 
     test "renders datetimes using the local timezone", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)

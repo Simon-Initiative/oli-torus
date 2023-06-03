@@ -390,9 +390,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
          } do
       %{
         section: section,
-        mod1_pages: mod1_pages,
-        unit1_resource: unit1_resource,
-        unit2_resource: unit2_resource
+        mod1_pages: mod1_pages
       } = Oli.Seeder.base_project_with_larger_hierarchy()
 
       [page_1, _page_2, _page_3] = mod1_pages

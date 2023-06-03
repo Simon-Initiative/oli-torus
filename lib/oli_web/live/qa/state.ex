@@ -51,7 +51,7 @@ defmodule OliWeb.Qa.State do
   end
 
   def initialize_state(
-        %SessionContext{author: author} = context,
+        %SessionContext{author: author} = ctx,
         project,
         initial_review
       ) do
@@ -60,7 +60,7 @@ defmodule OliWeb.Qa.State do
         [
           project: project,
           author: author,
-          context: context,
+          ctx: ctx,
           title: "Review | " <> project.title
         ],
         new_review_ran(@default_state, initial_review)

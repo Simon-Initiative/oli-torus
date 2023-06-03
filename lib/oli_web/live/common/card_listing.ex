@@ -9,6 +9,7 @@ defmodule OliWeb.Common.CardListing do
   prop model, :struct, required: true
   prop selected, :event, required: true
   prop selected_target, :any, default: nil
+  prop ctx, :struct, required: true
 
   def render(assigns) do
     ~F"""
@@ -47,7 +48,7 @@ defmodule OliWeb.Common.CardListing do
   end
 
   defp render_date(item, assigns) do
-    Utils.render_date(item, :inserted_at, Map.get(assigns, :context))
+    Utils.render_date(item, :inserted_at, Map.get(assigns, :ctx))
   end
 
   defp action_id(item) do

@@ -14,11 +14,11 @@ defmodule OliWeb.Resources.ActivitiesView do
   alias OliWeb.Resources.ActivitiesTableModel
   alias Oli.Repo.{Paging, Sorting}
 
-  data title, :string, default: "All Activities"
-  data project, :any
-  data breadcrumbs, :list
-  data author, :any
-  data activities, :list
+  data(title, :string, default: "All Activities")
+  data(project, :any)
+  data(breadcrumbs, :list)
+  data(author, :any)
+  data(activities, :list)
 
   @limit 25
 
@@ -49,7 +49,7 @@ defmodule OliWeb.Resources.ActivitiesView do
       with {:ok, author} <- Accounts.get_author(author_id) |> trap_nil(),
            {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project) do
-        context = SessionContext.init(session)
+        ctx = SessionContext.init_live(session)
 
         activities =
           ActivityBrowse.browse_activities(
@@ -71,10 +71,10 @@ defmodule OliWeb.Resources.ActivitiesView do
         total_count = determine_total(activities)
 
         {:ok, table_model} =
-          ActivitiesTableModel.new(activities, project, context, activities_by_id, parent_pages)
+          ActivitiesTableModel.new(activities, project, ctx, activities_by_id, parent_pages)
 
         assign(socket,
-          context: context,
+          ctx: ctx,
           breadcrumbs: breadcrumb(project),
           project: project,
           author: author,

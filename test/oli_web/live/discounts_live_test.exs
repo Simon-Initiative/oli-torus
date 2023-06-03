@@ -190,7 +190,7 @@ defmodule OliWeb.DiscountsLiveTest do
     end
 
     test "renders datetimes using the local timezone", %{product: product} = context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       discount = insert(:discount, section: product)
 

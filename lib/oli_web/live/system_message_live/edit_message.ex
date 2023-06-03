@@ -15,9 +15,9 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
     TextArea
   }
 
-  prop system_message, :struct, required: true
-  prop context, :struct, required: true
-  prop save, :event, required: true
+  prop(system_message, :struct, required: true)
+  prop(ctx, :struct, required: true)
+  prop(save, :event, required: true)
 
   def render(assigns) do
     changeset = Notifications.change_system_message(assigns.system_message)
@@ -25,12 +25,12 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
     start_date =
       changeset
       |> Ecto.Changeset.get_field(:start)
-      |> FormatDateTime.convert_datetime(assigns.context)
+      |> FormatDateTime.convert_datetime(assigns.ctx)
 
     end_date =
       changeset
       |> Ecto.Changeset.get_field(:end)
-      |> FormatDateTime.convert_datetime(assigns.context)
+      |> FormatDateTime.convert_datetime(assigns.ctx)
 
     ~F"""
       <Form for={changeset} submit={@save} class="d-flex align-items-center">

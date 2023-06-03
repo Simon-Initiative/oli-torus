@@ -555,7 +555,7 @@ defmodule Oli.Accounts do
   Returns an author preference using the key provided. If the preference isn't set or
   the author preferences have not been created yet, the default value will be returned.
 
-  Accepts and Author struct or author id. If an id is given, the latest author record
+  Accepts an Author struct or author id. If an id is given, the latest author record
   will be queried from the database. Otherwise, the preferences in the Author struct
   is used.
 
@@ -579,7 +579,7 @@ defmodule Oli.Accounts do
   Returns a user preference using the key provided. If the preference isn't set or
   the user preferences have not been created yet, the default value will be returned.
 
-  Accepts and User struct or user id. If an id is given, the latest user record
+  Accepts a User struct or user id. If an id is given, the latest user record
   will be queried from the database. Otherwise, the preferences in the User struct
   is used.
 

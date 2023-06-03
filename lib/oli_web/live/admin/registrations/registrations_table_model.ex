@@ -11,7 +11,7 @@ defmodule OliWeb.Admin.RegistrationsTableModel do
     """
   end
 
-  def new(authors, context) do
+  def new(authors, ctx) do
     SortableTableModel.new(
       rows: authors,
       column_specs: [
@@ -41,7 +41,7 @@ defmodule OliWeb.Admin.RegistrationsTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end

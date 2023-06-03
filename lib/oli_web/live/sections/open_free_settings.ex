@@ -6,10 +6,10 @@ defmodule OliWeb.Sections.OpenFreeSettings do
   alias OliWeb.Common.Properties.Group
   import Ecto.Changeset
 
-  prop changeset, :any, required: true
-  prop disabled, :boolean, required: true
-  prop is_admin, :boolean, required: true
-  prop context, :struct, required: true
+  prop(changeset, :any, required: true)
+  prop(disabled, :boolean, required: true)
+  prop(is_admin, :boolean, required: true)
+  prop(ctx, :struct, required: true)
 
   def render(assigns) do
     ~F"""
@@ -31,7 +31,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
 
       <div class="form-row">
         <small class="text-nowrap form-text text-muted">
-          Timezone: {@context.local_tz}
+          Timezone: {@ctx.local_tz}
         </small>
       </div>
 

@@ -4,7 +4,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.SelectUserModal do
   alias OliWeb.Common.EnrollmentBrowser.EnrollmentPicker
 
   prop section, :struct, required: true
-  prop context, :struct, required: true
+  prop ctx, :struct, required: true
 
   prop on_select, :event, required: true
   prop on_cancel, :event, default: nil
@@ -26,7 +26,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.SelectUserModal do
             {live_component EnrollmentPicker,
                 id: "#{id}_enrollment_picker",
                 section: assigns.section,
-                context: assigns.context}
+                ctx: assigns.ctx}
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" :on-click={@on_cancel}>Cancel</button>

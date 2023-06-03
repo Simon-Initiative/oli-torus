@@ -12,7 +12,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   prop parent_gate, :struct, required: true
   prop count_exceptions, :integer, required: true
   prop create_or_update, :atom, default: :create
-  prop context, :struct
+  prop ctx, :struct
 
   def render(assigns) do
     ~F"""
@@ -188,27 +188,27 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   def policy_desc(:allows_review), do: "Allow the review of previously completed attempts"
 
   def render_condition_options(
-        %{gating_condition: %{type: :schedule, data: data}, context: context} = assigns
+        %{gating_condition: %{type: :schedule, data: data}, ctx: ctx} = assigns
       ) do
     initial_start_date =
       data
       |> Map.get(:start_datetime)
-      |> convert_datetime(context)
+      |> convert_datetime(ctx)
 
     initial_end_date =
       data
       |> Map.get(:end_datetime)
-      |> convert_datetime(context)
+      |> convert_datetime(ctx)
 
     ~F"""
     <div class="form-group">
-      <label for="conditionTypeSelect">Start Date <small> ({context.local_tz}) </small></label>
+      <label for="conditionTypeSelect">Start Date <small> ({ctx.local_tz}) </small></label>
       <div id="start_date" phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_start_date_changed" phx-update="ignore">
         <DateTimeLocalInput class="form-control" value={initial_start_date}/>
       </div>
     </div>
     <div class="form-group">
-      <label for="conditionTypeSelect">End Date <small> ({context.local_tz}) </small></label>
+      <label for="conditionTypeSelect">End Date <small> ({ctx.local_tz}) </small></label>
       <div id="end_date" phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_end_date_changed" phx-update="ignore">
         <DateTimeLocalInput class="form-control" value={initial_end_date} />
       </div>

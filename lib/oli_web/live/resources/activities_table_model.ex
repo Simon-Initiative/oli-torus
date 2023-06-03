@@ -11,7 +11,7 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
     """
   end
 
-  def new(activities, project, context, activities_by_type_id, parent_pages) do
+  def new(activities, project, ctx, activities_by_type_id, parent_pages) do
     column_specs = [
       %ColumnSpec{
         name: :activity_type_id,
@@ -45,7 +45,7 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context,
+        ctx: ctx,
         project_slug: project.slug,
         activities_by_type_id: activities_by_type_id,
         parent_pages: parent_pages

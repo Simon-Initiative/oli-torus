@@ -7,14 +7,15 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
 
-  prop title, :string, default: "Students"
-  prop tab_name, :atom, default: :students
-  prop section_slug, :string, default: :nil
-  prop params, :map, required: true
-  prop total_count, :number, required: true
-  prop table_model, :struct, required: true
-  prop dropdown_options, :list, required: true
-  prop show_progress_csv_download, :boolean, default: false
+  prop(ctx, :struct, required: true)
+  prop(title, :string, default: "Students")
+  prop(tab_name, :atom, default: :students)
+  prop(section_slug, :string, default: nil)
+  prop(params, :map, required: true)
+  prop(total_count, :number, required: true)
+  prop(table_model, :struct, required: true)
+  prop(dropdown_options, :list, required: true)
+  prop(show_progress_csv_download, :boolean, default: false)
   prop(view, :atom)
 
   @default_params %{
@@ -34,7 +35,7 @@ defmodule OliWeb.Components.Delivery.Students do
         %{
           params: params,
           section: section,
-          context: context,
+          ctx: ctx,
           students: students,
           dropdown_options: dropdown_options
         } = assigns,
@@ -42,7 +43,7 @@ defmodule OliWeb.Components.Delivery.Students do
       ) do
     {total_count, rows} = apply_filters(students, params)
 
-    {:ok, table_model} = EnrollmentsTableModel.new(rows, section, context)
+    {:ok, table_model} = EnrollmentsTableModel.new(rows, section, ctx)
 
     table_model =
       Map.merge(table_model, %{

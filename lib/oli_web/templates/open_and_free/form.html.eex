@@ -33,7 +33,7 @@
       </div>
       <div>
         <small class="text-nowrap form-text text-muted">
-          Timezone: <%= @context.local_tz %>
+          Timezone: <%= @ctx.local_tz %>
         </small>
       </div>
       <%= error_tag f, :start_date %>
