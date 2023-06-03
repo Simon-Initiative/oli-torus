@@ -120,7 +120,7 @@ defmodule Oli.Ingest.RewireLinks do
     end
 
     {choices_result, item} = case Map.get(item, "choices") do
-      nil -> item
+      nil -> {false, item}
       choices ->
         {r, choices} = rewire(choices, link_builder, page_map)
         {r, Map.put(item, "choices", choices)}

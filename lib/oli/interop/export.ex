@@ -102,9 +102,25 @@ defmodule Oli.Interop.Export do
   end
 
   defp rewire_activity_elements(content_as_list, project) do
-    adjusted_content = %{"type" => "content", "children" => content_as_list["content"]}
-    {results, _} = rewire_elements(adjusted_content, project)
-    Map.put(content_as_list, "content", results["children"])
+
+    case Map.get(content_as_list, "content") do
+
+      list when is_list(list) ->
+        adjusted_content = %{"type" => "content", "children" => list}
+        {results, _} = rewire_elements(adjusted_content, project)
+        Map.put(content_as_list, "content", results["children"])
+
+      map when is_map(map) ->
+
+        list = map["model"]
+        adjusted_content = %{"type" => "content", "children" => list}
+        {results, _} = rewire_elements(adjusted_content, project)
+        content = Map.put(map, "model", results["children"])
+        Map.put(content_as_list, "content", content)
+
+    end
+
+
   end
 
   defp rewire_elements(content, project) do
@@ -171,7 +187,7 @@ defmodule Oli.Interop.Export do
           part
         end
 
-        part = if Map.has_key?(part, "responses") and Map.get(part, "responses") != nil do
+        if Map.has_key?(part, "responses") and Map.get(part, "responses") != nil do
           responses = Enum.map(part["responses"], fn response ->
             if Map.has_key?(response, "feedback") do
               Map.put(response, "feedback", rewire_activity_elements(response["feedback"], project))
