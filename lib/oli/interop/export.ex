@@ -101,29 +101,50 @@ defmodule Oli.Interop.Export do
     end)
   end
 
-  defp update_content(content, project) do
-    Oli.Resources.PageContent.map(content, fn c ->
+  defp rewire_elements(content, project) do
+    Oli.Resources.PageContent.visit_children(content, {:ok, []}, fn c, {status, []}, _tr_context ->
       case Map.get(c, "type") do
-        "alternatives" ->
-          Map.put(c, "group", "#{Map.get(c, "alternatives_id")}")
+        "cite" ->
+          {Map.put(c, "bibref", "#{Map.get(c, "bibref")}"), {status, []}}
         "page_link" ->
-          Map.put(c, "idref", "#{Map.get(c, "idref")}")
+          {Map.put(c, "idref", "#{Map.get(c, "idref")}"), {status, []}}
         "a" ->
           case Map.get(c, "href") do
             "/course/link/" <> slug ->
               case Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, slug) do
                 nil ->
-                  c
-                %Oli.Resources.Revision{revision_id: revision_id} ->
-                  Map.put(c, "idref", "#{revision_id}")
+                  {c, {status, []}}
+                %Oli.Resources.Revision{resource_id: resource_id} ->
+                  {Map.put(c, "idref", "#{resource_id}"), {status, []}}
               end
             _ ->
-              c
+              {c, {status, []}}
           end
         _ ->
-          c
+          {c, {status, []}}
       end
     end)
+  end
+
+  def rewire(content, project) do
+
+    {content, _} =
+      Oli.Resources.PageContent.map_reduce(content, {:ok, []}, fn e, {status, []}, _tr_context ->
+        case e do
+          %{"type" => "content"} = ref ->
+            rewire_elements(ref, project)
+          %{"type" => "alternatives"} = ref ->
+            {Map.put(ref, "group", "#{Map.get(ref, "alternatives_id")}"), {status, []}}
+          other ->
+            {other, {status, []}}
+        end
+      end)
+
+    case Map.get(content, "bibrefs", []) do
+      [] -> content
+      integer_ids -> Map.put(content, "bibrefs", Enum.map(integer_ids, fn id -> "#{id}" end))
+    end
+
   end
 
   # create entries for all pages
@@ -139,7 +160,7 @@ defmodule Oli.Interop.Export do
         title: r.title,
         tags: transform_tags(r),
         unresolvedReferences: [],
-        content: update_content(r.content, project),
+        content: rewire(r.content, project),
         objectives: Map.get(r.objectives, "attached", []) |> Enum.map(fn id -> "#{id}" end),
         isGraded: r.graded,
         purpose: r.purpose,

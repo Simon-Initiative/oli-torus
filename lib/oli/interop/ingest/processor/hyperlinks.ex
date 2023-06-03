@@ -30,6 +30,37 @@ defmodule Oli.Interop.Ingest.Processor.Hyperlinks do
     {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project, page_map)
     {:ok, _} = Oli.Ingest.RewireLinks.rewire_all_hyperlinks(activity_map, project, page_map)
 
+    rewire_relates_to(page_map)
+
     state
+  end
+
+  # This rewires the ids in the relates_to field of each page to point to the new resource_id
+  # of the page being related to. These ids are already integers (because they had to be
+  # to allow the revision to be written in the DB in the first place), so we do need to
+  # convert them back to string to be able to look them up in the page_map.
+  #
+  # A legacy OLI course has no notion of relates_to, so this field is only ever going to be
+  # populated by an export from a Torus course, which guarantees that these "string ids" will
+  # always actually be integers, as strings - as opposed to a legacy OLI id.
+  defp rewire_relates_to(page_map) do
+
+    Map.values(page_map)
+    |> Enum.each(fn revision ->
+      case revision.relates_to do
+        nil -> revision
+        [] -> revision
+        ids ->
+          mapped_ids = Enum.map(ids, fn id ->
+            case Map.get(page_map, "#{id}") do
+              nil -> nil
+              relates_to -> relates_to.resource_id
+            end
+          end)
+          |> Enum.reject(fn id -> is_nil(id) end)
+
+          Oli.Resources.update_revision(revision, %{relates_to: mapped_ids})
+      end
+    end)
   end
 end

@@ -66,7 +66,7 @@ defmodule Oli.Interop.Ingest.Processor do
   defp bulk_allocate_resources(%State{project: project} = state) do
     total_needed =
       Enum.count(state.tags) + Enum.count(state.bib_entries) + Enum.count(state.objectives) +
-        Enum.count(state.activities) + Enum.count(state.pages)
+        Enum.count(state.activities) + Enum.count(state.pages) + Enum.count(state.alternatives)
 
     %{
       state
