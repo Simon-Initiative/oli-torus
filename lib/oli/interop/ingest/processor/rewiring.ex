@@ -120,12 +120,9 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
           %{"type" => "alternatives", "group" => original} = ref ->
             case Map.get(legacy_to_resource_id_map, original) do
               nil ->
-                IO.inspect "WERROR!"
                 {ref, {:error, [original | invalid_refs]}}
 
               retrieved ->
-                IO.inspect "FOUND!"
-                IO.inspect retrieved
                 {Map.put(ref, "alternatives_id", retrieved), {status, invalid_refs}}
             end
 
