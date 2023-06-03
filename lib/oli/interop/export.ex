@@ -20,7 +20,7 @@ defmodule Oli.Interop.Export do
      ] ++
        tags(resources) ++
        objectives(resources) ++
-       activities(resources) ++
+       activities(resources, project) ++
        bib_entries(resources) ++
        alternatives(resources) ++
        pages(resources, project))
@@ -69,7 +69,7 @@ defmodule Oli.Interop.Export do
   end
 
   # create entries for all activities
-  defp activities(resources) do
+  defp activities(resources, project) do
     registrations =
       Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
@@ -85,7 +85,7 @@ defmodule Oli.Interop.Export do
         title: r.title,
         tags: transform_tags(r),
         unresolvedReferences: [],
-        content: r.content,
+        content: rewire_activity_content(r.content, project),
         objectives: to_string_ids(r.objectives),
         subType: Map.get(registrations, r.activity_type_id).slug
       }
@@ -99,6 +99,12 @@ defmodule Oli.Interop.Export do
     |> Enum.reduce(%{}, fn part_id, m ->
       Map.put(m, part_id, Enum.map(attached_objectives[part_id], fn id -> "#{id}" end))
     end)
+  end
+
+  defp rewire_activity_elements(content_as_list, project) do
+    adjusted_content = %{"type" => "content", "children" => content_as_list["content"]}
+    {results, _} = rewire_elements(adjusted_content, project)
+    Map.put(content_as_list, "content", results["children"])
   end
 
   defp rewire_elements(content, project) do
@@ -124,6 +130,67 @@ defmodule Oli.Interop.Export do
           {c, {status, []}}
       end
     end)
+  end
+
+  # For an activity, rewire all of the standard "content" locations:
+  # stem, choices, explanation, hints, feedback.  This will take care of
+  # re-wiring all of the links to pages and any bib citations.
+  defp rewire_activity_content(content, project) do
+
+    content = case Map.get(content, "stem") do
+      nil -> content
+      stem -> Map.put(content, "stem", rewire_activity_elements(stem, project))
+    end
+
+    content = case Map.get(content, "choices") do
+      nil -> content
+      choices ->
+        choices = Enum.map(choices, fn choice ->
+          rewire_activity_elements(choice, project)
+        end)
+
+        Map.put(content, "choices", choices)
+    end
+
+    if Map.has_key?(content, "authoring") and Map.has_key?(Map.get(content, "authoring"), "parts") do
+      parts = content["authoring"]["parts"]
+      |> Enum.map(fn part ->
+
+        part = if Map.has_key?(part, "explanation") do
+          Map.put(part, "explanation", rewire_activity_elements(part["explanation"], project))
+        else
+          part
+        end
+
+        part = if Map.has_key?(part, "hints") and Map.get(part, "hints") != nil do
+          hints = Enum.map(part["hints"], fn hint ->
+            rewire_activity_elements(hint, project)
+          end)
+          Map.put(part, "hints", hints)
+        else
+          part
+        end
+
+        part = if Map.has_key?(part, "responses") and Map.get(part, "responses") != nil do
+          responses = Enum.map(part["responses"], fn response ->
+            if Map.has_key?(response, "feedback") do
+              Map.put(response, "feedback", rewire_activity_elements(response["feedback"], project))
+            else
+              response
+            end
+          end)
+          Map.put(part, "responses", responses)
+        else
+          part
+        end
+
+      end)
+
+      Map.put(content, "authoring", Map.put(content["authoring"], "parts", parts))
+    else
+      content
+    end
+
   end
 
   def rewire(content, project) do
