@@ -7,7 +7,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
   alias Surface.Components.Link
   alias OliWeb.Common.FormatDateTime
 
-  def new(rows, context, opts \\ [is_listing: true]) do
+  def new(rows, ctx, opts \\ [is_listing: true]) do
     column_specs =
       case opts[:is_listing] do
         true ->
@@ -58,7 +58,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end

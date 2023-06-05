@@ -10,6 +10,9 @@ defmodule OliWeb.Components.Header do
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
+  alias OliWeb.Common.SessionContext
+
+  attr(:ctx, SessionContext, required: true)
 
   def header(assigns) do
     ~H"""
@@ -68,7 +71,7 @@ defmodule OliWeb.Components.Header do
 
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px]">
-              <UserAccountMenu.menu {assigns} />
+              <UserAccountMenu.menu ctx={@ctx} />
             </div>
 
           <% true -> %>

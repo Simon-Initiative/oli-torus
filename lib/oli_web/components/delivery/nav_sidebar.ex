@@ -5,6 +5,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   import Oli.Utils, only: [value_or: 2]
   import Oli.Branding
 
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
@@ -14,6 +15,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias OliWeb.Common.SessionContext
 
   slot :inner_block, required: true
 
@@ -31,9 +33,10 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
+  attr :context, SessionContext
   attr :path_info, :list
 
-  def navbar(%{path_info: path_info} = assigns) do
+  def navbar(assigns) do
     assigns =
       assigns
       |> assign(
@@ -45,7 +48,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
         if is_preview_mode?(assigns) do
           get_preview_links(assigns)
         else
-          get_links(assigns, path_info)
+          get_links(assigns, assigns.path_info)
         end
       )
       |> UserAccountMenu.user_account_menu_assigns()
@@ -59,15 +62,14 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           preview: @preview,
           routes: @routes,
           sectionSlug: @section_slug,
-          browserTimezone: @browser_timezone,
-          defaultTimezone: @default_timezone,
-          timezones: Enum.map(@timezones, &Tuple.to_list/1),
+          selectedTimezone: @selected_timezone,
+          timezones: @timezones,
         }) %>
       </div>
     """
   end
 
-  defp get_preview_links(%{section: %Section{} = section} = _assigns) do
+  defp get_preview_links(%{section: %Section{} = section}) do
     hierarchy =
       section
       |> Oli.Repo.preload([:root_section_resource])
@@ -108,9 +110,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     end)
   end
 
-  defp get_preview_links(assigns) do
-    project = assigns[:project]
-
+  defp get_preview_links(%{project: %Project{} = project}) do
     hierarchy =
       AuthoringResolver.full_hierarchy(project.slug)
       |> translate_to_outline()

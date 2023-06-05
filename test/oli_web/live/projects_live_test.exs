@@ -25,7 +25,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       assert has_element?(view, "#button-new-project")
     end
 
-    test "lists projects", %{conn: conn, admin: admin, context: context} do
+    test "lists projects", %{conn: conn, admin: admin, ctx: ctx} do
       project = create_project_with_owner(admin)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
@@ -36,7 +36,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
         |> render()
 
       assert project_row =~ project.title
-      assert project_row =~ OliWeb.Common.Utils.render_date(project, :inserted_at, context)
+      assert project_row =~ OliWeb.Common.Utils.render_date(project, :inserted_at, ctx)
       assert project_row =~ admin.name
       assert project_row =~ admin.email
       assert project_row =~ "Active"

@@ -32,7 +32,8 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
 
         {:cont,
          assign(socket,
-           context: SessionContext.init(session),
+           ctx: SessionContext.init_live(session, user: current_user),
+           browser_timezone: Map.get(session, "browser_timezone"),
            current_user: current_user,
            student:
              Accounts.get_user!(student_id)
@@ -45,7 +46,6 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
   end
 
   defp add_students_metrics(student, section_id) do
-
     progress = Metrics.progress_for(section_id, student.id) |> Map.get(student.id, 0.0)
 
     avg_score =

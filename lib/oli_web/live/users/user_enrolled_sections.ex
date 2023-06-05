@@ -20,15 +20,14 @@ defmodule OliWeb.Users.UserEnrolledSections do
   }
 
   def update(
-        %{user: user, params: params, context: context, enrolled_sections: enrolled_sections} =
-          _assigns,
+        %{user: user, params: params, ctx: ctx, enrolled_sections: enrolled_sections} = _assigns,
         socket
       ) do
     params = decode_params(params)
 
     {total_count, rows} = apply_filters(enrolled_sections, params)
 
-    {:ok, table_model} = UserEnrolledTableModel.new(rows, user, context)
+    {:ok, table_model} = UserEnrolledTableModel.new(rows, user, ctx)
 
     table_model =
       Map.merge(table_model, %{

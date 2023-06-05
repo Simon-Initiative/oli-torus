@@ -183,7 +183,7 @@ defmodule OliWeb.CommunityLiveTest do
     end
 
     test "renders datetimes using the local timezone", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       c1 = insert(:community)
 
@@ -1018,7 +1018,7 @@ defmodule OliWeb.CommunityLiveTest do
     end
 
     test "renders datetimes using the local timezone", %{community: community} = context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       cv1 = insert(:community_visibility, %{community: community})
 
@@ -1178,7 +1178,7 @@ defmodule OliWeb.CommunityLiveTest do
     test "renders datetimes using the local timezone", %{community: community} = context do
       s = insert(:section)
 
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
 

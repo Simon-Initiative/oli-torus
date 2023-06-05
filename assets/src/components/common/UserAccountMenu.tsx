@@ -42,8 +42,6 @@ interface UserAccountMenuProps {
   preview: boolean;
   routes: Routes;
   sectionSlug?: string;
-  browserTimezone: string;
-  defaultTimezone: string;
   timezones: [string, string][];
 }
 
@@ -52,8 +50,6 @@ export const UserAccountMenu = ({
   user,
   routes,
   sectionSlug,
-  browserTimezone,
-  defaultTimezone,
   timezones,
 }: UserAccountMenuProps) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -69,6 +65,7 @@ export const UserAccountMenu = ({
       isOpen={isPopoverOpen}
       onClickOutside={() => setIsPopoverOpen(false)}
       positions={['top', 'bottom', 'left', 'right']}
+      containerClassName="flex"
       content={
         <Dropdown>
           <>
@@ -146,27 +143,26 @@ export const UserAccountMenu = ({
                 Timezone
                 <br />
                 <SelectTimezone
-                  selectedTimezone={user.selectedTimezone || defaultTimezone}
+                  selectedTimezone={user.selectedTimezone}
                   timezones={timezones}
-                  browserTimezone={browserTimezone}
                   submitAction={routes.updateTimezone}
                 />
               </div>
             </DropdownItem>
 
-            <hr className="dropdown-divider" />
-
             {(user.isIndependentLearner || user.isIndependentInstructor) && (
               <>
+                <hr className="dropdown-divider" />
+
                 <DropdownItem>
                   <a href={routes.openAndFreeIndex} className="py-1 block w-full">
                     My Courses
                   </a>
                 </DropdownItem>
-
-                <hr className="dropdown-divider" />
               </>
             )}
+
+            <hr className="dropdown-divider" />
 
             <DropdownItem>
               <a
@@ -204,7 +200,7 @@ export const UserAccountMenu = ({
         "
         onClick={() => setIsPopoverOpen(!isPopoverOpen)}
       >
-        <div className="user-icon mr-4">
+        <div className="user-icon mr-4 self-center">
           <UserIcon user={user} />
         </div>
 

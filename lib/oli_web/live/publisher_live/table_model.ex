@@ -5,7 +5,7 @@ defmodule OliWeb.PublisherLive.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(publishers, context) do
+  def new(publishers, ctx) do
     SortableTableModel.new(
       rows: publishers,
       column_specs: [
@@ -44,7 +44,7 @@ defmodule OliWeb.PublisherLive.TableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end

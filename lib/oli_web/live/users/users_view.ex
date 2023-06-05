@@ -51,8 +51,8 @@ defmodule OliWeb.Users.UsersView do
 
     total_count = SortableTableModel.determine_total(users)
 
-    context = SessionContext.init(session)
-    {:ok, table_model} = UsersTableModel.new(users, context)
+    ctx = SessionContext.init_live(session)
+    {:ok, table_model} = UsersTableModel.new(users, ctx)
 
     {:ok,
      assign(socket,

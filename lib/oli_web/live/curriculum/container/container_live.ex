@@ -46,7 +46,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
         %{"current_author_id" => _} = session,
         socket
       ) do
-    %SessionContext{author: author} = context = SessionContext.init(session)
+    %SessionContext{author: author} = ctx = SessionContext.init_live(session)
 
     root_container = AuthoringResolver.root_container(project_slug)
     container_slug = Map.get(params, "container_slug")
@@ -85,7 +85,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
         {:ok,
          assign(socket,
-           context: context,
+           ctx: ctx,
            children: children,
            active: :curriculum,
            breadcrumbs:

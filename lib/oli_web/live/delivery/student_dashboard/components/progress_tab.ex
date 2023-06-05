@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTab do
           params={@params}
           section_slug={@section_slug}
           student_id={@student_id}
-          context={@context}
+          ctx={@ctx}
           pages={@pages}
         />
       </div>

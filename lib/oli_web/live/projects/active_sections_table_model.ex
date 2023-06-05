@@ -5,7 +5,7 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
 
-  def new(%SessionContext{} = context, sections, project) do
+  def new(%SessionContext{} = ctx, sections, project) do
     column_specs = [
       %ColumnSpec{
         name: :title,
@@ -41,7 +41,7 @@ defmodule OliWeb.Projects.ActiveSectionsTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context,
+        ctx: ctx,
         project: project
       }
     )

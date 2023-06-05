@@ -20,13 +20,13 @@ defmodule OliWeb.Sections.EditView do
   alias Surface.Components.Form
   alias Oli.Branding.CustomLabels
 
-  data breadcrumbs, :any
-  data title, :string, default: "Edit Section Details"
-  data section, :any, default: nil
-  data changeset, :any
-  data is_admin, :boolean
-  data brands, :list
-  data labels, :map, default: Map.from_struct(CustomLabels.default())
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Edit Section Details")
+  data(section, :any, default: nil)
+  data(changeset, :any)
+  data(is_admin, :boolean)
+  data(brands, :list)
+  data(labels, :map, default: Map.from_struct(CustomLabels.default()))
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -61,7 +61,7 @@ defmodule OliWeb.Sections.EditView do
 
         {:ok,
          assign(socket,
-           context: SessionContext.init(session),
+           ctx: SessionContext.init_live(session),
            brands: available_brands,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
@@ -80,11 +80,11 @@ defmodule OliWeb.Sections.EditView do
           <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
         </Group>
         <Group label="Schedule" description="Edit the start and end dates for scheduling purposes">
-          <StartEnd id="start_end_editing" changeset={@changeset} disabled={false} is_admin={@is_admin} context={@context}/>
+          <StartEnd id="start_end_editing" changeset={@changeset} disabled={false} is_admin={@is_admin} ctx={@ctx}/>
         </Group>
 
         {#if @section.open_and_free}
-          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
+          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@ctx}/>
         {#else}
           <LtiSettings section={@section}/>
         {/if}
@@ -102,12 +102,12 @@ defmodule OliWeb.Sections.EditView do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.context)
+    params = convert_dates(params, socket.assigns.ctx)
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
   def handle_event("save", %{"section" => params}, socket) do
-    params = convert_dates(params, socket.assigns.context)
+    params = convert_dates(params, socket.assigns.ctx)
 
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
@@ -143,9 +143,9 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
-  defp convert_dates(params, context) do
-    utc_start_date = FormatDateTime.datestring_to_utc_datetime(params["start_date"], context)
-    utc_end_date = FormatDateTime.datestring_to_utc_datetime(params["end_date"], context)
+  defp convert_dates(params, ctx) do
+    utc_start_date = FormatDateTime.datestring_to_utc_datetime(params["start_date"], ctx)
+    utc_end_date = FormatDateTime.datestring_to_utc_datetime(params["end_date"], ctx)
 
     params
     |> Map.put("start_date", utc_start_date)

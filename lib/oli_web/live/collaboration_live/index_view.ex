@@ -67,12 +67,12 @@ defmodule OliWeb.CollaborationLive.IndexView do
 
   def mount(params, session, socket) do
     live_action = socket.assigns.live_action
-    context = SessionContext.init(session)
+    ctx = SessionContext.init_live(session)
     section_slug = params["section_slug"]
 
     do_mount = fn ->
       {collab_spaces, table_model} =
-        get_collab_spaces_and_table_model(live_action, context, section_slug)
+        get_collab_spaces_and_table_model(live_action, ctx, section_slug)
 
       {:ok,
        assign(socket,
@@ -124,16 +124,16 @@ defmodule OliWeb.CollaborationLive.IndexView do
     """
   end
 
-  defp get_collab_spaces_and_table_model(:admin, context, _) do
+  defp get_collab_spaces_and_table_model(:admin, ctx, _) do
     collab_spaces = Collaboration.list_collaborative_spaces()
-    {:ok, table_model} = AdminTableModel.new(collab_spaces, context)
+    {:ok, table_model} = AdminTableModel.new(collab_spaces, ctx)
 
     {collab_spaces, table_model}
   end
 
-  defp get_collab_spaces_and_table_model(:instructor, context, section_slug) do
+  defp get_collab_spaces_and_table_model(:instructor, ctx, section_slug) do
     {_, collab_spaces} = Collaboration.list_collaborative_spaces_in_section(section_slug)
-    {:ok, table_model} = InstructorTableModel.new(collab_spaces, context)
+    {:ok, table_model} = InstructorTableModel.new(collab_spaces, ctx)
 
     {collab_spaces, table_model}
   end

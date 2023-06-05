@@ -3,7 +3,7 @@ defmodule OliWeb.CommunityLive.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(communities, context) do
+  def new(communities, ctx) do
     SortableTableModel.new(
       rows: communities,
       column_specs: [
@@ -38,7 +38,7 @@ defmodule OliWeb.CommunityLive.TableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end

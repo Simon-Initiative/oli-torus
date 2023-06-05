@@ -2,7 +2,7 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(rows, context) do
+  def new(rows, ctx) do
     SortableTableModel.new(
       rows: rows,
       column_specs: [
@@ -42,7 +42,7 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -63,16 +63,19 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
 
   def render_status(assigns, %{collab_space_config: %{status: :enabled}}, _),
     do: SortableTableModel.render_span_column(assigns, "Enabled", "text-success")
+
   def render_status(assigns, %{collab_space_config: %{"status" => "enabled"}}, _),
     do: SortableTableModel.render_span_column(assigns, "Enabled", "text-success")
 
   def render_status(assigns, %{collab_space_config: %{status: :disabled}}, _),
     do: SortableTableModel.render_span_column(assigns, "Disabled", "text-danger")
+
   def render_status(assigns, %{collab_space_config: %{"status" => "disabled"}}, _),
     do: SortableTableModel.render_span_column(assigns, "Disabled", "text-danger")
 
   def render_status(assigns, %{collab_space_config: %{status: :archived}}, _),
     do: SortableTableModel.render_span_column(assigns, "Archived", "text-info")
+
   def render_status(assigns, %{collab_space_config: %{"status" => "archived"}}, _),
     do: SortableTableModel.render_span_column(assigns, "Archived", "text-info")
 
@@ -83,8 +86,11 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
     do: {fn row -> row.page.title end, direction}
 
   def custom_sort(direction, %ColumnSpec{name: :status}),
-    do: {fn row ->
-      status = Map.get(row.collab_space_config, "status") || Map.get(row.collab_space_config, :status)
-      if is_atom(status), do: Atom.to_string(status), else: status
-    end, direction}
+    do:
+      {fn row ->
+         status =
+           Map.get(row.collab_space_config, "status") || Map.get(row.collab_space_config, :status)
+
+         if is_atom(status), do: Atom.to_string(status), else: status
+       end, direction}
 end
