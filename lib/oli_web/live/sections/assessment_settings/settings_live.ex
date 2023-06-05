@@ -27,7 +27,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
         {:ok,
          assign(socket,
-           context: SessionContext.init(session),
+           context: SessionContext.init_live(session, user: current_user),
            current_user: current_user,
            preview_mode: socket.assigns[:live_action] == :preview,
            title: "Assessment Settings",
