@@ -15,6 +15,6 @@ defmodule OliWeb.Common.Table.Common do
   end
 
   def render_date(assigns, item, %ColumnSpec{name: name}) do
-    Utils.render_date(item, name, Map.get(assigns, :context))
+    Utils.render_date(item, name, Map.get(assigns, :ctx))
   end
 end

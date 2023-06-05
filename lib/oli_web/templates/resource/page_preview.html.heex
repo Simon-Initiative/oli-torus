@@ -6,7 +6,9 @@
   }) %>
 <% else %>
 
-  <Components.Delivery.PageDelivery.header title={@context.title} page_number={0} review_mode={false} />
+  <%= if not (Map.has_key?(@context.content, "advancedDelivery") and @context.content["advancedDelivery"]) do %>
+    <Components.Delivery.PageDelivery.header title={@context.title} page_number={0} review_mode={false} />
+  <% end %>
 
   <Components.Delivery.PageDelivery.details />
 

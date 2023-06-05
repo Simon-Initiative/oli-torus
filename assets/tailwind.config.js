@@ -33,4 +33,5 @@ module.exports = {
     ),
     require('@tailwindcss/container-queries'),
   ],
+  safelist: ['mb-24'],
 };

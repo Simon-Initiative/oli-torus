@@ -93,9 +93,11 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           }
           `}
           </style>
-          <a href={backButtonUrl} title={backButtonText}>
-            <span className="fa fa-arrow-left">&nbsp;</span>
-          </a>
+          {currentPage.displayApplicationChrome || (
+            <a href={backButtonUrl} title={backButtonText}>
+              <span className="fa fa-arrow-left">&nbsp;</span>
+            </a>
+          )}
         </div>
       )}
       {isReviewMode && <ReviewModeNavigation></ReviewModeNavigation>}

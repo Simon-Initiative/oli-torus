@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
+  alias Oli.Delivery.RecommendedActions
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -92,6 +93,48 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(
+        %{
+          "view" => "overview",
+          "section_slug" => _section_slug,
+          "active_tab" => "recommended_actions"
+        } = params,
+        _,
+        socket
+      ) do
+    socket =
+      case socket.assigns[:has_scheduled_resources] do
+        nil ->
+          section = socket.assigns.section
+
+          has_scheduled_resources =
+            RecommendedActions.section_has_scheduled_resources?(section.id)
+
+          scoring_pending_activities_count =
+            RecommendedActions.section_scoring_pending_activities(section.id) |> length()
+
+          approval_pending_posts_count =
+            RecommendedActions.section_approval_pending_posts(section.id) |> length()
+
+          has_pending_updates = RecommendedActions.section_has_pending_updates?(section.id)
+          has_due_soon_activities = RecommendedActions.section_has_due_soon_activities?(section.id)
+
+          assign(socket,
+            has_scheduled_resources: has_scheduled_resources,
+            scoring_pending_activities_count: scoring_pending_activities_count,
+            approval_pending_posts_count: approval_pending_posts_count,
+            has_pending_updates: has_pending_updates,
+            has_due_soon_activities: has_due_soon_activities
+          )
+
+        _ ->
+          socket
+      end
+
+    {:noreply, assign(socket, params: params, view: :overview, active_tab: :recommended_actions)}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = params, _, socket) do
     socket =
       case params["active_tab"] do
@@ -118,7 +161,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
         tab ->
           socket
-          |> assign(active_tab: String.to_existing_atom(tab))
+          |> assign(view: :overview, params: params, active_tab: String.to_existing_atom(tab))
       end
 
     {:noreply, socket}
@@ -279,7 +322,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
       <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
-        Not implemented
+        <OliWeb.Components.Delivery.RecommendedActions.render
+          section_slug={@section_slug}
+          has_scheduled_resources={@has_scheduled_resources}
+          scoring_pending_activities_count={@scoring_pending_activities_count}
+          approval_pending_posts_count={@approval_pending_posts_count}
+          has_pending_updates={@has_pending_updates}
+          has_due_soon_activities={@has_due_soon_activities}
+        />
       </div>
     """
   end
@@ -290,7 +340,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
       <div class="mx-10 mb-10bg-white shadow-sm">
         <.live_component
-          module={OliWeb.Delivery.CourseContent}
+          module={OliWeb.Components.Delivery.CourseContent}
           id="course_content_tab"
           hierarchy={assigns.hierarchy}
           current_position={assigns.current_position}
@@ -317,7 +367,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         tab_name={@active_tab}
         show_progress_csv_download={true}
         params={@params}
-        context={@context}
+        ctx={@ctx}
         section={@section}
         view={@view}
         students={@students}
@@ -350,7 +400,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         id="students_table"
         module={OliWeb.Components.Delivery.Students}
         params={@params}
-        context={@context}
+        ctx={@ctx}
         section={@section}
         view={@view}
         students={@students}

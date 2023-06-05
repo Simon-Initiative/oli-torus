@@ -851,7 +851,7 @@ defmodule OliWeb.CollaborationLiveTest do
     end
 
     test "renders datetimes using the local timezone", context = %{second_post: second_post} do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       {:ok, view, _html} = live(conn, live_view_collab_space_index(:admin))
 

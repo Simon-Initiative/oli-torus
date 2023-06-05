@@ -411,7 +411,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      {:ok, conn: conn, context: session_context} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, ctx: session_context} = set_timezone(%{conn: conn})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -466,7 +466,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         post(
           conn,
-          Routes.page_delivery_path(conn, :start_attempt_protected, section.slug, page_revision.slug),
+          Routes.page_delivery_path(
+            conn,
+            :start_attempt_protected,
+            section.slug,
+            page_revision.slug
+          ),
           %{password: "wrong"}
         )
 
@@ -487,7 +492,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         post(
           conn,
-          Routes.page_delivery_path(conn, :start_attempt_protected, section.slug, page_revision.slug),
+          Routes.page_delivery_path(
+            conn,
+            :start_attempt_protected,
+            section.slug,
+            page_revision.slug
+          ),
           %{password: "password"}
         )
 
@@ -502,7 +512,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, redir_path)
       assert html_response(conn, 200) =~ "Submit Answers"
-
     end
 
     test "changing a page from graded to ungraded allows the graded attempt to continue", %{

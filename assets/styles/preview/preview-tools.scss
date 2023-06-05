@@ -59,14 +59,16 @@
       }
       li {
         counter-increment: li;
-
+        &.active {
+          background-color: var(--color-primary);
+        }
         a {
           color: #1e293b;
           display: block;
           position: relative;
           padding: 8px 8px;
           text-decoration: none;
-
+          margin-left: 30px;
           &.selected {
             background-color: var(--color-primary);
           }

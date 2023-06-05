@@ -66,7 +66,7 @@ defmodule OliWeb.Resources.PagesView do
       with {:ok, author} <- Accounts.get_author(author_id) |> trap_nil(),
            {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project) do
-        context = SessionContext.init(session)
+        ctx = SessionContext.init_live(session)
 
         pages =
           PageBrowse.browse_pages(
@@ -77,13 +77,13 @@ defmodule OliWeb.Resources.PagesView do
           )
 
         total_count = determine_total(pages)
-        {:ok, table_model} = PagesTableModel.new(pages, project, context)
+        {:ok, table_model} = PagesTableModel.new(pages, project, ctx)
 
         project_hierarchy =
           AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
 
         assign(socket,
-          context: context,
+          ctx: ctx,
           breadcrumbs: breadcrumb(project),
           project_hierarchy: project_hierarchy,
           project: project,

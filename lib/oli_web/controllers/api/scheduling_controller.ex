@@ -157,10 +157,10 @@ defmodule OliWeb.Api.SchedulingController do
        }
   def update(conn, %{"updates" => updates}) do
     section = conn.assigns.section
-    context = SessionContext.init(conn)
+    ctx = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
-      case Scheduling.update(section, updates, context.local_tz) do
+      case Scheduling.update(section, updates, ctx.local_tz) do
         {:ok, count} -> json(conn, %{"result" => "success", "count" => count})
         {:error, :missing_update_parameters} -> error(conn, 400, "Missing update parameters")
         e -> error(conn, 500, e)
@@ -183,7 +183,6 @@ defmodule OliWeb.Api.SchedulingController do
   end
 
   defp serialize_resource(%SectionResource{} = sr) do
-
     just_date = fn datetime ->
       case datetime do
         nil -> nil
@@ -198,7 +197,12 @@ defmodule OliWeb.Api.SchedulingController do
       "resource_type_id" => sr.resource_type_id,
       "graded" => sr.graded,
       "start_date" => sr.start_date |> just_date.(),
-      "end_date" => if sr.scheduling_type == :due_by do sr.end_date else sr.end_date |> just_date.() end,
+      "end_date" =>
+        if sr.scheduling_type == :due_by do
+          sr.end_date
+        else
+          sr.end_date |> just_date.()
+        end,
       "scheduling_type" => sr.scheduling_type,
       "resource_id" => sr.resource_id,
       "manually_scheduled" => sr.manually_scheduled,

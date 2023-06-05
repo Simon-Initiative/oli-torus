@@ -12,7 +12,7 @@ defmodule OliWeb.Users.UsersTableModel do
     """
   end
 
-  def new(users, context) do
+  def new(users, ctx) do
     SortableTableModel.new(
       rows: users,
       column_specs: [
@@ -36,7 +36,7 @@ defmodule OliWeb.Users.UsersTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -91,6 +91,6 @@ defmodule OliWeb.Users.UsersTableModel do
         """
       end
 
-      ~F({primary_badge} {secondary_badge})
+    ~F({primary_badge} {secondary_badge})
   end
 end

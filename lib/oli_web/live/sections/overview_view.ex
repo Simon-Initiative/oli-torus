@@ -112,10 +112,10 @@ defmodule OliWeb.Sections.OverviewView do
     {render_modal(assigns)}
     <Groups>
       <Group label="Details" description="Overview of course section details">
-        <ReadOnly label="Course Section ID" value={@section.slug}/>
-        <ReadOnly label="Title" value={@section.title}/>
-        <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
-        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
+        <ReadOnly label="Course Section ID" value={@section.slug} />
+        <ReadOnly label="Title" value={@section.title} />
+        <ReadOnly label="Course Section Type" value={type_to_string(@section)} />
+        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)} />
         {#unless is_nil(deployment)}
           <ReadOnly
             label="Institution"
@@ -128,7 +128,7 @@ defmodule OliWeb.Sections.OverviewView do
         {/unless}
       </Group>
       <Group label="Instructors" description="Manage users with instructor level access">
-        <Instructors users={@instructors}/>
+        <Instructors users={@instructors} />
       </Group>
       <Group label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
@@ -140,7 +140,39 @@ defmodule OliWeb.Sections.OverviewView do
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView , @section.slug)} class={"btn btn-link"}>Scheduling</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)} class={"btn btn-link"}>Advanced Gating and Scheduling</a></li>
           <li>
-            <a disabled={@updates_count == 0} href={Routes.source_materials_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @section.slug)} class={"btn btn-link"}>
+            <a
+              target="_blank"
+              href={Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, @section.slug, :content)}
+              class="btn btn-link"
+            ><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1" /></a>
+          </li>
+          <li><a
+              href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}
+              class="btn btn-link"
+              target="_blank"
+            ><span>Enter Course as a Student</span> <i class="fas fa-external-link-alt self-center ml-1" /></a></li>
+          <li><a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}
+              class="btn btn-link"
+            >Customize Curriculum</a></li>
+          <li><a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section.slug)}
+              class="btn btn-link"
+            >Scheduling</a></li>
+          <li><a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}
+              class="btn btn-link"
+            >Advanced Gating and Scheduling</a></li>
+          <li>
+            <a
+              disabled={@updates_count == 0}
+              href={Routes.source_materials_path(
+                OliWeb.Endpoint,
+                OliWeb.Delivery.ManageSourceMaterials,
+                @section.slug
+              )}
+              class="btn btn-link"
+            >
               Manage Source Materials
               {#if @updates_count > 0}
                 <span class="badge badge-primary">{@updates_count} available</span>
@@ -169,6 +201,16 @@ defmodule OliWeb.Sections.OverviewView do
               href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}
               class="btn btn-link"
             >Browse Collaborative Spaces</a></li>
+          <li><a
+              href={Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Sections.AssessmentSettings.SettingsLive,
+                @section.slug,
+                :settings,
+                :all
+              )}
+              class="btn btn-link"
+            >Assessment Settings</a></li>
           <li><button
               type="button"
               class="btn btn-link text-danger action-button"
@@ -193,7 +235,10 @@ defmodule OliWeb.Sections.OverviewView do
           </div>
         {/if}
       </Group>
-      <Group label="Collaborative Space" description="Activate and configure a collaborative space for this section">
+      <Group
+        label="Collaborative Space"
+        description="Activate and configure a collaborative space for this section"
+      >
         <div class="container mx-auto">
           {#if @collab_space_config && @collab_space_config.status != :disabled}
             {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
@@ -223,11 +268,20 @@ defmodule OliWeb.Sections.OverviewView do
               {/if}
             </a>
           </li>
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)} class={"btn btn-link"}>View all Grades</a></li>
-          <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)} class={"btn btn-link"}>Download Gradebook as <code>.csv</code> file</a></li>
+          <li><a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
+              class="btn btn-link"
+            >View all Grades</a></li>
+          <li><a
+              href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}
+              class="btn btn-link"
+            >Download Gradebook as <code>.csv</code> file</a></li>
 
           {#if @is_system_admin}
-            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Snapshots.SnapshotsView, @section.slug)} class={"btn btn-link"}>Manage Snapshot Records</a></li>
+            <li><a
+                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Snapshots.SnapshotsView, @section.slug)}
+                class="btn btn-link"
+              >Manage Snapshot Records</a></li>
           {/if}
           {#if !@section.open_and_free}
             <li><a

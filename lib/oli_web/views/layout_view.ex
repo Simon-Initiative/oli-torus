@@ -113,11 +113,11 @@ defmodule OliWeb.LayoutView do
     end
   end
 
-  def account_dropdown(%{assigns: %{current_author: current_author}} = conn),
+  def account_dropdown(%{assigns: %{ctx: ctx}} = conn),
     do:
       render(__MODULE__, "_author_account_dropdown.html",
         conn: conn,
-        current_author: current_author
+        ctx: ctx
       )
 
   def render_layout(layout, assigns, do: content) do

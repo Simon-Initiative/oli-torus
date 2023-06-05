@@ -8,18 +8,19 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Header
+  alias OliWeb.Common.SessionContext
 
-  attr :current_user, User
-  attr :student, User
-  attr :section, Section
-  attr :breadcrumbs, :list, required: true
-  attr :socket_or_conn, :any, required: true
-  attr :preview_mode, :boolean, default: false
+  attr(:ctx, SessionContext)
+  attr(:student, User)
+  attr(:section, Section)
+  attr(:breadcrumbs, :list, required: true)
+  attr(:socket_or_conn, :any, required: true)
+  attr(:preview_mode, :boolean, default: false)
 
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header current_user={@current_user} student={@student} section={@section} preview_mode={@preview_mode} />
+        <.header ctx={@ctx} student={@student} section={@section} preview_mode={@preview_mode} />
         <Header.delivery_breadcrumb {assigns} />
 
         <div class="flex-1 flex flex-col">
@@ -52,7 +53,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     )
   end
 
-  attr :active_tab, :atom,
+  attr(:active_tab, :atom,
     required: true,
     values: [
       :content,
@@ -60,10 +61,11 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
       :quizz_scores,
       :progress
     ]
+  )
 
-  attr :section_slug, :string, required: true
-  attr :student_id, :string, required: true
-  attr :preview_mode, :boolean, required: true
+  attr(:section_slug, :string, required: true)
+  attr(:student_id, :string, required: true)
+  attr(:preview_mode, :boolean, required: true)
 
   def tabs(assigns) do
     ~H"""
@@ -120,10 +122,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     end
   end
 
-  attr :current_user, User
-  attr :student, User
-  attr :section, Section
-  attr :preview_mode, :boolean, default: false
+  attr(:ctx, SessionContext)
+  attr(:student, User)
+  attr(:section, Section)
+  attr(:preview_mode, :boolean, default: false)
 
   def header(assigns) do
     ~H"""
@@ -137,7 +139,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu current_user={@current_user} />
+            <UserAccountMenu.menu ctx={@ctx} />
           <% end %>
           <div class="flex items-center border-l border-slate-300">
             <button
@@ -165,13 +167,13 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     use Ecto.Schema
 
     schema "survey_response" do
-      field :title, :string
-      field :response, :string
+      field(:title, :string)
+      field(:response, :string)
     end
   end
 
-  attr :student, User
-  attr :survey_responses, :list
+  attr(:student, User)
+  attr(:survey_responses, :list)
 
   def student_details(assigns) do
     ~H"""
@@ -209,8 +211,8 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     """
   end
 
-  attr :section_title, :string
-  attr :student_name, :string
+  attr(:section_title, :string)
+  attr(:student_name, :string)
 
   def section_details_header(%{section: nil}), do: nil
 

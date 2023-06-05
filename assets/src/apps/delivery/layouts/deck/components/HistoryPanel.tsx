@@ -107,14 +107,12 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
             ))}
           </nav>
           <div className="theme-history__footer">
-            (
             <button onClick={onRestart} className="theme-history__restart">
               <span>
                 <div className="theme-history__restart-icon" />
                 <span className="theme-history__restart-label">Restart Lesson</span>
               </span>
             </button>
-            )
           </div>
         </div>
       )}

@@ -14,7 +14,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     """
   end
 
-  def new(%SessionContext{} = context, gating_condition_rows, section, is_parent_gate?) do
+  def new(%SessionContext{} = ctx, gating_condition_rows, section, is_parent_gate?) do
     resource_column = %ColumnSpec{
       name: :title,
       label: "Resource",
@@ -53,7 +53,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
       id_field: [:id],
       data: %{
         section_slug: section.slug,
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -84,28 +84,29 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: context} = assigns,
+        %{ctx: ctx} = assigns,
         %GatingCondition{
           type: :schedule,
-          data: %GatingConditionData{
-            start_datetime: start_datetime,
-            end_datetime: end_datetime
-          } = data
+          data:
+            %GatingConditionData{
+              start_datetime: start_datetime,
+              end_datetime: end_datetime
+            } = data
         },
         _
       ) do
     ~F"""
       <div :if={start_datetime}>
-        <b>Start:</b> {Utils.render_precise_date(data, :start_datetime, context)}
+        <b>Start:</b> {Utils.render_precise_date(data, :start_datetime, ctx)}
       </div>
       <div :if={end_datetime}>
-        <b>End:</b> {Utils.render_precise_date(data, :end_datetime, context)}
+        <b>End:</b> {Utils.render_precise_date(data, :end_datetime, ctx)}
       </div>
     """
   end
 
   def render_details_column(
-        %{context: _} = assigns,
+        %{ctx: _} = assigns,
         %GatingCondition{
           type: :started
         },
@@ -119,7 +120,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: _} = assigns,
+        %{ctx: _} = assigns,
         %GatingCondition{
           type: :finished,
           data: %GatingConditionData{
@@ -136,7 +137,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: _} = assigns,
+        %{ctx: _} = assigns,
         %GatingCondition{
           type: :finished
         },
@@ -150,7 +151,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: _context} = assigns,
+        %{ctx: _ctx} = assigns,
         %GatingCondition{
           type: :always_open
         },
@@ -178,5 +179,4 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
       </div>
     """
   end
-
 end

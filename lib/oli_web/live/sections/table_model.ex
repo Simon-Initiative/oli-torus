@@ -5,7 +5,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(%SessionContext{} = context, sections) do
+  def new(%SessionContext{} = ctx, sections) do
     SortableTableModel.new(
       rows: sections,
       column_specs: [
@@ -64,7 +64,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context,
+        ctx: ctx,
         fade_data: true
       }
     )
@@ -77,7 +77,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :type}),
-    do: if section.open_and_free, do: "Open", else: "LMS"
+    do: if(section.open_and_free, do: "Open", else: "LMS")
 
   def custom_render(_assigns, section, %ColumnSpec{name: :requires_payment}) do
     if section.requires_payment do
@@ -106,7 +106,9 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
       SortableTableModel.render_link_column(assigns, section.blueprint.title, route_path)
     else
-      route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, section.base_project.slug)
+      route_path =
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, section.base_project.slug)
+
       SortableTableModel.render_link_column(assigns, section.base_project.title, route_path)
     end
   end

@@ -193,4 +193,4 @@ When making an LTI connection from an LMS such as Canvas, we need an internet ac
 
 Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.
 
-To configure an LTI connection, refer to the [Torus LTI 1.3 Manual Configuration](https://github.com/Simon-Initiative/oli-torus/wiki/Torus-LTI-1.3-Manual-Configuration).
+To configure an LTI connection, refer to the [Torus LTI 1.3 Manual Configuration](https://github.com/Simon-Initiative/oli-torus/wiki/Torus-LTI-1.3-Configuration).
