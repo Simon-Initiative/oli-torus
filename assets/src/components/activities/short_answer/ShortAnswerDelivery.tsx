@@ -165,7 +165,9 @@ export const ShortAnswerComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ShortAnswerModelSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, {
+      name: 'ShortAnswerDelivery',
+    });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

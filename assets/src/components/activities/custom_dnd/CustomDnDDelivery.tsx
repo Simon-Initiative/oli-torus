@@ -119,6 +119,7 @@ export const CustomDnDComponent: React.FC = () => {
   };
 
   const onSubmit = (targetId: string, draggableId: string) => {
+    console.info('🤡🤡 onSubmit.');
     const [partId, choiceId] =
       partIdBearers === 'targets' ? [targetId, draggableId] : [draggableId, targetId];
     const response = partId + '_' + choiceId;
@@ -196,7 +197,7 @@ export const CustomDnDComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class CustomDnDDelivery extends DeliveryElement<CustomDnDSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CustomDnDSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'CustomDNDDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
