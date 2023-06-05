@@ -26,13 +26,16 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   ## Optional Parameters:
 
-  select_mode:            Which selection mode to operate in. This can be set to :single, :multiple or
-                          :container. Defaults to :single
-  filter_items_fn:        Filter function applied to items shown. Default is no filter.
-  sort_items_fn:          Sorting function applied to items shown. Default is to sort containers first.
-  publications:           The list of publications that items can be selected from (used in multi-pub mode)
-  selected_publication:   The currently selected publication (used in multi-pub mode)
-  active_tab:             The currently selected tab (:curriculum or :all_pages)
+  select_mode:              Which selection mode to operate in. This can be set to :single, :multiple or
+                            :container. Defaults to :single
+  filter_items_fn:          Filter function applied to items shown. Default is no filter.
+  sort_items_fn:            Sorting function applied to items shown. Default is to sort containers first.
+  publications:             The list of publications that items can be selected from (used in multi-pub mode)
+  selected_publication:     The currently selected publication (used in multi-pub mode)
+  active_tab:               The currently selected tab (:curriculum or :all_pages)
+  table_model:              The table model containing the ordered and unordered pages
+  table_model_params:       The query params for the table model
+  table_model_total_count:  The total count for the table model rows
 
   ## Events:
   "HierarchyPicker.update_active", %{"uuid" => uuid}
@@ -46,7 +49,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   use Phoenix.HTML
 
   alias Oli.Resources.Numbering
-  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.{Breadcrumb, PagedTable, SearchInput}
   alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def render(
@@ -68,7 +71,29 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       <% end %>
 
       <%= if assigns[:active_tab] == :all_pages do %>
-        All pages
+        <form phx-debounce="500" phx-change="HierarchyPicker.text_search" class="w-min ml-auto">
+          <SearchInput.render text={assigns.params[:text_search]} name="text_search" id="text_search" placeholder="Search pages" />
+        </form>
+        <PagedTable.render
+          __context__={assigns[:__context_]}
+          total_count={assigns.total_count}
+          filter={assigns.params.text_filter}
+          limit={assigns.params.limit}
+          offset={assigns.params.offset}
+          table_model={Map.put(assigns.table_model, :data, %{
+            selection: assigns.selection,
+            preselected: assigns.preselected,
+            selected_publication: assigns.selected_publication
+          })}
+          allow_selection={false}
+          sort="HierarchyPicker.sort"
+          page_change="HierarchyPicker.page_change"
+          selection_change=""
+          show_top_paging={false}
+          show_bottom_paging={true}
+          additional_table_class="remix_materials_table"
+          render_top_info={false}
+        />
       <% else %>
         <div class="hierarchy-navigation">
           <%= render_breadcrumb assigns %>
