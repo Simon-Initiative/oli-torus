@@ -18,7 +18,9 @@ defmodule Oli.Interop.Ingest.Processor do
     BibEntries,
     Hyperlinks,
     PublishedResources,
-    MediaItems
+    MediaItems,
+    Alternatives,
+    InternalActivityRefs
   }
 
   def process(%State{} = state) do
@@ -28,11 +30,13 @@ defmodule Oli.Interop.Ingest.Processor do
       |> Project.process()
       |> bulk_allocate_resources
       |> Tags.process()
+      |> Alternatives.process()
       |> Objectives.process()
       |> BibEntries.process()
       |> Activities.process()
       |> Pages.process()
       |> PublishedResources.process()
+      |> InternalActivityRefs.process()
       |> Hyperlinks.process()
       |> Hierarchy.process()
       |> Products.process()
@@ -62,7 +66,7 @@ defmodule Oli.Interop.Ingest.Processor do
   defp bulk_allocate_resources(%State{project: project} = state) do
     total_needed =
       Enum.count(state.tags) + Enum.count(state.bib_entries) + Enum.count(state.objectives) +
-        Enum.count(state.activities) + Enum.count(state.pages)
+        Enum.count(state.activities) + Enum.count(state.pages) + Enum.count(state.alternatives)
 
     %{
       state
