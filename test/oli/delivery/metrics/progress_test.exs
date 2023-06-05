@@ -243,7 +243,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
           :a5
         )
 
-      guid = map.a5.attempt_guid
+      guid = map.a4.attempt_guid
       assert {:ok, :updated} = Metrics.update_page_progress(guid)
 
       ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
