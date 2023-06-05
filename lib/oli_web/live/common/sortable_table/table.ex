@@ -43,15 +43,12 @@ defmodule OliWeb.Common.SortableTable.Table do
       style="cursor: pointer;"
       :on-click={@sort}
       phx-value-sort_by={column_spec.name}
+      data-sort-column={if @model.sort_by_spec == column_spec, do: "true", else: "false"}
+      data-sort-order={if @model.sort_by_spec == column_spec, do: to_string(@model.sort_order || :desc), else: "desc"}
     >
       {column_spec.label}
       {#if column_spec.sortable}
-        {#if @model.sort_by_spec == column_spec}
-          <i class={"fas fa-sort-" <> sort_direction_cls} />
-          <span class={"data-sort-" <> sort_direction_cls} data-sort-column="true" />
-        {#else}
-          <span class="data-sort-up" data-sort-column="false" />
-        {/if}
+        <i class={"fas fa-sort-" <> sort_direction_cls} />
       {/if}
     </th>
     """
