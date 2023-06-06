@@ -677,15 +677,15 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
-  def is_first_activity_attempt?(activity_attempt_guid) do
-    attempt_number = Repo.one(
+  def is_scoreable_first_attempt?(activity_attempt_guid) do
+    {attempt_number, scoreable} = Repo.one(
       from(a in ActivityAttempt,
         where: a.attempt_guid == ^activity_attempt_guid,
-        select: a.attempt_number
+        select: {a.attempt_number, a.scoreable}
       )
     )
-    case attempt_number do
-      1 -> true
+    case {attempt_number, scoreable} do
+      {1, true} -> true
       _ -> false
     end
   end

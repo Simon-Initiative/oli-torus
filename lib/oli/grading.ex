@@ -25,6 +25,7 @@ defmodule Oli.Grading do
 
   alias Oli.Repo
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias OliWeb.Common.Utils
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -112,9 +113,12 @@ defmodule Oli.Grading do
 
     table_data =
       gradebook
+      |> Enum.sort_by(fn %GradebookRow{user: user} ->
+        Utils.name(user.name, user.given_name, user.family_name)
+      end)
       |> Enum.map(fn %GradebookRow{user: user, scores: scores} ->
         [
-          "#{user.name} (#{user.email})"
+          "#{Utils.name(user.name, user.given_name, user.family_name)} (#{user.email})"
           | Enum.map(scores, fn gradebook_score ->
               case gradebook_score do
                 nil ->
@@ -307,25 +311,25 @@ defmodule Oli.Grading do
   end
 
   def fetch_graded_pages(section_slug) do
-      SectionResource
-      |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
-      |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
-        on: spp.section_id == s.id and spp.project_id == sr.project_id
-      )
-      |> join(:inner, [sr, _, spp], pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
-      )
-      |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
-      |> where(
-        [sr, s, _, _, rev],
-        s.slug == ^section_slug and
-          rev.deleted == false and
-          rev.graded == true and
-          rev.resource_type_id == ^ResourceType.get_id_by_type("page")
-      )
-      |> order_by([_, _, _, _, rev], asc: rev.resource_id)
-      |> select([_, _, _, _, rev], rev)
-      |> Repo.all()
+    SectionResource
+    |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
+    |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id and spp.project_id == sr.project_id
+    )
+    |> join(:inner, [sr, _, spp], pr in PublishedResource,
+      on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id
+    )
+    |> join(:inner, [sr, _, _, pr], rev in Revision, on: rev.id == pr.revision_id)
+    |> where(
+      [sr, s, _, _, rev],
+      s.slug == ^section_slug and
+        rev.deleted == false and
+        rev.graded == true and
+        rev.resource_type_id == ^ResourceType.get_id_by_type("page")
+    )
+    |> order_by([_, _, _, _, rev], asc: rev.resource_id)
+    |> select([_, _, _, _, rev], rev)
+    |> Repo.all()
   end
 
   def fetch_reachable_graded_pages(section_slug) do

@@ -168,6 +168,10 @@ defmodule Oli.Resources.PageContent do
     item_with_children(item, acc, map_fn, %TraversalContext{})
   end
 
+  def visit_children(%{"children" => _children} = item, acc, map_fn) do
+    item_with_children(item, acc, map_fn, %TraversalContext{})
+  end
+
   def is_resource_group?(%{"type" => kind, "children" => _children})
       when kind in ["group", "survey", "alternatives", "alternative"],
       do: true

@@ -680,14 +680,14 @@ defmodule Oli.Delivery.Metrics do
   {:error, e} -> An other error occurred, rolled back
   """
   def update_page_progress(activity_attempt_guid) when is_binary(activity_attempt_guid) do
-    if Core.is_first_activity_attempt?(activity_attempt_guid) do
+    if Core.is_scoreable_first_attempt?(activity_attempt_guid) do
       do_update(activity_attempt_guid)
     else
       {:ok, :noop}
     end
   end
 
-  def update_page_progress(%ActivityAttempt{attempt_number: 1, attempt_guid: attempt_guid}) do
+  def update_page_progress(%ActivityAttempt{scoreable: true, attempt_number: 1, attempt_guid: attempt_guid}) do
     do_update(attempt_guid)
   end
 
@@ -720,8 +720,10 @@ defmodule Oli.Delivery.Metrics do
 
       case Ecto.Adapters.SQL.query(Oli.Repo, sql, [activity_attempt_guid, activity_attempt_guid]) do
         {:ok, %{num_rows: 1}} -> :updated
-        {:ok, %{num_rows: _}} -> Oli.Repo.rollback(:unexpected_update_count)
-        {:error, e} -> Oli.Repo.rollback(e)
+        {:ok, %{num_rows: _}} ->
+          Oli.Repo.rollback(:unexpected_update_count)
+        {:error, e} ->
+          Oli.Repo.rollback(e)
       end
     end)
   end

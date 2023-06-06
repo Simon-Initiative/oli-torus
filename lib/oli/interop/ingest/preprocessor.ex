@@ -14,7 +14,8 @@ defmodule Oli.Interop.Ingest.Preprocessor do
                  {"Activity", :activities},
                  {"Tag", :tags},
                  {"Page", :pages},
-                 {"Objective", :objectives}
+                 {"Objective", :objectives},
+                 {"Alternatives", :alternatives}
                ]
                |> Map.new()
 
