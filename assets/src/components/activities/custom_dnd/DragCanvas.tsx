@@ -211,7 +211,7 @@ function renderRawContent(id: string, props: DragCanvasProps) {
   };
 
   const dragStartHandler = (ev: DragEvent) => {
-    if (ev !== null) {
+    if (ev !== null && (ev as any)?.target?.getAttribute) {
       const inputVal = (ev as any).target.getAttribute('input_val');
       (ev as any).dataTransfer.setData('text/plain', inputVal);
       (ev as any).dataTransfer.dropEffect = 'move';
