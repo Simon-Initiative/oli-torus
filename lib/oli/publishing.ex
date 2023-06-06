@@ -695,30 +695,22 @@ defmodule Oli.Publishing do
   def get_published_pages_by_publication(publication_ids, params)
       when is_list(publication_ids) do
     text_filter =
-      if params[:text_search] do
-        dynamic([_pr, rev], ilike(rev.title, ^"%#{params.text_search}%"))
-      else
-        true
-      end
+      if params[:text_search],
+        do: dynamic([_pr, rev], ilike(rev.title, ^"%#{params.text_search}%")),
+        else: true
 
-    limit =
-      if params[:limit] do
-        params.limit
-      else
-        nil
-      end
+    limit = if params[:limit], do: params.limit, else: nil
 
-    offset =
-      if params[:offset] do
-        params.offset
-      else
-        0
-      end
+    offset = if params[:offset], do: params.offset, else: 0
 
     query =
       PublishedResource
       |> join(:inner, [pr], rev in Revision, on: rev.id == pr.revision_id)
-      |> where([pr, rev], pr.publication_id in ^publication_ids and rev.resource_type_id == 1 and rev.deleted != true)
+      |> where(
+        [pr, rev],
+        pr.publication_id in ^publication_ids and rev.resource_type_id == 1 and
+          rev.deleted != true
+      )
       |> select([_, rev], %{
         id: rev.id,
         title: rev.title,
