@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Delivery.SectionTitle do
   use Phoenix.Component
 
-  attr :title, :string
+  attr :title, :string, required: true
 
   def section_title(assigns) do
     ~H"""
