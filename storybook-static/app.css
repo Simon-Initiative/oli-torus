@@ -7024,7 +7024,7 @@ a {
   --tw-bg-opacity: 0.2;
 }
 
-.instructor_dashboard_table tr:has(div[data-mastery-check='false']) {
+.instructor_dashboard_table tr:has(div[data-proficiency-check='false']) {
   background-color: rgb(254 202 202 / var(--tw-bg-opacity));
   --tw-bg-opacity: 0.2;
 }
@@ -7143,7 +7143,7 @@ div:has(.remix_materials_table) {
   --tw-bg-opacity: 0.2;
 }
 
-.remix_materials_table tr:has(div[data-mastery-check='false']) {
+.remix_materials_table tr:has(div[data-proficiency-check='false']) {
   background-color: rgb(254 202 202 / var(--tw-bg-opacity));
   --tw-bg-opacity: 0.2;
 }
