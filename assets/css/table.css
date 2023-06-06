@@ -65,14 +65,14 @@
   @apply bg-red-200 bg-opacity-20;
 }
 
-<<<<<<< HEAD
 .instructor_dashboard_table td:has(div.highlight-exception) {
   @apply bg-blue-100 rounded-md bg-opacity-50;
 }
 
 div:has(.instructor_dashboard_table) #header_paging {
   @apply sticky left-0;
-=======
+}
+
 div:has(.remix_materials_table) {
   @apply overflow-x-hidden;
 }
@@ -83,5 +83,4 @@ div:has(.remix_materials_table) {
 
 .remix_materials_table th:last-of-type {
   text-align: right;
->>>>>>> e6ee73b5a5 (Add ability to add orphan pages to section curriculum)
 }
