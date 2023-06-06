@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         socket
       ) do
     if !socket.assigns[:loaded] do
-      ctx = SessionContext.init_live(session)
+      ctx = SessionContext.init(socket, session)
 
       # live_action is :independent_learner, :admin or :lms_instructor
       live_action = session["live_action"]

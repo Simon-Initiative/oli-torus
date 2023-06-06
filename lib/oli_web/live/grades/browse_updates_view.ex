@@ -15,14 +15,14 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
 
   @limit 25
 
-  data breadcrumbs, :any
-  data title, :string, default: "LMS Grade Updates"
-  data section, :any, default: nil
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
+  data(breadcrumbs, :any)
+  data(title, :string, default: "LMS Grade Updates")
+  data(section, :any, default: nil)
+  data(tabel_model, :struct)
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: @limit)
+  data(options, :any)
 
   def set_breadcrumbs(type, section) do
     type
@@ -54,7 +54,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        ctx = SessionContext.init_live(session)
+        ctx = SessionContext.init(socket, session)
 
         options = default_options(section)
 

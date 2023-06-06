@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.SectionsView do
   end
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = ctx = SessionContext.init_live(session)
+    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
 
     sections =
       Browse.browse_sections(

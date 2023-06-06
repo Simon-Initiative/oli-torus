@@ -28,11 +28,11 @@ defmodule OliWeb.Resources.PagesView do
   alias Oli.Authoring.Course.Project
   alias OliWeb.Curriculum.OptionsModal
 
-  data title, :string, default: "All Pages"
-  data project, :any
-  data breadcrumbs, :list
-  data author, :any
-  data pages, :list
+  data(title, :string, default: "All Pages")
+  data(project, :any)
+  data(breadcrumbs, :list)
+  data(author, :any)
+  data(pages, :list)
 
   @limit 25
 
@@ -66,7 +66,7 @@ defmodule OliWeb.Resources.PagesView do
       with {:ok, author} <- Accounts.get_author(author_id) |> trap_nil(),
            {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project) do
-        ctx = SessionContext.init_live(session)
+        ctx = SessionContext.init(socket, session)
 
         pages =
           PageBrowse.browse_pages(

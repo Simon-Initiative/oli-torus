@@ -56,7 +56,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        ctx = SessionContext.init_live(session)
+        ctx = SessionContext.init(socket, session)
 
         %{total_count: total_count, table_model: table_model} = enrollment_assigns(section, ctx)
 

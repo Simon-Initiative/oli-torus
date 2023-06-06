@@ -46,7 +46,7 @@ defmodule OliWeb.PublisherLive.IndexView do
   end
 
   def mount(_, session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
     publishers = Inventories.list_publishers()
 
     {:ok, table_model} = TableModel.new(publishers, ctx)

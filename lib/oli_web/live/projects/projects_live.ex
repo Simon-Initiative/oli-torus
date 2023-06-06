@@ -39,7 +39,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   data(is_admin, :boolean, default: false)
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = ctx = SessionContext.init_live(session)
+    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
     is_admin = Accounts.is_admin?(author)
 
     show_all =

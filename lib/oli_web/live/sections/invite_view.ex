@@ -39,7 +39,7 @@ defmodule OliWeb.Sections.InviteView do
       {type, _, section} ->
         {:ok,
          assign(socket,
-           ctx: SessionContext.init_live(session),
+           ctx: SessionContext.init(socket, session),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            invitations: SectionInvites.list_section_invites(section.id)

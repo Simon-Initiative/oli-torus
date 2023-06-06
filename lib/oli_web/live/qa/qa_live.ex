@@ -22,7 +22,7 @@ defmodule OliWeb.Qa.QaLive do
         %{"current_author_id" => _} = session,
         socket
       ) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
     project = Course.get_project_by_slug(project_slug)
 
     subscribe(project.slug)

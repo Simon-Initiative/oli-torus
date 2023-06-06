@@ -51,7 +51,7 @@ defmodule OliWeb.Products.PaymentsView do
   end
 
   def mount(%{"product_id" => product_slug}, session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
 
     payments = list_payments(product_slug)
 

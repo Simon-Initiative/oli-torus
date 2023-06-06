@@ -33,7 +33,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
     {:ok,
      assign(socket,
-       ctx: SessionContext.init_live(session),
+       ctx: SessionContext.init(socket, session),
        messages: messages,
        breadcrumbs: breadcrumb()
      )}
