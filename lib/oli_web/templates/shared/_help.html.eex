@@ -31,7 +31,8 @@
                   class: "form-control" <> error_class(f, :full_name, "is-invalid"),
                   placeholder: "Enter Name",
                   required: true,
-                  autofocus: true %>
+                  autofocus: true,
+                  value: @conn.assigns[:current_user] && @conn.assigns.current_user.name || @conn.assigns[:author] && @conn.assigns.author.name %>
               <%= error_tag f, :full_name %>
             </div>
             <div class="form-group">
@@ -40,7 +41,8 @@
                 :email,
                 class: "form-control" <> error_class(f, :email, "is-invalid"),
                 placeholder: "Enter Email",
-                required: true %>
+                required: true,
+                value: @conn.assigns[:current_user] && @conn.assigns.current_user.email || @conn.assigns[:author] && @conn.assigns.author.email %>
               <%= error_tag f, :email %>
             </div>
             <div class="form-group mb-3">

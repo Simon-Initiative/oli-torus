@@ -69,6 +69,6 @@
 
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
-    <%= render OliWeb.SharedView, "_help.html" %>
+    <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
   </body>
 </html>
