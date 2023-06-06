@@ -15,23 +15,23 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         name: :objective,
         label: "LEARNING OBJECTIVE",
         render_fn: &__MODULE__.custom_render/3,
-        th_class: "pl-10 instructor_dashboard_th",
+        th_class: "pl-10 instructor_dashboard_th"
       },
       %ColumnSpec{
         name: :subobjective,
         label: "SUB LEARNING OBJ.",
         render_fn: &__MODULE__.custom_render/3,
-        th_class: "instructor_dashboard_th",
+        th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :student_mastery_obj,
-        label: "STUDENT MASTERY OBJ.",
-        th_class: "instructor_dashboard_th",
+        name: :student_proficiency_obj,
+        label: "STUDENT PROFICIENCY OBJ.",
+        th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :student_mastery_subobj,
-        label: "STUDENT MASTERY(SUB OBJ.)",
-        th_class: "instructor_dashboard_th",
+        name: :student_proficiency_subobj,
+        label: "STUDENT PROFICIENCY (SUB OBJ.)",
+        th_class: "instructor_dashboard_th"
       }
     ]
 
@@ -43,26 +43,30 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     )
   end
 
-  def custom_render(assigns, %{objective: objective, student_mastery: student_mastery} = _objectives, %ColumnSpec{
-        name: :objective
-      }) do
+  def custom_render(
+        assigns,
+        %{objective: objective, student_proficiency: student_proficiency} = _objectives,
+        %ColumnSpec{
+          name: :objective
+        }
+      ) do
     ~F"""
-      <div class="flex items-center ml-8 gap-x-4" data-mastery-check={if student_mastery == "Low", do: "false", else: "true"}>
-        <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if student_mastery == "Low", do: "bg-red-600", else: "bg-gray-500"}"}></span>
+      <div class="flex items-center ml-8 gap-x-4" data-proficiency-check={if student_proficiency == "Low", do: "false", else: "true"}>
+        <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if student_proficiency == "Low", do: "bg-red-600", else: "bg-gray-500"}"}></span>
         <span>{objective}</span>
       </div>
     """
   end
 
   def custom_render(assigns, %{objective: objective} = _objectives, %ColumnSpec{
-      name: :objective
-    }) do
-  ~F"""
-    <div class="flex items-center ml-8 gap-x-4">
-      <span></span>
-      <span>{objective}</span>
-    </div>
-  """
+        name: :objective
+      }) do
+    ~F"""
+      <div class="flex items-center ml-8 gap-x-4">
+        <span></span>
+        <span>{objective}</span>
+      </div>
+    """
   end
 
   def custom_render(assigns, %{subobjective: subobjective} = _objectives, %ColumnSpec{
@@ -72,5 +76,4 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       <div>{if is_nil(subobjective), do: "-", else: subobjective}</div>
     """
   end
-
 end

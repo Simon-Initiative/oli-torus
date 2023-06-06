@@ -147,8 +147,8 @@ defmodule OliWeb.Components.Delivery.Students do
       :progress ->
         Enum.sort_by(students, fn student -> student.progress end, sort_order)
 
-      :overall_mastery ->
-        Enum.sort_by(students, fn student -> student.overall_mastery end, sort_order)
+      :overall_proficiency ->
+        Enum.sort_by(students, fn student -> student.overall_proficiency end, sort_order)
 
       :engagement ->
         Enum.sort_by(students, fn student -> student.engagement end, sort_order)
@@ -282,7 +282,14 @@ defmodule OliWeb.Components.Delivery.Students do
         Params.get_atom_param(
           params,
           "sort_by",
-          [:name, :last_interaction, :progress, :overall_mastery, :engagement, :payment_status],
+          [
+            :name,
+            :last_interaction,
+            :progress,
+            :overall_proficiency,
+            :engagement,
+            :payment_status
+          ],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),

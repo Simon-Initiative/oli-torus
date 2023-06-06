@@ -1088,7 +1088,6 @@ defmodule Oli.Delivery.Sections do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.reduce(results, MapSet.new(), fn [source_id, relates_to], links ->
-
       # The relates_to field is an array of resource ids, to be future proof
       # to how relates_to is used, we will follow these 'links' in both directions
       Enum.reduce(relates_to, links, fn target_id, links ->
@@ -1320,7 +1319,6 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-
   @doc """
   Returns a map of project_id to the latest available publication for that project
   if a newer publication is available.
@@ -1481,7 +1479,6 @@ defmodule Oli.Delivery.Sections do
 
     create_section_resources(section, publication)
   end
-
 
   def rebuild_section_resources(
         %Section{id: section_id} = section,
@@ -2032,7 +2029,7 @@ defmodule Oli.Delivery.Sections do
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts,
             scoring_strategy_id: revision.scoring_strategy_id,
-            retake_mode: revision.retake_mode,
+            retake_mode: revision.retake_mode
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -2090,9 +2087,14 @@ defmodule Oli.Delivery.Sections do
         inserted_at: now,
         updated_at: now,
         collab_space_config: revision.collab_space_config,
-        max_attempts: if is_nil(revision.max_attempts) do 0 else revision.max_attempts end,
+        max_attempts:
+          if is_nil(revision.max_attempts) do
+            0
+          else
+            revision.max_attempts
+          end,
         scoring_strategy_id: revision.scoring_strategy_id,
-        retake_mode: revision.retake_mode,
+        retake_mode: revision.retake_mode
       ]
     end)
     |> then(&Repo.insert_all(SectionResource, &1))
@@ -2500,7 +2502,17 @@ defmodule Oli.Delivery.Sections do
 
     query
     |> Repo.all()
-    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
+    |> Enum.map(fn sr ->
+      Map.put(
+        sr,
+        :end_date,
+        if is_nil(sr.end_date) do
+          nil
+        else
+          to_datetime(sr.end_date)
+        end
+      )
+    end)
     |> Enum.map(fn activity ->
       case ResourceType.get_type_by_id(activity.resource_type_id) do
         "page" ->
@@ -2551,7 +2563,17 @@ defmodule Oli.Delivery.Sections do
 
     (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
     |> append_related_resources(user_id)
-    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
+    |> Enum.map(fn sr ->
+      Map.put(
+        sr,
+        :end_date,
+        if is_nil(sr.end_date) do
+          nil
+        else
+          to_datetime(sr.end_date)
+        end
+      )
+    end)
   end
 
   defp get_graded_pages_without_date([]), do: []
@@ -2608,10 +2630,13 @@ defmodule Oli.Delivery.Sections do
 
     pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
 
-    mastery_per_learning_objective =
+    proficiency_per_learning_objective =
       case student_id do
-        nil -> Metrics.mastery_per_learning_objective(section_slug)
-        student_id -> Metrics.mastery_for_student_per_learning_objective(section_slug, student_id)
+        nil ->
+          Metrics.proficiency_per_learning_objective(section_slug)
+
+        student_id ->
+          Metrics.proficiency_for_student_per_learning_objective(section_slug, student_id)
       end
 
     objectives =
@@ -2644,12 +2669,16 @@ defmodule Oli.Delivery.Sections do
     Enum.map(objectives, fn obj ->
       Map.put(obj, :pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
       |> Map.put(
-        :student_mastery_obj,
-        Map.get(mastery_per_learning_objective, obj.objective_resource_id, "Not enough data")
+        :student_proficiency_obj,
+        Map.get(proficiency_per_learning_objective, obj.objective_resource_id, "Not enough data")
       )
       |> Map.put(
-        :student_mastery_subobj,
-        Map.get(mastery_per_learning_objective, obj.subobjective_resource_id, "Not enough data")
+        :student_proficiency_subobj,
+        Map.get(
+          proficiency_per_learning_objective,
+          obj.subobjective_resource_id,
+          "Not enough data"
+        )
       )
     end)
   end

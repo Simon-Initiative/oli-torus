@@ -424,7 +424,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "th", "STUDENT NAME")
       assert has_element?(view, "th", "LAST INTERACTED")
       assert has_element?(view, "th", "COURSE PROGRESS")
-      assert has_element?(view, "th", "OVERALL COURSE MASTERY")
+      assert has_element?(view, "th", "OVERALL COURSE PROFICIENCY")
       assert has_element?(view, "tbody tr td", "Forlán, Diego")
       assert has_element?(view, "tbody tr td", "Valverde, Federico")
       assert has_element?(view, "tbody tr td", "Bentancur, Rodrigo")
