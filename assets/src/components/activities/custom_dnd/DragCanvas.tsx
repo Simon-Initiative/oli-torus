@@ -8,7 +8,7 @@ export type DragCanvasProps = {
   model: CustomDnDSchema;
   onSubmitPart: (targetId: string, draggableId: string) => void;
   onFocusChange: (targetId: string | null, draggableId: string | null) => void;
-  onDetach: (targetId: string, draggableId: string) => void;
+  onDetach: (targetId: string, draggableId: string) => Promise<void>;
   initialState: Record<string, string>;
   editMode: boolean;
   activityAttemptGuid: string;
@@ -118,35 +118,43 @@ function focusDraggable(shadowRoot: any, draggableId: string | null, props: Drag
 }
 
 function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
-  return (ev: DragEvent) => {
-    if (
-      ev !== null &&
-      (ev.currentTarget as any).classList.contains('target') &&
-      (ev.currentTarget as any).getAttribute('input_ref') !== null
-    ) {
-      ev.preventDefault();
-      ev.stopPropagation();
+  return async (ev: DragEvent) => {
+    try {
+      if (
+        ev !== null &&
+        (ev.currentTarget as any).classList.contains('target') &&
+        (ev.currentTarget as any).getAttribute('input_ref') !== null
+      ) {
+        ev.preventDefault();
+        ev.stopPropagation();
 
-      (ev as any).dataTransfer.dropEffect = 'move';
-      const inputVal = (ev as any).dataTransfer.getData('text/plain');
+        (ev as any).dataTransfer.dropEffect = 'move';
+        const inputVal = (ev as any).dataTransfer.getData('text/plain');
 
-      // bump any existing draggable out of target
-      resetChildDraggables(shadowRoot, ev.currentTarget, props);
+        // bump any existing draggable out of target
+        resetChildDraggables(shadowRoot, ev.currentTarget, props);
 
-      const draggable = getDraggable(shadowRoot, inputVal);
-      //  notify if draggable to be dropped is detaching from another target
-      const prevTargetId = getParentTargetId(draggable);
-      if (prevTargetId) props.onDetach(prevTargetId, inputVal);
+        const draggable = getDraggable(shadowRoot, inputVal);
+        //  notify if draggable to be dropped is detaching from another target
+        const prevTargetId = getParentTargetId(draggable);
 
-      (ev.currentTarget as any).appendChild(draggable);
-      const newlyDropped = (ev.currentTarget as any).children[0];
-      newlyDropped.style.left = '0px';
-      newlyDropped.style.top = '0px';
-      newlyDropped.style.position = 'relative';
+        (ev.currentTarget as any).appendChild(draggable);
+        const newlyDropped = (ev.currentTarget as any).children[0];
+        newlyDropped.style.left = '0px';
+        newlyDropped.style.top = '0px';
+        newlyDropped.style.position = 'relative';
 
-      const targetId = (ev.currentTarget as any).getAttribute('input_ref');
-      focusTarget(shadowRoot, targetId, props);
-      props.onSubmitPart(targetId, inputVal);
+        const targetId = (ev.currentTarget as any).getAttribute('input_ref');
+        focusTarget(shadowRoot, targetId, props);
+
+        if (prevTargetId) {
+          await props.onDetach(prevTargetId, inputVal);
+        }
+        props.onSubmitPart(targetId, inputVal);
+      }
+    } catch (e) {
+      console.error('customDND target drop handler failed', e);
+      throw e;
     }
   };
 }
