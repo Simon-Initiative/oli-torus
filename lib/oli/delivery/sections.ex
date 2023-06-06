@@ -1088,6 +1088,7 @@ defmodule Oli.Delivery.Sections do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.reduce(results, MapSet.new(), fn [source_id, relates_to], links ->
+
       # The relates_to field is an array of resource ids, to be future proof
       # to how relates_to is used, we will follow these 'links' in both directions
       Enum.reduce(relates_to, links, fn target_id, links ->
@@ -1319,6 +1320,7 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+
   @doc """
   Returns a map of project_id to the latest available publication for that project
   if a newer publication is available.
@@ -1479,6 +1481,7 @@ defmodule Oli.Delivery.Sections do
 
     create_section_resources(section, publication)
   end
+
 
   def rebuild_section_resources(
         %Section{id: section_id} = section,
@@ -2029,7 +2032,7 @@ defmodule Oli.Delivery.Sections do
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts,
             scoring_strategy_id: revision.scoring_strategy_id,
-            retake_mode: revision.retake_mode
+            retake_mode: revision.retake_mode,
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -2087,14 +2090,9 @@ defmodule Oli.Delivery.Sections do
         inserted_at: now,
         updated_at: now,
         collab_space_config: revision.collab_space_config,
-        max_attempts:
-          if is_nil(revision.max_attempts) do
-            0
-          else
-            revision.max_attempts
-          end,
+        max_attempts: if is_nil(revision.max_attempts) do 0 else revision.max_attempts end,
         scoring_strategy_id: revision.scoring_strategy_id,
-        retake_mode: revision.retake_mode
+        retake_mode: revision.retake_mode,
       ]
     end)
     |> then(&Repo.insert_all(SectionResource, &1))
@@ -2355,7 +2353,7 @@ defmodule Oli.Delivery.Sections do
       )
 
     case Repo.all(query) do
-      [] -> {0, get_pages(section_slug) |> elem(1)}
+      [] -> {0, get_pages(section_slug)}
       containers -> {length(containers), containers}
     end
   end
@@ -2422,68 +2420,18 @@ defmodule Oli.Delivery.Sections do
     |> Enum.into(%{})
   end
 
-  def get_pages(section_slug, params \\ %{}) do
-    text_filter =
-      if params[:text_search] do
-        dynamic([_sr, _s, _spp, _pr, rev], ilike(rev.title, ^"%#{params.text_search}%"))
-      else
-        true
-      end
-
-    limit =
-      if params[:limit] do
-        params.limit
-      else
-        nil
-      end
-
-    offset =
-      if params[:offset] do
-        params.offset
-      else
-        0
-      end
-
+  defp get_pages(section_slug) do
     query =
       from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where: s.slug == ^section_slug and rev.resource_type_id == 1,
         select: %{
           id: rev.resource_id,
           title: rev.title,
-          numbering_index: sr.numbering_index,
-          graded: rev.graded,
-          updated_at: rev.updated_at,
-          resource_id: rev.resource_id,
-          resource_type_id: rev.resource_type_id
+          numbering_index: sr.numbering_index
         }
       )
-      |> where(^text_filter)
 
-    query =
-      if !!params[:sort_order] and !!params[:sort_by] do
-        case params.sort_by do
-          :title ->
-            order_by(query, [_, _, _, _, rev], [{^params.sort_order, rev.title}])
-
-          :graded ->
-            order_by(query, [_, _, _, _, rev], [{^params.sort_order, rev.graded}])
-
-          :updated_at ->
-            order_by(query, [_, _, _, _, rev], [{^params.sort_order, rev.updated_at}])
-        end
-      else
-        query
-      end
-
-    total_count = Repo.aggregate(query, :count, :id)
-
-    pages =
-      query
-      |> limit(^limit)
-      |> offset(^offset)
-      |> Repo.all()
-
-    {total_count, pages}
+    Repo.all(query)
   end
 
   defp get_student_pages(section_slug, user_id, opts \\ [graded: false]) do
@@ -2552,17 +2500,7 @@ defmodule Oli.Delivery.Sections do
 
     query
     |> Repo.all()
-    |> Enum.map(fn sr ->
-      Map.put(
-        sr,
-        :end_date,
-        if is_nil(sr.end_date) do
-          nil
-        else
-          to_datetime(sr.end_date)
-        end
-      )
-    end)
+    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
     |> Enum.map(fn activity ->
       case ResourceType.get_type_by_id(activity.resource_type_id) do
         "page" ->
@@ -2613,17 +2551,7 @@ defmodule Oli.Delivery.Sections do
 
     (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
     |> append_related_resources(user_id)
-    |> Enum.map(fn sr ->
-      Map.put(
-        sr,
-        :end_date,
-        if is_nil(sr.end_date) do
-          nil
-        else
-          to_datetime(sr.end_date)
-        end
-      )
-    end)
+    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
   end
 
   defp get_graded_pages_without_date([]), do: []
