@@ -25,6 +25,8 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
 
   # Read the collab space config in a robust manner, falling back to defaults if
   # the entire collabSpace key is missing or if any sub keys are missing
+  defp read_collab_space(%{"collabSpace" => nil}), do: read_collab_space(%{"collabSpace" => %{}})
+
   defp read_collab_space(%{"collabSpace" => config}) do
 
     # Read the status in a way that falls back to the proper default
@@ -96,6 +98,8 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
       explanation_strategy: get_explanation_strategy(graded),
       collab_space_config: read_collab_space(resource),
+      purpose: Map.get(resource, "purpose", "foundation") |> String.to_existing_atom(),
+      relates_to: Map.get(resource, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
       graded: graded,
       max_attempts:
         if graded do

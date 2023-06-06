@@ -7,6 +7,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
 import { classNames } from 'utils/classNames';
 import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
+import { backspaceBlockKeyDown, deleteBlockKeyDown } from './handlers/deleteblock';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
@@ -77,14 +78,18 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     [props.commandContext],
   );
 
-  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
-    voidOnKeyDown(editor, e);
-    listOnKeyDown(editor, e);
-    quoteOnKeyDown(editor, e);
-    titleOnKeyDown(editor, e);
-    hotkeyHandler(editor, e.nativeEvent, props.commandContext);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      voidOnKeyDown(editor, e);
+      listOnKeyDown(editor, e);
+      quoteOnKeyDown(editor, e);
+      titleOnKeyDown(editor, e);
+      hotkeyHandler(editor, e.nativeEvent, props.commandContext);
+      backspaceBlockKeyDown(editor, e);
+      deleteBlockKeyDown(editor, e);
+    },
+    [editor, props.commandContext],
+  );
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
     const markup = Object.keys(leaf).reduce(

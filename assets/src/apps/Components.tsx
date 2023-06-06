@@ -1,6 +1,7 @@
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
 import { ECLRepl } from 'components/common/ECLRepl';
 import { Navbar } from 'components/common/Navbar';
+import { SelectTimezone } from 'components/common/SelectTimezone';
 import { UserAccountMenu } from 'components/common/UserAccountMenu';
 import { AlternativesPreferenceSelector } from 'components/delivery/AlternativesPreferenceSelector';
 import { CourseContentOutline } from 'components/delivery/CourseContentOutline';
@@ -27,3 +28,4 @@ registerApplication('CourseContentOutline', CourseContentOutline, globalStore);
 registerApplication('UserAccountMenu', UserAccountMenu, globalStore);
 registerApplication('DeliveryElementRenderer', DeliveryElementRenderer, globalStore);
 registerApplication('ECLRepl', ECLRepl, globalStore);
+registerApplication('SelectTimezone', SelectTimezone, globalStore);

@@ -25,6 +25,7 @@ defmodule Oli.Interop.Ingest.State do
     :objectives,
     :pages,
     :products,
+    :alternatives,
 
     # The processed state
     # -------------------

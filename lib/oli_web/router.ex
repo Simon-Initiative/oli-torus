@@ -12,7 +12,7 @@ defmodule OliWeb.Router do
   @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
 
   ### BASE PIPELINES ###
-  # We have four "base" pipelines: :browser, :api, :lti, and :skip_csrf_protection
+  # We have five "base" pipelines: :browser, :api, :lti, :skip_csrf_protection, and :sso
   # All of the other pipelines are to be used as additions onto one of these four base pipelines
 
   # pipeline for all browser based routes
@@ -27,6 +27,7 @@ defmodule OliWeb.Router do
     plug(:protect_from_forgery)
     plug(OliWeb.SetLiveCSRF)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   # pipline for REST api endpoint routes
@@ -37,6 +38,7 @@ defmodule OliWeb.Router do
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   # pipeline for LTI launch endpoints
@@ -44,6 +46,16 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
+    plug(OliWeb.Plugs.SessionContext)
+  end
+
+  # pipeline for skipping CSRF protection
+  pipeline :skip_csrf_protection do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_secure_browser_headers)
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   # pipeline for SSO endpoints
@@ -51,13 +63,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_live_flash)
     plug(Oli.Plugs.ValidateIdToken)
-  end
-
-  pipeline :skip_csrf_protection do
-    plug(:accepts, ["html"])
-    plug(:fetch_session)
-    plug(:fetch_live_flash)
-    plug(:put_secure_browser_headers)
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   ### PIPELINE EXTENSIONS ###
@@ -990,6 +996,11 @@ defmodule OliWeb.Router do
 
     live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor,
       as: :collab_spaces_index
+    )
+
+    live(
+      "/:section_slug/assessment_settings/:active_tab/:assessment_id",
+      Sections.AssessmentSettings.SettingsLive
     )
   end
 

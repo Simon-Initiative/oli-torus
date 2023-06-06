@@ -59,11 +59,74 @@ defmodule Oli.Ingest.RewireLinks do
     end
   end
 
+  # When we encounter a "stem" object, we know we are processing an activity.  Therefore,
+  # we continue to process (if they exist) the "authoring" and "choices" objects. All during
+  # this processing, we track whether or not we are changing anything. We return that result
+  # as the first element of the tuple, with the potentially updated content as the second.
+  # This allows then the caller to know whether or not to save a new revision.
   defp rewire(%{"stem" => stem} = item, link_builder, page_map) do
-    case rewire(stem, link_builder, page_map) do
+    {stem_result, item} = case rewire(stem, link_builder, page_map) do
       {true, stem} -> {true, Map.put(item, "stem", stem)}
       {false, _} -> {false, item}
     end
+
+    {authoring_result, item} = case Map.get(item, "authoring") do
+      nil -> {false, item}
+      authoring ->
+        {result, parts} = case Map.get(authoring, "parts") do
+          nil -> {false, item}
+          parts ->
+            {results, parts} = Enum.map(parts, fn part ->
+
+              {exp_result, part} = case Map.get(part, "explanation") do
+                nil -> {false, part}
+                exp ->
+                  {exp_result, exp} = rewire(exp, link_builder, page_map)
+                  {exp_result, Map.put(part, "explanation", exp)}
+              end
+
+              {hint_result, part} = case Map.get(part, "hints") do
+                nil -> {false, part}
+                hints ->
+                  {hint_result, hints} = rewire(hints, link_builder, page_map)
+                  {hint_result, Map.put(part, "hints", hints)}
+              end
+
+              {resp_result, part} = case Map.get(part, "responses") do
+                nil -> {false, part}
+                responses ->
+                  {results, responses} = Enum.map(responses, fn r ->
+                    case Map.get(r, "feedback") do
+                      nil -> {false, r}
+                      feedback ->
+                        {result, feedback} = rewire(feedback, link_builder, page_map)
+                        {result, Map.put(r, "feedback", feedback)}
+                    end
+                  end)
+                  |> Enum.unzip
+
+                  {Enum.any?(results), Map.put(part, "responses", responses)}
+              end
+
+              {exp_result || hint_result || resp_result, part}
+
+            end)
+            |> Enum.unzip
+
+            {Enum.any?(results), parts}
+        end
+        authoring = Map.put(authoring, "parts", parts)
+        {result, Map.put(item, "authoring", authoring)}
+    end
+
+    {choices_result, item} = case Map.get(item, "choices") do
+      nil -> {false, item}
+      choices ->
+        {r, choices} = rewire(choices, link_builder, page_map)
+        {r, Map.put(item, "choices", choices)}
+    end
+
+    {stem_result || authoring_result || choices_result, item}
   end
 
   defp rewire(%{"content" => content} = item, link_builder, page_map) do

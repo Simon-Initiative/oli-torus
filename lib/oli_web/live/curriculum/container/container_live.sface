@@ -51,7 +51,7 @@
           <DropTarget id={index} index={index} />
           <EntryLive
             id={child.slug}
-            context={@context}
+            ctx={@ctx}
             editor={Map.get(@resources_being_edited, child.resource_id)}
             author={@author}
             selected={child == @selected}

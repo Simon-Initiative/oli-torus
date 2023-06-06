@@ -36,14 +36,14 @@ defmodule OliWeb.Users.Common do
 
             not is_nil(email_confirmed_at) ->
               ~F"""
-              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Email Confirmed on #{Utils.render_precise_date(row, :email_confirmed_at, @context)}"}>
+              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Email Confirmed on #{Utils.render_precise_date(row, :email_confirmed_at, @ctx)}"}>
                 <i class="fas fa-check text-success"></i>
               </span>
               """
 
             not is_nil(invitation_accepted_at) ->
               ~F"""
-              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Invitation Accepted on #{Utils.render_precise_date(row, :invitation_accepted_at, @context)}"}>
+              <span data-bs-toggle="tooltip" data-bs-html="true" title={"Invitation Accepted on #{Utils.render_precise_date(row, :invitation_accepted_at, @ctx)}"}>
                 <i class="fas fa-check text-success"></i>
               </span>
               """

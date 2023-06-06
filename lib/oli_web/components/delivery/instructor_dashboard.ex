@@ -4,22 +4,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Header
+  alias OliWeb.Common.SessionContext
 
-  attr(:current_user, User)
+  attr(:ctx, SessionContext)
   attr(:section, Section)
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
   attr(:preview_mode, :boolean, default: false)
-  attr(:view, :atom, required: true)
+  attr(:view, :atom, default: nil)
 
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header socket_or_conn={@socket_or_conn} view={@view} current_user={@current_user} section={@section} preview_mode={@preview_mode} />
+        <.header socket_or_conn={@socket_or_conn} ctx={@ctx} view={@view} section={@section} preview_mode={@preview_mode} />
         <.section_details_header section={@section}/>
         <Header.delivery_breadcrumb {assigns} />
 
@@ -139,11 +139,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp is_active?(current_view, view), do: current_view == view
 
-  attr(:current_user, User)
+  attr(:ctx, SessionContext)
   attr(:section, Section)
   attr(:preview_mode, :boolean, default: false)
   attr(:socket_or_conn, :any, required: true)
-  attr(:view, :atom, required: true)
+  attr(:view, :atom)
 
   def header(assigns) do
     ~H"""
@@ -162,13 +162,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             <.header_link path={header_link_path(@socket_or_conn, @section, :discussions, @preview_mode)} active={is_active?(@view, :discussions)}>Discussion Activity</.header_link>
           </div>
 
-          <div>
-            <%= if @preview_mode do %>
-              <UserAccountMenu.preview_user />
-            <% else %>
-              <UserAccountMenu.menu current_user={@current_user} />
-            <% end %>
-          </div>
+          <%= if @preview_mode do %>
+            <UserAccountMenu.preview_user />
+          <% else %>
+            <UserAccountMenu.menu ctx={@ctx} />
+          <% end %>
 
           <div class="flex items-center border-l border-slate-300 my-2">
             <button

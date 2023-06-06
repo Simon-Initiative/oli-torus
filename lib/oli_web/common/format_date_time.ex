@@ -26,7 +26,7 @@ defmodule OliWeb.Common.FormatDateTime do
       iex> date(datetime, conn)
       "December 31, 2021 at 11:59:59 PM"
 
-      iex> date(datetime, context)
+      iex> date(datetime, ctx)
       "December 31, 2021 at 11:59:59 PM"
 
       iex> date(datetime, "America/New_York")
@@ -39,11 +39,11 @@ defmodule OliWeb.Common.FormatDateTime do
       iex> date(datetime)
       "January 1, 2022 at 4:59:59 AM UTC"
 
-      # additionally, conn or context can be provided as opts along with any other format_datetime opts
+      # additionally, conn or ctx can be provided as opts along with any other format_datetime opts
       iex> date(datetime, conn: conn, precision: :date)
       "January 1, 2022"
 
-      iex> date(datetime, context: context, precision: :relative)
+      iex> date(datetime, ctx: ctx, precision: :relative)
       "8 minutes ago"
   """
   def date(datetime, opts \\ [])
@@ -53,8 +53,8 @@ defmodule OliWeb.Common.FormatDateTime do
     date(datetime, SessionContext.init(conn))
   end
 
-  def date(datetime, %SessionContext{} = context),
-    do: date(datetime, context: context)
+  def date(datetime, %SessionContext{} = ctx),
+    do: date(datetime, ctx: ctx)
 
   def date(datetime, local_tz) when is_binary(local_tz), do: date(datetime, local_tz: local_tz)
 
@@ -63,18 +63,18 @@ defmodule OliWeb.Common.FormatDateTime do
   def date(nil, _opts), do: ""
 
   def date(datetime, opts) when is_list(opts) do
-    maybe_context_conn_or_local_tz =
-      Keyword.get(opts, :context)
+    maybe_ctx_conn_or_local_tz =
+      Keyword.get(opts, :ctx)
       |> value_or(Keyword.get(opts, :conn))
       |> value_or(Keyword.get(opts, :local_tz))
 
-    case maybe_context_conn_or_local_tz do
+    case maybe_ctx_conn_or_local_tz do
       %Plug.Conn{} = conn ->
-        date(datetime, Keyword.merge(opts, context: SessionContext.init(conn)))
+        date(datetime, Keyword.merge(opts, ctx: SessionContext.init(conn)))
 
       _ ->
         opts =
-          case maybe_context_conn_or_local_tz do
+          case maybe_ctx_conn_or_local_tz do
             %SessionContext{author: author} ->
               Keyword.put_new(opts, :author, author)
 
@@ -83,7 +83,7 @@ defmodule OliWeb.Common.FormatDateTime do
           end
 
         datetime
-        |> maybe_localized_datetime(maybe_context_conn_or_local_tz)
+        |> maybe_localized_datetime(maybe_ctx_conn_or_local_tz)
         |> format_datetime(opts)
     end
   end
@@ -108,7 +108,8 @@ defmodule OliWeb.Common.FormatDateTime do
   def maybe_localized_datetime(%DateTime{} = datetime, %SessionContext{local_tz: local_tz}),
     do: maybe_localized_datetime(datetime, local_tz)
 
-  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when local_tz == @utc_timezone, do: {:not_localized, datetime}
+  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when local_tz == @utc_timezone,
+    do: {:not_localized, datetime}
 
   def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
     # ensure timezone is a valid
@@ -196,7 +197,8 @@ defmodule OliWeb.Common.FormatDateTime do
       iex> datestring_to_utc_datetime("2022-05-18T12:35", "US/Arizona")
       ~U[2022-05-18 19:35:00Z]
   """
-  def datestring_to_utc_datetime(date, _) when is_nil(date) or date == "" or not is_binary(date), do: nil
+  def datestring_to_utc_datetime(date, _) when is_nil(date) or date == "" or not is_binary(date),
+    do: nil
 
   def datestring_to_utc_datetime(date_string, %SessionContext{local_tz: local_tz}) do
     datestring_to_utc_datetime(date_string, local_tz)
@@ -221,7 +223,10 @@ defmodule OliWeb.Common.FormatDateTime do
     #DateTime<2022-06-22 10:58:23.316111-03:00 -03 America/Montevideo>
   """
   def convert_datetime(date, _) when is_nil(date) or date == "", do: nil
-  def convert_datetime(datetime, %SessionContext{local_tz: local_tz}), do: convert_datetime(datetime, local_tz)
+
+  def convert_datetime(datetime, %SessionContext{local_tz: local_tz}),
+    do: convert_datetime(datetime, local_tz)
+
   def convert_datetime(datetime, timezone), do: Timex.to_datetime(datetime, timezone)
 
   @doc """
@@ -238,5 +243,23 @@ defmodule OliWeb.Common.FormatDateTime do
     else
       nil
     end
+  end
+
+  @doc """
+  Returns an author or users preferred timezone or the browser_timezone if none is set.
+  Author takes precedence over user. If browser_timezone is nil, then UTC is returned.
+  """
+  def tz_preference_or_default(author, user, browser_timezone) do
+    cond do
+      not is_nil(author) ->
+        Accounts.get_author_preference(author, :timezone, browser_timezone)
+
+      not is_nil(user) ->
+        Accounts.get_user_preference(user, :timezone, browser_timezone)
+
+      true ->
+        browser_timezone
+    end
+    |> value_or(@utc_timezone)
   end
 end

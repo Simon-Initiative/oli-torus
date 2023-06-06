@@ -13,7 +13,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
     end
   end
 
-  def new(associations, context, id_field \\ :unique_id, action \\ "select") do
+  def new(associations, ctx, id_field \\ :unique_id, action \\ "select") do
     action =
       case action do
         "select" -> &__MODULE__.render_select_column/3
@@ -48,7 +48,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
       event_suffix: "",
       id_field: [id_field],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -62,7 +62,9 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
         SortableTableModel.render_link_column(assigns, get_field(:title, item), route_path)
 
       "project" ->
-        route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, get_field(:slug, item))
+        route_path =
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, get_field(:slug, item))
+
         SortableTableModel.render_link_column(assigns, get_field(:title, item), route_path)
     end
   end

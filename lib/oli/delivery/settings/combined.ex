@@ -1,6 +1,6 @@
 defmodule Oli.Delivery.Settings.Combined do
-
-defstruct end_date: nil,
+  defstruct resource_id: nil,
+            end_date: nil,
             max_attempts: 0,
             retake_mode: :normal,
             late_submit: :allow,
@@ -16,6 +16,7 @@ defstruct end_date: nil,
             explanation_strategy: nil
 
   @type t() :: %__MODULE__{
+          resource_id: integer(),
           end_date: DateTime.t(),
           max_attempts: integer(),
           retake_mode: :normal | :targeted,
@@ -31,5 +32,4 @@ defstruct end_date: nil,
           collab_space_config: Oli.Resources.Collaboration.CollabSpaceConfig.t(),
           explanation_strategy: Oli.Resources.ExplanationStrategy.t()
         }
-
 end

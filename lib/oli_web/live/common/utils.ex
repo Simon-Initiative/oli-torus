@@ -25,8 +25,8 @@ defmodule OliWeb.Common.Utils do
     end
   end
 
-  def render_date(item, attr_name, %SessionContext{} = context) do
-    opts = [context: context, show_timezone: false]
+  def render_date(item, attr_name, %SessionContext{} = ctx) do
+    opts = [ctx: ctx, show_timezone: false]
     render_date_with_opts(item, attr_name, opts)
   end
 
@@ -35,14 +35,14 @@ defmodule OliWeb.Common.Utils do
     render_date_with_opts(item, attr_name, opts)
   end
 
-  def render_relative_date(item, attr_name, context) do
-    opts = [context: context, precision: :relative]
+  def render_relative_date(item, attr_name, ctx) do
+    opts = [ctx: ctx, precision: :relative]
     render_date_with_opts(item, attr_name, opts)
   end
 
   @spec render_precise_date(map, any, any) :: binary
-  def render_precise_date(item, attr_name, context) do
-    opts = [context: context, precision: :minutes]
+  def render_precise_date(item, attr_name, ctx) do
+    opts = [ctx: ctx, precision: :minutes]
     render_date_with_opts(item, attr_name, opts)
   end
 

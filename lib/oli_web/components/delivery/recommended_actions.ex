@@ -27,12 +27,12 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
   def render(assigns) do
     ~H"""
       <div class="grid grid-cols-2 gap-2">
-        <%= if @has_scheduled_resources do %>
+        <%= if !@has_scheduled_resources do %>
           <.action_card to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section_slug)}>
             <:icon><i class="fa-regular fa-calendar" /></:icon>
-            <:title>Soft Scheduling</:title>
+            <:title>Scheduling</:title>
             <:description>
-              You have not define a schedule for your course content
+              You have not defined a schedule for your course content
             </:description>
           </.action_card>
         <% end %>

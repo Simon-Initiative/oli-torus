@@ -10,7 +10,7 @@ defmodule OliWeb.LtiController do
   alias Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
-  alias OliWeb.Common.{LtiSession, SessionContext, Utils}
+  alias OliWeb.Common.{LtiSession, Utils}
   alias Oli.Lti.LtiParams
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
@@ -250,7 +250,6 @@ defmodule OliWeb.LtiController do
       ) do
     case Institutions.create_pending_registration(pending_registration_attrs) do
       {:ok, pending_registration} ->
-        context = SessionContext.init(conn)
         # send a Slack notification regarding the new registration request
         Slack.send(%{
           "username" => "Torus Bot",
@@ -281,13 +280,12 @@ defmodule OliWeb.LtiController do
                 },
                 %{
                   "type" => "mrkdwn",
-                  "text" =>
-                    "*Location:*\n#{pending_registration.country_code}"
+                  "text" => "*Location:*\n#{pending_registration.country_code}"
                 },
                 %{
                   "type" => "mrkdwn",
                   "text" =>
-                    "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, context)}"
+                    "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, conn.assigns.ctx)}"
                 }
               ]
             },
@@ -420,7 +418,9 @@ defmodule OliWeb.LtiController do
 
                   # make sure section details are up to date
                   %{"title" => context_title} = context
-                  {:ok, _section} = update_section_details(context_title, section, lti_params, registration)
+
+                  {:ok, _section} =
+                    update_section_details(context_title, section, lti_params, registration)
                 end
 
                 # sign current user in and redirect to home page

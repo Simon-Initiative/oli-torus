@@ -9,7 +9,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.TableModel do
     """
   end
 
-  def new(users, section, context) do
+  def new(users, section, ctx) do
     column_specs = [
       %ColumnSpec{name: :name, label: "Name", render_fn: &__MODULE__.render_name_column/3},
       %ColumnSpec{
@@ -25,7 +25,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.TableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context,
+        ctx: ctx,
         section_slug: section.slug
       }
     )

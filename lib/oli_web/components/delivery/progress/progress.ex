@@ -6,10 +6,11 @@ defmodule OliWeb.Components.Delivery.Progress do
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
-  data title, :string, default: "Progress"
-  prop params, :map, required: true
-  prop total_count, :integer, required: true
-  prop table_model, :map, required: true
+  data(title, :string, default: "Progress")
+  prop(params, :map, required: true)
+  prop(total_count, :integer, required: true)
+  prop(table_model, :map, required: true)
+  prop(ctx, :struct, required: true)
 
   @default_params %{
     offset: 0,
@@ -24,7 +25,7 @@ defmodule OliWeb.Components.Delivery.Progress do
           student_id: student_id,
           section_slug: section_slug,
           params: params,
-          context: context,
+          ctx: ctx,
           pages: pages
         } = _assigns,
         socket
@@ -38,7 +39,7 @@ defmodule OliWeb.Components.Delivery.Progress do
         rows,
         section_slug,
         student_id,
-        context
+        ctx
       )
 
     table_model =

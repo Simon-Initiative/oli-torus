@@ -49,7 +49,7 @@ defmodule OliWeb.Admin.RegistrationsView do
   end
 
   def mount(_, %{"current_author_id" => author_id} = session, socket) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init_live(session)
     author = Repo.get(Author, author_id)
 
     registrations =
@@ -61,7 +61,7 @@ defmodule OliWeb.Admin.RegistrationsView do
 
     total_count = determine_total(registrations)
 
-    {:ok, table_model} = RegistrationsTableModel.new(registrations, context)
+    {:ok, table_model} = RegistrationsTableModel.new(registrations, ctx)
 
     {:ok,
      assign(socket,

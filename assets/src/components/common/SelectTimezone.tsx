@@ -2,20 +2,17 @@ import React, { useRef } from 'react';
 
 interface SelectTimezoneProps {
   timezones: [string, string][];
-  browserTimezone: string;
   selectedTimezone?: string;
   submitAction: string;
 }
 
 export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
   timezones,
-  browserTimezone,
   selectedTimezone,
   submitAction,
 }) => {
   const ref = useRef<HTMLFormElement>(null);
   const onSelect = ({ target: { value } }: any) => {
-    console.log(value);
     ref.current?.submit();
   };
 
@@ -38,11 +35,6 @@ export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
         name="timezone[timezone]"
         className="max-w-[300px] border-gray-300 rounded-md w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700"
       >
-        {selectedTimezone !== browserTimezone && (
-          <option key="browser" value={browserTimezone}>
-            Browser Timezone - {browserTimezone}
-          </option>
-        )}
         {timezones.map(([label, value]) => (
           <option key={value} value={value} selected={value === selectedTimezone}>
             {label}

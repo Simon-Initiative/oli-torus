@@ -51,17 +51,17 @@ defmodule OliWeb.Products.PaymentsView do
   end
 
   def mount(%{"product_id" => product_slug}, session, socket) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init_live(session)
 
     payments = list_payments(product_slug)
 
     total_count = length(payments)
 
-    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, context)
+    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, ctx)
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        product: Oli.Delivery.Sections.get_section_by(slug: product_slug),
        product_slug: product_slug,
        payments: payments,
@@ -126,7 +126,7 @@ defmodule OliWeb.Products.PaymentsView do
         {:ok, table_model} =
           OliWeb.Products.Payments.TableModel.new(
             payments,
-            socket.assigns.context
+            socket.assigns.ctx
           )
 
         total_count = length(payments)

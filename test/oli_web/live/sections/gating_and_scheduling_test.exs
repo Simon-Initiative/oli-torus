@@ -152,7 +152,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       section_1: section,
       gating_condition: gating_condition
     } do
-      {:ok, conn: conn, context: _} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, ctx: _} = set_timezone(%{conn: conn})
 
       {:ok, view, html} =
         live(
@@ -322,7 +322,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       section_1: section,
       gating_condition: gating_condition
     } do
-      {:ok, conn: conn, context: _} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, ctx: _} = set_timezone(%{conn: conn})
 
       {:ok, view, _html} =
         live(
@@ -437,7 +437,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       conn: conn,
       section_1: section
     } do
-      {:ok, conn: conn, context: _} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, ctx: _} = set_timezone(%{conn: conn})
 
       {:ok, view, _html} =
         live(
