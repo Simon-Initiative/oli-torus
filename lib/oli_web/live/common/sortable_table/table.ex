@@ -39,19 +39,16 @@ defmodule OliWeb.Common.SortableTable.Table do
 
     ~F"""
     <th
-      class={"#{column_spec.th_class} border-b border-r p-2 bg-gray-100"}
-      style="cursor: pointer;"
-      :on-click={@sort}
+      class={"#{column_spec.th_class} border-b border-r p-2 bg-gray-100 #{if column_spec.sortable, do: "cursor-pointer"}"}
+      :on-click={if column_spec.sortable, do: @sort, else: nil}
       phx-value-sort_by={column_spec.name}
+      data-sortable={if column_spec.sortable == false, do: "false", else: "true"}
+      data-sort-column={if @model.sort_by_spec == column_spec, do: "true", else: "false"}
+      data-sort-order={if @model.sort_by_spec == column_spec, do: to_string(@model.sort_order || :desc), else: "desc"}
     >
       {column_spec.label}
       {#if column_spec.sortable}
-        {#if @model.sort_by_spec == column_spec}
-          <i class={"fas fa-sort-" <> sort_direction_cls} />
-          <span class={"data-sort-" <> sort_direction_cls} data-sort-column="true" />
-        {#else}
-          <span class="data-sort-up" data-sort-column="false" />
-        {/if}
+        <i class={"fas fa-sort-" <> sort_direction_cls} />
       {/if}
     </th>
     """
