@@ -154,6 +154,11 @@
     }
   }
   .inspector {
+    .card-header {
+      background-color: #f1f5f9;
+      padding: 5px;
+      border-top: 1px solid #d4d4d4;
+    }
     .user-input {
       display: flex;
       align-items: center;
