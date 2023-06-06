@@ -117,7 +117,7 @@
     const okButton = document.getElementById('help-form-ok-button');
     okButton.classList.add('hidden');
 
-    document.getElementById('location').value = document.referrer
+    document.getElementById('location').value = window.location.href
     if (typeof document.cookie == "undefined" || typeof navigator == "undefined" || !navigator.cookieEnabled) {
       document.getElementById('cookies_enabled').value = false;
     } else {
