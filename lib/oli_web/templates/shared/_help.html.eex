@@ -32,7 +32,7 @@
                   placeholder: "Enter Name",
                   required: true,
                   autofocus: true,
-                  value: @conn.assigns[:current_user] && @conn.assigns.current_user.name || @conn.assigns[:author] && @conn.assigns.author.name %>
+                  value: @conn.assigns[:current_user] && @conn.assigns.current_user.name || @conn.assigns[:author] && @conn.assigns.author.name || @conn.assigns[:current_author] && @conn.assigns.current_author.name %>
               <%= error_tag f, :full_name %>
             </div>
             <div class="form-group">
@@ -42,7 +42,7 @@
                 class: "form-control" <> error_class(f, :email, "is-invalid"),
                 placeholder: "Enter Email",
                 required: true,
-                value: @conn.assigns[:current_user] && @conn.assigns.current_user.email || @conn.assigns[:author] && @conn.assigns.author.email %>
+                value: @conn.assigns[:current_user] && @conn.assigns.current_user.email || @conn.assigns[:author] && @conn.assigns.author.email || @conn.assigns[:current_author] && @conn.assigns.current_author.email %>
               <%= error_tag f, :email %>
             </div>
             <div class="form-group mb-3">
