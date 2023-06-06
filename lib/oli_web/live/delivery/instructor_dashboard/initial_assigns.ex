@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InitialAssigns do
 
         {:cont,
          assign(socket,
-           ctx: SessionContext.init_live(session, user: current_user),
+           ctx: SessionContext.init(socket, session, user: current_user),
            browser_timezone: Map.get(session, "browser_timezone"),
            current_user: current_user,
            title: section.title,

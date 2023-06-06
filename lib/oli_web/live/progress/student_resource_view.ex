@@ -60,7 +60,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             Mount.handle_error(socket, {:error, e})
 
           {type, _, section} ->
-            ctx = SessionContext.init_live(session)
+            ctx = SessionContext.init(socket, session)
             resource_access = get_resource_access(resource_id, section_slug, user_id)
 
             changeset =

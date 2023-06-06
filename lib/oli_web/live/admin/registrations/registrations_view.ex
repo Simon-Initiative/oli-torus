@@ -49,7 +49,7 @@ defmodule OliWeb.Admin.RegistrationsView do
   end
 
   def mount(_, %{"current_author_id" => author_id} = session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
     author = Repo.get(Author, author_id)
 
     registrations =

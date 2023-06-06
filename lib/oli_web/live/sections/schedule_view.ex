@@ -33,7 +33,7 @@ defmodule OliWeb.Sections.ScheduleView do
       {type, current_user, section} ->
         {:ok,
          assign(socket,
-           ctx: SessionContext.init_live(session, user: current_user),
+           ctx: SessionContext.init(socket, session, user: current_user),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            js_path: Routes.static_path(OliWeb.Endpoint, "/js/scheduler.js"),

@@ -10,20 +10,20 @@ defmodule OliWeb.Products.ProductsView do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
 
-  prop is_admin_view, :boolean
-  prop project, :any
-  prop author, :any
-  data breadcrumbs, :any
-  data title, :string, default: "Products"
+  prop(is_admin_view, :boolean)
+  prop(project, :any)
+  prop(author, :any)
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Products")
 
-  data creation_title, :string, default: ""
-  data products, :list, default: []
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data query, :string, default: ""
-  data applied_query, :string, default: ""
+  data(creation_title, :string, default: "")
+  data(products, :list, default: [])
+  data(tabel_model, :struct)
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: 20)
+  data(query, :string, default: "")
+  data(applied_query, :string, default: "")
 
   @table_filter_fn &OliWeb.Products.ProductsView.filter_rows/3
   @table_push_patch_path &OliWeb.Products.ProductsView.live_path/2
@@ -104,7 +104,7 @@ defmodule OliWeb.Products.ProductsView do
   defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket, session) do
     total_count = length(products)
 
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
 
     published? =

@@ -43,7 +43,7 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   end
 
   def mount(%{"community_id" => community_id}, session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
 
     associations = Groups.list_community_visibilities(community_id)
     {:ok, table_model} = TableModel.new(associations, ctx, :id, "remove")
