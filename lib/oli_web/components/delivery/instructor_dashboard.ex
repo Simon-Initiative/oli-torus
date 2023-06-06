@@ -182,8 +182,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                 hover:bg-delivery-header-700
                 active:bg-delivery-header-600
               "
-              data-bs-toggle="modal"
-              data-bs-target="#help-modal">
+                onclick="window.showHelpModal();">
               <i class="fa-regular fa-circle-question fa-lg"></i>
             </button>
           </div>
