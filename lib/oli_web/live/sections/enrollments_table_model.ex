@@ -32,9 +32,9 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           th_class: "instructor_dashboard_th"
         },
         %ColumnSpec{
-          name: :overall_mastery,
-          label: "OVERALL COURSE MASTERY",
-          render_fn: &__MODULE__.render_overall_mastery_column/3,
+          name: :overall_proficiency,
+          label: "OVERALL COURSE PROFICIENCY",
+          render_fn: &__MODULE__.render_overall_proficiency_column/3,
           th_class: "instructor_dashboard_th"
         }
       ] ++
@@ -135,11 +135,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  def render_overall_mastery_column(assigns, user, _) do
-    assigns = Map.merge(assigns, %{overall_mastery: Map.get(user, :overall_mastery)})
+  def render_overall_proficiency_column(assigns, user, _) do
+    assigns = Map.merge(assigns, %{overall_proficiency: Map.get(user, :overall_proficiency)})
 
     ~H"""
-      <div class={if @overall_mastery == "Low", do: "text-red-600 font-bold"}><%= @overall_mastery %></div>
+      <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}><%= @overall_proficiency %></div>
     """
   end
 

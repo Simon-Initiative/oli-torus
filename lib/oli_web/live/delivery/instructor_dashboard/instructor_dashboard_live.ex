@@ -117,7 +117,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
             RecommendedActions.section_approval_pending_posts(section.id) |> length()
 
           has_pending_updates = RecommendedActions.section_has_pending_updates?(section.id)
-          has_due_soon_activities = RecommendedActions.section_has_due_soon_activities?(section.id)
+
+          has_due_soon_activities =
+            RecommendedActions.section_has_due_soon_activities?(section.id)
 
           assign(socket,
             has_scheduled_resources: has_scheduled_resources,
@@ -512,13 +514,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Sections.enrolled_students(section.slug)
         |> add_students_progress(section.id, params.container_id)
         |> add_students_last_interaction(section, params.container_id)
-        |> add_students_overall_mastery(section, params.container_id)
+        |> add_students_overall_proficiency(section, params.container_id)
 
       page_id ->
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
-        |> add_students_overall_mastery_for_page(section.slug, page_id)
+        |> add_students_overall_proficiency_for_page(section.slug, page_id)
     end
   end
 
@@ -533,7 +535,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Sections.count_enrollments(section.slug)
       )
 
-    mastery_per_container = Metrics.mastery_per_container(section.slug)
+    proficiency_per_container = Metrics.proficiency_per_container(section.slug)
 
     # when those metrics are ready (see Oli.Delivery.Metrics)
 
@@ -541,7 +543,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       Enum.map(containers, fn container ->
         Map.merge(container, %{
           progress: student_progress[container.id] || 0.0,
-          student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
+          student_proficiency: Map.get(proficiency_per_container, container.id, "Not enough data")
         })
       end)
 
@@ -604,22 +606,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end)
   end
 
-  defp add_students_overall_mastery(students, section, container_id) do
-    mastery_per_student = Metrics.mastery_per_student_across(section, container_id)
+  defp add_students_overall_proficiency(students, section, container_id) do
+    proficiency_per_student = Metrics.proficiency_per_student_across(section, container_id)
 
     Enum.map(students, fn student ->
       Map.merge(student, %{
-        overall_mastery: Map.get(mastery_per_student, student.id, "Not enough data")
+        overall_proficiency: Map.get(proficiency_per_student, student.id, "Not enough data")
       })
     end)
   end
 
-  defp add_students_overall_mastery_for_page(students, section_slug, page_id) do
-    mastery_per_student_for_page = Metrics.mastery_per_student_for_page(section_slug, page_id)
+  defp add_students_overall_proficiency_for_page(students, section_slug, page_id) do
+    proficiency_per_student_for_page =
+      Metrics.proficiency_per_student_for_page(section_slug, page_id)
 
     Enum.map(students, fn student ->
       Map.merge(student, %{
-        overall_mastery: Map.get(mastery_per_student_for_page, student.id, "Not enough data")
+        overall_proficiency:
+          Map.get(proficiency_per_student_for_page, student.id, "Not enough data")
       })
     end)
   end

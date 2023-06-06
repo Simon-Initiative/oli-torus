@@ -44,7 +44,7 @@
   @apply bg-red-200 bg-opacity-20;
 }
 
-.instructor_dashboard_table tr:has(div[data-mastery-check='false']) {
+.instructor_dashboard_table tr:has(div[data-proficiency-check='false']) {
   @apply bg-red-200 bg-opacity-20;
 }
 

@@ -245,7 +245,8 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         student_id
       )
 
-    mastery_per_container = Metrics.mastery_for_student_per_container(section.slug, student_id)
+    proficiency_per_container =
+      Metrics.proficiency_for_student_per_container(section.slug, student_id)
 
     # when those metrics are ready (see Oli.Delivery.Metrics)
 
@@ -253,7 +254,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       Enum.map(containers, fn container ->
         Map.merge(container, %{
           progress: student_progress[container.id] || 0.0,
-          student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
+          student_proficiency: Map.get(proficiency_per_container, container.id, "Not enough data")
         })
       end)
 

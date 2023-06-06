@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Metrics.LearningMasteryTest do
+defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
   use Oli.DataCase
 
   import Oli.Factory
@@ -351,10 +351,10 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
     }
   end
 
-  describe "learning mastery calculations" do
+  describe "learning proficiency calculations" do
     setup [:create_project]
 
-    test "mastery_per_learning_objective/1 calculates correctly", %{
+    test "proficiency_per_learning_objective/1 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
@@ -383,22 +383,23 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_3, false)
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_4, false)
 
-      mastery_per_learning_objective = Metrics.mastery_per_learning_objective(section.slug)
+      proficiency_per_learning_objective =
+        Metrics.proficiency_per_learning_objective(section.slug)
 
-      assert mastery_per_learning_objective[page_1_obj.resource.id] ==
+      assert proficiency_per_learning_objective[page_1_obj.resource.id] ==
                "High"
 
-      assert mastery_per_learning_objective[page_2_obj.resource.id] ==
+      assert proficiency_per_learning_objective[page_2_obj.resource.id] ==
                "Medium"
 
-      assert mastery_per_learning_objective[page_3_obj.resource.id] ==
+      assert proficiency_per_learning_objective[page_3_obj.resource.id] ==
                "Low"
 
-      assert mastery_per_learning_objective[page_4_obj.resource.id] ==
+      assert proficiency_per_learning_objective[page_4_obj.resource.id] ==
                nil
     end
 
-    test "mastery_for_student_per_learning_objective/2 calculates correctly", %{
+    test "proficiency_for_student_per_learning_objective/2 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
@@ -419,24 +420,24 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_2, false)
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_2, true)
 
-      student_1_mastery_per_learning_objective =
-        Metrics.mastery_for_student_per_learning_objective(section.slug, student_1.id)
+      student_1_proficiency_per_learning_objective =
+        Metrics.proficiency_for_student_per_learning_objective(section.slug, student_1.id)
 
-      student_2_mastery_per_learning_objective =
-        Metrics.mastery_for_student_per_learning_objective(section.slug, student_2.id)
+      student_2_proficiency_per_learning_objective =
+        Metrics.proficiency_for_student_per_learning_objective(section.slug, student_2.id)
 
-      assert student_1_mastery_per_learning_objective[page_1_obj.resource.id] == "High"
-      assert student_1_mastery_per_learning_objective[page_2_obj.resource.id] == "Low"
-      assert student_1_mastery_per_learning_objective[page_3_obj.resource.id] == "High"
-      assert student_1_mastery_per_learning_objective[page_4_obj.resource.id] == nil
+      assert student_1_proficiency_per_learning_objective[page_1_obj.resource.id] == "High"
+      assert student_1_proficiency_per_learning_objective[page_2_obj.resource.id] == "Low"
+      assert student_1_proficiency_per_learning_objective[page_3_obj.resource.id] == "High"
+      assert student_1_proficiency_per_learning_objective[page_4_obj.resource.id] == nil
 
-      assert student_2_mastery_per_learning_objective[page_1_obj.resource.id] == "Low"
-      assert student_2_mastery_per_learning_objective[page_2_obj.resource.id] == nil
-      assert student_2_mastery_per_learning_objective[page_3_obj.resource.id] == "Low"
-      assert student_2_mastery_per_learning_objective[page_4_obj.resource.id] == "High"
+      assert student_2_proficiency_per_learning_objective[page_1_obj.resource.id] == "Low"
+      assert student_2_proficiency_per_learning_objective[page_2_obj.resource.id] == nil
+      assert student_2_proficiency_per_learning_objective[page_3_obj.resource.id] == "Low"
+      assert student_2_proficiency_per_learning_objective[page_4_obj.resource.id] == "High"
     end
 
-    test "mastery_per_container/1 calculates correctly", %{
+    test "proficiency_per_container/1 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
@@ -475,15 +476,15 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_3, false)
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_4, false)
 
-      mastery_per_container = Metrics.mastery_per_container(section.slug)
+      proficiency_per_container = Metrics.proficiency_per_container(section.slug)
 
-      assert mastery_per_container[unit_1.resource_id] == "Medium"
-      assert mastery_per_container[module_1.resource_id] == "Medium"
-      assert mastery_per_container[unit_2.resource_id] == "Low"
-      assert mastery_per_container[module_2.resource_id] == "Low"
+      assert proficiency_per_container[unit_1.resource_id] == "Medium"
+      assert proficiency_per_container[module_1.resource_id] == "Medium"
+      assert proficiency_per_container[unit_2.resource_id] == "Low"
+      assert proficiency_per_container[module_2.resource_id] == "Low"
     end
 
-    test "mastery_per_student_across/2 calculates correctly", %{
+    test "proficiency_per_student_across/2 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
@@ -515,23 +516,23 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_2, true)
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_3, false)
 
-      mastery_per_student_across = Metrics.mastery_per_student_across(section)
+      proficiency_per_student_across = Metrics.proficiency_per_student_across(section)
 
-      assert mastery_per_student_across[student_1.id] == "High"
-      assert mastery_per_student_across[student_2.id] == "Medium"
-      assert mastery_per_student_across[student_3.id] == "Low"
-      assert mastery_per_student_across[student_4.id] == nil
+      assert proficiency_per_student_across[student_1.id] == "High"
+      assert proficiency_per_student_across[student_2.id] == "Medium"
+      assert proficiency_per_student_across[student_3.id] == "Low"
+      assert proficiency_per_student_across[student_4.id] == nil
 
-      mastery_per_student_across_unit_1 =
-        Metrics.mastery_per_student_across(section, unit_1.resource_id)
+      proficiency_per_student_across_unit_1 =
+        Metrics.proficiency_per_student_across(section, unit_1.resource_id)
 
-      assert mastery_per_student_across_unit_1[student_1.id] == "High"
-      assert mastery_per_student_across_unit_1[student_2.id] == "Low"
-      assert mastery_per_student_across_unit_1[student_3.id] == "Low"
-      assert mastery_per_student_across_unit_1[student_4.id] == nil
+      assert proficiency_per_student_across_unit_1[student_1.id] == "High"
+      assert proficiency_per_student_across_unit_1[student_2.id] == "Low"
+      assert proficiency_per_student_across_unit_1[student_3.id] == "Low"
+      assert proficiency_per_student_across_unit_1[student_4.id] == nil
     end
 
-    test "mastery_for_student_per_container/2 calculates correctly", %{
+    test "proficiency_for_student_per_container/2 calculates correctly", %{
       section: section,
       student_1: student_1,
       page_1: page_1,
@@ -552,16 +553,16 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_1, true)
 
-      mastery_for_student_1_per_container =
-        Metrics.mastery_for_student_per_container(section.slug, student_1.id)
+      proficiency_for_student_1_per_container =
+        Metrics.proficiency_for_student_per_container(section.slug, student_1.id)
 
-      assert mastery_for_student_1_per_container[unit_1.resource_id] == "High"
-      assert mastery_for_student_1_per_container[unit_2.resource_id] == "Low"
-      assert mastery_for_student_1_per_container[module_1.resource_id] == "High"
-      assert mastery_for_student_1_per_container[module_2.resource_id] == "Low"
+      assert proficiency_for_student_1_per_container[unit_1.resource_id] == "High"
+      assert proficiency_for_student_1_per_container[unit_2.resource_id] == "Low"
+      assert proficiency_for_student_1_per_container[module_1.resource_id] == "High"
+      assert proficiency_for_student_1_per_container[module_2.resource_id] == "Low"
     end
 
-    test "mastery_per_student_for_page/2 calculates correctly", %{
+    test "proficiency_per_student_for_page/2 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
@@ -573,14 +574,17 @@ defmodule Oli.Delivery.Metrics.LearningMasteryTest do
       set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
       set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
 
-      page_1_mastery = Metrics.mastery_per_student_for_page(section.slug, page_1.resource_id)
-      page_2_mastery = Metrics.mastery_per_student_for_page(section.slug, page_2.resource_id)
+      page_1_proficiency =
+        Metrics.proficiency_per_student_for_page(section.slug, page_1.resource_id)
 
-      assert page_1_mastery[student_1.id] == "High"
-      assert page_2_mastery[student_1.id] == "Low"
+      page_2_proficiency =
+        Metrics.proficiency_per_student_for_page(section.slug, page_2.resource_id)
 
-      assert page_1_mastery[student_2.id] == nil
-      assert page_2_mastery[student_2.id] == nil
+      assert page_1_proficiency[student_1.id] == "High"
+      assert page_2_proficiency[student_1.id] == "Low"
+
+      assert page_1_proficiency[student_2.id] == nil
+      assert page_2_proficiency[student_2.id] == nil
     end
   end
 end

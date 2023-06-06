@@ -24,9 +24,9 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :student_mastery,
-        label: "STUDENT MASTERY",
-        render_fn: &__MODULE__.stub_student_mastery/3,
+        name: :student_proficiency,
+        label: "STUDENT PROFICIENCY",
+        render_fn: &__MODULE__.render_student_proficiency/3,
         th_class: "instructor_dashboard_th"
       }
     ]
@@ -94,11 +94,11 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     """
   end
 
-  def stub_student_mastery(assigns, container, _) do
+  def render_student_proficiency(assigns, container, _) do
     assigns = Map.merge(assigns, %{container: container})
 
     ~H"""
-      <div class={if @container.student_mastery == "Low", do: "text-red-600 font-bold"}><%= @container.student_mastery %></div>
+      <div class={if @container.student_proficiency == "Low", do: "text-red-600 font-bold"}><%= @container.student_proficiency %></div>
     """
   end
 
