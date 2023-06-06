@@ -4,7 +4,9 @@
     <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
 
     <%= if assigns.section.contains_explorations do%>
-      <Components.Delivery.ExplorationShade.exploration_shade />
+      <Components.Delivery.ExplorationShade.exploration_shade title={assigns.title}/>
+    <% else %>
+      <Components.Delivery.SectionTitle.section_title title={assigns.title}/>
     <% end %>
 
     <div class="container px-0 sm:px-10 mx-auto mt-3 mb-5 flex flex-col">

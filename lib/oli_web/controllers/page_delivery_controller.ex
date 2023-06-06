@@ -157,6 +157,7 @@ defmodule OliWeb.PageDeliveryController do
       render(
         conn,
         "assignments.html",
+        title: section.title,
         assignments: assignments,
         section_slug: section_slug,
         preview_mode: false,
