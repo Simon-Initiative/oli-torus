@@ -95,7 +95,7 @@ export const termDesc = toggleFormat({
 });
 
 export const deemphasisDesc = toggleFormat({
-  icon: <i className="fa-solid fa-square-dashed"></i>,
+  icon: <i className="fa-solid fa-bold line-through"></i>,
   mark: 'deemphasis',
   description: 'Deemphasis',
   precondition: (editor) => !isActive(editor, ['term']),
