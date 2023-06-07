@@ -11,19 +11,10 @@ defmodule Oli.Rendering.Survey.Html do
 
   def survey(%Context{submitted_surveys: submitted_surveys} = context, next, %{"id" => id}) do
     {:safe, survey_controls} =
-      case Map.get(context, :liveview) do
-        true ->
-          PhoenixLiveReact.live_react_component("Components.SurveyControls", %{
-            id: id,
-            isSubmitted: submitted_surveys[id]
-          })
-
-        _ ->
-          ReactPhoenix.ClientSide.react_component("Components.SurveyControls", %{
-            id: id,
-            isSubmitted: submitted_surveys[id]
-          })
-      end
+      OliWeb.Common.React.component(context, "Components.SurveyControls", %{
+        id: id,
+        isSubmitted: submitted_surveys[id]
+      })
 
     [
       ~s|<div id="#{id}" class="survey"><div class="survey-label">Survey</div><div class="survey-content">|,

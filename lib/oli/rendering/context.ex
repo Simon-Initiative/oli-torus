@@ -29,5 +29,5 @@ defmodule Oli.Rendering.Context do
             extrinsic_read_section_fn: nil,
             learning_language: nil,
             effective_settings: nil,
-            liveview: false
+            is_liveview: false
 end

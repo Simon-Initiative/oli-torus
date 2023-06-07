@@ -70,13 +70,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def video(%Context{} = context, _, attrs) do
     {:safe, video_player} =
-      case Map.get(context, :liveview) do
-        true ->
-          PhoenixLiveReact.live_react_component("Components.VideoPlayer", %{"video" => attrs})
-
-        _ ->
-          ReactPhoenix.ClientSide.react_component("Components.VideoPlayer", %{"video" => attrs})
-      end
+      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{"video" => attrs})
 
     video_player
   end
@@ -89,29 +83,16 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     {:safe, ecl} =
-      case Map.get(context, :liveview) do
-        true ->
-          PhoenixLiveReact.live_react_component(
-            "Components.ECLRepl",
-            %{
-              "code" => attrs["code"],
-              "id" => attrs["id"],
-              "slug" => context.section_slug,
-              "attemptGuid" => attempt_guid
-            }
-          )
-
-        _ ->
-          ReactPhoenix.ClientSide.react_component(
-            "Components.ECLRepl",
-            %{
-              "code" => attrs["code"],
-              "id" => attrs["id"],
-              "slug" => context.section_slug,
-              "attemptGuid" => attempt_guid
-            }
-          )
-      end
+      OliWeb.Common.React.component(
+        context,
+        "Components.ECLRepl",
+        %{
+          "code" => attrs["code"],
+          "id" => attrs["id"],
+          "slug" => context.section_slug,
+          "attemptGuid" => attempt_guid
+        }
+      )
 
     ecl
   end
@@ -724,25 +705,14 @@ defmodule Oli.Rendering.Content.Html do
 
   def popup(%Context{} = context, _next, element) do
     {:safe, rendered} =
-      case Map.get(context, :liveview) do
-        true ->
-          PhoenixLiveReact.live_react_component(
-            "Components.DeliveryElementRenderer",
-            %{
-              "element" => element
-            },
-            html_element: "span"
-          )
-
-        _ ->
-          ReactPhoenix.ClientSide.react_component(
-            "Components.DeliveryElementRenderer",
-            %{
-              "element" => element
-            },
-            html_element: "span"
-          )
-      end
+      OliWeb.Common.React.component(
+        context,
+        "Components.DeliveryElementRenderer",
+        %{
+          "element" => element
+        },
+        html_element: "span"
+      )
 
     rendered
   end

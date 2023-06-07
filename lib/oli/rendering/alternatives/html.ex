@@ -57,37 +57,19 @@ defmodule Oli.Rendering.Alternatives.Html do
       end
 
     {:safe, preference_selector} =
-      case Map.get(context, :liveview) do
-        true ->
-          PhoenixLiveReact.live_react_component("Components.AlternativesPreferenceSelector", %{
-            sectionSlug: section_slug,
-            alternativesId: alternatives_id,
-            options: options,
-            selected:
-              user_section_preference(
-                mode,
-                user,
-                section_slug,
-                alternatives_id,
-                extrinsic_read_section_fn
-              )
-          })
-
-        _ ->
-          ReactPhoenix.ClientSide.react_component("Components.AlternativesPreferenceSelector", %{
-            sectionSlug: section_slug,
-            alternativesId: alternatives_id,
-            options: options,
-            selected:
-              user_section_preference(
-                mode,
-                user,
-                section_slug,
-                alternatives_id,
-                extrinsic_read_section_fn
-              )
-          })
-      end
+      OliWeb.Common.React.component(context, "Components.AlternativesPreferenceSelector", %{
+        sectionSlug: section_slug,
+        alternativesId: alternatives_id,
+        options: options,
+        selected:
+          user_section_preference(
+            mode,
+            user,
+            section_slug,
+            alternatives_id,
+            extrinsic_read_section_fn
+          )
+      })
 
     preference_selector
   end
