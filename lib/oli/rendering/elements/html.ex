@@ -44,13 +44,25 @@ defmodule Oli.Rendering.Elements.Html do
   def paginate(%Context{} = context, {rendered, br_count}) do
     if br_count > 0 do
       {:safe, pagination_controls} =
-        ReactPhoenix.ClientSide.react_component("Components.PaginationControls", %{
-          forId: for_id(context),
-          paginationMode: context.pagination_mode,
-          sectionSlug: context.section_slug,
-          pageAttemptGuid: page_attempt_guid(context.resource_attempt),
-          initiallyVisible: extract_for(context.resource_attempt, for_id(context))
-        })
+        case Map.get(context, :liveview) do
+          true ->
+            PhoenixLiveReact.live_react_component("Components.PaginationControls", %{
+              forId: for_id(context),
+              paginationMode: context.pagination_mode,
+              sectionSlug: context.section_slug,
+              pageAttemptGuid: page_attempt_guid(context.resource_attempt),
+              initiallyVisible: extract_for(context.resource_attempt, for_id(context))
+            })
+
+          _ ->
+            ReactPhoenix.ClientSide.react_component("Components.PaginationControls", %{
+              forId: for_id(context),
+              paginationMode: context.pagination_mode,
+              sectionSlug: context.section_slug,
+              pageAttemptGuid: page_attempt_guid(context.resource_attempt),
+              initiallyVisible: extract_for(context.resource_attempt, for_id(context))
+            })
+        end
 
       [
         ~s|<div class="paginated">|,

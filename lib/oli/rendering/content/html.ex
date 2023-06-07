@@ -68,9 +68,15 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, _e), do: ""
 
-  def video(%Context{} = _context, _, attrs) do
+  def video(%Context{} = context, _, attrs) do
     {:safe, video_player} =
-      ReactPhoenix.ClientSide.react_component("Components.VideoPlayer", %{"video" => attrs})
+      case Map.get(context, :liveview) do
+        true ->
+          PhoenixLiveReact.live_react_component("Components.VideoPlayer", %{"video" => attrs})
+
+        _ ->
+          ReactPhoenix.ClientSide.react_component("Components.VideoPlayer", %{"video" => attrs})
+      end
 
     video_player
   end
@@ -83,15 +89,29 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     {:safe, ecl} =
-      ReactPhoenix.ClientSide.react_component(
-        "Components.ECLRepl",
-        %{
-          "code" => attrs["code"],
-          "id" => attrs["id"],
-          "slug" => context.section_slug,
-          "attemptGuid" => attempt_guid
-        }
-      )
+      case Map.get(context, :liveview) do
+        true ->
+          PhoenixLiveReact.live_react_component(
+            "Components.ECLRepl",
+            %{
+              "code" => attrs["code"],
+              "id" => attrs["id"],
+              "slug" => context.section_slug,
+              "attemptGuid" => attempt_guid
+            }
+          )
+
+        _ ->
+          ReactPhoenix.ClientSide.react_component(
+            "Components.ECLRepl",
+            %{
+              "code" => attrs["code"],
+              "id" => attrs["id"],
+              "slug" => context.section_slug,
+              "attemptGuid" => attempt_guid
+            }
+          )
+      end
 
     ecl
   end
@@ -702,15 +722,27 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{}, _next, element) do
+  def popup(%Context{} = context, _next, element) do
     {:safe, rendered} =
-      ReactPhoenix.ClientSide.react_component(
-        "Components.DeliveryElementRenderer",
-        %{
-          "element" => element
-        },
-        html_element: "span"
-      )
+      case Map.get(context, :liveview) do
+        true ->
+          PhoenixLiveReact.live_react_component(
+            "Components.DeliveryElementRenderer",
+            %{
+              "element" => element
+            },
+            html_element: "span"
+          )
+
+        _ ->
+          ReactPhoenix.ClientSide.react_component(
+            "Components.DeliveryElementRenderer",
+            %{
+              "element" => element
+            },
+            html_element: "span"
+          )
+      end
 
     rendered
   end

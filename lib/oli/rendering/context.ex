@@ -28,5 +28,6 @@ defmodule Oli.Rendering.Context do
             alternatives_selector_fn: nil,
             extrinsic_read_section_fn: nil,
             learning_language: nil,
-            effective_settings: nil
+            effective_settings: nil,
+            liveview: false
 end
