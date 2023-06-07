@@ -502,6 +502,11 @@ $element-margin-bottom: 1.5em;
     margin: auto;
     margin-bottom: $element-margin-bottom;
   }
+
+  em.deemphasis {
+    font-style: normal;
+    color: var(--color-gray-400);
+  }
 }
 
 .conjugation {

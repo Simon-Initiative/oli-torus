@@ -10,7 +10,9 @@ export type Mark =
   | 'sup'
   | 'underline'
   | 'strikethrough'
-  | 'foreign';
+  | 'foreign'
+  | 'doublesub'
+  | 'deemphasis';
 
 export enum Marks {
   'em',
@@ -25,6 +27,8 @@ export enum Marks {
   'underline',
   'strikethrough',
   'foreign',
+  'doublesub',
+  'deemphasis',
 }
 
 export type FormattedText = Record<'text', string> & Partial<Record<Mark, true>>;

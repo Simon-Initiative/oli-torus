@@ -787,6 +787,8 @@ defmodule Oli.Rendering.Content.Html do
       "term" => "term",
       "code" => "code",
       "sub" => "sub",
+      "doublesub" => "doublesub",
+      "deemphasis" => "deemphasis",
       "sup" => "sup",
       "underline" => "underline",
       "strikethrough" => "strikethrough"
@@ -809,6 +811,8 @@ defmodule Oli.Rendering.Content.Html do
           "term" -> ~s|<span class="term">#{acc}</span>|
           "underline" -> ~s|<span style="text-decoration: underline;">#{acc}</span>|
           "strikethrough" -> ~s|<span style="text-decoration: line-through;">#{acc}</span>|
+          "doublesub" -> ~s|<sub><sub>#{acc}</sub></sub>|
+          "deemphasis" -> ~s|<em class="deemphasis">#{acc}</em>|
           _ -> "<#{mark}>#{acc}</#{mark}>"
         end
       end
