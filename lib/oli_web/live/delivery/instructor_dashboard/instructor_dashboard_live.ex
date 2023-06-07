@@ -92,6 +92,47 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  def handle_params(
+        %{"view" => "overview", "active_tab" => "scored_activities"} = params,
+        _,
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(params: params, view: :overview, active_tab: :scored_activities)
+      |> assign_new(:assessments, fn ->
+        # TODO get real assessments, ensuring naming is consistent to the ticket spec
+        [
+          %{
+            name: "Assessment 1",
+            end_date: DateTime.utc_now(),
+            scheduling_type: :due_by,
+            avg_score: Enum.random(1..100),
+            total_attempts: Enum.random(1..10),
+            students_completion: Enum.random(1..10)
+          },
+          %{
+            name: "Assessment 2",
+            end_date: DateTime.utc_now(),
+            scheduling_type: :read_by,
+            avg_score: Enum.random(1..100),
+            total_attempts: Enum.random(1..10),
+            students_completion: Enum.random(1..10)
+          },
+          %{
+            name: "Assessment 3",
+            end_date: DateTime.utc_now(),
+            scheduling_type: :read_by,
+            avg_score: Enum.random(1..100),
+            total_attempts: Enum.random(1..10),
+            students_completion: Enum.random(1..10)
+          }
+        ]
+      end)
+
+    {:noreply, socket}
+  end
+
   @impl Phoenix.LiveView
   def handle_params(
         %{
@@ -117,7 +158,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
             RecommendedActions.section_approval_pending_posts(section.id) |> length()
 
           has_pending_updates = RecommendedActions.section_has_pending_updates?(section.id)
-          has_due_soon_activities = RecommendedActions.section_has_due_soon_activities?(section.id)
+
+          has_due_soon_activities =
+            RecommendedActions.section_has_due_soon_activities?(section.id)
 
           assign(socket,
             has_scheduled_resources: has_scheduled_resources,
@@ -311,8 +354,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-      <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
-        Not implemented
+      <div class="mx-10 mb-10 bg-white shadow-sm">
+        <.live_component id="scored_activities_tab"
+          module={OliWeb.Components.Delivery.ScoredActivities}
+          section_slug={@section_slug}
+          params={@params}
+          assessments={@assessments}
+          section_slug={@section.slug}
+          view={@view}
+          context={@ctx} />
       </div>
     """
   end
