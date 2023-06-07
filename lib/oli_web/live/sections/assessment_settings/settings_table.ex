@@ -287,7 +287,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            socket.assigns.section.slug,
            :settings,
            :all,
-           update_params(socket.assigns.params, %{text_search: assessment_name})
+           update_params(socket.assigns.params, %{text_search: assessment_name, offset: 0})
          )
      )}
   end

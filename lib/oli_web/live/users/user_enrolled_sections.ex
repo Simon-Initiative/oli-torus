@@ -90,7 +90,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
            socket,
            OliWeb.Users.UsersDetailView,
            socket.assigns.user.id,
-           update_params(socket.assigns.params, %{text_search: section_title})
+           update_params(socket.assigns.params, %{text_search: section_title, offset: 0})
          )
      )}
   end
