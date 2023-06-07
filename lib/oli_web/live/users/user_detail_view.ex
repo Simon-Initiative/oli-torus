@@ -25,12 +25,12 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
 
-  data breadcrumbs, :any
-  data changeset, :changeset
-  data csrf_token, :any
-  data modal, :any, default: nil
-  data title, :string, default: "User Details"
-  data user, :struct, default: nil
+  data(breadcrumbs, :any)
+  data(changeset, :changeset)
+  data(csrf_token, :any)
+  data(modal, :any, default: nil)
+  data(title, :string, default: "User Details")
+  data(user, :struct, default: nil)
 
   defp set_breadcrumbs(user) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -53,7 +53,7 @@ defmodule OliWeb.Users.UsersDetailView do
         %{"csrf_token" => csrf_token} = session,
         socket
       ) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
     user = user_with_platform_roles(user_id)
 
     case user do

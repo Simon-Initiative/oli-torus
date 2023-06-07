@@ -390,7 +390,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
          } do
       %{
         section: section,
-        mod1_pages: mod1_pages,
+        mod1_pages: mod1_pages
       } = Oli.Seeder.base_project_with_larger_hierarchy()
 
       [page_1, _page_2, _page_3] = mod1_pages
@@ -424,7 +424,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "th", "STUDENT NAME")
       assert has_element?(view, "th", "LAST INTERACTED")
       assert has_element?(view, "th", "COURSE PROGRESS")
-      assert has_element?(view, "th", "OVERALL COURSE MASTERY")
+      assert has_element?(view, "th", "OVERALL COURSE PROFICIENCY")
       assert has_element?(view, "tbody tr td", "Forlán, Diego")
       assert has_element?(view, "tbody tr td", "Valverde, Federico")
       assert has_element?(view, "tbody tr td", "Bentancur, Rodrigo")

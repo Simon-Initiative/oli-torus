@@ -29,28 +29,29 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Updates
 
   def distinct_slugs(publication_ids) do
-    (from pr in PublishedResource,
-        join: rev in Revision,
-        on: pr.revision_id == rev.id,
-        where:
-          pr.publication_id in ^publication_ids and
+    from(pr in PublishedResource,
+      join: rev in Revision,
+      on: pr.revision_id == rev.id,
+      where:
+        pr.publication_id in ^publication_ids and
           rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
-        select: {rev.resource_id, rev.slug},
-        distinct: true)
-      |> Repo.all()
-
+      select: {rev.resource_id, rev.slug},
+      distinct: true
+    )
+    |> Repo.all()
   end
 
   def all_page_resource_ids(publication_ids) do
-    (from pr in PublishedResource,
-        join: rev in Revision,
-        on: pr.revision_id == rev.id,
-        where:
-          pr.publication_id in ^publication_ids and
+    from(pr in PublishedResource,
+      join: rev in Revision,
+      on: pr.revision_id == rev.id,
+      where:
+        pr.publication_id in ^publication_ids and
           rev.resource_type_id == ^ResourceType.get_id_by_type("page"),
-        select: rev.resource_id,
-        distinct: true)
-      |> Repo.all()
+      select: rev.resource_id,
+      distinct: true
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -673,6 +674,81 @@ defmodule Oli.Publishing do
 
   def get_published_resources_by_publication(publication_id, opts) do
     get_published_resources_by_publication([publication_id], opts)
+  end
+
+  @doc """
+  Returns the list of published_resources with the "page" type for a given publication.
+
+  ## Examples
+
+      iex> get_published_pages_by_publication()
+      [%{
+        id: 1,
+        title: "Test",
+        graded: true,
+        updated_at: ~U[2023-04-20 12:00:00Z],
+      }]
+
+  """
+  def get_published_pages_by_publication(publication_ids, params \\ %{})
+
+  def get_published_pages_by_publication(publication_ids, params)
+      when is_list(publication_ids) do
+    text_filter =
+      if params[:text_search],
+        do: dynamic([_pr, rev], ilike(rev.title, ^"%#{params.text_search}%")),
+        else: true
+
+    limit = if params[:limit], do: params.limit, else: nil
+
+    offset = if params[:offset], do: params.offset, else: 0
+
+    query =
+      PublishedResource
+      |> join(:inner, [pr], rev in Revision, on: rev.id == pr.revision_id)
+      |> where(
+        [pr, rev],
+        pr.publication_id in ^publication_ids and rev.resource_type_id == 1 and
+          rev.deleted != true
+      )
+      |> select([_, rev], %{
+        id: rev.id,
+        title: rev.title,
+        graded: rev.graded,
+        updated_at: rev.updated_at,
+        resource_id: rev.resource_id
+      })
+      |> where(^text_filter)
+
+    query =
+      if !!params[:sort_order] and !!params[:sort_by] do
+        case params.sort_by do
+          :title ->
+            order_by(query, [_pr, rev], [{^params.sort_order, rev.title}])
+
+          :graded ->
+            order_by(query, [_pr, rev], [{^params.sort_order, rev.graded}])
+
+          :updated_at ->
+            order_by(query, [_pr, rev], [{^params.sort_order, rev.updated_at}])
+        end
+      else
+        query
+      end
+
+    total_count = Repo.aggregate(query, :count, :id)
+
+    pages =
+      query
+      |> limit(^limit)
+      |> offset(^offset)
+      |> Repo.all()
+
+    {total_count, pages}
+  end
+
+  def get_published_pages_by_publication(publication_id, params) do
+    get_published_pages_by_publication([publication_id], params)
   end
 
   defp maybe_preload(query, preload) do

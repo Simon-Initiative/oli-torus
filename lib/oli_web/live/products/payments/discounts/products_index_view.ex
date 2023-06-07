@@ -42,7 +42,7 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
     case Sections.get_section_by_slug(product_slug) do
       %Section{type: :blueprint} = product ->
         discounts = Paywall.get_product_discounts(product.id)
-        ctx = SessionContext.init_live(session)
+        ctx = SessionContext.init(socket, session)
 
         {:ok, table_model} = TableModel.new(discounts, ctx)
 

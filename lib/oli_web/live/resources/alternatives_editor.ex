@@ -20,7 +20,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
     project = Course.get_project_by_slug(project_slug)
 
     {:ok, alternatives} =

@@ -60,7 +60,7 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   end
 
   def mount(%{"community_id" => community_id}, session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
     sources = retrieve_all_sources(community_id)
     {:ok, table_model} = TableModel.new(sources, ctx)
 

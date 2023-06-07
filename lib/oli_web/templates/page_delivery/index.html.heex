@@ -3,6 +3,8 @@
   <div class="relative flex-1 flex flex-col pb-[60px]">
     <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
 
+    <Components.Delivery.SectionTitle.section_title title={assigns.section.title}/>
+
     <%= if length(@next_activities) > 0 do %>
       <Components.Delivery.UpNext.up_next
         section_slug={@section_slug}

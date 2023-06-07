@@ -1,11 +1,9 @@
 defmodule Oli.Delivery.Experiments.ExperimentBuilder do
-
   @doc """
   Builds the JSON representation of an Upgrade experiment, which (after downloaded) can be
   used to import the experiment into Upgrade.
   """
   def build(%Oli.Authoring.Course.Project{slug: slug, title: title}) do
-
     now = DateTime.utc_now() |> DateTime.to_string()
     {:ok, groups} = Oli.Resources.alternatives_groups(slug, Oli.Publishing.AuthoringResolver)
 
@@ -77,7 +75,7 @@ defmodule Oli.Delivery.Experiments.ExperimentBuilder do
         "createdAt" => now,
         "updatedAt" => now,
         "versionNumber" => 1,
-        "id" => UUID.uuid4,
+        "id" => UUID.uuid4(),
         "name" => "average correctness",
         "query" => %{
           "operationType" => "avg"
@@ -96,20 +94,20 @@ defmodule Oli.Delivery.Experiments.ExperimentBuilder do
   end
 
   defp do_conditions(decision_points, now) do
-
     options = Enum.at(decision_points, 0).options
     count = Enum.count(options)
 
-    weights = case count do
-      0 -> []
-      1 -> [100]
-      2 -> [50, 50]
-      3 -> [33, 33, 34]
-      4 -> [25, 25, 25, 25]
-      5 -> [20, 20, 20, 20, 20]
-      6 -> [16, 16, 17, 17, 17, 17]
-      _ -> List.duplicate(div(100, count), count)
-    end
+    weights =
+      case count do
+        0 -> []
+        1 -> [100]
+        2 -> [50, 50]
+        3 -> [33, 33, 34]
+        4 -> [25, 25, 25, 25]
+        5 -> [20, 20, 20, 20, 20]
+        6 -> [16, 16, 17, 17, 17, 17]
+        _ -> List.duplicate(div(100, count), count)
+      end
 
     code = fn index ->
       [index + 65, index + 65] |> List.to_string()
@@ -144,7 +142,7 @@ defmodule Oli.Delivery.Experiments.ExperimentBuilder do
         "createdAt" => now,
         "updatedAt" => now,
         "versionNumber" => 1,
-        "id" => UUID.uuid4,
+        "id" => UUID.uuid4(),
         "name" => "Exclusion Segment",
         "description" => "Exclusion Segment",
         "context" => "add",
@@ -165,7 +163,7 @@ defmodule Oli.Delivery.Experiments.ExperimentBuilder do
         "createdAt" => now,
         "updatedAt" => now,
         "versionNumber" => 1,
-        "id" => UUID.uuid4,
+        "id" => UUID.uuid4(),
         "name" => "Inclusion Segment",
         "description" => "Inclusion Segment",
         "context" => "add",
@@ -184,5 +182,4 @@ defmodule Oli.Delivery.Experiments.ExperimentBuilder do
       }
     }
   end
-
 end

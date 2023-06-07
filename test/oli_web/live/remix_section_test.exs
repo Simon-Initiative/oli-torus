@@ -3,6 +3,8 @@ defmodule OliWeb.RemixSectionLiveTest do
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
+  import Oli.Factory
+  import Ecto.Query, warn: false
 
   alias Oli.Seeder
   alias Lti_1p3.Tool.ContextRoles
@@ -147,7 +149,7 @@ defmodule OliWeb.RemixSectionLiveTest do
           OliWeb.Endpoint,
           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
           section.slug,
-          :content
+          :overview
         )
       )
     end
@@ -170,14 +172,14 @@ defmodule OliWeb.RemixSectionLiveTest do
     test "remix section navigation", %{
       conn: conn,
       map: %{
-        section_1: section1,
+        section_1: section_1,
         unit1_container: unit1_container,
         nested_revision1: nested_revision1,
         nested_revision2: nested_revision2
       }
     } do
       conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section1.slug))
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
 
       {:ok, view, _html} = live(conn)
 
@@ -223,7 +225,7 @@ defmodule OliWeb.RemixSectionLiveTest do
           OliWeb.Endpoint,
           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
           section.slug,
-          :content
+          :overview
         )
       )
     end
@@ -260,7 +262,7 @@ defmodule OliWeb.RemixSectionLiveTest do
           OliWeb.Endpoint,
           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
           section.slug,
-          :content
+          :overview
         )
       )
     end
@@ -413,6 +415,130 @@ defmodule OliWeb.RemixSectionLiveTest do
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
              |> render() =~ "#{latest2.title}"
     end
+
+    test "remix section items - add materials - all pages view gets rendered correctly", %{
+      conn: conn,
+      map: %{
+        oaf_section_1: oaf_section_1,
+        unit1_container: unit1_container,
+        latest1: latest1,
+        latest2: latest2
+      }
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
+
+      # click add materials and assert is listing units first
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      view
+      |> element(
+        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+      )
+      |> render_click()
+
+      assert view
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(1)")
+             |> render() =~ "#{unit1_container.revision.title}"
+
+      assert view
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
+             |> render() =~ "#{latest1.title}"
+
+      assert view
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
+             |> render() =~ "#{latest2.title}"
+
+      view
+      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> render_click()
+
+      view
+      |> element("a[phx-click=\"HierarchyPicker.page_change\"]", "2")
+      |> render_click()
+
+      assert view
+             |> has_element?(".remix_materials_table td", "Orphan Page")
+    end
+
+    test "remix section items - add materials - all pages view can be sorted", %{
+      conn: conn,
+      map: %{
+        oaf_section_1: oaf_section_1
+      }
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
+
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      view
+      |> element(
+        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+      )
+      |> render_click()
+
+      view
+      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> render_click()
+
+      assert view
+             |> has_element?(".remix_materials_table tr:first-of-type td", "Nested Page One")
+
+      view
+      |> element("th[phx-value-sort_by=\"title\"]")
+      |> render_click()
+
+      assert view
+             |> has_element?(".remix_materials_table tr:first-of-type td", "4")
+    end
+
+    test "remix section items - add materials - all pages view can be filtered by text", %{
+      conn: conn,
+      map: %{
+        oaf_section_1: oaf_section_1
+      }
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
+
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      view
+      |> element(
+        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+      )
+      |> render_click()
+
+      view
+      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> render_click()
+
+      view
+      |> element("form[phx-change=\"HierarchyPicker.text_search\"]")
+      |> render_change(%{"text_search" => "Orphan"})
+
+      assert view
+             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Orphan Page")
+
+      refute view
+             |> has_element?(".remix_materials_table tabtbodyle tr:nth-of-type(2)")
+    end
   end
 
   defp open_modal_and_confirm_removal([], view), do: view
@@ -437,6 +563,24 @@ defmodule OliWeb.RemixSectionLiveTest do
     conn =
       Plug.Test.init_test_session(conn, %{})
       |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    # Add an orphan page to the section
+    orphan_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Orphan Page"
+      })
+
+    insert(:project_resource, %{
+      project_id: map.project.id,
+      resource_id: orphan_revision.resource.id
+    })
+
+    insert(:published_resource, %{
+      publication: map.pub2,
+      resource: orphan_revision.resource,
+      revision: orphan_revision
+    })
 
     {:ok,
      conn: conn,

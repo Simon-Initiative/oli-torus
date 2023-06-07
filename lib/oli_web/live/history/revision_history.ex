@@ -27,7 +27,7 @@ defmodule OliWeb.RevisionHistory do
 
   @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
 
     case AuthoringResolver.from_revision_slug(project_slug, slug) do
       nil ->
@@ -39,7 +39,7 @@ defmodule OliWeb.RevisionHistory do
   end
 
   def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init_live(session)
+    ctx = SessionContext.init(socket, session)
 
     case AuthoringResolver.from_resource_id(project_slug, String.to_integer(resource_id_str)) do
       nil ->

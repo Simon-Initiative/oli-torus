@@ -61,7 +61,7 @@ defmodule OliWeb.Sections.EditView do
 
         {:ok,
          assign(socket,
-           ctx: SessionContext.init_live(session),
+           ctx: SessionContext.init(socket, session),
            brands: available_brands,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
