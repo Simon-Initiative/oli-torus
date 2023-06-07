@@ -98,7 +98,7 @@ const LikertComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class LikertDelivery extends DeliveryElement<LikertModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<LikertModelSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'LikertDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

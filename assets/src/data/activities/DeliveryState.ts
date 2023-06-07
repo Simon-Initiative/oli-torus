@@ -423,14 +423,19 @@ export const resetAndSubmitPart =
     ) => Promise<EvaluationResponse>,
   ): AppThunk =>
   async (dispatch, _getState) => {
-    const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
-    dispatch(slice.actions.partResetRecieved(partActivityResponse));
-    const response = await onSubmitPart(
-      attemptGuid,
-      partActivityResponse.attemptState.attemptGuid,
-      studentResponse,
-    );
-    dispatch(slice.actions.partSubmissionReceived(response));
+    try {
+      const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
+      dispatch(slice.actions.partResetRecieved(partActivityResponse));
+      const response = await onSubmitPart(
+        attemptGuid,
+        partActivityResponse.attemptState.attemptGuid,
+        studentResponse,
+      );
+      dispatch(slice.actions.partSubmissionReceived(response));
+    } catch (e) {
+      console.error('Reset and submit part failed', e);
+      throw e;
+    }
   };
 
 export const resetPart =

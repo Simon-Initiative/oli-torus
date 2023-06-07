@@ -107,14 +107,14 @@ export const CustomDnDComponent: React.FC = () => {
     setFocusedPart(partIdBearers === 'targets' ? targetId : draggableId);
   };
 
-  const onDetach = (targetId: string, draggableId: string) => {
+  const onDetach = async (targetId: string, draggableId: string) => {
     // update on detaching draggable from target
     const partId = partIdBearers === 'targets' ? targetId : draggableId;
 
     const part = findPart(partId);
     if (part === null) console.log('part not found! id=' + partId);
     else {
-      dispatch(resetPart(uiState.attemptState.attemptGuid, part.attemptGuid, onResetPart));
+      await dispatch(resetPart(uiState.attemptState.attemptGuid, part.attemptGuid, onResetPart));
     }
   };
 
@@ -196,7 +196,7 @@ export const CustomDnDComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class CustomDnDDelivery extends DeliveryElement<CustomDnDSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CustomDnDSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'CustomDNDDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

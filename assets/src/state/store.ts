@@ -1,11 +1,15 @@
 import { Reducer, applyMiddleware, createStore } from 'redux';
-import { composeWithDevTools } from 'redux-devtools-extension';
+import { EnhancerOptions, composeWithDevTools } from 'redux-devtools-extension';
 import { createLogger } from 'redux-logger';
 import thunk from 'redux-thunk';
 import rootReducer, { initState } from 'state';
 import nextReducer from './index';
 
-export function configureStore(initialState?: any, reducer?: Reducer) {
+export function configureStore(
+  initialState?: any,
+  reducer?: Reducer,
+  devtoolsOptions: EnhancerOptions = {},
+) {
   const logger = createLogger({
     stateTransformer: (state) => {
       const newState: any = {};
@@ -24,9 +28,9 @@ export function configureStore(initialState?: any, reducer?: Reducer) {
 
   let middleware;
   if (process.env.NODE_ENV === 'development') {
-    middleware = composeWithDevTools(applyMiddleware(thunk, logger));
+    middleware = composeWithDevTools(devtoolsOptions)(applyMiddleware(thunk, logger));
   } else {
-    middleware = composeWithDevTools(applyMiddleware(thunk));
+    middleware = composeWithDevTools(devtoolsOptions)(applyMiddleware(thunk));
   }
 
   // For backwards compatibility - only use initial state without calling
