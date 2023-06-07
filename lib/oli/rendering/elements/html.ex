@@ -44,7 +44,7 @@ defmodule Oli.Rendering.Elements.Html do
   def paginate(%Context{} = context, {rendered, br_count}) do
     if br_count > 0 do
       {:safe, pagination_controls} =
-        ReactPhoenix.ClientSide.react_component("Components.PaginationControls", %{
+        OliWeb.Common.React.component(context, "Components.PaginationControls", %{
           forId: for_id(context),
           paginationMode: context.pagination_mode,
           sectionSlug: context.section_slug,

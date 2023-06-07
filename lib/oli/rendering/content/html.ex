@@ -68,9 +68,9 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, _e), do: ""
 
-  def video(%Context{} = _context, _, attrs) do
+  def video(%Context{} = context, _, attrs) do
     {:safe, video_player} =
-      ReactPhoenix.ClientSide.react_component("Components.VideoPlayer", %{"video" => attrs})
+      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{"video" => attrs})
 
     video_player
   end
@@ -83,7 +83,8 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     {:safe, ecl} =
-      ReactPhoenix.ClientSide.react_component(
+      OliWeb.Common.React.component(
+        context,
         "Components.ECLRepl",
         %{
           "code" => attrs["code"],
@@ -702,9 +703,10 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{}, _next, element) do
+  def popup(%Context{} = context, _next, element) do
     {:safe, rendered} =
-      ReactPhoenix.ClientSide.react_component(
+      OliWeb.Common.React.component(
+        context,
         "Components.DeliveryElementRenderer",
         %{
           "element" => element
