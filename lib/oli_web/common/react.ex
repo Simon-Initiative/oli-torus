@@ -3,7 +3,11 @@ defmodule OliWeb.Common.React do
 
   import PhoenixLiveReact
 
-  def component(context, name, props, opts \\ [])
+  def component(%{is_liveview: true}, name, props),
+    do: live_react_component(name, props)
+
+  def component(_, name, props),
+    do: ReactPhoenix.ClientSide.react_component(name, props)
 
   def component(%{is_liveview: true}, name, props, opts),
     do: live_react_component(name, props, opts)
