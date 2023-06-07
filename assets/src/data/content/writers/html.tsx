@@ -96,6 +96,12 @@ export class HtmlParser implements WriterImpl {
       term: (e) => <span className="term">{e}</span>,
       underline: (e) => <span style={{ textDecoration: 'underline' }}>{e}</span>,
       strikethrough: (e) => <span style={{ textDecoration: 'line-through' }}>{e}</span>,
+      doublesub: (e) => (
+        <sub>
+          <sub>{e}</sub>
+        </sub>
+      ),
+      deemphasis: (e) => <em className="deemphasis">{e}</em>,
     };
     return Object.keys(textEntity)
       .filter((attr: Mark | 'text') => textEntity[attr] === true)
