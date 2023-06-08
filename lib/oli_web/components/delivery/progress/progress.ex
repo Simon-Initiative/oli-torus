@@ -67,7 +67,7 @@ defmodule OliWeb.Components.Delivery.Progress do
       <div class="mx-10 mb-10 bg-white">
         <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
           <h4 class="pl-9 !py-2 torus-h4 mr-auto">{@title}</h4>
-          <form for="search" phx-target={@myself} phx-change="search_progress" class="pb-6 ml-9 sm:pb-0">
+          <form for="search" phx-target={@myself} phx-change="search_progress" class="pb-6 ml-9 w-44 sm:pb-0">
             <SearchInput.render id="progress_search_input" name="resource_title" text={@params.text_search} />
           </form>
         </div>

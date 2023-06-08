@@ -37,7 +37,10 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
               active_tab={@active_tab}
               total_count={@total_count}
               params={@params}
-              table_model={@table_model} />
+              table_model={@table_model}
+              publications_table_model={@publications_table_model}
+              publications_table_model_total_count={@publications_table_model_total_count}
+              publications_table_model_params={@publications_table_model_params} />
             </div>
             <div class="modal-footer">
               <%= if Enum.count(@selection) > 0 do %>
