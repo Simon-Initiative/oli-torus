@@ -90,10 +90,18 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
   end
 
   def render_students_completion_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{students_completion: assessment.students_completion})
+    assigns =
+      Map.merge(assigns, %{
+        students_completion: assessment.students_completion,
+        avg_score: assessment.avg_score |> IO.inspect()
+      })
 
     ~H"""
-      <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}><%= format_value(@students_completion) %></div>
+      <%= if @avg_score != nil do %>
+        <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}><%= format_value(@students_completion) %></div>
+      <% else %>
+        -
+      <% end %>
     """
   end
 
