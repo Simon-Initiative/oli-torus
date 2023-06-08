@@ -2,13 +2,13 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  # alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.FormatDateTime
 
   # TODO revalidate section_slug need
-  def new(assessments, section_slug, context) do
+  def new(assessments, section_slug, ctx) do
     column_specs = [
       %ColumnSpec{
-        name: :name,
+        name: :title,
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
         th_class: "pl-10"
@@ -20,7 +20,8 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
       },
       %ColumnSpec{
         name: :avg_score,
-        label: "AVG SCORE"
+        label: "AVG SCORE",
+        render_fn: &__MODULE__.render_avg_score_column/3
       },
       %ColumnSpec{
         name: :total_attempts,
@@ -29,7 +30,8 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
       },
       %ColumnSpec{
         name: :students_completion,
-        label: "STUDENTS COMPLETION"
+        label: "STUDENTS COMPLETION",
+        render_fn: &__MODULE__.render_students_completion_column/3
       }
     ]
 
@@ -40,17 +42,16 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
       id_field: [:id],
       data: %{
         section_slug: section_slug,
-        # TODO revalidate context need
-        context: context
+        ctx: ctx
       }
     )
   end
 
   def render_assessment_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{name: assessment.name})
+    assigns = Map.merge(assigns, %{title: assessment.title})
 
     ~H"""
-      <div class="pl-9 pr-4"><%= @name %></div>
+      <div class="pl-9 pr-4"><%= @title %></div>
     """
   end
 
@@ -61,13 +62,16 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
         scheduling_type: assessment.scheduling_type
       })
 
-    # TODO render date
     ~H"""
-      <%= if @scheduling_type == :due_by do %>
-        aca iria la fecha
-      <% else %>
-        No due date
-      <% end %>
+      <%= parse_due_date(@due_date, @ctx, @scheduling_type) %>
+    """
+  end
+
+  def render_avg_score_column(assigns, assessment, _) do
+    assigns = Map.merge(assigns, %{avg_score: assessment.avg_score})
+
+    ~H"""
+      <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}><%= format_value(@avg_score) %></div>
     """
   end
 
@@ -75,16 +79,35 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
     assigns = Map.merge(assigns, %{total_attempts: assessment.total_attempts})
 
     ~H"""
-      <%= @total_attempts %>
+      <%= @total_attempts || "-" %>
     """
   end
 
-  # defp value_from_datetime(nil, _context), do: nil
+  def render_students_completion_column(assigns, assessment, _) do
+    assigns = Map.merge(assigns, %{students_completion: assessment.students_completion})
 
-  # defp value_from_datetime(datetime, context) do
-  #   datetime
-  #   |> FormatDateTime.convert_datetime(context)
-  #   |> DateTime.to_iso8601()
-  #   |> String.slice(0, 16)
-  # end
+    ~H"""
+      <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}><%= format_value(@students_completion) %></div>
+    """
+  end
+
+  defp parse_due_date(datetime, ctx, :due_by) do
+    datetime
+    |> FormatDateTime.convert_datetime(ctx)
+    |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
+  end
+
+  defp parse_due_date(_datetime, _ctx, _scheduling_type), do: "No due date"
+
+  defp format_value(nil), do: "-"
+  defp format_value(value), do: "#{parse_percentage(value)}%"
+
+  defp parse_percentage(value) do
+    {value, _} =
+      Float.round(value * 100)
+      |> Float.to_string()
+      |> Integer.parse()
+
+    value
+  end
 end

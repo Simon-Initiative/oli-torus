@@ -20,7 +20,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       socket
       |> assign(params: params, view: :reports, active_tab: String.to_existing_atom(active_tab))
-      |> assign(students: get_students(socket.assigns.section, params))
+      |> assign(users: get_users(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
 
     socket =
@@ -100,34 +100,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       socket
       |> assign(params: params, view: :overview, active_tab: :scored_activities)
-      |> assign_new(:assessments, fn ->
+      |> assign_new(:students, fn ->
+        Sections.enrolled_students(socket.assigns.section.slug)
+        |> Enum.reject(fn s -> s.user_role_id != 4 end)
+      end)
+      |> assign_new(:assessments, fn %{students: students} ->
         # TODO get real assessments, ensuring naming is consistent to the ticket spec
-        [
-          %{
-            name: "Assessment 1",
-            end_date: DateTime.utc_now(),
-            scheduling_type: :due_by,
-            avg_score: Enum.random(1..100),
-            total_attempts: Enum.random(1..10),
-            students_completion: Enum.random(1..10)
-          },
-          %{
-            name: "Assessment 2",
-            end_date: DateTime.utc_now(),
-            scheduling_type: :read_by,
-            avg_score: Enum.random(1..100),
-            total_attempts: Enum.random(1..10),
-            students_completion: Enum.random(1..10)
-          },
-          %{
-            name: "Assessment 3",
-            end_date: DateTime.utc_now(),
-            scheduling_type: :read_by,
-            avg_score: Enum.random(1..100),
-            total_attempts: Enum.random(1..10),
-            students_completion: Enum.random(1..10)
-          }
-        ]
+
+        get_assessments(socket.assigns.section, students)
       end)
 
     {:noreply, socket}
@@ -362,7 +342,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           assessments={@assessments}
           section_slug={@section.slug}
           view={@view}
-          context={@ctx} />
+          ctx={@ctx} />
       </div>
     """
   end
@@ -420,7 +400,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
-        students={@students}
+        students={@users}
         dropdown_options={@dropdown_options}
       />
     """
@@ -453,7 +433,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
-        students={@students}
+        students={@users}
         dropdown_options={@dropdown_options}
       />
     """
@@ -555,8 +535,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  defp get_students(section, params) do
-    # when that metric is ready (see Oli.Delivery.Metrics)
+  defp get_users(section, params) do
     case params.page_id do
       nil ->
         Sections.enrolled_students(section.slug)
@@ -584,8 +563,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       )
 
     mastery_per_container = Metrics.mastery_per_container(section.slug)
-
-    # when those metrics are ready (see Oli.Delivery.Metrics)
 
     containers_with_metrics =
       Enum.map(containers, fn container ->
@@ -696,5 +673,44 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       _ ->
         []
     end
+  end
+
+  def get_assessments(section, students) do
+    graded_pages_and_section_resources =
+      DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
+
+    pages_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
+
+    progress_across_for_pages =
+      Metrics.progress_across_for_pages(
+        section.id,
+        pages_ids,
+        [],
+        Enum.count(students)
+      )
+
+    avg_score_across_for_pages =
+      Metrics.avg_score_across_for_pages(
+        section.id,
+        pages_ids,
+        []
+      )
+
+    attempts_across_for_pages =
+      Metrics.attempts_across_for_pages(
+        section.id,
+        pages_ids
+      )
+
+    graded_pages_and_section_resources
+    |> Enum.map(fn {rev, sr} ->
+      Map.merge(rev, %{
+        end_date: sr.end_date,
+        students_completion: Map.get(progress_across_for_pages, rev.resource_id),
+        scheduling_type: sr.scheduling_type,
+        avg_score: Map.get(avg_score_across_for_pages, rev.resource_id),
+        total_attempts: Map.get(attempts_across_for_pages, rev.resource_id)
+      })
+    end)
   end
 end

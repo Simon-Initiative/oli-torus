@@ -11,7 +11,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   prop(params, :map, required: true)
   prop(section_slug, :string, required: true)
   prop(view, :string, required: true)
-  prop(context, :map, required: true)
+  prop(ctx, :map, required: true)
 
   data(table_model, :map)
   data(total_count, :integer)
@@ -33,8 +33,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
     {total_count, rows} = apply_filters(assigns.assessments, params)
 
-    {:ok, table_model} =
-      ScoredActivitiesTableModel.new(rows, assigns.section_slug, assigns.context)
+    {:ok, table_model} = ScoredActivitiesTableModel.new(rows, assigns.section_slug, assigns.ctx)
 
     table_model =
       Map.merge(table_model, %{
@@ -53,7 +52,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
        params: params,
        section_slug: assigns.section_slug,
        view: assigns.view,
-       context: assigns.context,
+       ctx: assigns.ctx,
        assessments: assigns.assessments
      )}
   end
@@ -160,14 +159,29 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   defp maybe_filter_by_text(assessments, text_search) do
     Enum.filter(assessments, fn assessment ->
       String.contains?(
-        String.downcase(assessment.name),
+        String.downcase(assessment.title),
         String.downcase(text_search)
       )
     end)
   end
 
   defp sort_by(assessments, sort_by, sort_order) do
-    Enum.sort_by(assessments, fn a -> Map.get(a, sort_by) end, sort_order)
+    case sort_by do
+      :due_date ->
+        Enum.sort_by(
+          assessments,
+          fn a ->
+            if a.scheduling_type != :due_by, do: 0, else: Map.get(a, :due_date)
+          end,
+          sort_order
+        )
+
+      so when so in [:avg_score, :students_completion, :total_attempts] ->
+        Enum.sort_by(assessments, fn a -> Map.get(a, so) || -1 end, sort_order)
+
+      _ ->
+        Enum.sort_by(assessments, fn a -> Map.get(a, sort_by) end, sort_order)
+    end
   end
 
   defp decode_params(params) do
@@ -186,20 +200,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           params,
           "sort_by",
           [
-            :name
-            # TODO add more sort by options
-            # :due_date,
-            # :max_attempts,
-            # :time_limit,
-            # :late_submit,
-            # :late_start,
-            # :scoring,
-            # :grace_period,
-            # :retake_mode,
-            # :feedback_mode,
-            # :review_submission,
-            # :exceptions_count,
-            # :scoring_strategy_id
+            :title,
+            :due_date,
+            :avg_score,
+            :total_attempts,
+            :students_completion
           ],
           @default_params.sort_by
         ),
