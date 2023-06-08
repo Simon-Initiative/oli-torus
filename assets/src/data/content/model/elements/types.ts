@@ -381,10 +381,12 @@ export interface Citation extends SlateElement<Text[]> {
   bibref: number;
 }
 
+export type HyperlinkType = 'page' | 'url' | 'media_library';
 export interface Hyperlink extends SlateElement<Text[]> {
   type: 'a';
   href: string;
   target: string;
+  linkType?: HyperlinkType;
 }
 
 export interface CommandButton extends SlateElement<Text[]> {

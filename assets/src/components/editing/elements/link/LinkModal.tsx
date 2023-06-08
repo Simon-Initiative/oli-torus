@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Maybe } from 'tsmonad';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
+import { UrlOrUpload } from 'components/media/UrlOrUpload';
+import { SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
 import {
@@ -11,24 +13,39 @@ import {
   toInternalLink,
 } from 'data/content/model/elements/utils';
 import * as Persistence from 'data/persistence/resource';
+import { MediaItem } from 'types/media';
 
 interface ModalProps {
   onDone: (x: any) => void;
   onCancel: () => void;
   model: ContentModel.Hyperlink;
   commandContext: CommandContext;
+  projectSlug: string;
 }
 
 function getCurrentSlugFromLink(href: string) {
   return href.startsWith('/course/link/') ? href.slice(href.lastIndexOf('/') + 1) : undefined;
 }
 
-export const LinkModal = ({ onDone, onCancel, model, commandContext }: ModalProps) => {
+const getHyperlinkType = (
+  linkType: undefined | ContentModel.HyperlinkType,
+  href: string,
+): ContentModel.HyperlinkType => {
+  return linkType || (isInternalLink(href) ? 'page' : 'url');
+};
+
+export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug }: ModalProps) => {
   const [href, setHref] = useState(model.href);
-  const [source, setSource] = useState<'page' | 'url'>(isInternalLink(model.href) ? 'page' : 'url');
+  const [source, setSource] = useState<ContentModel.HyperlinkType>(
+    getHyperlinkType(model.linkType, model.href),
+  );
+
   const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
   const [selectedPage, setSelectedPage] = useState<null | Persistence.Page>(null);
-
+  const commitValue = useCallback(
+    () => onDone({ linkType: source, href: normalizeHref(href) }),
+    [href, onDone, source],
+  );
   React.useEffect(() => {
     setPages({ type: 'Waiting' });
 
@@ -44,24 +61,33 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext }: ModalProp
         setPages(result);
       },
     );
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commandContext.projectSlug]);
 
   const renderLoading = () => <div>Loading...</div>;
   const renderFailed = () => <div>Failed to initialize. Close this window and try again.</div>;
 
   const renderSuccess = (pages: Persistence.PagesReceived) => {
     const onChangeSource = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      if (value === 'url') setHref('');
-      else if (pages.pages.length > 1) setHref(toInternalLink(pages.pages[0]));
-      setSource(value === 'page' ? 'page' : 'url');
+      const value = e.target.value as ContentModel.HyperlinkType;
+      switch (value) {
+        case 'page':
+          if (pages.pages.length > 1) setHref(toInternalLink(pages.pages[0]));
+          break;
+        case 'url':
+        case 'media_library':
+          setHref('');
+          break;
+      }
+
+      setSource(value);
     };
 
     const linkOptions = (
       <div className="d-flex flex-column">
         <div className="form-check">
           <input
-            className="form-check-input"
+            className="form-check-input mr-1"
             defaultChecked={source === 'page'}
             onChange={onChangeSource}
             type="radio"
@@ -75,7 +101,7 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext }: ModalProp
         </div>
         <div className="form-check">
           <input
-            className="form-check-input"
+            className="form-check-input mr-1"
             defaultChecked={source === 'url'}
             onChange={onChangeSource}
             type="radio"
@@ -87,55 +113,44 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext }: ModalProp
             Link to External Web Page
           </label>
         </div>
+        <div className="form-check">
+          <input
+            className="form-check-input mr-1"
+            defaultChecked={source === 'media_library'}
+            onChange={onChangeSource}
+            type="radio"
+            name="inlineRadioOptions"
+            id="inlineRadio3"
+            value="media_library"
+          />
+          <label className="form-check-label" htmlFor="inlineRadio3">
+            Link to media library item
+          </label>
+        </div>
       </div>
-    );
-
-    const PageOption = (p: Persistence.Page) => (
-      <option key={p.id} value={toInternalLink(p)}>
-        {p.title}
-      </option>
-    );
-
-    const pageSelect = (
-      <select
-        className="form-control mr-2"
-        value={toInternalLink(selectedPage)}
-        onChange={(e) => {
-          const href = e.target.value;
-          setHref(href);
-          const item = pages.pages.find((p) => toInternalLink(p) === href);
-          if (item) setSelectedPage(item);
-        }}
-        style={{ minWidth: '300px' }}
-      >
-        {pages.pages.map(PageOption)}
-      </select>
-    );
-
-    const hrefInput = (
-      <input
-        onMouseDown={(e) => e.currentTarget.focus()}
-        type="text"
-        defaultValue={href}
-        placeholder="www.google.com"
-        onChange={(e) => setHref(e.target.value)}
-        onKeyPress={(e: any) => onEnterApply(e, () => onDone({ href: normalizeHref(href) }))}
-        className={'form-control mr-sm-2'}
-        style={{ display: 'inline ', width: '300px' }}
-      />
-    );
-
-    const changeHref = (
-      <form className="form-inline">
-        <label className="sr-only">Link</label>
-        {source === 'page' ? pageSelect : hrefInput}
-      </form>
     );
 
     return (
       <div className="settings-editor">
         <div className="mb-2 d-flex justify-content-between">{linkOptions}</div>
-        {changeHref}
+        {source === 'page' && (
+          <PageSelect
+            href={href}
+            setHref={setHref}
+            selectedPage={selectedPage}
+            setSelectedPage={setSelectedPage}
+            pages={pages}
+          />
+        )}
+        {source === 'url' && <HrefInput href={href} setHref={setHref} commitValue={commitValue} />}
+        {source === 'media_library' && (
+          <MediaLibraryInput
+            projectSlug={projectSlug}
+            href={href}
+            setHref={setHref}
+            commitValue={commitValue}
+          />
+        )}
       </div>
     );
   };
@@ -150,13 +165,95 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext }: ModalProp
   return (
     <Modal
       title=""
-      size={ModalSize.MEDIUM}
+      size={ModalSize.LARGE}
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
-      onOk={() => onDone({ href })}
+      onOk={commitValue}
     >
       {renderedState}
     </Modal>
+  );
+};
+
+const PageOption = (p: Persistence.Page) => (
+  <option key={p.id} value={toInternalLink(p)}>
+    {p.title}
+  </option>
+);
+
+const PageSelect: React.FC<{
+  href: string;
+  setHref: (x: string) => void;
+  selectedPage: Persistence.Page | null;
+  setSelectedPage: (x: Persistence.Page) => void;
+  pages: Persistence.PagesReceived;
+}> = ({ href, setHref, selectedPage, setSelectedPage, pages }) => (
+  <form className="form-inline">
+    <label className="sr-only">Link</label>
+
+    <select
+      className="form-control mr-2"
+      value={toInternalLink(selectedPage)}
+      onChange={(e) => {
+        const href = e.target.value;
+        setHref(href);
+        const item = pages.pages.find((p) => toInternalLink(p) === href);
+        if (item) setSelectedPage(item);
+      }}
+      style={{ minWidth: '300px' }}
+    >
+      {pages.pages.map(PageOption)}
+    </select>
+  </form>
+);
+
+const HrefInput: React.FC<{
+  href: string;
+  setHref: (x: string) => void;
+  commitValue: () => void;
+}> = ({ href, setHref, commitValue }) => (
+  <form className="form-inline">
+    <label className="sr-only">Link</label>
+
+    <input
+      onMouseDown={(e) => e.currentTarget.focus()}
+      type="text"
+      defaultValue={href}
+      placeholder="www.google.com"
+      onChange={(e) => setHref(e.target.value)}
+      onKeyPress={(e: any) => onEnterApply(e, commitValue)}
+      className={'form-control mr-sm-2'}
+      style={{ display: 'inline ', width: '300px' }}
+    />
+  </form>
+);
+
+const MediaLibraryInput: React.FC<{
+  href: string;
+  projectSlug: string;
+  setHref: (x: string) => void;
+  commitValue: () => void;
+}> = ({ href, setHref, projectSlug, commitValue }) => {
+  const onMediaChange = useCallback(
+    (items: MediaItem[]) => {
+      if (items.length > 0) {
+        setHref(items[0].url);
+      } else {
+        setHref('');
+      }
+    },
+    [setHref],
+  );
+  return (
+    <UrlOrUpload
+      onUrlChange={setHref}
+      onMediaSelectionChange={onMediaChange}
+      projectSlug={projectSlug}
+      mimeFilter={undefined}
+      selectionType={SELECTION_TYPES.SINGLE}
+      initialSelectionPaths={href ? [href] : []}
+      externalUrlAllowed={false}
+    ></UrlOrUpload>
   );
 };

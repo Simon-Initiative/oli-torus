@@ -987,6 +987,13 @@
         "target": {
           "type": "string"
         },
+        "linkType": {
+          "oneOf": [
+            { "const": "page" },
+            { "const": "url" },
+            { "const": "media_library" }
+          ]
+        },
         "children": {
           "type": "array",
           "items": {
