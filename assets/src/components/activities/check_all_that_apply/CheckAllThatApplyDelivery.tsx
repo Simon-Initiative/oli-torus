@@ -105,7 +105,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class CheckAllThatApplyDelivery extends DeliveryElement<CATASchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CATASchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'CATADelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

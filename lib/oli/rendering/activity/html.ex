@@ -84,7 +84,12 @@ defmodule Oli.Rendering.Activity.Html do
           render_single_activity_html(tag, context, summary, bib_params, model_json)
         else
           [
-            render_historical_attempts(summary.id, context.historical_attempts, section_slug),
+            render_historical_attempts(
+              summary.id,
+              context.historical_attempts,
+              section_slug,
+              context
+            ),
             render_single_activity_html(tag, context, summary, bib_params, model_json)
           ]
         end
@@ -94,7 +99,7 @@ defmodule Oli.Rendering.Activity.Html do
     end
   end
 
-  defp render_historical_attempts(activity_id, historical_attempts, section_slug) do
+  defp render_historical_attempts(activity_id, historical_attempts, section_slug, context) do
     case historical_attempts do
       nil ->
         []
@@ -109,7 +114,7 @@ defmodule Oli.Rendering.Activity.Html do
 
           attempts ->
             {:safe, attempt_selector} =
-              ReactPhoenix.ClientSide.react_component("Components.AttemptSelector", %{
+              OliWeb.Common.React.component(context, "Components.AttemptSelector", %{
                 activityId: activity_id,
                 attempts:
                   Enum.map(attempts, fn a ->

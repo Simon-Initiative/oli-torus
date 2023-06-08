@@ -176,6 +176,14 @@ export function markFor(mark: Mark, children: any): JSX.Element {
       return <sub>{children}</sub>;
     case 'sup':
       return <sup>{children}</sup>;
+    case 'doublesub':
+      return (
+        <sub>
+          <sub>{children}</sub>
+        </sub>
+      );
+    case 'deemphasis':
+      return <em className="deemphasis">{children}</em>;
     case 'term':
       return <span className="term">{children}</span>;
     case 'strikethrough':

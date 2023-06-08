@@ -177,7 +177,7 @@ export const OrderingComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class OrderingDelivery extends DeliveryElement<OrderingSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'OrderingDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

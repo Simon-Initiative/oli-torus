@@ -319,7 +319,7 @@ export const FileUploadComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class FileUploadDelivery extends DeliveryElement<FileUploadSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<FileUploadSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'FileUploadDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

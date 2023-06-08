@@ -324,7 +324,7 @@ export const MultiInputComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class MultiInputDelivery extends DeliveryElement<MultiInputSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultiInputSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'MultiInputDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

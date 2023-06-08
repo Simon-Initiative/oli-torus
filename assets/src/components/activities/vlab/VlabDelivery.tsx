@@ -266,7 +266,7 @@ export const VlabComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class VlabDelivery extends DeliveryElement<VlabSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<VlabSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'VLabDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

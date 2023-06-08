@@ -16,7 +16,7 @@ export interface SchedulerAppProps {
   edit_section_details_url: string;
 }
 
-const store = configureStore(initState(), schedulerAppReducer);
+const store = configureStore(initState(), schedulerAppReducer, { name: 'SchedulerApp' });
 
 const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
   ({

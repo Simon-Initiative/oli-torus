@@ -40,7 +40,7 @@ defmodule Oli.Rendering.Alternatives.Html do
           alternatives_groups_fn: alternatives_groups_fn,
           extrinsic_read_section_fn: extrinsic_read_section_fn,
           mode: mode
-        },
+        } = context,
         %{
           "alternatives_id" => alternatives_id
         }
@@ -57,7 +57,7 @@ defmodule Oli.Rendering.Alternatives.Html do
       end
 
     {:safe, preference_selector} =
-      ReactPhoenix.ClientSide.react_component("Components.AlternativesPreferenceSelector", %{
+      OliWeb.Common.React.component(context, "Components.AlternativesPreferenceSelector", %{
         sectionSlug: section_slug,
         alternativesId: alternatives_id,
         options: options,

@@ -379,7 +379,9 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 // Defines the web component, a simple wrapper over our React component above
 export class ImageCodingDelivery extends DeliveryElement<ImageCodingModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ImageCodingModelSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, {
+      name: 'ImageCodingDelivery',
+    });
 
     ReactDOM.render(
       <Provider store={store}>
