@@ -33,10 +33,9 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   publications:             The list of publications that items can be selected from (used in multi-pub mode)
   selected_publication:     The currently selected publication (used in multi-pub mode)
   active_tab:               The currently selected tab (:curriculum or :all_pages)
-  table_model:              The table model containing the ordered and unordered pages
-  table_model_params:       The query params for the table model
-  table_model_total_count:  The total count for the table model rows
-
+  pages_table_model:              The table model containing the ordered and unordered pages
+  pages_table_model_params:       The query params for the table model
+  pages_table_model_total_count:  The total count for the table model rows
   publications_table_model:              The table model containing the available publications
   publications_table_model_params:       The query params for the publications table model
   publications_table_model_total_count:  The total count for the publications table model rows
@@ -75,23 +74,23 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       <% end %>
 
       <%= if assigns[:active_tab] == :all_pages do %>
-        <form phx-debounce="500" phx-change="HierarchyPicker.text_search" class="ml-auto w-44">
-          <SearchInput.render text={assigns.params[:text_search]} name="text_search" id="text_search" placeholder="Search pages" />
+        <form phx-debounce="500" phx-change="HierarchyPicker.pages_text_search" class="ml-auto w-44">
+          <SearchInput.render text={assigns.pages_table_model_params[:text_search]} name="text_search" id="text_search" placeholder="Search pages" />
         </form>
         <PagedTable.render
           __context__={assigns[:__context_]}
-          total_count={assigns.total_count}
-          filter={assigns.params.text_filter}
-          limit={assigns.params.limit}
-          offset={assigns.params.offset}
-          table_model={Map.put(assigns.table_model, :data, %{
+          total_count={assigns.pages_table_model_total_count}
+          filter={assigns.pages_table_model_params.text_filter}
+          limit={assigns.pages_table_model_params.limit}
+          offset={assigns.pages_table_model_params.offset}
+          table_model={Map.put(assigns.pages_table_model, :data, %{
             selection: assigns.selection,
             preselected: assigns.preselected,
             selected_publication: assigns.selected_publication
           })}
           allow_selection={false}
-          sort="HierarchyPicker.sort"
-          page_change="HierarchyPicker.page_change"
+          sort="HierarchyPicker.pages_sort"
+          page_change="HierarchyPicker.pages_page_change"
           selection_change=""
           show_top_paging={false}
           show_bottom_paging={true}
