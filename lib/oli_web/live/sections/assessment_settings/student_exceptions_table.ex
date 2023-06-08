@@ -20,7 +20,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   prop(student_exceptions, :list, required: true)
   prop(assessments, :list, required: true)
   prop(params, :map, required: true)
-  prop(context, :map, required: true)
+  prop(ctx, :map, required: true)
   prop(section, :map, required: true)
 
   data(table_model, :map)
@@ -59,7 +59,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         selected_assessment,
         socket.assigns.myself,
         socket.assigns.selected_student_exceptions,
-        assigns.context
+        assigns.ctx
       )
 
     table_model =
@@ -78,7 +78,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
          get_total_exceptions_count(selected_assessment, assigns.student_exceptions),
        params: params,
        section: assigns.section,
-       context: assigns.context,
+       ctx: assigns.ctx,
        assessments: assigns.assessments,
        students: assigns.students,
        form_id: UUID.uuid4(),
@@ -346,7 +346,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   def handle_event("update_student_exception", params, socket) do
-    case decode_target(params, socket.assigns.context) do
+    case decode_target(params, socket.assigns.ctx) do
       {:feedback_mode, user_id, :scheduled} ->
         student_exception =
           socket.assigns.table_model.rows
@@ -354,7 +354,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           |> Map.update(
             :feedback_scheduled_date,
             nil,
-            fn scheduled_date -> value_from_datetime(scheduled_date, socket.assigns.context) end
+            fn scheduled_date -> value_from_datetime(scheduled_date, socket.assigns.ctx) end
           )
 
         changeset =
@@ -513,7 +513,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     utc_datetime =
       FormatDateTime.datestring_to_utc_datetime(
         feedback_scheduled_date,
-        socket.assigns.context
+        socket.assigns.ctx
       )
 
     socket.assigns.modal_assigns.student_exception
@@ -698,11 +698,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     ~s[#{total_count} #{Gettext.ngettext(OliWeb.Gettext, "student", "students", total_count)}, #{total_exceptions} #{Gettext.ngettext(OliWeb.Gettext, "exception", "exceptions", total_exceptions)}]
   end
 
-  defp value_from_datetime(nil, _context), do: nil
+  defp value_from_datetime(nil, _ctx), do: nil
 
-  defp value_from_datetime(datetime, context) do
+  defp value_from_datetime(datetime, ctx) do
     datetime
-    |> FormatDateTime.convert_datetime(context)
+    |> FormatDateTime.convert_datetime(ctx)
     |> DateTime.to_iso8601()
     |> String.slice(0, 16)
   end
@@ -711,7 +711,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     send(self(), {:student_exception, action, student_exceptions, update_sort_order})
   end
 
-  defp decode_target(params, context) do
+  defp decode_target(params, ctx) do
     [target_str] = params["_target"]
     [key, id] = String.split(target_str, "-")
 
@@ -732,7 +732,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           abs(String.to_integer(value))
 
         {"end_date", value} ->
-          FormatDateTime.datestring_to_utc_datetime(value, context)
+          FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
         {_, value} ->
           value

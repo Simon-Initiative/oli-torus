@@ -20,7 +20,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   prop(assessments, :list, required: true)
   prop(params, :map, required: true)
   prop(section, :map, required: true)
-  prop(context, :map, required: true)
+  prop(ctx, :map, required: true)
   prop(update_sort_order, :boolean, required: true)
 
   data(flash, :map)
@@ -51,7 +51,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
     {total_count, rows} = apply_filters(assigns.assessments, params)
 
-    {:ok, table_model} = SettingsTableModel.new(rows, assigns.section.slug, assigns.context)
+    {:ok, table_model} = SettingsTableModel.new(rows, assigns.section.slug, assigns.ctx)
 
     table_model =
       Map.merge(table_model, %{
@@ -69,7 +69,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        total_count: total_count,
        params: params,
        section: assigns.section,
-       context: assigns.context,
+       ctx: assigns.ctx,
        assessments: assigns.assessments,
        form_id: UUID.uuid4(),
        bulk_apply_selected_assessment_id:
@@ -378,7 +378,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   def handle_event("update_setting", params, socket) do
-    case decode_target(params, socket.assigns.context) do
+    case decode_target(params, socket.assigns.ctx) do
       {:feedback_mode, assessment_setting_id, :scheduled} ->
         assessment_for_scheduled =
           Sections.get_section_resource(
@@ -388,7 +388,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           |> Map.update(
             :feedback_scheduled_date,
             nil,
-            fn scheduled_date -> value_from_datetime(scheduled_date, socket.assigns.context) end
+            fn scheduled_date -> value_from_datetime(scheduled_date, socket.assigns.ctx) end
           )
 
         changeset =
@@ -472,7 +472,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     utc_datetime =
       FormatDateTime.datestring_to_utc_datetime(
         feedback_scheduled_date,
-        socket.assigns.context
+        socket.assigns.ctx
       )
 
     socket.assigns.modal_assigns.assessment_for_scheduled
@@ -536,7 +536,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     assign(socket, assessments: updated_assessments, table_model: updated_table_model)
   end
 
-  defp decode_target(params, context) do
+  defp decode_target(params, ctx) do
     [target_str] = params["_target"]
     [key, id] = String.split(target_str, "-")
 
@@ -558,7 +558,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           abs(String.to_integer(value))
 
         {"end_date", value} ->
-          FormatDateTime.datestring_to_utc_datetime(value, context)
+          FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
         {_, value} ->
           value
@@ -651,11 +651,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     end)
   end
 
-  defp value_from_datetime(nil, _context), do: nil
+  defp value_from_datetime(nil, _ctx), do: nil
 
-  defp value_from_datetime(datetime, context) do
+  defp value_from_datetime(datetime, ctx) do
     datetime
-    |> FormatDateTime.convert_datetime(context)
+    |> FormatDateTime.convert_datetime(ctx)
     |> DateTime.to_iso8601()
     |> String.slice(0, 16)
   end

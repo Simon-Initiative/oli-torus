@@ -4,7 +4,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.FormatDateTime
   use Phoenix.Component
 
-  def new(assessments, section_slug, context) do
+  def new(assessments, section_slug, ctx) do
     column_specs = [
       %ColumnSpec{
         name: :name,
@@ -88,7 +88,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       id_field: [:id],
       data: %{
         section_slug: section_slug,
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -111,7 +111,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
       <%= if @scheduling_type == :due_by do %>
-        <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @context)}/>
+        <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @ctx)}/>
       <% else %>
         No due date
       <% end %>
@@ -251,11 +251,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     """
   end
 
-  defp value_from_datetime(nil, _context), do: nil
+  defp value_from_datetime(nil, _ctx), do: nil
 
-  defp value_from_datetime(datetime, context) do
+  defp value_from_datetime(datetime, ctx) do
     datetime
-    |> FormatDateTime.convert_datetime(context)
+    |> FormatDateTime.convert_datetime(ctx)
     |> DateTime.to_iso8601()
     |> String.slice(0, 16)
   end
