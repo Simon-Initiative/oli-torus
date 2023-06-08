@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Maybe } from 'tsmonad';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
