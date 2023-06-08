@@ -724,6 +724,11 @@ defmodule OliWeb.PageDeliveryController do
       conn.assigns.section
       |> Oli.Repo.preload([:base_project, :root_section_resource])
 
+    revision = DeliveryResolver.root_container(section_slug)
+
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(revision, section.id, conn.assigns.current_user.id)
+
     render(conn, "index.html",
       title: section.title,
       description: section.description,
@@ -732,7 +737,11 @@ defmodule OliWeb.PageDeliveryController do
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       preview_mode: true,
       page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
+      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
+      independent_learner: true,
+      collab_space_config: effective_settings.collab_space_config,
+      revision_slug: revision.slug,
+      is_instructor: false
     )
   end
 
