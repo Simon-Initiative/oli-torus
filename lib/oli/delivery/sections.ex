@@ -43,6 +43,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Branding.CustomLabels
 
   require Logger
 
@@ -2681,6 +2682,60 @@ defmodule Oli.Delivery.Sections do
         )
       )
     end)
+  end
+
+  @doc """
+  Maps each resource with its parent container label, being the label (if any) like
+  <Container Label> <Numbering Index>: <Container Title>
+
+  For example:
+
+  %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
+  """
+  def map_resources_with_container_labels(section_slug, resource_ids) do
+    containers =
+      from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: p in Project,
+        on: p.id == spp.project_id,
+        where: s.slug == ^section_slug and rev.resource_type_id == 2,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index,
+          children: rev.children,
+          customizations: p.customizations
+        }
+      )
+      |> Repo.all()
+
+    Enum.map(resource_ids, fn page_id ->
+      {page_id,
+       case Enum.find(containers, fn container ->
+              page_id in container.children
+            end) do
+         nil ->
+           nil
+
+         %{numbering_level: 0} ->
+           nil
+
+         c ->
+           ~s{#{get_container_label(c.numbering_level, c.customizations)} #{c.numbering_index}: #{c.title}}
+       end}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp get_container_label(
+         numbering_level,
+         customizations \\ Map.from_struct(CustomLabels.default())
+       ) do
+    case numbering_level do
+      1 -> Map.get(customizations, :unit)
+      2 -> Map.get(customizations, :module)
+      _ -> Map.get(customizations, :section)
+    end
   end
 
   def get_units_and_modules_from_a_section(section_slug) do

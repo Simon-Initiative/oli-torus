@@ -48,10 +48,16 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
   end
 
   def render_assessment_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{title: assessment.title})
+    assigns =
+      Map.merge(assigns, %{title: assessment.title, container_label: assessment.container_label})
 
     ~H"""
-      <div class="pl-9 pr-4"><%= @title %></div>
+      <div class="pl-9 pr-4 flex flex-col">
+        <%= if @container_label do %>
+          <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
+        <% end %>
+        <div class="text-base"><%= @title %></div>
+      </div>
     """
   end
 

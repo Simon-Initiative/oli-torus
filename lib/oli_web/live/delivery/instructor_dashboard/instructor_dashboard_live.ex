@@ -105,8 +105,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
       end)
       |> assign_new(:assessments, fn %{students: students} ->
-        # TODO get real assessments, ensuring naming is consistent to the ticket spec
-
         get_assessments(socket.assigns.section, students)
       end)
 
@@ -681,12 +679,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     graded_pages_and_section_resources =
       DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
 
-    pages_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
+    page_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
 
     progress_across_for_pages =
       Metrics.progress_across_for_pages(
         section.id,
-        pages_ids,
+        page_ids,
         [],
         Enum.count(students)
       )
@@ -694,15 +692,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     avg_score_across_for_pages =
       Metrics.avg_score_across_for_pages(
         section.id,
-        pages_ids,
+        page_ids,
         []
       )
 
     attempts_across_for_pages =
       Metrics.attempts_across_for_pages(
         section.id,
-        pages_ids
+        page_ids
       )
+
+    container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
 
     graded_pages_and_section_resources
     |> Enum.map(fn {rev, sr} ->
@@ -710,6 +710,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         end_date: sr.end_date,
         students_completion: Map.get(progress_across_for_pages, rev.resource_id),
         scheduling_type: sr.scheduling_type,
+        container_label: Map.get(container_labels, rev.resource_id),
         avg_score: Map.get(avg_score_across_for_pages, rev.resource_id),
         total_attempts: Map.get(attempts_across_for_pages, rev.resource_id)
       })
