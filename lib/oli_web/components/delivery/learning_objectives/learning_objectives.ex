@@ -26,7 +26,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   }
 
   def update(
-        %{objectives_tab: objectives_tab, section_slug: section_slug, params: params} = assigns,
+        %{
+          objectives_tab: objectives_tab,
+          section_slug: section_slug,
+          params: params
+        } = assigns,
         socket
       ) do
     params = decode_params(params)
@@ -117,7 +121,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
      )}
   end
 
-  def handle_event("search_objective", %{"objective_name" => objective_name}, socket) do
+  def handle_event(
+        "search_objective",
+        %{"objective_name" => objective_name},
+        socket
+      ) do
     {:noreply,
      push_patch(socket,
        to:
@@ -129,7 +137,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
      )}
   end
 
-  def handle_event("paged_table_sort", %{"sort_by" => sort_by} = _params, socket) do
+  def handle_event(
+        "paged_table_sort",
+        %{"sort_by" => sort_by} = _params,
+        socket
+      ) do
     {:noreply,
      push_patch(socket,
        to:
@@ -141,7 +153,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
      )}
   end
 
-  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+  def handle_event(
+        "paged_table_page_change",
+        %{"limit" => limit, "offset" => offset},
+        socket
+      ) do
     {:noreply,
      push_patch(socket,
        to:
@@ -158,12 +174,22 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       sort_order:
-        Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
+        Params.get_atom_param(
+          params,
+          "sort_order",
+          [:asc, :desc],
+          @default_params.sort_order
+        ),
       sort_by:
         Params.get_atom_param(
           params,
           "sort_by",
-          [:objective, :subobjective],
+          [
+            :objective,
+            :subobjective,
+            :student_proficiency_obj,
+            :student_proficiency_subobj
+          ],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
@@ -171,9 +197,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     }
   end
 
-  defp update_params(%{sort_by: current_sort_by, sort_order: current_sort_order} = params, %{
-         sort_by: new_sort_by
-       })
+  defp update_params(
+         %{sort_by: current_sort_by, sort_order: current_sort_order} = params,
+         %{
+           sort_by: new_sort_by
+         }
+       )
        when current_sort_by == new_sort_by do
     toggled_sort_order = if current_sort_order == :asc, do: :desc, else: :asc
     update_params(params, %{sort_order: toggled_sort_order})
@@ -202,16 +231,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp sort_by(objectives, sort_by, sort_order) do
-    case sort_by do
-      :objective ->
-        Enum.sort_by(objectives, fn obj -> obj.objective end, sort_order)
-
-      :subobjective ->
-        Enum.sort_by(objectives, fn obj -> obj.subobjective end, sort_order)
-
-      _ ->
-        Enum.sort_by(objectives, fn obj -> obj.objective end, sort_order)
-    end
+    Enum.sort_by(objectives, fn obj -> obj[sort_by] end, sort_order)
   end
 
   defp maybe_filter_by_option(objectives, "all", _units_modules), do: objectives
@@ -236,7 +256,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_text(objectives, text_search) do
     objectives
     |> Enum.filter(fn objective ->
-      String.contains?(String.downcase(objective.objective), String.downcase(text_search))
+      String.contains?(
+        String.downcase(objective.objective),
+        String.downcase(text_search)
+      )
     end)
   end
 

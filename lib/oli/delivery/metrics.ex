@@ -519,7 +519,7 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every learning objective of a given section
 
     It returns a map:
@@ -529,7 +529,7 @@ defmodule Oli.Delivery.Metrics do
       objective_id_n => "Low"
     }
   """
-  def mastery_per_learning_objective(section_slug) do
+  def proficiency_per_learning_objective(section_slug) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -545,10 +545,12 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
+    |> Enum.into(%{}, fn {objective_id, proficiency} ->
+      {objective_id, proficiency_range(proficiency)}
+    end)
   end
 
-  def mastery_for_student_per_learning_objective(section_slug, student_id) do
+  def proficiency_for_student_per_learning_objective(section_slug, student_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -566,11 +568,13 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
+    |> Enum.into(%{}, fn {objective_id, proficiency} ->
+      {objective_id, proficiency_range(proficiency)}
+    end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section
 
     It returns a map:
@@ -580,7 +584,7 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def mastery_per_container(section_slug) do
+  def proficiency_per_container(section_slug) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -598,15 +602,15 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {container_id, mastery} ->
-      {container_id, mastery_range(mastery)}
+    |> Enum.into(%{}, fn {container_id, proficiency} ->
+      {container_id, proficiency_range(proficiency)}
     end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every student across a given container.
-  Omitting the container_id (or specifying nil) calculates students learning mastery
+  Omitting the container_id (or specifying nil) calculates students learning proficiency
   across the entire course section.
 
     It returns a map:
@@ -616,7 +620,7 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def mastery_per_student_across(section, container_id \\ nil) do
+  def proficiency_per_student_across(section, container_id \\ nil) do
     filter_by_container =
       case container_id do
         nil ->
@@ -649,13 +653,13 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, mastery} ->
-      {student_id, mastery_range(mastery)}
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
     end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section for a given student
 
     It returns a map:
@@ -665,7 +669,7 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def mastery_for_student_per_container(section_slug, student_id) do
+  def proficiency_for_student_per_container(section_slug, student_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -685,13 +689,13 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, mastery} ->
-      {student_id, mastery_range(mastery)}
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
     end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for each student of a given section for a specific page
 
     It returns a map:
@@ -701,7 +705,7 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def mastery_per_student_for_page(section_slug, page_id) do
+  def proficiency_per_student_for_page(section_slug, page_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -719,13 +723,15 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, mastery} -> {student_id, mastery_range(mastery)} end)
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
+    end)
   end
 
-  defp mastery_range(nil), do: "Not enough data"
-  defp mastery_range(mastery) when mastery <= 0.5, do: "Low"
-  defp mastery_range(mastery) when mastery <= 0.8, do: "Medium"
-  defp mastery_range(_mastery), do: "High"
+  defp proficiency_range(nil), do: "Not enough data"
+  defp proficiency_range(proficiency) when proficiency <= 0.5, do: "Low"
+  defp proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
+  defp proficiency_range(_proficiency), do: "High"
 
   @doc """
   Updates page progress to be 100% complete.

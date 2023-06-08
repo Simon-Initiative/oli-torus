@@ -3,11 +3,15 @@ defmodule OliWeb.Common.React do
 
   import PhoenixLiveReact
 
-  alias OliWeb.Common.SessionContext
+  def component(%{is_liveview: true}, name, props),
+    do: live_react_component(name, props)
 
-  def component(%SessionContext{is_liveview: true}, name, props, opts),
+  def component(_, name, props),
+    do: ReactPhoenix.ClientSide.react_component(name, props)
+
+  def component(%{is_liveview: true}, name, props, opts),
     do: live_react_component(name, props, opts)
 
-  def component(%SessionContext{is_liveview: false}, name, props, opts),
+  def component(_, name, props, opts),
     do: ReactPhoenix.ClientSide.react_component(name, props, opts)
 end

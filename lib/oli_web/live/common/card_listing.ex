@@ -20,7 +20,7 @@ defmodule OliWeb.Common.CardListing do
             <div class={"card mb-2 mr-1 ml-1 h-100 " <> if Map.get(item, :selected), do: "!bg-delivery-primary-100 shadow-inner !border-none", else: ""}>
               <img src={cover_image(item)} class="card-img-top" alt="course image">
               <div class="card-body">
-                <h5 class="card-title mb-1" title={render_title_column(item)}>{render_title_column(item)}</h5>
+                <h5 class="card-title mb-1 !whitespace-normal" title={render_title_column(item)}>{render_title_column(item)}</h5>
                 <div class="fade-text"><p class="card-text text-sm">{render_description(item)}</p></div>
               </div>
               <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
