@@ -93,7 +93,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
     assigns =
       Map.merge(assigns, %{
         students_completion: assessment.students_completion,
-        avg_score: assessment.avg_score |> IO.inspect()
+        avg_score: assessment.avg_score
       })
 
     ~H"""

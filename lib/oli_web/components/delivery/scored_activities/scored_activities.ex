@@ -20,7 +20,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     offset: 0,
     limit: 10,
     sort_order: :asc,
-    sort_by: :name,
+    sort_by: :title,
     text_search: nil
   }
 
@@ -179,8 +179,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       so when so in [:avg_score, :students_completion, :total_attempts] ->
         Enum.sort_by(assessments, fn a -> Map.get(a, so) || -1 end, sort_order)
 
-      _ ->
-        Enum.sort_by(assessments, fn a -> Map.get(a, sort_by) end, sort_order)
+      :title ->
+        Enum.sort_by(assessments, fn a -> Map.get(a, :title) |> String.downcase() end, sort_order)
     end
   end
 
