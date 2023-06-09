@@ -52,7 +52,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
       <div class="flex flex-col gap-y-4">
         {#if length(@enrolled_sections) > 0}
           <div class="d-flex justify-end">
-            <form for="search" phx-target={@myself} phx-change="search_section" class="pb-6 ml-9 sm:pb-0">
+            <form for="search" phx-target={@myself} phx-change="search_section" class="pb-6 ml-9 sm:pb-0 w-44">
               <SearchInput.render id="section_search_input" name="section_title" text={@params.text_search} />
             </form>
           </div>

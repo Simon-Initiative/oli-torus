@@ -84,3 +84,20 @@ div:has(.remix_materials_table) {
 .remix_materials_table th:last-of-type {
   text-align: right;
 }
+
+.remix_materials_publications_table {
+  @apply instructor_dashboard_table border-none;
+}
+
+div:has(.remix_materials_publications_table) {
+  @apply overflow-x-hidden;
+}
+
+div:has(.remix_materials_publications_table) thead {
+  @apply hidden;
+}
+
+div:has(.remix_materials_publications_table) tbody tr:last-of-type {
+  @apply border-0;
+}
+
