@@ -68,6 +68,8 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     );
 
     installNormalizer(editor, props.normalizerContext);
+    editor.normalizeNode;
+    SlateEditor.normalize(editor, { force: true });
     return editor;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
