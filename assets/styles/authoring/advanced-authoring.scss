@@ -748,7 +748,13 @@ $font-family-sans-serif: var(--font-sans);
   width: 800px;
   max-width: none !important;
 }
-
+.modal-dialog.modal-90w {
+  max-width: 92% !important;
+  h5,
+  h6 {
+    font-weight: bold;
+  }
+}
 .modal-dialog.config-modal {
   .modal-content {
     box-shadow: 3px 3px 6px 1px rgba(#000, 0.5);
