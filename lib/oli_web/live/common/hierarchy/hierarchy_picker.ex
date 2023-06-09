@@ -143,15 +143,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
           additional_table_class="remix_materials_publications_table"
           render_top_info={false}
         />
-        <%!-- <%= for pub <- @publications do %>
-
-          <div id={"hierarchy_item_#{pub.id}"}>
-            <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="HierarchyPicker.select_publication" phx-value-id={pub.id}>
-              <%= pub.project.title %>
-            </button>
-          </div>
-
-        <% end %> --%>
       </div>
     </div>
     """
