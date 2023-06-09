@@ -4501,6 +4501,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 13rem;
 }
 
+.w-56 {
+  width: 14rem;
+}
+
 .w-6 {
   width: 1.5rem;
 }
@@ -4547,11 +4551,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-full {
   width: 100%;
-}
-
-.w-min {
-  width: -moz-min-content;
-  width: min-content;
 }
 
 .min-w-\[300px\] {
@@ -7180,6 +7179,133 @@ div:has(.remix_materials_table) #header_paging {
 
 .remix_materials_table th:last-of-type {
   text-align: right;
+}
+
+.remix_materials_publications_table {
+  border-style: none;
+  border-right-width: 0px;
+  border-left-width: 0px;
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+  font-family: Open Sans, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-style: normal;
+}
+
+.remix_materials_publications_table th {
+  position: relative;
+  height: 4rem;
+  border-right-width: 0px;
+  border-left-width: 0px;
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+@media (min-width: 640px) {
+  .remix_materials_publications_table th {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+.remix_materials_publications_table th[data-sort-column='true'] {
+  font-weight: 700;
+  --tw-text-opacity: 1;
+  color: rgb(38 38 38 / var(--tw-text-opacity));
+}
+
+.remix_materials_publications_table th i {
+  display: none;
+}
+
+.remix_materials_publications_table th[data-sortable="true"][data-sort-order="desc"]::after {
+  content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+.remix_materials_publications_table th[data-sortable="true"][data-sort-order="asc"]::after {
+  content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 12 L10 8 L14 12'/%3e%3c/svg%3e");
+}
+
+.remix_materials_publications_table th[data-sortable="true"][data-sort-column='true']::after {
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+  transform: translateY(6px);
+}
+
+.remix_materials_publications_table th[data-sortable="true"][data-sort-column='false']::after {
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+  transform: translateY(6px);
+  filter: grayscale(100%);
+}
+
+.remix_materials_publications_table tr {
+  height: 3.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
+@media (min-width: 640px) {
+  .remix_materials_publications_table tr {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+.remix_materials_publications_table tr:has(div[data-progress-check='false']) {
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.2;
+}
+
+.remix_materials_publications_table tr:has(div[data-proficiency-check='false']) {
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.2;
+}
+
+.remix_materials_publications_table td {
+  border-right-width: 0px;
+  border-left-width: 0px;
+}
+
+.remix_materials_publications_table tr:has(div[data-score-check='false']) {
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.2;
+}
+
+.remix_materials_publications_table tr:has(a[data-score-check='false']) {
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.2;
+}
+
+.remix_materials_publications_table td:has(div.highlight-exception) {
+  border-radius: 0.375rem;
+  background-color: rgb(193 211 241 / var(--tw-bg-opacity));
+  --tw-bg-opacity: 0.5;
+}
+
+div:has(.remix_materials_publications_table) #header_paging {
+  position: sticky;
+  left: 0px;
+}
+
+div:has(.remix_materials_publications_table) {
+  overflow-x: hidden;
+}
+
+div:has(.remix_materials_publications_table) thead {
+  display: none;
+}
+
+div:has(.remix_materials_publications_table) tbody tr:last-of-type {
+  border-width: 0px;
 }
 
 /**
