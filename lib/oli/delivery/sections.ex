@@ -2669,58 +2669,33 @@ defmodule Oli.Delivery.Sections do
         end)
       end)
 
-    ### get ids of objectives to be rendered
-    filtered_objectives_id =
-      Enum.reduce(objectives, [], fn obj, acc ->
-        case Map.get(objectives_pages_map, obj.objective_resource_id) do
-          nil ->
-            acc
+    Enum.reduce(objectives, [], fn objective, acc ->
+      # Only consider objectives that belong to a page
+      if Map.get(objectives_pages_map, objective.objective_resource_id) do
+        # Get all the parent objectives of the current objective
+        parent_objectives =
+          Enum.filter(objectives, fn obj ->
+            obj.subobjective_resource_id == objective.objective_resource_id
+          end)
 
-          _ ->
-            [obj.objective_resource_id | acc]
+        if length(parent_objectives) == 0 do
+          # If the current objective doesn't have a parent, just render it
+          [objective | acc]
+        else
+          # If the current objective has one or more parents, render their parents
+          parent_objectives ++ acc
         end
-      end)
-
-    ### get ids of all childrens of objectives
-    all_childrens =
-      Enum.reduce(objectives, [], fn obj, acc ->
-        [acc | obj.children]
-      end)
-      |> List.flatten()
-      |> Enum.uniq()
-
-    ### Filter the list of objectives to be rendered with all necessary fields.
-    Enum.reduce(objectives, [], fn obj, acc ->
-      case Enum.any?(filtered_objectives_id, fn x -> Enum.member?(obj.children, x) end) do
-        true ->
-          [
-            add_necessary_fields_to_objectives(
-              obj,
-              objectives_pages_map,
-              proficiency_per_learning_objective
-            )
-            | acc
-          ]
-
-        false ->
-          if Enum.member?(all_childrens, obj.objective_resource_id) == false and
-               Enum.member?(filtered_objectives_id, obj.objective_resource_id) do
-            [
-              add_necessary_fields_to_objectives(
-                obj,
-                objectives_pages_map,
-                proficiency_per_learning_objective
-              )
-              | acc
-            ]
-          else
-            acc
-          end
+      else
+        acc
       end
     end)
-    |> Enum.filter(fn obj ->
-      Enum.member?(filtered_objectives_id, obj.objective_resource_id) or
-        Enum.member?(filtered_objectives_id, obj.subobjective_resource_id)
+    |> Enum.uniq_by(&{&1.objective_resource_id, &1.subobjective_resource_id})
+    |> Enum.map(fn obj ->
+      add_necessary_fields_to_objectives(
+        obj,
+        objectives_pages_map,
+        proficiency_per_learning_objective
+      )
     end)
   end
 
