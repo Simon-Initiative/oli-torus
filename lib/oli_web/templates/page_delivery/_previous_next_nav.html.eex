@@ -1,4 +1,4 @@
-<nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
+<nav class="<%= if is_nil(@current_page), do: "hidden", else: "previous-next-nav d-flex flex-row" %>" aria-label="Page navigation">
 
   <%= cond do %>
     <% @previous_page != nil -> %>
@@ -24,18 +24,6 @@
       <%= OliWeb.PageDeliveryView.next_link(%{
         to: next_url(@conn, @next_page, @preview_mode, @section_slug),
         title: next_title(@next_page) }) %>
-
-    <% @current_page == nil -> %>
-      <%= link to: "#", class: "page-nav-link btn", onclick: "window.close();" do %>
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col text-left">
-            <div class="nav-title">Complete</div>
-          </div>
-          <div>
-            <i class="fas fa-check nav-icon"></i>
-          </div>
-        </div>
-      <% end %>
 
     <% true -> %>
       <%= link to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "page-nav-link btn" do %>
