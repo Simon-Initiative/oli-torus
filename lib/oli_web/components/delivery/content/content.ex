@@ -77,7 +77,7 @@ defmodule OliWeb.Components.Delivery.Content do
             <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 mt-6 mb-3 border-none focus:!border-none"/>
           </Field>
         </Form>
-        <form for="search" phx-target={@myself} phx-change="search_container" class="pb-6 ml-9 sm:pb-0">
+        <form for="search" phx-target={@myself} phx-change="search_container" class="pb-6 ml-9 w-44 sm:pb-0">
           <SearchInput.render id="content_search_input" name="container_name" text={@params.text_search} />
         </form>
       </div>

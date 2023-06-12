@@ -399,21 +399,73 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element(
-        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
       )
       |> render_click()
 
       assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(1)")
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
              |> render() =~ "#{unit1_container.revision.title}"
 
       assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
              |> render() =~ "#{latest1.title}"
 
       assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
              |> render() =~ "#{latest2.title}"
+    end
+
+    test "remix section - add materials - publications are paginated", %{
+      conn: conn,
+      map: %{
+        oaf_section_1: oaf_section_1
+      }
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
+
+        # click add materials and assert is listing units first
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      assert has_element?(view, "nav[aria-label=\"Paging\"]")
+      refute has_element?(view, "button", "Project 4")
+
+      view
+      |> element("a[phx-click=\"HierarchyPicker.publications_page_change\"]", "2")
+      |> render_click()
+
+      assert has_element?(view, "button", "Project 4")
+    end
+
+    test "remix section - add materials - publications can be filtered by text", %{
+      conn: conn,
+      map: %{
+        oaf_section_1: oaf_section_1
+      }
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
+
+      # click add materials and assert is listing units first
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      view
+      |> element("form[phx-change=\"HierarchyPicker.publications_text_search\"]")
+      |> render_change(%{"text_search" => "Project 2"})
+
+      assert has_element?(view, "button", "Project 2")
+      refute has_element?(view, ".hierarchy table > tbody tr:nth-of-type(2)")
     end
 
     test "remix section items - add materials - all pages view gets rendered correctly", %{
@@ -438,20 +490,20 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element(
-        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
       )
       |> render_click()
 
       assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(1)")
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
              |> render() =~ "#{unit1_container.revision.title}"
 
       assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
              |> render() =~ "#{latest1.title}"
 
       assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
              |> render() =~ "#{latest2.title}"
 
       view
@@ -459,7 +511,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       view
-      |> element("a[phx-click=\"HierarchyPicker.page_change\"]", "2")
+      |> element("a[phx-click=\"HierarchyPicker.pages_page_change\"]", "2")
       |> render_click()
 
       assert view
@@ -484,7 +536,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element(
-        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
       )
       |> render_click()
 
@@ -521,7 +573,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element(
-        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
       )
       |> render_click()
 
@@ -530,7 +582,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       view
-      |> element("form[phx-change=\"HierarchyPicker.text_search\"]")
+      |> element("form[phx-change=\"HierarchyPicker.pages_text_search\"]")
       |> render_change(%{"text_search" => "Orphan"})
 
       assert view
@@ -582,13 +634,39 @@ defmodule OliWeb.RemixSectionLiveTest do
       revision: orphan_revision
     })
 
+    proj_1 = insert(:project, title: "Project 1")
+    proj_2 = insert(:project, title: "Project 2")
+    proj_3 = insert(:project, title: "Project 3")
+    proj_4 = insert(:project, title: "Project 4")
+
+    insert(:publication, %{
+      project: proj_1,
+      published: DateTime.utc_now(),
+    })
+
+    insert(:publication, %{
+      project: proj_2,
+      published: DateTime.utc_now(),
+    })
+
+    insert(:publication, %{
+      project: proj_3,
+      published: DateTime.utc_now(),
+    })
+
+    insert(:publication, %{
+      project: proj_4,
+      published: DateTime.utc_now(),
+    })
+
+
     {:ok,
      conn: conn,
      map: map,
      author: map.author,
      institution: map.institution,
      project: map.project,
-     publication: map.publication}
+     publication: map.publication,}
   end
 
   defp setup_instructor_session(%{conn: conn}) do

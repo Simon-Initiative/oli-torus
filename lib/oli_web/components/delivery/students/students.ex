@@ -190,7 +190,7 @@ defmodule OliWeb.Components.Delivery.Students do
             </label>
           </form>
         </div>
-        <form for="search" phx-target={@myself} phx-change="search_student" class="sm:ml-9">
+        <form for="search" phx-target={@myself} phx-change="search_student" class="sm:ml-9 w-44">
           <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
         </form>
       </div>
