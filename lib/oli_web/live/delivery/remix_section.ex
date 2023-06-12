@@ -31,6 +31,8 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Sections.Section
 
+  alias Phoenix.LiveView.JS
+
   defp redirect_after_save(:instructor, %Section{slug: slug}),
     do:
       Routes.live_path(
@@ -224,7 +226,8 @@ defmodule OliWeb.Delivery.RemixSection do
        available_publications: available_publications,
        publications_table_model: publications_table_model,
        publications_table_model_total_count: publications_table_model_total_count,
-       publications_table_model_params: publications_table_model_params
+       publications_table_model_params: publications_table_model_params,
+       is_product: is_product?(socket)
      )}
   end
 
@@ -696,7 +699,11 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
-  def handle_event("HierarchyPicker.pages_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+  def handle_event(
+        "HierarchyPicker.pages_page_change",
+        %{"limit" => limit, "offset" => offset},
+        socket
+      ) do
     %{modal_assigns: modal_assigns} = socket.assigns
     selected_publication_id = modal_assigns.selected_publication.id
 
@@ -924,4 +931,7 @@ defmodule OliWeb.Delivery.RemixSection do
       %HierarchyNode{uuid: UUID.uuid4(), revision: rev}
     end)
   end
+
+  defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
+  defp is_product?(_), do: false
 end
