@@ -68,6 +68,14 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     );
 
     installNormalizer(editor, props.normalizerContext);
+
+    // Force normalization on initial render, this will help a few use-cases:
+    //   1. Our normalization code has changed since the last time this doc was opened
+    //   2. The doc was created from another source (like the digest tool) and has never been opened.
+    setTimeout(() => {
+      SlateEditor.normalize(editor, { force: true });
+    });
+
     return editor;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
