@@ -246,7 +246,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       |> assign(:maybe_disabled, maybe_disabled(breadcrumbs))
 
     ~H"""
-      <ol class="flex items-center gap-2 bg-gray-100 p-2 rounded overflow-x-scroll scrollbar-hide">
+      <ol class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-x-scroll scrollbar-hide">
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <.breadcrumb_item
             breadcrumb={breadcrumb}

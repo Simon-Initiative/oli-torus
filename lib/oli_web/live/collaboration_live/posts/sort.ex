@@ -11,7 +11,7 @@ defmodule OliWeb.CollaborationLive.Posts.Sort do
           phx-click="sort"
           phx-value-sort_by="inserted_at"
           phx-value-sort_order={@sort.order}
-          class={"#{if @sort.by == :inserted_at, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white"} rounded-l-sm py-1 h-8 w-20"}
+          class={"#{if @sort.by == :inserted_at, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:text-gray-600"} rounded-l-sm py-1 h-8 w-20"}
         >
           Date
         </button>
@@ -19,7 +19,7 @@ defmodule OliWeb.CollaborationLive.Posts.Sort do
           phx-click="sort"
           phx-value-sort_by="replies_count"
           phx-value-sort_order={@sort.order}
-          class={"#{if @sort.by == :replies_count, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white"} rounded-r-sm py-1 h-8 w-20"}
+          class={"#{if @sort.by == :replies_count, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:text-gray-600"} rounded-r-sm py-1 h-8 w-20"}
         >
           Popularity
         </button>

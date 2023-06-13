@@ -184,14 +184,14 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
           <% end %>
         </div>
-        <div class="flex flex-col divide-y divide-gray-100 w-full bg-white">
+        <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700 w-full bg-white dark:bg-neutral-800">
           <div class="grid grid-cols-5 gap-4 w-full p-8">
             <div class="flex flex-col justify-between">
-              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">average score</h4>
+              <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">average score</h4>
               <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}><%= format_student_score(@student.avg_score) %></span>
             </div>
             <div class="flex flex-col justify-between">
-              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">course completion</h4>
+              <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">course completion</h4>
               <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}><%= format_percentage(@student.progress) %></span>
             </div>
           </div>
@@ -199,8 +199,8 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             <div class="grid grid-cols-5 gap-4 w-full p-8">
               <%= for response <- @survey_responses do %>
                 <div class="flex flex-col justify-between">
-                  <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center"><%= response.title %></h4>
-                  <span class="text-base font-semibold tracking-wide text-gray-800 flex items-center mt-2"><%= response.response || "-" %></span>
+                  <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center"><%= response.title %></h4>
+                  <span class="text-base font-semibold tracking-wide text-gray-800 dark:text-white flex items-center mt-2"><%= response.response || "-" %></span>
                 </div>
               <% end %>
             </div>
@@ -218,7 +218,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   def section_details_header(assigns) do
     ~H"""
       <div id="section_details_header" class="flex flex-row justify-between items-center h-20 w-full py-6 px-10">
-        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span>
+        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 dark:text-white underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span>
         <button class="torus-button flex justify-center primary h-9 w-48">Email Student</button>
       </div>
     """

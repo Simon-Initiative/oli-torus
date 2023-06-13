@@ -87,7 +87,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     <div class="flex items-center ml-8">
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
       <.link
-        class="ml-6 text-gray-600 underline hover:text-gray-700"
+        class="ml-6 underline"
         navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.StudentDashboard.StudentDashboardLive, @section.slug, @id, :content)}
       >
         <%= Utils.name(@name, @given_name, @family_name) %>
