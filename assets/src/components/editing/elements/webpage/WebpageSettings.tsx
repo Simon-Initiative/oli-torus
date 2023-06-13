@@ -33,7 +33,11 @@ export const WebpageSettings = (props: SettingsProps) => {
         />
       </Toolbar.Group>
       <Toolbar.Group>
-        <SettingsButton model={props.model} onEdit={props.onEdit} />
+        <SettingsButton
+          model={props.model}
+          onEdit={props.onEdit}
+          projectSlug={props.commandContext.projectSlug}
+        />
       </Toolbar.Group>
     </Toolbar>
   );
@@ -41,7 +45,9 @@ export const WebpageSettings = (props: SettingsProps) => {
 interface SettingsButtonProps {
   model: ContentModel.Webpage;
   onEdit: (attrs: Partial<ContentModel.Webpage>) => void;
+  projectSlug: string;
 }
+
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
@@ -51,11 +57,12 @@ const SettingsButton = (props: SettingsButtonProps) => (
         window.oliDispatch(
           modalActions.display(
             <WebpageModal
+              projectSlug={props.projectSlug}
               model={props.model}
-              onDone={({ alt, width, src }: Partial<ContentModel.Webpage>) => {
+              onDone={({ alt, width, src, srcType }: Partial<ContentModel.Webpage>) => {
                 console.log('width', width, alt, src);
                 window.oliDispatch(modalActions.dismiss());
-                props.onEdit({ alt, width, src });
+                props.onEdit({ alt, width, src, srcType });
               }}
               onCancel={() => window.oliDispatch(modalActions.dismiss())}
             />,
