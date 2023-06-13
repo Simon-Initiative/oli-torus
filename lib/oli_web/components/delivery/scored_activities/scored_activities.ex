@@ -1,13 +1,16 @@
 defmodule OliWeb.Components.Delivery.ScoredActivities do
   use Surface.LiveComponent
 
-  alias OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel
+  alias Oli.Publishing.DeliveryResolver
+  alias OliWeb.Delivery.ScoredActivities.{ActivitiesTableModel, AssessmentsTableModel}
   alias OliWeb.Common.Params
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.{PagedTable, SearchInput}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.Table.SortableTableModel
 
   prop(assessments, :list, required: true)
+  prop(students, :list, required: true)
   prop(params, :map, required: true)
   prop(section_slug, :string, required: true)
   prop(view, :string, required: true)
@@ -15,6 +18,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   data(table_model, :map)
   data(total_count, :integer)
+  data(student_emails_without_attempts, :list)
+  data(students_with_attempts_count, :integer)
+  data(total_attempts_count, :integer)
+  data(scored_activity, :map)
 
   @default_params %{
     offset: 0,
@@ -31,58 +38,176 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    {total_count, rows} = apply_filters(assigns.assessments, params)
+    socket =
+      case params.scored_activity_id do
+        nil ->
+          {total_count, rows} = apply_filters(assigns.assessments, params)
 
-    {:ok, table_model} = ScoredActivitiesTableModel.new(rows, assigns.section_slug, assigns.ctx)
+          {:ok, table_model} = AssessmentsTableModel.new(rows, assigns.ctx)
 
-    table_model =
-      Map.merge(table_model, %{
-        rows: rows,
-        sort_order: params.sort_order,
-        sort_by_spec:
-          Enum.find(table_model.column_specs, fn col_spec ->
-            col_spec.name == params.sort_by
-          end)
-      })
+          table_model =
+            Map.merge(table_model, %{
+              rows: rows,
+              sort_order: params.sort_order
+            })
+            |> SortableTableModel.update_sort_params(params.sort_by)
+
+          assign(socket,
+            table_model: table_model,
+            total_count: total_count,
+            scored_activity: nil
+          )
+
+        scored_activity_id ->
+          scored_activity = Enum.find(assigns.assessments, fn a -> a.id == scored_activity_id end)
+
+          activities = get_activities(scored_activity, assigns.section_slug)
+
+          students_with_attempts =
+            DeliveryResolver.students_with_attempts_for_page(scored_activity.id)
+
+          student_emails_without_attempts =
+            Enum.reduce(assigns.students, [], fn s, acc ->
+              if s.id in students_with_attempts do
+                acc
+              else
+                [s.email | acc]
+              end
+            end)
+
+          {total_count, rows} = apply_filters(activities, params)
+
+          {:ok, table_model} = ActivitiesTableModel.new(rows)
+
+          table_model =
+            table_model
+            |> Map.merge(%{
+              rows: rows,
+              sort_order: params.sort_order,
+              selected: rows != [] && hd(rows).id |> Integer.to_string()
+            })
+            |> SortableTableModel.update_sort_params(params.sort_by)
+
+          assign(socket,
+            scored_activity: scored_activity,
+            activities: activities,
+            table_model: table_model,
+            total_count: total_count,
+            students_with_attempts_count: Enum.count(students_with_attempts),
+            student_emails_without_attempts: student_emails_without_attempts,
+            total_attempts_count:
+              Enum.reduce(activities, 0, fn a, acc -> a.total_attempts + acc end)
+          )
+      end
 
     {:ok,
      assign(socket,
-       table_model: table_model,
-       total_count: total_count,
        params: params,
        section_slug: assigns.section_slug,
        view: assigns.view,
        ctx: assigns.ctx,
-       assessments: assigns.assessments
+       assessments: assigns.assessments,
+       students: assigns.students
      )}
   end
 
   def render(assigns) do
     ~F"""
     <div class="bg-white shadow-sm">
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 bg-white">
-        <h4 class="torus-h4 pl-9 whitespace-nowrap">Scored Activities</h4>
-        <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 ml-9 sm:pb-0">
-          <SearchInput.render
-            id="assessments_search_input"
-            name="assessment_name"
-            text={@params.text_search}
-          />
-        </form>
+      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9 bg-white">
+        {#if @scored_activity != nil }
+          <div class="flex flex-col">
+            {#if @scored_activity.container_label }
+              <h4 class="torus-h4 whitespace-nowrap">{@scored_activity.container_label}</h4>
+              <span class="text-lg">{@scored_activity.title}</span>
+            {#else}
+              <h4 class="torus-h4 whitespace-nowrap">{@scored_activity.title}</h4>
+            {/if}
+            <button class="btn btn-primary whitespace-nowrap mr-auto my-6" phx-click="back" phx-target={@myself}>Go back</button>
+          </div>
+        {#else}
+          <h4 class="torus-h4 whitespace-nowrap">Scored Activities</h4>
+        {/if}
+        <div class="flex flex-col">
+          <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 lg:ml-auto lg:pt-7">
+            <SearchInput.render
+              id="assessments_search_input"
+              name="assessment_name"
+              text={@params.text_search}
+            />
+          </form>
+          {#if @scored_activity != nil }
+            <div class="flex flex-row mt-auto">
+              <span class="text-xs">
+                {@students_with_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed {@total_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.
+              </span>
+              {#if @students_with_attempts_count < Enum.count(@students)}
+                <div class="flex flex-col">
+                  <span class="text-xs ml-2">
+                    {Enum.count(@student_emails_without_attempts)} {Gettext.ngettext(OliWeb.Gettext, "student has", "students have", Enum.count(@student_emails_without_attempts))} not completed any attempt.
+                  </span>
+                  <input type="text" id="email_inputs" class="form-control hidden" value={Enum.join(@student_emails_without_attempts, "; ")} readonly>
+                  <button class="text-xs text-primary underline ml-auto mb-6" phx-hook="CopyListener" data-clipboard-target="#email_inputs"><i class="fa-solid fa-copy mr-2"></i>{Gettext.ngettext(OliWeb.Gettext, "Copy his email address", "Copy their email addresses", Enum.count(@student_emails_without_attempts))}</button>
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
-        <PagedTable
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@params.offset}
-          limit={@params.limit}
-          page_change={JS.push("paged_table_page_change", target: @myself)}
-          sort={JS.push("paged_table_sort", target: @myself)}
-          additional_table_class="instructor_dashboard_table"
-          show_bottom_paging={false}
-          render_top_info={false}
-        />
+
+      <PagedTable
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@params.offset}
+        limit={@params.limit}
+        page_change={JS.push("paged_table_page_change", target: @myself)}
+        selection_change={JS.push("paged_table_selection_change", target: @myself)}
+        sort={JS.push("paged_table_sort", target: @myself)}
+        additional_table_class="instructor_dashboard_table"
+        show_bottom_paging={false}
+        render_top_info={false}
+        allow_selection={true}
+      />
     </div>
     """
+  end
+
+  def handle_event("back", _params, socket) do
+    socket =
+      assign(socket,
+        params: Map.put(socket.assigns.params, :scored_activity_id, nil),
+        scored_activity: nil
+      )
+
+    {:noreply,
+     push_patch(socket, to: route_to(socket, socket.assigns.params.assessment_table_params))}
+  end
+
+  def handle_event("paged_table_selection_change", %{"id" => selected_id}, socket)
+      when not is_nil(socket.assigns.scored_activity) do
+    table_model =
+      Map.merge(socket.assigns.table_model, %{
+        selected: selected_id
+      })
+
+    {:noreply, assign(socket, table_model: table_model)}
+  end
+
+  def handle_event("paged_table_selection_change", %{"id" => selected_scored_activity_id}, socket) do
+    assessment_table_params = socket.assigns.params
+
+    socket =
+      assign(socket,
+        params:
+          Map.put(
+            socket.assigns.params,
+            :scored_activity_id,
+            selected_scored_activity_id
+          )
+      )
+
+    {:noreply,
+     push_patch(socket, to: route_to(socket, %{assessment_table_params: assessment_table_params}))}
   end
 
   def handle_event(
@@ -93,12 +218,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         route_to(
            socket,
-           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-           socket.assigns.section_slug,
-           socket.assigns.view,
-           :scored_activities,
            update_params(socket.assigns.params, %{text_search: assessment_name, offset: 0})
          )
      )}
@@ -112,12 +233,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         route_to(
            socket,
-           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-           socket.assigns.section_slug,
-           socket.assigns.view,
-           :scored_activities,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
@@ -131,12 +248,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         route_to(
            socket,
-           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-           socket.assigns.section_slug,
-           socket.assigns.view,
-           :scored_activities,
            update_params(socket.assigns.params, %{
              sort_by: String.to_existing_atom(sort_by)
            })
@@ -176,8 +289,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           sort_order
         )
 
-      so when so in [:avg_score, :students_completion, :total_attempts] ->
-        Enum.sort_by(assessments, fn a -> Map.get(a, so) || -1 end, sort_order)
+      sb when sb in [:avg_score, :students_completion, :total_attempts] ->
+        Enum.sort_by(assessments, fn a -> Map.get(a, sb) || -1 end, sort_order)
 
       :title ->
         Enum.sort_by(assessments, fn a -> Map.get(a, :title) |> String.downcase() end, sort_order)
@@ -208,7 +321,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           ],
           @default_params.sort_by
         ),
-      text_search: Params.get_param(params, "text_search", @default_params.text_search)
+      text_search: Params.get_param(params, "text_search", @default_params.text_search),
+      scored_activity_id: Params.get_int_param(params, "scored_activity_id", nil),
+      assessment_table_params: params["assessment_table_params"]
     }
   end
 
@@ -225,13 +340,66 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   defp update_params(params, new_param) do
     Map.merge(params, new_param)
-    |> purge_default_params()
   end
 
-  defp purge_default_params(params) do
-    # there is no need to add a param to the url if its value is equal to the default one
-    Map.filter(params, fn {key, value} ->
-      @default_params[key] != value
-    end)
+  defp route_to(socket, params)
+       when not is_nil(socket.assigns.params.scored_activity_id) do
+    Routes.live_path(
+      socket,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      socket.assigns.section_slug,
+      socket.assigns.view,
+      :scored_activities,
+      socket.assigns.params.scored_activity_id,
+      params
+    )
+  end
+
+  defp route_to(socket, params) do
+    Routes.live_path(
+      socket,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      socket.assigns.section_slug,
+      socket.assigns.view,
+      :scored_activities,
+      params
+    )
+  end
+
+  defp get_activities(scored_activity, section_slug) do
+    scored_activity.content["model"]
+    |> Enum.filter(fn element -> element["type"] == "activity-reference" end)
+    |> Enum.map(fn activity -> activity["activity_id"] end)
+    |> case do
+      [] ->
+        []
+
+      activity_ids ->
+        activities = DeliveryResolver.activities_by_resource_ids(activity_ids, section_slug)
+
+        objectives_mapper =
+          Enum.reduce(activities, [], fn activity, acc ->
+            activity.objectives["1"] ++ acc
+          end)
+          |> Enum.uniq()
+          |> DeliveryResolver.objectives_by_resource_ids(section_slug)
+          |> Enum.map(fn objective -> {objective.resource_id, objective} end)
+          |> Enum.into(%{})
+
+        activities
+        |> Enum.map(fn activity ->
+          case activity.objectives["1"] do
+            [] ->
+              activity
+
+            objective_ids ->
+              Map.put(
+                activity,
+                :objectives,
+                Enum.map(objective_ids, fn id -> Map.get(objectives_mapper, id) end)
+              )
+          end
+        end)
+    end
   end
 end

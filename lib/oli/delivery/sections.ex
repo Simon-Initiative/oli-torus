@@ -2721,7 +2721,7 @@ defmodule Oli.Delivery.Sections do
            nil
 
          c ->
-           ~s{#{get_container_label(c.numbering_level, c.customizations)} #{c.numbering_index}: #{c.title}}
+           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
        end}
     end)
     |> Enum.into(%{})
@@ -2729,7 +2729,7 @@ defmodule Oli.Delivery.Sections do
 
   defp get_container_label(
          numbering_level,
-         customizations \\ Map.from_struct(CustomLabels.default())
+         customizations
        ) do
     case numbering_level do
       1 -> Map.get(customizations, :unit)

@@ -1,11 +1,10 @@
-defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
+defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
 
-  # TODO revalidate section_slug need
-  def new(assessments, section_slug, ctx) do
+  def new(assessments, ctx) do
     column_specs = [
       %ColumnSpec{
         name: :title,
@@ -41,7 +40,6 @@ defmodule OliWeb.Delivery.ScoredActivities.ScoredActivitiesTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        section_slug: section_slug,
         ctx: ctx
       }
     )

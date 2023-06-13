@@ -99,7 +99,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       ) do
     socket =
       socket
-      |> assign(params: params, view: :overview, active_tab: :scored_activities)
+      |> assign(
+        params: params,
+        view: :overview,
+        active_tab: :scored_activities
+      )
       |> assign_new(:students, fn ->
         Sections.enrolled_students(socket.assigns.section.slug)
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
@@ -338,6 +342,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           section_slug={@section_slug}
           params={@params}
           assessments={@assessments}
+          students={@students}
           section_slug={@section.slug}
           view={@view}
           ctx={@ctx} />

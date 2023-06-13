@@ -850,6 +850,11 @@ defmodule OliWeb.Router do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
+
+      live(
+        "/:view/:active_tab/:scored_activity_id",
+        Delivery.InstructorDashboard.InstructorDashboardLive
+      )
     end
 
     get(

@@ -3,10 +3,10 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   alias OliWeb.Common.Table.ColumnSpec
 
-  prop model, :struct, required: true
-  prop sort, :event, required: true
-  prop select, :event
-  prop additional_table_class, :string, default: "table-sm"
+  prop(model, :struct, required: true)
+  prop(sort, :event, required: true)
+  prop(select, :event)
+  prop(additional_table_class, :string, default: "table-sm")
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do
@@ -69,7 +69,7 @@ defmodule OliWeb.Common.SortableTable.Table do
     ~F"""
     <tr
       id={id_field(row, @model)}
-      class={row_class <> if Map.get(row, :selected), do: " bg-delivery-primary-100 shadow-inner dark:text-black", else: ""}
+      class={row_class <> if Map.get(row, :selected) || id_field(row, assigns.model) == assigns.model.selected, do: " bg-delivery-primary-100 shadow-inner dark:text-black", else: ""}
       :on-click={@select}
       phx-value-id={id_field(row, @model)}
     >
