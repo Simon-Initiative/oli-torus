@@ -2678,7 +2678,7 @@ defmodule Oli.Delivery.Sections do
             obj.subobjective_resource_id == objective.objective_resource_id
           end)
 
-        if length(parent_objectives) == 0 do
+        if Enum.empty?(parent_objectives) do
           # If the current objective doesn't have a parent, just render it
           [objective | acc]
         else
