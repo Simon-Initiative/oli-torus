@@ -643,7 +643,6 @@ $font-family-sans-serif: var(--font-sans);
   }
   .aa-parts-list {
     button {
-      padding: 4px;
       img {
         display: inline-block;
         max-height: 16px;
@@ -665,7 +664,11 @@ $font-family-sans-serif: var(--font-sans);
   #search-popover {
     .popover-body {
       max-height: 51vh;
-      overflow: scroll;
+      overflow-y: scroll;
+      .list-group .list-group-item {
+        border: 0.5px solid #ccc;
+        padding: 8px;
+      }
     }
   }
 
