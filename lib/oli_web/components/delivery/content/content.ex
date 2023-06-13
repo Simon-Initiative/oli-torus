@@ -70,28 +70,31 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white shadow-sm">
-      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white h-16">
-        <Form for={:containers} id="container-select-form" change="filter_container" class="pl-9 torus-h4 mr-auto">
-          <Field name={:container_type}>
-            <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 mt-6 mb-3 border-none focus:!border-none"/>
-          </Field>
-        </Form>
-        <form for="search" phx-target={@myself} phx-change="search_container" class="pb-6 ml-9 w-44 sm:pb-0">
-          <SearchInput.render id="content_search_input" name="container_name" text={@params.text_search} />
-        </form>
-      </div>
+    <div class="flex flex-col gap-2 mx-10 mb-10">
+      <a class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
+      <div class="bg-white shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white h-16">
+          <Form for={:containers} id="container-select-form" change="filter_container" class="pl-9 torus-h4 mr-auto">
+            <Field name={:container_type}>
+              <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 mt-6 mb-3 border-none focus:!border-none"/>
+            </Field>
+          </Form>
+          <form for="search" phx-target={@myself} phx-change="search_container" class="pb-6 ml-9 w-44 sm:pb-0">
+            <SearchInput.render id="content_search_input" name="container_name" text={@params.text_search} />
+          </form>
+        </div>
 
-      <PagedTable
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@params.offset}
-        limit={@params.limit}
-        render_top_info={false}
-        additional_table_class="instructor_dashboard_table"
-        sort={JS.push("paged_table_sort", target: @myself)}
-        page_change={JS.push("paged_table_page_change", target: @myself)}
-      />
+        <PagedTable
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@params.offset}
+          limit={@params.limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
+          sort={JS.push("paged_table_sort", target: @myself)}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
+        />
+      </div>
     </div>
     """
   end
