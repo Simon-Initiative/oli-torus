@@ -113,9 +113,10 @@ describe('multi input question - default (with text input)', () => {
       </Provider>,
     );
 
-    fireEvent.click(screen.getByText('Answer Key'));
-    await screen.findByText('Add targeted feedback');
-    fireEvent.click(screen.getByText('Add targeted feedback'));
+    const answerKeyLink = await screen.findByText('Answer Key');
+    fireEvent.click(answerKeyLink);
+    const feedbackLink = await screen.findByText('Add targeted feedback');
+    fireEvent.click(feedbackLink);
     const responses = model.authoring.parts[0].responses;
     expect(responses).toHaveLength(3);
     expect(responses[1]).toHaveProperty('rule', 'input contains {}');
