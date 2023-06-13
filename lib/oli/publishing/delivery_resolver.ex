@@ -14,6 +14,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Resources.Numbering
   alias Oli.Branding.CustomLabels
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt, ResourceAccess}
+  alias Oli.Authoring.Course.Project
 
   defp section_resources(section_slug) do
     from(sr in SectionResource,
@@ -264,7 +265,9 @@ defmodule Oli.Publishing.DeliveryResolver do
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     fn ->
-      from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
+      from([s: s, sr: sr, rev: rev, spp: spp] in section_resource_revisions(section_slug),
+        join: p in Project,
+        on: p.id == spp.project_id,
         where: rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id,
         select:
           {s, sr, rev,
@@ -272,10 +275,10 @@ defmodule Oli.Publishing.DeliveryResolver do
              "CASE WHEN ? = ? THEN true ELSE false END",
              sr.id,
              s.root_section_resource_id
-           )}
+           ), p.slug}
       )
       |> Repo.all()
-      |> Enum.reduce({%{}, nil}, fn {s, sr, rev, is_root?}, {nodes, root} ->
+      |> Enum.reduce({%{}, nil}, fn {s, sr, rev, is_root?, proj_slug}, {nodes, root} ->
         labels =
           case s.customizations do
             nil -> Map.from_struct(CustomLabels.default())
@@ -292,6 +295,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           children: sr.children,
           resource_id: rev.resource_id,
           project_id: sr.project_id,
+          project_slug: proj_slug,
           revision: rev,
           section_resource: sr
         }

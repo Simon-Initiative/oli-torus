@@ -87,18 +87,47 @@
         }
       }
     }
+    .adaptivity {
+      .card {
+        padding: 5px;
+        border-radius: inherit;
+        background-color: #f1f5f9;
+      }
+      .card-header {
+        margin: 10px;
+        .initHeading {
+          border-bottom: 1px solid #d4d4d4;
+        }
+        .rules-adaptivity {
+          border-top: 1px solid #d4d4d4;
+          border-bottom: 1px solid #d4d4d4;
+        }
+      }
+      .collapse.show {
+        background-color: white;
+      }
+    }
     .adaptivity,
     .inspector {
       font-size: 0.8rem;
-
+      .text-uppercase {
+        text-transform: uppercase;
+        font-weight: bold;
+        margin: 8px;
+        padding-top: 8px;
+      }
       .list-group-item {
         padding: 0.5rem 1rem;
+        border: 1px solid #d4d4d4;
+        margin-bottom: 0.5rem;
       }
       .correct {
         border-left: 4px solid #4ade80;
+        border-top: 1px solid #d4d4d4;
       }
       .incorrect {
         border-left: 4px solid #facc15;
+        border-top: 1px solid #d4d4d4;
       }
       .initState {
         border-left: 4px solid #d4d4d4;
@@ -113,7 +142,8 @@
         display: inline-block;
         transform: rotate(0deg);
         transition: transform 200ms ease-in-out;
-
+        margin-right: 10px;
+        vertical-align: inherit;
         &.rotate {
           transform: rotate(90deg);
         }
@@ -124,6 +154,11 @@
     }
   }
   .inspector {
+    .card-header {
+      background-color: #f1f5f9;
+      padding: 5px;
+      border-top: 1px solid #d4d4d4;
+    }
     .user-input {
       display: flex;
       align-items: center;

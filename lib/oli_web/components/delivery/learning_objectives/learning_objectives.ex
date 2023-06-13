@@ -83,7 +83,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           </form>
         </div>
 
-        <form for="search" phx-target={@myself} phx-change="search_objective" class="pb-6 ml-9 sm:pb-0">
+        <form for="search" phx-target={@myself} phx-change="search_objective" class="pb-6 ml-9 w-44 sm:pb-0">
           <SearchInput.render id="objective_search_input" name="objective_name" text={@params.text_search} />
         </form>
       </div>
@@ -244,9 +244,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       |> List.first()
 
     Enum.filter(objectives, fn objective ->
-      Enum.any?(objective[:pages_id], fn page_id ->
-        Enum.member?(container.children, page_id)
-      end)
+      if is_nil(objective[:pages_id]),
+        do: false,
+        else:
+          Enum.any?(objective[:pages_id], fn page_id ->
+            Enum.member?(container.children, page_id)
+          end)
     end)
   end
 

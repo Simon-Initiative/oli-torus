@@ -1,6 +1,6 @@
 <%= render_modal(assigns) %>
 
-<div id="curriculum-container" class="container curriculum-editor">
+<div data-saved={if @has_unsaved_changes, do: "false", else: "true"} phx-hook="BeforeUnloadListener" id="curriculum-container" class="container curriculum-editor">
   <h3><%= @section.title %></h3>
 
   <div class="grid grid-cols-12 mt-3">
@@ -10,7 +10,15 @@
         <div class="flex-grow-1"></div>
         <div class="flex-shrink-0">
           <button id="cancel" class="btn btn-outline-primary ml-1" phx-click="cancel">Cancel</button>
-          <button id="save" disabled={!@has_unsaved_changes} class="btn btn-primary ml-1" phx-click="save" phx-disabled-with="Saving...">Save</button>
+          <button
+            id="save"
+            disabled={!@has_unsaved_changes}
+            class="btn btn-primary ml-1"
+            phx-click={JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container") |> JS.push("save")}
+            phx-disabled-with="Saving..."
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>
@@ -33,7 +41,8 @@
           <Entry.entry
               index={index}
               selected={@selected == node.uuid}
-              node={node} />
+              node={node}
+              is_product={assigns[:is_product]} />
         <% end %>
         <DropTarget.droptarget id={"last"} index={length(@active.children)} />
       </div>

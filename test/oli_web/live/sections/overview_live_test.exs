@@ -165,22 +165,32 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}\"]"
+               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "Enter Course as a Student"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug)}\"]"
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug)}\"]",
+               "Customize Curriculum"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)}\"]"
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, section.slug)}\"]",
+               "Scheduling"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.source_materials_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, section.slug)}\"]"
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)}\"]",
+               "Advanced Gating and Scheduling"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.source_materials_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, section.slug)}\"]",
+               "Manage Source Materials"
              )
 
       assert render(view) =~ "Manage"

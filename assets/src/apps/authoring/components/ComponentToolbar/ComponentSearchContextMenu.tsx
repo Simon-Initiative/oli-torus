@@ -130,12 +130,11 @@ const ComponentSearchContextMenu: React.FC<{
                     key={part.id}
                     className="d-flex w-full align-items-center justify-content-between"
                   >
-                    <div>
-                      <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>
-                        <img title={part.type} src={getPartIcon(part.type)} />
-                      </div>
+                    <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>
+                      <img title={part.type} src={getPartIcon(part.type)} />
                       <span className="mr-2">{part.id}</span>
                     </div>
+
                     <div className="text-center mr-1 d-flex" style={{ minWidth: '36px' }}>
                       <button
                         className="btn btn-xs move-btn"

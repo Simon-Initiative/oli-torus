@@ -37,7 +37,7 @@ const NestedStateDisplay: React.FC<NestedStateDisplayProps> = ({
         id={`heading${rootLevel}${levelIndex}`}
       >
         <button
-          className="btn btn-link btn-block text-left"
+          className="btn btn-link text-left"
           type="button"
           // TODO: figure out why Bootstrap collapse is breaking in recursion
           // data-bs-toggle="collapse"

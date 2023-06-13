@@ -62,7 +62,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
                 <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
               </div>
             {/if}
-            <form for="search" phx-target={@myself} phx-change="search_student" class="pb-3 md:pl-9 sm:pb-0">
+            <form for="search" phx-target={@myself} phx-change="search_student" class="pb-3 md:pl-9 w-44 sm:pb-0">
               <SearchInput.render id="student_search_input" name="student_name" text={@params.text_search} />
             </form>
           </div>

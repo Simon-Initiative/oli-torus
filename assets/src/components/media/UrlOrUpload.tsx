@@ -14,6 +14,7 @@ interface Props {
   onMediaSelectionChange: (items: MediaItem[]) => void;
   onUrlChange: (url: string) => void;
   children?: React.ReactNode;
+  externalUrlAllowed?: boolean;
 }
 
 export const UrlOrUpload = (props: Props) => {
@@ -42,12 +43,14 @@ export const UrlOrUpload = (props: Props) => {
         >
           Media Library
         </button>
-        <button
-          className={classNames('nav-link', whenActive('url', 'active'))}
-          onClick={() => setSource('url')}
-        >
-          External URL
-        </button>
+        {props.externalUrlAllowed && (
+          <button
+            className={classNames('nav-link', whenActive('url', 'active'))}
+            onClick={() => setSource('url')}
+          >
+            External URL
+          </button>
+        )}
       </div>
       <div className="tab-content py-3">
         <div
@@ -100,3 +103,7 @@ const MediaManagerError = () => (
     <p>If the problem persists, contact support with the following details:</p>
   </>
 );
+
+UrlOrUpload.defaultProps = {
+  externalUrlAllowed: true,
+};

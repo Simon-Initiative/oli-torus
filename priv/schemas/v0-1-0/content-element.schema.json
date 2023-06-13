@@ -595,6 +595,9 @@
         },
         "display": {
           "type": "string"
+        },
+        "srcType": {
+          "oneOf": [{ "const": "url" }, { "const": "media_library" }]
         }
       },
       "required": ["type"]
@@ -986,6 +989,13 @@
         },
         "target": {
           "type": "string"
+        },
+        "linkType": {
+          "oneOf": [
+            { "const": "page" },
+            { "const": "url" },
+            { "const": "media_library" }
+          ]
         },
         "children": {
           "type": "array",

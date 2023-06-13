@@ -2627,7 +2627,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
     pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
 
@@ -2640,21 +2640,24 @@ defmodule Oli.Delivery.Sections do
           Metrics.proficiency_for_student_per_learning_objective(section_slug, student_id)
       end
 
+    ### get all objectives from the database
     objectives =
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         left_join: rev2 in Revision,
         on: rev2.resource_id in rev.children,
-        where: rev.deleted == false and rev.resource_type_id == ^page_id,
-        group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id],
+        where: rev.deleted == false and rev.resource_type_id == ^objective_id,
+        group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id, rev.children],
         select: %{
           objective: rev.title,
           objective_resource_id: rev.resource_id,
           subobjective: rev2.title,
-          subobjective_resource_id: rev2.resource_id
+          subobjective_resource_id: rev2.resource_id,
+          children: rev.children
         }
       )
       |> Repo.all()
 
+    ### filter objectives that are attached to some page
     objectives_pages_map =
       pages_with_objectives
       |> Enum.reduce(%{}, fn page, acc ->
@@ -2667,19 +2670,32 @@ defmodule Oli.Delivery.Sections do
         end)
       end)
 
-    Enum.map(objectives, fn obj ->
-      Map.put(obj, :pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
-      |> Map.put(
-        :student_proficiency_obj,
-        Map.get(proficiency_per_learning_objective, obj.objective_resource_id, "Not enough data")
-      )
-      |> Map.put(
-        :student_proficiency_subobj,
-        Map.get(
-          proficiency_per_learning_objective,
-          obj.subobjective_resource_id,
-          "Not enough data"
-        )
+    Enum.reduce(objectives, [], fn objective, acc ->
+      # Only consider objectives that belong to a page
+      if Map.get(objectives_pages_map, objective.objective_resource_id) do
+        # Get all the parent objectives of the current objective
+        parent_objectives =
+          Enum.filter(objectives, fn obj ->
+            obj.subobjective_resource_id == objective.objective_resource_id
+          end)
+
+        if Enum.empty?(parent_objectives) do
+          # If the current objective doesn't have a parent, just render it
+          [objective | acc]
+        else
+          # If the current objective has one or more parents, render their parents
+          parent_objectives ++ acc
+        end
+      else
+        acc
+      end
+    end)
+    |> Enum.uniq_by(&{&1.objective_resource_id, &1.subobjective_resource_id})
+    |> Enum.map(fn obj ->
+      add_necessary_fields_to_objectives(
+        obj,
+        objectives_pages_map,
+        proficiency_per_learning_objective
       )
     end)
   end
@@ -2736,6 +2752,31 @@ defmodule Oli.Delivery.Sections do
       2 -> Map.get(customizations, :module)
       _ -> Map.get(customizations, :section)
     end
+  end
+
+  defp add_necessary_fields_to_objectives(
+         obj,
+         objectives_pages_map,
+         proficiency_per_learning_objective
+       ) do
+    obj
+    |> Map.put(:pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
+    |> Map.put(
+      :student_mastery_obj,
+      Map.get(
+        proficiency_per_learning_objective,
+        obj.objective_resource_id,
+        "Not enough data"
+      )
+    )
+    |> Map.put(
+      :student_mastery_subobj,
+      Map.get(
+        proficiency_per_learning_objective,
+        obj.subobjective_resource_id,
+        "Not enough data"
+      )
+    )
   end
 
   def get_units_and_modules_from_a_section(section_slug) do

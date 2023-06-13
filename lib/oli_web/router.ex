@@ -333,7 +333,7 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-    live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
+    live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix, as: :product_remix)
 
     get(
       "/products/:product_id/payments/donwload_codes",
@@ -916,9 +916,7 @@ defmodule OliWeb.Router do
     ])
 
     # Redirect deprecated routes
-    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
-    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
-
+    get("/overview", PageDeliveryController, :index_preview)
     get("/exploration", PageDeliveryController, :exploration_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
