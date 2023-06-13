@@ -759,6 +759,18 @@ $font-family-sans-serif: var(--font-sans);
   .modal-content {
     box-shadow: 3px 3px 6px 1px rgba(#000, 0.5);
   }
+  .list-group {
+    .list-group-item {
+      margin: 10px;
+    }
+    .input-group-sm.stateValue {
+      padding-top: inherit;
+      padding-bottom: inherit;
+    }
+    .custom-select.custom-select-sm {
+      padding-right: 40px;
+    }
+  }
   .modal-header {
     background: $panel-section-title-bar-color;
     border-top: 1px solid $ui-border-color;
@@ -771,7 +783,6 @@ $font-family-sans-serif: var(--font-sans);
     justify-content: space-between;
     align-items: center;
     padding: 0 16px 0 4px;
-
     i {
       font-size: 1rem;
     }
