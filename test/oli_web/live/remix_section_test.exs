@@ -275,18 +275,37 @@ defmodule OliWeb.RemixSectionLiveTest do
       conn: conn,
       prod: prod,
       revision1: revision1,
-      revision2: revision2
+      revision2: revision2,
+      project_slug: project_slug
     } do
       conn =
         get(
           conn,
-          Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug)
+          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
         )
 
       {:ok, view, _html} = live(conn)
 
       assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
       assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
+
+      assert view
+             |> has_element?(
+               "#entry-#{revision1.resource_id} a[href=\"#{Routes.resource_path(OliWeb.Endpoint,
+               :edit,
+               project_slug,
+               revision1.slug)}\"]",
+               "Edit Page"
+             )
+
+      assert view
+             |> has_element?(
+               "#entry-#{revision2.resource_id} a[href=\"#{Routes.resource_path(OliWeb.Endpoint,
+               :edit,
+               project_slug,
+               revision2.slug)}\"]",
+               "Edit Page"
+             )
     end
 
     test "saving redirects product manager correctly", %{
@@ -296,7 +315,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       conn =
         get(
           conn,
-          Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod.slug)
+          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
         )
 
       {:ok, view, _html} = live(conn)
@@ -428,7 +447,7 @@ defmodule OliWeb.RemixSectionLiveTest do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
         )
 
-        # click add materials and assert is listing units first
+      # click add materials and assert is listing units first
       view
       |> element("button[phx-click=\"show_add_materials_modal\"]")
       |> render_click()
@@ -641,24 +660,23 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     insert(:publication, %{
       project: proj_1,
-      published: DateTime.utc_now(),
+      published: DateTime.utc_now()
     })
 
     insert(:publication, %{
       project: proj_2,
-      published: DateTime.utc_now(),
+      published: DateTime.utc_now()
     })
 
     insert(:publication, %{
       project: proj_3,
-      published: DateTime.utc_now(),
+      published: DateTime.utc_now()
     })
 
     insert(:publication, %{
       project: proj_4,
-      published: DateTime.utc_now(),
+      published: DateTime.utc_now()
     })
-
 
     {:ok,
      conn: conn,
@@ -666,7 +684,7 @@ defmodule OliWeb.RemixSectionLiveTest do
      author: map.author,
      institution: map.institution,
      project: map.project,
-     publication: map.publication,}
+     publication: map.publication}
   end
 
   defp setup_instructor_session(%{conn: conn}) do
@@ -704,7 +722,8 @@ defmodule OliWeb.RemixSectionLiveTest do
       author: product_author,
       publication: publication,
       revision1: revision1,
-      revision2: revision2
+      revision2: revision2,
+      project: project
     } =
       Seeder.base_project_with_resource2()
       |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)
@@ -718,6 +737,11 @@ defmodule OliWeb.RemixSectionLiveTest do
         OliWeb.Pow.PowHelpers.get_pow_config(:author)
       )
 
-    {:ok, conn: conn, prod: prod, revision1: revision1, revision2: revision2}
+    {:ok,
+     conn: conn,
+     prod: prod,
+     revision1: revision1,
+     revision2: revision2,
+     project_slug: project.slug}
   end
 end

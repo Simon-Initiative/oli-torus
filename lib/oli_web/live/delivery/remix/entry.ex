@@ -9,6 +9,12 @@ defmodule OliWeb.Delivery.Remix.Entry do
 
   alias OliWeb.Delivery.Remix.Actions
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias OliWeb.Router.Helpers, as: Routes
+
+  attr :node, :map, required: true
+  attr :index, :integer, required: true
+  attr :selected, :boolean, required: true
+  attr :is_product, :boolean, default: false
 
   def entry(%{node: %HierarchyNode{}} = assigns) do
     ~H"""
@@ -32,6 +38,20 @@ defmodule OliWeb.Delivery.Remix.Entry do
             <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="set_active" phx-value-uuid={@node.uuid}><%= @node.revision.title %></button>
           <% else %>
             <span class="ml-1 mr-1 entry-title"><%= @node.revision.title %></span>
+            <%= if @is_product do %>
+              <a
+                id={"product-page-#{@node.revision.slug}"}
+                class="entry-title mx-3"
+                href={Routes.resource_path(
+                  OliWeb.Endpoint,
+                  :edit,
+                  @node.project_slug,
+                  @node.revision.slug
+                )}
+              >
+                Edit Page
+              </a>
+            <% end %>
           <% end %>
         </div>
       </div>
