@@ -168,16 +168,15 @@ defmodule OliWeb.Components.Delivery.Students do
   def render(assigns) do
     ~F"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
-      <a class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
+      {#if @show_progress_csv_download}
+        <a class="self-end" href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
+          <i class="fa-solid fa-download mr-1" />
+          Download student progress CSV
+        </a>
+      {#else}
+        <a href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)} class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
+      {/if}
       <div class="bg-white shadow-sm">
-        {#if @show_progress_csv_download}
-          <div class="flex justify-end p-2">
-            <a href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
-              <i class="fa-solid fa-download mr-1" />
-              Download student progress CSV
-            </a>
-          </div>
-        {/if}
         <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
           <h4 class="sm:pl-9 torus-h4 sm:mr-auto self-center">{@title}</h4>
           <div class="flex sm:items-end gap-2">

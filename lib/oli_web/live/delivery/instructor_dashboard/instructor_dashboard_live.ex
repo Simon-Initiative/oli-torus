@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Delivery.InstructorDashboard
@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       socket
       |> assign(params: params, view: :reports, active_tab: String.to_existing_atom(active_tab))
-      |> assign(students: get_students(socket.assigns.section, params))
+      |> assign(students: Helpers.get_students(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
 
     socket =
@@ -464,7 +464,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       <div class="flex flex-col gap-2 mx-10 mb-10">
         <a class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
         <div class="bg-white dark:bg-gray-800 p-8 shadow">
-         <%= if @collab_space_config do %>
+         <%= if !is_nil(@collab_space_config) do %>
           <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView, id: "course_discussion",
             session: %{
               "collab_space_config" => @collab_space_config,
@@ -507,79 +507,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <Components.Common.not_found />
     """
-  end
-
-  defp get_students(section, params) do
-    # when that metric is ready (see Oli.Delivery.Metrics)
-    case params.page_id do
-      nil ->
-        Sections.enrolled_students(section.slug)
-        |> add_students_progress(section.id, params.container_id)
-        |> add_students_last_interaction(section, params.container_id)
-        |> add_students_overall_proficiency(section, params.container_id)
-
-      page_id ->
-        Sections.enrolled_students(section.slug)
-        |> add_students_progress_for_page(section.id, page_id)
-        |> add_students_last_interaction_for_page(section.slug, page_id)
-        |> add_students_overall_proficiency_for_page(section.slug, page_id)
-    end
-  end
-
-  defp add_students_progress(students, section_id, container_id) do
-    students_progress =
-      Metrics.progress_for(section_id, Enum.map(students, & &1.id), container_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{progress: Map.get(students_progress, student.id)})
-    end)
-  end
-
-  defp add_students_progress_for_page(students, section_id, page_id) do
-    students_progress =
-      Metrics.progress_for_page(section_id, Enum.map(students, & &1.id), page_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{progress: Map.get(students_progress, student.id)})
-    end)
-  end
-
-  defp add_students_last_interaction(students, section, container_id) do
-    students_last_interaction = Metrics.students_last_interaction_across(section, container_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{last_interaction: Map.get(students_last_interaction, student.id)})
-    end)
-  end
-
-  defp add_students_last_interaction_for_page(students, section_slug, page_id) do
-    students_last_interaction = Metrics.students_last_interaction_for_page(section_slug, page_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{last_interaction: Map.get(students_last_interaction, student.id)})
-    end)
-  end
-
-  defp add_students_overall_proficiency(students, section, container_id) do
-    proficiency_per_student = Metrics.proficiency_per_student_across(section, container_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        overall_proficiency: Map.get(proficiency_per_student, student.id, "Not enough data")
-      })
-    end)
-  end
-
-  defp add_students_overall_proficiency_for_page(students, section_slug, page_id) do
-    proficiency_per_student_for_page =
-      Metrics.proficiency_per_student_for_page(section_slug, page_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        overall_proficiency:
-          Map.get(proficiency_per_student_for_page, student.id, "Not enough data")
-      })
-    end)
   end
 
   defp get_dropdown_options(section) do

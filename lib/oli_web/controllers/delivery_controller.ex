@@ -425,4 +425,40 @@ defmodule OliWeb.DeliveryController do
         )
     end
   end
+
+  def download_students_progress(conn, %{"section_slug" => slug}) do
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+
+      section ->
+        students = Helpers.get_students(section)
+
+        contents =
+          students
+          |> Enum.map(
+            &%{
+              name: &1.name,
+              last_interaction: &1.last_interaction,
+              progress: &1.progress,
+              overall_proficiency: &1.overall_proficiency,
+              requires_payment: Map.get(&1, :requires_payment, "N/A")
+            }
+          )
+          |> DataTable.new()
+          |> DataTable.headers([
+            :name,
+            :last_interaction,
+            :progress,
+            :overall_proficiency,
+            :requires_payment
+          ])
+          |> DataTable.to_csv_content()
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "#{slug}_students.csv"
+        )
+    end
+  end
 end
