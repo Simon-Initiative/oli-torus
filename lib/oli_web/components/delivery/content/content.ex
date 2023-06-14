@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.Content do
   prop(options_for_container_select, :list)
   prop(patch_url_type, :atom, required: true)
   prop(view, :atom)
+  prop(section_slug, :string)
 
   @default_params %{
     offset: 0,
@@ -71,7 +72,7 @@ defmodule OliWeb.Components.Delivery.Content do
   def render(assigns) do
     ~F"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
-      <a class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
+      <a href={Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug)} download="course_content.csv" class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
       <div class="bg-white shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white h-16">
           <Form for={:containers} id="container-select-form" change="filter_container" class="pl-9 torus-h4 mr-auto">

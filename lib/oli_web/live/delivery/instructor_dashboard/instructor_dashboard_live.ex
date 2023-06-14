@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
   alias Oli.Delivery.RecommendedActions
+  alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -27,7 +28,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       if params.container_id do
         selected_container =
           socket.assigns.section
-          |> get_containers()
+          |> Helpers.get_containers()
           |> elem(1)
           |> Enum.find(&(&1.id == params.container_id))
 
@@ -87,7 +88,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       socket
       |> assign(params: params, view: :reports, active_tab: active_tab)
-      |> assign_new(:containers, fn -> get_containers(socket.assigns.section) end)
+      |> assign_new(:containers, fn -> Helpers.get_containers(socket.assigns.section) end)
 
     {:noreply, socket}
   end
@@ -523,54 +524,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_proficiency_for_page(section.slug, page_id)
     end
-  end
-
-  defp get_containers(section) do
-    {total_count, containers} = Sections.get_units_and_modules_containers(section.slug)
-
-    student_progress =
-      get_students_progress(
-        total_count,
-        containers,
-        section.id,
-        Sections.count_enrollments(section.slug)
-      )
-
-    proficiency_per_container = Metrics.proficiency_per_container(section.slug)
-
-    # when those metrics are ready (see Oli.Delivery.Metrics)
-
-    containers_with_metrics =
-      Enum.map(containers, fn container ->
-        Map.merge(container, %{
-          progress: student_progress[container.id] || 0.0,
-          student_proficiency: Map.get(proficiency_per_container, container.id, "Not enough data")
-        })
-      end)
-
-    {total_count, containers_with_metrics}
-  end
-
-  defp get_students_progress(0, pages, section_id, students_count) do
-    page_ids = Enum.map(pages, fn p -> p.id end)
-
-    Metrics.progress_across_for_pages(
-      section_id,
-      page_ids,
-      [],
-      students_count
-    )
-  end
-
-  defp get_students_progress(_total_count, containers, section_id, students_count) do
-    container_ids = Enum.map(containers, fn c -> c.id end)
-
-    Metrics.progress_across(
-      section_id,
-      container_ids,
-      [],
-      students_count
-    )
   end
 
   defp add_students_progress(students, section_id, container_id) do

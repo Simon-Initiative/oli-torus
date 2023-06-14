@@ -4,10 +4,12 @@ defmodule OliWeb.DeliveryController do
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
   alias Oli.Repo
+  alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   import Oli.Utils
 
@@ -394,5 +396,33 @@ defmodule OliWeb.DeliveryController do
     |> put_status(403)
     |> render("section_unavailable.html", reason: reason)
     |> halt()
+  end
+
+  def download_course_content_info(conn, %{"section_slug" => slug}) do
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+
+      section ->
+        {_total_count, containers_with_metrics} = Helpers.get_containers(section)
+
+        contents =
+          containers_with_metrics
+          |> Enum.map(
+            &%{
+              title: &1.title,
+              progress: &1.progress,
+              student_proficiency: &1.student_proficiency
+            }
+          )
+          |> DataTable.new()
+          |> DataTable.headers([:title, :progress, :student_proficiency])
+          |> DataTable.to_csv_content()
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "#{slug}_course_content.csv"
+        )
+    end
   end
 end
