@@ -461,4 +461,36 @@ defmodule OliWeb.DeliveryController do
         )
     end
   end
+
+  def download_learning_objectives(conn, %{"section_slug" => slug}) do
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+
+      _section ->
+        contents =
+          Sections.get_objectives_and_subobjectives(slug)
+          |> Enum.map(
+            &%{
+              objective: &1.objective,
+              subojective: &1.subobjective,
+              student_proficiency_obj: &1.student_proficiency_obj,
+              student_proficiency_subobj: &1.student_proficiency_subobj
+            }
+          )
+          |> DataTable.new()
+          |> DataTable.headers([
+            :objective,
+            :subojective,
+            :student_proficiency_obj,
+            :student_proficiency_subobj
+          ])
+          |> DataTable.to_csv_content()
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "#{slug}_learning_objectives.csv"
+        )
+    end
+  end
 end

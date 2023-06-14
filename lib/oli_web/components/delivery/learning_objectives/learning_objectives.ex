@@ -14,6 +14,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   prop(student_id, :integer)
   prop(patch_url_type, :atom, required: true)
   prop(view, :atom)
+  prop(section_slug, :string)
 
   @default_params %{
     offset: 0,
@@ -67,7 +68,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   def render(assigns) do
     ~F"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
-      <a class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
+      <a href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)} class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
       <div class="bg-white">
         <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
           <h4 class="pl-9 !py-2 torus-h4 mr-auto">Learning Objectives</h4>
