@@ -244,9 +244,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       |> List.first()
 
     Enum.filter(objectives, fn objective ->
-      Enum.any?(objective[:pages_id], fn page_id ->
-        Enum.member?(container.children, page_id)
-      end)
+      if is_nil(objective[:pages_id]),
+        do: false,
+        else:
+          Enum.any?(objective[:pages_id], fn page_id ->
+            Enum.member?(container.children, page_id)
+          end)
     end)
   end
 

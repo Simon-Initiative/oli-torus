@@ -16,6 +16,17 @@ defmodule OliWeb.PaymentsLiveTest do
     [product: product]
   end
 
+  defp create_payment_code(product) do
+    user = insert(:user)
+    insert(:enrollment, section: product, user: user)
+
+    {:ok, [payment | _]} = Paywall.create_payment_codes(product.slug, 1)
+    code_to_test = Payment.to_human_readable(payment.code)
+
+    Paywall.redeem_code(code_to_test, user, product.slug)
+    {user, product}
+  end
+
   defp live_view_payments_route(product_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, product_slug)
   end
@@ -125,6 +136,43 @@ defmodule OliWeb.PaymentsLiveTest do
       assert view
              |> element("tr:first-child > td:first-child > div")
              |> render() =~ "Code: <code>#{code_to_test}</code>"
+    end
+
+    test "section title is a link to the instructor dashboard", %{conn: conn, product: product} do
+      {user, product} = create_payment_code(product)
+
+      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+
+      assert has_element?(
+               view,
+               "a[href=\"/sections/#{product.slug}/instructor_dashboard/overview\"]",
+               "#{product.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"/sections/#{product.slug}/student_dashboard/#{user.id}/content\"]",
+               "#{user.family_name}, #{user.given_name}"
+             )
+    end
+
+    test "The username is a link to the student details view for that student in that section",
+         %{conn: conn, product: product} do
+      {user, product} = create_payment_code(product)
+
+      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+
+      assert has_element?(
+               view,
+               "a[href=\"/sections/#{product.slug}/instructor_dashboard/overview\"]",
+               "#{product.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"/sections/#{product.slug}/student_dashboard/#{user.id}/content\"]",
+               "#{user.family_name}, #{user.given_name}"
+             )
     end
   end
 end

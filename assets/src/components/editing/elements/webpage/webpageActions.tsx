@@ -1,11 +1,10 @@
 import * as React from 'react';
-import { useState } from 'react';
 import { Transforms } from 'slate';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import * as Settings from 'components/editing/elements/common/settings/Settings';
-import { Modal } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
 import { Model } from 'data/content/model/elements/factories';
+import { Webpage } from 'data/content/model/elements/types';
+import { WebpageModal } from './WebpageModal';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -14,75 +13,50 @@ export type WebpageCreationProps = {
   onChange: (src: string) => void;
   onEdit: (src: string) => void;
 };
-const WebpageCreation = (props: WebpageCreationProps) => {
-  const [src, setSrc] = useState('');
 
-  return (
-    <div>
-      <div className="form">
-        <label>Enter the webpage URL:</label>
-        <input
-          type="text"
-          value={src}
-          onChange={(e) => {
-            props.onChange(e.target.value);
-            setSrc(e.target.value);
-          }}
-          onKeyPress={(e: any) => Settings.onEnterApply(e, () => props.onEdit(src))}
-          className="form-control mr-sm-2"
-        />
-        <div className="mb-2">
-          <small>e.g. https://www.wikipedia.org</small>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export function selectWebpage(): Promise<string | null> {
+export function selectWebpage(projectSlug: string): Promise<Webpage | null> {
   return new Promise((resolve, _reject) => {
-    const selected: { src: null | string } = { src: null };
+    const initial = Model.webpage('');
 
-    const mediaLibrary = (
-      <Modal
-        title="Insert Webpage"
-        onOk={() => {
-          dismiss();
-          resolve(selected.src ? selected.src : '');
-        }}
-        onCancel={() => dismiss()}
-      >
-        <WebpageCreation
-          onEdit={(src: string) => {
-            dismiss();
-            resolve(src);
-          }}
-          onChange={(src: string) => {
-            selected.src = src;
-          }}
-        />
-      </Modal>
+    const onDone = (webpage: Partial<Webpage>) => {
+      resolve({
+        ...initial,
+        ...webpage,
+      });
+      dismiss();
+    };
+
+    const onCancel = () => {
+      resolve(null);
+      dismiss();
+    };
+
+    display(
+      <WebpageModal
+        onDone={onDone}
+        onCancel={onCancel}
+        model={initial}
+        projectSlug={projectSlug}
+      />,
     );
-
-    display(mediaLibrary);
   });
 }
 
 export const insertWebpage = createButtonCommandDesc({
   icon: <i className="fa-solid fa-globe"></i>,
   description: 'Webpage',
-  execute: (_context, editor) => {
+  execute: (context, editor) => {
     const at = editor.selection;
     if (!at) return;
 
-    selectWebpage().then((selectedSrc) => {
-      if (selectedSrc !== null) {
-        let src = selectedSrc;
+    selectWebpage(context.projectSlug).then((selectedWebpage: Webpage) => {
+      if (selectedWebpage !== null) {
+        const src = selectedWebpage.src || '';
         if (!src.startsWith('http://') && !src.startsWith('https://')) {
-          src = 'https://' + src;
+          selectedWebpage.src = 'https://' + src;
         }
 
-        Transforms.insertNodes(editor, Model.webpage(src), { at });
+        Transforms.insertNodes(editor, selectedWebpage, { at });
       }
     });
   },

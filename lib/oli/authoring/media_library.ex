@@ -212,7 +212,9 @@ defmodule Oli.Authoring.MediaLibrary do
   end
 
   defp upload_file(bucket, file_name, contents) do
-    S3.put_object(bucket, file_name, contents, [{:acl, :public_read}]) |> ExAws.request()
+    mime_type = MIME.from_path(file_name)
+    options = [{:acl, :public_read}, {:content_type, mime_type}]
+    S3.put_object(bucket, file_name, contents, options) |> ExAws.request()
   end
 
   defp upload(file_name, file_contents) do

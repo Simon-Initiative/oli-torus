@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
+  alias Oli.Repo
 
   prop(user, :any)
   data(modal, :any, default: nil)
@@ -74,6 +75,8 @@ defmodule OliWeb.Sections.OverviewView do
             section.slug
           )
 
+        %{base_project: base_project} = section |> Repo.preload(:base_project)
+
         {:ok,
          assign(socket,
            is_system_admin: type == :admin,
@@ -87,7 +90,8 @@ defmodule OliWeb.Sections.OverviewView do
              Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section),
            collab_space_config: collab_space_config,
            resource_slug: revision_slug,
-           show_required_section_config: show_required_section_config
+           show_required_section_config: show_required_section_config,
+           base_project: base_project
          )}
     end
   end
@@ -125,6 +129,22 @@ defmodule OliWeb.Sections.OverviewView do
               do: Routes.institution_path(OliWeb.Endpoint, :show, deployment.institution_id),
               else: deployment.institution.name}
           />
+        {/unless}
+        <div class="flex flex-col form-group">
+          <label>Base Project</label>
+          <a
+            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @base_project.slug)}
+            class="">{@base_project.title}
+          </a>
+        </div>
+        {#unless is_nil(@section.blueprint_id)}
+          <div class="flex flex-col form-group">
+            <label>Product</label>
+            <a
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, @section.blueprint.slug)}
+              class="">{@section.blueprint.title}
+            </a>
+          </div>
         {/unless}
       </Group>
       <Group label="Instructors" description="Manage users with instructor level access">

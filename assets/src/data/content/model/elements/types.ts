@@ -287,11 +287,13 @@ export interface Audio extends SlateElement<VoidChildren> {
   caption?: Caption;
 }
 
+export type WebpageSrcType = 'url' | 'media_library';
 // Webpage and Iframe are synonymous. Webpage is used in most UI-related
 // code, and Iframe is used for the underlying slate data model.
 export interface Webpage extends SlateElement<VoidChildren> {
   type: 'iframe';
   src?: string;
+  srcType?: WebpageSrcType;
   height?: number;
   width?: number;
   alt?: string;
@@ -381,10 +383,12 @@ export interface Citation extends SlateElement<Text[]> {
   bibref: number;
 }
 
+export type HyperlinkType = 'page' | 'url' | 'media_library';
 export interface Hyperlink extends SlateElement<Text[]> {
   type: 'a';
   href: string;
   target: string;
+  linkType?: HyperlinkType;
 }
 
 export interface CommandButton extends SlateElement<Text[]> {

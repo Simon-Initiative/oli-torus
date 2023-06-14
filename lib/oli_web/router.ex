@@ -333,7 +333,7 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-    live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
+    live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix, as: :product_remix)
 
     get(
       "/products/:product_id/payments/donwload_codes",
