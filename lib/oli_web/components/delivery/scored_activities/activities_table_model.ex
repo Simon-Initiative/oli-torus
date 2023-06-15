@@ -34,7 +34,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
       rows: activities,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:resource_id]
     )
   end
 

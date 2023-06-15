@@ -111,6 +111,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       |> assign_new(:assessments, fn %{students: students} ->
         get_assessments(socket.assigns.section, students)
       end)
+      |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
+      |> assign_new(:scripts, fn %{activities: activities} ->
+        part_components = Oli.PartComponents.get_part_component_scripts(:delivery_script)
+
+        Enum.map(activities, fn a -> a.authoring_script end)
+        |> Enum.concat(part_components)
+        |> Enum.map(fn s -> Routes.static_path(OliWeb.Endpoint, "/js/" <> s) end)
+      end)
+      |> assign_new(:activity_types_map, fn %{activities: activities} ->
+        Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
+      end)
 
     {:noreply, socket}
   end
@@ -336,14 +347,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-      <div class="mx-10 mb-10 bg-white shadow-sm">
+      <div class="mx-10 mb-10">
         <.live_component id="scored_activities_tab"
           module={OliWeb.Components.Delivery.ScoredActivities}
-          section_slug={@section_slug}
+          section={@section}
           params={@params}
           assessments={@assessments}
           students={@students}
-          section_slug={@section.slug}
+          scripts={@scripts}
+          activity_types_map={@activity_types_map}
           view={@view}
           ctx={@ctx} />
       </div>
