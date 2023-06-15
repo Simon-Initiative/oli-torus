@@ -177,23 +177,25 @@ defmodule OliWeb.Components.Delivery.Students do
         <a href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)} class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
       {/if}
       <div class="bg-white shadow-sm">
-        <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
-          <h4 class="sm:pl-9 torus-h4 sm:mr-auto self-center">{@title}</h4>
-          <div class="flex sm:items-end gap-2">
-            <form phx-change="filter_by" phx-target={@myself}>
-              <label class="cursor-pointer inline-flex flex-col gap-1">
-                <small class="torus-small uppercase">Filter by</small>
-                <select class="torus-select pr-32" name="filter">
-                  {#for elem <- @dropdown_options}
-                    <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
-                  {/for}
-                </select>
-              </label>
+        <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+          <h4 class="torus-h4 !py-0 sm:mr-auto">{@title}</h4>
+          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
+            <div class="flex w-full sm:w-auto sm:items-end gap-2">
+              <form class="w-full" phx-change="filter_by" phx-target={@myself}>
+                <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
+                  <small class="torus-small uppercase">Filter by</small>
+                  <select class="torus-select" name="filter">
+                    {#for elem <- @dropdown_options}
+                      <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
+                    {/for}
+                  </select>
+                </label>
+              </form>
+            </div>
+            <form for="search" phx-target={@myself} phx-change="search_student" class="w-44">
+              <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
             </form>
           </div>
-          <form for="search" phx-target={@myself} phx-change="search_student" class="sm:ml-9 w-44">
-            <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
-          </form>
         </div>
 
         <PagedTable
