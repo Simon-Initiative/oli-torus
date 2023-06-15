@@ -168,17 +168,19 @@ defmodule OliWeb.Components.Delivery.Students do
   def render(assigns) do
     ~F"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
-      {#if @show_progress_csv_download}
-        <a class="self-end" href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
-          <i class="fa-solid fa-download mr-1" />
-          Download student progress CSV
-        </a>
-      {#else}
-        <a href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)} class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
-      {/if}
       <div class="bg-white shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
-          <h4 class="torus-h4 !py-0 sm:mr-auto">{@title}</h4>
+          <div>
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">{@title}</h4>
+            {#if @show_progress_csv_download}
+              <a class="self-end" href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
+                <i class="fa-solid fa-download mr-1" />
+                Download student progress CSV
+              </a>
+            {#else}
+              <a href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+            {/if}
+          </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
             <div class="flex w-full sm:w-auto sm:items-end gap-2">
               <form class="w-full" phx-change="filter_by" phx-target={@myself}>

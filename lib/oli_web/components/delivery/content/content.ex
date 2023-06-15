@@ -72,14 +72,16 @@ defmodule OliWeb.Components.Delivery.Content do
   def render(assigns) do
     ~F"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
-      <a href={Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug)} download="course_content.csv" class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
       <div class="bg-white shadow-sm">
-        <div style="min-height: 83px;" class="flex justify-center gap-2 items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
-          <Form for={:containers} id="container-select-form" change="filter_container" class="mr-auto">
-            <Field name={:container_type}>
-              <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 border-none focus:!border-none"/>
-            </Field>
-          </Form>
+        <div style="min-height: 83px;" class="flex justify-between gap-2 items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+          <div>
+            <Form for={:containers} id="container-select-form" change="filter_container" class="mr-auto mb-2">
+              <Field name={:container_type}>
+                <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 border-none focus:!border-none"/>
+              </Field>
+            </Form>
+            <a href={Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug)} download="course_content.csv" class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+          </div>
           <form for="search" phx-target={@myself} phx-change="search_container" class="w-44">
             <SearchInput.render id="content_search_input" name="container_name" text={@params.text_search} />
           </form>

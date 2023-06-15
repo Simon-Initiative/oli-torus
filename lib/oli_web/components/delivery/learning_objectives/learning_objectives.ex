@@ -68,10 +68,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   def render(assigns) do
     ~F"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
-      <a href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)} class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
       <div class="bg-white shadow-sm">
-        <div class="flex jusify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
-          <h4 class="torus-h4 !py-0 mr-auto">Learning Objectives</h4>
+        <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+          <div>
+            <h4 class="torus-h4 !py-0 mr-auto mb-2">Learning Objectives</h4>
+            <a href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+          </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
             <div class="flex w-full sm:w-auto sm:items-end gap-2">
               <form style="max-width: 176px;" class="w-full" phx-change="filter_by" phx-target={@myself}>

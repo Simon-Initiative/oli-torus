@@ -461,8 +461,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-      <div class="flex flex-col gap-2 mx-10 mb-10">
-        <a class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
+      <div class="mx-10 mb-10">
         <div class="bg-white dark:bg-gray-800 p-8 shadow">
          <%= if !is_nil(@collab_space_config) do %>
           <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView, id: "course_discussion",

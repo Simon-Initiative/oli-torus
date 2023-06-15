@@ -54,10 +54,12 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   def render(assigns) do
     ~F"""
       <div class="flex flex-col gap-2 mx-10 mb-10">
-        <a href={Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, @section_slug)} class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
         <div class="bg-white shadow-sm">
-        <div style="min-height: 83px;" class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
-            <h4 class="torus-h4 !py-0 sm:mr-auto">Quiz Scores</h4>
+          <div style="min-height: 83px;" class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+            <div>
+              <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Quiz Scores</h4>
+              <a href={Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+            </div>
             <div class="flex flex-col-reverse sm:flex-row gap-2 items-center">
               {#if is_nil(assigns[:student_id])}
                 <div class="form-check">
