@@ -8,6 +8,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Repo
 
   defp live_view_overview_route(section_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_slug)
@@ -132,9 +133,29 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert has_element?(view, "input[value=\"#{section.slug}\"]")
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"Direct Delivery\"]")
+      assert has_element?(view, "a", section.base_project.title)
 
       assert view |> element("a.form-control") |> render() =~
                section.lti_1p3_deployment.institution.name
+    end
+
+    test "loads title of the product on which the section is based if it exists.", %{
+      conn: conn,
+      section: section
+    } do
+      product = insert(:section, %{type: :blueprint})
+
+      {:ok, section} =
+        Sections.update_section(section, %{blueprint_id: product.id, blueprint: product})
+
+      section = section |> Repo.preload(:blueprint)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert render(view) =~ "Details"
+      assert render(view) =~ "Overview of course section details"
+      assert has_element?(view, "input[value=\"#{section.title}\"]")
+      assert has_element?(view, "a", section.blueprint.title)
     end
 
     test "loads section instructors correctly", %{conn: conn, section: section} do
