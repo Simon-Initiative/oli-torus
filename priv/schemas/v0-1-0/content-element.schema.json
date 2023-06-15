@@ -990,6 +990,9 @@
         "target": {
           "type": "string"
         },
+        "anchor": {
+          "type": "string"
+        },
         "linkType": {
           "oneOf": [
             { "const": "page" },

@@ -45,11 +45,25 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   def rewire(
-        %{"type" => "a", "idref" => idref, "children" => children},
+        %{"type" => "a", "idref" => idref, "children" => children} = link,
         link_builder,
         _page_map
       ) do
-    {true, %{"type" => "a", "children" => children, "href" => link_builder.(idref)}}
+    target = Map.get(link, "target")
+    anchor = Map.get(link, "anchor")
+
+    putIfNotNil = fn map, key, value ->
+      if is_nil(value) do
+        map
+      else
+        Map.put(map, key, value)
+      end
+    end
+
+    {true,
+     %{"type" => "a", "children" => children, "href" => link_builder.(idref)}
+     |> putIfNotNil.("target", target)
+     |> putIfNotNil.("anchor", anchor)}
   end
 
   def rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do

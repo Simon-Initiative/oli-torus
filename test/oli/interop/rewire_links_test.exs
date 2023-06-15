@@ -19,6 +19,64 @@ defmodule Oli.Interop.RewireLinksTest do
       assert %{"type" => "a", "children" => [], "href" => "my-url"} == rewritten
     end
 
+    test "rewire/3 maintains anchor and target attributes for href links" do
+      link = %{
+        "type" => "a",
+        "href" => "my-url",
+        "target" => "my-target",
+        "anchor" => "my-anchor",
+        "children" => []
+      }
+
+      {false, rewritten} = RewireLinks.rewire(link, &fake_link_builder/1, %{})
+
+      assert %{
+               "type" => "a",
+               "children" => [],
+               "href" => "my-url",
+               "target" => "my-target",
+               "anchor" => "my-anchor"
+             } == rewritten
+    end
+
+    test "rewire/3 maintains anchor and target attributes for idref links" do
+      link = %{
+        "type" => "a",
+        "idref" => "id1",
+        "target" => "my-target",
+        "anchor" => "my-anchor",
+        "children" => []
+      }
+
+      {true, rewritten} = RewireLinks.rewire(link, &fake_link_builder/1, %{})
+
+      assert %{
+               "type" => "a",
+               "children" => [],
+               "href" => "rewritten:id1",
+               "target" => "my-target",
+               "anchor" => "my-anchor"
+             } == rewritten
+    end
+
+    test "rewire/3 maintains anchor and not target attributes for idref links" do
+      link = %{
+        "type" => "a",
+        "idref" => "id1",
+        "anchor" => "my-anchor",
+        "children" => []
+      }
+
+      {true, rewritten} = RewireLinks.rewire(link, &fake_link_builder/1, %{})
+
+      assert %{
+               "type" => "a",
+               "children" => [],
+               "href" => "rewritten:id1",
+               "anchor" => "my-anchor"
+             } == rewritten
+    end
+
     test "rewire/3 rewrites a link in the children with an idref" do
       link = %{"type" => "a", "idref" => "id1", "children" => []}
       para = %{"type" => "p", "children" => [link]}

@@ -387,7 +387,8 @@ export type HyperlinkType = 'page' | 'url' | 'media_library';
 export interface Hyperlink extends SlateElement<Text[]> {
   type: 'a';
   href: string;
-  target: string;
+  target?: string;
+  anchor?: string;
   linkType?: HyperlinkType;
 }
 
