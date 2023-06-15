@@ -350,6 +350,43 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "download_quiz_scores" do
+    setup [:setup_lti_session]
+
+    test "downloads the quiz scores when section exists", %{
+      conn: conn,
+      lti_param_ids: lti_param_ids,
+      section: section
+    } do
+      %{section: section} = basic_section(nil)
+
+      conn =
+        conn
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> get(Routes.delivery_path(conn, :download_quiz_scores, section.slug))
+
+      Enum.any?(conn.resp_headers, fn h ->
+        h ==
+          {"content-disposition", "attachment; filename=\"#{section.slug}_quiz_scores.csv\""}
+      end)
+
+      Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert response(conn, 200)
+    end
+
+    test "Redirects to \"Not found\" page if the section doesn't exist", %{
+      conn: conn,
+      lti_param_ids: lti_param_ids
+    } do
+      conn =
+        conn
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
+
+      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+    end
+  end
+
   describe "independent learner" do
     setup [:setup_independent_learner_session]
 

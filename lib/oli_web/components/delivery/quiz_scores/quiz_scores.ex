@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   prop(scores, :map, default: %{})
   prop(patch_url_type, :atom, default: nil)
   prop(view, :atom)
+  prop(section_slug, :string)
 
   @default_params %{
     offset: 0,
@@ -53,7 +54,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   def render(assigns) do
     ~F"""
       <div class="flex flex-col gap-2 mx-10 mb-10">
-        <a class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
+        <a href={Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, @section_slug)} class="self-end">Download <i class="fa-solid fa-download ml-1" /></a>
         <div class="bg-white shadow-sm">
           <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4 pl-9">
             <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
