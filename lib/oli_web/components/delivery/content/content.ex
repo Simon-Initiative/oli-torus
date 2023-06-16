@@ -70,8 +70,8 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white shadow-sm">
-      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white h-16">
+    <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center pr-6 h-16">
         <Form for={:containers} id="container-select-form" change="filter_container" class="pl-9 torus-h4 mr-auto">
           <Field name={:container_type}>
             <Select id="container_select" options={@options_for_container_select} selected={@params.container_filter_by} class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 mt-6 mb-3 border-none focus:!border-none"/>

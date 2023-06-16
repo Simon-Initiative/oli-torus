@@ -313,7 +313,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-      <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
+      <div class="mx-10 mb-10 p-6 bg-white dark:bg-gray-800 shadow-sm">
         Not implemented
       </div>
     """
@@ -323,7 +323,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-      <div class="mx-10 mb-10 p-6 bg-white shadow-sm">
+      <div class="mx-10 mb-10 p-6 bg-white dark:bg-gray-800 shadow-sm">
         <OliWeb.Components.Delivery.RecommendedActions.render
           section_slug={@section_slug}
           has_scheduled_resources={@has_scheduled_resources}
@@ -340,7 +340,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-      <div class="mx-10 mb-10bg-white shadow-sm">
+      <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
         <.live_component
           module={OliWeb.Components.Delivery.CourseContent}
           id="course_content_tab"

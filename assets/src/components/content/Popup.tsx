@@ -64,9 +64,10 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
           childRect={childRect}
           popoverRect={popoverRect}
           arrowSize={10}
+          className="popup-arrow"
           arrowColor="white"
         >
-          <div className="popup-content bg-body p-4 drop-shadow rounded">
+          <div className="popup-content dark:text-white dark:bg-neutral-600 bg-body p-4 drop-shadow rounded">
             {isEmptyContent(popup.content) ? (
               <i className="fa-solid fa-volume-high"></i>
             ) : (

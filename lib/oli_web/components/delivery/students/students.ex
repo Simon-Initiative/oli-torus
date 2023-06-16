@@ -167,7 +167,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white shadow-sm">
+    <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
       {#if @show_progress_csv_download}
         <div class="flex justify-end p-2">
           <a href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
@@ -176,7 +176,7 @@ defmodule OliWeb.Components.Delivery.Students do
           </a>
         </div>
       {/if}
-      <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
+      <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
         <h4 class="sm:pl-9 torus-h4 sm:mr-auto self-center">{@title}</h4>
         <div class="flex sm:items-end gap-2">
           <form phx-change="filter_by" phx-target={@myself}>

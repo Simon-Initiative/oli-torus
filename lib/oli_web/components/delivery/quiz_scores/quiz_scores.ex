@@ -52,7 +52,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
   def render(assigns) do
     ~F"""
-      <div class="mx-10 mb-10 bg-white shadow-sm">
+      <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4 pl-9">
           <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
           <div class="flex flex-col gap-y-4 md:flex-row items-center">

@@ -85,7 +85,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   def group(assigns) do
     ~H"""
-      <div class="alternatives-group bg-gray-100 border p-3 my-2">
+      <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
         <div class="d-flex flex-row align-items-center">
           <div><b><%= @group.title %></b>
             <%= if @group.content["strategy"] == "upgrade_decision_point" do %>

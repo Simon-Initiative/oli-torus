@@ -64,3 +64,7 @@ p {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+body {
+  scrollbar-color: transparent;
+}

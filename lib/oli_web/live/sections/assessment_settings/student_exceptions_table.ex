@@ -89,9 +89,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white shadow-sm">
+    <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
       {modal(@modal_assigns)}
-      <div class="flex flex-col sm:flex-row sm:items-center pr-6 bg-white">
+      <div class="flex flex-col sm:flex-row sm:items-center pr-6">
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Student Exceptions</h4>
           <Form for={:assessments} id="assessment_select" change="change_assessment">

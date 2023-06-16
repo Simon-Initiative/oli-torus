@@ -49,10 +49,10 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
 
       {render_modal(assigns)}
 
-      <div class="bg-white dark:bg-gray-900 w-full">
-        <h4 class="px-10 py-6 border-b border-b-gray-200 torus-h4">Discussion Activity</h4>
+      <div class="bg-white dark:bg-gray-800 w-full">
+        <h4 class="px-10 py-6 border-b border-b-gray-200 dark:border-b-gray-700 torus-h4">Discussion Activity</h4>
 
-        <div class="flex items-end gap-2 px-10 py-6 border-b border-b-gray-200">
+        <div class="flex items-end gap-2 px-10 py-6 border-b border-b-gray-200 dark:border-b-gray-700">
           <form phx-change="filter" phx-target={@myself}>
             <label class="cursor-pointer inline-flex flex-col gap-2">
               <small class="torus-small uppercase">Filter by</small>
