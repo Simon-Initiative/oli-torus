@@ -39,6 +39,7 @@
             live_render(@conn, OliWeb.Delivery.StudentDashboard.CourseContentLive,
               session: %{
                 "section_slug" => @section_slug,
+                "current_user_id" => @current_user_id
               })
             %>
           </div>
