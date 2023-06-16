@@ -81,7 +81,8 @@ defmodule OliWeb.PageDeliveryController do
               is_instructor: is_instructor,
               progress: learner_progress(section.id, user.id),
               next_activities: next_activities,
-              independent_learner: user.independent_learner
+              independent_learner: user.independent_learner,
+              current_user_id: user.id
             )
           end
       end
@@ -720,6 +721,8 @@ defmodule OliWeb.PageDeliveryController do
   # PREVIEW
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
+    current_user = conn.assigns.current_author || conn.assigns.current_user
+
     section =
       conn.assigns.section
       |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -727,7 +730,11 @@ defmodule OliWeb.PageDeliveryController do
     revision = DeliveryResolver.root_container(section_slug)
 
     effective_settings =
-      Oli.Delivery.Settings.get_combined_settings(revision, section.id, conn.assigns.current_user.id)
+      Oli.Delivery.Settings.get_combined_settings(
+        revision,
+        section.id,
+        current_user.id
+      )
 
     render(conn, "index.html",
       title: section.title,
@@ -741,7 +748,8 @@ defmodule OliWeb.PageDeliveryController do
       independent_learner: true,
       collab_space_config: effective_settings.collab_space_config,
       revision_slug: revision.slug,
-      is_instructor: false
+      is_instructor: false,
+      current_user_id: current_user.id
     )
   end
 

@@ -72,7 +72,7 @@ defmodule OliWeb.Components.Delivery.Content do
   def render(assigns) do
     ~F"""
     <div class="flex flex-col gap-2 mx-10 mb-10">
-      <div class="bg-white shadow-sm">
+      <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div style="min-height: 83px;" class="flex justify-between gap-2 items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
             <Form for={:containers} id="container-select-form" change="filter_container" class="mr-auto mb-2">

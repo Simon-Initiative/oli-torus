@@ -1529,6 +1529,39 @@ defmodule OliWeb.PageDeliveryControllerTest do
       # page title
       assert html_response(conn, 200) =~ "page1 (Preview)"
     end
+
+    test "index preview - can access if the user is logged in as instructor", %{
+      conn: conn,
+      section: section
+    } do
+      user = insert(:user)
+      enroll_as_instructor(%{section: section, user: user})
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :index_preview, section.slug)
+        )
+
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "Preview"
+    end
+
+    test "index preview - can access if the user is logged in as admin", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :index_preview, section.slug)
+        )
+
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "Preview"
+    end
   end
 
   describe "exploration" do

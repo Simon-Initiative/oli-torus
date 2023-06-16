@@ -469,6 +469,16 @@ $element-margin-bottom: 1.5em;
     }
   }
 
+  .popup-arrow div:first-of-type {
+    @media (prefers-color-scheme: light) {
+      border-top-color: var(white) !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      border-top-color: rgb(82 82 82) !important;
+    }
+  }
+
   .popup-content {
     p:last-of-type {
       margin: 0;
