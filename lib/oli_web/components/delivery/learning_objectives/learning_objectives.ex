@@ -14,6 +14,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   prop(student_id, :integer)
   prop(patch_url_type, :atom, required: true)
   prop(view, :atom)
+  prop(section_slug, :string)
 
   @default_params %{
     offset: 0,
@@ -66,45 +67,52 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white">
-      <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
-        <h4 class="pl-9 !py-2 torus-h4 mr-auto">Learning Objectives</h4>
-        <div class="flex items-end gap-2">
-          <form phx-change="filter_by" phx-target={@myself}>
-            <label class="cursor-pointer inline-flex flex-col gap-1">
-              <small class="torus-small uppercase">Filter by</small>
-              <select class="torus-select pr-32" name="filter">
-                <option selected={@params.filter_by == "all"} value={"all"}>All</option>
-                {#for elem <- @units_modules}
-                  <option selected={@params.filter_by == Integer.to_string(elem.container_id)} value={elem.container_id}>{elem.title}</option>
-                {/for}
-              </select>
-            </label>
-          </form>
+    <div class="flex flex-col gap-2 mx-10 mb-10">
+      <div class="bg-white shadow-sm">
+        <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+          <div>
+            <h4 class="torus-h4 !py-0 mr-auto mb-2">Learning Objectives</h4>
+            <a href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+          </div>
+          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
+            <div class="flex w-full sm:w-auto sm:items-end gap-2">
+              <form style="max-width: 176px;" class="w-full" phx-change="filter_by" phx-target={@myself}>
+                <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
+                  <small class="torus-small uppercase">Filter by</small>
+                  <select class="torus-select" name="filter">
+                    <option selected={@params.filter_by == "all"} value={"all"}>All</option>
+                    {#for elem <- @units_modules}
+                      <option selected={@params.filter_by == Integer.to_string(elem.container_id)} value={elem.container_id}>{elem.title}</option>
+                    {/for}
+                  </select>
+                </label>
+              </form>
+            </div>
+
+            <form for="search" phx-target={@myself} phx-change="search_objective" class="w-44">
+              <SearchInput.render id="objective_search_input" name="objective_name" text={@params.text_search} />
+            </form>
+          </div>
         </div>
 
-        <form for="search" phx-target={@myself} phx-change="search_objective" class="pb-6 ml-9 w-44 sm:pb-0">
-          <SearchInput.render id="objective_search_input" name="objective_name" text={@params.text_search} />
-        </form>
+        {#if @total_count > 0}
+          <div id="objectives-table">
+            <PagedTable
+              table_model={@table_model}
+              page_change={JS.push("paged_table_page_change", target: @myself)}
+              sort={JS.push("paged_table_sort", target: @myself)}
+              total_count={@total_count}
+              offset={@params.offset}
+              limit={@params.limit}
+              additional_table_class="instructor_dashboard_table"
+              show_bottom_paging={false}
+              render_top_info={false}
+            />
+          </div>
+        {#else}
+          <h6 class="text-center py-4">There are no objectives to show</h6>
+        {/if}
       </div>
-
-      {#if @total_count > 0}
-        <div id="objectives-table">
-          <PagedTable
-            table_model={@table_model}
-            page_change={JS.push("paged_table_page_change", target: @myself)}
-            sort={JS.push("paged_table_sort", target: @myself)}
-            total_count={@total_count}
-            offset={@params.offset}
-            limit={@params.limit}
-            additional_table_class="instructor_dashboard_table"
-            show_bottom_paging={false}
-            render_top_info={false}
-          />
-        </div>
-      {#else}
-        <h6 class="text-center py-4">There are no objectives to show</h6>
-      {/if}
     </div>
     """
   end

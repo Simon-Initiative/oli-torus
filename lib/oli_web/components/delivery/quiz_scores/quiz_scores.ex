@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   prop(scores, :map, default: %{})
   prop(patch_url_type, :atom, default: nil)
   prop(view, :atom)
+  prop(section_slug, :string)
 
   @default_params %{
     offset: 0,
@@ -52,38 +53,43 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
   def render(assigns) do
     ~F"""
-      <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
-        <div class="flex flex-col justify-between sm:flex-row items-center px-6 py-4 pl-9">
-          <h4 class="!py-2 torus-h4 text-center">Quiz Scores</h4>
-          <div class="flex flex-col gap-y-4 md:flex-row items-center">
-            {#if is_nil(assigns[:student_id])}
-              <div class="form-check">
-                <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} phx-debounce="500"/>
-                <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
-              </div>
-            {/if}
-            <form for="search" phx-target={@myself} phx-change="search_student" class="pb-3 md:pl-9 w-44 sm:pb-0">
-              <SearchInput.render id="student_search_input" name="student_name" text={@params.text_search} />
-            </form>
+      <div class="flex flex-col gap-2 mx-10 mb-10">
+        <div class="bg-white dark:bg-gray-800 shadow-sm">
+          <div style="min-height: 83px;" class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+            <div>
+              <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Quiz Scores</h4>
+              <a href={Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+            </div>
+            <div class="flex flex-col-reverse sm:flex-row gap-2 items-center">
+              {#if is_nil(assigns[:student_id])}
+                <div class="form-check">
+                  <input type="checkbox" id="toggle_show_all_links" class="form-check-input -mt-1" checked={@params.show_all_links} phx-click="show_all_links" phx-target={@myself} phx-debounce="500"/>
+                  <label for="toggle_show_all_links" class="form-check-label">Shows links for all entries</label>
+                </div>
+              {/if}
+              <form for="search" phx-target={@myself} phx-change="search_student" class="w-44">
+                <SearchInput.render id="student_search_input" name="student_name" text={@params.text_search} />
+              </form>
+            </div>
           </div>
+
+
+          {#if @total_count > 0}
+            <PagedTable
+              table_model={@grades_table_model}
+              total_count={@total_count}
+              offset={@params.offset}
+              limit={@params.limit}
+              render_top_info={false}
+              additional_table_class="instructor_dashboard_table"
+              show_bottom_paging={false}
+              sort={JS.push("paged_table_sort", target: @myself)}
+              page_change={JS.push("paged_table_page_change", target: @myself)}
+            />
+          {#else}
+            <h6 class="text-center py-4">There are no quiz scores to show</h6>
+          {/if}
         </div>
-
-
-        {#if @total_count > 0}
-          <PagedTable
-            table_model={@grades_table_model}
-            total_count={@total_count}
-            offset={@params.offset}
-            limit={@params.limit}
-            render_top_info={false}
-            additional_table_class="instructor_dashboard_table"
-            show_bottom_paging={false}
-            sort={JS.push("paged_table_sort", target: @myself)}
-            page_change={JS.push("paged_table_page_change", target: @myself)}
-          />
-        {#else}
-          <h6 class="text-center py-4">There are no quiz scores to show</h6>
-        {/if}
       </div>
     """
   end

@@ -2707,7 +2707,7 @@ defmodule Oli.Delivery.Sections do
     obj
     |> Map.put(:pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
     |> Map.put(
-      :student_mastery_obj,
+      :student_proficiency_obj,
       Map.get(
         proficiency_per_learning_objective,
         obj.objective_resource_id,
@@ -2715,7 +2715,7 @@ defmodule Oli.Delivery.Sections do
       )
     )
     |> Map.put(
-      :student_mastery_subobj,
+      :student_proficiency_subobj,
       Map.get(
         proficiency_per_learning_objective,
         obj.subobjective_resource_id,
