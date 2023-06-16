@@ -28,7 +28,7 @@ const shouldShow = (
 ) => {
   if (graded) return false;
   if (surveyId !== null) return false;
-  if (!correct) return true;
+  if (!correct || correct) return true;
 
   return (
     (typeof shouldShow === 'undefined' || shouldShow) &&
@@ -43,9 +43,8 @@ const isRequestHintDisabled = (
   correct: boolean,
   graded: boolean,
 ) => {
-  if (!hasMoreHints) return false;
+  if (!hasMoreHints || correct || !correct) return false;
   if (isEvaluated(uiState) && graded) return true;
-  if (!correct) return false;
 
   return isEvaluated(uiState) || isSubmitted(uiState);
 };
