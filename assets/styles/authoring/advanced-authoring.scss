@@ -391,19 +391,25 @@ $font-family-sans-serif: var(--font-sans);
     }
     .aa-conditions .aa-conditions {
       margin: 16px 0 8px;
-
+      .aa-condition {
+        .input-group {
+          width: 100%;
+        }
+      }
       .aa-add-button {
         display: none;
       }
     }
     .aa-condition {
+      .custom-select {
+        width: 290px;
+      }
       &:first-of-type {
         margin-top: 4px !important;
       }
     }
     .custom-select {
       font-size: 12px;
-      padding: 4px 36px 4px 8px;
       height: inherit;
     }
     .aa-condition-header {
@@ -419,8 +425,17 @@ $font-family-sans-serif: var(--font-sans);
     .aa-actions {
       position: relative;
       border-top: 1px solid $ui-border-color;
+      .d-flex {
+        width: 99%;
+      }
+      .custom-select {
+        width: 15%;
+      }
     }
     .aa-action {
+      .custom-select {
+        width: 15%;
+      }
       .input-group-text {
         font-size: 12px;
         min-width: 7.5rem;
