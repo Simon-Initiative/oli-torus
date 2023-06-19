@@ -24,6 +24,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
   alias OliWeb.Components.Delivery.AdaptiveIFrame
+  alias OliWeb.PageDeliveryView
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -251,6 +252,8 @@ defmodule OliWeb.PageDeliveryController do
 
           section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
+          numbered_revisions = Sections.get_revision_indexes(section.slug)
+
           render(conn, "container.html",
             scripts: [],
             section: section,
@@ -260,6 +263,7 @@ defmodule OliWeb.PageDeliveryController do
             section_slug: section_slug,
             previous_page: previous,
             next_page: next,
+            numbered_revisions: numbered_revisions,
             current_page: current,
             page_number: section_resource.numbering_index,
             preview_mode: preview_mode,
@@ -402,6 +406,8 @@ defmodule OliWeb.PageDeliveryController do
 
     section_resource = Sections.get_section_resource(section.id, page.resource_id)
 
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
     render(conn, "prologue.html", %{
       resource_access: resource_access,
       section_slug: section_slug,
@@ -410,6 +416,7 @@ defmodule OliWeb.PageDeliveryController do
       resource_attempts: resource_attempts,
       previous_page: previous,
       next_page: next,
+      numbered_revisions: numbered_revisions,
       current_page: current,
       page_number: section_resource.numbering_index,
       title: context.page.title,
@@ -566,6 +573,8 @@ defmodule OliWeb.PageDeliveryController do
 
     adaptive = Map.get(content, "advancedDelivery", false)
 
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
     # For testing, you can uncomment to introduce a time out
     # effective_settings = %{effective_settings | time_limit: 2, late_submit: :disallow}
 
@@ -585,6 +594,7 @@ defmodule OliWeb.PageDeliveryController do
           Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a.slug) end),
         previous_page: previous,
         next_page: next,
+        numbered_revisions: numbered_revisions,
         current_page: current,
         page_number: section_resource.numbering_index,
         title: context.page.title,
@@ -650,6 +660,8 @@ defmodule OliWeb.PageDeliveryController do
 
     section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
 
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
     render(conn, "advanced_delivery.html", %{
       app_params: %{
         activityTypes: activity_types,
@@ -688,6 +700,7 @@ defmodule OliWeb.PageDeliveryController do
       latest_attempts: %{},
       next_page: next,
       current_page: current,
+      numbered_revisions: numbered_revisions,
       page_number: section_resource.numbering_level,
       user_id: context.user.id,
       next_url: next_url,
@@ -821,6 +834,8 @@ defmodule OliWeb.PageDeliveryController do
                 conn.assigns.current_user.id
               )
 
+            numbered_revisions = Sections.get_revision_indexes(section.slug)
+
             conn
             |> put_root_layout({OliWeb.LayoutView, "page.html"})
             |> render(
@@ -832,6 +847,7 @@ defmodule OliWeb.PageDeliveryController do
                 preview_mode: true,
                 previous_page: previous,
                 next_page: next,
+                numbered_revisions: numbered_revisions,
                 current_page: current,
                 title: revision.title,
                 html: html,
@@ -973,6 +989,8 @@ defmodule OliWeb.PageDeliveryController do
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
     |> render(
@@ -984,6 +1002,7 @@ defmodule OliWeb.PageDeliveryController do
         preview_mode: true,
         previous_page: previous,
         next_page: next,
+        numbered_revisions: numbered_revisions,
         current_page: current,
         page_number: section_resource.numbering_level,
         title: revision.title,
@@ -1191,6 +1210,62 @@ defmodule OliWeb.PageDeliveryController do
     |> put_resp_content_type("text/csv")
     |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
     |> send_resp(200, csv_text)
+  end
+
+  # This is for index based navigation between page
+  def navigate_by_index(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    page_number = Map.get(conn.body_params, "page_number", nil) |> safe_to_integer()
+    preview_mode = Map.get(conn.body_params, "preview_mode", "false") |> String.to_atom()
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      revision = Sections.get_revision_by_index(section_slug, page_number)
+
+      case revision do
+        nil ->
+          case get_req_header(conn, "referer") do
+            [] ->
+              conn
+              |> redirect(
+                to:
+                  Routes.page_delivery_path(
+                    OliWeb.Endpoint,
+                    :index,
+                    section_slug
+                  )
+              )
+
+            [origin_url] ->
+              conn |> put_flash(:error, "Invalid page index") |> redirect(external: origin_url)
+          end
+
+        revision ->
+          conn
+          |> redirect(
+            to:
+              Routes.page_delivery_path(
+                OliWeb.Endpoint,
+                PageDeliveryView.action(preview_mode, revision),
+                section_slug,
+                revision.slug
+              )
+          )
+      end
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
+  def navigate_by_index(conn, _) do
+    render(conn, "not_authorized.html")
+  end
+
+  @spec safe_to_integer(String.t()) :: integer() | nil
+  defp safe_to_integer(string) do
+    case Integer.parse(string) do
+      :error -> nil
+      {integer, _} -> integer
+    end
   end
 
   defp build_enrollments_text(enrollments) do

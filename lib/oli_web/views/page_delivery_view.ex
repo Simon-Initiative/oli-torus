@@ -7,7 +7,6 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Resources.Revision
   alias OliWeb.Common.Utils
 
   import Oli.Utils, only: [value_or: 2]
@@ -88,7 +87,7 @@ defmodule OliWeb.PageDeliveryView do
     """
   end
 
-  def action(preview_mode, %Revision{} = revision), do: action(preview_mode, container?(revision))
+  def action(preview_mode, %{resource_type_id: _resource_type_id} = revision), do: action(preview_mode, container?(revision))
 
   def action(preview_mode, %{"type" => type}), do: action(preview_mode, type == "container")
 

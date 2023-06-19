@@ -2,20 +2,35 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
   use Phoenix.Component
 
   import OliWeb.Components.Delivery.Utils
+  alias OliWeb.Components.Delivery.PageNavigator
 
   attr(:title, :string, required: true)
   attr(:page_number, :integer, required: true)
   attr(:review_mode, :boolean, required: true)
+  attr(:next_page, :map)
+  attr(:previous_page, :map)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:section_slug, :string, required: true)
+  attr(:numbered_revisions, :list, default: [])
 
   def header(assigns) do
     ~H"""
-      <h1 class="title flex flex-row justify-between">
+      <h1 class="title flex flex-row items-center justify-between">
         <%= @title %><%= if @review_mode == true do %>
           (Review)
         <% end %>
-        <div class="page-number text-gray-500">
-          <%= @page_number %>
-        </div>
+        <%= case assigns do %>
+          <% %{previous_page: _, next_page: _, numbered_revisions: _, section_slug: _} -> %>
+            <PageNavigator.render
+              id="top_page_navigator"
+              page_number={@page_number}
+              next_page={assigns[:next_page]}
+              previous_page={assigns[:previous_page]}
+              preview_mode={@preview_mode}
+              section_slug={@section_slug}
+              numbered_revisions={assigns[:numbered_revisions]} />
+          <% _ -> %>
+        <% end %>
       </h1>
     """
   end

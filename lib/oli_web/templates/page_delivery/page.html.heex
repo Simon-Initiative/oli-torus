@@ -1,10 +1,17 @@
 
 <%= if not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
-  <Components.Delivery.PageDelivery.header title={@title} page_number={@page_number} review_mode={@review_mode} />
+  <Components.Delivery.PageDelivery.header
+    title={@title}
+    page_number={@page_number}
+    review_mode={@review_mode}
+    next_page={@next_page}
+    previous_page={@previous_page}
+    preview_mode={@preview_mode}
+    section_slug={@section_slug}
+    numbered_revisions={assigns[:numbered_revisions]} />
 <% end %>
 
 <Components.Delivery.PageDelivery.details scheduling_type={@scheduling_type} end_date={@end_date} est_reading_time={@est_reading_time} />
-
 
 <script>
 window.userToken = "<%= assigns[:user_token] %>";

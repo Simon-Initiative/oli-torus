@@ -915,6 +915,12 @@ defmodule OliWeb.Router do
       :start_attempt_protected
     )
 
+    post(
+      "/page",
+      PageDeliveryController,
+      :navigate_by_index
+    )
+
     get(
       "/page/:revision_slug/attempt/:attempt_guid/review",
       PageDeliveryController,
