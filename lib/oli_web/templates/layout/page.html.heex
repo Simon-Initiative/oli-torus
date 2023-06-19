@@ -14,7 +14,7 @@
         <Components.Delivery.SectionTitle.section_title title={assigns.section.title}/>
       <% end %>
 
-      <div class="md:container md:mx-auto md:px-10 md:mt-3 md:mb-5">
+      <div class="max-w-[900px] mx-auto w-full">
         <div class="w-full flex flex-col xl:flex-row gap-4 p-10">
           <div class={if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config), do: "xl:w-2/3 w-full", else: "w-full"}>
             <div class="bg-white dark:bg-gray-800 dark:text-delivery-body-color-dark p-8 shadow">
