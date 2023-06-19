@@ -45,7 +45,9 @@ defmodule OliWeb.Products.ProductsView do
               "none"
             end
 
-          String.contains?(String.downcase(p.title), str) or String.contains?(amount_str, str)
+          String.contains?(String.downcase(p.title), str) or
+            String.contains?(String.downcase(p.base_project.title), str) or
+            String.contains?(amount_str, str)
         end)
     end
   end
