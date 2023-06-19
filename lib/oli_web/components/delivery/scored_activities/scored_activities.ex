@@ -148,8 +148,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   def render(assigns) do
     ~F"""
-    <div class="bg-white shadow-sm">
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9 bg-white">
+    <div class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
+      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
         {#if @current_assessment != nil}
           <div class="flex flex-col">
             {#if @current_assessment.container_label}
@@ -240,8 +240,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     </div>
     {#if @current_assessment != nil and @activities != []}
       <div class="mt-9">
-        <div class="bg-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">Question details</div>
-        <div class="bg-white shadow-sm px-6 -mt-5" id="activity_detail" phx-hook="LoadSurveyScripts">
+        <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">Question details</div>
+        <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5" id="activity_detail" phx-hook="LoadSurveyScripts">
           {#if @preview_rendered != nil}
             <RenderedActivity id="selected_activity" rendered_activity={@preview_rendered} />
           {#else}
