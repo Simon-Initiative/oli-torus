@@ -236,7 +236,6 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
           }
         >
           <Dropdown.Toggle
-            variant="link"
             id="rules-list-add-context-trigger"
             className="dropdown-toggle aa-add-button btn btn-primary btn-sm mr-3"
           >

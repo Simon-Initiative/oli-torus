@@ -389,6 +389,10 @@ $font-family-sans-serif: var(--font-sans);
       top: 55px;
       height: max-content;
     }
+    .aa-conditions .aa-condition .input-group {
+      width: 100%;
+    }
+
     .aa-conditions .aa-conditions {
       margin: 16px 0 8px;
       .aa-condition {
