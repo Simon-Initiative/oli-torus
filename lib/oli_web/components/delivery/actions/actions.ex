@@ -57,14 +57,14 @@ defmodule OliWeb.Components.Delivery.Actions do
 
   def render(assigns) do
     ~F"""
-      <div class="mx-10 mb-10 bg-white shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
-          <h4 class="pl-9 !py-2 torus-h4 mr-auto dark:!text-black">Actions</h4>
+      <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
+          <h4 class="pl-9 !py-2 torus-h4 mr-auto dark:text-white">Actions</h4>
         </div>
 
         <div class="flex justify-between items-center px-14 py-8">
           <div class="flex flex-col">
-            <span class="dark:text-black">Change enrolled user role</span>
+            <span class="dark:text-white">Change enrolled user role</span>
             <span class="text-xs text-gray-400 dark:text-gray-950">Select the role to change for the user in this section.</span>
           </div>
           <form phx-change="display_confirm_modal" phx-target={@myself}>

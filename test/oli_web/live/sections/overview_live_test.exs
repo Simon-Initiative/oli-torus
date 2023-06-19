@@ -186,7 +186,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
+               "a[href=\"#{Routes.page_delivery_url(OliWeb.Endpoint, :index, section.slug)}\"]",
                "Enter Course as a Student"
              )
 

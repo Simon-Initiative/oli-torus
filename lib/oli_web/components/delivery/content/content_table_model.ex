@@ -63,7 +63,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
       <%= if @patch_url_type == :instructor_dashboard do %>
         <.link
-          class="ml-6 text-gray-600 underline hover:text-gray-700"
+          class="ml-6 underline"
           patch={
             Routes.live_path(
               OliWeb.Endpoint,

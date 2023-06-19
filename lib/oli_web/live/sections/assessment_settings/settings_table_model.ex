@@ -11,7 +11,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
         th_class: "pl-10 instructor_dashboard_th sticky left-0 bg-white z-10",
-        td_class: "sticky left-0 bg-white z-10 whitespace-nowrap"
+        td_class: "sticky left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :due_date,
@@ -243,7 +243,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     ~H"""
     <div>
       <.link
-        class="ml-6 text-gray-600 underline hover:text-gray-700"
+        class="ml-6 underline"
         navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.AssessmentSettings.SettingsLive, @section_slug, :student_exceptions, @id)}>
         <%= @exceptions_count %>
       </.link>

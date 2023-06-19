@@ -857,6 +857,30 @@ defmodule OliWeb.Router do
       MetricsController,
       :download_container_progress
     )
+
+    get(
+      "/downloads/course_content/:section_slug",
+      DeliveryController,
+      :download_course_content_info
+    )
+
+    get(
+      "/downloads/students_progress/:section_slug",
+      DeliveryController,
+      :download_students_progress
+    )
+
+    get(
+      "/downloads/learning_objectives/:section_slug",
+      DeliveryController,
+      :download_learning_objectives
+    )
+
+    get(
+      "/downloads/quiz_scores/:section_slug",
+      DeliveryController,
+      :download_quiz_scores
+    )
   end
 
   ### Sections - Student Course Delivery

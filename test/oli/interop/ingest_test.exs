@@ -27,7 +27,6 @@ defmodule Oli.Interop.IngestTest do
   end
 
   def verify_export(entries) do
-
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
     assert length(entries) == 30
