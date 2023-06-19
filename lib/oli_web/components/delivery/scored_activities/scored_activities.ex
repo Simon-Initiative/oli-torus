@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use Surface.LiveComponent
 
   import Ecto.Query
+  alias Oli.Repo
 
   alias Oli.Publishing.DeliveryResolver
 
@@ -149,39 +150,73 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     ~F"""
     <div class="bg-white shadow-sm">
       <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9 bg-white">
-        {#if @current_assessment != nil }
+        {#if @current_assessment != nil}
           <div class="flex flex-col">
-            {#if @current_assessment.container_label }
+            {#if @current_assessment.container_label}
               <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.container_label}</h4>
               <span class="text-lg">{@current_assessment.title}</span>
             {#else}
               <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.title}</h4>
             {/if}
-            <button class="btn btn-primary whitespace-nowrap mr-auto my-6" phx-click="back" phx-target={@myself}>Go back</button>
+            <button
+              class="btn btn-primary whitespace-nowrap mr-auto my-6"
+              phx-click="back"
+              phx-target={@myself}
+            >Go back</button>
           </div>
         {#else}
           <h4 class="torus-h4 whitespace-nowrap">Scored Activities</h4>
         {/if}
         <div class="flex flex-col">
-          <form for="search" phx-target={@myself} phx-change="search_assessment" class="pb-6 lg:ml-auto lg:pt-7">
+          <form
+            for="search"
+            phx-target={@myself}
+            phx-change="search_assessment"
+            class="pb-6 lg:ml-auto lg:pt-7"
+          >
             <SearchInput.render
               id="assessments_search_input"
               name="assessment_name"
               text={@params.text_search}
             />
           </form>
-          {#if @current_assessment != nil }
-            <div class="flex flex-row mt-auto">
+          {#if @current_assessment != nil}
+            <div id="student_attempts_summary" class="flex flex-row mt-auto">
               <span class="text-xs">
-                {@students_with_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed {@total_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.
+                {#if @students_with_attempts_count == 0}
+                  No student has completed any attempts.
+                {#else}
+                  {@students_with_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed {@total_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.
+                {/if}
               </span>
               {#if @students_with_attempts_count < Enum.count(@students)}
                 <div class="flex flex-col">
                   <span class="text-xs ml-2">
-                    {Enum.count(@student_emails_without_attempts)} {Gettext.ngettext(OliWeb.Gettext, "student has", "students have", Enum.count(@student_emails_without_attempts))} not completed any attempt.
+                    {Enum.count(@student_emails_without_attempts)} {Gettext.ngettext(
+                      OliWeb.Gettext,
+                      "student has",
+                      "students have",
+                      Enum.count(@student_emails_without_attempts)
+                    )} not completed any attempt.
                   </span>
-                  <input type="text" id="email_inputs" class="form-control hidden" value={Enum.join(@student_emails_without_attempts, "; ")} readonly>
-                  <button id="copy_emails_button" class="text-xs text-primary underline ml-auto mb-6" phx-hook="CopyListener" data-clipboard-target="#email_inputs"><i class="fa-solid fa-copy mr-2"></i>{Gettext.ngettext(OliWeb.Gettext, "Copy his email address", "Copy their email addresses", Enum.count(@student_emails_without_attempts))}</button>
+                  <input
+                    type="text"
+                    id="email_inputs"
+                    class="form-control hidden"
+                    value={Enum.join(@student_emails_without_attempts, "; ")}
+                    readonly
+                  />
+                  <button
+                    id="copy_emails_button"
+                    class="text-xs text-primary underline ml-auto mb-6"
+                    phx-hook="CopyListener"
+                    data-clipboard-target="#email_inputs"
+                  ><i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
+                      OliWeb.Gettext,
+                      "Copy his email address",
+                      "Copy their email addresses",
+                      Enum.count(@student_emails_without_attempts)
+                    )}</button>
                 </div>
               {/if}
             </div>
@@ -200,14 +235,18 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         additional_table_class="instructor_dashboard_table"
         show_bottom_paging={false}
         render_top_info={false}
-        allow_selection={true}
+        allow_selection
       />
     </div>
-    {#if @current_assessment != nil and @activities != [] }
+    {#if @current_assessment != nil and @activities != []}
       <div class="mt-9">
         <div class="bg-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">Question details</div>
         <div class="bg-white shadow-sm px-6 -mt-5" id="activity_detail" phx-hook="LoadSurveyScripts">
-          <RenderedActivity id="selected_activity" rendered_activity={@preview_rendered}/>
+          {#if @preview_rendered != nil}
+            <RenderedActivity id="selected_activity" rendered_activity={@preview_rendered} />
+          {#else}
+            <p class="pt-9 pb-5">No attempt registered for this question</p>
+          {/if}
         </div>
       </div>
     {/if}
@@ -343,35 +382,40 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         selected: selected_activity_id
       })
 
-    activity_attempt = get_activity_attempt(selected_activity_id, socket.assigns.section.id)
-
-    part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
-
-    rendering_context =
-      OliWeb.ManualGrading.Rendering.create_rendering_context(
-        activity_attempt,
-        part_attempts,
-        socket.assigns.activity_types_map,
-        socket.assigns.section
-      )
-      |> Map.merge(%{is_liveview: true})
-
-    preview_rendered =
-      OliWeb.ManualGrading.Rendering.render(
-        rendering_context,
-        :instructor_preview
-      )
-
-    socket
-    |> assign(table_model: table_model, preview_rendered: preview_rendered)
-    |> case do
-      %{assigns: %{scripts_loaded: true}} = socket ->
+    case get_activity_attempt(selected_activity_id, socket.assigns.section.id) do
+      [] ->
         socket
+        |> assign(table_model: table_model)
 
-      socket ->
-        push_event(socket, "load_survey_scripts", %{
-          script_sources: socket.assigns.scripts
-        })
+      activity_attempt ->
+        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+
+        rendering_context =
+          OliWeb.ManualGrading.Rendering.create_rendering_context(
+            activity_attempt,
+            part_attempts,
+            socket.assigns.activity_types_map,
+            socket.assigns.section
+          )
+          |> Map.merge(%{is_liveview: true})
+
+        preview_rendered =
+          OliWeb.ManualGrading.Rendering.render(
+            rendering_context,
+            :instructor_preview
+          )
+
+        socket
+        |> assign(table_model: table_model, preview_rendered: preview_rendered)
+        |> case do
+          %{assigns: %{scripts_loaded: true}} = socket ->
+            socket
+
+          socket ->
+            push_event(socket, "load_survey_scripts", %{
+              script_sources: socket.assigns.scripts
+            })
+        end
     end
   end
 
@@ -489,6 +533,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     )
   end
 
+  defp get_activities(%{content: content} = _current_assessment, _section_slug)
+       when content == %{},
+       do: []
+
   defp get_activities(current_assessment, section_slug) do
     current_assessment.content["model"]
     |> Enum.filter(fn element -> element["type"] == "activity-reference" end)
@@ -517,7 +565,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         |> Enum.map(fn activity ->
           case activity.objectives["1"] do
             [] ->
-              activity
+              Map.put(activity, :objectives, [])
 
             objective_ids ->
               Map.put(
