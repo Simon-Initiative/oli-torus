@@ -54,3 +54,15 @@ input[type="datetime-local"].torus-input::placeholder {
 .torus-custom-checkbox:has(input[type="checkbox"]:not(:checked)) {
   @apply bg-white dark:bg-gray-800 hover:bg-delivery-primary-100 text-primary;
 }
+
+input, input[type="datetime-local"], input[type="number"] {
+  @apply dark:bg-neutral-800 dark:text-white;
+}
+
+select {
+  @apply dark:bg-neutral-800 dark:text-white;
+}
+
+::-webkit-calendar-picker-indicator {
+  @apply dark:invert
+}

@@ -161,7 +161,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
             for={@new_post_changeset}
             submit="create_post"
             opts={autocomplete: "off"}
-            class="bg-gray-100 p-3 rounded-sm"
+            class="bg-gray-100 dark:bg-gray-700 p-3 rounded-sm"
           >
             <HiddenInput field={:user_id} />
             <HiddenInput field={:section_id} />

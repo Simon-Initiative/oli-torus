@@ -21,8 +21,8 @@ defmodule OliWeb.Components.Delivery.CourseContent do
     <div class="bg-white dark:bg-gray-800 shadow-sm">
       <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
         <section class="flex flex-col p-8">
-          <h4 class="text-base font-semibold mr-auto tracking-wide text-gray-800 h-8">Course Content</h4>
-          <span class="text-sm font-normal tracking-wide text-gray-800 mt-2">Find all your course content, material, assignments and class activities here.</span>
+          <h4 class="text-base font-semibold mr-auto tracking-wide text-gray-800 dark:text-white h-8">Course Content</h4>
+          <span class="text-sm font-normal tracking-wide text-gray-800 dark:text-white mt-2">Find all your course content, material, assignments and class activities here.</span>
         </section>
         <section class="flex flex-row justify-between p-8">
           <div class="text-xs absolute -mt-5"><%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree, myself: @myself}) %></div>
@@ -30,10 +30,10 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             <i class="fa-regular fa-circle-left text-primary text-xl"></i>
           </button>
           <div class="flex flex-col">
-            <h4 id="course_browser_node_title" class="text-lg font-semibold tracking-wide text-gray-800 mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position, @section.display_curriculum_item_numbering) %> </h4>
+            <h4 id="course_browser_node_title" class="text-lg font-semibold tracking-wide text-gray-800 dark:text-white mx-auto h-9"><%= get_resource_name(@current_level_nodes, @current_position, @section.display_curriculum_item_numbering) %> </h4>
             <%= if !assigns[:is_instructor] do %>
               <div class="flex items-center justify-center space-x-3 mt-1">
-                <span class="uppercase text-[10px] tracking-wide text-gray-800"><%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering)} overall progress" %></span>
+                <span class="uppercase text-[10px] tracking-wide text-gray-800 dark:text-white"><%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering)} overall progress" %></span>
                 <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
                   <div class="rounded-full bg-primary h-2" style={"width: #{get_current_node_progress(@current_level_nodes, @current_position, @current_user_id, @section.id)}%"}></div>
                 </div>
@@ -47,7 +47,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
         <%= for {resource, index} <- get_current_node(@current_level_nodes, @current_position)["children"] |> Enum.with_index() do %>
           <section class="flex flex-row justify-between items-center w-full p-8">
             <h4
-              class={"text-sm font-bold tracking-wide text-gray-800 #{if resource["type"] == "container", do: "underline cursor-pointer"}"}
+              class={"text-sm font-bold tracking-wide text-gray-800 dark:text-white #{if resource["type"] == "container", do: "underline cursor-pointer"}"}
               phx-target={@myself}
               phx-click="go_down"
               phx-value-resource_id={resource["id"]}
@@ -57,7 +57,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             </h4>
 
             <%= if !assigns[:is_instructor] do %>
-              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 bg-gray-100 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
+              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
               <button class="torus-button primary h-10" phx-target={@myself} phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]}>Open</button>
             <% else %>
               <Buttons.button_with_options

@@ -79,9 +79,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white shadow-sm">
+    <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
       {modal(@modal_assigns)}
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 bg-white">
+      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6">
         <div class="flex flex-col pl-9">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>

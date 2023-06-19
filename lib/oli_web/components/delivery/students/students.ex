@@ -167,44 +167,50 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white shadow-sm">
-      {#if @show_progress_csv_download}
-        <div class="flex justify-end p-2">
-          <a href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
-            <i class="fa-solid fa-download mr-1" />
-            Download student progress CSV
-          </a>
+    <div class="flex flex-col gap-2 mx-10 mb-10">
+      <div class="bg-white dark:bg-gray-800 shadow-sm">
+        <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+          <div>
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">{@title}</h4>
+            {#if @show_progress_csv_download}
+              <a class="self-end" href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
+                <i class="fa-solid fa-download mr-1" />
+                Download student progress CSV
+              </a>
+            {#else}
+              <a href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+            {/if}
+          </div>
+          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
+            <div class="flex w-full sm:w-auto sm:items-end gap-2">
+              <form class="w-full" phx-change="filter_by" phx-target={@myself}>
+                <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
+                  <small class="torus-small uppercase">Filter by</small>
+                  <select class="torus-select" name="filter">
+                    {#for elem <- @dropdown_options}
+                      <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
+                    {/for}
+                  </select>
+                </label>
+              </form>
+            </div>
+            <form for="search" phx-target={@myself} phx-change="search_student" class="w-44">
+              <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
+            </form>
+          </div>
         </div>
-      {/if}
-      <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
-        <h4 class="sm:pl-9 torus-h4 sm:mr-auto self-center">{@title}</h4>
-        <div class="flex sm:items-end gap-2">
-          <form phx-change="filter_by" phx-target={@myself}>
-            <label class="cursor-pointer inline-flex flex-col gap-1">
-              <small class="torus-small uppercase">Filter by</small>
-              <select class="torus-select pr-32" name="filter">
-                {#for elem <- @dropdown_options}
-                  <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
-                {/for}
-              </select>
-            </label>
-          </form>
-        </div>
-        <form for="search" phx-target={@myself} phx-change="search_student" class="sm:ml-9 w-44">
-          <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
-        </form>
-      </div>
 
-      <PagedTable
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@params.offset}
-        limit={@params.limit}
-        render_top_info={false}
-        additional_table_class="instructor_dashboard_table"
-        sort={JS.push("paged_table_sort", target: @myself)}
-        page_change={JS.push("paged_table_page_change", target: @myself)}
-      />
+        <PagedTable
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@params.offset}
+          limit={@params.limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
+          sort={JS.push("paged_table_sort", target: @myself)}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
+        />
+      </div>
     </div>
     """
   end

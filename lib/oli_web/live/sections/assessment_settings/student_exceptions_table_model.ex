@@ -16,8 +16,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         name: :student,
         label: "STUDENT",
         render_fn: &__MODULE__.render_student_column/3,
-        th_class: "pl-10 instructor_dashboard_th sticky left-0 bg-white z-10",
-        td_class: "sticky left-0 bg-white z-10 whitespace-nowrap"
+        th_class: "pl-10 instructor_dashboard_th sticky left-0 bg-white dark:bg-neutral-800 z-10",
+        td_class: "sticky left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :due_date,

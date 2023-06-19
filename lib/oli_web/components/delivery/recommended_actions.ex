@@ -83,12 +83,12 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
 
   defp action_card(assigns) do
     ~H"""
-      <a href={@to} class="group border border-gray-200 rounded p-3 pl-8 flex flex-col justify-center cursor-pointer hover:bg-delivery-primary-50 active:bg-delivery-primary active:text-white hover:no-underline">
+      <a href={@to} class="group border border-gray-200 dark:border-gray-600 rounded p-3 pl-8 flex flex-col justify-center cursor-pointer hover:bg-delivery-primary-50 active:bg-delivery-primary active:text-white hover:no-underline">
         <div class="flex items-center gap-2">
           <%= render_slot(@icon) %>
           <h4><%= render_slot(@title) %></h4>
         </div>
-        <span class="torus-span group-active:text-white"><%= render_slot(@description) %></span>
+        <span class="torus-span group-hover:text-gray-500 group-active:text-white"><%= render_slot(@description) %></span>
       </a>
     """
   end

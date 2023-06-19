@@ -36,7 +36,7 @@
   <hr class="mt-4" />
 
   <div class="my-2">Favicons</div>
-  <p class="text-secondary my-2">
+  <p class="text-secondary dark:text-gray-400 my-2">
     Favicons are the icons that are shown in the browser tab and on mobile devices.
     Multiple favicons can be selected and uploaded. File names must match the following:
     <ul>
@@ -58,7 +58,7 @@
 
   <div class="my-2">Institution (Optional)</div>
 
-  <p class="text-secondary my-2">
+  <p class="text-secondary dark:text-gray-400 my-2">
     Associate this brand with a specific institution.
     This will limit the visibility of this brand to only registrations that belong to the institution.
   </p>
