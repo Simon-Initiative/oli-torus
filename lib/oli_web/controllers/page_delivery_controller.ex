@@ -99,19 +99,12 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp learner_progress(section_id, user_id) do
-    case Map.get(Metrics.progress_for(section_id, user_id), user_id) do
-      nil ->
-        # if there is no progress (nil) then return 0%
-        0
-
-      progress ->
-        (progress * 100)
-        |> round()
-        # if there is any progress at all, we want to represent that by at least showing 1% min
-        |> max(1)
-        # ensure we never show progress above 100%
-        |> min(100)
-    end
+    (Metrics.progress_for(section_id, user_id) * 100)
+    |> round()
+    # if there is any progress at all, we want to represent that by at least showing 1% min
+    |> max(1)
+    # ensure we never show progress above 100%
+    |> min(100)
   end
 
   def exploration(conn, %{"section_slug" => section_slug}) do
