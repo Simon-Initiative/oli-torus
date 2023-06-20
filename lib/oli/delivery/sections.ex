@@ -2531,8 +2531,12 @@ defmodule Oli.Delivery.Sections do
           Map.put(
             activity,
             :progress,
-            Oli.Delivery.Metrics.progress_for(activity.section_id, user_id, activity.resource_id)
-          ) * 100
+            Oli.Delivery.Metrics.progress_for(
+              activity.section_id,
+              user_id,
+              activity.resource_id
+            ) * 100
+          )
       end
       |> Map.put(
         :completion_percentage,
