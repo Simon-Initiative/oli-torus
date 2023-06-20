@@ -2709,11 +2709,13 @@ defmodule Oli.Delivery.Sections do
   %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
   """
   def map_resources_with_container_labels(section_slug, resource_ids) do
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
     containers =
       from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         join: p in Project,
         on: p.id == spp.project_id,
-        where: s.slug == ^section_slug and rev.resource_type_id == 2,
+        where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
         select: %{
           id: rev.resource_id,
           title: rev.title,

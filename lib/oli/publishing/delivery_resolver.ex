@@ -52,7 +52,7 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   def activities_by_resource_ids(resource_ids, section_slug) do
     from([_sr, _s, _spp, _pr, rev] in section_resource_revisions(section_slug),
-      where: rev.resource_type_id == 3 and rev.resource_id in ^resource_ids,
+      where: rev.resource_id in ^resource_ids,
       join: aa in ActivityAttempt,
       on: rev.id == aa.revision_id and rev.resource_id == aa.resource_id,
       group_by: rev.id,
@@ -77,7 +77,7 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   def objectives_by_resource_ids(resource_ids, section_slug) do
     from([_sr, _s, _spp, _pr, rev] in section_resource_revisions(section_slug),
-      where: rev.resource_type_id == 4 and rev.resource_id in ^resource_ids,
+      where: rev.resource_id in ^resource_ids,
       select: rev
     )
     |> Repo.all()

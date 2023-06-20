@@ -213,8 +213,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                     data-clipboard-target="#email_inputs"
                   ><i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
                       OliWeb.Gettext,
-                      "Copy his email address",
-                      "Copy their email addresses",
+                      "Copy email address",
+                      "Copy email addresses",
                       Enum.count(@student_emails_without_attempts)
                     )}</button>
                 </div>

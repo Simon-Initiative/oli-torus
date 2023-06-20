@@ -1177,7 +1177,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         )
 
       assert view
-             |> has_element?("#copy_emails_button", "Copy their email addresses")
+             |> has_element?("#copy_emails_button", "Copy email addresses")
     end
   end
 end

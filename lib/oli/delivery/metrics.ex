@@ -411,9 +411,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           rev.resource_id in ^pages_ids and r_acc.section_id == ^section_id and
             not is_nil(ra.date_evaluated),
-        where:
-          rev.resource_id in ^pages_ids and
-            not is_nil(ra.date_evaluated),
         group_by: rev.resource_id,
         select: {
           rev.resource_id,

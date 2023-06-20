@@ -49,7 +49,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
     ~H"""
       <div class="flex flex-col">
         <span class="font-bold"><%= @header %>:</span>
-        <span><%= @title %></span>
+        <span class="text-ellipsis"><%= @title %></span>
       </div>
     """
   end
@@ -119,15 +119,9 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
   defp best_effort_stem_extract(_), do: "[Empty]"
 
   defp extract(%{"type" => "p", "children" => children}) do
-    value =
-      Enum.reduce(children, "", fn c, s ->
-        s <> Map.get(c, "text", "")
-      end)
-
-    cond do
-      String.length(value) > 75 -> String.slice(value, 0..75) <> "..."
-      true -> value
-    end
+    Enum.reduce(children, "", fn c, s ->
+      s <> Map.get(c, "text", "")
+    end)
   end
 
   defp extract(%{"text" => t}), do: t
