@@ -107,6 +107,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
           module={Stepper}
           steps={@steps}
           current_step={@current_step_index}
+          on_cancel={JS.navigate(Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index))}
           data={get_step_data(assigns)}
         />
       </div>
