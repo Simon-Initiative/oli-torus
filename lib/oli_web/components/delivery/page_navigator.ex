@@ -72,6 +72,7 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
             bold
             bg-transparent
             group-hover:bg-white
+            dark:group-hover:bg-gray-800
             py-1
             w-12
             text-center
