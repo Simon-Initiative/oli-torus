@@ -84,7 +84,9 @@ defmodule Oli.Delivery.Sections.Browse do
         join: e in Enrollment,
         on: e.user_id == u.id,
         join: ecr in "enrollments_context_roles",
-        on: ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id and e.status == :enrolled,
+        on:
+          ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id and
+            e.status == :enrolled,
         select: %{
           name: fragment("array_to_string((array_agg(?)), ', ')", u.name),
           section_id: e.section_id
@@ -121,13 +123,29 @@ defmodule Oli.Delivery.Sections.Browse do
     # sorting
     query =
       case field do
-        :enrollments_count -> order_by(query, [_, e], {^direction, count(e.id)})
-        :institution -> order_by(query, [_, _, i], {^direction, i.name})
-        :instructor -> order_by(query, [_, _, _, _, _, u], {^direction, fragment("coalesce(?, '')", u.name)})
-        :requires_payment -> order_by(query, [s, _, _], [{^direction, s.requires_payment}, {^direction, s.amount}])
-        :type -> order_by(query, [s, _, _], {^direction, s.open_and_free})
-        :base -> order_by(query, [_, _, _, proj, prod], [{^direction, prod.title}, {^direction, proj.title}])
-        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+        :enrollments_count ->
+          order_by(query, [_, e], {^direction, count(e.id)})
+
+        :institution ->
+          order_by(query, [_, _, i], {^direction, i.name})
+
+        :instructor ->
+          order_by(query, [_, _, _, _, _, u], {^direction, fragment("coalesce(?, '')", u.name)})
+
+        :requires_payment ->
+          order_by(query, [s, _, _], [{^direction, s.requires_payment}, {^direction, s.amount}])
+
+        :type ->
+          order_by(query, [s, _, _], {^direction, s.open_and_free})
+
+        :base ->
+          order_by(query, [_, _, _, proj, prod], [
+            {^direction, prod.title},
+            {^direction, proj.title}
+          ])
+
+        _ ->
+          order_by(query, [p, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)

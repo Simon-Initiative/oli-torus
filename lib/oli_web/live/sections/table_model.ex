@@ -100,7 +100,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
     do: Phoenix.Naming.humanize(section.status)
 
   def custom_render(assigns, section, %ColumnSpec{name: :base}) do
-    if section.blueprint do
+    if section.blueprint_id do
       route_path =
         Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.blueprint.slug)
 

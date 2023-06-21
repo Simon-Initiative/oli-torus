@@ -1166,6 +1166,11 @@ defmodule OliWeb.Router do
       as: :institution
     )
 
+    live(
+      "/institutions/:institution_id/sections_and_students/:selected_tab",
+      Admin.Institutions.SectionsAndStudentsView
+    )
+
     live("/registrations", Admin.RegistrationsView)
 
     resources("/registrations", RegistrationController, except: [:index]) do
