@@ -23,18 +23,13 @@ const shouldShow = (
   uiState: ActivityDeliveryState,
   graded: boolean,
   surveyId: string | null,
-  correct: boolean,
   shouldShow?: boolean,
 ) => {
+  if (shouldShow) return true;
   if (graded) return false;
   if (surveyId !== null) return false;
-  if (correct !== undefined) return true;
 
-  return (
-    (typeof shouldShow === 'undefined' || shouldShow) &&
-    !isEvaluated(uiState) &&
-    !isSubmitted(uiState)
-  );
+  return !isEvaluated(uiState) && !isSubmitted(uiState);
 };
 
 const isRequestHintDisabled = (
@@ -67,7 +62,7 @@ export const HintsDeliveryConnected: React.FC<Props> = (props) => {
   const dispatch = useDispatch();
 
   const correct = isCorrect(uiState.attemptState);
-  const shouldShowHint = shouldShow(uiState, graded, surveyId, correct, props.shouldShow);
+  const shouldShowHint = shouldShow(uiState, graded, surveyId, props.shouldShow);
   const hasMoreHints = uiState.partState[props.partId]?.hasMoreHints || false;
   const requestHintDisabled = isRequestHintDisabled(uiState, hasMoreHints, correct, graded);
 
