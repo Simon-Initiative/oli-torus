@@ -574,16 +574,16 @@ defmodule OliWeb.Resources.PagesView do
     new_page_attrs =
       original_page
       |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
-      |> Map.put(:title, "Copy of #{original_page.title}")
+      |> Map.put(:title, "#{original_page.title} (copy)")
       |> Map.put(:content, nil)
       |> Map.put(:author_id, author.id)
-      |> (fn map ->
-            if is_nil(map.legacy) do
-              map
-            else
-              Map.put(map, :legacy, Map.from_struct(original_page.legacy))
-            end
-          end).()
+      |> then(fn map ->
+        if is_nil(map.legacy) do
+          map
+        else
+          Map.put(map, :legacy, Map.from_struct(original_page.legacy))
+        end
+      end)
 
     Oli.Repo.transaction(fn ->
       with {:ok, %{revision: revision}} <-
