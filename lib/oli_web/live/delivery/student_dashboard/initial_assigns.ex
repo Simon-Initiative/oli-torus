@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
   end
 
   defp add_students_metrics(student, section_id) do
-    progress = Metrics.progress_for(section_id, student.id) |> Map.get(student.id, 0.0)
+    progress = Metrics.progress_for(section_id, student.id)
 
     avg_score =
       Metrics.avg_score_for(section_id, student.id)

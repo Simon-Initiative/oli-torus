@@ -52,32 +52,31 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Calculate the progress for a specific student (or a list of students),
-  in all pages of a specific container.
+  Calculate the progress for a specific student (or a list of students), in all pages of a specific
+  container.
 
-  Omitting the container_id (or specifying nil) calculates progress
-  across the entire course section.
+  Omitting the container_id (or specifying nil) calculates progress across the entire course
+  section.
 
-  This query leverages the `contained_pages` relation, which is always an
-  up to date view of the structure of a course section. This allows this
-  query to take into account structural changes as the result of course
-  remix. The `contained_pages` relation is rebuilt after every remix.
+  This query leverages the `contained_pages` relation, which is always an up to date view of the
+  structure of a course section. This allows this query to take into account structural changes as
+  the result of course remix. The `contained_pages` relation is rebuilt after every remix.
 
   It returns a map:
 
-    %{user_id_1 => user_1_progress,
-      ...
-      user_id_n => user_n_progress
-    }
+    %{user_id_1 => user_1_progress, ... user_id_n => user_n_progress }
+
+  If only a single user_id is provided, it returns a single number representing progress for that
+  user. If a user does not have any progress, it returns 0.
   """
   @spec progress_for(
           section_id :: integer,
-          user_id :: integer | list(integer),
+          user_ids :: integer | list(integer),
           container_id :: integer | nil
-        ) :: map
-  def progress_for(section_id, user_id, container_id \\ nil) do
-    user_id_list = if is_list(user_id), do: user_id, else: [user_id]
+        ) :: map | number
+  def progress_for(section_id, user_ids, container_id \\ nil)
 
+  def progress_for(section_id, user_ids, container_id) when is_list(user_ids) do
     filter_by_container =
       case container_id do
         nil ->
@@ -100,7 +99,7 @@ defmodule Oli.Delivery.Metrics do
       |> join(:inner, [cp], ra in ResourceAccess,
         on:
           cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
-            ra.user_id in ^user_id_list
+            ra.user_id in ^user_ids
       )
       |> where([cp, ra], cp.section_id == ^section_id)
       |> where(^filter_by_container)
@@ -110,6 +109,9 @@ defmodule Oli.Delivery.Metrics do
     Repo.all(query)
     |> Enum.into(%{})
   end
+
+  def progress_for(section_id, user_id, container_id),
+    do: progress_for(section_id, [user_id], container_id) |> Map.get(user_id, 0.0)
 
   defp do_get_progress_for_page(section_id, user_ids, page_id) do
     filter_by_user =
@@ -135,9 +137,9 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Calculate the progress for a given student or list of students in a page.
   """
-  def progress_for_page(_section_id, [], _), do: []
+  def progress_for_page(_section_id, [], _), do: %{}
 
-  def progress_for_page(section_id, [_ | _] = user_ids, page_id),
+  def progress_for_page(section_id, user_ids, page_id) when is_list(user_ids),
     do:
       do_get_progress_for_page(section_id, user_ids, page_id)
       |> Repo.all()
