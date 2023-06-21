@@ -66,7 +66,20 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
         <% end %>
         <input
           id={"#{@id}_input"}
-          class={"text-2xl text-gray-500 bold py-1 w-12 text-center group-hover:mx-0 focus:mx-0 cursor-text #{if @show_navigation_arrows, do: "mx-8", else: ""}"}
+          class={"
+            text-2xl
+            text-gray-500
+            bold
+            bg-transparent
+            group-hover:bg-white
+            py-1
+            w-12
+            text-center
+            group-hover:mx-0
+            focus:mx-0
+            cursor-text
+            #{if @show_navigation_arrows, do: "mx-8", else: ""}"
+          }
           onfocus={"handleInputFocus_#{@id}()"}
           onblur={"handleInputFocus_#{@id}(false)"}
           name="page_number"
