@@ -333,7 +333,10 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-    live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix, as: :product_remix)
+
+    live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
+      as: :product_remix
+    )
 
     get(
       "/products/:product_id/payments/donwload_codes",
@@ -844,14 +847,6 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    live_session :instructor_dashboard,
-      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
-      live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
-      live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
-      live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
-    end
-
     get(
       "/downloads/progress/:container_id",
       MetricsController,
@@ -881,6 +876,19 @@ defmodule OliWeb.Router do
       DeliveryController,
       :download_quiz_scores
     )
+
+    live_session :instructor_dashboard,
+      on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
+      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
+      live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
+      live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
+      live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
+
+      live(
+        "/:view/:active_tab/:assessment_id",
+        Delivery.InstructorDashboard.InstructorDashboardLive
+      )
+    end
   end
 
   ### Sections - Student Course Delivery
