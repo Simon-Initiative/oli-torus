@@ -4071,6 +4071,11 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 1.25rem;
 }
 
+.my-6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
 .my-auto {
   margin-top: auto;
   margin-bottom: auto;
@@ -4260,12 +4265,20 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 2rem;
 }
 
+.mt-9 {
+  margin-top: 2.25rem;
+}
+
 .mt-\[-1px\] {
   margin-top: -1px;
 }
 
 .mt-\[2px\] {
   margin-top: 2px;
+}
+
+.mt-auto {
+  margin-top: auto;
 }
 
 .box-content {
@@ -4558,6 +4571,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-full {
   width: 100%;
+}
+
+.w-min {
+  width: -moz-min-content;
+  width: min-content;
 }
 
 .min-w-\[300px\] {
@@ -5681,6 +5699,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-4 {
   padding-top: 1rem;
+}
+
+.pt-9 {
+  padding-top: 2.25rem;
 }
 
 .text-left {
@@ -7015,22 +7037,22 @@ a {
   display: none;
 }
 
-.instructor_dashboard_table th[data-sortable="true"][data-sort-order="desc"]::after {
+.instructor_dashboard_table th[data-sortable='true'][data-sort-order='desc']::after {
   content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
 
-.instructor_dashboard_table th[data-sortable="true"][data-sort-order="asc"]::after {
+.instructor_dashboard_table th[data-sortable='true'][data-sort-order='asc']::after {
   content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 12 L10 8 L14 12'/%3e%3c/svg%3e");
 }
 
-.instructor_dashboard_table th[data-sortable="true"][data-sort-column='true']::after {
+.instructor_dashboard_table th[data-sortable='true'][data-sort-column='true']::after {
   height: 20px;
   width: 20px;
   display: inline-block;
   transform: translateY(6px);
 }
 
-.instructor_dashboard_table th[data-sortable="true"][data-sort-column='false']::after {
+.instructor_dashboard_table th[data-sortable='true'][data-sort-column='false']::after {
   height: 20px;
   width: 20px;
   display: inline-block;
@@ -7136,6 +7158,9 @@ a {
 div:has(.instructor_dashboard_table) #header_paging {
   position: sticky;
   left: 0px;
+}
+
+.dark div:has(.instructor_dashboard_table) #header_paging {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
@@ -7200,22 +7225,22 @@ div:has(.remix_materials_table) {
   display: none;
 }
 
-.remix_materials_table th[data-sortable="true"][data-sort-order="desc"]::after {
+.remix_materials_table th[data-sortable='true'][data-sort-order='desc']::after {
   content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
 
-.remix_materials_table th[data-sortable="true"][data-sort-order="asc"]::after {
+.remix_materials_table th[data-sortable='true'][data-sort-order='asc']::after {
   content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 12 L10 8 L14 12'/%3e%3c/svg%3e");
 }
 
-.remix_materials_table th[data-sortable="true"][data-sort-column='true']::after {
+.remix_materials_table th[data-sortable='true'][data-sort-column='true']::after {
   height: 20px;
   width: 20px;
   display: inline-block;
   transform: translateY(6px);
 }
 
-.remix_materials_table th[data-sortable="true"][data-sort-column='false']::after {
+.remix_materials_table th[data-sortable='true'][data-sort-column='false']::after {
   height: 20px;
   width: 20px;
   display: inline-block;
@@ -7301,6 +7326,9 @@ div:has(.remix_materials_table) {
 div:has(.remix_materials_table) #header_paging {
   position: sticky;
   left: 0px;
+}
+
+.dark div:has(.remix_materials_table) #header_paging {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
@@ -7365,22 +7393,22 @@ div:has(.remix_materials_table) #header_paging {
   display: none;
 }
 
-.remix_materials_publications_table th[data-sortable="true"][data-sort-order="desc"]::after {
+.remix_materials_publications_table th[data-sortable='true'][data-sort-order='desc']::after {
   content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
 
-.remix_materials_publications_table th[data-sortable="true"][data-sort-order="asc"]::after {
+.remix_materials_publications_table th[data-sortable='true'][data-sort-order='asc']::after {
   content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 12 L10 8 L14 12'/%3e%3c/svg%3e");
 }
 
-.remix_materials_publications_table th[data-sortable="true"][data-sort-column='true']::after {
+.remix_materials_publications_table th[data-sortable='true'][data-sort-column='true']::after {
   height: 20px;
   width: 20px;
   display: inline-block;
   transform: translateY(6px);
 }
 
-.remix_materials_publications_table th[data-sortable="true"][data-sort-column='false']::after {
+.remix_materials_publications_table th[data-sortable='true'][data-sort-column='false']::after {
   height: 20px;
   width: 20px;
   display: inline-block;
@@ -7466,6 +7494,9 @@ div:has(.remix_materials_table) #header_paging {
 div:has(.remix_materials_publications_table) #header_paging {
   position: sticky;
   left: 0px;
+}
+
+.dark div:has(.remix_materials_publications_table) #header_paging {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
@@ -8328,6 +8359,10 @@ body {
     margin-left: 1rem;
   }
 
+  .lg\:ml-auto {
+    margin-left: auto;
+  }
+
   .lg\:mt-0 {
     margin-top: 0px;
   }
@@ -8444,6 +8479,10 @@ body {
 
   .lg\:pt-6 {
     padding-top: 1.5rem;
+  }
+
+  .lg\:pt-7 {
+    padding-top: 1.75rem;
   }
 
   .lg\:shadow-lg {
