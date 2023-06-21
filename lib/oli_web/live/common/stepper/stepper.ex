@@ -41,10 +41,12 @@ defmodule OliWeb.Common.Stepper do
         <div class="flex md:flex-row flex-col-reverse absolute p-16 top-0 bottom-0 left-0 right-0 m-auto">
           <div class="bg-white dark:bg-gray-800 w-full md:w-2/3 border border-gray-200 dark:border-gray-600 flex flex-col overflow-hidden">
             <%= @selected_step.render_fn.(@data) %>
-            <div class="px-9 py-4 flex items-center justify-between border-gray-200 dark:border-gray-600 border-t">
-              <button phx-click={@on_cancel} class="torus-button secondary">
-                <%= @cancel_button_label %>
-              </button>
+            <div class={"px-9 py-4 flex items-center border-gray-200 dark:border-gray-600 border-t #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
+              <%= if !is_nil(@on_cancel) do %>
+                <button phx-click={@on_cancel} class="torus-button secondary">
+                  <%= @cancel_button_label %>
+                </button>
+              <% end %>
               <div class="flex gap-2">
                 <%= if @current_step != 0 do %>
                   <button phx-click={@selected_step.on_previous_step} class="torus-button secondary">
