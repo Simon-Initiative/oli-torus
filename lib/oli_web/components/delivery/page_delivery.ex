@@ -15,7 +15,7 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
 
   def header(assigns) do
     ~H"""
-      <h1 class="title flex flex-row items-center justify-between">
+      <h1 class="title flex flex-row items-center justify-between mb-2">
         <%= @title %><%= if @review_mode == true do %>
           (Review)
         <% end %>
@@ -35,9 +35,9 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
     """
   end
 
-  attr :scheduling_type, :atom, values: [:read_by, :inclass_activity]
-  attr :end_date, Date, default: nil
-  attr :est_reading_time, Timex.Duration, default: nil
+  attr(:scheduling_type, :atom, values: [:read_by, :inclass_activity])
+  attr(:end_date, Date, default: nil)
+  attr(:est_reading_time, Timex.Duration, default: nil)
 
   def details(assigns) do
     ~H"""
@@ -65,7 +65,7 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
   def learning_objectives(assigns) do
     ~H"""
       <%= if length(@objectives) > 0 do %>
-        <div class="objectives py-4">
+        <div class="objectives p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
           <div class="uppercase font-bold mb-2">Learning Objectives</div>
           <ul class="list-none">
             <%= for title <- @objectives do %>

@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Publishing.DeliveryResolver
 
   def get_containers(section) do
     {total_count, containers} = Sections.get_units_and_modules_containers(section.slug)
@@ -25,6 +26,48 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       end)
 
     {total_count, containers_with_metrics}
+  end
+
+  def get_assessments(section, students) do
+    graded_pages_and_section_resources =
+      DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
+
+    page_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
+
+    progress_across_for_pages =
+      Metrics.progress_across_for_pages(
+        section.id,
+        page_ids,
+        [],
+        Enum.count(students)
+      )
+
+    avg_score_across_for_pages =
+      Metrics.avg_score_across_for_pages(
+        section.id,
+        page_ids,
+        []
+      )
+
+    attempts_across_for_pages =
+      Metrics.attempts_across_for_pages(
+        section.id,
+        page_ids
+      )
+
+    container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
+
+    graded_pages_and_section_resources
+    |> Enum.map(fn {rev, sr} ->
+      Map.merge(rev, %{
+        end_date: sr.end_date,
+        students_completion: Map.get(progress_across_for_pages, rev.resource_id),
+        scheduling_type: sr.scheduling_type,
+        container_label: Map.get(container_labels, rev.resource_id),
+        avg_score: Map.get(avg_score_across_for_pages, rev.resource_id),
+        total_attempts: Map.get(attempts_across_for_pages, rev.resource_id)
+      })
+    end)
   end
 
   defp get_students_progress(0, pages, section_id, students_count) do

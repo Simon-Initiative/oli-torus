@@ -27,7 +27,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
         {:ok,
          assign(socket,
-           context: SessionContext.init(socket, session, user: current_user),
+           ctx: SessionContext.init(socket, session, user: current_user),
            current_user: current_user,
            preview_mode: socket.assigns[:live_action] == :preview,
            title: "Assessment Settings",
@@ -113,7 +113,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             assessments={@assessments}
             params={@params}
             section={@section}
-            context={@context}
+            ctx={@ctx}
             update_sort_order={@update_sort_order}
           />
         <% else %>
@@ -125,7 +125,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             assessments={@assessments}
             params={@params}
             section={@section}
-            context={@context}
+            ctx={@ctx}
           />
         <% end %>
       </div>

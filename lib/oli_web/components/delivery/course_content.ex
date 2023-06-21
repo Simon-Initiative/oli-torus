@@ -314,20 +314,10 @@ defmodule OliWeb.Components.Delivery.CourseContent do
        ) do
     case get_current_node(current_level_nodes, current_position) do
       %{"type" => "container", "id" => container_id} ->
-        Metrics.progress_for(section_id, current_user_id, container_id)
-        |> Map.get(current_user_id)
-        |> case do
-          nil -> 0.0
-          progress -> progress * 100
-        end
+        Metrics.progress_for(section_id, current_user_id, container_id) * 100
 
       %{"type" => "page", "id" => page_id} ->
-        Metrics.progress_for_page(section_id, [current_user_id], page_id)
-        |> Map.get(current_user_id)
-        |> case do
-          nil -> 0.0
-          progress -> progress * 100
-        end
+        Metrics.progress_for_page(section_id, current_user_id, page_id) * 100
 
       _ ->
         0.0

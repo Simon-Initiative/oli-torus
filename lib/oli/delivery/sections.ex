@@ -43,6 +43,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Branding.CustomLabels
 
   require Logger
 
@@ -2530,8 +2531,12 @@ defmodule Oli.Delivery.Sections do
           Map.put(
             activity,
             :progress,
-            Oli.Delivery.Metrics.progress_for(activity.section_id, user_id, activity.resource_id)
-          ) * 100
+            Oli.Delivery.Metrics.progress_for(
+              activity.section_id,
+              user_id,
+              activity.resource_id
+            ) * 100
+          )
       end
       |> Map.put(
         :completion_percentage,
@@ -2697,6 +2702,62 @@ defmodule Oli.Delivery.Sections do
         proficiency_per_learning_objective
       )
     end)
+  end
+
+  @doc """
+  Maps each resource with its parent container label, being the label (if any) like
+  <Container Label> <Numbering Index>: <Container Title>
+
+  For example:
+
+  %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
+  """
+  def map_resources_with_container_labels(section_slug, resource_ids) do
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    containers =
+      from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: p in Project,
+        on: p.id == spp.project_id,
+        where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index,
+          children: rev.children,
+          customizations: p.customizations
+        }
+      )
+      |> Repo.all()
+
+    Enum.map(resource_ids, fn page_id ->
+      {page_id,
+       case Enum.find(containers, fn container ->
+              page_id in container.children
+            end) do
+         nil ->
+           nil
+
+         %{numbering_level: 0} ->
+           nil
+
+         c ->
+           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+       end}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp get_container_label(
+         numbering_level,
+         customizations
+       ) do
+    case numbering_level do
+      1 -> Map.get(customizations, :unit)
+      2 -> Map.get(customizations, :module)
+      _ -> Map.get(customizations, :section)
+    end
   end
 
   defp add_necessary_fields_to_objectives(

@@ -266,8 +266,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      lti_param_ids: lti_param_ids
     } do
       conn =
         conn
@@ -302,8 +301,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      lti_param_ids: lti_param_ids
     } do
       conn =
         conn
@@ -338,8 +336,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      lti_param_ids: lti_param_ids
     } do
       conn =
         conn
@@ -355,8 +352,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "downloads the quiz scores when section exists", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      lti_param_ids: lti_param_ids
     } do
       %{section: section} = basic_section(nil)
 

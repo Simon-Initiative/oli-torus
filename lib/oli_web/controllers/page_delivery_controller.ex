@@ -8,7 +8,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
-  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Page.{PageContext, ObjectivesRollup}
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -100,19 +100,12 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp learner_progress(section_id, user_id) do
-    case Map.get(Metrics.progress_for(section_id, user_id), user_id) do
-      nil ->
-        # if there is no progress (nil) then return 0%
-        0
-
-      progress ->
-        (progress * 100)
-        |> round()
-        # if there is any progress at all, we want to represent that by at least showing 1% min
-        |> max(1)
-        # ensure we never show progress above 100%
-        |> min(100)
-    end
+    (Metrics.progress_for(section_id, user_id) * 100)
+    |> round()
+    # if there is any progress at all, we want to represent that by at least showing 1% min
+    |> max(1)
+    # ensure we never show progress above 100%
+    |> min(100)
   end
 
   def exploration(conn, %{"section_slug" => section_slug}) do
@@ -926,9 +919,10 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
+    activity_revisions = Resolver.from_resource_id(section_slug, activity_ids)
+
     activity_map =
-      section_slug
-      |> Resolver.from_resource_id(activity_ids)
+      activity_revisions
       |> Enum.map(fn rev ->
         type = Map.get(type_by_id, rev.activity_type_id)
 
@@ -991,6 +985,9 @@ defmodule OliWeb.PageDeliveryController do
 
     numbered_revisions = Sections.get_revision_indexes(section.slug)
 
+    objectives =
+      ObjectivesRollup.rollup_objectives(revision, activity_revisions, Resolver, section_slug)
+
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
     |> render(
@@ -1004,10 +1001,12 @@ defmodule OliWeb.PageDeliveryController do
         next_page: next,
         numbered_revisions: numbered_revisions,
         current_page: current,
-        page_number: section_resource.numbering_level,
+        page_number: section_resource.numbering_index,
         title: revision.title,
+        graded: revision.graded,
+        review_mode: false,
         html: html,
-        objectives: [],
+        objectives: objectives,
         section: section,
         revision: revision,
         page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),

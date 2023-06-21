@@ -47,7 +47,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   end
 
   describe "instructor" do
-    setup [:instructor_conn, :section_with_assessment]
+    setup [:instructor_conn, :set_timezone, :section_with_assessment]
 
     test "cannot access page if not enrolled to section", %{conn: conn, section: section} do
       redirect_path = "/unauthorized"
@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
     end
 
     test "students last interaction gets rendered (for a student with interaction and yet with no interaction)",
-         %{instructor: instructor, conn: conn} do
+         %{instructor: instructor, conn: conn, ctx: ctx} do
       %{section: section, mod1_pages: mod1_pages} =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
@@ -129,13 +129,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(2)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
-      assert student_1_last_interaction =~ "Apr. 05, 2023 - 12:25 PM"
+      assert student_1_last_interaction =~
+               ~U[2023-04-05 12:25:42Z]
+               |> OliWeb.Common.FormatDateTime.convert_datetime(ctx)
+               |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
 
       assert student_2_last_interaction =~
-               Timex.format!(
-                 student_2_enrollment_timestamp,
-                 "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}"
-               )
+               student_2_enrollment_timestamp
+               |> OliWeb.Common.FormatDateTime.convert_datetime(ctx)
+               |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
     end
 
     test "students table gets rendered considering the given url params", %{
