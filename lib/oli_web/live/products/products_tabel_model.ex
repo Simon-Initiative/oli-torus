@@ -25,7 +25,8 @@ defmodule OliWeb.Products.ProductsTableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &Common.render_date/3
+          render_fn: &Common.render_date/3,
+          sort_fn: &Common.sort_date/2
         }
       ],
       event_suffix: "",
