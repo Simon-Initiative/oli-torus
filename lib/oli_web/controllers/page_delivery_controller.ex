@@ -8,7 +8,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
-  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Page.{PageContext, ObjectivesRollup}
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -903,9 +903,10 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
+    activity_revisions = Resolver.from_resource_id(section_slug, activity_ids)
+
     activity_map =
-      section_slug
-      |> Resolver.from_resource_id(activity_ids)
+      activity_revisions
       |> Enum.map(fn rev ->
         type = Map.get(type_by_id, rev.activity_type_id)
 
@@ -966,6 +967,9 @@ defmodule OliWeb.PageDeliveryController do
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
+    objectives =
+      ObjectivesRollup.rollup_objectives(revision, activity_revisions, Resolver, section_slug)
+
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
     |> render(
@@ -978,10 +982,12 @@ defmodule OliWeb.PageDeliveryController do
         previous_page: previous,
         next_page: next,
         current_page: current,
-        page_number: section_resource.numbering_level,
+        page_number: section_resource.numbering_index,
         title: revision.title,
+        graded: revision.graded,
+        review_mode: false,
         html: html,
-        objectives: [],
+        objectives: objectives,
         section: section,
         revision: revision,
         page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
