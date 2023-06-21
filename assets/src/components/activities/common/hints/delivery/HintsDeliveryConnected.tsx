@@ -28,9 +28,10 @@ const shouldShow = (
 ) => {
   if (graded) return false;
   if (surveyId !== null) return false;
+  if (correct !== undefined) return true;
 
   return (
-    (typeof shouldShow === undefined || shouldShow) &&
+    (typeof shouldShow === 'undefined' || shouldShow) &&
     !isEvaluated(uiState) &&
     !isSubmitted(uiState)
   );
