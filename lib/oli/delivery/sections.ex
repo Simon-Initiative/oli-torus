@@ -2941,4 +2941,45 @@ defmodule Oli.Delivery.Sections do
       Map.put(%{}, visited_section_key, true)
     )
   end
+
+  @doc """
+  Get all the revisions that have numbering_index for a given section.
+  ## Examples
+      iex> get_revision_indexes("test_section")
+      [%{numbering_index: 1, slug: "revision_x"}, %{numbering_index: 2, slug: "revision_y"}]
+  """
+  def get_revision_indexes(section_slug) do
+      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1 and not is_nil(sr.numbering_index),
+        select: %{
+          slug: rev.slug,
+          numbering_index: sr.numbering_index
+        },
+        order_by: [asc: sr.numbering_index]
+      )
+      |> Repo.all()
+  end
+
+  @doc """
+  Get the revision for a section given the revision numbering_index
+  ## Examples
+      iex> get_revision_by_index(3)
+      %{slug: "revision_x", numbering_index: 3}
+      iex> get_revision_by_index(12)
+      nil
+  """
+  def get_revision_by_index(section_slug, numbering_index) when is_number(numbering_index) do
+    from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1 and sr.numbering_index == ^numbering_index,
+        select: %{
+          slug: rev.slug,
+          numbering_index: sr.numbering_index,
+          resource_type_id: rev.resource_type_id
+        },
+        limit: 1
+      )
+      |> Repo.one()
+  end
+
+  def get_revision_by_index(_, _), do: nil
 end
