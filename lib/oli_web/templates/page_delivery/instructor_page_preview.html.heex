@@ -1,5 +1,13 @@
 <div class="pt-5 mx-auto max-w-[900px]">
-  <Components.Delivery.PageDelivery.header title={"#{@title} (Preview)"} page_number={@page_number} review_mode={@review_mode} />
+  <Components.Delivery.PageDelivery.header
+    title={"#{@title} (Preview)"}
+    page_number={@page_number}
+    review_mode={@review_mode}
+    next_page={@next_page}
+    previous_page={@previous_page}
+    preview_mode={@preview_mode}
+    section_slug={@section_slug}
+    numbered_revisions={@numbered_revisions} />
 
   <script>
     window.userToken = "<%= assigns[:user_token] %>";

@@ -4,17 +4,22 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
   alias OliWeb.PageDeliveryView
   alias OliWeb.Router.Helpers, as: Routes
 
-  attr :page_number, :integer, required: true
-  attr :next_page, :map
-  attr :previous_page, :map
-  attr :preview_mode, :boolean, default: false
-  attr :section_slug, :string, required: true
-  attr :numbered_revisions, :list, required: true
-  attr :show_navigation_arrows, :boolean, default: true
-  attr :id, :string, required: true
+  attr(:page_number, :integer, required: true)
+  attr(:next_page, :map)
+  attr(:previous_page, :map)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:section_slug, :string, required: true)
+  attr(:numbered_revisions, :list, required: true)
+  attr(:show_navigation_arrows, :boolean, default: true)
+  attr(:id, :string, required: true)
 
   def render(assigns) do
-    assigns = assign(assigns, %{min_page: 1, max_page: assigns.numbered_revisions |> List.last() |> Map.get(:numbering_index, 1)})
+    assigns =
+      assign(assigns, %{
+        min_page: 1,
+        max_page: assigns.numbered_revisions |> List.last() |> Map.get(:numbering_index, 1)
+      })
+
     ~H"""
       <script>
         function handleInputFocus_<%= @id %>(focus = true) {
@@ -34,12 +39,11 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
           }
           if (focus) {
             pageNavigator.classList.add("shadow-md");
-            pageNavigatorInput.classList.add("bg-gray-200");
             pageNavigatorPopover.classList.add("block");
             pageNavigatorPopover.classList.remove("hidden");
+            pageNavigatorInput.select();
           } else {
             pageNavigator.classList.remove("shadow-md")
-            pageNavigatorInput.classList.remove("bg-gray-200");
             pageNavigatorPopover.classList.add("hidden");
             pageNavigatorPopover.classList.remove("block");
             pageNavigatorInput.value = <%= @page_number %>;
@@ -50,19 +54,19 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
       <.form
         for={:page_number}
         action={Routes.page_delivery_path(OliWeb.Endpoint, :navigate_by_index, @section_slug)}
-        id={@id} class="flex text-base hover:shadow-md group relative"
+        id={@id} class="flex text-base hover:shadow-md rounded group relative"
       >
         <%= if @show_navigation_arrows and @previous_page do %>
           <a
             href={PageDeliveryView.previous_url(OliWeb.Endpoint, @previous_page, @preview_mode, @section_slug)}
-            class="bg-gray-200 !no-underline rounded-l w-8 py-2 hidden group-hover:flex text-center cursor-pointer"
+            class="!no-underline rounded-l w-8 py-1 hidden group-hover:flex text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
           >
             <i class="fa-solid fa-chevron-left text-delivery-primary self-center mx-auto"></i>
           </a>
         <% end %>
         <input
           id={"#{@id}_input"}
-          class={"group-hover:bg-gray-200 text-lg py-2 w-12 text-center group-hover:mx-0 focus:mx-0 cursor-text #{if @show_navigation_arrows, do: "mx-8", else: ""}"}
+          class={"text-2xl text-gray-500 bold py-1 w-12 text-center group-hover:mx-0 focus:mx-0 cursor-text #{if @show_navigation_arrows, do: "mx-8", else: ""}"}
           onfocus={"handleInputFocus_#{@id}()"}
           onblur={"handleInputFocus_#{@id}(false)"}
           name="page_number"
@@ -80,7 +84,7 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
         <%= if @show_navigation_arrows and @next_page do %>
           <a
           href={PageDeliveryView.next_url(OliWeb.Endpoint, @next_page, @preview_mode, @section_slug)}
-            class="bg-gray-200 !no-underline rounded-r w-8 py-2 hidden group-hover:flex text-center cursor-pointer"
+            class="!no-underline rounded-r w-8 py-1 hidden group-hover:flex text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
           >
             <i class="fa-solid fa-chevron-right text-delivery-primary self-center mx-auto"></i>
           </a>
