@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.ScoredActivities do
-  use Surface.LiveComponent
+  use Phoenix.LiveComponent
 
   import Ecto.Query
   alias Oli.Repo
@@ -27,24 +27,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   }
 
   alias Oli.Resources.Revision
-
-  prop(assessments, :list, required: true)
-  prop(students, :list, required: true)
-  prop(params, :map, required: true)
-  prop(section, :map, required: true)
-  prop(scripts, :map, required: true)
-  prop(activity_types_map, :map, required: true)
-  prop(view, :string, required: true)
-  prop(ctx, :map, required: true)
-
-  data(table_model, :map)
-  data(total_count, :integer)
-  data(student_emails_without_attempts, :list)
-  data(students_with_attempts_count, :integer)
-  data(total_attempts_count, :integer)
-  data(current_assessment, :map)
-  data(activities, :list)
-  data(preview_rendered, :map)
 
   @default_params %{
     offset: 0,
@@ -147,109 +129,114 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   end
 
   def render(assigns) do
-    ~F"""
-    <div class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
-        {#if @current_assessment != nil}
-          <div class="flex flex-col">
-            {#if @current_assessment.container_label}
-              <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.container_label}</h4>
-              <span class="text-lg">{@current_assessment.title}</span>
-            {#else}
-              <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.title}</h4>
-            {/if}
-            <button
-              class="btn btn-primary whitespace-nowrap mr-auto my-6"
-              phx-click="back"
-              phx-target={@myself}
-            >Go back</button>
-          </div>
-        {#else}
-          <h4 class="torus-h4 whitespace-nowrap">Scored Activities</h4>
-        {/if}
-        <div class="flex flex-col">
-          <form
-            for="search"
-            phx-target={@myself}
-            phx-change="search_assessment"
-            class="pb-6 lg:ml-auto lg:pt-7"
-          >
-            <SearchInput.render
-              id="assessments_search_input"
-              name="assessment_name"
-              text={@params.text_search}
-            />
-          </form>
-          {#if @current_assessment != nil}
-            <div id="student_attempts_summary" class="flex flex-row mt-auto">
-              <span class="text-xs">
-                {#if @students_with_attempts_count == 0}
-                  No student has completed any attempts.
-                {#else}
-                  {@students_with_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed {@total_attempts_count} {Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.
-                {/if}
-              </span>
-              {#if @students_with_attempts_count < Enum.count(@students)}
-                <div class="flex flex-col">
-                  <span class="text-xs ml-2">
-                    {Enum.count(@student_emails_without_attempts)} {Gettext.ngettext(
-                      OliWeb.Gettext,
-                      "student has",
-                      "students have",
-                      Enum.count(@student_emails_without_attempts)
-                    )} not completed any attempt.
-                  </span>
-                  <input
-                    type="text"
-                    id="email_inputs"
-                    class="form-control hidden"
-                    value={Enum.join(@student_emails_without_attempts, "; ")}
-                    readonly
-                  />
-                  <button
-                    id="copy_emails_button"
-                    class="text-xs text-primary underline ml-auto mb-6"
-                    phx-hook="CopyListener"
-                    data-clipboard-target="#email_inputs"
-                  ><i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
-                      OliWeb.Gettext,
-                      "Copy email address",
-                      "Copy email addresses",
-                      Enum.count(@student_emails_without_attempts)
-                    )}</button>
-                </div>
-              {/if}
+    ~H"""
+    <div>
+      <div class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
+        <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
+          <%= if @current_assessment != nil do %>
+            <div class="flex flex-col">
+              <%= if @current_assessment.container_label do %>
+                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.container_label %></h4>
+                <span class="text-lg"><%= @current_assessment.title %></span>
+              <% else %>
+                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.title %></h4>
+              <% end %>
+              <button
+                class="btn btn-primary whitespace-nowrap mr-auto my-6"
+                phx-click="back"
+                phx-target={@myself}
+              >Go back</button>
             </div>
-          {/if}
+          <% else %>
+            <h4 class="torus-h4 whitespace-nowrap">Scored Activities</h4>
+          <% end %>
+          <div class="flex flex-col">
+            <form
+              for="search"
+              phx-target={@myself}
+              phx-change="search_assessment"
+              class="pb-6 lg:ml-auto lg:pt-7"
+            >
+              <SearchInput.render
+                id="assessments_search_input"
+                name="assessment_name"
+                text={@params.text_search}
+              />
+            </form>
+            <%= if @current_assessment != nil do %>
+              <div id="student_attempts_summary" class="flex flex-row mt-auto">
+                <span class="text-xs">
+                  <%= if @students_with_attempts_count == 0 do %>
+                    No student has completed any attempts.
+                  <% else %>
+                    <%= ~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.} %>
+                  <% end %>
+                </span>
+                <%= if @students_with_attempts_count < Enum.count(@students) do %>
+                  <div class="flex flex-col">
+                    <span class="text-xs ml-2">
+                      <%= ~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(
+                        OliWeb.Gettext,
+                        "student has",
+                        "students have",
+                        Enum.count(@student_emails_without_attempts)
+                      )} not completed any attempt.} %>
+                    </span>
+                    <input
+                      type="text"
+                      id="email_inputs"
+                      class="form-control hidden"
+                      value={Enum.join(@student_emails_without_attempts, "; ")}
+                      readonly
+                    />
+                    <button
+                      id="copy_emails_button"
+                      class="text-xs text-primary underline ml-auto mb-6"
+                      phx-hook="CopyListener"
+                      data-clipboard-target="#email_inputs"
+                    ><i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
+                        OliWeb.Gettext,
+                        "Copy email address",
+                        "Copy email addresses",
+                        Enum.count(@student_emails_without_attempts)
+                    )  %></button>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
         </div>
-      </div>
 
-      <PagedTable
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@params.offset}
-        limit={@params.limit}
-        page_change={JS.push("paged_table_page_change", target: @myself)}
-        selection_change={JS.push("paged_table_selection_change", target: @myself)}
-        sort={JS.push("paged_table_sort", target: @myself)}
-        additional_table_class="instructor_dashboard_table"
-        show_bottom_paging={false}
-        render_top_info={false}
-        allow_selection
-      />
-    </div>
-    {#if @current_assessment != nil and @activities != []}
-      <div class="mt-9">
-        <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">Question details</div>
-        <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5" id="activity_detail" phx-hook="LoadSurveyScripts">
-          {#if @preview_rendered != nil}
-            <RenderedActivity id="selected_activity" rendered_activity={@preview_rendered} />
-          {#else}
-            <p class="pt-9 pb-5">No attempt registered for this question</p>
-          {/if}
-        </div>
+        <PagedTable.render
+          __context__={assigns[:__context_]}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@params.offset}
+          limit={@params.limit}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
+          sort={JS.push("paged_table_sort", target: @myself)}
+          additional_table_class="instructor_dashboard_table"
+          filter=""
+          show_top_paging={true}
+          show_bottom_paging={false}
+          render_top_info={false}
+          allow_selection
+        />
       </div>
-    {/if}
+      <%= if @current_assessment != nil and @activities != [] do %>
+        <div class="mt-9">
+          <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">Question details</div>
+          <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5" id="activity_detail" phx-hook="LoadSurveyScripts">
+            <%= if @preview_rendered != nil do %>
+             <RenderedActivity.render id="selected_activity" rendered_activity={@preview_rendered} myself={@myself} />
+            <% else %>
+              <p class="pt-9 pb-5">No attempt registered for this question</p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
     """
   end
 
