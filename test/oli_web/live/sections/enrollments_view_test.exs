@@ -127,4 +127,5 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
       admin: admin
     })
   end
+  
 end
