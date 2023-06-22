@@ -184,7 +184,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
        to:
          route_for(
            socket,
-           %{text_search: student_name},
+           %{text_search: student_name, offset: 0},
            socket.assigns.patch_url_type
          )
      )}

@@ -225,7 +225,7 @@ defmodule OliWeb.Components.Delivery.Students do
            socket.assigns.section_slug,
            socket.assigns.view,
            socket.assigns.tab_name,
-           update_params(socket.assigns.params, %{text_search: student_name})
+           update_params(socket.assigns.params, %{text_search: student_name, offset: 0})
          )
      )}
   end

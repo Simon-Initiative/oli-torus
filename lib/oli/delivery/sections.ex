@@ -43,6 +43,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Branding.CustomLabels
 
   require Logger
 
@@ -2703,6 +2704,62 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  @doc """
+  Maps each resource with its parent container label, being the label (if any) like
+  <Container Label> <Numbering Index>: <Container Title>
+
+  For example:
+
+  %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
+  """
+  def map_resources_with_container_labels(section_slug, resource_ids) do
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    containers =
+      from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: p in Project,
+        on: p.id == spp.project_id,
+        where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index,
+          children: rev.children,
+          customizations: p.customizations
+        }
+      )
+      |> Repo.all()
+
+    Enum.map(resource_ids, fn page_id ->
+      {page_id,
+       case Enum.find(containers, fn container ->
+              page_id in container.children
+            end) do
+         nil ->
+           nil
+
+         %{numbering_level: 0} ->
+           nil
+
+         c ->
+           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+       end}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp get_container_label(
+         numbering_level,
+         customizations
+       ) do
+    case numbering_level do
+      1 -> Map.get(customizations, :unit)
+      2 -> Map.get(customizations, :module)
+      _ -> Map.get(customizations, :section)
+    end
+  end
+
   defp add_necessary_fields_to_objectives(
          obj,
          objectives_pages_map,
@@ -2884,4 +2941,45 @@ defmodule Oli.Delivery.Sections do
       Map.put(%{}, visited_section_key, true)
     )
   end
+
+  @doc """
+  Get all the revisions that have numbering_index for a given section.
+  ## Examples
+      iex> get_revision_indexes("test_section")
+      [%{numbering_index: 1, slug: "revision_x"}, %{numbering_index: 2, slug: "revision_y"}]
+  """
+  def get_revision_indexes(section_slug) do
+      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1 and not is_nil(sr.numbering_index),
+        select: %{
+          slug: rev.slug,
+          numbering_index: sr.numbering_index
+        },
+        order_by: [asc: sr.numbering_index]
+      )
+      |> Repo.all()
+  end
+
+  @doc """
+  Get the revision for a section given the revision numbering_index
+  ## Examples
+      iex> get_revision_by_index(3)
+      %{slug: "revision_x", numbering_index: 3}
+      iex> get_revision_by_index(12)
+      nil
+  """
+  def get_revision_by_index(section_slug, numbering_index) when is_number(numbering_index) do
+    from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1 and sr.numbering_index == ^numbering_index,
+        select: %{
+          slug: rev.slug,
+          numbering_index: sr.numbering_index,
+          resource_type_id: rev.resource_type_id
+        },
+        limit: 1
+      )
+      |> Repo.one()
+  end
+
+  def get_revision_by_index(_, _), do: nil
 end

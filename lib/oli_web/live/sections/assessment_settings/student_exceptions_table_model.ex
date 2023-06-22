@@ -9,7 +9,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         selected_assessment,
         target,
         selected_student_exceptions,
-        context
+        ctx
       ) do
     column_specs = [
       %ColumnSpec{
@@ -91,7 +91,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         selected_assessment: selected_assessment,
         target: target,
         selected_student_exceptions: selected_student_exceptions,
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -118,7 +118,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     ~H"""
     <div class={data_class(@selected_assessment.end_date, @due_date)}>
       <%= if @selected_assessment.scheduling_type == :due_by do %>
-        <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @context)} placeholder="-" />
+        <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @ctx)} placeholder="-" />
       <% else %>
         No due date
       <% end %>
@@ -294,11 +294,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
 
   defp data_class(_assessment_data, _student_exception_data), do: ""
 
-  defp value_from_datetime(nil, _context), do: nil
+  defp value_from_datetime(nil, _ctx), do: nil
 
-  defp value_from_datetime(datetime, context) do
+  defp value_from_datetime(datetime, ctx) do
     datetime
-    |> FormatDateTime.convert_datetime(context)
+    |> FormatDateTime.convert_datetime(ctx)
     |> DateTime.to_iso8601()
     |> String.slice(0, 16)
   end

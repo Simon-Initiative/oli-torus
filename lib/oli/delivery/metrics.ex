@@ -1,6 +1,9 @@
 defmodule Oli.Delivery.Metrics do
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias alias Oli.Resources.Revision
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Repo
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
@@ -354,6 +357,67 @@ defmodule Oli.Delivery.Metrics do
       |> select(
         [cp, ra],
         {ra.user_id, fragment("SUM(?)", ra.score) / fragment("COUNT(?)", ra.out_of)}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Calculates the average score for all students in a collection of pages
+  (only considering finished attempts).
+
+  The last parameter gives flexibility into excluding specific users
+  from the calculation. This exists primarily to exclude instructors.
+  `user_ids_to_ignore` can be an empty list.
+  """
+  def avg_score_across_for_pages(section_id, pages_ids, user_ids_to_ignore) do
+    query =
+      from(ra in ResourceAccess,
+        where:
+          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+            ra.user_id not in ^user_ids_to_ignore and not is_nil(ra.score),
+        group_by: ra.resource_id,
+        select: {
+          ra.resource_id,
+          fragment(
+            "SUM(?) / SUM(?)",
+            ra.score,
+            ra.out_of
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Returns the number of attempts for a given list of pages.
+  It only considers submitted attempts.
+
+  It returns a map:
+
+    %{page_id_1 => number_of_attempts_for_page_1,
+      ...
+      page_id_n => number_of_attempts_for_page_n
+    }
+  """
+  def attempts_across_for_pages(section_id, pages_ids) do
+    query =
+      from(ra in ResourceAttempt,
+        join: rev in Revision,
+        on: ra.revision_id == rev.id,
+        join: r_acc in ResourceAccess,
+        on: ra.resource_access_id == r_acc.id,
+        where:
+          rev.resource_id in ^pages_ids and r_acc.section_id == ^section_id and
+            not is_nil(ra.date_evaluated),
+        group_by: rev.resource_id,
+        select: {
+          rev.resource_id,
+          fragment("COUNT(*)")
+        }
       )
 
     Repo.all(query)

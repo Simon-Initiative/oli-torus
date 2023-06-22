@@ -922,6 +922,22 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Upcoming Activity 1"
       assert html_response(conn, 200) =~ "Upcoming Activity 2"
     end
+
+    test "shows page index based navigation", %{
+      conn: conn,
+      revision: revision,
+      user: user,
+      section: section
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+
+      assert html_response(conn, 200) =~ "id=\"top_page_navigator\""
+      assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
+    end
   end
 
   describe "independent learner page_delivery_controller" do
@@ -1561,6 +1577,20 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ section.title
       assert html_response(conn, 200) =~ "Preview"
+    end
+
+    test "shows page index based navigation", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
+        )
+
+        assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
     end
   end
 

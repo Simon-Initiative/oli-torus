@@ -79,8 +79,7 @@ const Component: React.FC<ComponentProps> = (props) => {
   return (
     <div aria-label="result" className={`evaluation feedback ${props.resultClass} my-1`}>
       {graphic}
-      {props.children}
-      <div></div>
+      <div>{props.children}</div>
     </div>
   );
 };

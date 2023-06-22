@@ -50,6 +50,10 @@ defmodule Oli.Activities.Model.Part do
     |> Oli.Activities.ParseUtils.items_or_errors()
   end
 
+  def parse(_) do
+    {:error, "invalid part"}
+  end
+
   def parse() do
     {:error, "invalid part"}
   end

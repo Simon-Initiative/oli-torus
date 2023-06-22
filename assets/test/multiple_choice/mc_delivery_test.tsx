@@ -78,6 +78,8 @@ describe('multiple choice delivery', () => {
       },
     ]);
 
+    expect(requestHintButton).toBeTruthy();
+
     // expect results to be displayed after submission
     expect(await screen.findAllByLabelText('result')).toHaveLength(1);
   });

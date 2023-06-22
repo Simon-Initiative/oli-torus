@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
+  alias OliWeb.Common.FormatDateTime
+
   use Phoenix.Component
 
   def render(assigns) do
@@ -127,11 +129,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   def render_last_interaction_column(assigns, user, _) do
     assigns =
       Map.merge(assigns, %{
-        last_interaction: parse_last_interaction(Map.get(user, :last_interaction))
+        last_interaction: Map.get(user, :last_interaction)
       })
 
     ~H"""
-    <%= @last_interaction %>
+    <%= parse_last_interaction(@last_interaction, @ctx) %>
     """
   end
 
@@ -152,10 +154,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     progress
   end
 
-  defp parse_last_interaction(nil), do: "-"
+  defp parse_last_interaction(nil, _ctx), do: "-"
 
-  defp parse_last_interaction(datetime) do
-    Timex.format!(datetime, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
+  defp parse_last_interaction(datetime, ctx) do
+    datetime
+    |> FormatDateTime.convert_datetime(ctx)
+    |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
   end
 
   defp render_label(:not_paid, _, _), do: "Not Paid"

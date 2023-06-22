@@ -1,20 +1,28 @@
+<div class="pt-5 mx-auto max-w-[900px]">
 
 <%= if not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
-  <Components.Delivery.PageDelivery.header title={@title} page_number={@page_number} review_mode={@review_mode} />
+  <Components.Delivery.PageDelivery.header
+    title={@title}
+    page_number={@page_number}
+    review_mode={@review_mode}
+    next_page={@next_page}
+    previous_page={@previous_page}
+    preview_mode={@preview_mode}
+    section_slug={@section_slug}
+    numbered_revisions={assigns[:numbered_revisions]} />
 <% end %>
 
 <Components.Delivery.PageDelivery.details scheduling_type={@scheduling_type} end_date={@end_date} est_reading_time={@est_reading_time} />
-
 
 <script>
 window.userToken = "<%= assigns[:user_token] %>";
 </script>
 
 <%= unless @graded && not @review_mode do %>
-  <Components.Delivery.PageDelivery.learning_objectives objectives={@objectives} />
+  <div class="mb-8">
+    <Components.Delivery.PageDelivery.learning_objectives objectives={@objectives} />
+  </div>
 <% end %>
-
-<hr class="text-gray-400 my-4" />
 
 <%= if @review_mode == true do %>
   <%= if @resource_attempt.lifecycle_state == :evaluated do  %>
@@ -106,3 +114,5 @@ __FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_at
 __ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__
 -->
 <% end %>
+
+</div>
