@@ -35,11 +35,11 @@
               <%= @inner_content %>
 
             </div>
-
-            <%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context, action: :preview %>
-
           </div>
         </div>
+
+        <%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context, action: :preview %>
+
       </div>
     </div>
   </Components.Delivery.NavSidebar.main_with_nav>

@@ -28,20 +28,6 @@
                     <%= render OliWeb.BibliographyView, "_references.html", conn: @conn, bib_app_params: @bib_app_params %>
 
                   </div>
-
-                  <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
-                    conn: @conn,
-                    section_slug: @section_slug,
-                    previous_page: @previous_page,
-                    next_page: @next_page,
-                    current_page: @current_page,
-                    page_number: @page_number,
-                    section: @section,
-                    preview_mode: @preview_mode,
-                    revision: @revision,
-                    resource_slug: @resource_slug,
-                    numbered_revisions: assigns[:numbered_revisions] %>
-
               </div>
             </div>
           </div>
@@ -62,8 +48,21 @@
             </div>
           <% end %>
         </div>
-      </div>
 
+        <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
+          conn: @conn,
+          section_slug: @section_slug,
+          previous_page: @previous_page,
+          next_page: @next_page,
+          current_page: @current_page,
+          page_number: @page_number,
+          section: @section,
+          preview_mode: @preview_mode,
+          revision: @revision,
+          resource_slug: @resource_slug,
+          numbered_revisions: assigns[:numbered_revisions] %>
+
+      </div>
 
       <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
     </div>
