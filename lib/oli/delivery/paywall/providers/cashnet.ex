@@ -91,7 +91,7 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
                    provider_payload: payload
                  }) do
               {:ok, _} ->
-                PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(enrollment.user.id), {:payment, "paid"})
+                PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(payment.pending_user_id), {:payment, "paid"})
                 {:ok, section}
               _ -> {:error, "Could not finalize payment"}
             end
