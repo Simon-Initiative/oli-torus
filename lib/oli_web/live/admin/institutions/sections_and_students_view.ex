@@ -7,13 +7,15 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
   alias Oli.Institutions
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.{PagedTable, Params, SessionContext, SearchInput, TextSearch}
-  alias Oli.Delivery.Sections.{Browse, BrowseOptions}
+  alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.Table.SortableTableModel
+  alias Phoenix.LiveView.JS
+  alias Oli.Repo
 
   @default_params %{
     offset: 0,
-    limit: 1,
+    limit: 10,
     sort_order: :asc,
     sort_by: :title,
     text_search: nil
@@ -25,7 +27,9 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
         socket
       ) do
     ctx = SessionContext.init(socket, session)
-    institution = Oli.Institutions.get_institution!(institution_id)
+
+    institutions = Oli.Institutions.list_institutions()
+    institution = Enum.find(institutions, fn i -> i.id == String.to_integer(institution_id) end)
 
     {:ok,
      assign(socket,
@@ -34,8 +38,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
          InstitutionController.root_breadcrumbs()
          |> InstitutionController.named(institution.name),
        institution: institution,
+       institutions: institutions,
        selected_tab: String.to_existing_atom(selected_tab),
-       ctx: ctx
+       ctx: ctx,
+       modal_assigns: %{show: false}
      )}
   end
 
@@ -56,7 +62,9 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
         }
       )
 
-    {:ok, table_model} = OliWeb.Sections.SectionsTableModel.new(socket.assigns.ctx, sections)
+    {:ok, table_model} =
+      OliWeb.Sections.SectionsTableModel.new(socket.assigns.ctx, sections, true)
+
     table_model = SortableTableModel.update_from_params(table_model, params)
 
     {:noreply,
@@ -94,6 +102,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
   def render(assigns) do
     ~H"""
     <div class="container">
+      <.modal modal_assigns={@modal_assigns} />
+      <h4 class="torus-h4 mb-2">
+        <%= @institution.name %>
+      </h4>
       <div class="flex flex-row justify-between items-center">
         <.tabs active_tab={@selected_tab} institution_id={@institution.id} />
 
@@ -220,11 +232,124 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
     }
   end
 
+  def handle_event("edit_section", %{"value" => section_id}, socket) do
+    changeset =
+      socket.assigns.table_model.rows
+      |> Enum.find(&(&1.id == String.to_integer(section_id)))
+      |> Section.changeset()
+
+    options_for_select =
+      Enum.map(socket.assigns.institutions, fn i -> {i.name, i.id} end)
+      |> Enum.sort_by(fn {name, _id} -> name end)
+
+    {:noreply,
+     assign(socket,
+       modal_assigns: %{
+         show: "edit_institution_for_section",
+         changeset: changeset,
+         options_for_select: options_for_select
+       }
+     )}
+  end
+
+  def handle_event("submit_modal", %{"institution_id" => institution_id}, socket) do
+    socket.assigns.modal_assigns.changeset
+    |> Section.changeset(%{institution_id: String.to_integer(institution_id)})
+    |> Repo.update()
+    |> case do
+      {:ok, _section} ->
+        socket
+        |> assign(modal_assigns: %{show: false})
+        |> put_flash(:info, "Institution updated")
+        |> patch_with(%{})
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> assign(modal_assigns: %{show: false})
+         |> put_flash(:error, "Institution could not be updated")}
+    end
+  end
+
+  def handle_event("hide_modal", _params, socket) do
+    {:noreply, assign(socket, modal_assigns: %{show: false})}
+  end
+
   def handle_event(event, params, socket) do
     delegate_to(
       {event, params, socket, &__MODULE__.patch_with/2},
       [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4]
     )
+  end
+
+  def modal(%{modal_assigns: %{show: false}} = assigns),
+    do: ~H"""
+
+    """
+
+  def modal(%{modal_assigns: %{show: "edit_institution_for_section"}} = assigns) do
+    ~H"""
+      <div
+          id="edit_institution_for_section_modal"
+          class="modal fade show bg-gray-900 bg-opacity-50"
+          tabindex="-1"
+          role="dialog"
+          aria-hidden="true"
+          style="display: block;"
+          phx-window-keydown={JS.dispatch("click", to: "#modal_cancel_button")}
+          phx-key="Escape"
+        >
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Assign institution for <%= @modal_assigns.changeset.data.title %></h5>
+                <button
+                  type="button"
+                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+                  aria-label="Close"
+                  phx-click={JS.dispatch("click", to: "#modal_cancel_button")}
+                >
+                  <i class="fa-solid fa-xmark fa-xl" />
+                </button>
+              </div>
+              <div class="modal-body">
+                <.form
+                  for={@modal_assigns.changeset}
+                  phx-submit="submit_modal"
+                >
+                  <div class="flex flex-col space-y-2">
+                    <div class="flex flex-col space-y-1">
+                      <label for="institution_id" class="text-sm font-medium text-gray-700 dark:text-gray-300">Institution</label>
+                      <select
+                        id="institution_id"
+                        name="institution_id"
+                        class="form-select block w-full mt-1"
+                      >
+                        <%= for {label, value} <- @modal_assigns.options_for_select do %>
+                        <option value={value} selected={value == @modal_assigns.changeset.data.institution_id}><%= label %></option>
+                        <% end %>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="flex space-x-3 mt-6 justify-end">
+                    <button
+                      type="button"
+                      id="modal_cancel_button"
+                      class="btn btn-link"
+                      phx-click="hide_modal"
+                    >Cancel</button>
+
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                    >Save</button>
+                  </div>
+                </.form>
+              </div>
+            </div>
+          </div>
+      </div>
+    """
   end
 
   def patch_with(socket, changes) do

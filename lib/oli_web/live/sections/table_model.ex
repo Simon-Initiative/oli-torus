@@ -5,7 +5,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(%SessionContext{} = ctx, sections) do
+  def new(%SessionContext{} = ctx, sections, render_institution_action \\ false) do
     SortableTableModel.new(
       rows: sections,
       column_specs: [
@@ -65,7 +65,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
       id_field: [:id],
       data: %{
         ctx: ctx,
-        fade_data: true
+        fade_data: true,
+        render_institution_action: render_institution_action
       }
     )
   end
@@ -90,10 +91,17 @@ defmodule OliWeb.Sections.SectionsTableModel do
     end
   end
 
-  def custom_render(_assigns, section, %ColumnSpec{name: :institution}) do
-    if is_nil(section.institution),
-      do: "",
-      else: section.institution.name
+  def custom_render(assigns, section, %ColumnSpec{name: :institution}) do
+    ~F"""
+      <div class="flex space-x-2 items-center">
+        <div>
+          {section.institution && section.institution.name}
+        </div>
+        {#if @render_institution_action}
+          <button class="btn btn-primary my-6" phx-click="edit_section" value={section.id}>Edit</button>
+        {/if}
+      </div>
+    """
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :status}),

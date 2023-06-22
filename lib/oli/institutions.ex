@@ -5,7 +5,6 @@ defmodule Oli.Institutions do
 
   import Ecto.Query, warn: false
 
-  alias Oli.Interop.CustomActivities.User
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
