@@ -619,6 +619,7 @@ defmodule OliWeb.Router do
 
     post("/c/success", PaymentProviders.CashnetController, :success)
     post("/c/failure", PaymentProviders.CashnetController, :failure)
+    get("/c/signoff", PaymentProviders.CashnetController, :signoff)
   end
 
   # Endpoints for client-side scheduling UI

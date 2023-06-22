@@ -6,6 +6,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Paywall.Providers.Cashnet
+  alias Phoenix.PubSub
 
   require Logger
 
@@ -25,17 +26,25 @@ defmodule OliWeb.PaymentProviders.CashnetController do
         _ -> Decimal.to_string(decimal)
       end
 
-    conn
-    # This is necessary since this controller has been delegated by PaymentController
-    |> Phoenix.Controller.put_view(OliWeb.PaymentProviders.CashnetView)
-    |> render("index.html",
-      api_key: Application.fetch_env!(:oli, :stripe_provider)[:public_secret],
-      purchase: Jason.encode!(%{user_id: user.id, section_slug: section.slug}),
-      section: section,
-      cost: cost,
-      user_name:
-        safe_get(user.family_name, "Unknown") <> ", " <> safe_get(user.given_name, "Unknown")
-    )
+    case Cashnet.create_form(section, user, conn.host) do
+      {:ok, %{payment_ref: _payment_ref, cashnet_form: cashnet_form}} ->
+
+          # This is necessary since this controller has been delegated by PaymentController
+          Phoenix.Controller.put_view(conn, OliWeb.PaymentProviders.CashnetView)
+          |> render("index.html",
+            api_key: Application.fetch_env!(:oli, :stripe_provider)[:public_secret],
+            purchase: Jason.encode!(%{user_id: user.id, section_slug: section.slug}),
+            section: section,
+            cost: cost,
+            cashnet_form: cashnet_form,
+            user: user,
+            user_name:
+              safe_get(user.family_name, "Unknown") <> ", " <> safe_get(user.given_name, "Unknown")
+          )
+      e ->
+          {_, msg} = Oli.Utils.log_error("CashnetController:init_form failed.", e)
+          error(conn, 500, msg)
+    end
   end
 
   defp safe_get(item, default_value) do
@@ -87,7 +96,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
     end
   end
 
-   @doc """
+  @doc """
   An endpoint that allows the cashnet system reporting of payment processing failure.
   """
   def failure(conn, payload) do
@@ -99,6 +108,23 @@ defmodule OliWeb.PaymentProviders.CashnetController do
     json(conn, %{
       result: "failure"
     })
+
+  end
+
+  @doc """
+  An endpoint where cashnet can redirect users if they sign off or cancel the payment process.
+  """
+  def signoff(conn, payload) do
+    Logger.debug("CashnetController:signoff ", payload)
+
+    user = conn.assigns.current_user
+    PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(user.id), {:payment, "logged off without paying"})
+
+    if user.independent_learner do
+      redirect(conn, to: Routes.delivery_path(conn, :open_and_free_index))
+    else
+      redirect(conn, to: Routes.delivery_path(conn, :index))
+    end
 
   end
 
