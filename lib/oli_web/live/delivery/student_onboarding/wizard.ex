@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     introduction_step = %Step{
       title: "Introduction",
       description:
-        "Welcome to Chemistry 101! Here's what you can expect during this set up process.",
+        "Welcome to #{section.title}! Here's what you can expect during this set up process.",
       render_fn: &render_step/1,
       data: %{},
       next_button_label:
@@ -65,7 +65,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
     exploration_step = %Step{
       title: "Explorations",
-      description: "An introduction to Explorations -- real world chemistry applications.",
+      description: "An introduction to Explorations -- real world applications.",
       render_fn: &render_step/1,
       data: %{},
       next_button_label: @course_label,
@@ -90,7 +90,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
        steps: steps,
        current_step_name: @intro_step,
        current_step_index: 0,
-       datashop_session_id: datashop_session_id
+       datashop_session_id: datashop_session_id,
+       is_lti: section.open_and_free == false
      )}
   end
 
@@ -107,6 +108,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
           module={Stepper}
           steps={@steps}
           current_step={@current_step_index}
+          on_cancel={if !@is_lti, do: JS.navigate(Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)), else: nil}
           data={get_step_data(assigns)}
         />
       </div>

@@ -331,6 +331,7 @@ $element-margin-bottom: 1.5em;
     padding: 12px;
     text-align: center;
     margin-bottom: $element-margin-bottom;
+    font-size: 0.8em;
 
     blockquote,
     ol,
@@ -469,6 +470,16 @@ $element-margin-bottom: 1.5em;
     }
   }
 
+  .popup-arrow div:first-of-type {
+    @media (prefers-color-scheme: light) {
+      border-top-color: var(white) !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      border-top-color: rgb(82 82 82) !important;
+    }
+  }
+
   .popup-content {
     p:last-of-type {
       margin: 0;
@@ -501,6 +512,11 @@ $element-margin-bottom: 1.5em;
     width: 90%;
     margin: auto;
     margin-bottom: $element-margin-bottom;
+  }
+
+  em.deemphasis {
+    font-style: normal;
+    color: var(--color-gray-400);
   }
 }
 

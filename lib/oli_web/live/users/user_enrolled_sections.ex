@@ -20,15 +20,14 @@ defmodule OliWeb.Users.UserEnrolledSections do
   }
 
   def update(
-        %{user: user, params: params, context: context, enrolled_sections: enrolled_sections} =
-          _assigns,
+        %{user: user, params: params, ctx: ctx, enrolled_sections: enrolled_sections} = _assigns,
         socket
       ) do
     params = decode_params(params)
 
     {total_count, rows} = apply_filters(enrolled_sections, params)
 
-    {:ok, table_model} = UserEnrolledTableModel.new(rows, user, context)
+    {:ok, table_model} = UserEnrolledTableModel.new(rows, user, ctx)
 
     table_model =
       Map.merge(table_model, %{
@@ -53,7 +52,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
       <div class="flex flex-col gap-y-4">
         {#if length(@enrolled_sections) > 0}
           <div class="d-flex justify-end">
-            <form for="search" phx-target={@myself} phx-change="search_section" class="pb-6 ml-9 sm:pb-0">
+            <form for="search" phx-target={@myself} phx-change="search_section" class="pb-6 ml-9 sm:pb-0 w-44">
               <SearchInput.render id="section_search_input" name="section_title" text={@params.text_search} />
             </form>
           </div>
@@ -91,7 +90,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
            socket,
            OliWeb.Users.UsersDetailView,
            socket.assigns.user.id,
-           update_params(socket.assigns.params, %{text_search: section_title})
+           update_params(socket.assigns.params, %{text_search: section_title, offset: 0})
          )
      )}
   end

@@ -14,14 +14,14 @@ defmodule OliWeb.Progress.StudentView do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Router.Helpers, as: Routes
 
-  data breadcrumbs, :any
-  data title, :string, default: "Student Progress"
-  data section, :any, default: nil
-  data user, :any
-  data text_search, :string
-  data table_model, :struct
-  data resource_accesses, :map
-  data page_nodes, :list
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Student Progress")
+  data(section, :any, default: nil)
+  data(user, :any)
+  data(text_search, :string)
+  data(table_model, :struct)
+  data(resource_accesses, :map)
+  data(page_nodes, :list)
 
   def set_breadcrumbs(type, section, user_id) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -48,7 +48,7 @@ defmodule OliWeb.Progress.StudentView do
         Mount.handle_error(socket, {:error, e})
 
       {:ok, user} ->
-        context = SessionContext.init(session)
+        ctx = SessionContext.init(socket, session)
 
         case Mount.for(section_slug, session) do
           {:error, e} ->
@@ -82,11 +82,11 @@ defmodule OliWeb.Progress.StudentView do
               end)
 
             {:ok, table_model} =
-              StudentTabelModel.new(page_nodes, resource_accesses, section, user, context)
+              StudentTabelModel.new(page_nodes, resource_accesses, section, user, ctx)
 
             {:ok,
              assign(socket,
-               context: context,
+               ctx: ctx,
                text_search: "",
                table_model: table_model,
                page_nodes: page_nodes,
@@ -117,7 +117,7 @@ defmodule OliWeb.Progress.StudentView do
         socket.assigns.resource_accesses,
         socket.assigns.section,
         socket.assigns.user,
-        socket.assigns.context
+        socket.assigns.ctx
       )
 
     # Updating from params is what will apply the sort
@@ -143,7 +143,7 @@ defmodule OliWeb.Progress.StudentView do
 
   def render(assigns) do
     ~F"""
-      <div>
+      <div class="container mx-auto mb-5">
         <h3>Progress Details for {name(@user)}</h3>
         <TextSearch id="text_search" text={@text_search}/>
         <div class="mt-4"/>

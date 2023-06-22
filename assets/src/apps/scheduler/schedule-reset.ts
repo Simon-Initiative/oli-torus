@@ -44,23 +44,45 @@ export const findStartEnd = (startDay: number, days: number, weekdaysToSchedule:
 */
 export const findStartEndByPercent = (
   start: DateWithoutTime,
+  end: DateWithoutTime,
   workingDayCount: number,
   entryIndex: number,
   totalEntries: number,
   weekdaysToSchedule: boolean[],
+  pageLength: number,
+  totalPageLength: number,
 ) => {
-  const length = Math.ceil(workingDayCount / totalEntries);
-  const startingDayIndex = (workingDayCount * entryIndex) / totalEntries + 1;
+  if (entryIndex === totalEntries - 1) {
+    // Due to rounding, sometimes the last entry will be off by a day. This is a hack to fix that.
+    return [start, end];
+  }
 
-  const calculatedStart = findNthDay(
-    start.getDaysSinceEpoch(),
-    startingDayIndex,
-    weekdaysToSchedule,
-  );
-  const calculatedEnd = findNthDay(calculatedStart.getDaysSinceEpoch(), length, weekdaysToSchedule);
+  const percentOfWhole = pageLength / totalPageLength;
 
-  return [calculatedStart, calculatedEnd];
+  const length = Math.ceil(workingDayCount * percentOfWhole);
+  const calculatedEnd = findNthDay(start.getDaysSinceEpoch(), length - 1, weekdaysToSchedule);
+
+  return [start, calculatedEnd];
 };
+
+export const getPageCount = (
+  item: HierarchyItem | undefined,
+  schedule: HierarchyItem[],
+): number => {
+  if (!item) return 0;
+  if (item.resource_type_id === ScheduleItemType.Page) return 1;
+  if (item.children.length === 0) return 1; // Empty units still get to take up some space.
+  return item.children.reduce(
+    (acc, id) => acc + getPageCount(getScheduleItem(id, schedule), schedule),
+    0,
+  );
+};
+
+export const getTotalPageCount = (schedule: HierarchyItem[]): number =>
+  schedule.filter((item) => {
+    // We want a count of all pages, PLUS containers with no children (since they still need room)
+    return item.resource_type_id === ScheduleItemType.Page || item.children.length === 0;
+  }).length;
 
 export const resetScheduleItem = (
   target: HierarchyItem,
@@ -70,12 +92,15 @@ export const resetScheduleItem = (
   resetManual = true,
   weekdaysToSchedule = [false, true, true, true, true, true, false],
 ) => {
-  const count = target.children.map((id) => getScheduleItem(id, schedule)).length;
+  const hasChildren = !!target.children.map((id) => getScheduleItem(id, schedule)).length;
 
   if (resetManual) target.manually_scheduled = false;
-  if (count === 0) return;
+  if (!hasChildren) return;
 
+  const totalPages = getPageCount(target, schedule); //getTotalPageCount(schedule);
   const dayCount = countWorkingDays(start, end, weekdaysToSchedule);
+
+  let nextStart = start;
 
   for (const [index, childId] of target.children.entries()) {
     const child = getScheduleItem(childId, schedule);
@@ -88,12 +113,17 @@ export const resetScheduleItem = (
 
     // const [calculatedStart, calculatedEnd] = findStartEnd(startDay, length, weekdaysToSchedule);
     const [calculatedStart, calculatedEnd] = findStartEndByPercent(
-      start,
+      nextStart,
+      end,
       dayCount,
       index,
       target.children.length,
       weekdaysToSchedule,
+      getPageCount(child, schedule),
+      totalPages,
     );
+
+    nextStart = findNthDay(calculatedEnd.getDaysSinceEpoch(), 2, weekdaysToSchedule);
 
     if (child && (resetManual || !child?.manually_scheduled)) {
       child.startDate =
@@ -102,12 +132,15 @@ export const resetScheduleItem = (
 
       const delta = child.endDate.getDaysSinceEpoch() - end.getDaysSinceEpoch();
       if (delta > 0) {
+        // Make sure we never schedule past the end.
         child.endDate.addDays(-delta);
       }
+
       if (
         child.startDate &&
         child.endDate.getDaysSinceEpoch() < child.startDate.getDaysSinceEpoch()
       ) {
+        // Make sure the start date is never after the end date.
         child.startDate = new DateWithoutTime(end.getDaysSinceEpoch());
       }
 

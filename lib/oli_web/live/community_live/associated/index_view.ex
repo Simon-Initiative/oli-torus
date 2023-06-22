@@ -9,15 +9,15 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Link
 
-  data title, :string, default: "Community Associated"
-  data breadcrumbs, :any
+  data(title, :string, default: "Community Associated")
+  data(breadcrumbs, :any)
 
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
+  data(query, :string, default: "")
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: 20)
+  data(sort, :string, default: "sort")
+  data(page_change, :string, default: "page_change")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -43,14 +43,14 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   end
 
   def mount(%{"community_id" => community_id}, session, socket) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init(socket, session)
 
     associations = Groups.list_community_visibilities(community_id)
-    {:ok, table_model} = TableModel.new(associations, context, :id, "remove")
+    {:ok, table_model} = TableModel.new(associations, ctx, :id, "remove")
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        breadcrumbs: breadcrumb(community_id),
        associations: associations,
        community_id: community_id,
@@ -94,7 +94,7 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
     case Groups.delete_community_visibility(id) do
       {:ok, _community_visibility} ->
         associations = Groups.list_community_visibilities(socket.assigns.community_id)
-        {:ok, table_model} = TableModel.new(associations, socket.assigns.context, :id, "remove")
+        {:ok, table_model} = TableModel.new(associations, socket.assigns.ctx, :id, "remove")
 
         socket =
           put_flash(socket, :info, "Association successfully removed.")

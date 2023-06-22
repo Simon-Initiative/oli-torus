@@ -2,7 +2,7 @@ defmodule OliWeb.Grades.UpdatesTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   use Surface.LiveComponent
 
-  def new(updates, context) do
+  def new(updates, ctx) do
     inserted_at_spec = %ColumnSpec{
       name: :inserted_at,
       label: "Date/Time",
@@ -46,7 +46,7 @@ defmodule OliWeb.Grades.UpdatesTableModel do
       sort_by_spec: inserted_at_spec,
       sort_order: :desc,
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end

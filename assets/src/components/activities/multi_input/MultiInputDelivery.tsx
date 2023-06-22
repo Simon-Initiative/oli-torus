@@ -10,7 +10,7 @@ import { SubmitButtonConnected } from 'components/activities/common/delivery/sub
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
-import { Manifest, PartId } from 'components/activities/types';
+import { Choice, Manifest, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
   ActivityDeliveryState,
@@ -102,6 +102,16 @@ export const MultiInputComponent: React.FC = () => {
     );
   };
 
+  const choiceIdToChoiceMap: Record<string, Choice> = (
+    uiState.model as MultiInputSchema
+  ).choices.reduce(
+    (acc, choice) => ({
+      ...acc,
+      [choice.id]: choice,
+    }),
+    {},
+  );
+
   const inputs = new Map(
     (uiState.model as MultiInputSchema).inputs.map((input) => [
       input.id,
@@ -111,12 +121,10 @@ export const MultiInputComponent: React.FC = () => {
             ? {
                 id: input.id,
                 inputType: input.inputType,
-                options: (uiState.model as MultiInputSchema).choices
-                  .filter((c) => input.choiceIds.includes(c.id))
-                  .map((choice) => ({
-                    value: choice.id,
-                    displayValue: toSimpleText(choice.content),
-                  })),
+                options: input.choiceIds.map((choiceId) => ({
+                  value: choiceId,
+                  displayValue: toSimpleText(choiceIdToChoiceMap[choiceId].content),
+                })),
               }
             : { id: input.id, inputType: input.inputType },
         value: (uiState.partState[input.partId]?.studentInput || [''])[0],
@@ -316,7 +324,7 @@ export const MultiInputComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class MultiInputDelivery extends DeliveryElement<MultiInputSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultiInputSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, { name: 'MultiInputDelivery' });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

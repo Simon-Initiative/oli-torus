@@ -47,7 +47,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   end
 
   describe "instructor" do
-    setup [:instructor_conn, :section_with_assessment]
+    setup [:instructor_conn, :set_timezone, :section_with_assessment]
 
     test "cannot access page if not enrolled to section", %{conn: conn, section: section} do
       redirect_path = "/unauthorized"
@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
     end
 
     test "students last interaction gets rendered (for a student with interaction and yet with no interaction)",
-         %{instructor: instructor, conn: conn} do
+         %{instructor: instructor, conn: conn, ctx: ctx} do
       %{section: section, mod1_pages: mod1_pages} =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
@@ -129,13 +129,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(2)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
-      assert student_1_last_interaction =~ "Apr. 05, 2023 - 12:25 PM"
+      assert student_1_last_interaction =~
+               ~U[2023-04-05 12:25:42Z]
+               |> OliWeb.Common.FormatDateTime.convert_datetime(ctx)
+               |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
 
       assert student_2_last_interaction =~
-               Timex.format!(
-                 student_2_enrollment_timestamp,
-                 "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}"
-               )
+               student_2_enrollment_timestamp
+               |> OliWeb.Common.FormatDateTime.convert_datetime(ctx)
+               |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
     end
 
     test "students table gets rendered considering the given url params", %{
@@ -339,7 +341,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       enrollment_user_1 = Sections.get_enrollment(section_with_payment.slug, user_1.id)
 
-      insert(:payment, %{enrollment: enrollment_user_1, section: section_with_payment})
+      insert(:payment, %{
+        enrollment: enrollment_user_1,
+        section: section_with_payment,
+        application_date: yesterday()
+      })
 
       {:ok, view, _html} = live(conn, live_view_students_route(section_with_payment.slug, params))
 
@@ -354,6 +360,45 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute render(view) =~ "Scaloni, Lionel"
       refute render(view) =~ "Di Maria, Angelito"
       refute render(view) =~ "Jr, Neymar"
+
+      ### filtering by withing grace period option
+      params = %{filter_by: :grace_period}
+
+      {:ok, section_with_grace_period} =
+        Sections.update_section(section_with_payment, %{
+          start_date: yesterday(),
+          end_date: tomorrow(),
+          requires_payment: true,
+          amount: %{amount: "1000", currency: "USD"},
+          has_grace_period: true,
+          grace_period_days: 10
+        })
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_route(section_with_grace_period.slug, params))
+
+      [grace_period_1, grace_period_2, grace_period_3] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert grace_period_1 =~ "Di Maria, Angelito"
+      assert grace_period_2 =~ "Jr, Neymar"
+      assert grace_period_3 =~ "Suarez, Luis"
+      refute render(view) =~ "Messi, Lionel"
+
+      [payment_status_1, payment_status_2, payment_status_3] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table td:last-child})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert payment_status_1 =~ "Grace Period: 8d remaining"
+      assert payment_status_2 =~ "Grace Period: 8d remaining"
+      assert payment_status_3 =~ "Grace Period: 8d remaining"
     end
   end
 

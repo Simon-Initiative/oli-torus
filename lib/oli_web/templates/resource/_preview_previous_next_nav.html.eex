@@ -21,7 +21,7 @@
     <% @action != :edit -> %>
       <%= link to: "#", class: "page-nav-link btn", onclick: "window.close();" do %>
         <div class="d-flex flex-row">
-          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-left">
+          <div class="d-flex flex-column flex-fill text-left overflow-hidden">
             <div class="nav-label">Complete</div>
             <div class="nav-title"><%= @context.project.title %></div>
           </div>

@@ -9,15 +9,15 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes
 
-  data title, :string, default: "Community Associate New"
-  data breadcrumbs, :any
+  data(title, :string, default: "Community Associate New")
+  data(breadcrumbs, :any)
 
-  data query, :string, default: ""
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: 20
-  data sort, :string, default: "sort"
-  data page_change, :string, default: "page_change"
+  data(query, :string, default: "")
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: 20)
+  data(sort, :string, default: "sort")
+  data(page_change, :string, default: "page_change")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -60,13 +60,13 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   end
 
   def mount(%{"community_id" => community_id}, session, socket) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init(socket, session)
     sources = retrieve_all_sources(community_id)
-    {:ok, table_model} = TableModel.new(sources, context)
+    {:ok, table_model} = TableModel.new(sources, ctx)
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        breadcrumbs: breadcrumb(community_id),
        sources: sources,
        table_model: table_model,
@@ -117,7 +117,7 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
     case Groups.create_community_visibility(attrs) do
       {:ok, _community_visibility} ->
         sources = retrieve_all_sources(socket.assigns.community_id)
-        {:ok, table_model} = TableModel.new(sources, socket.assigns.context)
+        {:ok, table_model} = TableModel.new(sources, socket.assigns.ctx)
 
         socket =
           put_flash(socket, :info, "Association to #{type} successfully added.")

@@ -20,12 +20,14 @@ defmodule OliWeb.Components.Delivery.Buttons do
   attr :class, :string, default: nil
   attr :id, :string, required: true
   attr :options, :list, required: true
+  attr :onclick, :string, default: nil
+  slot :inner_block
 
   def button_with_options(assigns) do
     ~H"""
     <div class="relative inline-block text-left">
       <div class="flex">
-        <button id={"#{@id}_button"} type={@type} class={["torus-button primary !rounded-r-none", @class]} disabled={@disabled}>
+        <button phx-target={assigns[:onclick_target]} phx-click={assigns[:onclick]} id={"#{@id}_button"} type={@type} class={["torus-button primary !rounded-r-none", @class]} disabled={@disabled}>
           <%= render_slot(@inner_block) %>
         </button>
         <button type="button" phx-click={toggle_options(@id)} class="flex justify-center rounded-r-sm items-center px-2 text-white bg-delivery-primary-600 hover:bg-delivery-primary-700">

@@ -7,28 +7,35 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
 
-  prop params, :map, required: true
-  prop total_count, :number, required: true
-  prop table_model, :struct, required: true
-  prop dropdown_options, :list, required: true
+  prop(ctx, :struct, required: true)
+  prop(title, :string, default: "Students")
+  prop(tab_name, :atom, default: :students)
+  prop(section_slug, :string, default: nil)
+  prop(params, :map, required: true)
+  prop(total_count, :number, required: true)
+  prop(table_model, :struct, required: true)
+  prop(dropdown_options, :list, required: true)
+  prop(show_progress_csv_download, :boolean, default: false)
   prop(view, :atom)
 
   @default_params %{
     offset: 0,
     limit: 25,
     container_id: nil,
+    section_slug: nil,
     page_id: nil,
     sort_order: :asc,
     sort_by: :name,
     text_search: nil,
-    filter_by: :enrolled
+    filter_by: :enrolled,
+    payment_status: nil
   }
 
   def update(
         %{
           params: params,
           section: section,
-          context: context,
+          ctx: ctx,
           students: students,
           dropdown_options: dropdown_options
         } = assigns,
@@ -36,7 +43,7 @@ defmodule OliWeb.Components.Delivery.Students do
       ) do
     {total_count, rows} = apply_filters(students, params)
 
-    {:ok, table_model} = EnrollmentsTableModel.new(rows, section, context)
+    {:ok, table_model} = EnrollmentsTableModel.new(rows, section, ctx)
 
     table_model =
       Map.merge(table_model, %{
@@ -53,7 +60,10 @@ defmodule OliWeb.Components.Delivery.Students do
        params: params,
        section_slug: section.slug,
        dropdown_options: dropdown_options,
-       view: assigns[:view]
+       view: assigns[:view],
+       title: Map.get(assigns, :title, "Students"),
+       tab_name: Map.get(assigns, :tab_name, :students),
+       show_progress_csv_download: Map.get(assigns, :show_progress_csv_download, false)
      )}
   end
 
@@ -137,8 +147,14 @@ defmodule OliWeb.Components.Delivery.Students do
       :progress ->
         Enum.sort_by(students, fn student -> student.progress end, sort_order)
 
-      :overall_mastery ->
-        Enum.sort_by(students, fn student -> student.overall_mastery end, sort_order)
+      :overall_proficiency ->
+        Enum.sort_by(students, fn student -> student.overall_proficiency end, sort_order)
+
+      :engagement ->
+        Enum.sort_by(students, fn student -> student.engagement end, sort_order)
+
+      :payment_status ->
+        Enum.sort_by(students, fn student -> student.payment_status end, sort_order)
 
       _ ->
         Enum.sort_by(
@@ -151,36 +167,50 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white shadow-sm">
-      <div class="flex flex-col gap-y-4 items-center sm:flex-row sm:items-center px-6 py-4 border instructor_dashboard_table">
-        <h4 class="sm:pl-9 torus-h4 sm:mr-auto">Students</h4>
-        <div class="flex sm:items-end gap-2">
-          <form phx-change="filter_by" phx-target={@myself}>
-            <label class="cursor-pointer inline-flex flex-col gap-1">
-              <small class="torus-small uppercase">Filter by</small>
-              <select class="torus-select pr-32" name="filter">
-                {#for elem <- @dropdown_options}
-                  <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
-                {/for}
-              </select>
-            </label>
-          </form>
+    <div class="flex flex-col gap-2 mx-10 mb-10">
+      <div class="bg-white dark:bg-gray-800 shadow-sm">
+        <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+          <div>
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">{@title}</h4>
+            {#if @show_progress_csv_download}
+              <a class="self-end" href={Routes.metrics_path(OliWeb.Endpoint, :download_container_progress, @section_slug, @params.container_id)} download="progress.csv">
+                <i class="fa-solid fa-download mr-1" />
+                Download student progress CSV
+              </a>
+            {#else}
+              <a href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
+            {/if}
+          </div>
+          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
+            <div class="flex w-full sm:w-auto sm:items-end gap-2">
+              <form class="w-full" phx-change="filter_by" phx-target={@myself}>
+                <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
+                  <small class="torus-small uppercase">Filter by</small>
+                  <select class="torus-select" name="filter">
+                    {#for elem <- @dropdown_options}
+                      <option selected={@params.filter_by == elem.value} value={elem.value}>{elem.label}</option>
+                    {/for}
+                  </select>
+                </label>
+              </form>
+            </div>
+            <form for="search" phx-target={@myself} phx-change="search_student" class="w-44">
+              <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
+            </form>
+          </div>
         </div>
-        <form for="search" phx-target={@myself} phx-change="search_student" class="sm:ml-9">
-          <SearchInput.render id="students_search_input" name="student_name" text={@params.text_search} />
-        </form>
-      </div>
 
-      <PagedTable
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@params.offset}
-        limit={@params.limit}
-        render_top_info={false}
-        additional_table_class="instructor_dashboard_table"
-        sort={JS.push("paged_table_sort", target: @myself)}
-        page_change={JS.push("paged_table_page_change", target: @myself)}
-      />
+        <PagedTable
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@params.offset}
+          limit={@params.limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
+          sort={JS.push("paged_table_sort", target: @myself)}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
+        />
+      </div>
     </div>
     """
   end
@@ -194,8 +224,8 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
-           update_params(socket.assigns.params, %{text_search: student_name})
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{text_search: student_name, offset: 0})
          )
      )}
   end
@@ -209,7 +239,7 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
+           socket.assigns.tab_name,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
@@ -224,7 +254,7 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
+           socket.assigns.tab_name,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
      )}
@@ -239,7 +269,7 @@ defmodule OliWeb.Components.Delivery.Students do
            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
            socket.assigns.section_slug,
            socket.assigns.view,
-           :students,
+           socket.assigns.tab_name,
            update_params(socket.assigns.params, %{filter_by: String.to_existing_atom(filter)})
          )
      )}
@@ -250,6 +280,7 @@ defmodule OliWeb.Components.Delivery.Students do
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       container_id: Params.get_int_param(params, "container_id", @default_params.container_id),
+      section_slug: Params.get_int_param(params, "section_slug", @default_params.section_slug),
       page_id: Params.get_int_param(params, "page_id", @default_params.page_id),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
@@ -257,7 +288,14 @@ defmodule OliWeb.Components.Delivery.Students do
         Params.get_atom_param(
           params,
           "sort_by",
-          [:name, :last_interaction, :progress, :overall_mastery],
+          [
+            :name,
+            :last_interaction,
+            :progress,
+            :overall_proficiency,
+            :engagement,
+            :payment_status
+          ],
           @default_params.sort_by
         ),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),

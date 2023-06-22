@@ -19,7 +19,11 @@ defmodule OliWeb.Delivery.RemixSection do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias OliWeb.Common.Hierarchy.HierarchyPicker.TableModel, as: PagesTableModel
+  alias OliWeb.Common.Hierarchy.Publications.TableModel, as: PublicationsTableModel
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal}
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing
@@ -27,13 +31,15 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Sections.Section
 
+  alias Phoenix.LiveView.JS
+
   defp redirect_after_save(:instructor, %Section{slug: slug}),
     do:
       Routes.live_path(
         OliWeb.Endpoint,
         OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
         slug,
-        :content
+        :overview
       )
 
   defp redirect_after_save(:open_and_free, section),
@@ -168,6 +174,15 @@ defmodule OliWeb.Delivery.RemixSection do
   def init_state(socket, opts) do
     section = Keyword.get(opts, :section)
     hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+    params = %{
+      text_filter: "",
+      limit: 5,
+      offset: 0
+    }
+
+    {:ok, pages_table_model} = PagesTableModel.new([])
+
     redirect_after_save = Keyword.get(opts, :redirect_after_save)
     breadcrumbs = Keyword.get(opts, :breadcrumbs)
     available_publications = Keyword.get(opts, :available_publications)
@@ -186,6 +201,12 @@ defmodule OliWeb.Delivery.RemixSection do
         end
       end)
 
+    {:ok, publications_table_model} =
+      PublicationsTableModel.new(available_publications |> Enum.take(5))
+
+    publications_table_model_total_count = length(available_publications)
+    publications_table_model_params = params
+
     {:ok,
      assign(socket,
        title: "Customize Content",
@@ -193,13 +214,20 @@ defmodule OliWeb.Delivery.RemixSection do
        pinned_project_publications: pinned_project_publications,
        previous_hierarchy: hierarchy,
        hierarchy: hierarchy,
+       pages_table_model_total_count: 0,
+       pages_table_model_params: params,
+       pages_table_model: pages_table_model,
        active: hierarchy,
        dragging: nil,
        selected: nil,
        has_unsaved_changes: false,
        breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
-       available_publications: available_publications
+       available_publications: available_publications,
+       publications_table_model: publications_table_model,
+       publications_table_model_total_count: publications_table_model_total_count,
+       publications_table_model_params: publications_table_model_params,
+       is_product: is_product?(socket)
      )}
   end
 
@@ -386,7 +414,14 @@ defmodule OliWeb.Delivery.RemixSection do
       selection: [],
       preselected: preselected,
       publications: available_publications,
-      selected_publication: nil
+      selected_publication: nil,
+      active_tab: :curriculum,
+      pages_table_model_total_count: socket.assigns.pages_table_model_total_count,
+      pages_table_model_params: socket.assigns.pages_table_model_params,
+      pages_table_model: socket.assigns.pages_table_model,
+      publications_table_model: socket.assigns.publications_table_model,
+      publications_table_model_total_count: socket.assigns.publications_table_model_total_count,
+      publications_table_model_params: socket.assigns.publications_table_model_params
     }
 
     modal = fn assigns ->
@@ -466,11 +501,21 @@ defmodule OliWeb.Delivery.RemixSection do
 
     hierarchy = publication_hierarchy(publication)
 
+    {total_count, section_pages} =
+      Publishing.get_published_pages_by_publication(
+        publication.id,
+        socket.assigns.pages_table_model_params
+      )
+
+    section_pages = transform_section_pages(section_pages)
+
     modal_assigns = %{
       modal_assigns
       | hierarchy: hierarchy,
         active: hierarchy,
-        selected_publication: publication
+        selected_publication: publication,
+        pages_table_model: Map.put(modal_assigns.pages_table_model, :rows, section_pages),
+        pages_table_model_total_count: total_count
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -504,6 +549,34 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event(
         "HierarchyPicker.select",
         %{"uuid" => uuid},
+        %{assigns: %{modal_assigns: %{active_tab: :all_pages}}} = socket
+      ) do
+    %{
+      modal_assigns:
+        %{
+          selection: selection,
+          pages_table_model: pages_table_model,
+          selected_publication: publication
+        } = modal_assigns
+    } = socket.assigns
+
+    item = Enum.find(pages_table_model.rows, &(&1.uuid == uuid))
+
+    modal_assigns = %{
+      modal_assigns
+      | selection:
+          xor(
+            selection,
+            {publication.id, item.revision.resource_id}
+          )
+    }
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "HierarchyPicker.select",
+        %{"uuid" => uuid},
         socket
       ) do
     %{
@@ -525,6 +598,164 @@ defmodule OliWeb.Delivery.RemixSection do
             {publication.id, item.revision.resource_id}
           )
     }
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}, socket) do
+    %{modal_assigns: modal_assigns} = socket.assigns
+
+    modal_assigns = Map.put(modal_assigns, :active_tab, String.to_existing_atom(tab_name))
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("HierarchyPicker.pages_text_search", %{"text_search" => text_search}, socket) do
+    %{modal_assigns: modal_assigns} = socket.assigns
+    selected_publication_id = modal_assigns.selected_publication.id
+    params = Map.put(modal_assigns.pages_table_model_params, :text_search, text_search)
+
+    {total_count, section_pages} =
+      Publishing.get_published_pages_by_publication(
+        selected_publication_id,
+        params
+      )
+
+    section_pages = transform_section_pages(section_pages)
+
+    modal_assigns =
+      Map.merge(
+        modal_assigns,
+        %{
+          pages_table_model: Map.put(modal_assigns.pages_table_model, :rows, section_pages),
+          pages_table_model_total_count: total_count,
+          pages_table_model_params: params
+        }
+      )
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "HierarchyPicker.publications_text_search",
+        %{"text_search" => text_search},
+        socket
+      ) do
+    %{modal_assigns: modal_assigns} = socket.assigns
+    publications = modal_assigns.publications
+
+    params =
+      modal_assigns.publications_table_model_params
+      |> Map.put(:text_filter, text_search)
+
+    {total_count, publications} = maybe_filter_publications(publications, params)
+
+    modal_assigns =
+      Map.merge(modal_assigns, %{
+        publications_table_model_params: params,
+        publications_table_model_total_count: total_count,
+        publications_table_model:
+          modal_assigns.publications_table_model
+          |> Map.put(:rows, publications)
+      })
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("HierarchyPicker.pages_sort", %{"sort_by" => sort_by}, socket) do
+    %{modal_assigns: modal_assigns} = socket.assigns
+    selected_publication_id = modal_assigns.selected_publication.id
+    sort_by = String.to_existing_atom(sort_by)
+
+    pages_table_model =
+      SortableTableModel.update_sort_params(modal_assigns.pages_table_model, sort_by)
+
+    params =
+      modal_assigns.pages_table_model_params
+      |> Map.put(:sort_order, pages_table_model.sort_order)
+      |> Map.put(:sort_by, sort_by)
+
+    {total_count, section_pages} =
+      Publishing.get_published_pages_by_publication(
+        selected_publication_id,
+        params
+      )
+
+    section_pages = transform_section_pages(section_pages)
+
+    modal_assigns =
+      Map.merge(
+        modal_assigns,
+        %{
+          pages_table_model:
+            modal_assigns.pages_table_model
+            |> SortableTableModel.update_sort_params(sort_by)
+            |> Map.put(:rows, section_pages),
+          pages_table_model_total_count: total_count,
+          pages_table_model_params: params
+        }
+      )
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "HierarchyPicker.pages_page_change",
+        %{"limit" => limit, "offset" => offset},
+        socket
+      ) do
+    %{modal_assigns: modal_assigns} = socket.assigns
+    selected_publication_id = modal_assigns.selected_publication.id
+
+    params =
+      modal_assigns.pages_table_model_params
+      |> Map.put(:limit, String.to_integer(limit))
+      |> Map.put(:offset, String.to_integer(offset))
+
+    {total_count, section_pages} =
+      Publishing.get_published_pages_by_publication(
+        selected_publication_id,
+        params
+      )
+
+    section_pages = transform_section_pages(section_pages)
+
+    modal_assigns =
+      Map.merge(modal_assigns, %{
+        pages_table_model_params: params,
+        pages_table_model_total_count: total_count,
+        pages_table_model:
+          SortableTableModel.update_from_params(modal_assigns.pages_table_model, params)
+          |> Map.put(:rows, section_pages)
+      })
+
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "HierarchyPicker.publications_page_change",
+        %{"limit" => limit, "offset" => offset},
+        socket
+      ) do
+    %{modal_assigns: modal_assigns} = socket.assigns
+    publications = modal_assigns.publications
+
+    params =
+      modal_assigns.publications_table_model_params
+      |> Map.put(:limit, String.to_integer(limit))
+      |> Map.put(:offset, String.to_integer(offset))
+
+    {total_count, publications} = maybe_filter_publications(publications, params)
+
+    modal_assigns =
+      Map.merge(modal_assigns, %{
+        publications_table_model_params: params,
+        publications_table_model_total_count: total_count,
+        publications_table_model:
+          modal_assigns.publications_table_model
+          |> SortableTableModel.update_from_params(params)
+          |> Map.put(:rows, publications)
+      })
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
@@ -597,6 +828,27 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("RemoveModal.cancel", _, socket) do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  defp maybe_filter_publications(publications, params) do
+    filtered_publications =
+      case params[:text_filter] do
+        "" ->
+          publications
+
+        text_filter ->
+          Enum.filter(
+            publications,
+            &(&1.project.title
+              |> String.downcase()
+              |> String.contains?(String.downcase(text_filter)))
+          )
+      end
+
+    total_count = length(filtered_publications)
+    publications = Enum.slice(filtered_publications, params[:offset], params[:limit])
+
+    {total_count, publications}
   end
 
   defp xor(list, item) do
@@ -672,4 +924,14 @@ defmodule OliWeb.Delivery.RemixSection do
     |> Enum.with_index()
     |> Enum.filter(fn {c, _i} -> c.uuid != dragging end)
   end
+
+  defp transform_section_pages(section_pages) do
+    section_pages
+    |> Enum.map(fn rev ->
+      %HierarchyNode{uuid: UUID.uuid4(), revision: rev}
+    end)
+  end
+
+  defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
+  defp is_product?(_), do: false
 end

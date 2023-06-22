@@ -25,12 +25,12 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
 
-  data breadcrumbs, :any
-  data changeset, :changeset
-  data csrf_token, :any
-  data modal, :any, default: nil
-  data title, :string, default: "User Details"
-  data user, :struct, default: nil
+  data(breadcrumbs, :any)
+  data(changeset, :changeset)
+  data(csrf_token, :any)
+  data(modal, :any, default: nil)
+  data(title, :string, default: "User Details")
+  data(user, :struct, default: nil)
 
   defp set_breadcrumbs(user) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -53,7 +53,7 @@ defmodule OliWeb.Users.UsersDetailView do
         %{"csrf_token" => csrf_token} = session,
         socket
       ) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init(socket, session)
     user = user_with_platform_roles(user_id)
 
     case user do
@@ -67,7 +67,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
         {:ok,
          assign(socket,
-           context: context,
+           ctx: ctx,
            breadcrumbs: set_breadcrumbs(user),
            user: user,
            csrf_token: csrf_token,
@@ -114,9 +114,9 @@ defmodule OliWeb.Users.UsersDetailView do
               </div>
             </section>
             <ReadOnly label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
-            <ReadOnly label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @context)}/>
-            <ReadOnly label="Created" value={render_date(@user, :inserted_at, @context)}/>
-            <ReadOnly label="Last Updated" value={render_date(@user, :updated_at, @context)}/>
+            <ReadOnly label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @ctx)}/>
+            <ReadOnly label="Created" value={render_date(@user, :inserted_at, @ctx)}/>
+            <ReadOnly label="Last Updated" value={render_date(@user, :updated_at, @ctx)}/>
             <Submit class="float-right btn btn-md btn-primary mt-2">Save</Submit>
           </Form>
         </Group>
@@ -127,7 +127,7 @@ defmodule OliWeb.Users.UsersDetailView do
                 <li class="list-group-item">
                   <div class="d-flex pb-2 mb-2 border-b">
                     <div class="flex-grow-1">{lti_params.issuer}</div>
-                    <div>Last Updated: {render_date(lti_params, :updated_at, @context)}</div>
+                    <div>Last Updated: {render_date(lti_params, :updated_at, @ctx)}</div>
                   </div>
                   <div style="max-height: 400px; overflow: scroll;">
                     <pre> <code
@@ -144,7 +144,7 @@ defmodule OliWeb.Users.UsersDetailView do
             id: "user_enrolled_sections",
             user: @user,
             params: @params,
-            context: @context,
+            ctx: @ctx,
             enrolled_sections: @enrolled_sections
           }
         </Group>

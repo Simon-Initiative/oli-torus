@@ -2,7 +2,7 @@ defmodule OliWeb.Products.ProductsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(products, context) do
+  def new(products, ctx) do
     SortableTableModel.new(
       rows: products,
       column_specs: [
@@ -25,13 +25,14 @@ defmodule OliWeb.Products.ProductsTableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &Common.render_date/3
+          render_fn: &Common.render_date/3,
+          sort_fn: &Common.sort_date/2
         }
       ],
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end
@@ -53,7 +54,9 @@ defmodule OliWeb.Products.ProductsTableModel do
   end
 
   def render_project_column(assigns, %{base_project: base_project}, _) do
-    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, base_project.slug)
+    route_path =
+      Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, base_project.slug)
+
     SortableTableModel.render_link_column(assigns, base_project.title, route_path)
   end
 end

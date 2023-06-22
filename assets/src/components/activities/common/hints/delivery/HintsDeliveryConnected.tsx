@@ -23,18 +23,13 @@ const shouldShow = (
   uiState: ActivityDeliveryState,
   graded: boolean,
   surveyId: string | null,
-  correct: boolean,
   shouldShow?: boolean,
 ) => {
+  if (shouldShow) return true;
   if (graded) return false;
   if (surveyId !== null) return false;
-  if (!correct) return true;
 
-  return (
-    (typeof shouldShow === 'undefined' || shouldShow) &&
-    !isEvaluated(uiState) &&
-    !isSubmitted(uiState)
-  );
+  return !isEvaluated(uiState) && !isSubmitted(uiState);
 };
 
 const isRequestHintDisabled = (
@@ -56,7 +51,7 @@ const isRequestHintDisabled = (
     1. You can request hints before answering
     2. You can see hints on incorrect
     3. You can request additional hints on incorrect, but that implicitly resets (I'd suggest that for both question types).
-    4. Hints are hidden on correct
+    4. Hints are always visible
     5. Once you see a hint, it remains revealed until you get it correct.
 */
 export const HintsDeliveryConnected: React.FC<Props> = (props) => {
@@ -67,7 +62,7 @@ export const HintsDeliveryConnected: React.FC<Props> = (props) => {
   const dispatch = useDispatch();
 
   const correct = isCorrect(uiState.attemptState);
-  const shouldShowHint = shouldShow(uiState, graded, surveyId, correct, props.shouldShow);
+  const shouldShowHint = shouldShow(uiState, graded, surveyId, props.shouldShow);
   const hasMoreHints = uiState.partState[props.partId]?.hasMoreHints || false;
   const requestHintDisabled = isRequestHintDisabled(uiState, hasMoreHints, correct, graded);
 

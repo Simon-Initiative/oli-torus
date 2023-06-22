@@ -11,10 +11,8 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
   alias Oli.Delivery.Sections.SectionsProjectsPublications
-  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Accounts.User
-  alias Oli.Authoring.Course.ProjectResource
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
@@ -421,23 +419,13 @@ defmodule Oli.Delivery.Attempts.Core do
   def get_part_attempts_and_users(project_id) do
     # This is our base, reusable query designed to get the part attempts
     core =
-      from project in Project,
-        join: spp in SectionsProjectsPublications,
-        on: spp.project_id == project.id,
-        join: section in Section,
-        on: spp.section_id == section.id,
-        join: project_resource in ProjectResource,
-        on: project_resource.project_id == ^project_id,
-        join: snapshot in Snapshot,
+      from snapshot in Snapshot,
         as: :snapshot,
-        on:
-          snapshot.section_id == section.id and
-            snapshot.resource_id == project_resource.resource_id,
         join: part_attempt in PartAttempt,
         as: :part_attempt,
         on: snapshot.part_attempt_id == part_attempt.id,
         where:
-          project.id == ^project_id and
+          snapshot.project_id == ^project_id and
             part_attempt.lifecycle_state == :evaluated
 
     # Now get the resource attempt revision for those part attempts, distinctly, and
@@ -689,15 +677,15 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
-  def is_first_activity_attempt?(activity_attempt_guid) do
-    attempt_number = Repo.one(
+  def is_scoreable_first_attempt?(activity_attempt_guid) do
+    {attempt_number, scoreable} = Repo.one(
       from(a in ActivityAttempt,
         where: a.attempt_guid == ^activity_attempt_guid,
-        select: a.attempt_number
+        select: {a.attempt_number, a.scoreable}
       )
     )
-    case attempt_number do
-      1 -> true
+    case {attempt_number, scoreable} do
+      {1, true} -> true
       _ -> false
     end
   end

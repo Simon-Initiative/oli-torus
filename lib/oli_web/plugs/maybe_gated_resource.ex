@@ -69,6 +69,8 @@ defmodule Oli.Plugs.MaybeGatedResource do
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
     conn
     |> put_view(OliWeb.DeliveryView)
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
@@ -78,6 +80,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
       scripts: [],
       previous_page: previous,
       next_page: next,
+      numbered_revisions: numbered_revisions,
       current_page: current,
       page_number: section_resource.numbering_level,
       preview_mode: false,

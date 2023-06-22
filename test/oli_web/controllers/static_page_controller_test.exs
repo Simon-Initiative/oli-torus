@@ -35,7 +35,7 @@ defmodule OliWeb.StaticPageControllerTest do
     end
 
     test "does not load timezone script when local timezone is set", context do
-      {:ok, conn: conn, context: _} = set_timezone(context)
+      {:ok, conn: conn, ctx: _} = set_timezone(context)
 
       conn = get(conn, "/")
 

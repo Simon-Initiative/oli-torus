@@ -1,6 +1,9 @@
 defmodule Oli.Delivery.Metrics do
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias alias Oli.Resources.Revision
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Repo
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt}
@@ -21,60 +24,62 @@ defmodule Oli.Delivery.Metrics do
   def progress_datatable_for(section_id, container_id) do
     learner_id = ContextRoles.get_role(:context_learner).id
 
-    users = from(e in Enrollment,
-      join: ecr in assoc(e, :context_roles),
-      join: u in assoc(e, :user),
-      where: e.section_id == ^section_id,
-      where: ecr.id == ^learner_id,
-      select: u,
-      distinct: u
-    )
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn user, acc -> Map.put(acc, user.id, user) end)
+    users =
+      from(e in Enrollment,
+        join: ecr in assoc(e, :context_roles),
+        join: u in assoc(e, :user),
+        where: e.section_id == ^section_id,
+        where: ecr.id == ^learner_id,
+        select: u,
+        distinct: u
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn user, acc -> Map.put(acc, user.id, user) end)
 
     user_ids = Map.keys(users)
 
     progress_for(section_id, user_ids, container_id)
     |> Enum.reduce([], fn {user_id, progress}, acc ->
-      [%{
-        id: user_id,
-        name: users[user_id].name,
-        email: users[user_id].email,
-        progress: progress
-      } | acc]
+      [
+        %{
+          id: user_id,
+          name: users[user_id].name,
+          email: users[user_id].email,
+          progress: progress
+        }
+        | acc
+      ]
     end)
     |> DataTable.new()
     |> DataTable.headers([:id, :name, :email, :progress])
-
   end
 
   @doc """
-  Calculate the progress for a specific student (or a list of students),
-  in all pages of a specific container.
+  Calculate the progress for a specific student (or a list of students), in all pages of a specific
+  container.
 
-  Omitting the container_id (or specifying nil) calculates progress
-  across the entire course section.
+  Omitting the container_id (or specifying nil) calculates progress across the entire course
+  section.
 
-  This query leverages the `contained_pages` relation, which is always an
-  up to date view of the structure of a course section. This allows this
-  query to take into account structural changes as the result of course
-  remix. The `contained_pages` relation is rebuilt after every remix.
+  This query leverages the `contained_pages` relation, which is always an up to date view of the
+  structure of a course section. This allows this query to take into account structural changes as
+  the result of course remix. The `contained_pages` relation is rebuilt after every remix.
 
   It returns a map:
 
-    %{user_id_1 => user_1_progress,
-      ...
-      user_id_n => user_n_progress
-    }
+    %{user_id_1 => user_1_progress, ... user_id_n => user_n_progress }
+
+  If only a single user_id is provided, it returns a single number representing progress for that
+  user. If a user does not have any progress, it returns 0.
   """
   @spec progress_for(
           section_id :: integer,
-          user_id :: integer | list(integer),
+          user_ids :: integer | list(integer),
           container_id :: integer | nil
-        ) :: map
-  def progress_for(section_id, user_id, container_id \\ nil) do
-    user_id_list = if is_list(user_id), do: user_id, else: [user_id]
+        ) :: map | number
+  def progress_for(section_id, user_ids, container_id \\ nil)
 
+  def progress_for(section_id, user_ids, container_id) when is_list(user_ids) do
     filter_by_container =
       case container_id do
         nil ->
@@ -97,7 +102,7 @@ defmodule Oli.Delivery.Metrics do
       |> join(:inner, [cp], ra in ResourceAccess,
         on:
           cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
-            ra.user_id in ^user_id_list
+            ra.user_id in ^user_ids
       )
       |> where([cp, ra], cp.section_id == ^section_id)
       |> where(^filter_by_container)
@@ -107,6 +112,9 @@ defmodule Oli.Delivery.Metrics do
     Repo.all(query)
     |> Enum.into(%{})
   end
+
+  def progress_for(section_id, user_id, container_id),
+    do: progress_for(section_id, [user_id], container_id) |> Map.get(user_id, 0.0)
 
   defp do_get_progress_for_page(section_id, user_ids, page_id) do
     filter_by_user =
@@ -132,9 +140,9 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Calculate the progress for a given student or list of students in a page.
   """
-  def progress_for_page(_section_id, [], _), do: []
+  def progress_for_page(_section_id, [], _), do: %{}
 
-  def progress_for_page(section_id, [_ | _] = user_ids, page_id),
+  def progress_for_page(section_id, user_ids, page_id) when is_list(user_ids),
     do:
       do_get_progress_for_page(section_id, user_ids, page_id)
       |> Repo.all()
@@ -153,7 +161,9 @@ defmodule Oli.Delivery.Metrics do
   def completion_for(section_id, container_id) do
     completions =
       User
-      |> join(:inner, [u], e in Enrollment, on: u.id == e.user_id and e.section_id == ^section_id and e.status == :enrolled)
+      |> join(:inner, [u], e in Enrollment,
+        on: u.id == e.user_id and e.section_id == ^section_id and e.status == :enrolled
+      )
       |> join(:inner, [u, e], ecr in EnrollmentContextRole,
         on:
           ecr.enrollment_id == e.id and
@@ -354,6 +364,67 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Calculates the average score for all students in a collection of pages
+  (only considering finished attempts).
+
+  The last parameter gives flexibility into excluding specific users
+  from the calculation. This exists primarily to exclude instructors.
+  `user_ids_to_ignore` can be an empty list.
+  """
+  def avg_score_across_for_pages(section_id, pages_ids, user_ids_to_ignore) do
+    query =
+      from(ra in ResourceAccess,
+        where:
+          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
+            ra.user_id not in ^user_ids_to_ignore and not is_nil(ra.score),
+        group_by: ra.resource_id,
+        select: {
+          ra.resource_id,
+          fragment(
+            "SUM(?) / SUM(?)",
+            ra.score,
+            ra.out_of
+          )
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Returns the number of attempts for a given list of pages.
+  It only considers submitted attempts.
+
+  It returns a map:
+
+    %{page_id_1 => number_of_attempts_for_page_1,
+      ...
+      page_id_n => number_of_attempts_for_page_n
+    }
+  """
+  def attempts_across_for_pages(section_id, pages_ids) do
+    query =
+      from(ra in ResourceAttempt,
+        join: rev in Revision,
+        on: ra.revision_id == rev.id,
+        join: r_acc in ResourceAccess,
+        on: ra.resource_access_id == r_acc.id,
+        where:
+          rev.resource_id in ^pages_ids and r_acc.section_id == ^section_id and
+            not is_nil(ra.date_evaluated),
+        group_by: rev.resource_id,
+        select: {
+          rev.resource_id,
+          fragment("COUNT(*)")
+        }
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Calculates the students latest interaction across all pages of a given container (the max value).
   Omitting the container_id (or specifying nil) calculates students latest interaction
   across the entire course section.
@@ -428,7 +499,9 @@ defmodule Oli.Delivery.Metrics do
         on: e.section_id == s.id,
         left_join: ra in ResourceAccess,
         on: e.user_id == ra.user_id,
-        where: s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)) and e.status == :enrolled,
+        where:
+          s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)) and
+            e.status == :enrolled,
         group_by: [e.user_id, e.updated_at],
         select: {
           e.user_id,
@@ -445,7 +518,7 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every learning objective of a given section
 
     It returns a map:
@@ -455,7 +528,7 @@ defmodule Oli.Delivery.Metrics do
       objective_id_n => "Low"
     }
   """
-  def mastery_per_learning_objective(section_slug) do
+  def proficiency_per_learning_objective(section_slug) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -471,10 +544,12 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
+    |> Enum.into(%{}, fn {objective_id, proficiency} ->
+      {objective_id, proficiency_range(proficiency)}
+    end)
   end
 
-  def mastery_for_student_per_learning_objective(section_slug, student_id) do
+  def proficiency_for_student_per_learning_objective(section_slug, student_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -492,11 +567,13 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, mastery} -> {objective_id, mastery_range(mastery)} end)
+    |> Enum.into(%{}, fn {objective_id, proficiency} ->
+      {objective_id, proficiency_range(proficiency)}
+    end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section
 
     It returns a map:
@@ -506,7 +583,7 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def mastery_per_container(section_slug) do
+  def proficiency_per_container(section_slug) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -524,15 +601,15 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {container_id, mastery} ->
-      {container_id, mastery_range(mastery)}
+    |> Enum.into(%{}, fn {container_id, proficiency} ->
+      {container_id, proficiency_range(proficiency)}
     end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every student across a given container.
-  Omitting the container_id (or specifying nil) calculates students learning mastery
+  Omitting the container_id (or specifying nil) calculates students learning proficiency
   across the entire course section.
 
     It returns a map:
@@ -542,7 +619,7 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def mastery_per_student_across(section, container_id \\ nil) do
+  def proficiency_per_student_across(section, container_id \\ nil) do
     filter_by_container =
       case container_id do
         nil ->
@@ -575,13 +652,13 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, mastery} ->
-      {student_id, mastery_range(mastery)}
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
     end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section for a given student
 
     It returns a map:
@@ -591,7 +668,7 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def mastery_for_student_per_container(section_slug, student_id) do
+  def proficiency_for_student_per_container(section_slug, student_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -611,13 +688,13 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, mastery} ->
-      {student_id, mastery_range(mastery)}
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
     end)
   end
 
   @doc """
-  Calculates the learning mastery ("High", "Medium", "Low", "Not enough data")
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for each student of a given section for a specific page
 
     It returns a map:
@@ -627,7 +704,7 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def mastery_per_student_for_page(section_slug, page_id) do
+  def proficiency_per_student_for_page(section_slug, page_id) do
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -645,13 +722,15 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, mastery} -> {student_id, mastery_range(mastery)} end)
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
+    end)
   end
 
-  defp mastery_range(nil), do: "Not enough data"
-  defp mastery_range(mastery) when mastery <= 0.5, do: "Low"
-  defp mastery_range(mastery) when mastery <= 0.8, do: "Medium"
-  defp mastery_range(_mastery), do: "High"
+  defp proficiency_range(nil), do: "Not enough data"
+  defp proficiency_range(proficiency) when proficiency <= 0.5, do: "Low"
+  defp proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
+  defp proficiency_range(_proficiency), do: "High"
 
   @doc """
   Updates page progress to be 100% complete.
@@ -680,14 +759,18 @@ defmodule Oli.Delivery.Metrics do
   {:error, e} -> An other error occurred, rolled back
   """
   def update_page_progress(activity_attempt_guid) when is_binary(activity_attempt_guid) do
-    if Core.is_first_activity_attempt?(activity_attempt_guid) do
+    if Core.is_scoreable_first_attempt?(activity_attempt_guid) do
       do_update(activity_attempt_guid)
     else
       {:ok, :noop}
     end
   end
 
-  def update_page_progress(%ActivityAttempt{attempt_number: 1, attempt_guid: attempt_guid}) do
+  def update_page_progress(%ActivityAttempt{
+        scoreable: true,
+        attempt_number: 1,
+        attempt_guid: attempt_guid
+      }) do
     do_update(attempt_guid)
   end
 
@@ -719,9 +802,14 @@ defmodule Oli.Delivery.Metrics do
       """
 
       case Ecto.Adapters.SQL.query(Oli.Repo, sql, [activity_attempt_guid, activity_attempt_guid]) do
-        {:ok, %{num_rows: 1}} -> :updated
-        {:ok, %{num_rows: _}} -> Oli.Repo.rollback(:unexpected_update_count)
-        {:error, e} -> Oli.Repo.rollback(e)
+        {:ok, %{num_rows: 1}} ->
+          :updated
+
+        {:ok, %{num_rows: _}} ->
+          Oli.Repo.rollback(:unexpected_update_count)
+
+        {:error, e} ->
+          Oli.Repo.rollback(e)
       end
     end)
   end

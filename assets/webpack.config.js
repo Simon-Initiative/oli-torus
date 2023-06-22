@@ -178,11 +178,20 @@ module.exports = (env, options) => ({
       {
         test: /\.ttf$/,
         include: MONACO_DIR,
-        use: ['file-loader'],
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              outputPath: 'fonts/',
+              publicPath: '/js/fonts',
+            },
+          },
+        ],
       },
       // load fonts, specifically for MathLive
       {
         test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+        exclude: MONACO_DIR,
         use: [
           {
             loader: 'file-loader',
@@ -259,7 +268,7 @@ module.exports = (env, options) => ({
         ],
       },
       {
-        // Thie one EXCLUDES monaco & src, so it includes things like css insidenode_modules
+        // This one EXCLUDES monaco & src, so it includes things like css inside node_modules
         test: /\.[s]?css$/,
         exclude: [MONACO_DIR, path.resolve(__dirname, 'src')],
         use: [

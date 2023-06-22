@@ -27,6 +27,9 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
 
   return (
     <div className="optionsPanel">
+      <style type="text/css">
+        {'.displayOptionsView .option{margin-bottom: 10px; margin-top: 10px;}'};
+      </style>
       <div className={`displayOptionsView${open ? '' : ' displayNone'}`}>
         <div className="title">Display options</div>
         <div className={`option navigationOption${enableHistory ? '' : ' displayNone'}`}>

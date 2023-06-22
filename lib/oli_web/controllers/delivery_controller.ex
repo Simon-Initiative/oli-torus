@@ -4,10 +4,14 @@ defmodule OliWeb.DeliveryController do
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   import Oli.Utils
 
@@ -394,5 +398,192 @@ defmodule OliWeb.DeliveryController do
     |> put_status(403)
     |> render("section_unavailable.html", reason: reason)
     |> halt()
+  end
+
+  def download_course_content_info(conn, %{"section_slug" => slug}) do
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+
+      section ->
+        {_total_count, containers_with_metrics} = Helpers.get_containers(section)
+
+        contents =
+          containers_with_metrics
+          |> Enum.map(
+            &%{
+              title: &1.title,
+              progress: &1.progress,
+              student_proficiency: &1.student_proficiency
+            }
+          )
+          |> DataTable.new()
+          |> DataTable.headers([:title, :progress, :student_proficiency])
+          |> DataTable.to_csv_content()
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "#{slug}_course_content.csv"
+        )
+    end
+  end
+
+  def download_students_progress(conn, %{"section_slug" => slug}) do
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+
+      section ->
+        students = Helpers.get_students(section)
+
+        contents =
+          students
+          |> Enum.map(
+            &%{
+              name: &1.name,
+              last_interaction: &1.last_interaction,
+              progress: &1.progress,
+              overall_proficiency: &1.overall_proficiency,
+              requires_payment: Map.get(&1, :requires_payment, "N/A")
+            }
+          )
+          |> DataTable.new()
+          |> DataTable.headers([
+            :name,
+            :last_interaction,
+            :progress,
+            :overall_proficiency,
+            :requires_payment
+          ])
+          |> DataTable.to_csv_content()
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "#{slug}_students.csv"
+        )
+    end
+  end
+
+  def download_learning_objectives(conn, %{"section_slug" => slug}) do
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+
+      _section ->
+        contents =
+          Sections.get_objectives_and_subobjectives(slug)
+          |> Enum.map(
+            &%{
+              objective: &1.objective,
+              subojective: &1.subobjective,
+              student_proficiency_obj: &1.student_proficiency_obj,
+              student_proficiency_subobj: &1.student_proficiency_subobj
+            }
+          )
+          |> DataTable.new()
+          |> DataTable.headers([
+            :objective,
+            :subojective,
+            :student_proficiency_obj,
+            :student_proficiency_subobj
+          ])
+          |> DataTable.to_csv_content()
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "#{slug}_learning_objectives.csv"
+        )
+    end
+  end
+
+  def download_quiz_scores(conn, %{"section_slug" => slug}) do
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))
+
+      section ->
+        enrollments =
+          Sections.browse_enrollments(
+            section,
+            %Paging{offset: 0, limit: nil},
+            %Sorting{direction: :desc, field: :name},
+            %EnrollmentBrowseOptions{
+              text_search: "",
+              is_student: true,
+              is_instructor: false
+            }
+          )
+
+        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+
+        graded_pages =
+          hierarchy
+          |> Oli.Delivery.Hierarchy.flatten()
+          |> Enum.filter(fn node -> node.revision.graded end)
+          |> Enum.map(fn node -> node.revision end)
+
+        resource_accesses = fetch_resource_accesses(enrollments, section)
+
+        by_user =
+          Enum.reduce(resource_accesses, %{}, fn ra, m ->
+            case Map.has_key?(m, ra.user_id) do
+              true ->
+                user = Map.get(m, ra.user_id)
+                Map.put(m, ra.user_id, Map.put(user, ra.resource_id, ra))
+
+              false ->
+                Map.put(m, ra.user_id, Map.put(%{}, ra.resource_id, ra))
+            end
+          end)
+
+        pages = Enum.map(graded_pages, &{&1.resource_id, &1.title})
+
+        contents =
+          Enum.map(enrollments, fn user ->
+            Map.get(by_user, user.id, %{})
+            |> Map.merge(%{user: user, id: user.id, section: section})
+          end)
+          |> Enum.map(fn enrollment ->
+            Enum.reduce(pages, %{}, fn {page_id, page_title}, acc ->
+              page_enrollment = Map.get(enrollment, page_id, %{})
+              score = Map.get(page_enrollment, :score)
+              out_of = Map.get(page_enrollment, :out_of)
+              Map.put(acc, page_title, safe_score(score, out_of))
+            end)
+            |> Map.put(:student, OliWeb.Common.Utils.name(enrollment.user))
+          end)
+          |> DataTable.new()
+          |> DataTable.headers(
+            [
+              :student
+            ] ++ Enum.map(pages, &elem(&1, 1))
+          )
+          |> DataTable.to_csv_content()
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "#{slug}_quiz_scores.csv"
+        )
+    end
+  end
+
+  defp safe_score(score, out_of) do
+    not_finished_msg = "Not finished"
+
+    case {score, out_of} do
+      {nil, _} -> not_finished_msg
+      {_, nil} -> "#{score / 1 * 100}%"
+      {_, 0} -> "#{score / 1 * 100}%"
+      _ -> "#{score / out_of * 100}%"
+    end
+  end
+
+  defp fetch_resource_accesses(enrollments, section) do
+    student_ids = Enum.map(enrollments, fn user -> user.id end)
+
+    Oli.Delivery.Attempts.Core.get_graded_resource_access_for_context(
+      section.id,
+      student_ids
+    )
   end
 end

@@ -43,6 +43,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
+  alias Oli.Branding.CustomLabels
 
   require Logger
 
@@ -54,7 +55,7 @@ defmodule Oli.Delivery.Sections do
       join: ecr in assoc(e, :context_roles),
       join: u in assoc(e, :user),
       left_join: p in Payment,
-      on: p.enrollment_id == e.id,
+      on: p.enrollment_id == e.id and not is_nil(p.application_date),
       where: s.slug == ^section_slug,
       select: {u, ecr.id, e, p},
       preload: [user: :platform_roles],
@@ -72,12 +73,13 @@ defmodule Oli.Delivery.Sections do
             context_role_id,
             enrollment,
             payment
-          ).reason
+          ).reason,
+        payment_date: if(!is_nil(payment), do: payment.application_date, else: nil)
       })
     end)
   end
 
-  def browse_enrollments(
+  def browse_enrollments_query(
         %Section{id: section_id},
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -89,7 +91,7 @@ defmodule Oli.Delivery.Sections do
       case options do
         %EnrollmentBrowseOptions{is_student: true} ->
           dynamic(
-            [e, u],
+            [u, e],
             fragment(
               "(NOT EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
               e.id,
@@ -99,7 +101,7 @@ defmodule Oli.Delivery.Sections do
 
         %EnrollmentBrowseOptions{is_instructor: true} ->
           dynamic(
-            [e, u],
+            [u, e],
             fragment(
               "(EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
               e.id,
@@ -116,7 +118,7 @@ defmodule Oli.Delivery.Sections do
         true
       else
         dynamic(
-          [_, s],
+          [s, _],
           ilike(s.name, ^"%#{options.text_search}%") or
             ilike(s.email, ^"%#{options.text_search}%") or
             ilike(s.given_name, ^"%#{options.text_search}%") or
@@ -129,32 +131,67 @@ defmodule Oli.Delivery.Sections do
       end
 
     query =
-      Enrollment
-      |> join(:left, [e], u in User, on: u.id == e.user_id)
-      |> join(:left, [e, _], p in Payment, on: p.enrollment_id == e.id)
+      User
+      |> join(:left, [u], e in Enrollment, on: u.id == e.user_id)
+      |> join(:left, [_, e], p in Payment, on: p.enrollment_id == e.id)
       |> where(^filter_by_text)
       |> where(^filter_by_role)
-      |> where([e, _], e.section_id == ^section_id)
+      |> where([u, e], e.section_id == ^section_id)
       |> limit(^limit)
       |> offset(^offset)
-      |> group_by([e, u, p], [e.id, u.id, p.id])
-      |> select([_, u], u)
-      |> select_merge([e, _, p], %{
+      |> group_by([u, e, p], [e.id, u.id, p.id])
+      |> select([u, _], u)
+      |> select_merge([_, e, p], %{
         total_count: fragment("count(*) OVER()"),
         enrollment_date: e.inserted_at,
         payment_date: p.application_date,
         payment_id: p.id
       })
 
-    query =
-      case field do
-        :enrollment_date -> order_by(query, [e, _, _], {^direction, e.inserted_at})
-        :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
-        :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
-        _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
-      end
+    case field do
+      :enrollment_date -> order_by(query, [_, e, _], {^direction, e.inserted_at})
+      :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
+      :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
+      _ -> order_by(query, [u, _, _], {^direction, field(u, ^field)})
+    end
+  end
 
-    Repo.all(query)
+  def browse_enrollments(
+        %Section{id: _section_id} = section,
+        %Paging{limit: _limit, offset: _offset} = paging,
+        %Sorting{field: _field, direction: _direction} = sorting,
+        %EnrollmentBrowseOptions{} = options
+      ) do
+    browse_enrollments_query(
+      section,
+      paging,
+      sorting,
+      options
+    )
+    |> Repo.all()
+  end
+
+  def browse_enrollments_with_context_roles(
+        %Section{id: _section_id} = section,
+        %Paging{limit: _limit, offset: _offset} = paging,
+        %Sorting{field: _field, direction: _direction} = sorting,
+        %EnrollmentBrowseOptions{} = options
+      ) do
+    browse_enrollments_query(
+      section,
+      paging,
+      sorting,
+      options
+    )
+    |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
+    |> group_by([_, _, _, ecr], [ecr.context_role_id])
+    |> preload([u], :platform_roles)
+    |> select_merge([u, e, p, ecr], %{
+      context_role_id: ecr.context_role_id,
+      payment: p,
+      enrollment: e
+    })
+    |> Repo.all()
   end
 
   @doc """
@@ -1052,7 +1089,6 @@ defmodule Oli.Delivery.Sections do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.reduce(results, MapSet.new(), fn [source_id, relates_to], links ->
-
       # The relates_to field is an array of resource ids, to be future proof
       # to how relates_to is used, we will follow these 'links' in both directions
       Enum.reduce(relates_to, links, fn target_id, links ->
@@ -1284,7 +1320,6 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-
   @doc """
   Returns a map of project_id to the latest available publication for that project
   if a newer publication is available.
@@ -1445,7 +1480,6 @@ defmodule Oli.Delivery.Sections do
 
     create_section_resources(section, publication)
   end
-
 
   def rebuild_section_resources(
         %Section{id: section_id} = section,
@@ -1996,7 +2030,7 @@ defmodule Oli.Delivery.Sections do
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts,
             scoring_strategy_id: revision.scoring_strategy_id,
-            retake_mode: revision.retake_mode,
+            retake_mode: revision.retake_mode
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -2054,9 +2088,14 @@ defmodule Oli.Delivery.Sections do
         inserted_at: now,
         updated_at: now,
         collab_space_config: revision.collab_space_config,
-        max_attempts: if is_nil(revision.max_attempts) do 0 else revision.max_attempts end,
+        max_attempts:
+          if is_nil(revision.max_attempts) do
+            0
+          else
+            revision.max_attempts
+          end,
         scoring_strategy_id: revision.scoring_strategy_id,
-        retake_mode: revision.retake_mode,
+        retake_mode: revision.retake_mode
       ]
     end)
     |> then(&Repo.insert_all(SectionResource, &1))
@@ -2464,7 +2503,17 @@ defmodule Oli.Delivery.Sections do
 
     query
     |> Repo.all()
-    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
+    |> Enum.map(fn sr ->
+      Map.put(
+        sr,
+        :end_date,
+        if is_nil(sr.end_date) do
+          nil
+        else
+          to_datetime(sr.end_date)
+        end
+      )
+    end)
     |> Enum.map(fn activity ->
       case ResourceType.get_type_by_id(activity.resource_type_id) do
         "page" ->
@@ -2482,8 +2531,12 @@ defmodule Oli.Delivery.Sections do
           Map.put(
             activity,
             :progress,
-            Oli.Delivery.Metrics.progress_for(activity.section_id, user_id, activity.resource_id)
-          ) * 100
+            Oli.Delivery.Metrics.progress_for(
+              activity.section_id,
+              user_id,
+              activity.resource_id
+            ) * 100
+          )
       end
       |> Map.put(
         :completion_percentage,
@@ -2515,7 +2568,17 @@ defmodule Oli.Delivery.Sections do
 
     (graded_pages_with_date ++ get_graded_pages_without_date(other_resources))
     |> append_related_resources(user_id)
-    |> Enum.map(fn sr -> Map.put(sr, :end_date, if is_nil(sr.end_date) do nil else to_datetime(sr.end_date) end) end)
+    |> Enum.map(fn sr ->
+      Map.put(
+        sr,
+        :end_date,
+        if is_nil(sr.end_date) do
+          nil
+        else
+          to_datetime(sr.end_date)
+        end
+      )
+    end)
   end
 
   defp get_graded_pages_without_date([]), do: []
@@ -2568,31 +2631,37 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
-    page_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
     pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
 
-    mastery_per_learning_objective =
+    proficiency_per_learning_objective =
       case student_id do
-        nil -> Metrics.mastery_per_learning_objective(section_slug)
-        student_id -> Metrics.mastery_for_student_per_learning_objective(section_slug, student_id)
+        nil ->
+          Metrics.proficiency_per_learning_objective(section_slug)
+
+        student_id ->
+          Metrics.proficiency_for_student_per_learning_objective(section_slug, student_id)
       end
 
+    ### get all objectives from the database
     objectives =
       from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         left_join: rev2 in Revision,
         on: rev2.resource_id in rev.children,
-        where: rev.deleted == false and rev.resource_type_id == ^page_id,
-        group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id],
+        where: rev.deleted == false and rev.resource_type_id == ^objective_id,
+        group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id, rev.children],
         select: %{
           objective: rev.title,
           objective_resource_id: rev.resource_id,
           subobjective: rev2.title,
-          subobjective_resource_id: rev2.resource_id
+          subobjective_resource_id: rev2.resource_id,
+          children: rev.children
         }
       )
       |> Repo.all()
 
+    ### filter objectives that are attached to some page
     objectives_pages_map =
       pages_with_objectives
       |> Enum.reduce(%{}, fn page, acc ->
@@ -2605,17 +2674,115 @@ defmodule Oli.Delivery.Sections do
         end)
       end)
 
-    Enum.map(objectives, fn obj ->
-      Map.put(obj, :pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
-      |> Map.put(
-        :student_mastery_obj,
-        Map.get(mastery_per_learning_objective, obj.objective_resource_id, "Not enough data")
-      )
-      |> Map.put(
-        :student_mastery_subobj,
-        Map.get(mastery_per_learning_objective, obj.subobjective_resource_id, "Not enough data")
+    Enum.reduce(objectives, [], fn objective, acc ->
+      # Only consider objectives that belong to a page
+      if Map.get(objectives_pages_map, objective.objective_resource_id) do
+        # Get all the parent objectives of the current objective
+        parent_objectives =
+          Enum.filter(objectives, fn obj ->
+            obj.subobjective_resource_id == objective.objective_resource_id
+          end)
+
+        if Enum.empty?(parent_objectives) do
+          # If the current objective doesn't have a parent, just render it
+          [objective | acc]
+        else
+          # If the current objective has one or more parents, render their parents
+          parent_objectives ++ acc
+        end
+      else
+        acc
+      end
+    end)
+    |> Enum.uniq_by(&{&1.objective_resource_id, &1.subobjective_resource_id})
+    |> Enum.map(fn obj ->
+      add_necessary_fields_to_objectives(
+        obj,
+        objectives_pages_map,
+        proficiency_per_learning_objective
       )
     end)
+  end
+
+  @doc """
+  Maps each resource with its parent container label, being the label (if any) like
+  <Container Label> <Numbering Index>: <Container Title>
+
+  For example:
+
+  %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
+  """
+  def map_resources_with_container_labels(section_slug, resource_ids) do
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    containers =
+      from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        join: p in Project,
+        on: p.id == spp.project_id,
+        where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
+        select: %{
+          id: rev.resource_id,
+          title: rev.title,
+          numbering_level: sr.numbering_level,
+          numbering_index: sr.numbering_index,
+          children: rev.children,
+          customizations: p.customizations
+        }
+      )
+      |> Repo.all()
+
+    Enum.map(resource_ids, fn page_id ->
+      {page_id,
+       case Enum.find(containers, fn container ->
+              page_id in container.children
+            end) do
+         nil ->
+           nil
+
+         %{numbering_level: 0} ->
+           nil
+
+         c ->
+           ~s{#{get_container_label(c.numbering_level, c.customizations || Map.from_struct(CustomLabels.default()))} #{c.numbering_index}: #{c.title}}
+       end}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp get_container_label(
+         numbering_level,
+         customizations
+       ) do
+    case numbering_level do
+      1 -> Map.get(customizations, :unit)
+      2 -> Map.get(customizations, :module)
+      _ -> Map.get(customizations, :section)
+    end
+  end
+
+  defp add_necessary_fields_to_objectives(
+         obj,
+         objectives_pages_map,
+         proficiency_per_learning_objective
+       ) do
+    obj
+    |> Map.put(:pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
+    |> Map.put(
+      :student_proficiency_obj,
+      Map.get(
+        proficiency_per_learning_objective,
+        obj.objective_resource_id,
+        "Not enough data"
+      )
+    )
+    |> Map.put(
+      :student_proficiency_subobj,
+      Map.get(
+        proficiency_per_learning_objective,
+        obj.subobjective_resource_id,
+        "Not enough data"
+      )
+    )
   end
 
   def get_units_and_modules_from_a_section(section_slug) do
@@ -2774,4 +2941,45 @@ defmodule Oli.Delivery.Sections do
       Map.put(%{}, visited_section_key, true)
     )
   end
+
+  @doc """
+  Get all the revisions that have numbering_index for a given section.
+  ## Examples
+      iex> get_revision_indexes("test_section")
+      [%{numbering_index: 1, slug: "revision_x"}, %{numbering_index: 2, slug: "revision_y"}]
+  """
+  def get_revision_indexes(section_slug) do
+      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1 and not is_nil(sr.numbering_index),
+        select: %{
+          slug: rev.slug,
+          numbering_index: sr.numbering_index
+        },
+        order_by: [asc: sr.numbering_index]
+      )
+      |> Repo.all()
+  end
+
+  @doc """
+  Get the revision for a section given the revision numbering_index
+  ## Examples
+      iex> get_revision_by_index(3)
+      %{slug: "revision_x", numbering_index: 3}
+      iex> get_revision_by_index(12)
+      nil
+  """
+  def get_revision_by_index(section_slug, numbering_index) when is_number(numbering_index) do
+    from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: s.slug == ^section_slug and rev.resource_type_id == 1 and sr.numbering_index == ^numbering_index,
+        select: %{
+          slug: rev.slug,
+          numbering_index: sr.numbering_index,
+          resource_type_id: rev.resource_type_id
+        },
+        limit: 1
+      )
+      |> Repo.one()
+  end
+
+  def get_revision_by_index(_, _), do: nil
 end

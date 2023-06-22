@@ -3,10 +3,10 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   alias OliWeb.Common.Table.ColumnSpec
 
-  prop model, :struct, required: true
-  prop sort, :event, required: true
-  prop select, :event
-  prop additional_table_class, :string, default: "table-sm"
+  prop(model, :struct, required: true)
+  prop(sort, :event, required: true)
+  prop(select, :event)
+  prop(additional_table_class, :string, default: "table-sm")
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do
@@ -39,19 +39,16 @@ defmodule OliWeb.Common.SortableTable.Table do
 
     ~F"""
     <th
-      class={"#{column_spec.th_class} border-b border-r p-2 bg-gray-100"}
-      style="cursor: pointer;"
-      :on-click={@sort}
+      class={"#{column_spec.th_class} border-b border-r p-2 bg-gray-100 #{if column_spec.sortable, do: "cursor-pointer"}"}
+      :on-click={if column_spec.sortable, do: @sort, else: nil}
       phx-value-sort_by={column_spec.name}
+      data-sortable={if column_spec.sortable == false, do: "false", else: "true"}
+      data-sort-column={if @model.sort_by_spec == column_spec, do: "true", else: "false"}
+      data-sort-order={if @model.sort_by_spec == column_spec, do: to_string(@model.sort_order || :desc), else: "desc"}
     >
       {column_spec.label}
       {#if column_spec.sortable}
-        {#if @model.sort_by_spec == column_spec}
-          <i class={"fas fa-sort-" <> sort_direction_cls} />
-          <span class={"data-sort-" <> sort_direction_cls} data-sort-column="true" />
-        {#else}
-          <span class="data-sort-up" data-sort-column="false" />
-        {/if}
+        <i class={"fas fa-sort-" <> sort_direction_cls} />
       {/if}
     </th>
     """
@@ -72,7 +69,7 @@ defmodule OliWeb.Common.SortableTable.Table do
     ~F"""
     <tr
       id={id_field(row, @model)}
-      class={row_class <> if Map.get(row, :selected), do: " bg-delivery-primary-100 shadow-inner dark:text-black", else: ""}
+      class={row_class <> if Map.get(row, :selected) || id_field(row, assigns.model) == assigns.model.selected, do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black", else: ""}
       :on-click={@select}
       phx-value-id={id_field(row, @model)}
     >

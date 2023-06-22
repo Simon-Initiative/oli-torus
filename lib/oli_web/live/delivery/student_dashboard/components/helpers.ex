@@ -8,18 +8,19 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Header
+  alias OliWeb.Common.SessionContext
 
-  attr :current_user, User
-  attr :student, User
-  attr :section, Section
-  attr :breadcrumbs, :list, required: true
-  attr :socket_or_conn, :any, required: true
-  attr :preview_mode, :boolean, default: false
+  attr(:ctx, SessionContext)
+  attr(:student, User)
+  attr(:section, Section)
+  attr(:breadcrumbs, :list, required: true)
+  attr(:socket_or_conn, :any, required: true)
+  attr(:preview_mode, :boolean, default: false)
 
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header current_user={@current_user} student={@student} section={@section} preview_mode={@preview_mode} />
+        <.header ctx={@ctx} student={@student} section={@section} preview_mode={@preview_mode} />
         <Header.delivery_breadcrumb {assigns} />
 
         <div class="flex-1 flex flex-col">
@@ -52,7 +53,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     )
   end
 
-  attr :active_tab, :atom,
+  attr(:active_tab, :atom,
     required: true,
     values: [
       :content,
@@ -60,10 +61,11 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
       :quizz_scores,
       :progress
     ]
+  )
 
-  attr :section_slug, :string, required: true
-  attr :student_id, :string, required: true
-  attr :preview_mode, :boolean, required: true
+  attr(:section_slug, :string, required: true)
+  attr(:student_id, :string, required: true)
+  attr(:preview_mode, :boolean, required: true)
 
   def tabs(assigns) do
     ~H"""
@@ -120,10 +122,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     end
   end
 
-  attr :current_user, User
-  attr :student, User
-  attr :section, Section
-  attr :preview_mode, :boolean, default: false
+  attr(:ctx, SessionContext)
+  attr(:student, User)
+  attr(:section, Section)
+  attr(:preview_mode, :boolean, default: false)
 
   def header(assigns) do
     ~H"""
@@ -137,7 +139,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu current_user={@current_user} />
+            <UserAccountMenu.menu ctx={@ctx} />
           <% end %>
           <div class="flex items-center border-l border-slate-300">
             <button
@@ -151,8 +153,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
                 hover:bg-delivery-header-700
                 active:bg-delivery-header-600
               "
-              data-bs-toggle="modal"
-              data-bs-target="#help-modal">
+              onclick="window.showHelpModal();">
               <i class="fa-regular fa-circle-question fa-lg"></i>
             </button>
           </div>
@@ -165,13 +166,13 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     use Ecto.Schema
 
     schema "survey_response" do
-      field :title, :string
-      field :response, :string
+      field(:title, :string)
+      field(:response, :string)
     end
   end
 
-  attr :student, User
-  attr :survey_responses, :list
+  attr(:student, User)
+  attr(:survey_responses, :list)
 
   def student_details(assigns) do
     ~H"""
@@ -183,14 +184,14 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
           <% end %>
         </div>
-        <div class="flex flex-col divide-y divide-gray-100 w-full bg-white">
+        <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700 w-full bg-white dark:bg-neutral-800">
           <div class="grid grid-cols-5 gap-4 w-full p-8">
             <div class="flex flex-col justify-between">
-              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">average score</h4>
+              <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">average score</h4>
               <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}><%= format_student_score(@student.avg_score) %></span>
             </div>
             <div class="flex flex-col justify-between">
-              <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center">course completion</h4>
+              <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">course completion</h4>
               <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}><%= format_percentage(@student.progress) %></span>
             </div>
           </div>
@@ -198,8 +199,8 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             <div class="grid grid-cols-5 gap-4 w-full p-8">
               <%= for response <- @survey_responses do %>
                 <div class="flex flex-col justify-between">
-                  <h4 class="text-xs uppercase text-gray-800 font-normal flex items-center"><%= response.title %></h4>
-                  <span class="text-base font-semibold tracking-wide text-gray-800 flex items-center mt-2"><%= response.response || "-" %></span>
+                  <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center"><%= response.title %></h4>
+                  <span class="text-base font-semibold tracking-wide text-gray-800 dark:text-white flex items-center mt-2"><%= response.response || "-" %></span>
                 </div>
               <% end %>
             </div>
@@ -209,15 +210,15 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     """
   end
 
-  attr :section_title, :string
-  attr :student_name, :string
+  attr(:section_title, :string)
+  attr(:student_name, :string)
 
   def section_details_header(%{section: nil}), do: nil
 
   def section_details_header(assigns) do
     ~H"""
       <div id="section_details_header" class="flex flex-row justify-between items-center h-20 w-full py-6 px-10">
-        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span>
+        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 dark:text-white underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span>
         <button class="torus-button flex justify-center primary h-9 w-48">Email Student</button>
       </div>
     """

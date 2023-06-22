@@ -391,19 +391,25 @@ $font-family-sans-serif: var(--font-sans);
     }
     .aa-conditions .aa-conditions {
       margin: 16px 0 8px;
-
+      .aa-condition {
+        .input-group {
+          width: 100%;
+        }
+      }
       .aa-add-button {
         display: none;
       }
     }
     .aa-condition {
+      .custom-select {
+        width: 290px;
+      }
       &:first-of-type {
         margin-top: 4px !important;
       }
     }
     .custom-select {
       font-size: 12px;
-      padding: 4px 36px 4px 8px;
       height: inherit;
     }
     .aa-condition-header {
@@ -419,8 +425,17 @@ $font-family-sans-serif: var(--font-sans);
     .aa-actions {
       position: relative;
       border-top: 1px solid $ui-border-color;
+      .d-flex {
+        width: 99%;
+      }
+      .custom-select {
+        width: 15%;
+      }
     }
     .aa-action {
+      .custom-select {
+        width: 15%;
+      }
       .input-group-text {
         font-size: 12px;
         min-width: 7.5rem;
@@ -643,7 +658,6 @@ $font-family-sans-serif: var(--font-sans);
   }
   .aa-parts-list {
     button {
-      padding: 4px;
       img {
         display: inline-block;
         max-height: 16px;
@@ -665,7 +679,11 @@ $font-family-sans-serif: var(--font-sans);
   #search-popover {
     .popover-body {
       max-height: 51vh;
-      overflow: scroll;
+      overflow-y: scroll;
+      .list-group .list-group-item {
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        padding: 8px;
+      }
     }
   }
 
@@ -748,10 +766,28 @@ $font-family-sans-serif: var(--font-sans);
   width: 800px;
   max-width: none !important;
 }
-
+.modal-dialog.modal-90w {
+  max-width: 92% !important;
+  h5,
+  h6 {
+    font-weight: bold;
+  }
+}
 .modal-dialog.config-modal {
   .modal-content {
     box-shadow: 3px 3px 6px 1px rgba(#000, 0.5);
+  }
+  .list-group {
+    .list-group-item {
+      margin: 10px;
+    }
+    .input-group-sm.stateValue {
+      padding-top: inherit;
+      padding-bottom: inherit;
+    }
+    .custom-select.custom-select-sm {
+      padding-right: 40px;
+    }
   }
   .modal-header {
     background: $panel-section-title-bar-color;
@@ -765,7 +801,6 @@ $font-family-sans-serif: var(--font-sans);
     justify-content: space-between;
     align-items: center;
     padding: 0 16px 0 4px;
-
     i {
       font-size: 1rem;
     }

@@ -102,8 +102,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
         activity_types_map = Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
 
-        context = SessionContext.init(session)
-        {:ok, table_model} = TableModel.new(attempts, activity_types_map, context)
+        ctx = SessionContext.init(socket, session)
+        {:ok, table_model} = TableModel.new(attempts, activity_types_map, ctx)
 
         table_model =
           Map.put(table_model, :sort_order, :desc)

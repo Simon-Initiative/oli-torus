@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.SectionsView do
   end
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = context = SessionContext.init(session)
+    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
 
     sections =
       Browse.browse_sections(
@@ -58,11 +58,11 @@ defmodule OliWeb.Sections.SectionsView do
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(context, sections)
+    {:ok, table_model} = SectionsTableModel.new(ctx, sections)
 
     {:ok,
      assign(socket,
-       context: context,
+       ctx: ctx,
        breadcrumbs: set_breadcrumbs(),
        author: author,
        sections: sections,
@@ -169,8 +169,11 @@ defmodule OliWeb.Sections.SectionsView do
     do: patch_with(socket, %{filter_type: type})
 
   def handle_event(event, params, socket),
-    do: delegate_to({event, params, socket, &__MODULE__.patch_with/2},
-        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4])
+    do:
+      delegate_to(
+        {event, params, socket, &__MODULE__.patch_with/2},
+        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4]
+      )
 
   defp determine_total(projects) do
     case projects do

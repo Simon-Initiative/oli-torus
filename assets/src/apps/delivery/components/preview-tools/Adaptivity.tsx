@@ -54,10 +54,10 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
         {/* InitState */}
         {currentActivity?.content?.custom?.facts?.length > 0 && (
           <div key={`init-${currentActivity.id}`} className="card initState">
-            <div className="card-header p-2" id={`initHeading-${currentActivity.id}`}>
+            <div className="card-header p-2 initHeading" id={`initHeading-${currentActivity.id}`}>
               <h2 className="mb-0">
                 <button
-                  className="btn btn-link btn-block text-left"
+                  className="btn btn-link text-left"
                   type="button"
                   data-bs-toggle="collapse"
                   data-bs-target={`#collapse`}
@@ -116,10 +116,10 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
             key={`${rule.id}-${ruleIndex}`}
             className={`card${rule.correct ? ' correct' : ' incorrect'}`}
           >
-            <div className="card-header p-2" id={`heading${ruleIndex}`}>
+            <div className="card-header p-2 rules-adaptivity" id={`heading${ruleIndex}`}>
               <h2 className="mb-0">
                 <button
-                  className="btn btn-link btn-block text-left"
+                  className="btn btn-link text-left"
                   type="button"
                   data-bs-toggle="collapse"
                   data-bs-target={`#collapse${ruleIndex}`}

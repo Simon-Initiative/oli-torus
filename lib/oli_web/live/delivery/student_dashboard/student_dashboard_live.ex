@@ -98,7 +98,8 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       |> assign_new(:enrollment_info, fn ->
         %{
           enrollment: enrollment,
-          user_role_id: Sections.get_user_role_from_enrollment(enrollment)
+          user_role_id: Sections.get_user_role_from_enrollment(enrollment),
+          current_user: socket.assigns.current_user
         }
       end)
 
@@ -173,7 +174,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         params={@params}
         section_slug={@section.slug}
         student_id={@student.id}
-        context={@context}
+        ctx={@ctx}
         pages={@pages}
       />
     """
@@ -185,7 +186,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         id="actions_table"
         module={OliWeb.Components.Delivery.Actions}
         user={@student}
-        section_slug={@section.slug}
+        section={@section}
         enrollment_info={@enrollment_info}
       />
     """
@@ -244,7 +245,8 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         student_id
       )
 
-    mastery_per_container = Metrics.mastery_for_student_per_container(section.slug, student_id)
+    proficiency_per_container =
+      Metrics.proficiency_for_student_per_container(section.slug, student_id)
 
     # when those metrics are ready (see Oli.Delivery.Metrics)
 
@@ -252,7 +254,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       Enum.map(containers, fn container ->
         Map.merge(container, %{
           progress: student_progress[container.id] || 0.0,
-          student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
+          student_proficiency: Map.get(proficiency_per_container, container.id, "Not enough data")
         })
       end)
 

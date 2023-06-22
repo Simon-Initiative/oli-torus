@@ -64,11 +64,87 @@ defmodule Oli.Activities.TransformersTest do
 
     # Shuffle fifty times.  If none of the shuffles result in
     # the first element changing - we likely have a broken shuffle impl.
-    assert Enum.any?(1..1, fn _ ->
+    assert Enum.any?(1..50, fn _ ->
              [{:ok, transformed}] =
                Transformers.apply_transforms([as_revision(1, create_model.())])
 
              transformed["choices"] |> Enum.at(0) |> Map.get("id") != "1"
+           end)
+  end
+
+  test "applying shuffle for specific part" do
+    create_model = fn ->
+      %{
+        "stem" => "this is the stem",
+        "choices" => [
+          %{id: "1", content: []},
+          %{id: "2", content: []},
+          %{id: "3", content: []},
+          %{id: "4", content: []}
+        ],
+        "inputs" => [
+          %{
+            "choiceIds" => [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "id" => "1560432564",
+            "inputType" => "dropdown",
+            "partId" => "4170243249"
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [
+                %{
+                  "feedback" => %{
+                    "content" => [],
+                    "id" => "2853247186"
+                  },
+                  "id" => "297027184",
+                  "rule" => "input like {4170243249}",
+                  "score" => 1
+                },
+                %{
+                  "feedback" => %{
+                    "content" => [],
+                    "id" => "269269687"
+                  },
+                  "id" => "2857138762",
+                  "rule" => "input like {.*}",
+                  "score" => 0
+                }
+              ],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "regex"
+            }
+          ],
+          "transformations" => [
+            %{"id" => "1", "path" => "choices", "operation" => "shuffle"},
+            %{
+              "firstAttemptOnly" => true,
+              "id" => "2",
+              "operation" => "shuffle",
+              "partId" => "4170243249",
+              "path" => "choices"
+            }
+          ]
+        }
+      }
+    end
+
+    # Shuffle fifty times.  If none of the shuffles result in
+    # the first element changing - we likely have a broken shuffle impl.
+    assert Enum.any?(1..50, fn _ ->
+             [{:ok, transformed}] =
+               Transformers.apply_transforms([as_revision(1, create_model.())])
+
+             transformed["choices"] |> Enum.at(0) |> Map.get("id") != "1"
+             transformed["inputs"] |> Enum.at(0) |> Map.get("choiceIds") |> Enum.at(0) != "1"
            end)
   end
 

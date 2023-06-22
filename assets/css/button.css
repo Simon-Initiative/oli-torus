@@ -20,3 +20,7 @@ button.torus-button.primary:disabled,
 button.torus-button.secondary:disabled {
   @apply bg-gray-200 text-white pointer-events-none cursor-not-allowed;
 }
+
+a {
+  @apply cursor-pointer;
+}

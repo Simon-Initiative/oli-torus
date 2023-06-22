@@ -11,7 +11,7 @@ defmodule OliWeb.Resources.PagesTableModel do
     """
   end
 
-  def new(pages, project, context) do
+  def new(pages, project, ctx) do
     column_specs = [
       %ColumnSpec{name: :title, label: "Title", render_fn: &__MODULE__.render_title_column/3},
       %ColumnSpec{
@@ -41,7 +41,7 @@ defmodule OliWeb.Resources.PagesTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context,
+        ctx: ctx,
         project_slug: project.slug
       }
     )

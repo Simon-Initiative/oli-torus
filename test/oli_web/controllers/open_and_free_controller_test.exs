@@ -41,7 +41,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
   describe "new" do
     setup [:create_fixtures, :set_timezone]
 
-    test "renders form from product", %{conn: conn, section: section, context: session_context} do
+    test "renders form from product", %{conn: conn, section: section, ctx: session_context} do
       conn =
         get(conn, Routes.admin_open_and_free_path(conn, :new, source_id: "product:#{section.id}"))
 
@@ -62,7 +62,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     test "renders form from publication", %{
       conn: conn,
       publication: publication,
-      context: session_context
+      ctx: session_context
     } do
       conn =
         get(
@@ -84,7 +84,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       assert html_response(conn, 200) =~ "Timezone: " <> session_context.local_tz
     end
 
-    test "renders form from project", %{conn: conn, project: project, context: session_context} do
+    test "renders form from project", %{conn: conn, project: project, ctx: session_context} do
       conn =
         get(conn, Routes.admin_open_and_free_path(conn, :new, source_id: "project:#{project.id}"))
 
@@ -153,8 +153,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       assert html_response(conn, 200) =~ "Edit Section"
     end
 
-    test "displays start and end dates using the local timezone", %{section: section} = context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+    test "displays start and end dates using the local timezone", %{section: section} = map do
+      {:ok, conn: conn, ctx: session_context} = set_timezone(map)
 
       conn = get(conn, Routes.admin_open_and_free_path(conn, :edit, section))
 

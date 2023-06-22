@@ -67,7 +67,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
         bib_app_params: context.bib_revisions,
         submitted_surveys: submitted_surveys,
         historical_attempts: context.historical_attempts,
-        learning_language: base_project_attributes.learning_language
+        learning_language: base_project_attributes.learning_language,
+        is_liveview: true
       }
 
       this_attempt = context.resource_attempts |> hd

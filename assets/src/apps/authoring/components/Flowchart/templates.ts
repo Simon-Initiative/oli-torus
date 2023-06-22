@@ -1,5 +1,7 @@
 import { Template } from './template-types';
 
+// TODO - this file has gotten quite large. We may want to load it at runtime from a json file in the future.
+
 export const templates: Template[] = [
   {
     name: 'Audio 6',
@@ -62,51 +64,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           autoPlay: false,
           customCssClass: '',
           enableReplay: true,
@@ -118,9 +75,9 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
+          width: 100,
           x: 40,
-          y: 460,
+          y: 455,
           z: 0,
         },
         id: 'audio-01',
@@ -140,7 +97,7 @@ export const templates: Template[] = [
                       children: [],
                       style: {},
                       tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet consectetur. Non feugiat tincidunt ante arcu.',
+                      text: 'Lorem ipsum dolor sit amet consectetur. Non feugiat tincidunt ante arcu. Lorem ipsum dolor sit amet consectetur. Non feugiat tincidunt ante arcu.',
                     },
                   ],
                   style: {
@@ -167,7 +124,7 @@ export const templates: Template[] = [
           requiresManualGrading: false,
           visible: true,
           width: 522,
-          x: 96,
+          x: 165,
           y: 451,
           z: 0,
         },
@@ -253,51 +210,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           autoPlay: false,
           customCssClass: '',
           enableReplay: true,
@@ -309,7 +221,7 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
+          width: 100,
           x: 40,
           y: 123,
           z: 0,
@@ -355,8 +267,8 @@ export const templates: Template[] = [
           requiresManualGrading: false,
           visible: true,
           width: 613,
-          x: 96,
-          y: 120,
+          x: 165,
+          y: 100,
           z: 0,
         },
         id: 'heading-4-01',
@@ -400,7 +312,7 @@ export const templates: Template[] = [
           requiresManualGrading: false,
           visible: true,
           width: 613,
-          x: 96,
+          x: 165,
           y: 156,
           z: 0,
         },
@@ -420,7 +332,7 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
+          width: 100,
           x: 40,
           y: 256,
           z: 0,
@@ -466,8 +378,8 @@ export const templates: Template[] = [
           requiresManualGrading: false,
           visible: true,
           width: 613,
-          x: 96,
-          y: 252,
+          x: 165,
+          y: 232,
           z: 0,
         },
         id: 'heading-4-02',
@@ -511,7 +423,7 @@ export const templates: Template[] = [
           requiresManualGrading: false,
           visible: true,
           width: 613,
-          x: 96,
+          x: 165,
           y: 288,
           z: 0,
         },
@@ -531,7 +443,7 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
+          width: 100,
           x: 40,
           y: 388,
           z: 0,
@@ -577,8 +489,8 @@ export const templates: Template[] = [
           requiresManualGrading: false,
           visible: true,
           width: 613,
-          x: 96,
-          y: 384,
+          x: 165,
+          y: 364,
           z: 0,
         },
         id: 'heading-4-03',
@@ -622,7 +534,7 @@ export const templates: Template[] = [
           requiresManualGrading: false,
           visible: true,
           width: 613,
-          x: 96,
+          x: 165,
           y: 420,
           z: 0,
         },
@@ -811,8 +723,8 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
-          x: 39,
+          width: 100,
+          x: 40,
           y: 447,
           z: 0,
         },
@@ -859,57 +771,12 @@ export const templates: Template[] = [
           },
           requiresManualGrading: false,
           visible: true,
-          width: 252,
-          x: 96,
+          width: 190,
+          x: 165,
           y: 438,
           z: 0,
         },
         id: 'audio-caption-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -968,7 +835,7 @@ export const templates: Template[] = [
           visible: true,
           width: 105,
           x: 426,
-          y: 429,
+          y: 409,
           z: 0,
         },
         id: 'heading-5-01',
@@ -1077,7 +944,7 @@ export const templates: Template[] = [
           visible: true,
           width: 105,
           x: 703,
-          y: 429,
+          y: 409,
           z: 0,
         },
         id: 'heading-5-02',
@@ -1255,51 +1122,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           autoPlay: false,
           customCssClass: '',
           enableReplay: true,
@@ -1311,7 +1133,7 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
+          width: 100,
           x: 690,
           y: 328,
           z: 0,
@@ -1500,7 +1322,7 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
+          width: 100,
           x: 654,
           y: 451,
           z: 0,
@@ -1548,8 +1370,8 @@ export const templates: Template[] = [
           },
           requiresManualGrading: false,
           visible: true,
-          width: 250,
-          x: 710,
+          width: 180,
+          x: 780,
           y: 451,
           z: 0,
         },
@@ -1693,7 +1515,7 @@ export const templates: Template[] = [
           startTime: 0,
           subtitles: [],
           triggerCheck: false,
-          width: 32,
+          width: 100,
           x: 40,
           y: 460,
           z: 0,
@@ -1741,8 +1563,8 @@ export const templates: Template[] = [
           },
           requiresManualGrading: false,
           visible: true,
-          width: 374,
-          x: 96,
+          width: 305,
+          x: 165,
           y: 451,
           z: 0,
         },
@@ -1825,51 +1647,6 @@ export const templates: Template[] = [
           z: 0,
         },
         id: 'heading-2',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -2011,51 +1788,6 @@ export const templates: Template[] = [
           z: 0,
         },
         id: 'heading-2',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -2570,51 +2302,6 @@ export const templates: Template[] = [
                       children: [],
                       style: {},
                       tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
                       text: 'Lorem ipsum',
                     },
                   ],
@@ -2941,51 +2628,6 @@ export const templates: Template[] = [
         },
         id: 'iframe-01',
         type: 'janus-capi-iframe',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -3691,51 +3333,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           alt: 'an image',
           height: 312,
           lockAspectRatio: true,
@@ -3855,51 +3452,6 @@ export const templates: Template[] = [
           z: 0,
         },
         id: 'heading-2',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -4392,51 +3944,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           alt: 'an image',
           height: 325,
           lockAspectRatio: true,
@@ -4491,7 +3998,7 @@ export const templates: Template[] = [
           visible: true,
           width: 105,
           x: 426,
-          y: 429,
+          y: 409,
           z: 0,
         },
         id: 'heading-5-01',
@@ -4600,7 +4107,7 @@ export const templates: Template[] = [
           visible: true,
           width: 105,
           x: 703,
-          y: 429,
+          y: 406,
           z: 0,
         },
         id: 'heading-5-02',
@@ -4897,51 +4404,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           customCssClass: 'text-align-bottom',
           height: 284,
           maxScore: 1,
@@ -5183,51 +4645,6 @@ export const templates: Template[] = [
           z: 0,
         },
         id: 'heading-2',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -5481,51 +4898,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           alt: '',
           autoPlay: false,
           customCssClass: '',
@@ -5586,7 +4958,7 @@ export const templates: Template[] = [
           visible: true,
           width: 105,
           x: 426,
-          y: 248,
+          y: 230,
           z: 0,
         },
         id: 'heading-5-01',
@@ -5701,7 +5073,7 @@ export const templates: Template[] = [
           visible: true,
           width: 105,
           x: 703,
-          y: 248,
+          y: 230,
           z: 0,
         },
         id: 'heading-5-02',
@@ -5833,51 +5205,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           alt: '',
           autoPlay: false,
           customCssClass: '',
@@ -5938,7 +5265,7 @@ export const templates: Template[] = [
           visible: true,
           width: 613,
           x: 310,
-          y: 120,
+          y: 100,
           z: 0,
         },
         id: 'heading-4-01',
@@ -6051,7 +5378,7 @@ export const templates: Template[] = [
           visible: true,
           width: 613,
           x: 310,
-          y: 252,
+          y: 232,
           z: 0,
         },
         id: 'heading-4-02',
@@ -6164,7 +5491,7 @@ export const templates: Template[] = [
           visible: true,
           width: 613,
           x: 310,
-          y: 384,
+          y: 364,
           z: 0,
         },
         id: 'heading-4-03',
@@ -6452,51 +5779,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           customCssClass: 'text-align-bottom',
           height: 244,
           maxScore: 1,
@@ -6714,7 +5996,7 @@ export const templates: Template[] = [
   },
   {
     name: 'Carousel 1',
-    templateType: 'Carousel',
+    templateType: 'carousel',
     parts: [
       {
         gradingApproach: 'automatic',
@@ -6865,7 +6147,7 @@ export const templates: Template[] = [
   },
   {
     name: 'Carousel 2',
-    templateType: 'Carousel',
+    templateType: 'carousel',
     parts: [
       {
         gradingApproach: 'automatic',
@@ -6998,7 +6280,7 @@ export const templates: Template[] = [
   },
   {
     name: 'Carousel 3',
-    templateType: 'Carousel',
+    templateType: 'carousel',
     parts: [
       {
         gradingApproach: 'automatic',
@@ -7129,51 +6411,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           customCssClass: 'text-align-bottom',
           height: 244,
           maxScore: 1,
@@ -7221,7 +6458,7 @@ export const templates: Template[] = [
   },
   {
     name: 'Carousel 4',
-    templateType: 'Carousel',
+    templateType: 'carousel',
     parts: [
       {
         gradingApproach: 'automatic',
@@ -7389,51 +6626,6 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           height: 300,
           images: [
             {
@@ -7552,7 +6744,7 @@ export const templates: Template[] = [
   },
   {
     name: 'Carousel 5',
-    templateType: 'Carousel',
+    templateType: 'carousel',
     parts: [
       {
         gradingApproach: 'automatic',
@@ -7623,51 +6815,6 @@ export const templates: Template[] = [
           z: 0,
         },
         id: 'heading-2',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -8025,7 +7172,7 @@ export const templates: Template[] = [
   },
   {
     name: 'Carousel 6',
-    templateType: 'Carousel',
+    templateType: 'carousel',
     parts: [
       {
         gradingApproach: 'automatic',
@@ -8080,51 +7227,6 @@ export const templates: Template[] = [
           z: 0,
         },
         id: 'heading-2',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -9550,51 +8652,6 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           height: 114,
           maxScore: 1,
           nodes: [
@@ -10082,51 +9139,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           alt: 'an image',
           height: 325,
           lockAspectRatio: true,
@@ -10357,51 +9369,6 @@ export const templates: Template[] = [
           z: 0,
         },
         id: 'caption-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
         type: 'janus-text-flow',
       },
       {
@@ -10849,51 +9816,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           alt: 'an image',
           height: 325,
           lockAspectRatio: true,
@@ -11326,51 +10248,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 420,
-          x: 540,
-          y: 381,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           commonErrorFeedback: [],
           correctAnswer: 0,
           correctFeedback: '',
@@ -11379,15 +10256,15 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
-          label: 'Choose',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           optionLabels: ['Option 1', 'Option 2'],
           prompt: 'Select answer',
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           width: 270,
-          x: 540,
-          y: 413,
+          x: 537,
+          y: 431,
           z: 0,
         },
         id: 'dropdown-01',
@@ -11501,51 +10378,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 430,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           commonErrorFeedback: [],
           correctAnswer: 0,
           correctFeedback: '',
@@ -11554,12 +10386,12 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
-          label: 'Choose',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           optionLabels: ['Option 1', 'Option 2'],
           prompt: 'Select answer',
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 40,
           y: 395,
@@ -11728,51 +10560,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 654,
-          y: 361,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           commonErrorFeedback: [],
           correctAnswer: 0,
           correctFeedback: '',
@@ -11781,12 +10568,12 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
-          label: 'Choose',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           optionLabels: ['Option 1', 'Option 2'],
           prompt: 'Select answer',
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 654,
           y: 395,
@@ -11921,51 +10708,6 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           height: 114,
           maxScore: 1,
           nodes: [
@@ -12010,51 +10752,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 690,
-          y: 326,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           commonErrorFeedback: [],
           correctAnswer: 0,
           correctFeedback: '',
@@ -12063,12 +10760,12 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
-          label: 'Choose',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           optionLabels: ['Option 1', 'Option 2'],
           prompt: 'Select answer',
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 690,
           y: 358,
@@ -12230,51 +10927,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           commonErrorFeedback: [],
           correctAnswer: 0,
           correctFeedback: '',
@@ -12283,12 +10935,12 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
-          label: 'Choose',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           optionLabels: ['Option 1', 'Option 2'],
           prompt: 'Select answer',
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 40,
           y: 395,
@@ -12296,51 +10948,6 @@ export const templates: Template[] = [
         },
         id: 'dropdown-01',
         type: 'janus-dropdown',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -12578,96 +11185,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 680,
-          y: 100,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           commonErrorFeedback: [],
           correctAnswer: 0,
           correctFeedback: '',
@@ -12676,12 +11193,12 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
-          label: 'Choose',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           optionLabels: ['Option 1', 'Option 2'],
           prompt: 'Select answer',
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 680,
           y: 132,
@@ -12843,51 +11360,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           commonErrorFeedback: [],
           correctAnswer: 0,
           correctFeedback: '',
@@ -12896,12 +11368,12 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
-          label: 'Choose',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           optionLabels: ['Option 1', 'Option 2'],
           prompt: 'Select answer',
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 40,
           y: 395,
@@ -12909,51 +11381,6 @@ export const templates: Template[] = [
         },
         id: 'dropdown-01',
         type: 'janus-dropdown',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -13344,64 +11771,19 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 420,
-          x: 540,
-          y: 252,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctFeedback: '',
           customCssClass: '',
           enabled: true,
           fontSize: 12,
           height: 144,
           incorrectFeedback: '',
-          label: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           minimumLength: 0,
           prompt: '',
           requiresManualGrading: false,
           showCharacterCount: true,
-          showLabel: false,
+          showLabel: true,
           width: 420,
           x: 540,
           y: 284,
@@ -13518,64 +11900,19 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 430,
-          x: 40,
-          y: 315,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctFeedback: '',
           customCssClass: '',
           enabled: true,
           fontSize: 12,
           height: 144,
           incorrectFeedback: '',
-          label: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           minimumLength: 0,
           prompt: '',
           requiresManualGrading: false,
           showCharacterCount: true,
-          showLabel: false,
+          showLabel: true,
           width: 430,
           x: 40,
           y: 348,
@@ -13726,64 +12063,19 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 654,
-          y: 314,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctFeedback: '',
           customCssClass: '',
           enabled: true,
           fontSize: 12,
           height: 158,
           incorrectFeedback: '',
-          label: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           minimumLength: 0,
           prompt: '',
           requiresManualGrading: false,
           showCharacterCount: true,
-          showLabel: false,
+          showLabel: true,
           width: 306,
           x: 654,
           y: 346,
@@ -13918,51 +12210,6 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           height: 92,
           maxScore: 1,
           nodes: [
@@ -14007,64 +12254,19 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 690,
-          y: 304,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctFeedback: '',
           customCssClass: '',
           enabled: true,
           fontSize: 12,
           height: 144,
           incorrectFeedback: '',
-          label: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           minimumLength: 0,
           prompt: '',
           requiresManualGrading: false,
           showCharacterCount: true,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 690,
           y: 336,
@@ -14226,64 +12428,19 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 297,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctFeedback: '',
           customCssClass: '',
           enabled: true,
           fontSize: 12,
           height: 158,
           incorrectFeedback: '',
-          label: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           minimumLength: 0,
           prompt: '',
           requiresManualGrading: false,
           showCharacterCount: true,
-          showLabel: false,
+          showLabel: true,
           width: 306,
           x: 40,
           y: 329,
@@ -14291,51 +12448,6 @@ export const templates: Template[] = [
         },
         id: 'multi-line-01',
         type: 'janus-multi-line-text',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -14573,109 +12685,19 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 680,
-          y: 100,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctFeedback: '',
           customCssClass: '',
           enabled: true,
           fontSize: 12,
           height: 144,
           incorrectFeedback: '',
-          label: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           minimumLength: 0,
           prompt: '',
           requiresManualGrading: false,
           showCharacterCount: true,
-          showLabel: false,
+          showLabel: true,
           width: 270,
           x: 680,
           y: 132,
@@ -14837,64 +12859,19 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 321,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctFeedback: '',
           customCssClass: '',
           enabled: true,
           fontSize: 12,
           height: 144,
           incorrectFeedback: '',
-          label: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           minimumLength: 0,
           prompt: '',
           requiresManualGrading: false,
           showCharacterCount: true,
-          showLabel: false,
+          showLabel: true,
           width: 306,
           x: 40,
           y: 353,
@@ -14902,51 +12879,6 @@ export const templates: Template[] = [
         },
         id: 'multi-line-01',
         type: 'janus-multi-line-text',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -15382,51 +13314,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 420,
-          x: 540,
-          y: 381,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctAnswer: {
             minimumLength: 0,
             mustContain: '',
@@ -15438,12 +13325,13 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'Lorem ipsum dolor sit amet consectetur ',
           requireManualGrading: false,
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           showOnAnswersReport: false,
           width: 270,
           x: 540,
@@ -15561,51 +13449,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 430,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctAnswer: {
             minimumLength: 0,
             mustContain: '',
@@ -15617,12 +13460,13 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'Lorem ipsum dolor sit amet consectetur ',
           requireManualGrading: false,
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           showOnAnswersReport: false,
           width: 270,
           x: 40,
@@ -15792,51 +13636,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 654,
-          y: 361,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctAnswer: {
             minimumLength: 0,
             mustContain: '',
@@ -15848,15 +13647,16 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'Lorem ipsum dolor sit amet consectetur ',
           requireManualGrading: false,
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           showOnAnswersReport: false,
           width: 306,
-          x: 654,
+          x: 653,
           y: 393,
           z: 0,
         },
@@ -15989,51 +13789,6 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           height: 114,
           maxScore: 1,
           nodes: [
@@ -16078,51 +13833,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 690,
-          y: 326,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctAnswer: {
             minimumLength: 0,
             mustContain: '',
@@ -16134,12 +13844,13 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'Lorem ipsum dolor sit amet consectetur ',
           requireManualGrading: false,
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           showOnAnswersReport: false,
           width: 270,
           x: 690,
@@ -16302,51 +14013,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctAnswer: {
             minimumLength: 0,
             mustContain: '',
@@ -16358,12 +14024,13 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'Lorem ipsum dolor sit amet consectetur ',
           requireManualGrading: false,
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           showOnAnswersReport: false,
           width: 306,
           x: 40,
@@ -16372,51 +14039,6 @@ export const templates: Template[] = [
         },
         id: 'input-text-01',
         type: 'janus-input-text',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -16652,96 +14274,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 680,
-          y: 100,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctAnswer: {
             minimumLength: 0,
             mustContain: '',
@@ -16753,12 +14285,13 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'Lorem ipsum dolor sit amet consectetur ',
           requireManualGrading: false,
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           showOnAnswersReport: false,
           width: 270,
           x: 680,
@@ -16921,51 +14454,6 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           correctAnswer: {
             minimumLength: 0,
             mustContain: '',
@@ -16977,12 +14465,13 @@ export const templates: Template[] = [
           fontSize: 12,
           height: 40,
           incorrectFeedback: '',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'Lorem ipsum dolor sit amet consectetur ',
           requireManualGrading: false,
           requiresManualGrading: false,
-          showLabel: false,
+          showLabel: true,
           showOnAnswersReport: false,
           width: 306,
           x: 40,
@@ -16991,51 +14480,6 @@ export const templates: Template[] = [
         },
         id: 'input-text-01',
         type: 'janus-input-text',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -17472,61 +14916,16 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 420,
-          x: 540,
-          y: 381,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           enabled: true,
           height: 55,
           invertScale: false,
-          label: 'Slider',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           maximum: 100,
           minimum: 0,
           requiresManualGrading: false,
           showDataTip: true,
-          showLabel: false,
+          showLabel: true,
           showThumbByDefault: true,
           showTicks: true,
           showValueLabels: true,
@@ -17648,61 +15047,16 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 430,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           enabled: true,
           height: 55,
           invertScale: false,
-          label: 'Slider',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           maximum: 100,
           minimum: 0,
           requiresManualGrading: false,
           showDataTip: true,
-          showLabel: false,
+          showLabel: true,
           showThumbByDefault: true,
           showTicks: true,
           showValueLabels: true,
@@ -17876,61 +15230,16 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 654,
-          y: 361,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           enabled: true,
           height: 55,
           invertScale: false,
-          label: 'Slider',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           maximum: 100,
           minimum: 0,
           requiresManualGrading: false,
           showDataTip: true,
-          showLabel: false,
+          showLabel: true,
           showThumbByDefault: true,
           showTicks: true,
           showValueLabels: true,
@@ -18069,51 +15378,6 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           height: 114,
           maxScore: 1,
           nodes: [
@@ -18159,61 +15423,16 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 690,
-          y: 326,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           enabled: true,
           height: 55,
           invertScale: false,
-          label: 'Slider',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           maximum: 100,
           minimum: 0,
           requiresManualGrading: false,
           showDataTip: true,
-          showLabel: false,
+          showLabel: true,
           showThumbByDefault: true,
           showTicks: true,
           showValueLabels: true,
@@ -18380,55 +15599,10 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           enabled: true,
           height: 55,
           invertScale: false,
-          label: 'Slider',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           maximum: 100,
           minimum: 0,
@@ -18446,51 +15620,6 @@ export const templates: Template[] = [
         },
         id: 'slider-01',
         type: 'janus-slider',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -18727,106 +15856,16 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 680,
-          y: 100,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           enabled: true,
           height: 55,
           invertScale: false,
-          label: 'Slider',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           maximum: 100,
           minimum: 0,
           requiresManualGrading: false,
           showDataTip: true,
-          showLabel: false,
+          showLabel: true,
           showThumbByDefault: true,
           showTicks: true,
           showValueLabels: true,
@@ -18993,61 +16032,16 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           enabled: true,
           height: 55,
           invertScale: false,
-          label: 'Slider',
+          label: 'Lorem ipsum dolor sit amet?',
           maxScore: 1,
           maximum: 100,
           minimum: 0,
           requiresManualGrading: false,
           showDataTip: true,
-          showLabel: false,
+          showLabel: true,
           showThumbByDefault: true,
           showTicks: true,
           showValueLabels: true,
@@ -19059,51 +16053,6 @@ export const templates: Template[] = [
         },
         id: 'slider-01',
         type: 'janus-slider',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {
@@ -19539,62 +16488,17 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 420,
-          x: 540,
-          y: 381,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           enabled: true,
           fontSize: 12,
           height: 40,
-          label: 'How many?',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'enter a number...',
           requireManualGrading: false,
           requiresManualGrading: false,
           showIncrementArrows: false,
-          showLabel: false,
+          showLabel: true,
           unitsLabel: 'Units',
           width: 270,
           x: 540,
@@ -19712,62 +16616,17 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 430,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           enabled: true,
           fontSize: 12,
           height: 40,
-          label: 'How many?',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'enter a number...',
           requireManualGrading: false,
           requiresManualGrading: false,
           showIncrementArrows: false,
-          showLabel: false,
+          showLabel: true,
           unitsLabel: 'Units',
           width: 270,
           x: 40,
@@ -19937,62 +16796,17 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 654,
-          y: 361,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           enabled: true,
           fontSize: 12,
           height: 40,
-          label: 'How many?',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'enter a number...',
           requireManualGrading: false,
           requiresManualGrading: false,
           showIncrementArrows: false,
-          showLabel: false,
+          showLabel: true,
           unitsLabel: 'Units',
           width: 306,
           x: 654,
@@ -20128,51 +16942,6 @@ export const templates: Template[] = [
       {
         custom: {
           customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
           height: 114,
           maxScore: 1,
           nodes: [
@@ -20217,62 +16986,17 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 690,
-          y: 326,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           enabled: true,
           fontSize: 12,
           height: 40,
-          label: 'How many?',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'enter a number...',
           requireManualGrading: false,
           requiresManualGrading: false,
           showIncrementArrows: false,
-          showLabel: false,
+          showLabel: true,
           unitsLabel: 'Units',
           width: 270,
           x: 690,
@@ -20435,107 +17159,17 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           enabled: true,
           fontSize: 12,
           height: 40,
-          label: 'How many?',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'enter a number...',
           requireManualGrading: false,
           requiresManualGrading: false,
           showIncrementArrows: false,
-          showLabel: false,
+          showLabel: true,
           unitsLabel: 'Units',
           width: 306,
           x: 40,
@@ -20779,107 +17413,17 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 36,
-          x: 923,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum dolor sit amet?',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 260,
-          x: 680,
-          y: 100,
-          z: 1,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           enabled: true,
           fontSize: 12,
           height: 40,
-          label: 'How many?',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'enter a number...',
           requireManualGrading: false,
           requiresManualGrading: false,
           showIncrementArrows: false,
-          showLabel: false,
+          showLabel: true,
           unitsLabel: 'Units',
           width: 270,
           x: 680,
@@ -21042,62 +17586,17 @@ export const templates: Template[] = [
       },
       {
         custom: {
-          customCssClass: '',
-          height: 20,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: 'Lorem ipsum',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h5',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 306,
-          x: 40,
-          y: 363,
-          z: 0,
-        },
-        id: 'heading-5-01',
-        type: 'janus-text-flow',
-      },
-      {
-        custom: {
           enabled: true,
           fontSize: 12,
           height: 40,
-          label: 'How many?',
+          label: 'Lorem ipsum dolor sit amet?',
           maxManualGrade: 0,
           maxScore: 1,
           prompt: 'enter a number...',
           requireManualGrading: false,
           requiresManualGrading: false,
           showIncrementArrows: false,
-          showLabel: false,
+          showLabel: true,
           unitsLabel: 'Units',
           width: 306,
           x: 40,
@@ -21106,51 +17605,6 @@ export const templates: Template[] = [
         },
         id: 'number-01',
         type: 'janus-input-number',
-      },
-      {
-        custom: {
-          customCssClass: '',
-          height: 16,
-          maxScore: 1,
-          nodes: [
-            {
-              children: [
-                {
-                  children: [
-                    {
-                      children: [],
-                      style: {},
-                      tag: 'text',
-                      text: '1/12',
-                    },
-                  ],
-                  style: {},
-                  tag: 'span',
-                },
-              ],
-              style: {},
-              tag: 'h6',
-            },
-          ],
-          overrideHeight: false,
-          overrideWidth: true,
-          palette: {
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderRadius: 0,
-            borderStyle: 'none',
-            borderWidth: 0,
-            useHtmlProps: true,
-          },
-          requiresManualGrading: false,
-          visible: true,
-          width: 35,
-          x: 924,
-          y: 40,
-          z: 0,
-        },
-        id: 'page-number',
-        type: 'janus-text-flow',
       },
       {
         custom: {

@@ -6,11 +6,7 @@
 
 <OliWeb.Delivery.StudentDashboard.Components.Helpers.main_layout
   socket_or_conn={OliWeb.Components.Delivery.Utils.socket_or_conn(assigns)}
-  current_user={@current_user}
-  student={@student}
-  section={@section}
-  preview_mode={assigns[:preview_mode]}
-  breadcrumbs={assigns[:breadcrumbs]}>
+  {assigns} >
   <%= @inner_content %>
 </OliWeb.Delivery.StudentDashboard.Components.Helpers.main_layout>
 

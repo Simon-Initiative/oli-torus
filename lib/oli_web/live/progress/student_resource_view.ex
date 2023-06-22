@@ -60,7 +60,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             Mount.handle_error(socket, {:error, e})
 
           {type, _, section} ->
-            context = SessionContext.init(session)
+            ctx = SessionContext.init(socket, session)
             resource_access = get_resource_access(resource_id, section_slug, user_id)
 
             changeset =
@@ -82,7 +82,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
             {:ok,
              assign(socket,
-               context: context,
+               ctx: ctx,
                changeset: changeset,
                breadcrumbs: set_breadcrumbs(type, section, user_id),
                section: section,
@@ -177,7 +177,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
       {/if}
       <Group label="Attempt History" description="">
-        <AttemptHistory revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} {=@context}/>
+        <AttemptHistory revision={@revision} section={@section} resource_attempts={@resource_access.resource_attempts} {=@ctx}/>
       </Group>
     </Groups>
     {#if @show_confirm}
@@ -221,34 +221,49 @@ defmodule OliWeb.Progress.StudentResourceView do
   end
 
   def handle_event("do_submit_attempt", _, socket) do
-
     attempt_guid = socket.assigns.attempt_guid
 
-    datashop_session_id = case get_datashop_session_id(attempt_guid) do
-      nil -> UUID.uuid4()
-      id -> id
-    end
+    datashop_session_id =
+      case get_datashop_session_id(attempt_guid) do
+        nil -> UUID.uuid4()
+        id -> id
+      end
 
-    case Oli.Delivery.Attempts.PageLifecycle.finalize(socket.assigns.section.slug, attempt_guid, datashop_session_id) do
+    case Oli.Delivery.Attempts.PageLifecycle.finalize(
+           socket.assigns.section.slug,
+           attempt_guid,
+           datashop_session_id
+         ) do
       {:ok, _} ->
-         resource_access = get_resource_access(socket.assigns.revision.resource_id, socket.assigns.section.slug, socket.assigns.user.id)
+        resource_access =
+          get_resource_access(
+            socket.assigns.revision.resource_id,
+            socket.assigns.section.slug,
+            socket.assigns.user.id
+          )
 
-         socket = socket
-         |> put_flash(:info, "Attempt submitted.")
-         |> assign(resource_access: resource_access)
+        socket =
+          socket
+          |> put_flash(:info, "Attempt submitted.")
+          |> assign(resource_access: resource_access)
 
-         {:noreply, socket}
+        {:noreply, socket}
+
       _ ->
+        resource_access =
+          get_resource_access(
+            socket.assigns.revision.resource_id,
+            socket.assigns.section.slug,
+            socket.assigns.user.id
+          )
 
-        resource_access = get_resource_access(socket.assigns.revision.resource_id, socket.assigns.section.slug, socket.assigns.user.id)
+        socket =
+          socket
+          |> put_flash(:error, "Unable to submit attempt.")
+          |> assign(resource_access: resource_access)
 
-        socket = socket
-         |> put_flash(:error, "Unable to submit attempt.")
-         |> assign(resource_access: resource_access)
-
-         {:noreply, socket}
+        {:noreply, socket}
     end
-
   end
 
   def handle_event("enable_score_edit", _, socket) do
@@ -381,16 +396,19 @@ defmodule OliWeb.Progress.StudentResourceView do
   end
 
   defp get_datashop_session_id(resource_attempt_guid) do
-    part_attempts = Repo.all(
-      from(
-        part_attempt in PartAttempt,
-        join: aa in ActivityAttempt, on: aa.id == part_attempt.activity_attempt_id,
-        join: resource_attempt in ResourceAttempt, on: resource_attempt.id == aa.resource_attempt_id,
-        where: resource_attempt.attempt_guid == ^resource_attempt_guid,
-        limit: 1,
-        select: part_attempt.datashop_session_id
+    part_attempts =
+      Repo.all(
+        from(
+          part_attempt in PartAttempt,
+          join: aa in ActivityAttempt,
+          on: aa.id == part_attempt.activity_attempt_id,
+          join: resource_attempt in ResourceAttempt,
+          on: resource_attempt.id == aa.resource_attempt_id,
+          where: resource_attempt.attempt_guid == ^resource_attempt_guid,
+          limit: 1,
+          select: part_attempt.datashop_session_id
+        )
       )
-    )
 
     case part_attempts do
       [] -> nil

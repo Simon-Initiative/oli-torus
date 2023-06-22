@@ -172,7 +172,9 @@ const ImageHotspotComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class ImageHotspotDelivery extends DeliveryElement<ImageHotspotModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ImageHotspotModelSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, {
+      name: 'ImageHotspotDelivery',
+    });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

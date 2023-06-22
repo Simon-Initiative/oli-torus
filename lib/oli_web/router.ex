@@ -12,7 +12,7 @@ defmodule OliWeb.Router do
   @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
 
   ### BASE PIPELINES ###
-  # We have four "base" pipelines: :browser, :api, :lti, and :skip_csrf_protection
+  # We have five "base" pipelines: :browser, :api, :lti, :skip_csrf_protection, and :sso
   # All of the other pipelines are to be used as additions onto one of these four base pipelines
 
   # pipeline for all browser based routes
@@ -27,6 +27,7 @@ defmodule OliWeb.Router do
     plug(:protect_from_forgery)
     plug(OliWeb.SetLiveCSRF)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   # pipline for REST api endpoint routes
@@ -37,6 +38,7 @@ defmodule OliWeb.Router do
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   # pipeline for LTI launch endpoints
@@ -44,6 +46,16 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
+    plug(OliWeb.Plugs.SessionContext)
+  end
+
+  # pipeline for skipping CSRF protection
+  pipeline :skip_csrf_protection do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_secure_browser_headers)
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   # pipeline for SSO endpoints
@@ -51,13 +63,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_live_flash)
     plug(Oli.Plugs.ValidateIdToken)
-  end
-
-  pipeline :skip_csrf_protection do
-    plug(:accepts, ["html"])
-    plug(:fetch_session)
-    plug(:fetch_live_flash)
-    plug(:put_secure_browser_headers)
+    plug(OliWeb.Plugs.SessionContext)
   end
 
   ### PIPELINE EXTENSIONS ###
@@ -327,7 +333,10 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-    live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
+
+    live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
+      as: :product_remix
+    )
 
     get(
       "/products/:product_id/payments/donwload_codes",
@@ -425,6 +434,7 @@ defmodule OliWeb.Router do
     # Preview
     get("/:project_id/preview", ResourceController, :preview)
     get("/:project_id/preview/:revision_slug", ResourceController, :preview)
+    get("/:project_id/preview_fullscreen/:revision_slug", ResourceController, :preview_fullscreen)
     get("/:project_id/preview/:revision_slug/page/:page", ResourceController, :preview)
 
     # Editors
@@ -793,7 +803,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
@@ -820,7 +829,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
 
@@ -837,9 +845,38 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery_and_admin,
-      :maybe_gated_resource,
       :pow_email_layout
     ])
+
+    get(
+      "/downloads/progress/:container_id",
+      MetricsController,
+      :download_container_progress
+    )
+
+    get(
+      "/downloads/course_content/:section_slug",
+      DeliveryController,
+      :download_course_content_info
+    )
+
+    get(
+      "/downloads/students_progress/:section_slug",
+      DeliveryController,
+      :download_students_progress
+    )
+
+    get(
+      "/downloads/learning_objectives/:section_slug",
+      DeliveryController,
+      :download_learning_objectives
+    )
+
+    get(
+      "/downloads/quiz_scores/:section_slug",
+      DeliveryController,
+      :download_quiz_scores
+    )
 
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
@@ -847,13 +884,12 @@ defmodule OliWeb.Router do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
-    end
 
-    get(
-      "/downloads/progress/:container_id",
-      MetricsController,
-      :download_container_progress
-    )
+      live(
+        "/:view/:active_tab/:assessment_id",
+        Delivery.InstructorDashboard.InstructorDashboardLive
+      )
+    end
   end
 
   ### Sections - Student Course Delivery
@@ -878,6 +914,7 @@ defmodule OliWeb.Router do
     get("/my_assignments", PageDeliveryController, :assignments)
     get("/container/:revision_slug", PageDeliveryController, :container)
     get("/page/:revision_slug", PageDeliveryController, :page)
+    get("/page_fullscreen/:revision_slug", PageDeliveryController, :page_fullscreen)
     get("/page/:revision_slug/page/:page", PageDeliveryController, :page)
     get("/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -885,6 +922,12 @@ defmodule OliWeb.Router do
       "/page/:revision_slug/attempt_protected",
       PageDeliveryController,
       :start_attempt_protected
+    )
+
+    post(
+      "/page",
+      PageDeliveryController,
+      :navigate_by_index
     )
 
     get(
@@ -907,9 +950,7 @@ defmodule OliWeb.Router do
     ])
 
     # Redirect deprecated routes
-    get("/", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
-    get("/overview", Plugs.Redirect, to: "/sections/:section_slug/preview/other")
-
+    get("/overview", PageDeliveryController, :index_preview)
     get("/exploration", PageDeliveryController, :exploration_preview)
     get("/discussion", PageDeliveryController, :discussion_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
@@ -992,6 +1033,11 @@ defmodule OliWeb.Router do
 
     live("/:section_slug/collaborative_spaces", CollaborationLive.IndexView, :instructor,
       as: :collab_spaces_index
+    )
+
+    live(
+      "/:section_slug/assessment_settings/:active_tab/:assessment_id",
+      Sections.AssessmentSettings.SettingsLive
     )
   end
 

@@ -151,7 +151,7 @@ defmodule OliWeb.PublisherLiveTest do
     end
 
     test "renders datetimes using the local timezone", context do
-      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, conn: conn, ctx: session_context} = set_timezone(context)
       publisher = Inventories.default_publisher()
 
       {:ok, view, _html} = live(conn, @live_view_index_route)

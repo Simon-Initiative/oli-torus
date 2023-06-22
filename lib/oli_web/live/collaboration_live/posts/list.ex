@@ -62,7 +62,7 @@ defmodule OliWeb.CollaborationLive.Posts.List do
               </div>
             </div>
           {/if}
-          <hr class="border-gray-200">
+          <hr class="border-gray-200 dark:border-gray-700">
         </div>
       {/for}
     </div>

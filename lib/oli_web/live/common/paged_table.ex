@@ -13,6 +13,7 @@ defmodule OliWeb.Common.PagedTable do
   prop page_change, :event, default: "paged_table_page_change"
   prop selection_change, :event, default: "paged_table_selection_change"
   prop show_bottom_paging, :boolean, default: true
+  prop show_top_paging, :boolean, default: true
   prop additional_table_class, :string, default: ""
   prop render_top_info, :boolean, default: true
 
@@ -24,7 +25,9 @@ defmodule OliWeb.Common.PagedTable do
         {/if}
 
         {#if @total_count > 0 and @total_count > @limit}
-          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+          {#if @show_top_paging}
+            <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+          {/if}
           {render_table(assigns)}
           {#if @show_bottom_paging}
             <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>

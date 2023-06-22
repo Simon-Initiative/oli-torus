@@ -64,9 +64,10 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
           childRect={childRect}
           popoverRect={popoverRect}
           arrowSize={10}
+          className="popup-arrow"
           arrowColor="white"
         >
-          <div className="popup-content bg-body p-4 drop-shadow rounded">
+          <div className="popup-content dark:text-white dark:bg-neutral-600 bg-body p-4 drop-shadow rounded">
             {isEmptyContent(popup.content) ? (
               <i className="fa-solid fa-volume-high"></i>
             ) : (
@@ -83,17 +84,17 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
         onMouseLeave={onBlur}
         onClick={onClick}
       >
-        {children}
         {hasAudio && (
           <>
             {isPlaying ? (
-              <i className="fa-solid fa-circle-pause ml-2"></i>
+              <i className="fa-solid fa-circle-pause mx-1"></i>
             ) : (
-              <i className="fa-solid fa-volume-high ml-2"></i>
+              <i className="fa-solid fa-volume-high mx-1"></i>
             )}
             {audioPlayer}
           </>
         )}
+        {children}
       </span>
     </Popover>
   );

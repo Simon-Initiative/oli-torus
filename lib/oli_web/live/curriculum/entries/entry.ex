@@ -11,6 +11,7 @@ defmodule OliWeb.Curriculum.EntryLive do
   alias OliWeb.Common.Links
   alias Surface.Components.Link
 
+  prop ctx, :struct, required: true
   prop child, :struct, required: true
   prop index, :integer, required: true
   prop selected, :boolean, required: true
@@ -21,7 +22,6 @@ defmodule OliWeb.Curriculum.EntryLive do
   prop activity_map, :map, required: true
   prop author, :struct, required: true
   prop container, :struct, required: true
-  prop context, :struct, required: true
   prop objective_map, :map, required: true
   prop view, :string, required: true
 

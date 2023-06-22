@@ -62,9 +62,9 @@ defmodule OliWeb.CommunityLive.IndexView do
         Accounts.list_admin_communities(author_id)
       end
 
-    context = SessionContext.init(session)
+    ctx = SessionContext.init(socket, session)
 
-    {:ok, table_model} = TableModel.new(communities, context)
+    {:ok, table_model} = TableModel.new(communities, ctx)
 
     {:ok,
      assign(socket,

@@ -28,11 +28,11 @@ defmodule OliWeb.Resources.PagesView do
   alias Oli.Authoring.Course.Project
   alias OliWeb.Curriculum.OptionsModal
 
-  data title, :string, default: "All Pages"
-  data project, :any
-  data breadcrumbs, :list
-  data author, :any
-  data pages, :list
+  data(title, :string, default: "All Pages")
+  data(project, :any)
+  data(breadcrumbs, :list)
+  data(author, :any)
+  data(pages, :list)
 
   @limit 25
 
@@ -66,7 +66,7 @@ defmodule OliWeb.Resources.PagesView do
       with {:ok, author} <- Accounts.get_author(author_id) |> trap_nil(),
            {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project) do
-        context = SessionContext.init(session)
+        ctx = SessionContext.init(socket, session)
 
         pages =
           PageBrowse.browse_pages(
@@ -77,13 +77,13 @@ defmodule OliWeb.Resources.PagesView do
           )
 
         total_count = determine_total(pages)
-        {:ok, table_model} = PagesTableModel.new(pages, project, context)
+        {:ok, table_model} = PagesTableModel.new(pages, project, ctx)
 
         project_hierarchy =
           AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()
 
         assign(socket,
-          context: context,
+          ctx: ctx,
           breadcrumbs: breadcrumb(project),
           project_hierarchy: project_hierarchy,
           project: project,
@@ -574,9 +574,16 @@ defmodule OliWeb.Resources.PagesView do
     new_page_attrs =
       original_page
       |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
-      |> Map.put(:title, "Copy of #{original_page.title}")
+      |> Map.put(:title, "#{original_page.title} (copy)")
       |> Map.put(:content, nil)
       |> Map.put(:author_id, author.id)
+      |> then(fn map ->
+        if is_nil(map.legacy) do
+          map
+        else
+          Map.put(map, :legacy, Map.from_struct(original_page.legacy))
+        end
+      end)
 
     Oli.Repo.transaction(fn ->
       with {:ok, %{revision: revision}} <-

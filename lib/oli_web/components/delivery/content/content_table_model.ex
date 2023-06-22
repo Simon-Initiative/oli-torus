@@ -24,9 +24,9 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
         th_class: "instructor_dashboard_th"
       },
       %ColumnSpec{
-        name: :student_mastery,
-        label: "STUDENT MASTERY",
-        render_fn: &__MODULE__.stub_student_mastery/3,
+        name: :student_proficiency,
+        label: "STUDENT PROFICIENCY",
+        render_fn: &__MODULE__.render_student_proficiency/3,
         th_class: "instructor_dashboard_th"
       }
     ]
@@ -63,14 +63,14 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
       <%= if @patch_url_type == :instructor_dashboard do %>
         <.link
-          class="ml-6 text-gray-600 underline hover:text-gray-700"
+          class="ml-6 underline"
           patch={
             Routes.live_path(
               OliWeb.Endpoint,
               OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
               @section_slug,
               @view,
-              :students,
+              :content,
               @url_params
             )
           }
@@ -94,11 +94,11 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     """
   end
 
-  def stub_student_mastery(assigns, container, _) do
+  def render_student_proficiency(assigns, container, _) do
     assigns = Map.merge(assigns, %{container: container})
 
     ~H"""
-      <div class={if @container.student_mastery == "Low", do: "text-red-600 font-bold"}><%= @container.student_mastery %></div>
+      <div class={if @container.student_proficiency == "Low", do: "text-red-600 font-bold"}><%= @container.student_proficiency %></div>
     """
   end
 

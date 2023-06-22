@@ -65,13 +65,24 @@ defmodule OliWeb.HelpController do
         }
       )
 
-    current_user = Pow.Plug.current_user(conn)
+    current_user =
+      Pow.Plug.current_user(conn) ||
+        conn.assigns[:current_user]
 
-    if current_user != nil do
+    if current_user do
       # :TODO: find a way to reliably get roles in both authoring and delivery contexts
-      email = if current_user.email == nil, do: " ", else: " "
-      given_name = if current_user.given_name == nil, do: " ", else: " "
-      family_name = if current_user.family_name == nil, do: " ", else: " "
+      email = if current_user.email == nil, do: " ", else: current_user.email
+
+      given_name =
+        if current_user.given_name == nil,
+          do: " ",
+          else: current_user.given_name
+
+      family_name =
+        if current_user.family_name == nil,
+          do: " ",
+          else: current_user.family_name
+
       context = SessionContext.init(conn)
 
       {

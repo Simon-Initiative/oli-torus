@@ -3,9 +3,9 @@ defmodule OliWeb.Sections.Invites.Invitation do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
 
-  prop invitation, :struct, required: true
-  prop delete, :event, required: true
-  prop context, :struct, required: true
+  prop(invitation, :struct, required: true)
+  prop(delete, :event, required: true)
+  prop(ctx, :struct, required: true)
 
   def render(assigns) do
     assigns
@@ -29,10 +29,10 @@ defmodule OliWeb.Sections.Invites.Invitation do
         </div>
       </div>
       {#if active}
-        <p class="mb-1">Expires: {Utils.render_precise_date(@invitation, :date_expires, @context)}</p>
+        <p class="mb-1">Expires: {Utils.render_precise_date(@invitation, :date_expires, @ctx)}</p>
         <small class="text-muted">Time remaining: {duration(@invitation.date_expires, DateTime.utc_now())}.</small>
       {#else}
-        <p class="mb-1">Expired: {Utils.render_precise_date(@invitation, :date_expires, @context)}</p>
+        <p class="mb-1">Expired: {Utils.render_precise_date(@invitation, :date_expires, @ctx)}</p>
       {/if}
     </li>
     """

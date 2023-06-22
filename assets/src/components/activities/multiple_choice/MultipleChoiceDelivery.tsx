@@ -120,6 +120,7 @@ export const MultipleChoiceComponent: React.FC = () => {
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
+          shouldShow
         />
         <EvaluationConnected />
       </div>
@@ -130,7 +131,9 @@ export const MultipleChoiceComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, {
+      name: 'MultipleChoiceDelivery',
+    });
 
     ReactDOM.render(
       <Provider store={store}>

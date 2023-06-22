@@ -11,12 +11,12 @@ defmodule OliWeb.SystemMessageLive.IndexView do
   alias Surface.Components.Form
   alias Surface.Components.Form.{ErrorTag, Field, TextArea}
 
-  data title, :string, default: "Type a System Message"
-  data breadcrumbs, :list
-  data show_confirm, :boolean, default: false
-  data messages, :list
-  data unsaved_system_message, :map, default: nil
-  data message_will_be_displayed, :boolean
+  data(title, :string, default: "Type a System Message")
+  data(breadcrumbs, :list)
+  data(show_confirm, :boolean, default: false)
+  data(messages, :list)
+  data(unsaved_system_message, :map, default: nil)
+  data(message_will_be_displayed, :boolean)
 
   def breadcrumb() do
     OliWeb.Admin.AdminView.breadcrumb() ++
@@ -33,7 +33,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
     {:ok,
      assign(socket,
-       context: SessionContext.init(session),
+       ctx: SessionContext.init(socket, session),
        messages: messages,
        breadcrumbs: breadcrumb()
      )}
@@ -42,7 +42,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
   def render(assigns) do
     ~F"""
       {#for message <- @messages}
-        <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} {=@context}/>
+        <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} {=@ctx}/>
       {/for}
       <Form for={:system_message} submit="create">
         <Field name={:message} class="form-group">
@@ -103,12 +103,12 @@ defmodule OliWeb.SystemMessageLive.IndexView do
       |> Map.update(
         :start,
         "",
-        &FormatDateTime.datestring_to_utc_datetime(&1, socket.assigns.context)
+        &FormatDateTime.datestring_to_utc_datetime(&1, socket.assigns.ctx)
       )
       |> Map.update(
         :end,
         "",
-        &FormatDateTime.datestring_to_utc_datetime(&1, socket.assigns.context)
+        &FormatDateTime.datestring_to_utc_datetime(&1, socket.assigns.ctx)
       )
       |> Map.put(:active, active)
       |> Map.put(:id, id)

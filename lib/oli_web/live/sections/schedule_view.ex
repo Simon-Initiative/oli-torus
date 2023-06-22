@@ -4,11 +4,11 @@ defmodule OliWeb.Sections.ScheduleView do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb, SessionContext}
 
-  data breadcrumbs, :any
-  data title, :string, default: "Schedule Section"
-  data section, :any, default: nil
-  data show_confirm, :boolean, default: false
-  data to_delete, :integer, default: nil
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Schedule Section")
+  data(section, :any, default: nil)
+  data(show_confirm, :boolean, default: false)
+  data(to_delete, :integer, default: nil)
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -30,10 +30,10 @@ defmodule OliWeb.Sections.ScheduleView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {type, _, section} ->
+      {type, current_user, section} ->
         {:ok,
          assign(socket,
-           context: SessionContext.init(session),
+           ctx: SessionContext.init(socket, session, user: current_user),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            js_path: Routes.static_path(OliWeb.Endpoint, "/js/scheduler.js"),

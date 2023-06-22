@@ -4,43 +4,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   import OliWeb.ViewHelpers, only: [brand_logo: 1]
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Components.Delivery.UserAccountMenu
   alias OliWeb.Components.Header
+  alias OliWeb.Common.SessionContext
 
-  defmodule PriorityAction do
-    @enforce_keys [:type, :title, :description, :action_link]
-
-    defstruct [
-      :type,
-      :title,
-      :description,
-      :action_link
-    ]
-
-    @type link_label() :: String.t()
-    @type link_href() :: String.t()
-
-    @type t() :: %__MODULE__{
-            type: :email | :grade | :review,
-            title: String.t(),
-            description: String.t(),
-            action_link: {link_label(), link_href()}
-          }
-  end
-
-  attr(:current_user, User)
+  attr(:ctx, SessionContext)
   attr(:section, Section)
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
   attr(:preview_mode, :boolean, default: false)
-  attr(:view, :atom, required: true)
+  attr(:view, :atom, default: nil)
 
   def main_layout(assigns) do
     ~H"""
       <div class="flex-1 flex flex-col h-screen">
-        <.header socket_or_conn={@socket_or_conn} view={@view} current_user={@current_user} section={@section} preview_mode={@preview_mode} />
+        <.header socket_or_conn={@socket_or_conn} ctx={@ctx} view={@view} section={@section} preview_mode={@preview_mode} />
         <.section_details_header section={@section}/>
         <Header.delivery_breadcrumb {assigns} />
 
@@ -63,7 +42,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     ]
 
     @type t() :: %__MODULE__{
-            label: String.t(),
+            label: String.t() | Function.t(),
             path: String.t(),
             badge: Integer.t(),
             active: Boolean.t()
@@ -94,9 +73,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   hover:text-body-color
                   hover:border-delivery-primary-200
                   focus:border-delivery-primary-200
-                  #{if active, do: "!border-delivery-primary", else: "border-transparent"}
+                  #{if active, do: "!border-delivery-primary active", else: "border-transparent"}
                 "}>
-                  <%= label %>
+                <%= if is_function(label), do: label.(), else: label %>
                   <%= if badge do %>
                   <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
                   <% end %>
@@ -160,11 +139,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp is_active?(current_view, view), do: current_view == view
 
-  attr(:current_user, User)
+  attr(:ctx, SessionContext)
   attr(:section, Section)
   attr(:preview_mode, :boolean, default: false)
   attr(:socket_or_conn, :any, required: true)
-  attr(:view, :atom, required: true)
+  attr(:view, :atom)
 
   def header(assigns) do
     ~H"""
@@ -183,13 +162,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             <.header_link path={header_link_path(@socket_or_conn, @section, :discussions, @preview_mode)} active={is_active?(@view, :discussions)}>Discussion Activity</.header_link>
           </div>
 
-          <div>
-            <%= if @preview_mode do %>
-              <UserAccountMenu.preview_user />
-            <% else %>
-              <UserAccountMenu.menu current_user={@current_user} />
-            <% end %>
-          </div>
+          <%= if @preview_mode do %>
+            <UserAccountMenu.preview_user />
+          <% else %>
+            <UserAccountMenu.menu ctx={@ctx} />
+          <% end %>
 
           <div class="flex items-center border-l border-slate-300 my-2">
             <button
@@ -203,8 +180,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                 hover:bg-delivery-header-700
                 active:bg-delivery-header-600
               "
-              data-bs-toggle="modal"
-              data-bs-target="#help-modal">
+                onclick="window.showHelpModal();">
               <i class="fa-regular fa-circle-question fa-lg"></i>
             </button>
           </div>
@@ -236,71 +212,4 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     </div>
     """
   end
-
-  @doc """
-  Takes a list of actions and renders a set of action cards
-
-  E.g.
-    ```
-    <.actions actions=[%PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }] />
-    ```
-  """
-  attr(:actions, :list, default: [])
-
-  def actions(assigns) do
-    ~H"""
-      <%= if Enum.count(@actions) > 0 do %>
-          <div class="w-full py-4">
-            <div class="container mx-auto flex-col">
-              <div class="py-4 font-bold">
-                Top priority actions to take for this class
-              </div>
-              <div class="flex flex-row overflow-x-auto">
-                <%= for action <- @actions do %>
-                  <.action_card action={action} />
-                <% end %>
-              </div>
-            </div>
-          </div>
-      <% end %>
-    """
-  end
-
-  attr(:action, PriorityAction, required: true)
-
-  def action_card(assigns) do
-    ~H"""
-      <div class="flex flex-col bg-white dark:bg-gray-800 shadow p-4 mr-4 max-w-[300px] shrink-0">
-        <div class="flex my-2">
-          <span class={"rounded-full py-1 px-6 #{badge_bg_color(@action.type)} text-white"}>
-            <%= badge_title(@action.type) %>
-          </span>
-        </div>
-        <div class="font-semibold my-2">
-          <%= @action.title %>
-        </div>
-        <div class="flex-1 text-gray-500 my-2">
-          <%= @action.description %>
-        </div>
-        <div class="flex flex-row mt-4">
-          <a href={@action.action_link |> elem(1)} class="btn flex-1 bg-delivery-primary hover:bg-delivery-primary-700 text-white hover:text-white text-center">
-            <%= @action.action_link |> elem(0) %>
-          </a>
-          <button class="btn btn-link text-delivery-primary hover:text-delivery-primary-700">
-            Dismiss
-          </button>
-        </div>
-      </div>
-    """
-  end
-
-  defp badge_title(:email), do: "Email"
-  defp badge_title(:grade), do: "Grade"
-  defp badge_title(:review), do: "Review"
-  defp badge_title(_), do: "Action"
-
-  defp badge_bg_color(:email), do: "bg-green-700"
-  defp badge_bg_color(:grade), do: "bg-red-700"
-  defp badge_bg_color(:review), do: "bg-fuchsia-700"
-  defp badge_bg_color(_), do: "bg-gray-700"
 end

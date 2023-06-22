@@ -6,10 +6,11 @@ defmodule OliWeb.Components.Delivery.Progress do
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
-  data title, :string, default: "Progress"
-  prop params, :map, required: true
-  prop total_count, :integer, required: true
-  prop table_model, :map, required: true
+  data(title, :string, default: "Progress")
+  prop(params, :map, required: true)
+  prop(total_count, :integer, required: true)
+  prop(table_model, :map, required: true)
+  prop(ctx, :struct, required: true)
 
   @default_params %{
     offset: 0,
@@ -24,7 +25,7 @@ defmodule OliWeb.Components.Delivery.Progress do
           student_id: student_id,
           section_slug: section_slug,
           params: params,
-          context: context,
+          ctx: ctx,
           pages: pages
         } = _assigns,
         socket
@@ -38,7 +39,7 @@ defmodule OliWeb.Components.Delivery.Progress do
         rows,
         section_slug,
         student_id,
-        context
+        ctx
       )
 
     table_model =
@@ -64,9 +65,9 @@ defmodule OliWeb.Components.Delivery.Progress do
   def render(assigns) do
     ~F"""
       <div class="mx-10 mb-10 bg-white">
-        <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 border instructor_dashboard_table">
+        <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
           <h4 class="pl-9 !py-2 torus-h4 mr-auto">{@title}</h4>
-          <form for="search" phx-target={@myself} phx-change="search_progress" class="pb-6 ml-9 sm:pb-0">
+          <form for="search" phx-target={@myself} phx-change="search_progress" class="pb-6 ml-9 w-44 sm:pb-0">
             <SearchInput.render id="progress_search_input" name="resource_title" text={@params.text_search} />
           </form>
         </div>

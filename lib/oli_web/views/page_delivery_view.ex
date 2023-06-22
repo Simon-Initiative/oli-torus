@@ -7,7 +7,6 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Resources.Revision
   alias OliWeb.Common.Utils
 
   import Oli.Utils, only: [value_or: 2]
@@ -59,11 +58,11 @@ defmodule OliWeb.PageDeliveryView do
   def prev_link(assigns) do
     ~H"""
       <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
-        <div class="d-flex flex-row">
-          <div>
+        <div class="flex items-center justify-between">
+          <div class="mr-4">
             <i class="fas fa-arrow-left nav-icon"></i>
           </div>
-          <div class="d-flex flex-column flex-1 flex-ellipsis-fix text-right">
+          <div class="flex flex-col text-right overflow-hidden">
             <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>
@@ -75,12 +74,12 @@ defmodule OliWeb.PageDeliveryView do
   def next_link(assigns) do
     ~H"""
       <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
-        <div class="d-flex flex-row">
-          <div class="d-flex flex-column flex-1 flex-ellipsis-fix text-left">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col text-left overflow-hidden">
             <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>
-          <div>
+          <div class="ml-4">
             <i class="fas fa-arrow-right nav-icon"></i>
           </div>
         </div>
@@ -88,7 +87,7 @@ defmodule OliWeb.PageDeliveryView do
     """
   end
 
-  def action(preview_mode, %Revision{} = revision), do: action(preview_mode, container?(revision))
+  def action(preview_mode, %{resource_type_id: _resource_type_id} = revision), do: action(preview_mode, container?(revision))
 
   def action(preview_mode, %{"type" => type}), do: action(preview_mode, type == "container")
 

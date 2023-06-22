@@ -8,7 +8,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
-  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Page.{PageContext, ObjectivesRollup}
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -23,6 +23,8 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.{PageContent, Revision}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
+  alias OliWeb.Components.Delivery.AdaptiveIFrame
+  alias OliWeb.PageDeliveryView
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -53,7 +55,8 @@ defmodule OliWeb.PageDeliveryController do
           else
             revision = DeliveryResolver.root_container(section_slug)
 
-            effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+            effective_settings =
+              Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
             next_activities =
               Sections.get_next_activities_for_student(section_slug, user.id)
@@ -79,7 +82,8 @@ defmodule OliWeb.PageDeliveryController do
               is_instructor: is_instructor,
               progress: learner_progress(section.id, user.id),
               next_activities: next_activities,
-              independent_learner: user.independent_learner
+              independent_learner: user.independent_learner,
+              current_user_id: user.id
             )
           end
       end
@@ -96,19 +100,12 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp learner_progress(section_id, user_id) do
-    case Map.get(Metrics.progress_for(section_id, user_id), user_id) do
-      nil ->
-        # if there is no progress (nil) then return 0%
-        0
-
-      progress ->
-        (progress * 100)
-        |> round()
-        # if there is any progress at all, we want to represent that by at least showing 1% min
-        |> max(1)
-        # ensure we never show progress above 100%
-        |> min(100)
-    end
+    (Metrics.progress_for(section_id, user_id) * 100)
+    |> round()
+    # if there is any progress at all, we want to represent that by at least showing 1% min
+    |> max(1)
+    # ensure we never show progress above 100%
+    |> min(100)
   end
 
   def exploration(conn, %{"section_slug" => section_slug}) do
@@ -155,6 +152,7 @@ defmodule OliWeb.PageDeliveryController do
       render(
         conn,
         "assignments.html",
+        title: section.title,
         assignments: assignments,
         section_slug: section_slug,
         preview_mode: false,
@@ -247,6 +245,8 @@ defmodule OliWeb.PageDeliveryController do
 
           section_resource = Sections.get_section_resource(section.id, revision.resource_id)
 
+          numbered_revisions = Sections.get_revision_indexes(section.slug)
+
           render(conn, "container.html",
             scripts: [],
             section: section,
@@ -256,6 +256,7 @@ defmodule OliWeb.PageDeliveryController do
             section_slug: section_slug,
             previous_page: previous,
             next_page: next,
+            numbered_revisions: numbered_revisions,
             current_page: current,
             page_number: section_resource.numbering_index,
             preview_mode: preview_mode,
@@ -286,6 +287,21 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  # Route to render adaptive pages in a full screen mode with no torus navigation.
+  # Used within an iframe when the adaptive page is embedded in a torus page.
+  def page_fullscreen(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
+      |> render_adaptive_chromeless_page(conn, section_slug, false)
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
@@ -299,17 +315,33 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def render_content_html(
+        %{section_slug: section_slug},
+        %{"displayApplicationChrome" => true, "advancedDelivery" => true} = content,
+        page_slug
+      ) do
+    # Render the internal page iframe for adaptive delivery within the torus navigation
+    AdaptiveIFrame.delivery(section_slug, page_slug, content)
+  end
+
+  def render_content_html(render_context, content, _page_slug) do
+    # Render a basic page content.  This is the default for all pages that do not have
+    # displayApplicationChrome set to true
+    Page.render(render_context, content, Page.Html)
+  end
+
+  # Matches a not-started page that displays the "start attempt" button
   defp render_page(
          %PageContext{
            progress_state: :not_started,
            page: page,
            user: user,
            resource_attempts: resource_attempts,
-           effective_settings: effective_settings,
+           effective_settings: effective_settings
          } = context,
          conn,
          section_slug,
-         _
+         _preview_mode
        ) do
     section = conn.assigns.section
 
@@ -322,19 +354,33 @@ defmodule OliWeb.PageDeliveryController do
     # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
     # gate that prevents this learning from starting another attempt of this resource
     blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
-    new_attempt_allowed = Oli.Delivery.Settings.new_attempt_allowed(effective_settings, attempts_taken, blocking_gates)
+
+    new_attempt_allowed =
+      Oli.Delivery.Settings.new_attempt_allowed(
+        effective_settings,
+        attempts_taken,
+        blocking_gates
+      )
+
     allow_attempt? = new_attempt_allowed == {:allowed}
 
     message =
       case new_attempt_allowed do
-        {:blocking_gates} -> Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
-        {:no_attempts_remaining} -> "You have no attempts remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
-        {:end_date_passed} -> "The deadline for this assignment has passed."
+        {:blocking_gates} ->
+          Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
+
+        {:no_attempts_remaining} ->
+          "You have no attempts remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
+
+        {:end_date_passed} ->
+          "The deadline for this assignment has passed."
+
         {:allowed} ->
           if effective_settings.max_attempts == 0 do
             "You can take this scored page an unlimited number of times"
           else
             attempts_remaining = effective_settings.max_attempts - attempts_taken
+
             "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{effective_settings.max_attempts} total attempt#{plural(effective_settings.max_attempts)}."
           end
       end
@@ -353,6 +399,8 @@ defmodule OliWeb.PageDeliveryController do
 
     section_resource = Sections.get_section_resource(section.id, page.resource_id)
 
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
     render(conn, "prologue.html", %{
       resource_access: resource_access,
       section_slug: section_slug,
@@ -361,6 +409,7 @@ defmodule OliWeb.PageDeliveryController do
       resource_attempts: resource_attempts,
       previous_page: previous,
       next_page: next,
+      numbered_revisions: numbered_revisions,
       current_page: current,
       page_number: section_resource.numbering_index,
       title: context.page.title,
@@ -370,117 +419,77 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       max_attempts: effective_settings.max_attempts,
       effective_settings: effective_settings,
-      requires_password?: effective_settings.password != nil and effective_settings.password != "",
+      requires_password?:
+        effective_settings.password != nil and effective_settings.password != "",
       section: section,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
       resource_slug: context.page.slug,
-
       bib_app_params: %{
         bibReferences: context.bib_revisions
       }
     })
   end
 
-  # Advanced / adaptive lesson page rendering
+  # Handles the 2 cases of adaptive delivery
+  #  1. A fullscreen chromeless version
+  #  2. A version inside the torus navigation with an iframe pointing to #1
   defp render_page(
-         %PageContext{user: user, page: %{content: %{"advancedDelivery" => true}}} = context,
+         %PageContext{
+           page: %{
+             content:
+               %{
+                 "advancedDelivery" => true
+               } = content
+           }
+         } = context,
          conn,
          section_slug,
          preview_mode
        ) do
-    section = conn.assigns.section
+    case Map.get(content, "displayApplicationChrome", false) do
+      false ->
+        render_adaptive_chromeless_page(context, conn, section_slug, preview_mode)
 
-    layout =
-      case Map.get(context.page.content, "displayApplicationChrome", true) do
-        true -> "page.html"
-        false -> "chromeless.html"
-      end
-
-    conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
-
-    resource_attempt = Enum.at(context.resource_attempts, 0)
-
-    {:ok, {previous, next, current}, _} =
-      PreviousNextIndex.retrieve(section, context.page.resource_id)
-
-    previous_url = url_from_desc(conn, section_slug, previous)
-    next_url = url_from_desc(conn, section_slug, next)
-
-    activity_types = Activities.activities_for_section()
-
-    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
-
-    render(conn, "advanced_delivery.html", %{
-      app_params: %{
-        activityTypes: activity_types,
-        resourceId: context.page.resource_id,
-        sectionSlug: section_slug,
-        userId: user.id,
-        userName: user.name,
-        pageTitle: context.page.title,
-        pageSlug: context.page.slug,
-        graded: context.page.graded,
-        content: context.page.content,
-        resourceAttemptState: resource_attempt.state,
-        resourceAttemptGuid: resource_attempt.attempt_guid,
-        activityGuidMapping: context.activities,
-        previousPageURL: previous_url,
-        nextPageURL: next_url,
-        previewMode: preview_mode,
-        isInstructor: true,
-        reviewMode: context.review_mode,
-        overviewURL: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug),
-        finalizeGradedURL:
-          Routes.page_lifecycle_path(
-            conn,
-            :transition
-          ),
-        screenIdleTimeOutInSeconds:
-          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
-      },
-      bib_app_params: %{
-        bibReferences: context.bib_revisions
-      },
-      activity_type_slug_mapping: %{},
-      activity_types: activity_types,
-      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
-      graded: context.page.graded,
-      latest_attempts: %{},
-      next_page: next,
-      current_page: current,
-      page_number: section_resource.numbering_level,
-      user_id: user.id,
-      next_url: next_url,
-      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-      preview_mode: preview_mode,
-      previous_url: previous_url,
-      previous_page: previous,
-      resource_attempt_guid: resource_attempt.attempt_guid,
-      resource_id: context.page.resource_id,
-      section: section,
-      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
-      revision: context.page,
-      resource_slug: context.page.slug,
-      section_slug: section_slug,
-      slug: context.page.slug,
-      scripts: Activities.get_activity_scripts(:delivery_script),
-      title: context.page.title
-    })
+      _ ->
+        render_page_body(context, conn, section_slug)
+    end
   end
 
-  defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
+  defp render_page(
+         %PageContext{progress_state: :error},
+         conn,
+         _section_slug,
+         _preview_mode
+       ) do
     render(conn, "error.html")
   end
 
   # This case handles :in_progress and :revised progress states, in addition to
   # handling ungraded pages and review mode
-  defp render_page(%PageContext{user: user, effective_settings: effective_settings} = context, conn, section_slug, _) do
+  defp render_page(
+         context,
+         conn,
+         section_slug,
+         _preview_mode
+       ) do
+    render_page_body(context, conn, section_slug)
+  end
+
+  # This renders the page with navigation and the content inside it. The content might be either
+  # core torus content or an iframe pointing to adaptive content which is determined in render_content_html
+  def render_page_body(
+        %PageContext{
+          user: user,
+          effective_settings: effective_settings,
+          page: %{content: content}
+        } = context,
+        conn,
+        section_slug
+      ) do
     section = conn.assigns.section
 
-    # get_section_resource
     section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
@@ -545,8 +554,7 @@ defmodule OliWeb.PageDeliveryController do
     }
 
     this_attempt = context.resource_attempts |> hd
-    html = Page.render(render_context, this_attempt.content, Page.Html)
-
+    html = render_content_html(render_context, this_attempt.content, context.page.slug)
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
     all_activities = Activities.list_activity_registrations()
@@ -556,6 +564,10 @@ defmodule OliWeb.PageDeliveryController do
 
     resource_attempt = hd(context.resource_attempts)
 
+    adaptive = Map.get(content, "advancedDelivery", false)
+
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
     # For testing, you can uncomment to introduce a time out
     # effective_settings = %{effective_settings | time_limit: 2, late_submit: :disallow}
 
@@ -563,6 +575,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        adaptive: adaptive,
         context: context,
         page: context.page,
         review_mode: context.review_mode,
@@ -574,6 +587,7 @@ defmodule OliWeb.PageDeliveryController do
           Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a.slug) end),
         previous_page: previous,
         next_page: next,
+        numbered_revisions: numbered_revisions,
         current_page: current,
         page_number: section_resource.numbering_index,
         title: context.page.title,
@@ -601,7 +615,9 @@ defmodule OliWeb.PageDeliveryController do
         scheduling_type: section_resource.scheduling_type,
         time_limit: effective_settings.time_limit,
         attempt_start_time: resource_attempt.inserted_at |> to_epoch,
-        effective_end_time: Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings) |> to_epoch,
+        effective_end_time:
+          Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings)
+          |> to_epoch,
         end_date: effective_settings.end_date,
         auto_submit: effective_settings.late_submit == :disallow,
         # TODO: implement reading time estimation
@@ -610,7 +626,97 @@ defmodule OliWeb.PageDeliveryController do
     )
   end
 
+  # Renders an adaptive page fullscreen with no torus nav around it.
+  #   Used in adaptive delivery full screen mode and when displayApplicationChrome is true
+  #   inside an iframe.
+  defp render_adaptive_chromeless_page(
+         context,
+         conn,
+         section_slug,
+         preview_mode
+       ) do
+    section = conn.assigns.section
+
+    layout = "chromeless.html"
+
+    conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
+
+    resource_attempt = Enum.at(context.resource_attempts, 0)
+
+    {:ok, {previous, next, current}, _} =
+      PreviousNextIndex.retrieve(section, context.page.resource_id)
+
+    previous_url = url_from_desc(conn, section_slug, previous)
+    next_url = url_from_desc(conn, section_slug, next)
+
+    activity_types = Activities.activities_for_section()
+
+    section_resource = Sections.get_section_resource(section.id, context.page.resource_id)
+
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
+    render(conn, "advanced_delivery.html", %{
+      app_params: %{
+        activityTypes: activity_types,
+        resourceId: context.page.resource_id,
+        sectionSlug: section_slug,
+        userId: context.user.id,
+        userName: context.user.name,
+        pageTitle: context.page.title,
+        pageSlug: context.page.slug,
+        graded: context.page.graded,
+        content: context.page.content,
+        resourceAttemptState: resource_attempt.state,
+        resourceAttemptGuid: resource_attempt.attempt_guid,
+        activityGuidMapping: context.activities,
+        previousPageURL: previous_url,
+        nextPageURL: next_url,
+        previewMode: preview_mode,
+        isInstructor: true,
+        reviewMode: context.review_mode,
+        overviewURL: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug),
+        finalizeGradedURL:
+          Routes.page_lifecycle_path(
+            conn,
+            :transition
+          ),
+        screenIdleTimeOutInSeconds:
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+      },
+      bib_app_params: %{
+        bibReferences: context.bib_revisions
+      },
+      activity_type_slug_mapping: %{},
+      activity_types: activity_types,
+      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
+      graded: context.page.graded,
+      latest_attempts: %{},
+      next_page: next,
+      current_page: current,
+      numbered_revisions: numbered_revisions,
+      page_number: section_resource.numbering_level,
+      user_id: context.user.id,
+      next_url: next_url,
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+      preview_mode: preview_mode,
+      previous_url: previous_url,
+      previous_page: previous,
+      resource_attempt_guid: resource_attempt.attempt_guid,
+      resource_id: context.page.resource_id,
+      section: section,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+      revision: context.page,
+      resource_slug: context.page.slug,
+      section_slug: section_slug,
+      slug: context.page.slug,
+      scripts: Activities.get_activity_scripts(:delivery_script),
+      title: context.page.title
+    })
+  end
+
   defp to_epoch(nil), do: nil
+
   defp to_epoch(date_time) do
     date_time
     |> DateTime.to_unix(:second)
@@ -621,9 +727,20 @@ defmodule OliWeb.PageDeliveryController do
   # PREVIEW
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
+    current_user = conn.assigns.current_author || conn.assigns.current_user
+
     section =
       conn.assigns.section
       |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+    revision = DeliveryResolver.root_container(section_slug)
+
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(
+        revision,
+        section.id,
+        current_user.id
+      )
 
     render(conn, "index.html",
       title: section.title,
@@ -633,7 +750,12 @@ defmodule OliWeb.PageDeliveryController do
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       preview_mode: true,
       page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
+      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
+      independent_learner: true,
+      collab_space_config: effective_settings.collab_space_config,
+      revision_slug: revision.slug,
+      is_instructor: false,
+      current_user_id: current_user.id
     )
   end
 
@@ -685,7 +807,6 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
-
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
         case conn.assigns.current_user do
@@ -699,7 +820,14 @@ defmodule OliWeb.PageDeliveryController do
             html =
               ~s|<div class="text-center"><em>Instructor preview of adaptive activities is not supported</em></div>|
 
-            effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, conn.assigns.current_user.id)
+            effective_settings =
+              Oli.Delivery.Settings.get_combined_settings(
+                revision,
+                section.id,
+                conn.assigns.current_user.id
+              )
+
+            numbered_revisions = Sections.get_revision_indexes(section.slug)
 
             conn
             |> put_root_layout({OliWeb.LayoutView, "page.html"})
@@ -712,6 +840,7 @@ defmodule OliWeb.PageDeliveryController do
                 preview_mode: true,
                 previous_page: previous,
                 next_page: next,
+                numbered_revisions: numbered_revisions,
                 current_page: current,
                 title: revision.title,
                 html: html,
@@ -790,9 +919,10 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
+    activity_revisions = Resolver.from_resource_id(section_slug, activity_ids)
+
     activity_map =
-      section_slug
-      |> Resolver.from_resource_id(activity_ids)
+      activity_revisions
       |> Enum.map(fn rev ->
         type = Map.get(type_by_id, rev.activity_type_id)
 
@@ -845,12 +975,18 @@ defmodule OliWeb.PageDeliveryController do
 
     html = Page.render(render_context, revision.content, Page.Html)
 
-    effective_settings = case conn.assigns.current_user do
-      nil -> Oli.Delivery.Settings.get_combined_settings(revision, section.id)
-      user -> Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
-    end
+    effective_settings =
+      case conn.assigns.current_user do
+        nil -> Oli.Delivery.Settings.get_combined_settings(revision, section.id)
+        user -> Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+      end
 
     section_resource = Sections.get_section_resource(section.id, revision.resource_id)
+
+    numbered_revisions = Sections.get_revision_indexes(section.slug)
+
+    objectives =
+      ObjectivesRollup.rollup_objectives(revision, activity_revisions, Resolver, section_slug)
 
     conn
     |> put_root_layout({OliWeb.LayoutView, "page.html"})
@@ -863,11 +999,14 @@ defmodule OliWeb.PageDeliveryController do
         preview_mode: true,
         previous_page: previous,
         next_page: next,
+        numbered_revisions: numbered_revisions,
         current_page: current,
-        page_number: section_resource.numbering_level,
+        page_number: section_resource.numbering_index,
         title: revision.title,
+        graded: revision.graded,
+        review_mode: false,
         html: html,
-        objectives: [],
+        objectives: objectives,
         section: section,
         revision: revision,
         page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
@@ -898,28 +1037,32 @@ defmodule OliWeb.PageDeliveryController do
     password = Map.get(conn.body_params, "password", nil)
 
     if Sections.is_enrolled?(user.id, section_slug) do
-
       revision = Resolver.from_revision_slug(section_slug, revision_slug)
-      effective_settings = Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
       case effective_settings.password do
-        nil -> do_start_attempt(conn, section, user, revision, effective_settings)
-        "" -> do_start_attempt(conn, section, user, revision, effective_settings)
-        ^password -> do_start_attempt(conn, section, user, revision, effective_settings)
+        nil ->
+          do_start_attempt(conn, section, user, revision, effective_settings)
+
+        "" ->
+          do_start_attempt(conn, section, user, revision, effective_settings)
+
+        ^password ->
+          do_start_attempt(conn, section, user, revision, effective_settings)
+
         _ ->
           conn
           |> put_flash(:error, "Incorrect password")
           |> redirect(to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
-
       end
-
     else
       render(conn, "not_authorized.html")
     end
   end
 
   defp do_start_attempt(conn, section, user, revision, effective_settings) do
-
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
@@ -940,6 +1083,7 @@ defmodule OliWeb.PageDeliveryController do
             redirect(conn,
               to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
             )
+
           {:error, {:end_date_passed}} ->
             redirect(conn,
               to: Routes.page_delivery_path(conn, :page, section.slug, revision.slug)
@@ -982,7 +1126,6 @@ defmodule OliWeb.PageDeliveryController do
 
     if Oli.Accounts.is_admin?(author) or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
-
       page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
 
       # enforce review_submission
@@ -991,7 +1134,6 @@ defmodule OliWeb.PageDeliveryController do
         {:allow, _} -> render_page(page_context, conn, section_slug, false)
         _ -> render(conn, "not_authorized.html")
       end
-
     else
       render(conn, "not_authorized.html")
     end
@@ -1067,6 +1209,62 @@ defmodule OliWeb.PageDeliveryController do
     |> put_resp_content_type("text/csv")
     |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
     |> send_resp(200, csv_text)
+  end
+
+  # This is for index based navigation between page
+  def navigate_by_index(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+    page_number = Map.get(conn.body_params, "page_number", nil) |> safe_to_integer()
+    preview_mode = Map.get(conn.body_params, "preview_mode", "false") |> String.to_atom()
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      revision = Sections.get_revision_by_index(section_slug, page_number)
+
+      case revision do
+        nil ->
+          case get_req_header(conn, "referer") do
+            [] ->
+              conn
+              |> redirect(
+                to:
+                  Routes.page_delivery_path(
+                    OliWeb.Endpoint,
+                    :index,
+                    section_slug
+                  )
+              )
+
+            [origin_url] ->
+              conn |> put_flash(:error, "Invalid page index") |> redirect(external: origin_url)
+          end
+
+        revision ->
+          conn
+          |> redirect(
+            to:
+              Routes.page_delivery_path(
+                OliWeb.Endpoint,
+                PageDeliveryView.action(preview_mode, revision),
+                section_slug,
+                revision.slug
+              )
+          )
+      end
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
+  def navigate_by_index(conn, _) do
+    render(conn, "not_authorized.html")
+  end
+
+  @spec safe_to_integer(String.t()) :: integer() | nil
+  defp safe_to_integer(string) do
+    case Integer.parse(string) do
+      :error -> nil
+      {integer, _} -> integer
+    end
   end
 
   defp build_enrollments_text(enrollments) do

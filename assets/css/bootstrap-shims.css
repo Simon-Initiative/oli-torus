@@ -264,7 +264,7 @@ textarea.form-control,
 .input-group select,
 select.custom-select,
 select.form-control {
-  @apply border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700;
+  @apply border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white;
 }
 
 input.form-control-sm,
@@ -426,10 +426,10 @@ li.page-item {
   @apply bg-blue-400 text-white;
 }
 .badge-light {
-  @apply bg-gray-200 text-white;
+  @apply bg-gray-200 text-white dark:text-black;
 }
 .badge-dark {
-  @apply bg-gray-800 text-white;
+  @apply bg-gray-700 text-white;
 }
 
 .align-items-baseline {

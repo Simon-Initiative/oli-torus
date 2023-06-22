@@ -15,6 +15,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
   alias OliWeb.Common.SessionContext
   alias Surface.Components.Link
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Paywall
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -55,14 +56,13 @@ defmodule OliWeb.Sections.EnrollmentsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        context = SessionContext.init(session)
+        ctx = SessionContext.init(socket, session)
 
-        %{total_count: total_count, table_model: table_model} =
-          enrollment_assigns(section, context)
+        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section, ctx)
 
         {:ok,
          assign(socket,
-           context: context,
+           ctx: ctx,
            changeset: Sections.change_section(section),
            breadcrumbs: set_breadcrumbs(type, section),
            is_admin: type == :admin,
@@ -97,13 +97,14 @@ defmodule OliWeb.Sections.EnrollmentsView do
     }
 
     enrollments =
-      Sections.browse_enrollments(
+      Sections.browse_enrollments_with_context_roles(
         socket.assigns.section,
         %Paging{offset: offset, limit: @limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
       |> add_students_progress(socket.assigns.section.id, nil)
+      |> add_payment_status(socket.assigns.section)
 
     table_model = Map.put(table_model, :rows, enrollments)
     total_count = determine_total(enrollments)
@@ -168,12 +169,11 @@ defmodule OliWeb.Sections.EnrollmentsView do
   end
 
   def handle_event("unenroll", %{"id" => user_id}, socket) do
-    %{section: section, context: context} = socket.assigns
+    %{section: section, ctx: ctx} = socket.assigns
 
     case Sections.unenroll_learner(user_id, section.id) do
       {:ok, _} ->
-        %{total_count: total_count, table_model: table_model} =
-          enrollment_assigns(section, context)
+        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section, ctx)
 
         {:noreply, assign(socket, total_count: total_count, table_model: table_model)}
 
@@ -190,19 +190,20 @@ defmodule OliWeb.Sections.EnrollmentsView do
     ])
   end
 
-  def enrollment_assigns(section, context) do
+  def enrollment_assigns(section, ctx) do
     enrollments =
-      Sections.browse_enrollments(
+      Sections.browse_enrollments_with_context_roles(
         section,
         %Paging{offset: 0, limit: @limit},
         %Sorting{direction: :asc, field: :name},
         @default_options
       )
       |> add_students_progress(section.id, nil)
+      |> add_payment_status(section)
 
     total_count = determine_total(enrollments)
 
-    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
+    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, ctx)
 
     %{total_count: total_count, table_model: table_model}
   end
@@ -212,6 +213,21 @@ defmodule OliWeb.Sections.EnrollmentsView do
 
     Enum.map(users, fn user ->
       Map.merge(user, %{progress: Map.get(users_progress, user.id)})
+    end)
+  end
+
+  defp add_payment_status(users, section) do
+    Enum.map(users, fn user ->
+      Map.merge(user, %{
+        payment_status:
+          Paywall.summarize_access(
+            user,
+            section,
+            user.context_role_id,
+            user.enrollment,
+            user.payment
+          ).reason
+      })
     end)
   end
 end

@@ -181,6 +181,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Content"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "handles student page access by an enrolled student", %{
@@ -196,6 +197,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
       assert html_response(conn, 200) =~ "Page one"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "shows the related exploration pages for a given page", %{
@@ -212,6 +214,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "exploration page 1"
       assert html_response(conn, 200) =~ "exploration page 2"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "shows a 'no exploration pages' message when the page doesn't have any related exploration pages",
@@ -228,6 +231,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :page, section.slug, ungraded_page_revision.slug))
 
       assert html_response(conn, 200) =~ "There are no explorations related to this page"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "handles student adaptive page access by an enrolled student", %{
@@ -411,7 +415,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      {:ok, conn: conn, context: session_context} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, ctx: session_context} = set_timezone(%{conn: conn})
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -466,7 +470,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         post(
           conn,
-          Routes.page_delivery_path(conn, :start_attempt_protected, section.slug, page_revision.slug),
+          Routes.page_delivery_path(
+            conn,
+            :start_attempt_protected,
+            section.slug,
+            page_revision.slug
+          ),
           %{password: "wrong"}
         )
 
@@ -487,7 +496,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         post(
           conn,
-          Routes.page_delivery_path(conn, :start_attempt_protected, section.slug, page_revision.slug),
+          Routes.page_delivery_path(
+            conn,
+            :start_attempt_protected,
+            section.slug,
+            page_revision.slug
+          ),
           %{password: "password"}
         )
 
@@ -502,7 +516,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, redir_path)
       assert html_response(conn, 200) =~ "Submit Answers"
-
     end
 
     test "changing a page from graded to ungraded allows the graded attempt to continue", %{
@@ -908,6 +921,22 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Up Next"
       assert html_response(conn, 200) =~ "Upcoming Activity 1"
       assert html_response(conn, 200) =~ "Upcoming Activity 2"
+    end
+
+    test "shows page index based navigation", %{
+      conn: conn,
+      revision: revision,
+      user: user,
+      section: section
+    } do
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+
+      assert html_response(conn, 200) =~ "id=\"top_page_navigator\""
+      assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
     end
   end
 
@@ -1469,6 +1498,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # Unit title
       assert html_response(conn, 200) =~ "The first unit"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "page preview - renders ok", %{
@@ -1484,6 +1514,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # page title
       assert html_response(conn, 200) =~ "Page one (Preview)"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "page preview - adaptive renders ok", %{
@@ -1514,6 +1545,53 @@ defmodule OliWeb.PageDeliveryControllerTest do
       # page title
       assert html_response(conn, 200) =~ "page1 (Preview)"
     end
+
+    test "index preview - can access if the user is logged in as instructor", %{
+      conn: conn,
+      section: section
+    } do
+      user = insert(:user)
+      enroll_as_instructor(%{section: section, user: user})
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :index_preview, section.slug)
+        )
+
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "Preview"
+    end
+
+    test "index preview - can access if the user is logged in as admin", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :index_preview, section.slug)
+        )
+
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "Preview"
+    end
+
+    test "shows page index based navigation", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
+        )
+
+        assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
+    end
   end
 
   describe "exploration" do
@@ -1529,6 +1607,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
 
       assert html_response(conn, 200)
+      assert html_response(conn, 200) =~ "#{section.title} | Your Exploration Activities"
     end
 
     test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
@@ -1584,6 +1663,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :exploration, section.slug))
 
       assert html_response(conn, 200) =~ other_revision.title
+      assert html_response(conn, 200) =~ "#{section.title} | Your Exploration Activities"
     end
 
     test "page renders a message when there are no exploration pages available", %{
@@ -1619,6 +1699,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       refute html_response(conn, 200) =~ "<a>Exploration</a>"
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "do not show the 'exploration' access in the Windowshade when the section does not have explorations to show",
@@ -1636,6 +1717,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       refute html_response(conn, 200) =~ "<h4>Your Exploration Activities</h4>"
+      assert html_response(conn, 200) =~ section.title
     end
   end
 
@@ -1651,7 +1733,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
         |> get(Routes.page_delivery_path(conn, :discussion, section.slug))
 
-      assert html_response(conn, 200)
+      assert html_response(conn, 200) =~ section.title
     end
 
     test "instructor can access if is enrolled in the section", %{conn: conn, section: section} do
@@ -1747,6 +1829,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
           )
         )
 
+      assert html_response(conn, 200) =~ section.title
+
       assert html_response(conn, 200) =~ "Assignments"
 
       assert html_response(conn, 200) =~
@@ -1768,6 +1852,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           )
         )
 
+      assert html_response(conn, 200) =~ section.title
       assert html_response(conn, 200) =~ "Course content"
       assert html_response(conn, 200) =~ "Explorations"
 

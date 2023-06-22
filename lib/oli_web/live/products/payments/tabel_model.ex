@@ -1,14 +1,13 @@
 defmodule OliWeb.Products.Payments.TableModel do
   use OliWeb, :surface_component
 
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Common.Utils
+  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel, Common}
 
-  def new(payments, context) do
+  def new(payments, ctx) do
     inserted_at_spec = %ColumnSpec{
       name: :generation_date,
       label: "Created Date",
-      render_fn: &__MODULE__.render_date_column/3,
+      render_fn: &Common.render_date/3,
       sort_fn: &__MODULE__.sort_date/2
     }
 
@@ -19,13 +18,14 @@ defmodule OliWeb.Products.Payments.TableModel do
           name: :type,
           label: "Type",
           render_fn: &__MODULE__.render_type_column/3,
-          sort_fn: &__MODULE__.sort/2
+          sort_fn: &__MODULE__.sort/2,
+          td_class: "text-center text-nowrap"
         },
         inserted_at_spec,
         %ColumnSpec{
           name: :application_date,
           label: "Application Date",
-          render_fn: &__MODULE__.render_date_column/3,
+          render_fn: &Common.render_date/3,
           sort_fn: &__MODULE__.sort_date/2
         },
         %ColumnSpec{
@@ -36,12 +36,14 @@ defmodule OliWeb.Products.Payments.TableModel do
         %ColumnSpec{
           name: :user,
           label: "User",
-          render_fn: &__MODULE__.render_user_column/3
+          render_fn: &__MODULE__.render_user_column/3,
+          td_class: "text-center text-nowrap"
         },
         %ColumnSpec{
           name: :section,
           label: "Section",
-          render_fn: &__MODULE__.render_section_column/3
+          render_fn: &__MODULE__.render_section_column/3,
+          td_class: "text-center text-nowrap"
         }
       ],
       event_suffix: "",
@@ -49,25 +51,47 @@ defmodule OliWeb.Products.Payments.TableModel do
       sort_by_spec: inserted_at_spec,
       sort_order: :desc,
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end
 
-  def render_section_column(_, %{section: section}, _) do
+  def render_section_column(assigns, %{section: section}, _) do
     case section do
-      nil -> ""
-      s -> s.title
+      nil ->
+        ""
+
+      s ->
+        ~F"""
+          <a href={Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+            section.slug,
+            :overview
+          )}>
+            <span>{s.title}</span>
+          </a>
+        """
     end
   end
 
-  def render_user_column(_, %{user: user}, _) do
+  def render_user_column(assigns, %{user: user, section: section}, _) do
     case user do
       nil ->
         ""
 
       user ->
-        safe_get(user.family_name, "Unknown") <> ", " <> safe_get(user.given_name, "Unknown")
+        ~F"""
+          <a href={Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+            section.slug,
+            user.id,
+            :content
+          )}>
+            <span>{safe_get(user.family_name, "Unknown")}, {safe_get(user.given_name, "Unknown")}</span>
+          </a>
+        """
     end
   end
 
@@ -123,10 +147,6 @@ defmodule OliWeb.Products.Payments.TableModel do
            DateTime.to_unix(d)
        end
      end, direction}
-  end
-
-  def render_date_column(%{context: context}, %{payment: payment}, %ColumnSpec{name: name}) do
-    Utils.render_date(payment, name, context)
   end
 
   def render(assigns) do

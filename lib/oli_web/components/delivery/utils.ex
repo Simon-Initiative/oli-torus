@@ -156,7 +156,7 @@ defmodule OliWeb.Components.Delivery.Utils do
     end
   end
 
-  attr :current_user, User
+  attr(:current_user, User)
 
   def user_icon(%{current_user: _} = assigns) do
     ~H"""
@@ -293,8 +293,8 @@ defmodule OliWeb.Components.Delivery.Utils do
   def socket_or_conn(%{socket: socket} = _assigns), do: socket
   def socket_or_conn(%{conn: conn} = _assigns), do: conn
 
-  attr :percent, :integer, required: true
-  attr :width, :string, default: "100%"
+  attr(:percent, :integer, required: true)
+  attr(:width, :string, default: "100%")
 
   def progress_bar(assigns) do
     ~H"""

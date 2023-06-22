@@ -2,33 +2,60 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
+  alias Oli.Delivery.RecommendedActions
+  alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     {:ok, socket}
   end
 
-  @impl Phoenix.LiveView
-  def handle_params(
-        %{"view" => "reports", "active_tab" => "students"} = params,
-        _,
-        socket
-      ) do
+  defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
     params = OliWeb.Components.Delivery.Students.decode_params(params)
 
     socket =
       socket
-      |> assign(params: params, view: :reports, active_tab: :students)
-      |> assign(students: get_students(socket.assigns.section, params))
+      |> assign(params: params, view: :reports, active_tab: String.to_existing_atom(active_tab))
+      |> assign(users: Helpers.get_students(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
+
+    socket =
+      if params.container_id do
+        selected_container =
+          socket.assigns.section
+          |> Helpers.get_containers()
+          |> elem(1)
+          |> Enum.find(&(&1.id == params.container_id))
+
+        assign(socket, :selected_container, selected_container)
+      else
+        socket
+      end
 
     {:noreply, socket}
   end
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "reports", "active_tab" => "content", "container_id" => _container_id} =
+          params,
+        uri,
+        socket
+      ),
+      do: do_handle_students_params(params, uri, socket)
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "reports", "active_tab" => "students"} = params,
+        uri,
+        socket
+      ),
+      do: do_handle_students_params(params, uri, socket)
 
   @impl Phoenix.LiveView
   def handle_params(
@@ -61,7 +88,118 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       socket
       |> assign(params: params, view: :reports, active_tab: active_tab)
-      |> assign_new(:containers, fn -> get_containers(socket.assigns.section) end)
+      |> assign_new(:containers, fn -> Helpers.get_containers(socket.assigns.section) end)
+
+    {:noreply, socket}
+  end
+
+  def handle_params(
+        %{"view" => "overview", "active_tab" => "scored_activities"} = params,
+        _,
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(
+        params: params,
+        view: :overview,
+        active_tab: :scored_activities
+      )
+      |> assign_new(:students, fn ->
+        Sections.enrolled_students(socket.assigns.section.slug)
+        |> Enum.reject(fn s -> s.user_role_id != 4 end)
+      end)
+      |> assign_new(:assessments, fn %{students: students} ->
+        Helpers.get_assessments(socket.assigns.section, students)
+      end)
+      |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
+      |> assign_new(:scripts, fn %{activities: activities} ->
+        part_components = Oli.PartComponents.get_part_component_scripts(:delivery_script)
+
+        Enum.map(activities, fn a -> a.authoring_script end)
+        |> Enum.concat(part_components)
+        |> Enum.map(fn s -> Routes.static_path(OliWeb.Endpoint, "/js/" <> s) end)
+      end)
+      |> assign_new(:activity_types_map, fn %{activities: activities} ->
+        Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
+      end)
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(
+        %{
+          "view" => "overview",
+          "section_slug" => _section_slug,
+          "active_tab" => "recommended_actions"
+        } = params,
+        _,
+        socket
+      ) do
+    socket =
+      case socket.assigns[:has_scheduled_resources] do
+        nil ->
+          section = socket.assigns.section
+
+          has_scheduled_resources =
+            RecommendedActions.section_has_scheduled_resources?(section.id)
+
+          scoring_pending_activities_count =
+            RecommendedActions.section_scoring_pending_activities(section.id) |> length()
+
+          approval_pending_posts_count =
+            RecommendedActions.section_approval_pending_posts(section.id) |> length()
+
+          has_pending_updates = RecommendedActions.section_has_pending_updates?(section.id)
+
+          has_due_soon_activities =
+            RecommendedActions.section_has_due_soon_activities?(section.id)
+
+          assign(socket,
+            has_scheduled_resources: has_scheduled_resources,
+            scoring_pending_activities_count: scoring_pending_activities_count,
+            approval_pending_posts_count: approval_pending_posts_count,
+            has_pending_updates: has_pending_updates,
+            has_due_soon_activities: has_due_soon_activities
+          )
+
+        _ ->
+          socket
+      end
+
+    {:noreply, assign(socket, params: params, view: :overview, active_tab: :recommended_actions)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = params, _, socket) do
+    socket =
+      case params["active_tab"] do
+        value when value in [nil, "course_content"] ->
+          socket =
+            assign_new(socket, :hierarchy, fn ->
+              section =
+                socket.assigns.section
+                |> Oli.Repo.preload([:base_project, :root_section_resource])
+
+              %{"children" => Sections.build_hierarchy(section).children}
+            end)
+
+          socket
+          |> assign(
+            params: params,
+            view: :overview,
+            active_tab: :course_content,
+            current_position: 0,
+            current_level: 0,
+            breadcrumbs_tree: [{0, 0, "Curriculum"}],
+            current_level_nodes: socket.assigns.hierarchy["children"]
+          )
+
+        tab ->
+          socket
+          |> assign(view: :overview, params: params, active_tab: String.to_existing_atom(tab))
+      end
 
     {:noreply, socket}
   end
@@ -70,7 +208,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   def handle_params(params, _, socket) do
     allowed_routes = [
       {nil, nil},
-      {"overview", nil},
+      {"overview", "course_content"},
+      {"overview", "scored_activities"},
+      {"overview", "recommended_actions"},
       {"reports", nil},
       {"reports", "content"},
       {"reports", "students"},
@@ -125,6 +265,49 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
+  defp overview_tabs(section_slug, preview_mode, active_tab) do
+    [
+      %TabLink{
+        label: "Course Content",
+        path: path_for(:overview, :course_content, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:course_content, active_tab)
+      },
+      %TabLink{
+        label: "Scored Activities",
+        path: path_for(:overview, :scored_activities, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:scored_activities, active_tab)
+      },
+      %TabLink{
+        label: "Recommended Actions",
+        path: path_for(:overview, :recommended_actions, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:recommended_actions, active_tab)
+      }
+    ]
+  end
+
+  defp container_details_tab(section_slug, preview_mode, selected_container) do
+    [
+      %TabLink{
+        label: fn -> render_container_tab_detail(%{title: selected_container.title}) end,
+        path: path_for(:reports, :content, section_slug, preview_mode),
+        badge: nil,
+        active: true
+      }
+    ]
+  end
+
+  defp render_container_tab_detail(assigns) do
+    ~H"""
+    <div class="flex gap-2 items-center">
+      <i class="fa-solid fa-chevron-left" />
+      <span><%= @title %></span>
+    </div>
+    """
+  end
+
   defp reports_tabs(section_slug, preview_mode, active_tab) do
     [
       %TabLink{
@@ -161,11 +344,81 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def render(%{view: :overview, active_tab: :scored_activities} = assigns) do
+    ~H"""
+      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+      <div class="mx-10 mb-10">
+        <.live_component id="scored_activities_tab"
+          module={OliWeb.Components.Delivery.ScoredActivities}
+          section={@section}
+          params={@params}
+          assessments={@assessments}
+          students={@students}
+          scripts={@scripts}
+          activity_types_map={@activity_types_map}
+          view={@view}
+          ctx={@ctx} />
+      </div>
+    """
+  end
+
+  def render(%{view: :overview, active_tab: :recommended_actions} = assigns) do
+    ~H"""
+      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+      <div class="mx-10 mb-10 p-6 bg-white dark:bg-gray-800 shadow-sm">
+        <OliWeb.Components.Delivery.RecommendedActions.render
+          section_slug={@section_slug}
+          has_scheduled_resources={@has_scheduled_resources}
+          scoring_pending_activities_count={@scoring_pending_activities_count}
+          approval_pending_posts_count={@approval_pending_posts_count}
+          has_pending_updates={@has_pending_updates}
+          has_due_soon_activities={@has_due_soon_activities}
+        />
+      </div>
+    """
+  end
+
   def render(%{view: :overview} = assigns) do
     ~H"""
-      <InstructorDashboard.actions actions={[
-        %InstructorDashboard.PriorityAction{ type: :email, title: "Send an email to students reminding of add/drop period", description: "Send before add/drop period ends on 9/23/2022", action_link: {"Send", "#"} }
-      ]} />
+      <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+      <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+        <.live_component
+          module={OliWeb.Components.Delivery.CourseContent}
+          id="course_content_tab"
+          hierarchy={assigns.hierarchy}
+          current_position={assigns.current_position}
+          current_level={assigns.current_level}
+          breadcrumbs_tree={assigns.breadcrumbs_tree}
+          current_level_nodes={assigns.current_level_nodes}
+          section={assigns.section}
+          is_instructor={true}
+        />
+      </div>
+    """
+  end
+
+  def render(
+        %{view: :reports, active_tab: :content, params: %{container_id: _container_id}} = assigns
+      ) do
+    ~H"""
+      <InstructorDashboard.tabs tabs={container_details_tab(@section_slug, @preview_mode, @selected_container)} />
+
+      <.live_component
+        id="container_details_table"
+        module={OliWeb.Components.Delivery.Students}
+        title={@selected_container.title}
+        tab_name={@active_tab}
+        show_progress_csv_download={true}
+        params={@params}
+        ctx={@ctx}
+        section={@section}
+        view={@view}
+        students={@users}
+        dropdown_options={@dropdown_options}
+      />
     """
   end
 
@@ -193,10 +446,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         id="students_table"
         module={OliWeb.Components.Delivery.Students}
         params={@params}
-        context={@context}
+        ctx={@ctx}
         section={@section}
         view={@view}
-        students={@students}
+        students={@users}
         dropdown_options={@dropdown_options}
       />
     """
@@ -251,9 +504,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <InstructorDashboard.tabs tabs={reports_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-      <div class="container mx-auto mt-3 mb-5">
+      <div class="mx-10 mb-10">
         <div class="bg-white dark:bg-gray-800 p-8 shadow">
-         <%= if @collab_space_config do %>
+         <%= if !is_nil(@collab_space_config) do %>
           <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceView, id: "course_discussion",
             session: %{
               "collab_space_config" => @collab_space_config,
@@ -296,125 +549,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
       <Components.Common.not_found />
     """
-  end
-
-  defp get_students(section, params) do
-    # when that metric is ready (see Oli.Delivery.Metrics)
-    case params.page_id do
-      nil ->
-        Sections.enrolled_students(section.slug)
-        |> add_students_progress(section.id, params.container_id)
-        |> add_students_last_interaction(section, params.container_id)
-        |> add_students_overall_mastery(section, params.container_id)
-
-      page_id ->
-        Sections.enrolled_students(section.slug)
-        |> add_students_progress_for_page(section.id, page_id)
-        |> add_students_last_interaction_for_page(section.slug, page_id)
-        |> add_students_overall_mastery_for_page(section.slug, page_id)
-    end
-  end
-
-  defp get_containers(section) do
-    {total_count, containers} = Sections.get_units_and_modules_containers(section.slug)
-
-    student_progress =
-      get_students_progress(
-        total_count,
-        containers,
-        section.id,
-        Sections.count_enrollments(section.slug)
-      )
-
-    mastery_per_container = Metrics.mastery_per_container(section.slug)
-
-    # when those metrics are ready (see Oli.Delivery.Metrics)
-
-    containers_with_metrics =
-      Enum.map(containers, fn container ->
-        Map.merge(container, %{
-          progress: student_progress[container.id] || 0.0,
-          student_mastery: Map.get(mastery_per_container, container.id, "Not enough data")
-        })
-      end)
-
-    {total_count, containers_with_metrics}
-  end
-
-  defp get_students_progress(0, pages, section_id, students_count) do
-    page_ids = Enum.map(pages, fn p -> p.id end)
-
-    Metrics.progress_across_for_pages(
-      section_id,
-      page_ids,
-      [],
-      students_count
-    )
-  end
-
-  defp get_students_progress(_total_count, containers, section_id, students_count) do
-    container_ids = Enum.map(containers, fn c -> c.id end)
-
-    Metrics.progress_across(
-      section_id,
-      container_ids,
-      [],
-      students_count
-    )
-  end
-
-  defp add_students_progress(students, section_id, container_id) do
-    students_progress =
-      Metrics.progress_for(section_id, Enum.map(students, & &1.id), container_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{progress: Map.get(students_progress, student.id)})
-    end)
-  end
-
-  defp add_students_progress_for_page(students, section_id, page_id) do
-    students_progress =
-      Metrics.progress_for_page(section_id, Enum.map(students, & &1.id), page_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{progress: Map.get(students_progress, student.id)})
-    end)
-  end
-
-  defp add_students_last_interaction(students, section, container_id) do
-    students_last_interaction = Metrics.students_last_interaction_across(section, container_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{last_interaction: Map.get(students_last_interaction, student.id)})
-    end)
-  end
-
-  defp add_students_last_interaction_for_page(students, section_slug, page_id) do
-    students_last_interaction = Metrics.students_last_interaction_for_page(section_slug, page_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{last_interaction: Map.get(students_last_interaction, student.id)})
-    end)
-  end
-
-  defp add_students_overall_mastery(students, section, container_id) do
-    mastery_per_student = Metrics.mastery_per_student_across(section, container_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        overall_mastery: Map.get(mastery_per_student, student.id, "Not enough data")
-      })
-    end)
-  end
-
-  defp add_students_overall_mastery_for_page(students, section_slug, page_id) do
-    mastery_per_student_for_page = Metrics.mastery_per_student_for_page(section_slug, page_id)
-
-    Enum.map(students, fn student ->
-      Map.merge(student, %{
-        overall_mastery: Map.get(mastery_per_student_for_page, student.id, "Not enough data")
-      })
-    end)
   end
 
   defp get_dropdown_options(section) do

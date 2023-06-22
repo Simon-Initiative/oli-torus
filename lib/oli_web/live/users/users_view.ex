@@ -18,13 +18,13 @@ defmodule OliWeb.Users.UsersView do
     text_search: ""
   }
 
-  data breadcrumbs, :any
-  data users, :list, default: []
-  data tabel_model, :struct
-  data total_count, :integer, default: 0
-  data offset, :integer, default: 0
-  data limit, :integer, default: @limit
-  data options, :any
+  data(breadcrumbs, :any)
+  data(users, :list, default: [])
+  data(tabel_model, :struct)
+  data(total_count, :integer, default: 0)
+  data(offset, :integer, default: 0)
+  data(limit, :integer, default: @limit)
+  data(options, :any)
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -51,8 +51,8 @@ defmodule OliWeb.Users.UsersView do
 
     total_count = SortableTableModel.determine_total(users)
 
-    context = SessionContext.init(session)
-    {:ok, table_model} = UsersTableModel.new(users, context)
+    ctx = SessionContext.init(socket, session)
+    {:ok, table_model} = UsersTableModel.new(users, ctx)
 
     {:ok,
      assign(socket,

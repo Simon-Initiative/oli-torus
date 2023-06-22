@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(products, context) do
+  def new(products, ctx) do
     column_specs = [
       %ColumnSpec{
         name: :action,
@@ -44,7 +44,7 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
       sort_by_spec: Enum.at(column_specs, 1),
       sort_order: :desc,
       data: %{
-        context: context
+        ctx: ctx
       }
     )
   end

@@ -57,48 +57,33 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
     } do
       # Verify the modules
       assert_in_delta 0.5,
-                      Map.get(
-                        Metrics.progress_for(section.id, this_user.id, mod1_resource.id),
-                        this_user.id
-                      ),
+                      Metrics.progress_for(section.id, this_user.id, mod1_resource.id),
                       0.0001
 
       assert_in_delta 0.2,
-                      Map.get(
-                        Metrics.progress_for(section.id, this_user.id, mod2_resource.id),
-                        this_user.id
-                      ),
+                      Metrics.progress_for(section.id, this_user.id, mod2_resource.id),
                       0.0001
 
       assert_in_delta 0.25,
-                      Map.get(
-                        Metrics.progress_for(section.id, this_user.id, mod3_resource.id),
-                        this_user.id
-                      ),
+                      Metrics.progress_for(section.id, this_user.id, mod3_resource.id),
                       0.0001
 
       # Then the units
       assert_in_delta 0.35,
-                      Map.get(
-                        Metrics.progress_for(section.id, this_user.id, unit1_resource.id),
-                        this_user.id
-                      ),
+                      Metrics.progress_for(section.id, this_user.id, unit1_resource.id),
                       0.0001
 
       assert_in_delta 0.25,
-                      Map.get(
-                        Metrics.progress_for(section.id, this_user.id, unit2_resource.id),
-                        this_user.id
-                      ),
+                      Metrics.progress_for(section.id, this_user.id, unit2_resource.id),
                       0.0001
 
       # Then the entire course (there are two other pages, outside of the units)
       assert_in_delta 0.2583,
-                      Map.get(Metrics.progress_for(section.id, this_user.id), this_user.id),
+                      Metrics.progress_for(section.id, this_user.id),
                       0.0001
 
       assert_in_delta 0.2583,
-                      Map.get(Metrics.progress_for(section.id, this_user.id, nil), this_user.id),
+                      Metrics.progress_for(section.id, this_user.id, nil),
                       0.0001
     end
 
@@ -243,7 +228,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
           :a5
         )
 
-      guid = map.a5.attempt_guid
+      guid = map.a4.attempt_guid
       assert {:ok, :updated} = Metrics.update_page_progress(guid)
 
       ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
@@ -266,6 +251,11 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
       assert progress[this_user.id] == 0.5
       assert progress[another_user.id] == 0.75
+
+      # passing single user id
+      this_user_progress = Metrics.progress_for_page(section.id, this_user.id, p1.resource.id)
+
+      assert this_user_progress == 0.5
     end
 
     test "progress_across_for_pages/4 calculates correctly", %{

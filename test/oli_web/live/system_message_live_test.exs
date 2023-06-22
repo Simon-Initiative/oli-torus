@@ -49,7 +49,7 @@ defmodule OliWeb.SystemMessageLiveTest do
 
     test "displays start and end datetimes using the local timezone", %{
       conn: conn,
-      context: context
+      ctx: ctx
     } do
       system_message = insert(:system_message)
       {:ok, view, _html} = live(conn, @live_view_index_route)
@@ -57,12 +57,12 @@ defmodule OliWeb.SystemMessageLiveTest do
       assert view
              |> element("#system_message_start")
              |> render() =~
-               utc_datetime_to_localized_datestring(system_message.start, context.local_tz)
+               utc_datetime_to_localized_datestring(system_message.start, ctx.local_tz)
 
       assert view
              |> element("#system_message_end")
              |> render() =~
-               utc_datetime_to_localized_datestring(system_message.end, context.local_tz)
+               utc_datetime_to_localized_datestring(system_message.end, ctx.local_tz)
     end
 
     test "creates new system message when data is valid", %{conn: conn} do

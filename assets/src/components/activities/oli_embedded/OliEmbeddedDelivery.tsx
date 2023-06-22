@@ -152,7 +152,9 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
 
 export class OliEmbeddedDelivery extends DeliveryElement<OliEmbeddedModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OliEmbeddedModelSchema>) {
-    const store = configureStore({}, activityDeliverySlice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer, {
+      name: 'OLIEmbeddedDelivery',
+    });
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

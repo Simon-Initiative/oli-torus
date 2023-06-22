@@ -31,7 +31,8 @@
                   class: "form-control" <> error_class(f, :full_name, "is-invalid"),
                   placeholder: "Enter Name",
                   required: true,
-                  autofocus: true %>
+                  autofocus: true,
+                  value: @conn.assigns[:current_user] && @conn.assigns.current_user.name || @conn.assigns[:author] && @conn.assigns.author.name || @conn.assigns[:current_author] && @conn.assigns.current_author.name %>
               <%= error_tag f, :full_name %>
             </div>
             <div class="form-group">
@@ -40,7 +41,8 @@
                 :email,
                 class: "form-control" <> error_class(f, :email, "is-invalid"),
                 placeholder: "Enter Email",
-                required: true %>
+                required: true,
+                value: @conn.assigns[:current_user] && @conn.assigns.current_user.email || @conn.assigns[:author] && @conn.assigns.author.email || @conn.assigns[:current_author] && @conn.assigns.current_author.email %>
               <%= error_tag f, :email %>
             </div>
             <div class="form-group mb-3">
@@ -69,17 +71,27 @@
         </div>
         <div
           class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
+          <div id="help-form-buttons">
+            <button
+              type="button"
+              class="btn btn-link ml-2"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <%= submit "Send Request",
+              id: "button-create-author",
+              class: "btn btn-primary ml-2",
+              phx_disable_with: "Requesting help..." %>
+          </div>
           <button
+            id="help-form-ok-button"
             type="button"
-            class="btn btn-link ml-2"
+            class="hidden btn btn-primary px-4"
             data-bs-dismiss="modal"
           >
-            Cancel
+            Ok
           </button>
-          <%= submit "Send Request",
-            id: "button-create-author",
-            class: "btn btn-primary ml-2",
-            phx_disable_with: "Requesting help..." %>
         </div>
       </form>
     </div>
@@ -93,7 +105,19 @@
   const showHelpModal = () => {
     $('#help-modal').modal('show');
 
-    document.getElementById('location').value = document.referrer
+    const formElement = document.getElementById('help-form');
+    formElement.classList.remove('hidden');
+
+    const formButtons = document.getElementById('help-form-buttons')
+    formButtons.classList.remove('hidden');
+
+    const successElement = document.getElementById('help-success-message');
+    successElement.classList.add('hidden');
+
+    const okButton = document.getElementById('help-form-ok-button');
+    okButton.classList.add('hidden');
+
+    document.getElementById('location').value = window.location.href
     if (typeof document.cookie == "undefined" || typeof navigator == "undefined" || !navigator.cookieEnabled) {
       document.getElementById('cookies_enabled').value = false;
     } else {
@@ -101,7 +125,7 @@
     }
     if (helpRecapture != null) {
       grecaptcha.reset(helpRecapture);
-      document.getElementById('help_recaptcha').value = "";
+      document.getElementById('help-captcha').value = "";
     } else {
       helpRecapture = grecaptcha.render('help-captcha', {
         'sitekey': '<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>',  // required
@@ -129,9 +153,15 @@
                 const formElement = document.getElementById('help-form');
                 formElement.classList.add('hidden');
 
+                const formButtons = document.getElementById('help-form-buttons')
+                formButtons.classList.add('hidden');
+
                 const successElement = document.getElementById('help-success-message');
                 successElement.innerHTML = json.info;
                 successElement.classList.remove('hidden');
+
+                const okButton = document.getElementById('help-form-ok-button');
+                okButton.classList.remove('hidden');
 
                 return json
               })

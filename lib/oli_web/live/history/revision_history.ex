@@ -27,30 +27,30 @@ defmodule OliWeb.RevisionHistory do
 
   @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, session, socket) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init(socket, session)
 
     case AuthoringResolver.from_revision_slug(project_slug, slug) do
       nil ->
         {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       revision ->
-        do_mount(revision, project_slug, socket, context)
+        do_mount(revision, project_slug, socket, ctx)
     end
   end
 
   def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, session, socket) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init(socket, session)
 
     case AuthoringResolver.from_resource_id(project_slug, String.to_integer(resource_id_str)) do
       nil ->
         {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       revision ->
-        do_mount(revision, project_slug, socket, context)
+        do_mount(revision, project_slug, socket, ctx)
     end
   end
 
-  defp do_mount(revision, project_slug, socket, context) do
+  defp do_mount(revision, project_slug, socket, ctx) do
     project = Course.get_project_by_slug(project_slug)
     resource_id = revision.resource_id
     slug = revision.slug
@@ -87,9 +87,14 @@ defmodule OliWeb.RevisionHistory do
     {:ok,
      socket
      |> assign(
-       context: context,
+       ctx: ctx,
        breadcrumbs:
-         Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver, project.customizations) ++
+         Breadcrumb.trail_to(
+           project_slug,
+           slug,
+           Oli.Publishing.AuthoringResolver,
+           project.customizations
+         ) ++
            [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
        page_size: @page_size,

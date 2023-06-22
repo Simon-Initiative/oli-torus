@@ -20,14 +20,14 @@ defmodule OliWeb.Projects.PublishView do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  data is_force_push, :boolean, default: false
-  data limit, :integer, default: 10
-  data modal, :any, default: nil
-  data offset, :integer, default: 0
-  data page_change, :string, default: "page_change"
-  data query, :string, default: ""
-  data show_bottom_paging, :boolean, default: false
-  data sort, :string, default: "sort"
+  data(is_force_push, :boolean, default: false)
+  data(limit, :integer, default: 10)
+  data(modal, :any, default: nil)
+  data(offset, :integer, default: 0)
+  data(page_change, :string, default: "page_change")
+  data(query, :string, default: "")
+  data(show_bottom_paging, :boolean, default: false)
+  data(sort, :string, default: "sort")
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
@@ -42,7 +42,7 @@ defmodule OliWeb.Projects.PublishView do
         session,
         socket
       ) do
-    context = SessionContext.init(session)
+    ctx = SessionContext.init(socket, session)
     project = Course.get_project_by_slug(project_slug)
     active_sections = Sections.get_active_sections_by_project(project.id)
 
@@ -109,7 +109,7 @@ defmodule OliWeb.Projects.PublishView do
         _ -> true
       end
 
-    {:ok, table_model} = ActiveSectionsTableModel.new(context, active_sections, project)
+    {:ok, table_model} = ActiveSectionsTableModel.new(ctx, active_sections, project)
 
     {:ok,
      assign(socket,
@@ -118,7 +118,7 @@ defmodule OliWeb.Projects.PublishView do
        active_sections: active_sections,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
        changeset: Publishing.change_publication(active_publication),
-       context: context,
+       ctx: ctx,
        has_changes: has_changes,
        latest_published_publication: latest_published_publication,
        lti_connect_info: lti_connect_info,
@@ -138,7 +138,7 @@ defmodule OliWeb.Projects.PublishView do
           <div class="flex-1">
             <PublicationDetails
               active_publication_changes={@active_publication_changes}
-              context={@context}
+              ctx={@ctx}
               has_changes={@has_changes}
               latest_published_publication={@latest_published_publication}
               parent_pages={@parent_pages}
