@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   alias Oli.Delivery.Evaluation.ExplanationContext
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt}
   alias Oli.Delivery.Evaluation.Actions.FeedbackAction
+  alias Oli.Repo
 
   @doc """
   Determines whether an explanation should be shown using the given explanation context.
@@ -12,9 +13,15 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   """
   def get_explanation(
         %ExplanationContext{
-          part: part
+          part: part,
+          activity_attempt: %ActivityAttempt{} = activity_attempt
         } = context
       ) do
+    context = %{
+      context
+      | activity_attempt: activity_attempt |> Repo.preload(:part_attempts)
+    }
+
     case check_explanation_condition(context) do
       {_strategy, true} ->
         part.explanation
@@ -33,9 +40,15 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   def maybe_set_feedback_action_explanation(
         {:ok, %FeedbackAction{} = feedback_action},
         %ExplanationContext{
-          part: part
+          part: part,
+          activity_attempt: %ActivityAttempt{} = activity_attempt
         } = context
       ) do
+    context = %{
+      context
+      | activity_attempt: activity_attempt |> Repo.preload(:part_attempts)
+    }
+
     case check_explanation_condition(context) do
       {_strategy, true} ->
         {:ok, %FeedbackAction{feedback_action | explanation: part.explanation}}
@@ -98,13 +111,23 @@ defmodule Oli.Delivery.Evaluation.Explanation do
            }
          },
          activity_attempt: %ActivityAttempt{
-           attempt_number: activity_attempt_number
-         }
+           attempt_number: activity_attempt_number,
+           part_attempts: part_attempts
+         },
+         part_attempt: part_attempt
        }) do
-    if activity_attempt_number >= set_num_attempts do
-      {:after_set_num_attempts, true}
+    if length(part_attempts) > 1 do
+      if part_attempt.attempt_number >= set_num_attempts do
+        {:after_set_num_attempts, true}
+      else
+        {:after_set_num_attempts, false}
+      end
     else
-      {:after_set_num_attempts, false}
+      if activity_attempt_number >= set_num_attempts do
+        {:after_set_num_attempts, true}
+      else
+        {:after_set_num_attempts, false}
+      end
     end
   end
 
