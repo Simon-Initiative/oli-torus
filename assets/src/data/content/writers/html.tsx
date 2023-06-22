@@ -9,6 +9,7 @@ import { TextInput } from 'components/activities/common/delivery/inputs/TextInpu
 import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
+import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import {
   Audio,
   Blockquote,
@@ -308,11 +309,7 @@ export class HtmlParser implements WriterImpl {
 
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
     if (!attrs.src) return <></>;
-
-    return this.iframe(context, next, {
-      ...attrs,
-      src: `https://www.youtube.com/embed/${this.escapeXml(attrs.src)}`,
-    });
+    return <YoutubePlayer video={attrs} authorMode={false} context={context} />;
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
     if (!attrs.src) return <></>;

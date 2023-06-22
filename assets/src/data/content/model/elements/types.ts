@@ -278,6 +278,8 @@ export interface YouTube extends SlateElement<VoidChildren> {
   caption?: Caption;
   // Legacy, unused;
   display?: string;
+  startTime?: number;
+  endTime?: number;
 }
 
 export interface Audio extends SlateElement<VoidChildren> {

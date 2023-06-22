@@ -81,7 +81,16 @@ export class ContentWriter {
   render(context: WriterContext, content: AllModelElements[], impl: WriterImpl): React.ReactElement;
   render(context: WriterContext, content: AllModelElements, impl: WriterImpl): React.ReactElement;
   render(context: WriterContext, content: Text, impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: ContentTypes, impl: WriterImpl): React.ReactElement {
+  render(context: WriterContext, content: string, impl: WriterImpl): React.ReactElement;
+  render(
+    context: WriterContext,
+    content: ContentTypes | string,
+    impl: WriterImpl,
+  ): React.ReactElement {
+    if (typeof content === 'string') {
+      return impl.text(context, { text: content });
+    }
+
     if (Array.isArray(content)) {
       return (
         <>
