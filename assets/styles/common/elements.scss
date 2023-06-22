@@ -522,8 +522,7 @@ $element-margin-bottom: 1.5em;
   span,
   input[type='text'],
   input[type='numeric'],
-  select.dropdown-input,
-  div.math-input {
+  select.dropdown-input {
     width: 180px;
 
     &.input-size-small {
@@ -534,6 +533,28 @@ $element-margin-bottom: 1.5em;
     }
     &.input-size-large {
       width: 380px;
+    }
+  }
+
+  div.math-input {
+    math-field {
+      width: 240px;
+    }
+
+    &.input-size-small {
+      math-field {
+        width: 120px;
+      }
+    }
+    &.input-size-medium {
+      math-field {
+        width: 240px;
+      }
+    }
+    &.input-size-large {
+      math-field {
+        width: 400px;
+      }
     }
   }
 }
