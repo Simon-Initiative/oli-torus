@@ -91,7 +91,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
        current_step_name: @intro_step,
        current_step_index: 0,
        datashop_session_id: datashop_session_id,
-       is_lti: !is_nil(session["lti_params_id"])
+       is_lti: section.open_and_free == false
      )}
   end
 
