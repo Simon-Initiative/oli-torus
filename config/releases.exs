@@ -62,8 +62,8 @@ if System.get_env("PAYMENT_PROVIDER") == "stripe" &&
 end
 
 if System.get_env("PAYMENT_PROVIDER") == "cashnet" &&
-     (!System.get_env("CASHNET_STORE") || !System.get_env("CASHNET_CHECKOUT_URL")
-     || !System.get_env("CASHNET_CLIENT") || !System.get_env("CASHNET_GL_NUMBER")) do
+     (!System.get_env("CASHNET_STORE") || !System.get_env("CASHNET_CHECKOUT_URL") ||
+        !System.get_env("CASHNET_CLIENT") || !System.get_env("CASHNET_GL_NUMBER")) do
   raise """
   Cashnet payment provider not configured correctly. CASHNET_STORE, CASHNET_CHECKOUT_URL,
   CASHNET_CLIENT and CASHNET_GL_NUMBER values must be set.
@@ -99,7 +99,8 @@ config :oli,
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
-  screen_idle_timeout_in_seconds: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+  screen_idle_timeout_in_seconds:
+    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
@@ -107,7 +108,8 @@ As a leader in higher education's innovation of online learning, we're a growing
 """
 
 config :oli, :vendor_property,
-  workspace_logo: System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/images/torus-icon.png"),
+  workspace_logo:
+    System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/prod/oli_torus_icon.png"),
   product_full_name:
     System.get_env("VENDOR_PROPERTY_PRODUCT_FULL_NAME", "Open Learning Initiative"),
   product_short_name: System.get_env("VENDOR_PROPERTY_PRODUCT_SHORT_NAME", "OLI Torus"),
@@ -127,8 +129,8 @@ config :oli, :vendor_property,
 
 # optional emerald cloudlab configuration
 config :oli,
-    ecl_username: System.get_env("ECL_USERNAME", ""),
-    ecl_password: System.get_env("ECL_PASSWORD", "")
+  ecl_username: System.get_env("ECL_USERNAME", ""),
+  ecl_password: System.get_env("ECL_PASSWORD", "")
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),

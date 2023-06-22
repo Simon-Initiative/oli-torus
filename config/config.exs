@@ -44,13 +44,13 @@ config :oli,
   world_universities_and_domains_json: world_universities_and_domains_json,
   branding: [
     name: System.get_env("BRANDING_NAME", "OLI Torus"),
-    logo: System.get_env("BRANDING_LOGO", "/images/oli_torus_logo.png"),
+    logo: System.get_env("BRANDING_LOGO", "/branding/prod/oli_torus_logo.png"),
     logo_dark:
       System.get_env(
         "BRANDING_LOGO_DARK",
-        System.get_env("BRANDING_LOGO", "/images/oli_torus_logo_dark.png")
+        System.get_env("BRANDING_LOGO", "/branding/prod/oli_torus_logo_dark.png")
       ),
-    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
+    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/branding/prod/favicons")
   ],
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
@@ -87,7 +87,8 @@ As a leader in higher education's innovation of online learning, we're a growing
 """
 
 config :oli, :vendor_property,
-  workspace_logo: System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/images/torus-icon.png"),
+  workspace_logo:
+    System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/prod/oli_torus_icon.png"),
   product_full_name:
     System.get_env("VENDOR_PROPERTY_PRODUCT_FULL_NAME", "Open Learning Initiative"),
   product_short_name: System.get_env("VENDOR_PROPERTY_PRODUCT_SHORT_NAME", "OLI Torus"),
