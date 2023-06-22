@@ -86,6 +86,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
              )
 
       assert has_element?(view, "button", "Go to course")
+      assert has_element?(view, "button", "Cancel")
     end
 
     test "the exploration description rendered when there are explorations", %{
