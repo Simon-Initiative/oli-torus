@@ -7,6 +7,7 @@ import { MathInput } from 'components/activities/common/delivery/inputs/MathInpu
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
+import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
@@ -481,11 +482,17 @@ export class HtmlParser implements WriterImpl {
 
     switch (inputData.input.inputType) {
       case 'numeric':
-        return withHints(<NumericInput {...shared} />);
+        return withHints(
+          <NumericInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
+        );
       case 'text':
-        return withHints(<TextInput {...shared} />);
+        return withHints(
+          <TextInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
+        );
       case 'math':
-        return withHints(<MathInput {...shared} inline />);
+        return withHints(
+          <MathInput {...shared} inline size={(inputData.input as MultiInputDelivery).size} />,
+        );
       case 'vlabvalue':
         return withHints(<VlabInput {...shared} />);
       case 'dropdown':
@@ -494,6 +501,7 @@ export class HtmlParser implements WriterImpl {
             {...shared}
             options={inputData.input.options}
             selected={inputData.value}
+            size={(inputData.input as MultiInputDelivery).size}
           />,
         );
       default:

@@ -5,6 +5,7 @@ import {
   Dropdown,
   MultiInput,
   MultiInputSchema,
+  MultiInputSize,
   MultiInputType,
 } from 'components/activities/multi_input/schema';
 import {
@@ -192,6 +193,18 @@ export const MultiInputActions = {
       }[type];
 
       input.inputType = type;
+    };
+  },
+
+  setInputSize(inputId: string, size: MultiInputSize) {
+    return (model: MultiInputSchema) => {
+      const input = getByUnsafe(model.inputs, (x) => x.id === inputId);
+      if (!input) return;
+
+      const inputSizeChanged = input.size !== size;
+      if (!inputSizeChanged) return;
+
+      input.size = size;
     };
   },
 

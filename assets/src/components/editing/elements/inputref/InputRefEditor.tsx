@@ -8,6 +8,7 @@ import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import * as ContentModel from 'data/content/model/elements/types';
+import { classNames } from 'utils/classNames';
 
 export interface InputRefEditorProps extends EditorProps<ContentModel.InputRef> {}
 export const InputRefEditor = (props: InputRefEditorProps) => {
@@ -19,34 +20,17 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
 
   const input = inputRefContext?.inputs.get(props.model.id);
 
-  const borderStyle =
-    focused && selected
-      ? { border: 'solid 3px lightblue', borderRadius: '0.25rem' }
-      : { border: 'solid 3px transparent' };
-
   if (!inputRefContext || !input) {
     return (
       <span
         {...props.attributes}
         contentEditable={false}
-        style={Object.assign(
-          {
-            border: '1px solid black',
-            borderRadius: 3,
-            padding: 4,
-          },
-          borderStyle,
-        )}
+        className="inline-block align-middle select-none rounded p-1 px-2 border border-red-500 bg-red-100 text-red-500 dark:text-red-600"
       >
         Missing Input Ref (delete){props.children}
       </span>
     );
   }
-
-  const activeStyle =
-    inputRefContext.selectedInputRef?.id === props.model.id
-      ? { fontWeight: 'bold', backgroundColor: 'lightblue' }
-      : {};
 
   const action = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
@@ -58,7 +42,6 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
     <span
       {...props.attributes}
       contentEditable={false}
-      style={Object.assign(borderStyle, { display: 'inline-block' })}
       onKeyPress={(e: any) => {
         if (e.key === 'Enter') {
           action(e);
@@ -81,12 +64,13 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
       >
         <span
           onClick={(e) => action(e)}
-          style={Object.assign(activeStyle, {
-            width: '160px',
-            display: 'inline-block',
-            userSelect: 'none',
-          } as React.CSSProperties)}
-          className="form-control border border-gray-400 rounded p-1"
+          className={classNames(
+            'inline-block align-middle select-none rounded p-1 px-2 whitespace-nowrap overflow-hidden border',
+            inputRefContext.selectedInputRef?.id === props.model.id
+              ? 'border-primary bg-blue-100 dark:bg-blue-700 text-primary dark:text-body-color-dark'
+              : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600',
+            input.size && `input-size-${input.size}`,
+          )}
         >
           {friendlyType(input.inputType)}
           {props.children}
