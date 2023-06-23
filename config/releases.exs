@@ -125,7 +125,8 @@ config :oli, :vendor_property,
     System.get_env(
       "VENDOR_PROPERTY_COMPANY_ADDRESS",
       "5000 Forbes Ave, Pittsburgh, PA 15213 US"
-    )
+    ),
+  support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL")
 
 # optional emerald cloudlab configuration
 config :oli,

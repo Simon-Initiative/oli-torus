@@ -1,0 +1,9 @@
+<%= render_layout "http_error.html", assigns do %>
+  <p class="mb-3">Oops! Looks like we tripped on a server cable.</p>
+
+  <p>We apologize for the inconvenience.</p>
+  <p class="mb-4">Our technical team has captured some details and is working to fix the issue.</p>
+
+  <p>In the meantime, you can try <a href="javascript:window.location.reload()">refreshing the page</a> or come back later.</p>
+  <p class="mb-4">If you continue to see this error, please <%= support_email_link("contact our support team") %> for assistance.</p>
+<% end %>

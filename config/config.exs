@@ -104,7 +104,8 @@ config :oli, :vendor_property,
     System.get_env(
       "VENDOR_PROPERTY_COMPANY_ADDRESS",
       "5000 Forbes Ave, Pittsburgh, PA 15213 US"
-    )
+    ),
+  support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL")
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
@@ -133,7 +134,11 @@ config :oli, OliWeb.Endpoint,
   live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "LIVE_VIEW_SALT")],
   url: [host: "localhost"],
   secret_key_base: "GE9cpXBwVXNaplyUCYbIWqERmC/OlcR5iVMwLX9/W7gzQRxkD1ETjda9E0jW/BW1",
-  render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
+  render_errors: [
+    accepts: ~w(html json),
+    root_layout: {OliWeb.LayoutView, :error},
+    view: OliWeb.ErrorView
+  ],
   pubsub_server: Oli.PubSub
 
 config :oli, Oban,

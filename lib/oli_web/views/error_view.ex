@@ -13,4 +13,18 @@ defmodule OliWeb.ErrorView do
   def template_not_found(template, _assigns) do
     Phoenix.Controller.status_message_from_template(template)
   end
+
+  def status_code(%Plug.Conn{assigns: %{reason: %{plug_status: plug_status}}}), do: plug_status
+  def status_code(_), do: 500
+
+  def status_message(conn) do
+    status_code(conn)
+    |> Plug.Conn.Status.reason_phrase()
+  rescue
+    _ -> "Internal Server Error"
+  end
+
+  def render_layout(layout, assigns, do: content) do
+    render(layout, Map.put(assigns, :inner_content, content))
+  end
 end

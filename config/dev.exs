@@ -31,7 +31,8 @@ config :oli,
 
 config :oli, :vendor_property,
   workspace_logo:
-    System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/dev/oli_torus_icon.png")
+    System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/dev/oli_torus_icon.png"),
+  support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL", "support@example.com")
 
 # Configure your database
 config :oli, Oli.Repo,
@@ -85,7 +86,7 @@ config :oli, OliWeb.Endpoint,
     keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
     certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
   ],
-  debug_errors: true,
+  debug_errors: false,
   code_reloader: true,
   check_origin: false,
   watchers: [
