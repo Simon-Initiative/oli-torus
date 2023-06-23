@@ -86,7 +86,7 @@ config :oli, OliWeb.Endpoint,
     keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
     certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
   ],
-  debug_errors: false,
+  debug_errors: true,
   code_reloader: true,
   check_origin: false,
   watchers: [
