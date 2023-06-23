@@ -90,7 +90,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
        steps: steps,
        current_step_name: @intro_step,
        current_step_index: 0,
-       datashop_session_id: datashop_session_id
+       datashop_session_id: datashop_session_id,
+       is_lti: section.open_and_free == false
      )}
   end
 
@@ -107,6 +108,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
           module={Stepper}
           steps={@steps}
           current_step={@current_step_index}
+          on_cancel={if !@is_lti, do: JS.navigate(Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)), else: nil}
           data={get_step_data(assigns)}
         />
       </div>

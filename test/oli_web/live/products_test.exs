@@ -10,6 +10,8 @@ defmodule OliWeb.ProductsLiveTest do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Utils.Seeder
 
+  @live_view_all_products Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)
+
   defp live_view_products_route(project_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, project_slug)
   end
@@ -47,6 +49,97 @@ defmodule OliWeb.ProductsLiveTest do
       refute view
              |> element("#section_display_curriculum_item_numbering")
              |> render() =~ "checked"
+    end
+  end
+
+  describe "browse all products" do
+    setup [:admin_conn, :create_product]
+
+    test "shows all products list", %{conn: conn, product: product} do
+      [{_, product_2} | _] = create_product(conn)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", product_2.title)
+    end
+
+    test "search product by title", %{conn: conn, product: product} do
+      [{_, product_2} | _] = create_product(conn)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", product_2.title)
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: product.title})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "a", product.title)
+      refute has_element?(view, "a", product_2.title)
+
+      view
+      |> element("button[phx-click=\"reset_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", product_2.title)
+    end
+
+    test "search product by base project title", %{conn: conn, product: product} do
+      [{_, product_2} | _] = create_product(conn)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "a", product.base_project.title)
+      assert has_element?(view, "a", product_2.base_project.title)
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: product_2.base_project.title})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      refute has_element?(view, "a", product.base_project.title)
+      assert has_element?(view, "a", product_2.base_project.title)
+
+      view
+      |> element("button[phx-click=\"reset_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "a", product.base_project.title)
+      assert has_element?(view, "a", product_2.base_project.title)
+    end
+
+    test "applies sorting by creation date", %{conn: conn, product: product} do
+      product_2 =
+        insert(:section,
+          type: :blueprint,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          inserted_at: yesterday()
+        )
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ product.title
+
+      view
+      |> element("th[phx-click=\"sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> render_click(%{sort_by: "inserted_at"})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~ product_2.title
     end
   end
 

@@ -59,10 +59,10 @@ defmodule OliWeb.PageDeliveryView do
     ~H"""
       <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
         <div class="flex items-center justify-between">
-          <div>
+          <div class="mr-4">
             <i class="fas fa-arrow-left nav-icon"></i>
           </div>
-          <div class="flex flex-col text-right">
+          <div class="flex flex-col text-right overflow-hidden">
             <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>
@@ -75,11 +75,11 @@ defmodule OliWeb.PageDeliveryView do
     ~H"""
       <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
         <div class="flex items-center justify-between">
-          <div class="flex flex-col text-left">
+          <div class="flex flex-col text-left overflow-hidden">
             <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
             <div class="nav-title"><%= @title %></div>
           </div>
-          <div>
+          <div class="ml-4">
             <i class="fas fa-arrow-right nav-icon"></i>
           </div>
         </div>
