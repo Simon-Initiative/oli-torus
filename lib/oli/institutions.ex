@@ -77,6 +77,7 @@ defmodule Oli.Institutions do
       select_merge: %{total_count: fragment("count(*) OVER()")}
     )
     |> Repo.all()
+    |> Repo.preload(:author)
   end
 
   @doc """

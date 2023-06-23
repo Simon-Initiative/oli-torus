@@ -95,7 +95,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
        selected_tab: :students,
        params: decoded_params,
        table_model: table_model,
-       total_count: determine_total(students) |> IO.inspect(label: "total_count!!")
+       total_count: determine_total(students)
      )}
   end
 
