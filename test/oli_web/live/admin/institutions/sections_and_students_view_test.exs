@@ -73,7 +73,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
     {:ok, section_4} = Sections.create_section_resources(section_4, publication)
 
     # enroll students to sections
-    [student_1, student_2, student_3, student_4] = insert_list(4, :user)
+    student_1 = insert(:user)
+    student_2 = insert(:user)
+    student_3 = insert(:user)
+    student_4 = insert(:user)
 
     Sections.enroll(student_1.id, section_1.id, [ContextRoles.get_role(:context_learner)])
     Sections.enroll(student_1.id, section_2.id, [ContextRoles.get_role(:context_learner)])
