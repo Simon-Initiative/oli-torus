@@ -12,20 +12,24 @@ import {
 import { Identifiable } from 'data/content/model/other';
 import { assertNever } from 'utils/common';
 
+export type MultiInputSize = 'small' | 'medium' | 'large' | '100pct';
+
 export type MultiInput = Dropdown | FillInTheBlank;
 export type MultiInputDelivery =
-  | { id: string; inputType: 'dropdown'; options: SelectOption[] }
-  | { id: string; inputType: 'text' | 'numeric' | 'math' };
+  | { id: string; inputType: 'dropdown'; options: SelectOption[]; size?: MultiInputSize }
+  | { id: string; inputType: 'text' | 'numeric' | 'math'; size?: MultiInputSize };
 
 export interface Dropdown extends Identifiable {
   inputType: 'dropdown';
   partId: string;
   choiceIds: ChoiceId[];
+  size?: MultiInputSize;
 }
 
 export interface FillInTheBlank extends Identifiable {
   inputType: 'text' | 'numeric' | 'math';
   partId: string;
+  size?: MultiInputSize;
 }
 
 export type MultiInputType = 'dropdown' | 'text' | 'numeric' | 'math';

@@ -125,8 +125,9 @@ export const MultiInputComponent: React.FC = () => {
                   value: choiceId,
                   displayValue: toSimpleText(choiceIdToChoiceMap[choiceId].content),
                 })),
+                size: input.size,
               }
-            : { id: input.id, inputType: input.inputType },
+            : { id: input.id, inputType: input.inputType, size: input.size },
         value: (uiState.partState[input.partId]?.studentInput || [''])[0],
         hasHints: uiState.partState[input.partId].hasMoreHints,
       },

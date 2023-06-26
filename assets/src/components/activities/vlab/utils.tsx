@@ -64,10 +64,10 @@ export const friendlyType = (type: VlabInputType) => {
       : type === 'vlabvalue'
       ? 'Vlab Value'
       : type === 'numeric'
-      ? 'Input (Number)'
+      ? 'Numeric'
       : type === 'math'
-      ? 'Input (Math)'
-      : 'Input (Text)'
+      ? 'Math'
+      : 'Text'
   }`;
 };
 
