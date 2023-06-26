@@ -460,7 +460,18 @@ defmodule OliWeb.Delivery.NewCourse do
         end
 
       3 ->
-        if validate_fields(changeset, [:class_days, :start_date, :end_date]) do
+        class_modality =
+          Ecto.Changeset.fetch_field(changeset, :class_modality)
+          |> elem(1)
+
+        fields_to_validate =
+          if class_modality != :never do
+            [:class_days, :start_date, :end_date]
+          else
+            [:start_date, :end_date]
+          end
+
+        if validate_fields(changeset, fields_to_validate) do
           if validate_course_dates(changeset) do
             create_section(socket.assigns.live_action, assign(socket, changeset: changeset))
           else

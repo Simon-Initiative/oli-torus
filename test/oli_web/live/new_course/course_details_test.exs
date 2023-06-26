@@ -33,6 +33,25 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
     end
 
+    test "doesn't render the class days if class never meets", %{conn: conn} = context do
+      %{section: section} = create_source(context)
+      {:ok, view, _html} = live(conn, @live_view_admin_route)
+
+      select_source(:admin, view, section)
+      complete_course_name_form(view, %{class_modality: :never})
+
+      assert has_element?(view, "h2", "Course details")
+      refute has_element?(view, "input[type=\"checkbox\"]#sunday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#monday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#tuesday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#wednesday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#thursday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#friday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
+      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_start_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
+    end
+
     test "can't go to next step unless all required fields are filled and valid",
          %{conn: conn} = context do
       %{section: section} = create_source(context)
