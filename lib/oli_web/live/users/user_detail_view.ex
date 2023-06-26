@@ -322,6 +322,7 @@ defmodule OliWeb.Users.UsersDetailView do
       {:ok, user} ->
         {:noreply,
          socket
+         |> put_flash(:info, "User successfully updated.")
          |> assign(user: user, changeset: user_changeset(user, params), disabled_edit: true)}
 
       {:error, _error} ->

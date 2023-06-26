@@ -300,6 +300,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {:ok, user} ->
         {:noreply,
          socket
+         |> put_flash(:info, "Author successfully updated.")
          |> assign(user: user, changeset: author_changeset(user, params), disabled_edit: true)}
 
       {:error, _error} ->
