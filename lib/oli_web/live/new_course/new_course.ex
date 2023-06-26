@@ -442,6 +442,15 @@ defmodule OliWeb.Delivery.NewCourse do
         %{"section" => section, "current_step" => current_step},
         socket
       ) do
+    section =
+      case Map.get(section, "class_days") do
+        class_days when not (is_nil(class_days) or is_list(class_days)) ->
+          Map.put(section, "class_days", [class_days])
+
+        _ ->
+          section
+      end
+
     changeset =
       socket.assigns.changeset
       |> Section.changeset(section)
