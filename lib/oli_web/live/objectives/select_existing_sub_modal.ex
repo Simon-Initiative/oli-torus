@@ -32,7 +32,7 @@ defmodule OliWeb.ObjectivesLive.SelectExistingSubModal do
             </div>
             <div class="modal-body">
               <div class="container form-container">
-                <TextSearch id="text-search" text={@query} event_target={@myself} />
+                <TextSearch id="text-search" text={@query} event_target={@myself} reset="text_search_reset" />
                 <div class="d-flex flex-column mt-3">
                   {#for sub_objective <- @filtered_sub_objectives}
                     <div class="my-2 d-flex">
@@ -66,6 +66,14 @@ defmodule OliWeb.ObjectivesLive.SelectExistingSubModal do
      assign(socket,
        filtered_sub_objectives: filtered_sub_objectives,
        query: query
+     )}
+  end
+
+  def handle_event("text_search_reset", _, socket) do
+    {:noreply,
+     assign(socket,
+       filtered_sub_objectives: socket.assigns.sub_objectives,
+       query: ""
      )}
   end
 end
