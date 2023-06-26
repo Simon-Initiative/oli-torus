@@ -19,6 +19,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.ManualGrading.RenderedActivity
   alias Oli.Repo
+  alias Oli.Delivery.Snapshots.Snapshot
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -37,7 +38,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   }
 
   def mount(socket) do
-    {:ok, assign(socket, scripts_loaded: false)}
+    activity_registrations_mapper =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.into(%{}, &{&1.id, &1})
+
+    {:ok,
+     assign(socket,
+       scripts_loaded: false,
+       activity_registrations_mapper: activity_registrations_mapper
+     )}
   end
 
   def update(assigns, socket) do
@@ -103,7 +112,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             students_with_attempts_count: Enum.count(students_with_attempts),
             student_emails_without_attempts: student_emails_without_attempts,
             total_attempts_count:
-              Enum.reduce(activities, 0, fn a, acc -> a.total_attempts + acc end)
+              Enum.reduce(activities, 0, fn a, acc -> a.total_attempts + acc end),
+            rendered_activity_id: UUID.uuid4()
           )
       end
 
@@ -229,7 +239,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">Question details</div>
           <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5" id="activity_detail" phx-hook="LoadSurveyScripts">
             <%= if @preview_rendered != nil do %>
-             <RenderedActivity.render id="selected_activity" rendered_activity={@preview_rendered} myself={@myself} />
+             <RenderedActivity.render id={@rendered_activity_id} rendered_activity={@preview_rendered} myself={@myself} />
             <% else %>
               <p class="pt-9 pb-5">No attempt registered for this question</p>
             <% end %>
@@ -255,7 +265,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   def handle_event(
         "paged_table_selection_change",
-        %{"id" => activity_resource_id},
+        %{"id" => activity_id},
         socket
       )
       when not is_nil(socket.assigns.current_assessment) do
@@ -265,7 +275,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          route_to(
            socket,
            update_params(socket.assigns.params, %{
-             selected_activity: activity_resource_id
+             selected_activity: activity_id
            })
          )
      )}
@@ -359,17 +369,31 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         socket
 
       rows ->
-        assign_selected_activity(socket, hd(rows).resource_id |> Integer.to_string())
+        assign_selected_activity(socket, hd(rows).id)
     end
   end
 
   defp assign_selected_activity(socket, selected_activity_id) do
+    selected_activity_id =
+      if is_integer(selected_activity_id),
+        do: selected_activity_id,
+        else: String.to_integer(selected_activity_id)
+
+    selected_activity =
+      Enum.find(socket.assigns.activities, fn a ->
+        a.id == selected_activity_id
+      end)
+
     table_model =
       Map.merge(socket.assigns.table_model, %{
-        selected: selected_activity_id
+        selected: "#{selected_activity_id}"
       })
 
-    case get_activity_attempt(selected_activity_id, socket.assigns.section.id) do
+    case get_activity_attempt_for(
+           selected_activity,
+           socket.assigns.section.id,
+           socket.assigns.activity_registrations_mapper
+         ) do
       [] ->
         socket
         |> assign(table_model: table_model)
@@ -567,7 +591,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     end
   end
 
-  defp get_activity_attempt(selected_activity_id, section_id) do
+  defp get_activity_attempt_for(selected_activity, section_id, activity_registrations_mapper) do
     query =
       ActivityAttempt
       |> join(:left, [aa], resource_attempt in ResourceAttempt,
@@ -586,7 +610,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       |> where(
         [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
         resource_access.section_id == ^section_id and
-          activity_revision.resource_id == ^selected_activity_id
+          activity_revision.id == ^selected_activity.id
       )
       |> select([aa, _, _, _, _, _], aa)
       |> select_merge(
@@ -605,7 +629,93 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         }
       )
 
-    Repo.all(query)
-    |> hd
+    case Map.get(activity_registrations_mapper, selected_activity.activity_type_id).title do
+      "Multiple Choice" ->
+        activity_attempts =
+          Repo.all(query)
+          |> Repo.preload(:part_attempts)
+
+        frequency_per_choice_id =
+          activity_attempts
+          |> Enum.reduce([], fn activity_attempt, acc ->
+            Enum.reduce(activity_attempt.part_attempts, [], fn part_attempt, pa_acc ->
+              responses =
+                part_attempt.response["input"]
+                |> String.split(" ", trim: true)
+
+              responses ++ pa_acc
+            end) ++
+              acc
+          end)
+          |> Enum.frequencies()
+
+        activity_attempt = hd(activity_attempts)
+
+        choices =
+          activity_attempt.transformed_model["choices"]
+          |> Enum.map(fn choice ->
+            Map.merge(choice, %{"frequency" => Map.get(frequency_per_choice_id, choice["id"])})
+          end)
+
+        transformed_model =
+          activity_attempt.transformed_model
+          |> Map.put("choices", choices)
+
+        activity_attempt
+        |> Map.put(:transformed_model, transformed_model)
+
+      "Single Response" ->
+        activity_attempts =
+          Repo.all(query)
+          |> Repo.preload(:part_attempts)
+
+        part_attempt_ids =
+          activity_attempts
+          |> Enum.reduce([], fn activity_attempt, acc ->
+            Enum.reduce(activity_attempt.part_attempts, [], fn part_attempt, pa_acc ->
+              [part_attempt.id] ++ pa_acc
+            end) ++
+              acc
+          end)
+
+        user_per_part_attempt =
+          Repo.all(
+            from(
+              snapshot in Snapshot,
+              where: snapshot.part_attempt_id in ^part_attempt_ids,
+              preload: [:user],
+              select: snapshot
+            )
+          )
+          |> Enum.into(%{}, fn snapshot ->
+            {snapshot.part_attempt_id, snapshot.user}
+          end)
+
+        answers =
+          activity_attempts
+          |> Enum.reduce([], fn activity_attempt, acc ->
+            Enum.reduce(activity_attempt.part_attempts, [], fn part_attempt, pa_acc ->
+              [
+                %{
+                  response: part_attempt.response["input"],
+                  user_name:
+                    Map.get(user_per_part_attempt, part_attempt.id) |> OliWeb.Common.Utils.name()
+                }
+              ] ++ pa_acc
+            end) ++
+              acc
+          end)
+
+        activity_attempt = hd(activity_attempts)
+
+        content = activity_attempt.revision.content |> Map.put(:answers, answers)
+
+        revision = activity_attempt.revision |> Map.put(:content, content)
+
+        activity_attempt |> Map.put(:revision, revision)
+
+      _activity_title ->
+        Repo.all(query) |> hd()
+    end
   end
 end
