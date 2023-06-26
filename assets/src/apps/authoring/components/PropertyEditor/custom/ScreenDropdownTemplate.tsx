@@ -66,7 +66,7 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
           <i className="fas fa-caret-down my-auto" />
         </Dropdown.Toggle>
 
-        <Dropdown.Menu>
+        <Dropdown.Menu className="aa-sequence-editor-menu">
           <SequenceDropdown
             items={hierarchy}
             onChange={onChangeHandler}
