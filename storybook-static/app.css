@@ -3972,6 +3972,10 @@ table.table-striped tbody tr:nth-child(even) {
   grid-column: span 12 / span 12;
 }
 
+.col-span-2 {
+  grid-column: span 2 / span 2;
+}
+
 .col-span-3 {
   grid-column: span 3 / span 3;
 }
@@ -4018,6 +4022,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .m-4 {
   margin: 1rem;
+}
+
+.m-5 {
+  margin: 1.25rem;
 }
 
 .m-auto {
@@ -4494,6 +4502,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 2.5rem;
 }
 
+.w-10\/12 {
+  width: 83.333333%;
+}
+
 .w-12 {
   width: 3rem;
 }
@@ -4684,6 +4696,10 @@ table.table-striped tbody tr:nth-child(even) {
   flex-basis: 0.25rem;
 }
 
+.basis-1\/2 {
+  flex-basis: 50%;
+}
+
 .border-collapse {
   border-collapse: collapse;
 }
@@ -4775,6 +4791,10 @@ table.table-striped tbody tr:nth-child(even) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .grid-cols-5 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -4801,6 +4821,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .flex-nowrap {
   flex-wrap: nowrap;
+}
+
+.content-center {
+  align-content: center;
 }
 
 .items-end {
@@ -5028,6 +5052,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-left-radius: 0.25rem;
 }
 
+.rounded-l-md {
+  border-top-left-radius: 0.375rem;
+  border-bottom-left-radius: 0.375rem;
+}
+
 .rounded-l-sm {
   border-top-left-radius: 0.125rem;
   border-bottom-left-radius: 0.125rem;
@@ -5036,6 +5065,11 @@ table.table-striped tbody tr:nth-child(even) {
 .rounded-r {
   border-top-right-radius: 0.25rem;
   border-bottom-right-radius: 0.25rem;
+}
+
+.rounded-r-md {
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
 }
 
 .rounded-r-sm {
@@ -5067,6 +5101,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .border-\[1px\] {
   border-width: 1px;
+}
+
+.border-\[3px\] {
+  border-width: 3px;
 }
 
 .border-x-0 {
@@ -5126,6 +5164,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-width: 0px;
 }
 
+.border-t-2 {
+  border-top-width: 2px;
+}
+
 .border-t-4 {
   border-top-width: 4px;
 }
@@ -5158,6 +5200,10 @@ table.table-striped tbody tr:nth-child(even) {
 .border-black {
   --tw-border-opacity: 1;
   border-color: rgb(0 0 0 / var(--tw-border-opacity));
+}
+
+.border-current {
+  border-color: currentColor;
 }
 
 .border-delivery-primary {
@@ -5254,6 +5300,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-color: rgb(212 212 212 / var(--tw-border-opacity));
 }
 
+.border-t-transparent {
+  border-top-color: transparent;
+}
+
 .\!bg-delivery-primary-100 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(193 211 241 / var(--tw-bg-opacity)) !important;
@@ -5267,6 +5317,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-blue-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(193 211 241 / var(--tw-bg-opacity));
+}
+
+.bg-blue-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(209 223 245 / var(--tw-bg-opacity));
 }
 
 .bg-blue-500 {
@@ -5825,9 +5880,18 @@ table.table-striped tbody tr:nth-child(even) {
   vertical-align: text-bottom;
 }
 
+.font-sans {
+  font-family: Open Sans, sans-serif;
+}
+
 .text-2xl {
   font-size: 1.5rem;
   line-height: 2rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
 }
 
 .text-7xl {
@@ -5966,6 +6030,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-blue-500 {
   --tw-text-opacity: 1;
   color: rgb(59 118 211 / var(--tw-text-opacity));
+}
+
+.text-blue-600 {
+  --tw-text-opacity: 1;
+  color: rgb(39 92 175 / var(--tw-text-opacity));
 }
 
 .text-blue-700 {
