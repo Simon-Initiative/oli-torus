@@ -145,7 +145,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       assert has_element?(view, "input#online_radio_button")
       assert has_element?(view, "input#hybrid_radio_button")
       assert has_element?(view, "input#never_radio_button")
-      refute has_element?(view, "button", "Cancel")
+      assert has_element?(view, "button", "Cancel")
     end
 
     test "can't go to next step unless all required fields are filled", %{

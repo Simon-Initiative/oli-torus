@@ -93,7 +93,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <.live_component
           id="course_creation_stepper"
           module={Stepper}
-          on_cancel={if !@lti_params, do: "redirect_to_courses", else: nil}
+          on_cancel="redirect_to_courses"
           steps={@steps || []}
           current_step={@current_step}
           next_step_disabled={next_step_disabled?(assigns)}
@@ -393,7 +393,11 @@ defmodule OliWeb.Delivery.NewCourse do
   def handle_event("redirect_to_courses", _, socket) do
     {:noreply,
      redirect(socket,
-       to: Routes.delivery_path(socket, :open_and_free_index)
+       to:
+         if(socket.assigns.lti_params,
+           do: Routes.delivery_path(socket, :index),
+           else: Routes.delivery_path(socket, :open_and_free_index)
+         )
      )}
   end
 
