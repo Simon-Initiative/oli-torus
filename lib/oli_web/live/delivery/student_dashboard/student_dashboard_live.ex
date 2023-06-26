@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
   alias Oli.Grading.GradebookRow
+  alias OliWeb.Components.Header
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do

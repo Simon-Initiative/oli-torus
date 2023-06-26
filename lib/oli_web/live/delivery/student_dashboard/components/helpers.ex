@@ -218,7 +218,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   def section_details_header(assigns) do
     ~H"""
       <div id="section_details_header" class="flex flex-row justify-between items-center h-20 w-full py-6 px-10">
-        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 dark:text-white underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span>
+        <%!-- <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 dark:text-white underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span> --%>
         <button class="torus-button flex justify-center primary h-9 w-48">Email Student</button>
       </div>
     """

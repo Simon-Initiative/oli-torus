@@ -73,7 +73,7 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
 
     test "mount enrollments for admin", %{section: section, conn: conn} do
       {:ok, _view, html} =
-        live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsView, section.slug))
+        live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug))
 
       [e | _] = Oli.Delivery.Sections.list_enrollments(section.slug)
 
@@ -95,7 +95,7 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       {:ok, _view, html} =
-        live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsView, section.slug))
+        live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug))
 
       refute html =~ "Admin"
       assert html =~ "Enrollments"

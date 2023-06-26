@@ -79,10 +79,29 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns =
       Map.merge(assigns, %{
         progress: parse_progress(progress),
-        id: id,
         name: name,
         family_name: family_name,
-        given_name: given_name
+        given_name: given_name,
+        link:
+          case Map.get(assigns.ctx, :is_enrollment_page) do
+            true ->
+              Routes.enrollment_student_info_path(
+                OliWeb.Endpoint,
+                OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+                assigns.section.slug,
+                id,
+                :content
+              )
+
+            _ ->
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+                assigns.section.slug,
+                id,
+                :content
+              )
+          end
       })
 
     ~H"""
@@ -90,7 +109,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}></div>
       <.link
         class="ml-6 underline"
-        navigate={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.StudentDashboard.StudentDashboardLive, @section.slug, @id, :content)}
+        navigate={@link}
       >
         <%= Utils.name(@name, @given_name, @family_name) %>
       </.link>
