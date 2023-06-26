@@ -33,7 +33,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
     end
 
-    test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
+    test "can't go to next step unless all required fields are filled and valid",
+         %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
@@ -45,6 +46,23 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{"section" => %{}, "current_step" => 3})
 
       assert has_element?(view, ".alert-danger", "Some fields require your attention")
+
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{
+        "section" => %{
+          class_days: [:monday, :friday],
+          start_date: DateTime.add(DateTime.utc_now(), 4, :day),
+          end_date: DateTime.add(DateTime.utc_now(), 2, :day)
+        },
+        "current_step" => 3
+      })
+
+      assert has_element?(
+               view,
+               ".alert-danger",
+               "The course's start date must be earlier than its end date"
+             )
     end
 
     test "successfully creates a section from a project publication", %{conn: conn} = context do

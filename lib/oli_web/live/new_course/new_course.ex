@@ -461,7 +461,16 @@ defmodule OliWeb.Delivery.NewCourse do
 
       3 ->
         if validate_fields(changeset, [:class_days, :start_date, :end_date]) do
-          create_section(socket.assigns.live_action, assign(socket, changeset: changeset))
+          if validate_course_dates(changeset) do
+            create_section(socket.assigns.live_action, assign(socket, changeset: changeset))
+          else
+            {:noreply,
+             assign(socket, changeset: changeset)
+             |> put_flash(
+               :form_error,
+               "The course's start date must be earlier than its end date"
+             )}
+          end
         else
           {:noreply,
            assign(socket, changeset: changeset)
@@ -489,5 +498,11 @@ defmodule OliWeb.Delivery.NewCourse do
         _ -> true
       end
     end)
+  end
+
+  defp validate_course_dates(changeset) do
+    {_, start_date} = Ecto.Changeset.fetch_field(changeset, :start_date)
+    {_, end_date} = Ecto.Changeset.fetch_field(changeset, :end_date)
+    Date.diff(start_date, end_date) < 0
   end
 end
