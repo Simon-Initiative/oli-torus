@@ -90,7 +90,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       assert has_element?(view, "button", "Cancel")
     end
 
-    test "can't go to next step unless all required fields are filled", %{
+    test "can't go to next step unless all required fields are filled and correct", %{
       conn: conn,
       section: section
     } do
@@ -101,6 +101,19 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       view
       |> element("#open_and_free_form")
       |> render_hook("js_form_data_response", %{"section" => %{}, "current_step" => 2})
+
+      assert has_element?(view, ".alert-danger", "Some fields require your attention")
+
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{
+        "section" => %{
+          title: "Test Title",
+          course_section_number: "  ",
+          class_modality: :online
+        },
+        "current_step" => 2
+      })
 
       assert has_element?(view, ".alert-danger", "Some fields require your attention")
     end
