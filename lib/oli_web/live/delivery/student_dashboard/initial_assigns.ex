@@ -3,13 +3,15 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
   Ensure common assigns are applied to all StudentDashboard LiveViews attaching this hook.
   """
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
   alias Oli.Delivery.Metrics
 
   import Phoenix.LiveView
   import Phoenix.Component
+  import OliWeb.LiveHelpers
 
   def on_mount(:default, :not_mounted_at_router, _session, socket) do
     {:cont, socket}
@@ -30,18 +32,108 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
 
+        student =
+          Accounts.get_user!(student_id)
+          |> add_students_survey_data(section_slug)
+          |> add_students_metrics(section.id)
+
         {:cont,
          assign(socket,
            ctx: SessionContext.init(socket, session, user: current_user),
            browser_timezone: Map.get(session, "browser_timezone"),
            current_user: current_user,
-           student:
-             Accounts.get_user!(student_id)
-             |> add_students_survey_data(section_slug)
-             |> add_students_metrics(section.id),
+           student: student,
            preview_mode: socket.assigns[:live_action] == :preview,
            section: section
+         )
+         |> Phoenix.LiveView.attach_hook(
+           :maybe_set_breadcrumbs,
+           :handle_params,
+           &maybe_set_breadcrumbs/3
          )}
+    end
+  end
+
+  def maybe_set_breadcrumbs(params, _url, socket) do
+    socket =
+      if !socket.assigns[:breadcrumbs] and socket.assigns[:route_name] do
+        assign(socket, breadcrumbs: set_breadcrumbs(socket, params))
+      else
+        socket
+      end
+
+    {:cont, socket}
+  end
+
+  defp set_breadcrumbs(socket, params) do
+    url_params =
+      if !is_nil(params["container_id"]), do: %{container_id: params["container_id"]}, else: %{}
+
+    case socket.assigns[:route_name] do
+      :enrollments_student_info ->
+        [
+          Breadcrumb.new(%{
+            full_title: "Manage Section",
+            link:
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+                socket.assigns.section.slug,
+                :manage
+              )
+          }),
+          Breadcrumb.new(%{
+            full_title: "Enrollments",
+            link:
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Sections.EnrollmentsViewLive,
+                socket.assigns.section.slug,
+                url_params
+              )
+          }),
+          Breadcrumb.new(%{
+            full_title: "#{Utils.user_name(socket.assigns.student)} information"
+          })
+        ]
+
+      :student_dashboard_preview ->
+        [
+          Breadcrumb.new(%{
+            full_title: "Student reports",
+            link:
+              Routes.instructor_dashboard_path(
+                socket,
+                :preview,
+                socket.assigns.section.slug,
+                :reports,
+                :students,
+                url_params
+              )
+          }),
+          Breadcrumb.new(%{
+            full_title: "#{Utils.user_name(socket.assigns.student)} information"
+          })
+        ]
+
+      _ ->
+        [
+          Breadcrumb.new(%{
+            full_title: "Student reports",
+            link:
+              Routes.live_path(
+                socket,
+                OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+                socket.assigns.section.slug,
+                :reports,
+                :students,
+                url_params
+              )
+          }),
+          Breadcrumb.new(%{
+            full_title: "#{Utils.user_name(socket.assigns.student)} information"
+          })
+        ]
     end
   end
 
