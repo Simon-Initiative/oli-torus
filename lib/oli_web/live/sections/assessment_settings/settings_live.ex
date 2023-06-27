@@ -6,7 +6,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   alias Oli.Repo
 
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.{SessionContext, Breadcrumb}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.{Settings, Sections}
   alias OliWeb.Router.Helpers, as: Routes
@@ -37,7 +37,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
              Sections.enrolled_students(section.slug)
              |> Enum.reject(fn s -> s.user_role_id != 4 end)
              |> Enum.sort(),
-           assessments: get_assessments(section.slug, student_exceptions)
+           assessments: get_assessments(section.slug, student_exceptions),
+           breadcrumbs: [
+             Breadcrumb.new(%{
+               full_title: "Manage Section",
+               link:
+                 Routes.live_path(
+                   OliWeb.Endpoint,
+                   OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+                   section.slug,
+                   :manage
+                 )
+             }),
+             Breadcrumb.new(%{
+               full_title: "Assessments settings"
+             })
+           ]
          )}
     end
   end
