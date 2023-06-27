@@ -64,8 +64,10 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
     }
     if (isPreviewMode) {
       window.location.reload();
-    } else {
+    } else if (window.top) {
       window.top.location.href = redirectTo;
+    } else {
+      window.location.href = redirectTo;
     }
   };
 
