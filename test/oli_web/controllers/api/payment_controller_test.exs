@@ -152,7 +152,7 @@ defmodule OliWeb.PaymentControllerTest do
         conn
         |> get(Routes.payment_path(conn, :make_payment, enrollable.slug))
 
-      assert html_response(conn, 200) =~ "<input type=\"text\" disabled value=\"$100.00\"/>"
+      assert html_response(conn, 200) =~ "$100.00"
 
       reset_test_payment_config()
     end

@@ -104,12 +104,12 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
 
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))
 
-      assert html_response(conn, 200) =~ "Course Section"
-      assert html_response(conn, 200) =~ "value=\"#{section.title}\""
-      assert html_response(conn, 200) =~ "User"
-      assert html_response(conn, 200) =~ "value=\"#{user.family_name}, #{user.given_name}\""
-      assert html_response(conn, 200) =~ "Amount"
-      assert html_response(conn, 200) =~ "value=\"#{amount}\""
+      assert html_response(conn, 200) =~ "Course Title:"
+      assert html_response(conn, 200) =~ "#{section.title}"
+      assert html_response(conn, 200) =~ "User:"
+      assert html_response(conn, 200) =~ "#{user.family_name}, #{user.given_name}"
+      assert html_response(conn, 200) =~ "Price"
+      assert html_response(conn, 200) =~ "#{amount}"
       assert html_response(conn, 200) =~ "id=\"card-element\""
     end
   end

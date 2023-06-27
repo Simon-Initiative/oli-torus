@@ -1,0 +1,52 @@
+<script type="text/javascript" src={Routes.static_path(@conn, "/js/cashnetclient.js")}></script>
+
+<Components.Header.header {assigns} />
+<div class="mx-auto w-10/12 m-5">
+  <div class="content justify-center flex flex-row">
+    <div class="rounded-md bg-gray-200 basis-1/2 p-10 flex flex-col">
+      <div class="grid grid-cols-3">
+        <div class="font-semibold ">Course Title: </div>
+        <div class="col-span-2 font-semibold"><%= @section.title %></div>
+      </div>
+      <div class="grid grid-cols-3">
+        <div class="font-semibold ">User: </div>
+        <div class="col-span-2 font-semibold"><%= @user_name %></div>
+      </div>
+      <div class="font-semibold mt-4">Summary</div>
+
+      <table class="w-full mb-8">
+        <tbody>
+            <tr>
+                <td class="text-left text-gray-700">Price</td>
+                <td class="text-right text-gray-700"><%= @cost %></td>
+            </tr>
+
+        </tbody>
+        <tfoot>
+            <tr>
+                <td class="text-left font-bold text-gray-700">Total</td>
+                <td class="text-right font-bold text-gray-700"><%= @cost %></td>
+            </tr>
+        </tfoot>
+      </table>
+
+      <div id="cashnet-form" class="hidden">
+        <%= raw(@cashnet_form) %>
+      </div>
+      <div class="justify-center flex flex-row">
+          <div class="animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full" role="status" aria-label="loading">
+            <span class="sr-only">Loading...</span>
+          </div>
+          <div class="ml-2 inline-block">Processing...</div>
+      </div>
+      <%= live_render(@conn, OliWeb.Sections.PaymentEnd, session: %{
+        "section" => @section,
+        "user" => @user
+      }) %>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.OLICashnetPayments.makeCashnetPurchase(<%= raw(@purchase) %>);
+</script>

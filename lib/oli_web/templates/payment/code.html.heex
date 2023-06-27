@@ -1,4 +1,4 @@
-
+<Components.Header.header {assigns} />
 <div class="configure-section mt-5">
   <h3>Enter Payment Code</h3>
   <p class="mt-3">
@@ -8,7 +8,7 @@
   <%= form_for @conn, Routes.payment_path(@conn, :apply_code, @section_slug), [as: :code], fn f -> %>
 
     <div class="form-label-group mt-4">
-      <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+      <div class="g-recaptcha" data-sitekey={ Application.fetch_env!(:oli, :recaptcha)[:site_key] }></div>
 
       <%= case assigns[:recaptcha_error] do %>
         <% recaptcha_error -> %>
@@ -18,7 +18,7 @@
 
     <div class="form-group" style="width: 100%;">
       <label>Enter your payment code</label>
-      <%= text_input f, :value, class: "form-control"%>
+      <%= text_input f, :value, class: "form-control", maxlength: 8%>
 
       <%= case assigns[:error] do %>
         <% error -> %>
