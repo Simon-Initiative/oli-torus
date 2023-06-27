@@ -466,7 +466,7 @@ defmodule OliWeb.LtiControllerTest do
 
       assert placements == [
                %{
-                 "icon_url" => "https://localhost/images/torus-icon.png",
+                 "icon_url" => "https://localhost/branding/prod/oli_torus_icon.png",
                  "message_type" => "LtiResourceLinkRequest",
                  "placement" => "link_selection"
                },
@@ -495,7 +495,7 @@ defmodule OliWeb.LtiControllerTest do
 
       assert placements == [
                %{
-                 "icon_url" => "https://localhost/images/torus-icon.png",
+                 "icon_url" => "https://localhost/branding/prod/oli_torus_icon.png",
                  "message_type" => "LtiResourceLinkRequest",
                  "placement" => "link_selection"
                },

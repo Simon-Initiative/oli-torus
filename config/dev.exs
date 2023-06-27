@@ -17,7 +17,22 @@ config :oli,
     from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: System.get_env("LOAD_TESTING_MODE", "disabled") |> String.to_existing_atom(),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
-  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
+  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID"),
+  branding: [
+    name: System.get_env("BRANDING_NAME", "OLI Torus"),
+    logo: System.get_env("BRANDING_LOGO", "/branding/dev/oli_torus_logo.png"),
+    logo_dark:
+      System.get_env(
+        "BRANDING_LOGO_DARK",
+        System.get_env("BRANDING_LOGO", "/branding/dev/oli_torus_logo_dark.png")
+      ),
+    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/branding/dev/favicons")
+  ]
+
+config :oli, :vendor_property,
+  workspace_logo:
+    System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/dev/oli_torus_icon.png"),
+  support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL", "support@example.com")
 
 # Configure your database
 config :oli, Oli.Repo,

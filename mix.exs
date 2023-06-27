@@ -44,7 +44,7 @@ defmodule Oli.MixProject do
     [
       main: "introduction",
       assets: "doc_assets",
-      logo: "assets/static/images/torus-icon.png",
+      logo: "assets/static/branding/dev/oli_torus_icon.png",
       extra_section: "GUIDES",
       extras: extras(),
       groups_for_extras: groups_for_extras(),
