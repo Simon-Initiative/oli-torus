@@ -4302,6 +4302,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 2px;
 }
 
+.mt-\[50px\] {
+  margin-top: 50px;
+}
+
 .mt-auto {
   margin-top: auto;
 }
@@ -7725,10 +7729,6 @@ a.download::after {
   font-family: 'Font Awesome 6 Free';
   font-weight: 600;
   content: '\f019';
-}
-
-p {
-  margin-bottom: 0.75rem;
 }
 
 .slate-editor p:last-child {
