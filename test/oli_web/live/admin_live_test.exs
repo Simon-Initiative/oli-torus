@@ -908,5 +908,54 @@ defmodule OliWeb.AdminLiveTest do
       refute html =~ "Resend confirmation link"
       refute html =~ "Confirm email"
     end
+
+    test "edit user details", %{conn: conn, author: author} do
+      new_first_name = "New First Name"
+      new_last_name = "New Last Name"
+      new_email = "new_email@example.com"
+
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
+
+      # Assert that fields are disabled
+      assert has_element?(view, "input[value=\"#{author.given_name}\"][disabled]")
+      assert has_element?(view, "input[value=\"#{author.family_name}\"][disabled]")
+      assert has_element?(view, "input[value=\"#{author.email}\"][disabled]")
+
+      view
+      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> render_click()
+
+      # Assert that there is a save button
+      assert has_element?(view, "button[type=\"submit\"]", "Save")
+
+      # Refute that fields are disabled
+      refute has_element?(view, "input[value=\"#{author.given_name}\"][disabled]")
+      refute has_element?(view, "input[value=\"#{author.family_name}\"][disabled]")
+      refute has_element?(view, "input[value=\"#{author.email}\"][disabled]")
+
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{
+        "author" => %{
+          "given_name" => new_first_name,
+          "family_name" => new_last_name,
+          "email" => new_email
+        }
+      })
+
+      # Assert that fields are updated correctly
+      assert view |> element("input[value=\"#{new_first_name}\"][disabled]") |> render() =~
+               new_first_name
+
+      assert view |> element("input[value=\"#{new_last_name}\"][disabled]") |> render() =~
+               new_last_name
+
+      assert view |> element("input[value=\"#{new_email}\"][disabled]") |> render() =~ new_email
+
+      # Assert that the name field was updated correctly
+      assert view
+             |> element("input[value=\"#{new_first_name} #{new_last_name}\"][disabled]")
+             |> render() =~ "#{new_first_name} #{new_last_name}"
+    end
   end
 end
