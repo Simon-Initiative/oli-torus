@@ -583,7 +583,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       page_3: page_3,
       page_4: page_4
     } do
-      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+      {:ok, view, html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
         view
@@ -599,6 +599,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_2 == page_2.title
       assert assessment_3 == page_3.title
       assert assessment_4 == page_4.title
+
+      assert html =~
+               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
     end
 
     test "student_exceptions view loads correctly", %{
