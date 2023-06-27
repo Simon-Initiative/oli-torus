@@ -344,6 +344,13 @@ $element-margin-bottom: 1.5em;
     }
   }
 
+  .formula {
+    /* MER-2118 - Center block level formulas */
+    width: 100%;
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+
   .dialog {
     display: flex;
     flex-direction: column;
