@@ -137,9 +137,40 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert has_element?(view, "input[value=\"#{section.description}\"]")
 
       assert view
-             |> element("option[value=\"\"]")
-             |> render() =~
-               "None"
+             |> element(
+               "select[id=section_brand_id] option[selected=selected][value=#{section.brand_id}]"
+             )
+             |> has_element?()
+
+      assert view
+             |> element(
+               "select[id=section_institution_id] option[selected=selected][value=#{section.institution_id}]"
+             )
+             |> has_element?()
+    end
+
+    test "institution dropdown is disabled for LTI sections", %{conn: conn} do
+      section = insert(:section)
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      assert view
+             |> element("select[id=section_institution_id][disabled=disabled]")
+             |> has_element?()
+    end
+
+    test "institution dropdown is enabled for non LTI sections", %{conn: conn} do
+      section = insert(:section, lti_1p3_deployment: nil)
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      refute view
+             |> element("select[id=section_institution_id][disabled=disabled]")
+             |> has_element?()
+
+      assert view
+             |> element("select[id=section_institution_id]")
+             |> has_element?()
     end
 
     test "loads open and free section datetimes correctly using the local timezone", context do
