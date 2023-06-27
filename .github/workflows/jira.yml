@@ -33,6 +33,23 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
+      - name: Get higest priority label
+        id: priority
+        run: |
+          echo "Determining priority from issue labels: ${{ github.event.issue.labels }}"
+
+          if contains(github.event.issue.labels.*.name, 'Priority 1: Critical'); then
+            PRIORITY="Highest"
+          elif contains(github.event.issue.labels.*.name, 'Priority 2: High'); then
+            PRIORITY="High"
+          elif contains(github.event.issue.labels.*.name, 'Priority 3: Normal'); then
+            PRIORITY="Medium"
+          else
+            PRIORITY="Medium"
+          fi
+
+          echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
+
       - name: Create
         id: create
         uses: atlassian/gajira-create@v3
@@ -44,6 +61,12 @@ jobs:
             ${{ github.event.issue.html_url }}
 
             ${{ github.event.issue.body }}
+          fields: |
+            {
+              "priority": {
+                "name": "${{ steps.priority.outputs.priority }}"
+              }
+            }
 
       - name: Log created issue
         run: echo "Issue ${{ steps.create.outputs.issue }} was created"
