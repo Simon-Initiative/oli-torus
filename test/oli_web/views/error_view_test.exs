@@ -5,10 +5,17 @@ defmodule OliWeb.ErrorViewTest do
   import Phoenix.View
 
   test "renders 404.html" do
-    assert render_to_string(OliWeb.ErrorView, "404.html", []) == "Not Found"
+    assert render_to_string(OliWeb.ErrorView, "404.html", reason: %{plug_status: 404}) =~
+             "404 Not Found"
   end
 
   test "renders 500.html" do
-    assert render_to_string(OliWeb.ErrorView, "500.html", []) == "Internal Server Error"
+    assert render_to_string(OliWeb.ErrorView, "500.html", reason: %{plug_status: 500}) =~
+             "500 Internal Server Error"
+  end
+
+  test "renders 403.html" do
+    assert render_to_string(OliWeb.ErrorView, "403.html", reason: %{plug_status: 403}) =~
+             "403 Forbidden"
   end
 end

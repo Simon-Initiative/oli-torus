@@ -4,6 +4,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
   import OliWeb.Common.Properties.Utils
   import OliWeb.Common.Utils
+  import Ecto.Changeset
 
   alias Oli.Accounts
   alias Oli.Accounts.User
@@ -23,7 +24,7 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
   alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
+  alias Surface.Components.Form.{Checkbox, Label, Field, Submit, TextInput}
 
   data(breadcrumbs, :any)
   data(changeset, :changeset)
@@ -31,6 +32,7 @@ defmodule OliWeb.Users.UsersDetailView do
   data(modal, :any, default: nil)
   data(title, :string, default: "User Details")
   data(user, :struct, default: nil)
+  data(disabled_edit, :boolean, default: true)
 
   defp set_breadcrumbs(user) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -73,7 +75,8 @@ defmodule OliWeb.Users.UsersDetailView do
            csrf_token: csrf_token,
            changeset: user_changeset(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
-           enrolled_sections: enrolled_sections
+           enrolled_sections: enrolled_sections,
+           disabled_edit: true
          )}
     end
   end
@@ -88,16 +91,25 @@ defmodule OliWeb.Users.UsersDetailView do
           <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
             <ReadOnly label="Sub" value={@user.sub}/>
             <ReadOnly label="Name" value={@user.name}/>
-            <ReadOnly label="First Name" value={@user.given_name}/>
-            <ReadOnly label="Last Name" value={@user.family_name}/>
-            <ReadOnly label="Email" value={@user.email}/>
+            <Field name={:given_name} class="form-group">
+              <Label text="Given Name"/>
+              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
+            </Field>
+            <Field name={:family_name} class="form-group">
+              <Label text="Last Name"/>
+              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
+            </Field>
+            <Field name={:email} class="form-group">
+              <Label text="Email"/>
+              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
+            </Field>
             <ReadOnly label="Guest" value={boolean(@user.guest)}/>
             {#if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true"}
               <ReadOnly label="Confirmed is 13 or older on creation" value={boolean(@user.age_verified)}/>
             {/if}
             <div class="form-control mb-3">
               <Field name={:independent_learner}>
-                <Checkbox/>
+                <Checkbox class="form-check-input" value={get_field(@changeset, :independent_learner)} opts={disabled: @disabled_edit}/>
                 <Label class="form-check-label mr-2">Independent Learner</Label>
               </Field>
             </div>
@@ -108,7 +120,7 @@ defmodule OliWeb.Users.UsersDetailView do
               </heading>
               <div class="form-control">
                 <Field name={:can_create_sections}>
-                  <Checkbox />
+                  <Checkbox class="form-check-input" value={get_field(@changeset, :can_create_sections)} opts={disabled: @disabled_edit}/>
                   <Label class="form-check-label mr-2">Can Create Sections</Label>
                 </Field>
               </div>
@@ -117,8 +129,13 @@ defmodule OliWeb.Users.UsersDetailView do
             <ReadOnly label="Email Confirmed" value={render_date(@user, :email_confirmed_at, @ctx)}/>
             <ReadOnly label="Created" value={render_date(@user, :inserted_at, @ctx)}/>
             <ReadOnly label="Last Updated" value={render_date(@user, :updated_at, @ctx)}/>
-            <Submit class="float-right btn btn-md btn-primary mt-2">Save</Submit>
+            {#unless @disabled_edit}
+              <Submit class={"float-right btn btn-md btn-primary mt-2"}>Save</Submit>
+            {/unless}
           </Form>
+            {#if @disabled_edit}
+              <button class={"float-right btn btn-md btn-primary mt-2"} phx-click="start_edit">Edit</button>
+            {/if}
         </Group>
         {#if !Enum.empty?(@user_lti_params)}
           <Group label="LTI Details" description="LTI 1.3 details provided by an LMS">
@@ -305,11 +322,16 @@ defmodule OliWeb.Users.UsersDetailView do
       {:ok, user} ->
         {:noreply,
          socket
-         |> assign(user: user, changeset: user_changeset(user, params))}
+         |> put_flash(:info, "User successfully updated.")
+         |> assign(user: user, changeset: user_changeset(user, params), disabled_edit: true)}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "User couldn't be updated.")}
     end
+  end
+
+  def handle_event("start_edit", _, socket) do
+    {:noreply, socket |> assign(disabled_edit: false)}
   end
 
   defp user_with_platform_roles(id) do

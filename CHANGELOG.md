@@ -1,11 +1,40 @@
 # Changelog
 
+## 0.24 (unreleased)
 
-## 0.23.1 (2023-4-5)
+### Bug Fixes
+
+- Fix a bug in displaying the All Products view
+- Tech support modal initialization issues
+- Legacy migration fixes
+- Normalize whitespace upon rule evaluation of activities
+- Multi input dropdown now allows shuffling of individual parts
+- Allow previewing of gated resources
+- Fix an issue with page links and course flow related to pages outside hierarchy
+- Always show hints in unscored pages even after attempt evaluations
 
 ### Enhancements
 
-- Fix a bug in displaying the All Products view
+- Various authoring bug fixes and enhancements
+- Instructor dashboard top level navigation, reports and content views
+- Student dashboard views
+- Adaptive flowchart authoring
+- Add edit page links to product view
+- Soft scheduling controls for suggested by, in class activity on, and due by
+- Add support for scored pages time limit, grace period, late start, late submit and auto submit
+- Require start and end datetimes for sections
+- Password protected attempt starts
+- Instructor and student onboarding wizards
+- Student progress CSV downloads
+- Allow payment bypass for a particular student
+- Enable selection of all pages including ones outside the hierarchy in remix
+- Add ability to jump to a specific page in delivery
+
+### Environment Configs
+
+```
+VENDOR_PROPERTY_SUPPORT_EMAIL    (optional) specify an email address where users can contact the support team
+```
 
 ## 0.23.0 (2023-3-30)
 
@@ -251,9 +280,7 @@
     e.g. SUPER_ACTIVITY_FOLDER=torus/superactivity
   - Ensure the folder is readable to the running torus instance
 
-**Environment Configs**
-
-The following environment configs are now available:
+### Environment Configs
 
 ```
 SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legacy activities
@@ -404,7 +431,7 @@ releases.
 sudo yum install openssl11
 ```
 
-**Environment Configs**
+### Environment Configs
 
 The following environment configs are now available for AppSignal integration.
 All are required for AppSignal support. If none are specified, AppSignal

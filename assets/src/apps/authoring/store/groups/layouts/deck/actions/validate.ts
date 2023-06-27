@@ -648,7 +648,7 @@ export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) =
         [],
       );
 
-      console.log('blacklists: ', { lineageBlacklist, childrenBlackList, foundProblems, problems });
+      // console.log('blacklists: ', { lineageBlacklist, childrenBlackList, foundProblems, problems });
 
       errors.push({
         activity: activitySequence,

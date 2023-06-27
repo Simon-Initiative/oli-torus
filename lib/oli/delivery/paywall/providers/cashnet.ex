@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.PubSub
 
   @spec create_form(%Section{}, %User{}, String.t()) :: {:ok, any} | {:error, any}
   def create_form(section, user, host) do
@@ -30,7 +31,7 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
        %{
          payment_ref: payment.provider_id,
          cashnet_form:
-           ~s|<form action="#{cashnet_checkout_url}" id="cmupayment" name="cashnet" method="post" target="_blank">
+           ~s|<form action="#{cashnet_checkout_url}" id="cmupayment" name="cashnet" method="post" target="_self">
            <input type="hidden" name="virtual" value="#{cashnet_client}#{cashnet_store}"/>
            <input type="hidden" name="signouturl" value="https://#{host}#{Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}"/>
            <input type="hidden" name="ref1type1" value="#{cashnet_store}-payment_ref"/>
@@ -89,7 +90,9 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
                    application_date: DateTime.utc_now(),
                    provider_payload: payload
                  }) do
-              {:ok, _} -> {:ok, section}
+              {:ok, _} ->
+                PubSub.broadcast(Oli.PubSub, "section:payment:"<>Integer.to_string(payment.pending_user_id), {:payment, "paid"})
+                {:ok, section}
               _ -> {:error, "Could not finalize payment"}
             end
         end

@@ -86,7 +86,7 @@
     "react-shadow": "^20.0.0",
     "react-tiny-popover": "^7.0.1",
     "react-transition-group": "^4.4.5",
-    "react-youtube": "^7.13.0",
+    "react-youtube": "^7.14.0",
     "reactflow": "^11.5.6",
     "redux": "^4.0.5",
     "redux-logger": "^3.0.6",

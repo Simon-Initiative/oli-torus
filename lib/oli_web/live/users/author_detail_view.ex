@@ -21,6 +21,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias OliWeb.Pow.AuthorContext
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Label, Field, Submit, TextInput}
 
   prop author, :any
   data breadcrumbs, :any
@@ -28,6 +30,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
   data user, :struct, default: nil
   data modal, :any, default: nil
   data csrf_token, :any
+  data changeset, :changeset
+  data disabled_edit, :boolean, default: true
 
   defp set_breadcrumbs(author) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -64,7 +68,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
            breadcrumbs: set_breadcrumbs(user),
            author: author,
            user: user,
-           csrf_token: csrf_token
+           csrf_token: csrf_token,
+           changeset: author_changeset(user),
+           disabled_edit: true
          )}
     end
   end
@@ -75,11 +81,28 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {render_modal(assigns)}
       <Groups>
         <Group label="Details" description="User details">
-          <ReadOnly label="Name" value={@user.name}/>
-          <ReadOnly label="First Name" value={@user.given_name}/>
-          <ReadOnly label="Last Name" value={@user.family_name}/>
-          <ReadOnly label="Email" value={@user.email}/>
-          <ReadOnly label="Role" value={role(@user.system_role_id)}/>
+          <Form for={@changeset} change="change" submit="submit" opts={autocomplete: "off"}>
+            <ReadOnly label="Name" value={@user.name}/>
+            <Field name={:given_name} class="form-group">
+              <Label text="First Name"/>
+              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
+            </Field>
+            <Field name={:family_name} class="form-group">
+              <Label text="Last Name"/>
+              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
+            </Field>
+            <Field name={:email} class="form-group">
+              <Label text="Email"/>
+              <TextInput class="form-control" opts={disabled: @disabled_edit}/>
+            </Field>
+            <ReadOnly label="Role" value={role(@user.system_role_id)}/>
+            {#unless @disabled_edit}
+              <Submit class={"float-right btn btn-md btn-primary mt-2"}>Save</Submit>
+            {/unless}
+          </Form>
+          {#if @disabled_edit}
+            <button class={"float-right btn btn-md btn-primary mt-2"} phx-click="start_edit">Edit</button>
+          {/if}
         </Group>
         <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu")}
@@ -266,6 +289,32 @@ defmodule OliWeb.Users.AuthorsDetailView do
      socket
      |> change_system_role(author, author_role_id)
      |> hide_modal(modal_assigns: nil)}
+  end
+
+  def handle_event("change", %{"author" => params}, socket) do
+    {:noreply, assign(socket, changeset: author_changeset(socket.assigns.user, params))}
+  end
+
+  def handle_event("submit", %{"author" => params}, socket) do
+    case Accounts.update_author(socket.assigns.user, params) do
+      {:ok, user} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Author successfully updated.")
+         |> assign(user: user, changeset: author_changeset(user, params), disabled_edit: true)}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Author couldn't be updated.")}
+    end
+  end
+
+  def handle_event("start_edit", _, socket) do
+    {:noreply, socket |> assign(disabled_edit: false)}
+  end
+
+  defp author_changeset(author, attrs \\ %{}) do
+    Author.noauth_changeset(author, attrs)
+    |> Map.put(:action, :update)
   end
 
   defp change_system_role(socket, author, role_id) do

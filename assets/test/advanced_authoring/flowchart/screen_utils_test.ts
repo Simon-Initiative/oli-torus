@@ -6,7 +6,6 @@ describe('screen-utils', function () {
     it('should give me all paths out of the given screen', function () {
       const result = getOrderedPath(sampleScreen, screensLeft);
       expect(result.length).toEqual(3);
-      console.info(result);
       expect(result.map((s) => s.activitySlug)).toEqual([
         'whats_your_favorite_cat',
         'orange_boy',

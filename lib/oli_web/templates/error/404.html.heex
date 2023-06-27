@@ -1,0 +1,7 @@
+<%= render_layout "http_status.html", assigns do %>
+  <p class="mb-4">We couldn't find the knowledge you were looking for.</p>
+
+  <p>You can always return to the <a href={Routes.static_page_path(OliWeb.Endpoint, :index)}>homepage</a> and start anew.</p>
+
+  <p class="mb-8">If you think this is an error, please <%= support_email_link("contact our support team") %> for assistance.</p>
+<% end %>

@@ -97,12 +97,11 @@ defmodule Oli.Rendering.Content.Html do
     ecl
   end
 
-  def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
-    iframe(
-      context,
-      nil,
-      Map.put(attrs, "src", "https://www.youtube.com/embed/#{escape_xml!(src)}")
-    )
+  def youtube(%Context{} = context, _, %{"src" => _} = attrs) do
+    {:safe, video_player} =
+      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{"video" => attrs})
+
+    video_player
   end
 
   def youtube(%Context{} = _context, _, _e), do: ""

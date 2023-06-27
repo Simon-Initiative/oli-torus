@@ -171,7 +171,7 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
         post(conn, Routes.cashnet_path(conn, :success), %{
           "result" => "0",
           "respmessage" => "SUCCESS",
-          "lname" => "none",
+          "lname" => System.get_env("CASHNET_NAME", "none"),
           "ref1val1" => payment_ref
         })
 

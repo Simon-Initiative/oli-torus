@@ -91,9 +91,8 @@ describe('parser', () => {
     expect(
       screen.getByText((content, element) => {
         return (
-          element?.tagName.toLowerCase() === 'iframe' &&
-          element.getAttribute('src') === 'https://www.youtube.com/embed/fhdCslFcKFU' &&
-          content === ''
+          element?.getAttribute('data-video-id') === 'fhdCslFcKFU' &&
+          element?.tagName.toLowerCase() === 'div'
         );
       }),
     ).toBeTruthy();

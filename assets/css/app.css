@@ -40,10 +40,6 @@ a.download::after {
   content: '\f019';
 }
 
-p {
-  @apply mb-3;
-}
-
 .slate-editor p:last-child {
   @apply mb-0;
 }

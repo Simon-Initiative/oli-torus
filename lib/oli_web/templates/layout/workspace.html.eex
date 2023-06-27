@@ -5,7 +5,9 @@
     </a>
     <div class="workspace-top d-flex flex-row shadow">
       <div class="logo justify-content-center align-items-center">
-        <img class="self-center mx-auto" src="<%= Oli.VendorProperties.workspace_logo() %>" />
+        <a href="<%= OliWeb.Router.Helpers.static_page_path(@conn, :index) %>">
+          <img class="self-center mx-auto" src="<%= Oli.VendorProperties.workspace_logo() %>" />
+        </a>
       </div>
       <%= render OliWeb.LayoutView, "_workspace_header.html", assigns %>
     </div>
