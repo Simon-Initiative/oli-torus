@@ -40,8 +40,10 @@ jobs:
           project: MER
           issuetype: Bug
           summary: "${{ github.event.issue.title }}"
-          description: "${{ github.event.issue.body }}"
-          fields: '{"github": "${{ github.event.issue.url }}"}'
+          description: |
+            ${{ github.event.issue.url }}
+
+            ${{ github.event.issue.body }}
 
       - name: Log created issue
         run: echo "Issue ${{ steps.create.outputs.issue }} was created"
