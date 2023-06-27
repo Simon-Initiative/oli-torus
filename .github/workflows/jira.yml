@@ -41,7 +41,7 @@ jobs:
           issuetype: Bug
           summary: "${{ github.event.issue.title }}"
           description: |
-            ${{ github.event.issue.url }}
+            ${{ github.event.issue.html_url }}
 
             ${{ github.event.issue.body }}
 
