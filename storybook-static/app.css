@@ -4057,6 +4057,11 @@ table.table-striped tbody tr:nth-child(even) {
   margin-right: 1rem;
 }
 
+.mx-5 {
+  margin-left: 1.25rem;
+  margin-right: 1.25rem;
+}
+
 .mx-8 {
   margin-left: 2rem;
   margin-right: 2rem;
@@ -4568,6 +4573,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-64 {
   width: 16rem;
+}
+
+.w-72 {
+  width: 18rem;
 }
 
 .w-8 {
