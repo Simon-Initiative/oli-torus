@@ -732,7 +732,9 @@ defmodule Oli.Delivery.Attempts.Core do
       nil
   """
   def get_activity_attempt_by(clauses),
-    do: Repo.get_by(ActivityAttempt, clauses) |> Repo.preload(revision: [:activity_type])
+    do:
+      Repo.get_by(ActivityAttempt, clauses)
+      |> Repo.preload([:part_attempts, revision: [:activity_type]])
 
   @doc """
   Gets a part attempt by a clause.
