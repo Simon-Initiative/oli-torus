@@ -36,13 +36,13 @@ jobs:
       - name: Get higest priority label
         id: priority
         run: |
-          echo "Determining priority from issue labels: ${{ github.event.issue.labels }}"
+          echo "Determining priority from issue labels: ${{ github.event.issue.labels.*.name }}"
 
-          if contains(github.event.issue.labels.*.name, 'Priority 1: Critical'); then
+          if ${{ contains(github.event.issue.labels.*.name, 'Priority 1: Critical') }}; then
             PRIORITY="Highest"
-          elif contains(github.event.issue.labels.*.name, 'Priority 2: High'); then
+          elif ${{ contains(github.event.issue.labels.*.name, 'Priority 2: High') }}; then
             PRIORITY="High"
-          elif contains(github.event.issue.labels.*.name, 'Priority 3: Normal'); then
+          elif ${{ contains(github.event.issue.labels.*.name, 'Priority 3: Normal') }}; then
             PRIORITY="Medium"
           else
             PRIORITY="Medium"
