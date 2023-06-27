@@ -19,16 +19,16 @@ defmodule OliWeb.Delivery.NewCourse.NameCourse do
           <%= text_input f, :course_section_number, class: "torus-input" %>
         </label>
 
-        <label class="flex flex-col">
+        <div class="flex flex-col">
           <span required for="course-modality-field">My class meets...</span>
 
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-2" onclick="(e) => e.stopPropagation()">
             <RadioButton.item form={f} field={:class_modality} value="in_person" label="Only in person" />
             <RadioButton.item form={f} field={:class_modality} value="online" label="Only online" />
             <RadioButton.item form={f} field={:class_modality} value="hybrid" label="Both in person and online" />
             <RadioButton.item form={f} field={:class_modality} value="never" label="Never, it's a self paced course" />
           </div>
-        </label>
+        </div>
       </.form>
     """
   end
