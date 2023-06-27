@@ -192,33 +192,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("breadcrumb-navigate", _unsigned_params, socket) do
-    if socket.assigns.preview_mode do
-      {:noreply,
-       redirect(socket,
-         to:
-           Routes.instructor_dashboard_path(
-             socket,
-             :preview,
-             socket.assigns.section.slug,
-             :students
-           )
-       )}
-    else
-      {:noreply,
-       redirect(socket,
-         to:
-           Routes.live_path(
-             socket,
-             OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-             socket.assigns.section.slug,
-             :students
-           )
-       )}
-    end
-  end
-
-  @impl Phoenix.LiveView
   def handle_info({:hide_modal}, socket) do
     {:noreply, hide_modal(socket)}
   end
