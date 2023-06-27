@@ -46,7 +46,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<ul class=\"list-inside pl-2\"><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
 
       assert rendered_html_string =~
-               ~r/<div class=".*">\s*<iframe.* src="https:\/\/www.youtube.com\/embed\/fhdCslFcKFU"><\/iframe>\s*<\/div>/
+               ~r/<div data-react-class="Components.YoutubePlayer"/
 
       assert rendered_html_string =~
                "<pre><code class=\"language-python\">import fresh-pots</code></pre>"

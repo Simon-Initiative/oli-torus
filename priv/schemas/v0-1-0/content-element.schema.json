@@ -550,6 +550,12 @@
         },
         "display": {
           "type": "string"
+        },
+        "startTime": {
+          "type": "number"
+        },
+        "endTime": {
+          "type": "number"
         }
       },
       "required": ["type"]

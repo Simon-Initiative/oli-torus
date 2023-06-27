@@ -24,7 +24,7 @@ const CommandTarget: React.FC<{
         type="radio"
         id={id}
       />
-      <label className="form-check-label" htmlFor={id}>
+      <label className="form-check-label mx-5 inline-block" htmlFor={id}>
         <b>{target.componentType}</b>
         <br />
         <i>{target.label}</i>
@@ -94,10 +94,12 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
               type="radio"
               id="button-style-button"
             />
-            <label className="form-check-label" htmlFor="button-style-button">
+            <label className="form-check-label mx-5 inline-block" htmlFor="button-style-button">
               Button
               <br />
-              <span className="btn btn-primary command-button">Example Button</span>
+              <span className="btn btn-primary command-button mx-15 my-3 inline-block">
+                Example Button
+              </span>
             </label>
           </div>
           <div className="form-check col-sm">
@@ -110,10 +112,12 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
               type="radio"
               id="button-style-link"
             />
-            <label className="form-check-label" htmlFor="button-style-link">
+            <label className="form-check-label mx-5 inline-block" htmlFor="button-style-link">
               Link
               <br />
-              <span className="btn btn-link command-button">Example Link</span>
+              <span className="btn btn-link command-button mx-15 my-3 inline-block">
+                Example Link
+              </span>
             </label>
           </div>
         </div>
