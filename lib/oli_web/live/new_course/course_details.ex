@@ -20,19 +20,12 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
     assigns =
       assign(
         assigns,
-        :class_days,
-        Ecto.Changeset.fetch_field(assigns.changeset, :class_days) |> elem(1)
+        %{
+          class_days: Ecto.Changeset.fetch_field(assigns.changeset, :class_days) |> elem(1),
+          class_modality: Ecto.Changeset.fetch_field(assigns.changeset, :class_modality) |> elem(1),
+          days: @days
+        }
       )
-
-    assigns =
-      assign(
-        assigns,
-        :class_modality,
-        Ecto.Changeset.fetch_field(assigns.changeset, :class_modality)
-        |> elem(1)
-      )
-
-    assigns = assign(assigns, days: @days)
 
     ~H"""
     <.form id="course-details-form" class="w-full" for={@changeset} let={f} >
