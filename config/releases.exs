@@ -2,12 +2,13 @@
 # from environment variables at runtime
 import Config
 
-from_boolean_env = fn key, default ->
+get_env_as_boolean = fn key, default ->
   System.get_env(key, default)
   |> String.downcase()
+  |> String.trim()
   |> case do
-    "true" -> :enabled
-    _ -> :disabled
+    "true" -> true
+    _ -> false
   end
 end
 
@@ -85,7 +86,7 @@ config :oli,
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
-  load_testing_mode: System.get_env("LOAD_TESTING_MODE", "disabled") |> String.to_existing_atom(),
+  load_testing_mode: get_env_as_boolean.("LOAD_TESTING_MODE", "false"),
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID"),
   branding: [
@@ -100,7 +101,9 @@ config :oli,
   ],
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   screen_idle_timeout_in_seconds:
-    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+  always_use_persistent_login_sessions:
+    get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false")
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
