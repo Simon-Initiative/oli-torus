@@ -1,22 +1,70 @@
-<div class="container mx-auto my-5 text-center">
-  <%= if author_signed_in?(@conn) do %>
-    <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.name %></h1>
+<div class="container mx-auto my-5 py-10 text-center">
+    <section class="container mx-auto">
+      <h1 class="text-4xl text-center mb-6">Welcome to <%= Oli.VendorProperties.product_short_name() %></h1>
+      <p class="text-lg text-center text-gray-600 dark:text-gray-400 mb-10">The open-source online education platform for better learning outcomes</p>
 
-    <p class="my-2 py-2">
-      <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-outline-primary mx-2" do %>
-        Authoring Workspace <i class="fa fa-arrow-right"></i>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <div class="rounded-lg p-6">
+          <h2 class="text-2xl font-bold mb-4">Intuitive Authoring Experience</h2>
+          <p>Create engaging course materials with ease using our web-based editor. Build
+          adaptive learning experiences using a drag-and-drop flowchart. No coding skills
+          required!</p>
+        </div>
+
+        <div class="rounded-lg p-6">
+          <h2 class="text-2xl font-bold mb-4">Data-Driven Improvement</h2>
+          <p>Track learners' progress and analyze data in real-time to provide feedback and improve learning outcomes.</p>
+        </div>
+
+        <div class="rounded-lg p-6">
+          <h2 class="text-2xl font-bold mb-4">Learning Engineering Approach</h2>
+          <p>Design effective learning experiences that are instrumented and can be continuously improved using our learning engineering approach.</p>
+        </div>
+      </div>
+
+      <%= if author_signed_in?(@conn) do %>
+        <div class="text-center mt-12">
+          <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class:
+            "btn border border-blue-500 text-blue-500 hover:bg-blue-600 hover:text-white font-semibold py-3 px-8 rounded-full"
+           do %>
+            Authoring Workspace <i class="fa fa-arrow-right"></i>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="text-center mt-12">
+          <%= link to: Routes.authoring_pow_session_path(@conn, :new), class:
+            "btn bg-blue-500 hover:bg-blue-600 text-white hover:text-white font-semibold py-3 px-8 rounded-full" do %>
+            Authoring Sign In <i class="fa fa-arrow-right"></i>
+          <% end %>
+        </div>
       <% end %>
-    </p>
 
-  <% else %>
-    <h1>Welcome to <%= Oli.VendorProperties.product_short_name() %></h1>
-    <p>Create, deliver and continuously improve course materials.</p>
+    </section>
 
-    <p class="my-2 py-2">
-      <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-outline-primary" do %>
-        Authoring Sign In <i class="fa fa-arrow-right"></i>
-      <% end %>
-    </p>
-  <% end %>
-
+</div>
+<div class="bg-gray-50 dark:bg-gray-800 p-12 mt-12">
+    <section class="container mx-auto">
+      OLI Torus brings together the unique combination of an intuitive authoring experience, data-driven improvement, and learning engineering approach to help you achieve better learning outcomes. Our platform is designed to help you easily create and deliver online courses that cater to your learners' needs while driving engagement and improving learning outcomes.
+    </section>
+    <section class="container mx-auto mt-12">
+      <h3 class="text-2xl mb-3">Intuitive Authoring Experience</h3>
+      Our authoring tool is designed to simplify the course creation process with a drag-and-drop
+      interface, an easy-to-use text editor and a large collection of learning activities. You don't need to be a tech expert to create a
+      course on OLI Torus. We've made it easy for anyone to create an interactive, engaging, and effective course without any coding skills.
+    </section>
+    <section class="container mx-auto mt-12">
+      <h3 class="text-2xl mb-3">Data-Driven Improvement</h3>
+      OLI Torus is equipped with a powerful analytics engine that tracks every learner's progress, identifies their strengths and weaknesses, and provides insights to help you optimize your courses. With our analytics, you can get real-time data on how learners are engaging with your content, where they're struggling, and where they're excelling. This information helps you make data-driven decisions that improve learning outcomes.
+    </section>
+    <section class="container mx-auto mt-12">
+      <h3 class="text-2xl mb-3">Learning Engineering Approach</h3>
+      We use a learning engineering approach to help you design, develop and deliver effective online courses. Our approach combines cognitive science, learning theory, and data analysis to create personalized learning experiences that cater to every learner's needs. We help you design courses that are tailored to your learners' individual learning styles, goals, and preferences.
+    </section>
+    <section class="container mx-auto mt-12">
+      <h3 class="text-2xl mb-3">Open-Source Platform</h3>
+      OLI Torus is an open-source platform that allows you to access the code, modify it, and build upon it. You can customize the platform to fit your specific needs and preferences. Our community of educators and developers work together to continually improve the platform, add new features, and provide support.
+    </section>
+    <section class="container mx-auto mt-12">
+      If you're looking for a powerful and flexible platform to create and deliver engaging online courses, OLI Torus is the perfect solution. Get started today and revolutionize your online learning experience.
+    </section>
 </div>
