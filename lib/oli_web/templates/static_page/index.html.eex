@@ -44,27 +44,42 @@
 </div>
 <div class="bg-gray-50 dark:bg-gray-800 p-12 mt-12">
     <section class="container mx-auto">
-      OLI Torus brings together an intuitive authoring experience, data-driven improvement, and learning engineering approach to help you achieve better learning outcomes. Our platform is designed to help you easily create and deliver online courses that cater to your learners' needs while driving engagement and improving learning outcomes.
+      OLI Torus brings together an intuitive authoring experience, data-driven improvement, and
+      learning engineering approach to help you achieve better learning outcomes. Our platform is
+      designed to help you easily create and deliver online courses that cater to your learners'
+      needs while driving engagement and improving learning outcomes.
     </section>
     <section class="container mx-auto mt-12">
       <h3 class="text-2xl mb-3">Intuitive Authoring Experience</h3>
       Our authoring tool is designed to simplify the course creation process with a drag-and-drop
-      interface, an easy-to-use text editor and a large collection of learning activities. You don't need to be a tech expert to create a
-      course on OLI Torus. We've made it easy for anyone to create an interactive, engaging, and effective course without any coding skills.
+      interface, an easy-to-use text editor and a large collection of learning activities. You don't
+      need to be a tech expert to create a course on OLI Torus. We've made it easy for anyone to
+      create an interactive, engaging, and effective course without any coding skills.
     </section>
     <section class="container mx-auto mt-12">
       <h3 class="text-2xl mb-3">Data-Driven Improvement</h3>
-      OLI Torus is equipped with a powerful analytics engine that tracks every learner's progress, identifies their strengths and weaknesses, and provides insights to help you optimize your courses. With our analytics, you can get real-time data on how learners are engaging with your content, where they're struggling, and where they're excelling. This information helps you make data-driven decisions that improve learning outcomes.
+      OLI Torus is equipped with a powerful analytics engine that tracks every learner's progress,
+      identifies their strengths and weaknesses and provides insights to help you optimize your
+      courses. With our analytics, you can get real-time data on how learners are engaging with your
+      content, where they're struggling, and where they're excelling. This information helps you
+      make data-driven decisions that improve learning outcomes.
     </section>
     <section class="container mx-auto mt-12">
       <h3 class="text-2xl mb-3">Learning Engineering Approach</h3>
-      We use a learning engineering approach to help you design, develop and deliver effective online courses. Our approach combines cognitive science, learning theory, and data analysis to create personalized learning experiences that cater to every learner's needs. We help you design courses that are tailored to your learners' individual learning styles, goals, and preferences.
+      We use a learning engineering approach to help you design, develop and deliver effective
+      online courses. Our approach combines cognitive science, learning theory, and data analysis to
+      instrument learning experiences and continuously improve learning outcomes.
     </section>
     <section class="container mx-auto mt-12">
       <h3 class="text-2xl mb-3">Open-Source Platform</h3>
-      OLI Torus is an open-source platform that allows you to access the code, modify it, and build upon it. You can customize the platform to fit your specific needs and preferences. Our community of educators and developers work together to continually improve the platform, add new features, and provide support.
+      OLI Torus is an open-source platform that allows you to access the code, modify it, and build
+      upon it. You can customize the platform to fit your specific needs and preferences. Our
+      community of educators and developers work together to continually improve the platform, add
+      new features, and provide support.
     </section>
     <section class="container mx-auto mt-12">
-      If you're looking for a powerful and flexible platform to create and deliver engaging online courses, OLI Torus is the perfect solution. Get started today and revolutionize your online learning experience.
+      If you're looking for a powerful and flexible platform to create and deliver engaging online
+      courses, OLI Torus is the perfect solution. Get started today and revolutionize your online
+      learning experience.
     </section>
 </div>
