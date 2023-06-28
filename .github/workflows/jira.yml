@@ -1,0 +1,79 @@
+name: Create Jira Issue
+on:
+  issues:
+    types:
+      - labeled
+jobs:
+  check-existing-jira-issue:
+    name: Check for an existing linked Jira issue
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'Jira'
+    outputs:
+      comment-id: ${{ steps.find-comment.outputs.comment-id }}
+    steps:
+      - name: Find Existing Linked Ticket
+        uses: peter-evans/find-comment@v2
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body-regex: '^https:\/\/eliterate\.atlassian\.net\/browse\/MER-\d+$'
+
+  create-jira-issue:
+    name: Create new Jira issue
+    runs-on: ubuntu-latest
+    needs: check-existing-jira-issue
+    if: needs.check-existing-jira-issue.outputs.comment-id == ''
+    permissions:
+      issues: write
+    steps:
+      - name: Login
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      - name: Get higest priority label
+        id: priority
+        run: |
+          echo "Determining priority from issue labels: ${{ github.event.issue.labels.*.name }}"
+
+          if ${{ contains(github.event.issue.labels.*.name, 'Priority 1: Critical') }}; then
+            PRIORITY="Highest"
+          elif ${{ contains(github.event.issue.labels.*.name, 'Priority 2: High') }}; then
+            PRIORITY="High"
+          elif ${{ contains(github.event.issue.labels.*.name, 'Priority 3: Normal') }}; then
+            PRIORITY="Medium"
+          else
+            PRIORITY="Medium"
+          fi
+
+          echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
+
+      - name: Create
+        id: create
+        uses: atlassian/gajira-create@v3
+        with:
+          project: MER
+          issuetype: Bug
+          summary: "${{ github.event.issue.title }}"
+          description: |
+            ${{ github.event.issue.html_url }}
+
+            ${{ github.event.issue.body }}
+          fields: |
+            {
+              "priority": {
+                "name": "${{ steps.priority.outputs.priority }}"
+              }
+            }
+
+      - name: Log created issue
+        run: echo "Issue ${{ steps.create.outputs.issue }} was created"
+
+      - name: Add comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            https://eliterate.atlassian.net/browse/${{ steps.create.outputs.issue }}

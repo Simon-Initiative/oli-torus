@@ -39,7 +39,7 @@ jobs:
         run: mix deps.compile
 
       - name: Install node_module dependencies 📦
-        run: npm install -g yarn && cd assets && yarn
+        run: npm install -g yarn && yarn --cwd assets
 
       - name: Build client-side API markdown docs
         run: cd assets && npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts
@@ -48,7 +48,7 @@ jobs:
         run: mix docs
 
       - name: 🔨📖 Build client-side storybook docs
-        run: cd assets && yarn build-storybook
+        run: yarn --cwd assets run build-storybook
 
       - name: 🚀 Deploy Docs
         uses: JamesIves/github-pages-deploy-action@releases/v3

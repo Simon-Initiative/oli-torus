@@ -98,13 +98,19 @@ defmodule Oli.Delivery.Evaluation.Explanation do
            }
          },
          activity_attempt: %ActivityAttempt{
-           attempt_number: activity_attempt_number
-         }
+           attempt_number: activity_attempt_number,
+           part_attempts: part_attempts
+         },
+         part_attempt: part_attempt
        }) do
-    if activity_attempt_number >= set_num_attempts do
-      {:after_set_num_attempts, true}
+    if length(part_attempts) > 1 do
+      if part_attempt.attempt_number >= set_num_attempts,
+        do: {:after_set_num_attempts, true},
+        else: {:after_set_num_attempts, false}
     else
-      {:after_set_num_attempts, false}
+      if activity_attempt_number >= set_num_attempts,
+        do: {:after_set_num_attempts, true},
+        else: {:after_set_num_attempts, false}
     end
   end
 
