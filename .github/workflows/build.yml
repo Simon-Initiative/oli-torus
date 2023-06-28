@@ -168,10 +168,10 @@ jobs:
         run: yarn --cwd assets --frozen-lockfile
 
       - name: 🧹 Lint
-        run: cd assets && yarn run prettier && yarn run lint
+        run: yarn --cwd assets run prettier && yarn --cwd assets run lint
 
       - name: 👁️ Typecheck
-        run: yarn --cwd assets check-types
+        run: yarn --cwd assets run check-types
 
       - name: 🔨 Build
         run: yarn --cwd assets run deploy
