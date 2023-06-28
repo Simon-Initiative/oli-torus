@@ -23,6 +23,13 @@ defmodule OliWeb.ViewHelpers do
     """
   end
 
+  def support_email_link(text) do
+    case Application.fetch_env!(:oli, :vendor_property)[:support_email] do
+      nil -> text
+      support_email -> link(text, to: "mailto:#{support_email}")
+    end
+  end
+
   def preview_mode(%{assigns: assigns} = _conn) do
     Map.get(assigns, :preview_mode, false)
   end

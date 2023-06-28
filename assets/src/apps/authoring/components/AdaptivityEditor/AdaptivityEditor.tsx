@@ -348,7 +348,10 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
                   </Tooltip>
                 }
               >
-                <Dropdown.Toggle variant="link" id="adaptive-editor-add-context-trigger">
+                <Dropdown.Toggle
+                  id="adaptive-editor-add-context-trigger"
+                  className="btn btn-primary btn-sm mr-3"
+                >
                   <i className="fa fa-plus" />
                 </Dropdown.Toggle>
               </OverlayTrigger>

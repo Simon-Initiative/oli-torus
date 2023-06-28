@@ -1,4 +1,4 @@
-defmodule OliWeb.Sections.EnrollmentsView do
+defmodule OliWeb.Sections.EnrollmentsViewLive do
   use OliWeb, :surface_view
 
   import OliWeb.DelegatedEvents
@@ -58,7 +58,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
       {type, _, section} ->
         ctx = SessionContext.init(socket, session)
 
-        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section, ctx)
+        %{total_count: total_count, table_model: table_model} =
+          enrollment_assigns(section, ctx |> Map.put(:is_enrollment_page, true))
 
         {:ok,
          assign(socket,

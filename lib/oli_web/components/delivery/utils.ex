@@ -88,9 +88,6 @@ defmodule OliWeb.Components.Delivery.Utils do
       is_open_and_free_section?(assigns) or is_independent_learner?(assigns) ->
         Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
 
-      user_signed_in?(assigns) ->
-        Routes.delivery_path(OliWeb.Endpoint, :index)
-
       true ->
         Routes.static_page_path(OliWeb.Endpoint, :index)
     end

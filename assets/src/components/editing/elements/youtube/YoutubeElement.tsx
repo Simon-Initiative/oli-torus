@@ -10,10 +10,13 @@ import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import { modalActions } from 'actions/modal';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
 import { getQueryVariableFromString } from 'utils/params';
+import { useCommandTargetable } from '../command_button/useCommandTargetable';
+import { VideoCommandEditor } from '../video/VideoCommandEditor';
 import { YouTubeModal } from './YoutubeModal';
 import { youtubeUrlToId } from './youtubeActions';
 
@@ -47,10 +50,14 @@ export type YouTubeProps = EditorProps<ContentModel.YouTube>;
 export const YouTubeEditor = (props: YouTubeProps) => {
   const focused = useFocused();
   const selected = useSelected();
+  const { model } = props;
 
-  const parameters = 'disablekb=1&modestbranding=1&showinfo=0&rel=0&controls=0';
-  const fullSrc =
-    'https://www.youtube.com/embed/' + (props.model.src || CUTE_OTTERS) + '?' + parameters;
+  useCommandTargetable(
+    model.id,
+    'YouTube Player',
+    model?.src || 'No video file selected',
+    VideoCommandEditor,
+  );
 
   const onEdit = useEditModelCallback(props.model);
 
@@ -60,7 +67,12 @@ export const YouTubeEditor = (props: YouTubeProps) => {
       : { border: 'solid 3px transparent' };
 
   return (
-    <div {...props.attributes} className="youtube-editor" contentEditable={false}>
+    <div
+      style={borderStyle}
+      {...props.attributes}
+      className="youtube-editor"
+      contentEditable={false}
+    >
       {props.children}
 
       <HoverContainer
@@ -72,16 +84,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
           <Settings model={props.model} onEdit={onEdit} commandContext={props.commandContext} />
         }
       >
-        <div className="embed-responsive embed-responsive-16by9 img-thumbnail" style={borderStyle}>
-          <iframe
-            width={props.model.width ?? '100%'}
-            className="embed-responsive-item"
-            src={fullSrc}
-            allowFullScreen
-            aria-label="Youtube video"
-            frameBorder={0}
-          />
-        </div>
+        <YoutubePlayer video={model} authorMode={true} />
       </HoverContainer>
 
       <CaptionEditor
@@ -138,9 +141,9 @@ const SettingsButton = (props: SettingsButtonProps) => (
           modalActions.display(
             <YouTubeModal
               model={props.model}
-              onDone={({ alt, width, src }: Partial<ContentModel.YouTube>) => {
+              onDone={({ alt, width, src, startTime, endTime }: Partial<ContentModel.YouTube>) => {
                 window.oliDispatch(modalActions.dismiss());
-                props.onEdit({ alt, width, src: youtubeUrlToId(src) || '' });
+                props.onEdit({ alt, width, src: youtubeUrlToId(src) || '', startTime, endTime });
               }}
               onCancel={() => window.oliDispatch(modalActions.dismiss())}
             />,

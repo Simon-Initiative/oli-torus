@@ -114,7 +114,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       assert render(student_details_card) =~ "A lot"
     end
 
-    test "can see the details header correctly and navigate through breadcrumb", %{
+    test "breadcrumbs get render correctly when coming from the instructor dashboard", %{
       instructor: instructor,
       student: student,
       section: section,
@@ -122,26 +122,35 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} =
+      {:ok, _view, html} =
         live(conn, live_view_students_dashboard_route(section.slug, student.id))
 
-      assert view
-             |> element("#section_details_header")
-             |> render() =~ ~s{#{section.title} | Students  &gt;  #{student.name}}
+      assert html =~ ~s(<a href="/sections/#{section.slug}/instructor_dashboard/reports/students">Student reports</a>)
+      assert html =~ ~s(#{student.name} information)
+    end
 
-      view
-      |> element(~s{#section_details_header span[phx-click="breadcrumb-navigate"]})
-      |> render_click()
+    test "breadcrumbs get render correctly when coming from the enrollments view", %{
+      instructor: instructor,
+      student: student,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      assert_redirect(
-        view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :students
-        )
+      route = Routes.enrollment_student_info_path(
+        OliWeb.Endpoint,
+        OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
+        section.slug,
+        student.id,
+        :content
       )
+
+      {:ok, _view, html} =
+        live(conn, route)
+
+      assert html =~ ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
+      assert html =~ ~s(<a href="/sections/#{section.slug}/enrollments">Enrollments</a>)
+      assert html =~ ~s(#{student.name} information)
     end
   end
 

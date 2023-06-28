@@ -324,14 +324,22 @@ $element-margin-bottom: 1.5em;
     margin-bottom: $element-margin-bottom;
   }
 
+  .formula {
+    /* The mathjax formulas were rendering out much larger than the surrounding text, so we're scaling them down to better match the
+       legacy content, but the callouts should not be scaled down since that made them look too small. */
+    font-size: 0.8em;
+  }
+
   .callout-block,
   .formula {
     display: block;
-    margin: 8px;
+    margin: 8px 0px;
     padding: 12px;
     text-align: center;
     margin-bottom: $element-margin-bottom;
-    font-size: 0.8em;
+
+    /* MER-2118 MER-2121 - Center block level formulas & callouts */
+    width: 100%;
 
     blockquote,
     ol,

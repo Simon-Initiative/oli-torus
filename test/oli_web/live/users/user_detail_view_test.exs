@@ -89,6 +89,69 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert html =~ "LTI 1.3 details" == false
       assert html =~ "LTI users are managed by the LMS" == false
     end
+
+    test "edit author details", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      new_given_name = "New Given Name"
+      new_last_name = "New Last Name"
+      new_email = "new_email@example.com"
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      conn =
+        get(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      # Assert that fields are disabled
+      assert has_element?(view, "input[value=\"#{independent_student.given_name}\"][disabled]")
+      assert has_element?(view, "input[value=\"#{independent_student.family_name}\"][disabled]")
+      assert has_element?(view, "input[value=\"#{independent_student.email}\"][disabled]")
+
+      view
+      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> render_click()
+
+      # Assert that there is a save button
+      assert has_element?(view, "button[type=\"submit\"]", "Save")
+
+      # Refute that fields are disabled
+      refute has_element?(view, "input[value=\"#{independent_student.given_name}\"][disabled]")
+      refute has_element?(view, "input[value=\"#{independent_student.family_name}\"][disabled]")
+      refute has_element?(view, "input[value=\"#{independent_student.email}\"][disabled]")
+
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{
+        "user" => %{
+          "given_name" => new_given_name,
+          "family_name" => new_last_name,
+          "email" => new_email
+        }
+      })
+
+      # Assert that fields are updated correctly
+      assert view |> element("input[value=\"#{new_given_name}\"][disabled]") |> render() =~
+               new_given_name
+
+      assert view |> element("input[value=\"#{new_last_name}\"][disabled]") |> render() =~
+               new_last_name
+
+      assert view |> element("input[value=\"#{new_email}\"][disabled]") |> render() =~ new_email
+
+      # Assert that the name field was updated correctly
+      assert view
+             |> element("input[value=\"#{new_given_name} #{new_last_name}\"][disabled]")
+             |> render() =~ "#{new_given_name} #{new_last_name}"
+    end
   end
 
   describe "user cannot access when is not logged in" do

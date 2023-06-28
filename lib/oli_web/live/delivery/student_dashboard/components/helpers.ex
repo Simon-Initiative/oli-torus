@@ -210,20 +210,6 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     """
   end
 
-  attr(:section_title, :string)
-  attr(:student_name, :string)
-
-  def section_details_header(%{section: nil}), do: nil
-
-  def section_details_header(assigns) do
-    ~H"""
-      <div id="section_details_header" class="flex flex-row justify-between items-center h-20 w-full py-6 px-10">
-        <span phx-click="breadcrumb-navigate" class="text-sm tracking-wide text-gray-800 dark:text-white underline font-normal cursor-pointer"><%= @section_title %> | Students  >  <%= @student_name %></span>
-        <button class="torus-button flex justify-center primary h-9 w-48">Email Student</button>
-      </div>
-    """
-  end
-
   defp text_color(metric_type, metric_value) when metric_type in [:avg_score, :progress] do
     case metric_value do
       nil -> "text-gray-800"

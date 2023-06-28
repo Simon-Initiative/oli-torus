@@ -44,13 +44,13 @@ config :oli,
   world_universities_and_domains_json: world_universities_and_domains_json,
   branding: [
     name: System.get_env("BRANDING_NAME", "OLI Torus"),
-    logo: System.get_env("BRANDING_LOGO", "/images/oli_torus_logo.png"),
+    logo: System.get_env("BRANDING_LOGO", "/branding/prod/oli_torus_logo.png"),
     logo_dark:
       System.get_env(
         "BRANDING_LOGO_DARK",
-        System.get_env("BRANDING_LOGO", "/images/oli_torus_logo_dark.png")
+        System.get_env("BRANDING_LOGO", "/branding/prod/oli_torus_logo_dark.png")
       ),
-    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
+    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/branding/prod/favicons")
   ],
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
@@ -87,7 +87,8 @@ As a leader in higher education's innovation of online learning, we're a growing
 """
 
 config :oli, :vendor_property,
-  workspace_logo: System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/images/torus-icon.png"),
+  workspace_logo:
+    System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/prod/oli_torus_icon.png"),
   product_full_name:
     System.get_env("VENDOR_PROPERTY_PRODUCT_FULL_NAME", "Open Learning Initiative"),
   product_short_name: System.get_env("VENDOR_PROPERTY_PRODUCT_SHORT_NAME", "OLI Torus"),
@@ -103,7 +104,8 @@ config :oli, :vendor_property,
     System.get_env(
       "VENDOR_PROPERTY_COMPANY_ADDRESS",
       "5000 Forbes Ave, Pittsburgh, PA 15213 US"
-    )
+    ),
+  support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL")
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
@@ -132,7 +134,11 @@ config :oli, OliWeb.Endpoint,
   live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "LIVE_VIEW_SALT")],
   url: [host: "localhost"],
   secret_key_base: "GE9cpXBwVXNaplyUCYbIWqERmC/OlcR5iVMwLX9/W7gzQRxkD1ETjda9E0jW/BW1",
-  render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
+  render_errors: [
+    accepts: ~w(html json),
+    root_layout: {OliWeb.LayoutView, :error},
+    view: OliWeb.ErrorView
+  ],
   pubsub_server: Oli.PubSub
 
 config :oli, Oban,

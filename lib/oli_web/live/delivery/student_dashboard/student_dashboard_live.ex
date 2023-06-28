@@ -119,7 +119,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   def render(assigns) do
     ~H"""
       <%= render_modal(assigns) %>
-      <Helpers.section_details_header section_title={@section.title} student_name={@student.name}/>
       <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
       <Helpers.tabs active_tab={@active_tab} section_slug={@section.slug} student_id={@student.id} preview_mode={@preview_mode} />
       <%= render_tab(assigns) %>
@@ -190,33 +189,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         enrollment_info={@enrollment_info}
       />
     """
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("breadcrumb-navigate", _unsigned_params, socket) do
-    if socket.assigns.preview_mode do
-      {:noreply,
-       redirect(socket,
-         to:
-           Routes.instructor_dashboard_path(
-             socket,
-             :preview,
-             socket.assigns.section.slug,
-             :students
-           )
-       )}
-    else
-      {:noreply,
-       redirect(socket,
-         to:
-           Routes.live_path(
-             socket,
-             OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-             socket.assigns.section.slug,
-             :students
-           )
-       )}
-    end
   end
 
   @impl Phoenix.LiveView
