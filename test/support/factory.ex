@@ -355,10 +355,10 @@ defmodule Oli.Factory do
     %Resource{}
   end
 
-  def project_resource_factory() do
+  def project_resource_factory(attr) do
     %ProjectResource{
-      project_id: insert(:project).id,
-      resource_id: insert(:resource).id
+      project_id: attr[:project_id] || insert(:project).id,
+      resource_id: attr[:resource_id] || insert(:resource).id
     }
   end
 
