@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - hotfix-*
+      - fix-docs-build # TODO: REMOVE AFTER TESTING
 
 jobs:
   elixir-build-test:
