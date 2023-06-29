@@ -308,7 +308,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
         if (variable === 'visits' && context !== 'mutate') {
           const sessionVisits = getSessionVisits(hierarchy);
           return (
-            <Accordion>
+            <Accordion key={variable}>
               <Accordion.Toggle
                 as={ListGroup.Item}
                 eventKey={`${index}`}

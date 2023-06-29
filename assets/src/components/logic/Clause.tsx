@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as Bank from 'data/content/bank';
+import { hashCode } from 'utils/common';
 import guid from 'utils/guid';
 import { CloseButton } from '../misc/CloseButton';
 import { Expression } from './Expression';
@@ -26,11 +27,18 @@ export const Clause: React.FC<ClauseProps> = (props: ClauseProps) => {
   const [id] = React.useState(guid());
   const { clause, editMode, onChange } = props;
 
-  const children = (clause.children as any).map((c: any, i: number) => {
+  const children = (clause.children as any).map((c: Bank.Clause | Bank.Expression, i: number) => {
+    // NOTE: This is an inefficient way to do this, but without any unique identifier on the clause
+    // or expression its the best we can do for now in order to provide react with a stable key for
+    // the clause / expression. Note that having multiple clauses with the same attributes and
+    // children will cause issues with this approach.
+    const key = `${hashCode(c)}`;
+
     if (c.operator === Bank.ClauseOperator.all || c.operator === Bank.ClauseOperator.any) {
       return (
         <Clause
           {...props}
+          key={key}
           clause={c}
           onChange={(e) => {
             const index = i;
@@ -46,6 +54,7 @@ export const Clause: React.FC<ClauseProps> = (props: ClauseProps) => {
       return (
         <Expression
           {...props}
+          key={key}
           expression={c as unknown as Bank.Expression}
           onChange={(e) => {
             const index = i;

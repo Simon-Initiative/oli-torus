@@ -101,9 +101,9 @@ export const VideoPlayer: React.FC<{ video: ContentModel.Video; children?: React
     return (
       <div
         className="video-player"
-        aria-role="img"
+        role="img"
         aria-roledescription="Video Player"
-        aria-aria-label={video.alt}
+        aria-label={video.alt}
         onClick={preventDefault}
       >
         <Player poster={video.poster} {...sizeAttributes} ref={onPlayer} crossOrigin="anonymous">

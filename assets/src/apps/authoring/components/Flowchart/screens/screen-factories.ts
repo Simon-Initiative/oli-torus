@@ -29,7 +29,7 @@ export const screenTypeToTitle: Record<string, string> = {
   dropdown: 'Dropdown',
 };
 
-export type ScreenTypes = typeof screenTypes[number];
+export type ScreenTypes = (typeof screenTypes)[number];
 
 export const createScreen = (screenType: string): IActivityTemplate => {
   return {

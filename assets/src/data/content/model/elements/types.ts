@@ -139,10 +139,10 @@ export const OrderedListStyles = [
   'upper-latin',
 ] as const;
 
-export type OrderedListStyle = typeof OrderedListStyles[number];
+export type OrderedListStyle = (typeof OrderedListStyles)[number];
 
 export const UnorderdListStyles = ['none', 'disc', 'circle', 'square'];
-export type UnorderedListStyle = typeof UnorderdListStyles[number];
+export type UnorderedListStyle = (typeof UnorderdListStyles)[number];
 
 type ListChildren = (ListItem | OrderedList | UnorderedList | Text)[];
 

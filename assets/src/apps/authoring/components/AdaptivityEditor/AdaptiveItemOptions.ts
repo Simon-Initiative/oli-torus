@@ -185,12 +185,12 @@ const op4 = conditionTypeOperatorCombos[4].operators;
 const op5 = conditionTypeOperatorCombos[5].operators;
 
 export type OperatorOptions =
-  | typeof op0[number]
-  | typeof op1[number]
-  | typeof op2[number]
-  | typeof op3[number]
-  | typeof op4[number]
-  | typeof op5[number];
+  | (typeof op0)[number]
+  | (typeof op1)[number]
+  | (typeof op2)[number]
+  | (typeof op3)[number]
+  | (typeof op4)[number]
+  | (typeof op5)[number];
 
 export const sessionVariables: Record<string, unknown> = {
   attemptNumber: 0,

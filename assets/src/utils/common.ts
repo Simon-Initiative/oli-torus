@@ -301,3 +301,20 @@ export const padLeft = (inp: string | number, length: number, char = '0') => {
   const str = String(inp);
   return str.length >= length ? str : new Array(length - str.length + 1).join(char) + str;
 };
+
+/**
+ * Generate a quick (non-secure) hash code from any object
+ * @param  {any} obj The object to hash.
+ * @return {Number}    A 32bit integer
+ */
+export function hashCode(obj: any) {
+  const str = JSON.stringify(obj);
+
+  let hash = 0;
+  for (let i = 0, len = str.length; i < len; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+
+  return hash;
+}
