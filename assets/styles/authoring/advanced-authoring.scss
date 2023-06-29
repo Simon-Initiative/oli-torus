@@ -341,6 +341,12 @@ $font-family-sans-serif: var(--font-sans);
       border: 1px solid #999;
     }
   }
+  .active-selection-toolbar button {
+    padding-left: 5px;
+    padding-right: 5px;
+    border: 1px solid #ccc;
+    margin: 0;
+  }
   .aa-panel-section-title-bar {
     background: $panel-section-title-bar-color;
     border-top: 1px solid $ui-border-color;
