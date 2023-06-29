@@ -527,12 +527,9 @@ $element-margin-bottom: 1.5em;
     color: var(--color-gray-400);
   }
 
-  span,
   input[type='text'],
   input[type='numeric'],
   select.dropdown-input {
-    width: 180px;
-
     &.input-size-small {
       width: 80px;
     }
