@@ -1,11 +1,12 @@
 import Config
 
-from_boolean_env = fn key, default ->
+get_env_as_boolean = fn key, default ->
   System.get_env(key, default)
   |> String.downcase()
+  |> String.trim()
   |> case do
-    "true" -> :enabled
-    _ -> :disabled
+    "true" -> true
+    _ -> false
   end
 end
 
@@ -14,8 +15,8 @@ config :oli,
   s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME"),
   media_url: System.get_env("MEDIA_URL"),
   problematic_query_detection:
-    from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
-  load_testing_mode: System.get_env("LOAD_TESTING_MODE", "disabled") |> String.to_existing_atom(),
+    get_env_as_boolean.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
+  load_testing_mode: get_env_as_boolean.("LOAD_TESTING_MODE", "false"),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
   blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID"),
   branding: [
@@ -27,7 +28,9 @@ config :oli,
         System.get_env("BRANDING_LOGO", "/branding/dev/oli_torus_logo_dark.png")
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/branding/dev/favicons")
-  ]
+  ],
+  always_use_persistent_login_sessions:
+    get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false")
 
 config :oli, :vendor_property,
   workspace_logo:

@@ -21,8 +21,8 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
-  load_testing_mode: :disabled,
-  problematic_query_detection: :disabled,
+  load_testing_mode: false,
+  problematic_query_detection: false,
   problematic_query_cost_threshold: 150,
   ecto_repos: [Oli.Repo],
   prometheus_port: 9568,
@@ -55,7 +55,8 @@ config :oli,
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   screen_idle_timeout_in_seconds:
-    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+    String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+  always_use_persistent_login_sessions: false
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do

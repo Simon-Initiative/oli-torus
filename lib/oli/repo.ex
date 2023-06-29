@@ -13,7 +13,7 @@ defmodule Oli.Repo do
   def prepare_query(_operation, query, opts) do
     # Attempt to guarantee that we do not ever enable problematic query detection in production
     if Application.fetch_env!(:oli, :env) != :prod and
-         Application.fetch_env!(:oli, :problematic_query_detection) == :enabled do
+         Application.fetch_env!(:oli, :problematic_query_detection) do
       threshold = Application.fetch_env!(:oli, :problematic_query_cost_threshold)
       Oli.Utils.Database.flag_problem_queries(query, threshold)
     end
