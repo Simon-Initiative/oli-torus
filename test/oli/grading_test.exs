@@ -196,9 +196,9 @@ defmodule Oli.GradingTest do
       expected_csv = """
       Student,Page one,Page two\r
           Points Possible,20.0,5.0\r
-      "Doe, Jane (jane0@platform.example.edu)",12.0,0.0\r
-      "Doe, Jane (jane1@platform.example.edu)",20.0,3.0\r
-      "Doe, Jane (jane2@platform.example.edu)",19.0,5.0\r
+      "Doe, Jane 0 (jane0@platform.example.edu)",12.0,0.0\r
+      "Doe, Jane 1 (jane1@platform.example.edu)",20.0,3.0\r
+      "Doe, Jane 2 (jane2@platform.example.edu)",19.0,5.0\r
       """
 
       csv = Grading.export_csv(section) |> Enum.join("")

@@ -1379,7 +1379,7 @@ defmodule Oli.Seeder do
             acc,
             %{
               sub: Atom.to_string(tag),
-              given_name: "Jane",
+              given_name: "Jane #{index}",
               family_name: "Doe",
               email: "jane#{index}@platform.example.edu"
             },
