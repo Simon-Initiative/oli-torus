@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - fix-docs-build # TODO: REMOVE AFTER TESTING
   # manually trigger a package build from the Actions tab
   workflow_dispatch:
 
