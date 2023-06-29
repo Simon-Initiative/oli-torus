@@ -276,6 +276,7 @@ export class HtmlParser implements WriterImpl {
       <img
         className="figure-img img-fluid"
         alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
+        width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
         src={this.escapeXml(attrs.src)}
       />,
     );
