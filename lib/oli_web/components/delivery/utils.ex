@@ -3,7 +3,6 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   alias Oli.Interop.CustomActivities.User
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author, SystemRole}
@@ -95,9 +94,6 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_role_text(section, user) do
     case user_role(section, user) do
-      :open_and_free ->
-        "Independent"
-
       :administrator ->
         "Administrator"
 
@@ -117,9 +113,6 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_role_is_student(assigns, user) do
     case user_role(assigns[:section], user) do
-      :open_and_free ->
-        !Sections.is_independent_instructor?(user)
-
       :student ->
         true
 
@@ -133,9 +126,6 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_role_color(section, user) do
     case user_role(section, user) do
-      :open_and_free ->
-        "#2C67C4"
-
       :administrator ->
         "#f39c12"
 
@@ -200,11 +190,8 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_role(section, user) do
     case section do
-      %Section{open_and_free: open_and_free, slug: section_slug} ->
+      %Section{open_and_free: true, slug: section_slug} ->
         cond do
-          open_and_free ->
-            :open_and_free
-
           PlatformRoles.has_roles?(user, @admin_roles, :any) ||
               ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
             :administrator
@@ -229,11 +216,8 @@ defmodule OliWeb.Components.Delivery.Utils do
 
       _ ->
         case user do
-          %User{guest: is_guest?} = user ->
+          %User{guest: _is_guest?} = user ->
             cond do
-              is_guest? ->
-                :open_and_free
-
               PlatformRoles.has_roles?(user, @admin_roles, :any) ->
                 :administrator
 
