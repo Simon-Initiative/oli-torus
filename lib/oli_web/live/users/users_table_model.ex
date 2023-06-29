@@ -41,14 +41,14 @@ defmodule OliWeb.Users.UsersTableModel do
     )
   end
 
-  def render_author_column(assigns, %{author: author}, _) do
-    case author do
+  def render_author_column(assigns, %{author: author, author_id: author_id}, _) do
+    case author_id do
       nil ->
         ~F"""
           <span class="text-secondary"><em>None</em></span>
         """
 
-      author ->
+      _author_id ->
         ~F"""
           <span class="badge badge-dark">{author.email}</span>
         """

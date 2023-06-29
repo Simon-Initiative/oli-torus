@@ -74,7 +74,9 @@
           <tbody>
         <%= for institution <- @institutions do %>
             <tr>
-              <td><%= institution.name %></td>
+              <td>
+                <%= link institution.name, to: Routes.live_path(@conn, OliWeb.Admin.Institutions.SectionsAndStudentsView, institution.id, :sections) %>
+              </td>
               <td><%= institution.country_code %></td>
               <td><%= institution.institution_email %></td>
               <td><%= institution.institution_url %></td>

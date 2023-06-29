@@ -19,6 +19,7 @@ defmodule OliWeb.Sections.EditView do
 
   alias Surface.Components.Form
   alias Oli.Branding.CustomLabels
+  alias Oli.Institutions
 
   data(breadcrumbs, :any)
   data(title, :string, default: "Edit Section Details")
@@ -53,6 +54,10 @@ defmodule OliWeb.Sections.EditView do
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
+        available_institutions =
+          Institutions.list_institutions()
+          |> Enum.map(fn institution -> {institution.name, institution.id} end)
+
         labels =
           case section.customizations do
             nil -> Map.from_struct(CustomLabels.default())
@@ -63,6 +68,7 @@ defmodule OliWeb.Sections.EditView do
          assign(socket,
            ctx: SessionContext.init(socket, session),
            brands: available_brands,
+           institutions: available_institutions,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
            breadcrumbs: set_breadcrumbs(type, section),
@@ -77,25 +83,43 @@ defmodule OliWeb.Sections.EditView do
     <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
       <Groups>
         <Group label="Settings" description="Manage the course section settings">
-          <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
+          <MainDetails
+            changeset={@changeset}
+            disabled={false}
+            is_admin={@is_admin}
+            brands={@brands}
+            institutions={@institutions}
+          />
         </Group>
         <Group label="Schedule" description="Edit the start and end dates for scheduling purposes">
-          <StartEnd id="start_end_editing" changeset={@changeset} disabled={false} is_admin={@is_admin} ctx={@ctx}/>
+          <StartEnd
+            id="start_end_editing"
+            changeset={@changeset}
+            disabled={false}
+            is_admin={@is_admin}
+            ctx={@ctx}
+          />
         </Group>
 
         {#if @section.open_and_free}
-          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@ctx}/>
+          <OpenFreeSettings
+            id="open_and_free_settings"
+            is_admin={@is_admin}
+            changeset={@changeset}
+            disabled={false}
+            {=@ctx}
+          />
         {#else}
-          <LtiSettings section={@section}/>
+          <LtiSettings section={@section} />
         {/if}
 
-        <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)}/>
-        <ContentSettings changeset={@changeset}/>
+        <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)} />
+        <ContentSettings changeset={@changeset} />
       </Groups>
     </Form>
     <Groups>
       <Group label="Labels" description="Custom labels">
-        <CustomLabelsForm labels={@labels} save="save_labels"/>
+        <CustomLabelsForm labels={@labels} save="save_labels" />
       </Group>
     </Groups>
     """
