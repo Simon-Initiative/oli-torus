@@ -2,7 +2,6 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
   use Surface.LiveComponent
 
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
 
   def new(products, ctx) do
     column_specs = [
@@ -79,15 +78,11 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
      end, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
-  def render_title_column(assigns, item, _) do
+  def render_title_column(_assigns, item, _) do
     if is_product?(item) do
-      route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, item.slug)
-      SortableTableModel.render_link_column(assigns, item.title, route_path)
+      item.title
     else
-      route_path =
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, item.project.slug)
-
-      SortableTableModel.render_link_column(assigns, item.project.title, route_path)
+      item.project.title
     end
   end
 

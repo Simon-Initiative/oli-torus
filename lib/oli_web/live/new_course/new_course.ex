@@ -93,7 +93,7 @@ defmodule OliWeb.Delivery.NewCourse do
         <.live_component
           id="course_creation_stepper"
           module={Stepper}
-          on_cancel={if !@lti_params, do: "redirect_to_courses", else: nil}
+          on_cancel="redirect_to_courses"
           steps={@steps || []}
           current_step={@current_step}
           next_step_disabled={next_step_disabled?(assigns)}
@@ -393,7 +393,11 @@ defmodule OliWeb.Delivery.NewCourse do
   def handle_event("redirect_to_courses", _, socket) do
     {:noreply,
      redirect(socket,
-       to: Routes.delivery_path(socket, :open_and_free_index)
+       to:
+         if(socket.assigns.lti_params,
+           do: Routes.delivery_path(socket, :index),
+           else: Routes.delivery_path(socket, :open_and_free_index)
+         )
      )}
   end
 
@@ -438,6 +442,15 @@ defmodule OliWeb.Delivery.NewCourse do
         %{"section" => section, "current_step" => current_step},
         socket
       ) do
+    section =
+      case Map.get(section, "class_days") do
+        class_days when not (is_nil(class_days) or is_list(class_days)) ->
+          Map.put(section, "class_days", [class_days])
+
+        _ ->
+          section
+      end
+
     changeset =
       socket.assigns.changeset
       |> Section.changeset(section)
@@ -456,8 +469,28 @@ defmodule OliWeb.Delivery.NewCourse do
         end
 
       3 ->
-        if validate_fields(changeset, [:class_days, :start_date, :end_date]) do
-          create_section(socket.assigns.live_action, assign(socket, changeset: changeset))
+        class_modality =
+          Ecto.Changeset.fetch_field(changeset, :class_modality)
+          |> elem(1)
+
+        fields_to_validate =
+          if class_modality != :never do
+            [:class_days, :start_date, :end_date]
+          else
+            [:start_date, :end_date]
+          end
+
+        if validate_fields(changeset, fields_to_validate) do
+          if validate_course_dates(changeset) do
+            create_section(socket.assigns.live_action, assign(socket, changeset: changeset))
+          else
+            {:noreply,
+             assign(socket, changeset: changeset)
+             |> put_flash(
+               :form_error,
+               "The course's start date must be earlier than its end date"
+             )}
+          end
         else
           {:noreply,
            assign(socket, changeset: changeset)
@@ -485,5 +518,11 @@ defmodule OliWeb.Delivery.NewCourse do
         _ -> true
       end
     end)
+  end
+
+  defp validate_course_dates(changeset) do
+    {_, start_date} = Ecto.Changeset.fetch_field(changeset, :start_date)
+    {_, end_date} = Ecto.Changeset.fetch_field(changeset, :end_date)
+    Date.diff(start_date, end_date) < 0
   end
 end

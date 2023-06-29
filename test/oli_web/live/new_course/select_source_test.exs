@@ -52,7 +52,6 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "button[phx-click=\"source_selection\"]")
       refute has_element?(view, "img[alt=\"course image\"]")
       refute has_element?(view, "form#update_view_type")
-      assert has_element?(view, "a[href=\"#{details_view(section)}\"]")
 
       assert view
              |> element("tr:first-child > td:first-child + td")
@@ -73,15 +72,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("button", "Search")
       |> render_click()
 
-      assert has_element?(view, "a[href=\"#{details_view(s1)}\"]")
-      refute has_element?(view, "a[href=\"#{details_view(s2)}\"]")
+      assert has_element?(view, "div", s1.title)
+      refute has_element?(view, "div", s2.title)
 
       view
       |> element("button#reset_search")
       |> render_click()
 
-      assert has_element?(view, "a[href=\"#{details_view(s1)}\"]")
-      assert has_element?(view, "a[href=\"#{details_view(s2)}\"]")
+      assert has_element?(view, "div", s1.title)
+      assert has_element?(view, "div", s2.title)
     end
 
     test "applies sorting", %{conn: conn} do
@@ -119,15 +118,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("th[phx-value-sort_by=\"title\"")
       |> render_click(%{sort_by: "title"})
 
-      assert has_element?(view, "a[href=\"#{details_view(first_s)}\"]")
-      refute has_element?(view, "a[href=\"#{details_view(last_s)}\"]")
+      assert has_element?(view, "div", first_s.title)
+      refute has_element?(view, "div", last_s.title)
 
       view
       |> element(".page-item a", "2")
       |> render_click()
 
-      refute has_element?(view, "a[href=\"#{details_view(first_s)}\"]")
-      assert has_element?(view, "a[href=\"#{details_view(last_s)}\"]")
+      refute has_element?(view, "div", first_s.title)
+      assert has_element?(view, "div", last_s.title)
     end
 
     test "successfully goes to the next step", %{conn: conn} do

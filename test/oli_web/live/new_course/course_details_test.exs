@@ -33,7 +33,27 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
     end
 
-    test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
+    test "doesn't render the class days if class never meets", %{conn: conn} = context do
+      %{section: section} = create_source(context)
+      {:ok, view, _html} = live(conn, @live_view_admin_route)
+
+      select_source(:admin, view, section)
+      complete_course_name_form(view, %{class_modality: :never})
+
+      assert has_element?(view, "h2", "Course details")
+      refute has_element?(view, "input[type=\"checkbox\"]#sunday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#monday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#tuesday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#wednesday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#thursday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#friday_radio_button")
+      refute has_element?(view, "input[type=\"checkbox\"]#saturday_radio_button")
+      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_start_date")
+      assert has_element?(view, "input[type=\"datetime-local\"]#course-details-form_end_date")
+    end
+
+    test "can't go to next step unless all required fields are filled and valid",
+         %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
@@ -45,6 +65,23 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{"section" => %{}, "current_step" => 3})
 
       assert has_element?(view, ".alert-danger", "Some fields require your attention")
+
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{
+        "section" => %{
+          class_days: [:monday, :friday],
+          start_date: DateTime.add(DateTime.utc_now(), 4, :day),
+          end_date: DateTime.add(DateTime.utc_now(), 2, :day)
+        },
+        "current_step" => 3
+      })
+
+      assert has_element?(
+               view,
+               ".alert-danger",
+               "The course's start date must be earlier than its end date"
+             )
     end
 
     test "successfully creates a section from a project publication", %{conn: conn} = context do
