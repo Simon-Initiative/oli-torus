@@ -10,7 +10,7 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     # only deploy docs if the workflow is running on the master branch
-    if: github.ref == 'refs/heads/master' # TODO: UNCOMMENT AFTER TESTING
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: 🛎️ Checkout
