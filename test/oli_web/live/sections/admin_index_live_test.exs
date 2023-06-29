@@ -188,8 +188,11 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
     test "applies sorting", %{conn: conn} do
       project = insert(:project, title: "Project", authors: [])
-      s1 = insert(:section, type: :enrollable, amount: Money.new(:USD, 100_000))
-      s2 = insert(:section, type: :enrollable, base_project: project)
+
+      s1 =
+        insert(:section, type: :enrollable, amount: Money.new(:USD, 100_000), title: "Section A")
+
+      s2 = insert(:section, type: :enrollable, base_project: project, title: "Section B")
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
