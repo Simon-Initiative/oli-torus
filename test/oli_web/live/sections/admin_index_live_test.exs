@@ -260,5 +260,25 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       refute has_element?(view, "td", first_s.title)
       assert has_element?(view, "td", last_s.title)
     end
+
+    test "section title is a link to the manage tab of the instructor dashboard", %{conn: conn} do
+      project = insert(:project, authors: [])
+      institution = insert(:institution)
+
+      section =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          institution: institution
+        )
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\"]",
+               section.title
+             )
+    end
   end
 end

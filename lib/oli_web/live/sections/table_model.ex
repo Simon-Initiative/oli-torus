@@ -72,7 +72,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :title}) do
     ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}>{section.title}</a>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}>{section.title}</a>
     """
   end
 
