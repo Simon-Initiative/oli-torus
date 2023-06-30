@@ -154,7 +154,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                       <%= hidden_input :search_field, :entity, value: "institution" %>
                     </form>
                   </div>
-                  <div class="grid grid-cols-12 justify-content-center">
+                  <div class="grid grid-col-12 justify-content-start">
                     <%= if !Enum.empty?(@institution_names) do %>
                       <div class="flex-fill">
                         <p>Select from the list below and submit</p>
