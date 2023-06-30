@@ -967,7 +967,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{#selected_activity oli-multiple-choice-authoring})
+        |> Floki.find(~s{oli-multiple-choice-authoring})
         |> Floki.attribute("model")
         |> hd
 
@@ -1031,7 +1031,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{#selected_activity oli-multiple-choice-authoring})
+        |> Floki.find(~s{oli-multiple-choice-authoring})
         |> Floki.attribute("model")
         |> hd
 
