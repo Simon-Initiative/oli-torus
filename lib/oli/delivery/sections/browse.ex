@@ -148,6 +148,9 @@ defmodule Oli.Delivery.Sections.Browse do
           order_by(query, [p, _], {^direction, field(p, ^field)})
       end
 
+    # ensure there is always a stable sort order based on id, in addition to the specified sort order
+    query = order_by(query, [s, _], s.id)
+
     Repo.all(query)
   end
 end
