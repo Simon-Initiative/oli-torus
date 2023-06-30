@@ -11,6 +11,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Repo
+  alias Oli.Accounts
 
   describe "page_delivery_controller build_hierarchy" do
     setup [:setup_lti_session]
@@ -937,6 +939,49 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "id=\"top_page_navigator\""
       assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
+    end
+
+    test "shows role label correctly when user is enrolled as student", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      {:ok, section} = Sections.update_section(section, %{open_and_free: true})
+      enroll_as_student(%{section: section, user: user |> Repo.preload(:platform_roles)})
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "#{user.name}"
+      assert html_response(conn, 200) =~ "Student"
+    end
+
+    test "shows role label correctly when user is enrolled as instructor", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      {:ok, section} = Sections.update_section(section, %{open_and_free: true})
+
+      {:ok, instructor} =
+        Accounts.update_user_platform_roles(
+          user,
+          [
+            Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+          ]
+        )
+
+      enroll_as_student(%{section: section, user: instructor})
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "#{instructor.name}"
+      assert html_response(conn, 200) =~ "Instructor"
     end
   end
 

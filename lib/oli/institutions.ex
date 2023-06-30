@@ -11,6 +11,10 @@ defmodule Oli.Institutions do
   alias Oli.Institutions.{Institution, PendingRegistration, RegistrationBrowseOptions, SsoJwk}
   alias Oli.Lti.Tool.Registration
   alias Oli.Lti.Tool.Deployment
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.Enrollment
+  alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.EnrollmentContextRole
 
   @doc """
   Returns the list of institutions.
@@ -36,6 +40,45 @@ defmodule Oli.Institutions do
   """
   def get_institution!(id),
     do: Repo.get!(Institution, id) |> Repo.preload([:deployments, :default_brand])
+
+  def get_students_by_institution(institution_id, text_search, limit, offset) do
+    student_role_id = Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
+
+    filter_by_text =
+      if text_search in ["", nil] do
+        true
+      else
+        text_search = String.trim(text_search)
+
+        dynamic(
+          [_e, _s, u],
+          ilike(u.name, ^"%#{text_search}%") or
+            ilike(u.email, ^"%#{text_search}%") or
+            ilike(u.given_name, ^"%#{text_search}%") or
+            ilike(u.family_name, ^"%#{text_search}%")
+        )
+      end
+
+    from(e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      join: u in User,
+      on: e.user_id == u.id,
+      join: ecr in EnrollmentContextRole,
+      on: e.id == ecr.enrollment_id,
+      where:
+        s.institution_id == ^institution_id and s.status == :active and e.status == :enrolled and
+          ecr.context_role_id == ^student_role_id,
+      where: ^filter_by_text,
+      limit: ^limit,
+      offset: ^offset,
+      group_by: u.id,
+      select: u,
+      select_merge: %{total_count: fragment("count(*) OVER()")}
+    )
+    |> Repo.all()
+    |> Repo.preload(:author)
+  end
 
   @doc """
   Gets an institution by clauses. Will raise an error if

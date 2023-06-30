@@ -808,14 +808,14 @@ defmodule OliWeb.CollaborationLiveTest do
     } do
       {:ok, view, _html} = live(conn, live_view_collab_space_index(:admin))
 
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "page_title"})
+
       assert view
              |> element("tr:first-child > td:nth-child(2)")
              |> render() =~
                "Other revision A"
-
-      view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
-      |> render_click(%{sort_by: "page_title"})
 
       view
       |> element("th[phx-click=\"sort\"]:first-of-type")
@@ -838,6 +838,10 @@ defmodule OliWeb.CollaborationLiveTest do
       end
 
       {:ok, view, _html} = live(conn, live_view_collab_space_index(:admin))
+
+      view
+      |> element("th[phx-click=sort][phx-value-sort_by=page_title]")
+      |> render_click()
 
       assert view
              |> element("tr:first-child > td:nth-child(2)")
@@ -919,19 +923,23 @@ defmodule OliWeb.CollaborationLiveTest do
       enroll_user_to_section(user, section, :context_instructor)
       {:ok, view, _html} = live(conn, live_view_collab_space_index(:instructor, section.slug))
 
-      assert view
-             |> element("tr:first-child > td:first-child")
-             |> render() =~
-               "Other revision A"
-
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
-      |> render_click(%{sort_by: "page_title"})
+      |> element("th[phx-click=sort][phx-value-sort_by=page_title]")
+      |> render_click()
 
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Other revision B"
+
+      view
+      |> element("th[phx-click=sort][phx-value-sort_by=page_title]")
+      |> render_click()
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Other revision A"
     end
 
     test "applies paging", %{
@@ -951,15 +959,19 @@ defmodule OliWeb.CollaborationLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_collab_space_index(:instructor, section.slug))
 
+      view
+      |> element("th[phx-click=sort][phx-value-sort_by=page_title]")
+      |> render_click()
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-               "Other revision A"
+               "Other revision B"
 
       assert view
              |> element("tr:nth-child(2) > td:first-child")
              |> render() =~
-               "Other revision B"
+               "Other revision A"
     end
   end
 

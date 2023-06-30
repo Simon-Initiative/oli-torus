@@ -453,13 +453,13 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       assert has_element?(view, "nav[aria-label=\"Paging\"]")
-      refute has_element?(view, "button", "Project 4")
+      refute has_element?(view, "button", "Project 5")
 
       view
       |> element("a[phx-click=\"HierarchyPicker.publications_page_change\"]", "2")
       |> render_click()
 
-      assert has_element?(view, "button", "Project 4")
+      assert has_element?(view, "button", "Project 5")
     end
 
     test "remix section - add materials - publications can be filtered by text", %{
@@ -530,11 +530,11 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       view
-      |> element("a[phx-click=\"HierarchyPicker.pages_page_change\"]", "2")
+      |> element("th[phx-value-sort_by=\"title\"]")
       |> render_click()
 
       assert view
-             |> has_element?(".remix_materials_table td", "Orphan Page")
+             |> has_element?(".remix_materials_table td", "An Orphan Page")
     end
 
     test "remix section items - add materials - all pages view can be sorted", %{
@@ -555,7 +555,8 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        "Project 1"
       )
       |> render_click()
 
@@ -564,14 +565,17 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       assert view
-             |> has_element?(".remix_materials_table tr:first-of-type td", "Nested Page One")
+             |> has_element?(
+               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
+               "Elixir Page"
+             )
 
       view
       |> element("th[phx-value-sort_by=\"title\"]")
       |> render_click()
 
       assert view
-             |> has_element?(".remix_materials_table tr:first-of-type td", "4")
+             |> has_element?(".remix_materials_table tr:first-of-type td", "Another orph. Page")
     end
 
     test "remix section items - add materials - all pages view can be filtered by text", %{
@@ -605,7 +609,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_change(%{"text_search" => "Orphan"})
 
       assert view
-             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Orphan Page")
+             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "An Orphan Page")
 
       refute view
              |> has_element?(".remix_materials_table tabtbodyle tr:nth-of-type(2)")
@@ -639,7 +643,7 @@ defmodule OliWeb.RemixSectionLiveTest do
     orphan_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-        title: "Orphan Page"
+        title: "An Orphan Page"
       })
 
     insert(:project_resource, %{
@@ -653,29 +657,112 @@ defmodule OliWeb.RemixSectionLiveTest do
       revision: orphan_revision
     })
 
-    proj_1 = insert(:project, title: "Project 1")
-    proj_2 = insert(:project, title: "Project 2")
-    proj_3 = insert(:project, title: "Project 3")
-    proj_4 = insert(:project, title: "Project 4")
+    author = insert(:author, %{email: "my_custom@email.com"})
 
-    insert(:publication, %{
-      project: proj_1,
-      published: DateTime.utc_now()
+    proj_1 = insert(:project, title: "Project 1", authors: [author])
+    proj_2 = insert(:project, title: "Project 2", authors: [author])
+    proj_3 = insert(:project, title: "Project 3", authors: [author])
+    proj_4 = insert(:project, title: "Project 4", authors: [author])
+    proj_5 = insert(:project, title: "Project 5", authors: [author])
+
+    page_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Elixir Page"
+      })
+
+    orphan_revision_2 =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Another orph. Page"
+      })
+
+    container_revision =
+      insert(:revision, %{
+        resource: insert(:resource),
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_revision.resource_id,
+          orphan_revision_2.resource_id
+        ],
+        content: %{},
+        deleted: false,
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{
+      project_id: proj_1.id,
+      resource_id: page_revision.resource.id
     })
+
+    insert(:project_resource, %{
+      project_id: proj_1.id,
+      resource_id: orphan_revision_2.resource.id
+    })
+
+    insert(:project_resource, %{
+      project_id: proj_1.id,
+      resource_id: container_revision.resource_id
+    })
+
+    proj_1_publication =
+      insert(:publication, %{
+        project: proj_1,
+        published: ~U[2023-06-25 00:36:38.112566Z],
+        root_resource_id: container_revision.resource_id
+      })
+
+    insert(:published_resource, %{
+      publication: proj_1_publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: proj_1_publication,
+      resource: orphan_revision_2.resource,
+      revision: orphan_revision_2,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: proj_1_publication,
+      resource: container_revision.resource,
+      revision: container_revision,
+      author: author
+    })
+
+    section =
+      insert(:section,
+        base_project: proj_1,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, _section} = Sections.create_section_resources(section, proj_1_publication)
 
     insert(:publication, %{
       project: proj_2,
-      published: DateTime.utc_now()
+      published: ~U[2023-06-26 00:36:38.112566Z]
     })
 
     insert(:publication, %{
       project: proj_3,
-      published: DateTime.utc_now()
+      published: ~U[2023-06-27 00:36:38.112566Z]
     })
 
     insert(:publication, %{
       project: proj_4,
-      published: DateTime.utc_now()
+      published: ~U[2023-06-28 00:36:38.112566Z]
+    })
+
+    insert(:publication, %{
+      project: proj_5,
+      published: ~U[2023-06-29 00:36:38.112566Z]
     })
 
     {:ok,

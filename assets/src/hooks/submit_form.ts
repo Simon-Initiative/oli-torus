@@ -10,10 +10,10 @@ function formDataToObject(formData: FormData): PlainObject {
       if (index === keys.length - 1) {
         acc[key] =
           acc[key] && Array.isArray(acc[key])
-            ? [...(acc[key] as any), value]
+            ? [...(acc[key] as any), maybeTrimValue(value)]
             : acc[key]
-            ? [acc[key], value]
-            : value;
+            ? [acc[key], maybeTrimValue(value)]
+            : maybeTrimValue(value);
       } else if (!acc[key]) {
         acc[key] = {};
       }
@@ -21,6 +21,10 @@ function formDataToObject(formData: FormData): PlainObject {
     }, obj);
   }
   return obj;
+}
+
+function maybeTrimValue(value: any) {
+  return typeof value === 'string' ? value.trim() : value;
 }
 
 /**

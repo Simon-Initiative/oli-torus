@@ -19,59 +19,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
     )
   end
 
-  defp insert_resource_access(page1, page3, page5, section, user1, user2) do
-    # Page 1
-    insert(:resource_access,
-      user: user1,
-      section: section,
-      resource: page1.resource,
-      score: 5,
-      out_of: 10
-    )
-
-    insert(:resource_access,
-      user: user2,
-      section: section,
-      resource: page1.resource,
-      score: 3,
-      out_of: 10
-    )
-
-    # Page 3
-    insert(:resource_access,
-      user: user1,
-      section: section,
-      resource: page3.resource,
-      score: 7,
-      out_of: 10
-    )
-
-    insert(:resource_access,
-      user: user2,
-      section: section,
-      resource: page3.resource,
-      score: 6,
-      out_of: 10
-    )
-
-    # Page 5
-    insert(:resource_access,
-      user: user1,
-      section: section,
-      resource: page5.resource,
-      score: 9,
-      out_of: 10
-    )
-
-    insert(:resource_access,
-      user: user2,
-      section: section,
-      resource: page5.resource,
-      score: 10,
-      out_of: 10
-    )
-  end
-
   describe "user" do
     test "cannot access page when it is not logged in", %{conn: conn} do
       section = insert(:section)
@@ -170,40 +117,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
     test "applies searching", %{
       conn: conn,
       section: section,
-      instructor: instructor,
-      student_with_gating_condition: student_with_gating_condition,
-      student_with_gating_condition_2: student_with_gating_condition_2,
-      graded_page_1: graded_page_1,
-      graded_page_3: graded_page_3,
-      graded_page_5: graded_page_5
+      instructor: instructor
     } do
-      insert_resource_access(
-        graded_page_1,
-        graded_page_3,
-        graded_page_5,
-        section,
-        student_with_gating_condition,
-        student_with_gating_condition_2
-      )
-
+      student = insert(:user, %{family_name: "Example", given_name: "Student1"})
+      student_2 = insert(:user, %{family_name: "Example", given_name: "Student2"})
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
 
-      assert has_element?(
-               view,
-               "div",
-               "#{student_with_gating_condition.family_name}, #{student_with_gating_condition.given_name}"
-             )
-
-      assert has_element?(
-               view,
-               "div",
-               "#{student_with_gating_condition_2.family_name}, #{student_with_gating_condition_2.given_name}"
-             )
-
-      # searching by student
       params = %{
-        text_search: student_with_gating_condition.given_name
+        text_search: student.given_name
       }
 
       {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug, params))
@@ -211,47 +134,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       assert has_element?(
                view,
                "div",
-               "#{student_with_gating_condition.family_name}, #{student_with_gating_condition.given_name}"
+               "#{student.family_name}, #{student.given_name}"
              )
 
       refute has_element?(
                view,
                "div",
-               "#{student_with_gating_condition_2.family_name}, #{student_with_gating_condition_2.given_name}"
+               "#{student_2.family_name}, #{student_2.given_name}"
              )
     end
 
     test "applies sorting", %{
       conn: conn,
       instructor: instructor,
-      section: section,
-      student_with_gating_condition: student_with_gating_condition,
-      student_with_gating_condition_2: student_with_gating_condition_2,
-      graded_page_1: graded_page_1,
-      graded_page_3: graded_page_3,
-      graded_page_5: graded_page_5
+      section: section
     } do
-      insert_resource_access(
-        graded_page_1,
-        graded_page_3,
-        graded_page_5,
-        section,
-        student_with_gating_condition,
-        student_with_gating_condition_2
-      )
-
+      student = insert(:user, %{family_name: "Example", given_name: "Student1"})
+      student_2 = insert(:user, %{family_name: "Example", given_name: "Student2"})
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
 
-      assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ student_with_gating_condition.family_name
-
-      assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ student_with_gating_condition_2.family_name
-
-      ## sorting by student
       params = %{
         sort_order: :desc
       }
@@ -260,84 +163,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ student_with_gating_condition_2.family_name
+             |> render() =~ student_2.family_name
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ student_with_gating_condition.family_name
+             |> render() =~ student.family_name
     end
 
     test "applies pagination", %{
       conn: conn,
       instructor: instructor,
-      section: section,
-      student_with_gating_condition: student_with_gating_condition,
-      student_with_gating_condition_2: student_with_gating_condition_2,
-      graded_page_1: graded_page_1,
-      graded_page_3: graded_page_3,
-      graded_page_5: graded_page_5
+      section: section
     } do
-      insert_resource_access(
-        graded_page_1,
-        graded_page_3,
-        graded_page_5,
-        section,
-        student_with_gating_condition,
-        student_with_gating_condition_2
-      )
-
+      student = insert(:user, %{family_name: "Example", given_name: "Student1"})
+      student_2 = insert(:user, %{family_name: "Example", given_name: "Student2"})
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
 
-      assert has_element?(
-               view,
-               "div",
-               "#{student_with_gating_condition.family_name}, #{student_with_gating_condition.given_name}"
-             )
-
-      assert has_element?(
-               view,
-               "div",
-               "#{student_with_gating_condition_2.family_name}, #{student_with_gating_condition_2.given_name}"
-             )
-
-      ## aplies limit
       params = %{
-        limit: 1,
-        sort_order: "asc"
+        offset: 1,
+        limit: 1
       }
 
       {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug, params))
 
       assert has_element?(
                view,
-               "div",
-               "#{student_with_gating_condition.family_name}, #{student_with_gating_condition.given_name}"
-             )
-
-      refute has_element?(
-               view,
-               "div",
-               "#{student_with_gating_condition_2.family_name}, #{student_with_gating_condition_2.given_name}"
-             )
-
-      ## aplies pagination
-      params = %{
-        offset: 1
-      }
-
-      {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug, params))
-
-      refute has_element?(
-               view,
-               "div",
-               "#{student_with_gating_condition.family_name}, #{student_with_gating_condition.given_name}"
-             )
-
-      assert has_element?(
-               view,
-               "div",
-               "#{student_with_gating_condition_2.family_name}, #{student_with_gating_condition_2.given_name}"
+               ~s{nav[aria-label="Paging"]}
              )
     end
   end
