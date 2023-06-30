@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.24 (unreleased)
+## 0.25.0 (unreleased)
+
+### Bug Fixes
+
+### Enhancements
+
+### Configs
+
+## 0.24.0 (prerelease)
 
 ### Bug Fixes
 
