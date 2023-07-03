@@ -342,8 +342,23 @@ export const triggerCheck = createAsyncThunk(
       ) {
         doesCheckResultContainsNavigationToDifferentScreen = true;
       }
-    }
 
+      if (
+        isCorrect &&
+        hasNavigation &&
+        navTarget !== expectedResumeActivityId &&
+        doesFirstEventHasNavigation
+      ) {
+        const updateSessionAttempt: ApplyStateOperation[] = [
+          {
+            target: 'session.attemptNumber',
+            operator: '=',
+            value: 1,
+          },
+        ];
+        bulkApplyState(updateSessionAttempt, defaultGlobalEnv);
+      }
+    }
     //Even If the check result contains a wrong trap state and has a navigation to different screen, we should not create a new attempt for that screen because
     // the student will be navigated to different screen so it does not make sense to create a new attempt for the current screen
     if (!isCorrect && !doesCheckResultContainsNavigationToDifferentScreen) {
