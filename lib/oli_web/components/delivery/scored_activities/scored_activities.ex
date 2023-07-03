@@ -535,6 +535,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         where: res_access.section_id == ^section.id,
         join: rev in Revision,
         on: aa.revision_id == rev.id,
+        left_join: rev2 in Revision,
+        on: rev.resource_id == rev2.resource_id and rev2.id > rev.id,
+        where: is_nil(rev2),
         group_by: rev.id,
         select: {rev, count(aa.id), sum(aa.score) / sum(aa.out_of)}
       )
@@ -591,6 +594,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         resource_access.section_id == ^section_id and
           activity_revision.resource_id == ^selected_activity_id
       )
+      |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
       |> limit(1)
       |> select([aa, _, _, _, _, _], aa)
       |> select_merge(
