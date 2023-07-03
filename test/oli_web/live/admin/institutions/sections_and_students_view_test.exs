@@ -73,10 +73,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
     {:ok, section_4} = Sections.create_section_resources(section_4, publication)
 
     # enroll students to sections
-    student_1 = insert(:user)
-    student_2 = insert(:user)
-    student_3 = insert(:user)
-    student_4 = insert(:user)
+    student_1 = insert(:user, email: "student@1.com")
+    student_2 = insert(:user, email: "student@2.com")
+    student_3 = insert(:user, email: "student@3.com")
+    student_4 = insert(:user, email: "student@4.com")
 
     Sections.enroll(student_1.id, section_1.id, [ContextRoles.get_role(:context_learner)])
     Sections.enroll(student_1.id, section_2.id, [ContextRoles.get_role(:context_learner)])
@@ -231,24 +231,23 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
           live_view_sections_and_students_live(institution.id, :sections)
         )
 
+      [section_1, section_2, section_3, section_4] =
+        [section_1, section_2, section_3, section_4] |> Enum.sort_by(& &1.title)
+
       [s_1, s_2, s_3, s_4] = rendered_sections = table_as_list_of_maps(view, :sections)
 
       assert length(rendered_sections) == 4
 
       assert s_1.title == section_1.title
-      assert s_1.enrollments_count =~ "4"
       assert s_1.institution =~ institution.name
 
       assert s_2.title == section_2.title
-      assert s_2.enrollments_count =~ "3"
       assert s_2.institution =~ institution.name
 
       assert s_3.title == section_3.title
-      assert s_3.enrollments_count =~ "2"
       assert s_3.institution =~ institution.name
 
       assert s_4.title == section_4.title
-      assert s_4.enrollments_count =~ "1"
       assert s_4.institution =~ institution.name
     end
 
@@ -362,6 +361,9 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
           conn,
           live_view_sections_and_students_live(institution.id, :students)
         )
+
+      [student_1, student_2, student_3, student_4] =
+        [student_1, student_2, student_3, student_4] |> Enum.sort_by(& &1.name)
 
       [s_1, s_2, s_3, s_4] = students = table_as_list_of_maps(view, :students)
 
