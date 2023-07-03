@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use Phoenix.LiveComponent
 
   import Ecto.Query
+  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
   alias Oli.Publishing.DeliveryResolver
@@ -19,6 +20,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.ManualGrading.RenderedActivity
   alias Oli.Repo
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -535,9 +537,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         where: res_access.section_id == ^section.id,
         join: rev in Revision,
         on: aa.revision_id == rev.id,
-        left_join: rev2 in Revision,
-        on: rev.resource_id == rev2.resource_id and rev2.id > rev.id,
-        where: is_nil(rev2),
+        join: pr in PublishedResource,
+        on: rev.id == pr.revision_id,
+        join: spp in SectionsProjectsPublications,
+        on: pr.publication_id == spp.publication_id,
+        where: spp.section_id == ^section.id,
         group_by: rev.id,
         select: {rev, count(aa.id), sum(aa.score) / sum(aa.out_of)}
       )
