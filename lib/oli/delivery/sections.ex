@@ -2437,13 +2437,7 @@ defmodule Oli.Delivery.Sections do
     Repo.all(query)
   end
 
-  defp get_student_pages(section_slug, user_id, opts \\ [graded: false]) do
-    graded_filter =
-      case opts[:graded] do
-        true -> dynamic([_, _, _, _, rev], rev.graded == true)
-        _ -> []
-      end
-
+  defp get_student_pages(section_slug, user_id) do
     SectionResource
     |> join(:inner, [sr], s in Section, on: sr.section_id == s.id)
     |> join(:inner, [sr, s], spp in SectionsProjectsPublications,
@@ -2459,7 +2453,6 @@ defmodule Oli.Delivery.Sections do
           ds.user_id == ^user_id
     )
     |> where([sr, s, _, _, _, ds], s.slug == ^section_slug)
-    |> where(^graded_filter)
     |> select([sr, s, _, _, rev, ds], %{
       id: sr.id,
       title: rev.title,
@@ -2475,6 +2468,7 @@ defmodule Oli.Delivery.Sections do
       resource_type_id: rev.resource_type_id,
       resource_id: rev.resource_id,
       numbering_level: sr.numbering_level,
+      numbering_index: sr.numbering_index,
       scheduling_type: sr.scheduling_type,
       children: sr.children,
       section_id: s.id,
@@ -2556,7 +2550,7 @@ defmodule Oli.Delivery.Sections do
     Returns the graded pages and their due dates for a given student.
   """
   def get_graded_pages(section_slug, user_id) do
-    student_pages_query = get_student_pages(section_slug, user_id, graded: true)
+    student_pages_query = get_student_pages(section_slug, user_id)
 
     {graded_pages_with_date, other_resources} =
       Repo.all(from(sp in subquery(student_pages_query)))
@@ -2588,8 +2582,11 @@ defmodule Oli.Delivery.Sections do
 
     graded_page_map = Enum.reduce(graded_pages, %{}, fn p, m -> Map.put(m, p.id, p) end)
 
-    {pages, remaining} =
-      get_flatten_hierarchy((root_container || %{})[:children], resources)
+    {reachable_graded_pages, unreachable_graded_pages} =
+      get_flatten_hierarchy(
+        (root_container || %{})[:children],
+        resources
+      )
       |> Enum.reduce({[], graded_page_map}, fn id, {acc, remaining} ->
         case Map.get(remaining, id) do
           nil -> {acc, remaining}
@@ -2597,7 +2594,9 @@ defmodule Oli.Delivery.Sections do
         end
       end)
 
-    Enum.reverse(pages) ++ Map.values(remaining)
+    Enum.reverse(reachable_graded_pages) ++
+      (Map.values(unreachable_graded_pages)
+       |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index}))
   end
 
   defp get_root_container_and_graded_pages(resources) do
@@ -2949,15 +2948,16 @@ defmodule Oli.Delivery.Sections do
       [%{numbering_index: 1, slug: "revision_x"}, %{numbering_index: 2, slug: "revision_y"}]
   """
   def get_revision_indexes(section_slug) do
-      from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        where: s.slug == ^section_slug and rev.resource_type_id == 1 and not is_nil(sr.numbering_index),
-        select: %{
-          slug: rev.slug,
-          numbering_index: sr.numbering_index
-        },
-        order_by: [asc: sr.numbering_index]
-      )
-      |> Repo.all()
+    from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+      where:
+        s.slug == ^section_slug and rev.resource_type_id == 1 and not is_nil(sr.numbering_index),
+      select: %{
+        slug: rev.slug,
+        numbering_index: sr.numbering_index
+      },
+      order_by: [asc: sr.numbering_index]
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -2970,15 +2970,17 @@ defmodule Oli.Delivery.Sections do
   """
   def get_revision_by_index(section_slug, numbering_index) when is_number(numbering_index) do
     from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        where: s.slug == ^section_slug and rev.resource_type_id == 1 and sr.numbering_index == ^numbering_index,
-        select: %{
-          slug: rev.slug,
-          numbering_index: sr.numbering_index,
-          resource_type_id: rev.resource_type_id
-        },
-        limit: 1
-      )
-      |> Repo.one()
+      where:
+        s.slug == ^section_slug and rev.resource_type_id == 1 and
+          sr.numbering_index == ^numbering_index,
+      select: %{
+        slug: rev.slug,
+        numbering_index: sr.numbering_index,
+        resource_type_id: rev.resource_type_id
+      },
+      limit: 1
+    )
+    |> Repo.one()
   end
 
   def get_revision_by_index(_, _), do: nil

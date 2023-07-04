@@ -24,8 +24,18 @@ defmodule Oli.Delivery.Sections.GradedPagesTest do
       assert Enum.at(graded_pages, 3)[:end_date] == nil
 
       assert Enum.at(graded_pages, 4).title == "Graded page 3 - Level 1 (w/ no date)"
-      assert Enum.at(graded_pages, 5)[:end_date] == nil
-    end
+      assert Enum.at(graded_pages, 4)[:end_date] == nil
 
+      assert Enum.at(graded_pages, 5).title ==
+               "Graded page 6 - Level 0 (w/o student gating condition)"
+
+      assert Enum.at(graded_pages, 5)[:end_date] == nil
+
+      assert Enum.at(graded_pages, 6).title == "Unreachable Graded page 2"
+      assert Enum.at(graded_pages, 6)[:end_date] == nil
+
+      assert Enum.at(graded_pages, 7).title == "Unreachable Graded page 1"
+      assert Enum.at(graded_pages, 7)[:end_date] == nil
+    end
   end
 end
