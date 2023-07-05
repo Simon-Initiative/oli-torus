@@ -1,0 +1,67 @@
+/*
+  Applies some "global" styles to adaptive player to bring us back to a pre-tailwind preflight state.
+  This needs to be a top-level css outside of the adaptive theming css so lessons that define a custom
+  theme can still benefit from it.
+*/
+
+/* Looks like `.mainView` will be specific enough to just the adaptive player. */
+.mainView {
+  .content {
+    border-color: #000;
+  }
+
+  * {
+    /*
+      This one is a little dangerous. Tailwind uses `box-sizing: border-box` by default on *, but this one
+      is in the .mainView .content scope, this could end up overriding some other box-sizing styles set in
+      custom sheets that have lower specificity.
+    */
+    box-sizing: content-box;
+  }
+
+  ol,
+  ul {
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    padding-inline-start: 40px;
+  }
+
+  ol {
+    li {
+      list-style-type: decimal;
+    }
+    list-style-type: decimal;
+  }
+
+  ul {
+    li {
+      list-style-type: disc;
+    }
+    list-style-type: disc;
+  }
+
+  [type='text'],
+  [type='email'],
+  [type='url'],
+  [type='password'],
+  [type='number'],
+  [type='date'],
+  [type='datetime-local'],
+  [type='month'],
+  [type='search'],
+  [type='tel'],
+  [type='time'],
+  [type='week'],
+  [multiple],
+  textarea,
+  select {
+    padding: 5px;
+    border: 1px solid var(--grayDark20);
+    box-sizing: border-box;
+    border-radius: 2px;
+    min-height: 44px;
+  }
+}

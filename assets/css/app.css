@@ -8,6 +8,8 @@
 @import 'button';
 @import 'table';
 
+@import 'adaptive-reset.scss';
+
 /**
  * Automatically style all links with blue text and underline on hover.
  * External links will automatically get an arrow icon appended.

@@ -14,6 +14,7 @@
 
     <!-- Tailwind CSS -->
     <link id="app" rel="stylesheet" href="/css/app.css" />
+    <link id="app" rel="stylesheet" href="/css/adaptive.css" />
 
     <%= if dev_mode?() do %>
       <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
@@ -54,8 +55,7 @@
 
     <%= OliWeb.Common.MathJaxScript.render(@conn) %>
 
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/
-    vendor.js") %>"></script>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 
     <%= additional_stylesheets(assigns) %>
