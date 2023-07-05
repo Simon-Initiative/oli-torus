@@ -8,7 +8,9 @@
   at the right level without having control of all those custom style sheets out there.
 */
 
-* {
+*,
+::before,
+::after {
   box-sizing: content-box;
 }
 
