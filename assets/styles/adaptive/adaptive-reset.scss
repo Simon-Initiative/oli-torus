@@ -1,66 +1,62 @@
 /*
-  Applies some "global" styles to adaptive player to bring us back to a pre-tailwind preflight state.
+  Applies some global styles to adaptive player to bring us back to a pre-tailwind preflight state.
   This needs to be a top-level css outside of the adaptive theming css so lessons that define a custom
   theme can still benefit from it.
+
+  These can not be scoped under a parent selector because then they gets a higher specificity and it breaks
+  some of the custom style sheets in the adaptive player. Putting it here is the only way to get it to apply
+  at the right level without having control of all those custom style sheets out there.
 */
 
-/*
-   This is the only actual global style, it's because Tailwind uses `box-sizing: border-box` by default on *, if we do that inside our
-   .mainView scoping, it gets a higher specificity and then breaks some of the custom style sheets in the adaptive player. Putting it
-   here is the only way to get it to apply at the right level without having control of all those custom style sheets out there.
-*/
 * {
   box-sizing: content-box;
 }
 
-/* Looks like `.mainView` will be specific enough to just the adaptive player. */
-.mainView {
-  .content {
-    border-color: #000;
-  }
-  ol,
-  ul {
-    display: block;
-    margin-block-start: 1em;
-    margin-block-end: 1em;
-    margin-inline-start: 0px;
-    margin-inline-end: 0px;
-    padding-inline-start: 40px;
-  }
+.content {
+  border-color: #000;
+}
+ol,
+ul {
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  padding-inline-start: 40px;
+}
 
-  ol {
-    li {
-      list-style-type: decimal;
-    }
+ol {
+  li {
     list-style-type: decimal;
   }
+  list-style-type: decimal;
+}
 
-  ul {
-    li {
-      list-style-type: disc;
-    }
+ul {
+  li {
     list-style-type: disc;
   }
+  list-style-type: disc;
+}
 
-  [type='text'],
-  [type='email'],
-  [type='url'],
-  [type='password'],
-  [type='number'],
-  [type='date'],
-  [type='datetime-local'],
-  [type='month'],
-  [type='search'],
-  [type='tel'],
-  [type='time'],
-  [type='week'],
-  [multiple],
-  textarea,
-  select {
-    padding: 5px;
-    border: 1px solid var(--grayDark20);
-    box-sizing: border-box;
-    border-radius: 2px;
-    min-height: 44px;
-  }
+[type='text'],
+[type='email'],
+[type='url'],
+[type='password'],
+[type='number'],
+[type='date'],
+[type='datetime-local'],
+[type='month'],
+[type='search'],
+[type='tel'],
+[type='time'],
+[type='week'],
+[multiple],
+textarea,
+select {
+  padding: 5px;
+  border: 1px solid var(--grayDark20);
+  box-sizing: border-box;
+  border-radius: 2px;
+  min-height: 44px;
 }
