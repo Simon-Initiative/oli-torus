@@ -9,9 +9,16 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Lti_1p3.Tool.ContextRoles
 
-  defp set_progress(section_id, resource_id, user_id, progress) do
-    Core.track_access(resource_id, section_id, user_id)
-    |> Core.update_resource_access(%{progress: progress})
+  defp set_progress(section_id, resource_id, user_id, progress, revision) do
+    {:ok, resource_access} =
+      Core.track_access(resource_id, section_id, user_id)
+      |> Core.update_resource_access(%{progress: progress})
+
+    insert(:resource_attempt, %{
+      resource_access: resource_access,
+      revision: revision,
+      lifecycle_state: :evaluated
+    })
   end
 
   describe "progress calculations" do
@@ -29,14 +36,14 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       [p4, p5, p6] = map.mod2_pages
       [p7, p8, _, _] = map.mod3_pages
 
-      set_progress(section.id, p1.published_resource.resource_id, user_id, 0.5)
-      set_progress(section.id, p2.published_resource.resource_id, user_id, 1)
-      set_progress(section.id, p3.published_resource.resource_id, user_id, 0.0)
-      set_progress(section.id, p4.published_resource.resource_id, user_id, 0.1)
-      set_progress(section.id, p5.published_resource.resource_id, user_id, 0.2)
-      set_progress(section.id, p6.published_resource.resource_id, user_id, 0.3)
-      set_progress(section.id, p7.published_resource.resource_id, user_id, 0.5)
-      set_progress(section.id, p8.published_resource.resource_id, user_id, 0.5)
+      set_progress(section.id, p1.published_resource.resource_id, user_id, 0.5, p1.revision)
+      set_progress(section.id, p2.published_resource.resource_id, user_id, 1, p2.revision)
+      set_progress(section.id, p3.published_resource.resource_id, user_id, 0.0, p3.revision)
+      set_progress(section.id, p4.published_resource.resource_id, user_id, 0.1, p4.revision)
+      set_progress(section.id, p5.published_resource.resource_id, user_id, 0.2, p5.revision)
+      set_progress(section.id, p6.published_resource.resource_id, user_id, 0.3, p6.revision)
+      set_progress(section.id, p7.published_resource.resource_id, user_id, 0.5, p7.revision)
+      set_progress(section.id, p8.published_resource.resource_id, user_id, 0.5, p8.revision)
 
       # Notice that we aren't setting progress - even to 0 - for p9 and p10.
       # It is an important test case to NOT have a resource_access record present for
@@ -146,8 +153,8 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       user_id = map.that_user.id
 
       [p1, p2, _] = map.mod1_pages
-      set_progress(section.id, p1.published_resource.resource_id, user_id, 1)
-      set_progress(section.id, p2.published_resource.resource_id, user_id, 1)
+      set_progress(section.id, p1.published_resource.resource_id, user_id, 1, p1.revision)
+      set_progress(section.id, p2.published_resource.resource_id, user_id, 1, p2.revision)
 
       [r1, r2, r3] =
         Metrics.progress_across(
@@ -244,7 +251,14 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
       another_user = insert(:user)
       Sections.enroll(another_user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      set_progress(section.id, p1.published_resource.resource_id, another_user.id, 0.75)
+
+      set_progress(
+        section.id,
+        p1.published_resource.resource_id,
+        another_user.id,
+        0.75,
+        p1.revision
+      )
 
       progress =
         Metrics.progress_for_page(section.id, [this_user.id, another_user.id], p1.resource.id)
@@ -267,8 +281,22 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
       another_user = insert(:user)
       Sections.enroll(another_user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      set_progress(section.id, p1.published_resource.resource_id, another_user.id, 0.75)
-      set_progress(section.id, p2.published_resource.resource_id, another_user.id, 0.5)
+
+      set_progress(
+        section.id,
+        p1.published_resource.resource_id,
+        another_user.id,
+        0.75,
+        p1.revision
+      )
+
+      set_progress(
+        section.id,
+        p2.published_resource.resource_id,
+        another_user.id,
+        0.5,
+        p2.revision
+      )
 
       progress =
         Metrics.progress_across_for_pages(section.id, [p1.resource.id, p2.resource.id], [], 2)

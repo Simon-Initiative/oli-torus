@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Metrics do
   import Ecto.Query, warn: false
 
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
-  alias alias Oli.Resources.Revision
+  alias Oli.Resources.Revision
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Repo
   alias Oli.Analytics.DataTables.DataTable
@@ -20,6 +20,9 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
+
+  alias Oli.Publishing.PublishedResource
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   def progress_datatable_for(section_id, container_id) do
     learner_id = ContextRoles.get_role(:context_learner).id
@@ -265,16 +268,25 @@ defmodule Oli.Delivery.Metrics do
     user_count = max(user_count, 1)
 
     query =
-      from(ra in ResourceAccess,
+      from(r_acc in ResourceAccess,
+        join: ra in ResourceAttempt,
+        on: r_acc.id == ra.resource_access_id,
+        join: rev in Revision,
+        on: ra.revision_id == rev.id,
+        join: pr in PublishedResource,
+        on: rev.id == pr.revision_id,
+        join: spp in SectionsProjectsPublications,
+        on: pr.publication_id == spp.publication_id,
         where:
-          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
-            ra.user_id not in ^user_ids_to_ignore,
-        group_by: ra.resource_id,
+          spp.section_id == ^section_id and
+            r_acc.resource_id in ^pages_ids and r_acc.section_id == ^section_id and
+            r_acc.user_id not in ^user_ids_to_ignore and ra.lifecycle_state == :evaluated,
+        group_by: r_acc.resource_id,
         select: {
-          ra.resource_id,
+          r_acc.resource_id,
           fragment(
             "SUM(?) / (?)",
-            ra.progress,
+            r_acc.progress,
             ^user_count
           )
         }
@@ -373,17 +385,26 @@ defmodule Oli.Delivery.Metrics do
   """
   def avg_score_across_for_pages(section_id, pages_ids, user_ids_to_ignore) do
     query =
-      from(ra in ResourceAccess,
+      from(r_acc in ResourceAccess,
+        join: ra in ResourceAttempt,
+        on: r_acc.id == ra.resource_access_id,
+        join: rev in Revision,
+        on: ra.revision_id == rev.id,
+        join: pr in PublishedResource,
+        on: rev.id == pr.revision_id,
+        join: spp in SectionsProjectsPublications,
+        on: pr.publication_id == spp.publication_id,
         where:
-          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
-            ra.user_id not in ^user_ids_to_ignore and not is_nil(ra.score),
-        group_by: ra.resource_id,
+          spp.section_id == ^section_id and
+            r_acc.resource_id in ^pages_ids and r_acc.section_id == ^section_id and
+            r_acc.user_id not in ^user_ids_to_ignore and ra.lifecycle_state == :evaluated,
+        group_by: r_acc.resource_id,
         select: {
-          ra.resource_id,
+          r_acc.resource_id,
           fragment(
             "SUM(?) / SUM(?)",
-            ra.score,
-            ra.out_of
+            r_acc.score,
+            r_acc.out_of
           )
         }
       )
@@ -410,9 +431,14 @@ defmodule Oli.Delivery.Metrics do
         on: ra.revision_id == rev.id,
         join: r_acc in ResourceAccess,
         on: ra.resource_access_id == r_acc.id,
+        join: pr in PublishedResource,
+        on: rev.id == pr.revision_id,
+        join: spp in SectionsProjectsPublications,
+        on: pr.publication_id == spp.publication_id,
         where:
-          rev.resource_id in ^pages_ids and r_acc.section_id == ^section_id and
-            not is_nil(ra.date_evaluated),
+          spp.section_id == ^section_id and
+            rev.resource_id in ^pages_ids and r_acc.section_id == ^section_id and
+            ra.lifecycle_state == :evaluated,
         group_by: rev.resource_id,
         select: {
           rev.resource_id,

@@ -531,7 +531,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       from(aa in ActivityAttempt,
         join: res_attempt in ResourceAttempt,
         on: aa.resource_attempt_id == res_attempt.id,
-        where: res_attempt.revision_id == ^current_assessment.id,
+        where:
+          res_attempt.revision_id == ^current_assessment.id and
+            res_attempt.lifecycle_state == :evaluated,
         join: res_access in ResourceAccess,
         on: res_attempt.resource_access_id == res_access.id,
         where: res_access.section_id == ^section.id,

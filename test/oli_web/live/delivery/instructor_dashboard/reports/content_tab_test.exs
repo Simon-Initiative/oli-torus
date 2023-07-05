@@ -103,10 +103,37 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
-      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
-      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
-      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
-      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_1.id,
+        0.9,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_2.id,
+        0.6,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_3.id,
+        0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_4.id,
+        0.3,
+        page_1.revision
+      )
 
       ### sorting by module
       params = %{
@@ -309,7 +336,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
            instructor: instructor,
            conn: conn
          } do
-      %{page1: page1, page2: page2, section: section} = Oli.Seeder.base_project_with_pages()
+      %{page1: page1, revision1: revision1, page2: page2, revision2: revision2, section: section} =
+        Oli.Seeder.base_project_with_pages()
 
       user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
       user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
@@ -324,15 +352,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
-      set_progress(section.id, page1.id, user_1.id, 0.9)
-      set_progress(section.id, page1.id, user_2.id, 0.6)
-      set_progress(section.id, page1.id, user_3.id, 0)
-      set_progress(section.id, page1.id, user_4.id, 0.3)
+      set_progress(section.id, page1.id, user_1.id, 0.9, revision1)
+      set_progress(section.id, page1.id, user_2.id, 0.6, revision1)
+      set_progress(section.id, page1.id, user_3.id, 0, revision1)
+      set_progress(section.id, page1.id, user_4.id, 0.3, revision1)
 
-      set_progress(section.id, page2.id, user_1.id, 0.8)
-      set_progress(section.id, page2.id, user_2.id, 0.8)
-      set_progress(section.id, page2.id, user_3.id, 0.8)
-      set_progress(section.id, page2.id, user_4.id, 0.8)
+      set_progress(section.id, page2.id, user_1.id, 0.8, revision2)
+      set_progress(section.id, page2.id, user_2.id, 0.8, revision2)
+      set_progress(section.id, page2.id, user_3.id, 0.8, revision2)
+      set_progress(section.id, page2.id, user_4.id, 0.8, revision2)
 
       {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
 
@@ -408,10 +436,37 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
-      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 0.9)
-      set_progress(section.id, page_1.published_resource.resource_id, user_2.id, 0.6)
-      set_progress(section.id, page_1.published_resource.resource_id, user_3.id, 0)
-      set_progress(section.id, page_1.published_resource.resource_id, user_4.id, 0.3)
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_1.id,
+        0.9,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_2.id,
+        0.6,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_3.id,
+        0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_4.id,
+        0.3,
+        page_1.revision
+      )
 
       {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
 
@@ -432,8 +487,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
     end
   end
 
-  defp set_progress(section_id, resource_id, user_id, progress) do
-    Core.track_access(resource_id, section_id, user_id)
-    |> Core.update_resource_access(%{progress: progress})
+  defp set_progress(section_id, resource_id, user_id, progress, revision) do
+    {:ok, resource_access} =
+      Core.track_access(resource_id, section_id, user_id)
+      |> Core.update_resource_access(%{progress: progress})
+
+    insert(:resource_attempt, %{
+      resource_access: resource_access,
+      revision: revision,
+      lifecycle_state: :evaluated
+    })
   end
 end

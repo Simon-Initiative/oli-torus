@@ -44,6 +44,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       insert(:resource_attempt, %{
         resource_access: resource_access,
         revision: page,
+        lifecycle_state: :evaluated,
         date_evaluated: ~U[2020-01-01 00:00:00Z]
       })
 
@@ -52,7 +53,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
         revision: activity_revision,
         resource: activity_revision.resource,
         resource_attempt: resource_attempt,
-        lifecycle_state: :submitted,
+        lifecycle_state: :evaluated,
         transformed_model: %{choices: generate_choices(activity_revision.id)},
         score: score,
         out_of: 1
