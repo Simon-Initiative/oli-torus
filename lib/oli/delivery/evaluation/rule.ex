@@ -70,9 +70,11 @@ defmodule Oli.Delivery.Evaluation.Rule do
   end
 
   defp eval(:attempt_number, context), do: context.activity_attempt_number |> Integer.to_string()
+
   defp eval(:input, context) do
     Oli.Utils.normalize_whitespace(context.input)
   end
+
   defp eval(:input_length, context), do: String.length(context.input) |> Integer.to_string()
 
   defp eval({:lt, lhs, rhs}, context) do
@@ -188,6 +190,13 @@ defmodule Oli.Delivery.Evaluation.Rule do
   end
 
   defp parse_number(str) when is_binary(str) do
+    str =
+      if Regex.match?(~r/^\.\d+$/, str) do
+        "0#{str}"
+      else
+        str
+      end
+
     if is_float?(str) do
       str
       |> Float.parse()
@@ -209,5 +218,4 @@ defmodule Oli.Delivery.Evaluation.Rule do
   end
 
   defp drop_remainder({val, _rem}), do: val
-
 end

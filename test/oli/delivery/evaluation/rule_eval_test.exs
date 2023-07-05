@@ -37,6 +37,10 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
   end
 
   test "evaluating floats" do
+    assert eval("attemptNumber = {1} && input = {0.1}", "0.1")
+    refute eval("attemptNumber = {1} && input = {0.1}", "0.2")
+    assert eval("attemptNumber = {1} && input = {0.1}", ".1")
+    refute eval("attemptNumber = {1} && input = {0.1}", ".2")
     assert eval("attemptNumber = {1} && input = {3.1}", "3.1")
     refute eval("attemptNumber = {1} && input = {3.1}", "3.2")
     refute eval("attemptNumber = {1} && input = {3.1}", "4")
@@ -45,6 +49,7 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("attemptNumber = {1} && input < {4}", "3.1")
     refute eval("attemptNumber = {1} && input > {3}", "3.0")
     refute eval("attemptNumber = {1} && input < {3}", "3.0")
+    assert eval("attemptNumber = {1} && input < {3}", ".2")
   end
 
   test "evaluating ranges" do
