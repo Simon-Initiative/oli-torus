@@ -542,7 +542,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         join: spp in SectionsProjectsPublications,
         on: pr.publication_id == spp.publication_id,
         where: spp.section_id == ^section.id,
-        group_by: rev.id,
+        group_by: [rev.resource_id, rev.id],
         select: {rev, count(aa.id), sum(aa.score) / sum(aa.out_of)}
       )
       |> Repo.all()
