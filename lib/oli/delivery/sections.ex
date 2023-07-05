@@ -986,7 +986,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   # Traverse the graph structure of the links to determine which pages are reachable
-  # from the pages in the hierarchy, removing them from the candidate set of unreachable pages.
+  # from the pages in the hierarchy, removing them from the candidate set of unreachable pages
   # This also tracks seen pages to avoid infinite recursion, in cases where pages create a
   # a circular link structure.
   def traverse_links(link_map, hiearchy_ids, unreachable, seen) do
@@ -2633,8 +2633,6 @@ defmodule Oli.Delivery.Sections do
   def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
     objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
-    pages_with_objectives = DeliveryResolver.pages_with_attached_objectives(section_slug)
-
     proficiency_per_learning_objective =
       case student_id do
         nil ->
@@ -2661,44 +2659,26 @@ defmodule Oli.Delivery.Sections do
       )
       |> Repo.all()
 
-    ### filter objectives that are attached to some page
-    objectives_pages_map =
-      pages_with_objectives
-      |> Enum.reduce(%{}, fn page, acc ->
-        Enum.map(page.objectives["attached"] || [], fn obj_id ->
-          {obj_id, [page.resource_id]}
-        end)
-        |> Enum.into(%{})
-        |> Map.merge(acc, fn _, x1, x2 ->
-          x1 ++ x2
-        end)
-      end)
-
     Enum.reduce(objectives, [], fn objective, acc ->
-      # Only consider objectives that belong to a page
-      if Map.get(objectives_pages_map, objective.objective_resource_id) do
-        # Get all the parent objectives of the current objective
-        parent_objectives =
-          Enum.filter(objectives, fn obj ->
-            obj.subobjective_resource_id == objective.objective_resource_id
-          end)
+      # Get all the parent objectives of the current objective
+      parent_objectives =
+        Enum.filter(objectives, fn obj ->
+          obj.subobjective_resource_id == objective.objective_resource_id
+        end)
 
-        if Enum.empty?(parent_objectives) do
-          # If the current objective doesn't have a parent, just render it
-          [objective | acc]
-        else
-          # If the current objective has one or more parents, render their parents
-          parent_objectives ++ acc
-        end
+      if Enum.empty?(parent_objectives) do
+        # If the current objective doesn't have a parent, just render it
+        [objective | acc]
       else
-        acc
+        # If the current objective has one or more parents, render their parents
+        parent_objectives ++ acc
       end
+
     end)
     |> Enum.uniq_by(&{&1.objective_resource_id, &1.subobjective_resource_id})
     |> Enum.map(fn obj ->
       add_necessary_fields_to_objectives(
         obj,
-        objectives_pages_map,
         proficiency_per_learning_objective
       )
     end)
@@ -2762,11 +2742,9 @@ defmodule Oli.Delivery.Sections do
 
   defp add_necessary_fields_to_objectives(
          obj,
-         objectives_pages_map,
          proficiency_per_learning_objective
        ) do
     obj
-    |> Map.put(:pages_id, Map.get(objectives_pages_map, obj.objective_resource_id))
     |> Map.put(
       :student_proficiency_obj,
       Map.get(
