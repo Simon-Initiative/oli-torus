@@ -4,21 +4,20 @@
   theme can still benefit from it.
 */
 
+/*
+   This is the only actual global style, it's because Tailwind uses `box-sizing: border-box` by default on *, if we do that inside our
+   .mainView scoping, it gets a higher specificity and then breaks some of the custom style sheets in the adaptive player. Putting it
+   here is the only way to get it to apply at the right level without having control of all those custom style sheets out there.
+*/
+* {
+  box-sizing: content-box;
+}
+
 /* Looks like `.mainView` will be specific enough to just the adaptive player. */
 .mainView {
   .content {
     border-color: #000;
   }
-
-  * {
-    /*
-      This one is a little dangerous. Tailwind uses `box-sizing: border-box` by default on *, but this one
-      is in the .mainView .content scope, this could end up overriding some other box-sizing styles set in
-      custom sheets that have lower specificity.
-    */
-    box-sizing: content-box;
-  }
-
   ol,
   ul {
     display: block;
