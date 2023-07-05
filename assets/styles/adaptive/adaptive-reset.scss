@@ -62,3 +62,13 @@ select {
   border-radius: 2px;
   min-height: 44px;
 }
+
+img,
+video {
+  max-width: unset;
+  height: unset;
+}
+
+janus-video video {
+  max-height: 100%;
+}
