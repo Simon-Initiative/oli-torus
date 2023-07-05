@@ -11,8 +11,6 @@
     <link rel="icon" type="image/png" sizes="16x16" href="<%= favicons("favicon-16x16.png", assigns[:section]) %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png", assigns[:section]) %>">
 
-    <!-- CSS -->
-    <link id="styles" rel="stylesheet" href="/css/styles.css" />
 
     <!-- Tailwind CSS -->
     <link id="app" rel="stylesheet" href="/css/app.css" />
@@ -56,7 +54,8 @@
 
     <%= OliWeb.Common.MathJaxScript.render(@conn) %>
 
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/
+    vendor.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 
     <%= additional_stylesheets(assigns) %>
