@@ -43,13 +43,13 @@ jobs:
         run: npm install -g yarn && yarn --cwd assets
 
       - name: Build client-side API markdown docs
-        run: cd assets && npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts
+        run: yarn --cwd assets run sdk-docs
 
       - name: 🔨📄 Build Docs
         run: mix docs
 
       - name: 🔨📖 Build client-side storybook docs
-        run: yarn --cwd assets run build-storybook
+        run: yarn --cwd assets run storybook:build
 
       - name: 🚀 Deploy Docs
         uses: JamesIves/github-pages-deploy-action@releases/v3
