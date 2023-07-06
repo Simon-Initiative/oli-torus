@@ -40,7 +40,7 @@ git push origin deploy-test --force
 
 Deployments to the production server will be initiated when a release is created with the tag formatted as `vX.Y.Z` where X.Y.Z represents a version number.
 
-> **Note:** Production deployments assume a previous build has been packaged, and therefore any commit tagged as a release must exist on the `master` branch, a `hotfix-*` branch or be packaged by tagging the commit with the `package` tag first.
+> **Note:** Production deployments assume a previous build has been packaged, and therefore any commit tagged as a release must exist on the `master` branch, a `hotfix|prerelease-*` branch or be packaged by tagging the commit with the `package` tag first.
 
 ## Hotfixes
 
