@@ -4,7 +4,9 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
   alias Oli.Delivery.Attempts.AutoSubmit.Worker
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Settings
+  alias Oli.Delivery.Sections
 
   @moduledoc """
   An Oban worker driven page attempts auto submission creator.
@@ -14,7 +16,19 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
   def perform(%Oban.Job{
         args: %{"attempt_guid" => attempt_guid, "section_slug" => section_slug, "datashop_session_id" => datashop_session_id}
       }) do
-    PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id)
+    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
+
+      {:ok, %FinalizationSummary{
+        graded: true,
+        resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id}
+      }} ->
+        # graded resource finalization success
+        section = Sections.get_section_by(slug: section_slug)
+        PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
+      _ ->
+        :ok
+
+    end
   end
 
   @doc """
