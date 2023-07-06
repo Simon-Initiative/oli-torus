@@ -1102,6 +1102,35 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert page_1_assessment_settings.feedback_mode == :allow
       assert page_1_assessment_settings.feedback_scheduled_date == nil
     end
+
+    test "schedule date can be changed by clicking the due date in the table",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#settings_table")
+      |> render_click("edit_date", %{assessment_id: "#{page_1.resource_id}"})
+
+      view
+      |> with_target("#assessment_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Page 1 due date")
+      assert has_element?(view, "label", "Please pick a due date for the selected assessment")
+
+      new_date = ~U[2023-10-10 16:00:00Z]
+
+      view
+      |> element("#assessment-due-date-form")
+      |> render_submit(%{end_date: new_date})
+
+      assert has_element?(view, "button", "October 10, 2023")
+    end
   end
 
   describe "student exceptions tab" do
@@ -1447,6 +1476,46 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                "p",
                "Current exceptions: 2 students, 2 exceptions"
              )
+    end
+
+    test "schedule date can be changed by clicking the due date in the table",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Due date for #{student_1.name}")
+      assert has_element?(view, "label", "Please pick a due date for the selected student")
+
+      new_date = ~U[2023-10-10 16:00:00Z]
+
+      view
+      |> element("#student-due-date-form")
+      |> render_submit(%{end_date: new_date})
+
+      assert has_element?(view, "button", "October 10, 2023")
     end
   end
 end

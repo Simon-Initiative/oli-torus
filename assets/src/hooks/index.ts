@@ -7,6 +7,7 @@ import { DragSource, DropTarget } from './dragdrop';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
+import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
@@ -45,4 +46,5 @@ export const Hooks = {
   LiveReact,
   SubmitForm,
   LoadSurveyScripts,
+  LiveModal,
 };
