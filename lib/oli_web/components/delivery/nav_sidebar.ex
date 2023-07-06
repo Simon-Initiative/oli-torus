@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
 
-  slot :inner_block, required: true
+  slot(:inner_block, required: true)
 
   def main_with_nav(assigns) do
     ~H"""
@@ -33,8 +33,8 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
-  attr :context, SessionContext
-  attr :path_info, :list
+  attr(:context, SessionContext)
+  attr(:path_info, :list)
 
   def navbar(assigns) do
     assigns =
@@ -69,7 +69,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     """
   end
 
-  defp get_preview_links(%{section: %Section{} = section}) do
+  defp get_preview_links(%{section: %Section{} = section} = assigns) do
     hierarchy =
       section
       |> Oli.Repo.preload([:root_section_resource])
@@ -78,8 +78,8 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
     [
       %{
         name: "Home",
-        href: "#",
-        active: false
+        href: home_url(assigns),
+        active: is_active(assigns.path_info, :overview)
       },
       %{
         name: "Course Content",
@@ -87,10 +87,18 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
           component: "Components.CourseContentOutline",
           props: %{hierarchy: hierarchy, sectionSlug: section.slug, isPreview: true}
         },
-        active: true
+        active: is_active(assigns.path_info, :content)
       },
-      %{name: "Discussion", href: "#", active: false},
-      %{name: "Assignments", href: "#", active: false}
+      %{
+        name: "Discussion",
+        href: discussion_url(assigns),
+        active: is_active(assigns.path_info, :discussion)
+      },
+      %{
+        name: "Assignments",
+        href: assignments_url(assigns),
+        active: is_active(assigns.path_info, :assignments)
+      }
     ]
     |> then(fn links ->
       case section do
@@ -99,8 +107,8 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
             [
               %{
                 name: "Exploration",
-                href: "#",
-                active: false
+                href: exploration_url(assigns),
+                active: is_active(assigns.path_info, :exploration)
               }
             ]
 
@@ -251,11 +259,7 @@ defmodule OliWeb.Components.Delivery.NavSidebar do
 
   defp home_url(assigns) do
     if assigns[:preview_mode] do
-      Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.ContentLive,
-        assigns[:section_slug]
-      )
+      Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, assigns[:section_slug])
     else
       Routes.page_delivery_path(OliWeb.Endpoint, :index, assigns[:section_slug])
     end

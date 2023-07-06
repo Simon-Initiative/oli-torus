@@ -160,7 +160,7 @@ defmodule OliWeb.Sections.OverviewView do
             ><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1" /></a>
           </li>
           <li><a
-              href={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}
+              href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)}
               class="btn btn-link"
               target="_blank"
             ><span>Enter Course as a Student</span> <i class="fas fa-external-link-alt self-center ml-1" /></a></li>
