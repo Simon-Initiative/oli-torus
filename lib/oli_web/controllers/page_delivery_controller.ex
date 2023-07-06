@@ -794,6 +794,21 @@ defmodule OliWeb.PageDeliveryController do
     )
   end
 
+  def assignments_preview(conn, %{"section_slug" => section_slug}) do
+    section = conn.assigns.section
+    user = conn.assigns.current_user
+
+    render(
+      conn,
+      "assignments.html",
+      title: section.title,
+      assignments: Sections.get_graded_pages(section_slug, user.id),
+      section_slug: section_slug,
+      preview_mode: true,
+      format_datetime_fn: format_datetime_fn(conn)
+    )
+  end
+
   def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     conn
     |> assign(:preview_mode, true)
