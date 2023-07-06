@@ -11,11 +11,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="<%= favicons("favicon-16x16.png", assigns[:section]) %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png", assigns[:section]) %>">
 
-    <!-- CSS -->
-    <link id="styles" rel="stylesheet" href="/css/styles.css" />
 
     <!-- Tailwind CSS -->
     <link id="app" rel="stylesheet" href="/css/app.css" />
+    <link id="app" rel="stylesheet" href="/css/adaptive.css" />
 
     <%= if dev_mode?() do %>
       <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
