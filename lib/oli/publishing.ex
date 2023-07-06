@@ -706,17 +706,19 @@ defmodule Oli.Publishing do
     query =
       PublishedResource
       |> join(:inner, [pr], rev in Revision, on: rev.id == pr.revision_id)
+      |> join(:inner, [pr], pub in Publication, on: pr.publication_id == pub.id)
       |> where(
         [pr, rev],
         pr.publication_id in ^publication_ids and rev.resource_type_id == 1 and
           rev.deleted != true
       )
-      |> select([_, rev], %{
+      |> select([_, rev, pub], %{
         id: rev.id,
         title: rev.title,
         graded: rev.graded,
         updated_at: rev.updated_at,
-        resource_id: rev.resource_id
+        resource_id: rev.resource_id,
+        publication_date: pub.published
       })
       |> where(^text_filter)
 
