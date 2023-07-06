@@ -8,6 +8,7 @@ import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
 import { LoadSurveyScripts } from './load_survey_scripts';
+import { LiveModal } from './live_modal';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
@@ -45,4 +46,5 @@ export const Hooks = {
   LiveReact,
   SubmitForm,
   LoadSurveyScripts,
+  LiveModal
 };
