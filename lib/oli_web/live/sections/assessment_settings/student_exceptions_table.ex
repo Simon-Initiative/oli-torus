@@ -31,6 +31,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   data(selected_student_exceptions, :list)
   data(modal_assigns, :map)
   data(form_id, :string)
+  data(selected_setting, :map)
 
   @default_params %{
     offset: 0,
@@ -59,7 +60,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         selected_assessment,
         socket.assigns.myself,
         socket.assigns.selected_student_exceptions,
-        assigns.ctx
+        assigns.ctx,
+        JS.push("edit_date", target: socket.assigns.myself)
+        |> JS.push("open", target: "#student_due_date_modal")
       )
 
     table_model =
@@ -83,15 +86,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        students: assigns.students,
        form_id: UUID.uuid4(),
        assessment_student_exceptions: assessment_student_exceptions,
-       options_for_select: Enum.map(assigns.assessments, fn a -> {a.name, a.resource_id} end)
+       options_for_select: Enum.map(assigns.assessments, fn a -> {a.name, a.resource_id} end),
+       selected_setting: socket.assigns[:selected_setting] || nil
      )}
   end
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+    <div id="student_exceptions_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+      {due_date_modal(assigns)}
       {modal(@modal_assigns)}
-      <div class="flex flex-col sm:flex-row sm:items-center pr-6">
+      <div class="flex flex-col sm:flex-row sm:items-center pr-6 mb-4">
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Student Exceptions</h4>
           <Form for={:assessments} id="assessment_select" change="change_assessment">
@@ -135,6 +140,28 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         />
       </form>
     </div>
+    """
+  end
+
+  def due_date_modal(assigns) do
+    ~H"""
+      <.live_component
+        id="student_due_date_modal"
+        title={if @selected_setting, do: "Due date for #{@selected_setting.user.name}"}
+        module={OliWeb.Components.Modal}
+        on_confirm={JS.dispatch("submit", to: "#student-due-date-form") |> JS.push("close", target: "#student_due_date_modal")}
+        on_confirm_label="Save"
+      >
+        <div class="p-4">
+          <form id="student-due-date-form" for="settings_table" phx-target={@myself} phx-submit="edit_date">
+            <label for="end_date_input">Please pick a due date for the selected student</label>
+            <div class="flex gap-2 items-center mt-2">
+              <input id="end_date_input" name="end_date" type="datetime-local" phx-debounce={500} value={value_from_datetime(@selected_setting.end_date, @ctx)}/>
+              <button class="torus-button primary" type="button" phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}>Clear</button>
+            </div>
+          </form>
+        </div>
+      </.live_component>
     """
   end
 
@@ -312,6 +339,55 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           </div>
         </div>
     """
+  end
+
+  def handle_event("edit_date", %{"user_id" => user_id}, socket) do
+    selected_setting =
+      Enum.find(socket.assigns.table_model.rows, fn s ->
+        s.user_id == String.to_integer(user_id)
+      end)
+
+    {:noreply, assign(socket, selected_setting: selected_setting)}
+  end
+
+  def handle_event("edit_date", %{"end_date" => end_date}, socket) do
+    selected_setting = socket.assigns.selected_setting
+
+    end_date =
+      if String.length(end_date) > 0 do
+        FormatDateTime.datestring_to_utc_datetime(
+          end_date,
+          socket.assigns.ctx
+        )
+      else
+        nil
+      end
+
+    scheduling_type = if !is_nil(end_date), do: :due_by, else: :read_by
+
+    Delivery.get_delivery_setting_by(%{
+      resource_id: selected_setting.resource_id,
+      user_id: selected_setting.user_id
+    })
+    |> StudentException.changeset(%{end_date: end_date, scheduling_type: scheduling_type})
+    |> Repo.update()
+    |> case do
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
+
+      {:ok, updated_student_exception} ->
+        update_liveview_student_exceptions(
+          :updated,
+          [Repo.preload(updated_student_exception, :user)],
+          false
+        )
+
+        {:noreply,
+         socket
+         |> flash_to_liveview(:info, "Student Exception updated!")}
+    end
   end
 
   def handle_event("show_modal", %{"modal_name" => name}, socket) do
