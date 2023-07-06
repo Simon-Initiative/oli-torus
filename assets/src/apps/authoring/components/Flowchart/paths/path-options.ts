@@ -113,7 +113,12 @@ const createMultipleChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
         .map((_, index) => index)
         .filter((index) => multipleSelection || !correct[index])
         .map((index) => createMCQCommonErrorPath(mcq, index));
-      return [...commonErrorOptions, createCorrectPath(mcq.id), createIncorrectPath(mcq.id)];
+      return [
+        ...commonErrorOptions,
+        createCorrectPath(mcq.id),
+        createIncorrectPath(mcq.id),
+        ...createDefaultPathTypes(),
+      ];
     }
   }
   return [];
