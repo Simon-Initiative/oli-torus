@@ -6,7 +6,11 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
   @impl Phoenix.LiveView
   def mount(
         _params,
-        %{"section_slug" => section_slug, "current_user_id" => current_user_id} = _session,
+        %{
+          "section_slug" => section_slug,
+          "current_user_id" => current_user_id,
+          "preview_mode" => preview_mode
+        } = _session,
         socket
       ) do
     section =
@@ -27,7 +31,8 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
          Sections.get_resources_scheduled_dates_for_student(section.slug, current_user_id),
        section: section,
        breadcrumbs_tree: [{current_level, current_position, "Curriculum"}],
-       current_user_id: current_user_id
+       current_user_id: current_user_id,
+       preview_mode: preview_mode
      )}
   end
 
@@ -45,6 +50,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
         section={assigns.section}
         scheduled_dates={assigns.scheduled_dates}
         current_user_id={assigns.current_user_id}
+        preview_mode={assigns.preview_mode}
       />
     """
   end
