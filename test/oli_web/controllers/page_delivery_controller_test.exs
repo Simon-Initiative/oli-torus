@@ -983,6 +983,90 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "#{instructor.name}"
       assert html_response(conn, 200) =~ "Instructor"
     end
+
+    test "timer will not be shown if revision is ungraded", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      %{ungraded_page: ungraded_page} = map
+
+      enroll_as_student(%{section: section, user: user})
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(ungraded_page.revision, section.id, user.id)
+
+      datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+      Oli.Delivery.Sections.get_section_resource(section.id, ungraded_page.resource.id)
+      |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: ungraded_page.resource
+      )
+
+      Oli.Delivery.Attempts.PageLifecycle.start(
+        ungraded_page.revision.slug,
+        section.slug,
+        datashop_session_id,
+        user,
+        effective_settings,
+        activity_provider
+      )
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, ungraded_page.revision.slug))
+
+      assert html_response(conn, 200) =~ ungraded_page.revision.title
+      refute html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
+    end
+
+    test "timer will be shown it if revision is graded", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      %{page: page} = map
+
+      enroll_as_student(%{section: section, user: user})
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(page.revision, section.id, user.id)
+
+      datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+      Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
+      |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page.resource
+      )
+
+      Oli.Delivery.Attempts.PageLifecycle.start(
+        page.revision.slug,
+        section.slug,
+        datashop_session_id,
+        user,
+        effective_settings,
+        activity_provider
+      )
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, page.revision.slug))
+
+      assert html_response(conn, 200) =~ page.revision.title
+      assert html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
+    end
   end
 
   describe "independent learner page_delivery_controller" do
