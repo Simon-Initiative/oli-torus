@@ -1253,6 +1253,7 @@ defmodule Oli.Delivery.Sections do
         max_attempts: revision.max_attempts,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
+        scoring_strategy_id: revision.scoring_strategy_id,
         section_id: section.id
       })
 
@@ -1508,7 +1509,7 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at]},
+          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -1816,6 +1817,7 @@ defmodule Oli.Delivery.Sections do
           section_id: section.id,
           # we set children to nil here so that we know it needs to be set in the next step
           children: nil,
+          scoring_strategy_id: pr.revision.scoring_strategy_id,
           slug: Oli.Utils.Slug.generate("section_resources", pr.revision.title),
           inserted_at: {:placeholder, :timestamp},
           updated_at: {:placeholder, :timestamp}
@@ -1824,7 +1826,7 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at]},
+          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
           conflict_target: [:section_id, :resource_id]
         )
       )
@@ -1922,7 +1924,7 @@ defmodule Oli.Delivery.Sections do
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at]},
+          on_conflict: {:replace_all_except, [:inserted_at, :scoring_strategy_id]},
           conflict_target: [:section_id, :resource_id]
         )
       )
