@@ -125,7 +125,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       </div>
       <div class="hierarchy">
         <form phx-debounce="500" phx-change="HierarchyPicker.publications_text_search" class="ml-auto w-56">
-          <SearchInput.render text={assigns.publications_table_model_params[:text_search]} name="text_search" id="text_search" placeholder="Search publications" />
+          <SearchInput.render text={assigns.publications_table_model_params[:text_search]} name="text_search" id="text_search" placeholder="Search Content Sources" />
         </form>
         <PagedTable.render
           __context__={assigns[:__context_]}
@@ -231,7 +231,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     ~H"""
       <ol class="breadcrumb custom-breadcrumb p-1 px-2">
         <div>
-          <button class="btn btn-sm btn-link" disabled><i class="fas fa-book"></i> Select a Publication</button>
+          <button class="btn btn-sm btn-link" disabled><i class="fas fa-book"></i> Select a Content Source</button>
         </div>
       </ol>
     """
