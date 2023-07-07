@@ -812,7 +812,9 @@ defmodule OliWeb.Router do
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
       root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
-      live("/:active_tab", Delivery.StudentDashboard.StudentDashboardLive, metadata: %{route_name: :student_dashboard})
+      live("/:active_tab", Delivery.StudentDashboard.StudentDashboardLive,
+        metadata: %{route_name: :student_dashboard}
+      )
     end
 
     live_session :student_dashboard_preview,
@@ -1017,7 +1019,12 @@ defmodule OliWeb.Router do
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
       root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
-      live("/:section_slug/enrollments/students/:student_id/:active_tab", Delivery.StudentDashboard.StudentDashboardLive, as: :enrollment_student_info, metadata: %{route_name: :enrollments_student_info})
+      live(
+        "/:section_slug/enrollments/students/:student_id/:active_tab",
+        Delivery.StudentDashboard.StudentDashboardLive,
+        as: :enrollment_student_info,
+        metadata: %{route_name: :enrollments_student_info}
+      )
     end
 
     post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
@@ -1096,6 +1103,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
     delete("/signout", SessionController, :signout)
+    get("/signout", SessionController, :signout)
   end
 
   scope "/course", OliWeb do

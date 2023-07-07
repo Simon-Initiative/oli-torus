@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import TimeRemaining from 'components/common/TimeRemaining';
 import {
@@ -9,10 +9,9 @@ import {
 import { readGlobal } from 'data/persistence/extrinsic';
 import { setScreenIdleTimeOutTriggered } from '../../store/features/adaptivity/slice';
 
-const ScreenIdleTimeOutDialog: React.FC<any> = () => {
-  const [isOpen, setIsOpen] = useState(true);
+const ScreenIdleTimeOutDialog: React.FC<any> = (props) => {
   const overviewURL = useSelector(selectOverviewURL);
-  const remainingTimeInMinutes = 5;
+  const remainingTimeInMinutes = props.remainingTime;
   const handleKeepMySessionActiveClick = async () => {
     //lets make a server call to continue the user session
     await readGlobal([]);
@@ -22,8 +21,8 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
   const dispatch = useDispatch();
   const handleSessionExpire = () => {
     dispatch(setScreenIdleExpirationTime({ screenIdleExpireTime: Date.now() }));
-    setIsOpen(false);
-    (window as Window).location = overviewURL;
+    (window as Window).location = props.signoutUrl || overviewURL;
+
     dispatch(setScreenIdleTimeOutTriggered({ screenIdleTimeOutTriggered: false }));
   };
   useEffect(() => {
@@ -33,21 +32,24 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    // Kick off a server call so we don't have an intedeterminate state at the end of the timeout
+    // where a user session might already be expired before we try to log out.
+    readGlobal([]);
+  }, []);
+
   return (
     <>
-      <div
-        className="modal-backdrop in"
-        style={{ display: isOpen ? 'block' : 'none', opacity: 0.5 }}
-      ></div>
+      <div className="modal-backdrop in" style={{ display: 'block', opacity: 0.5 }}></div>
 
       <div
         className="IdleTimeOutDialog modal in"
         data-keyboard="false"
-        aria-hidden={!isOpen}
         style={{
-          display: isOpen ? 'block' : 'none',
+          display: 'block',
           top: '20%',
           left: '50%',
+          width: '75%',
           height: 'max-content',
         }}
       >
@@ -81,6 +83,10 @@ const ScreenIdleTimeOutDialog: React.FC<any> = () => {
       </div>
     </>
   );
+};
+
+ScreenIdleTimeOutDialog.defaultProps = {
+  remainingTime: 5,
 };
 
 export default ScreenIdleTimeOutDialog;
