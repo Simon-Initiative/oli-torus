@@ -368,7 +368,7 @@ defmodule Oli.Delivery.Metrics do
       |> group_by([_cp, ra], ra.user_id)
       |> select(
         [cp, ra],
-        {ra.user_id, fragment("SUM(?)", ra.score) / fragment("COUNT(?)", ra.out_of)}
+        {ra.user_id, fragment("SUM(?)", ra.score) / fragment("SUM(?)", ra.out_of)}
       )
 
     Repo.all(query)
@@ -383,7 +383,7 @@ defmodule Oli.Delivery.Metrics do
   from the calculation. This exists primarily to exclude instructors.
   `user_ids_to_ignore` can be an empty list.
   """
-  def avg_score_across_for_pages(section_id, pages_ids, user_ids_to_ignore) do
+  def avg_score_across_for_pages(section_id, pages_ids, user_ids_to_ignore \\ []) do
     query =
       from(r_acc in ResourceAccess,
         join: ra in ResourceAttempt,
