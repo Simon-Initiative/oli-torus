@@ -35,7 +35,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     offset: 0,
     limit: 10,
     sort_order: :asc,
-    sort_by: :name,
+    sort_by: :index,
     text_search: nil
   }
 

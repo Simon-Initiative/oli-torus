@@ -7,11 +7,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   def new(assessments, section_slug, ctx, on_edit_date) do
     column_specs = [
       %ColumnSpec{
+        name: :index,
+        label: "#",
+        th_class:
+          "pl-10 instructor_dashboard_th !sticky left-0 bg-white z-10 whitespace-nowrap w-20",
+        td_class: "sticky pl-11 left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap w-20"
+      },
+      %ColumnSpec{
         name: :name,
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
-        th_class: "pl-10 instructor_dashboard_th !sticky left-0 bg-white z-10",
-        td_class: "sticky left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
+        th_class: "instructor_dashboard_th !sticky left-20 bg-white z-10",
+        td_class: "sticky left-20 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :due_date,
@@ -98,7 +105,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns = Map.merge(assigns, %{name: assessment.name})
 
     ~H"""
-      <div class="pl-9 pr-4"><%= @name %></div>
+      <div class="pr-4"><%= @name %></div>
     """
   end
 

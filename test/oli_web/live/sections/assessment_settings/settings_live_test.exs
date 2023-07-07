@@ -406,6 +406,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       case tab_name do
         :settings ->
           [
+            :index,
             :name,
             :due_date,
             :max_attempts,
@@ -589,7 +590,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
         |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
 
       assert view
@@ -783,7 +784,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_submit(%{})
       |> follow_redirect(
         conn,
-        "/sections/#{section.slug}/assessment_settings/settings/all?limit=10&offset=0&sort_by=name&sort_order=asc&text_search="
+        "/sections/#{section.slug}/assessment_settings/settings/all?limit=10&offset=0&sort_by=index&sort_order=asc&text_search="
       )
 
       # after being redirected, we validate all changes were applied
@@ -798,10 +799,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4.late_submit == "Disallow"
 
       assert Enum.uniq([
-               Map.drop(assessment_1, [:name]),
-               Map.drop(assessment_2, [:name]),
-               Map.drop(assessment_3, [:name]),
-               Map.drop(assessment_4, [:name])
+               Map.drop(assessment_1, [:name, :index]),
+               Map.drop(assessment_2, [:name, :index]),
+               Map.drop(assessment_3, [:name, :index]),
+               Map.drop(assessment_4, [:name, :index])
              ])
              |> length() == 1
     end
@@ -878,7 +879,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       [initial_a1, initial_a2, initial_a3, initial_a4] = table_as_list_of_maps(view, :settings)
 
       view
-      |> element("th[phx-value-sort_by=name]")
+      |> element("th[phx-value-sort_by=index]")
       |> render_click()
 
       [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)

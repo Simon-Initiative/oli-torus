@@ -45,7 +45,8 @@ defmodule Oli.Publishing.DeliveryResolver do
   def graded_pages_revisions_and_section_resources(section_slug) do
     from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
       where: rev.resource_type_id == 1 and rev.graded == true,
-      select: {rev, sr}
+      select: {rev, sr},
+      order_by: [asc: sr.numbering_level, asc: sr.numbering_index]
     )
     |> Repo.all()
   end
