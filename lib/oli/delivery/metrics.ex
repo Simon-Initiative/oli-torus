@@ -753,6 +753,40 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  @doc """
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
+  for each page provided as a list
+
+    It returns a map:
+
+    %{page_id_1 => "High",
+      ...
+      page_id_n => "Low"
+    }
+  """
+  def proficiency_per_page(section_slug, page_ids) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.resource_id in ^page_ids,
+        group_by: sn.resource_id,
+        select:
+          {sn.resource_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {page_id, proficiency} ->
+      {page_id, proficiency_range(proficiency)}
+    end)
+  end
+
   defp proficiency_range(nil), do: "Not enough data"
   defp proficiency_range(proficiency) when proficiency <= 0.5, do: "Low"
   defp proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
