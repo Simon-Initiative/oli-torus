@@ -327,7 +327,7 @@ $element-margin-bottom: 1.5em;
   .formula {
     /* The mathjax formulas were rendering out much larger than the surrounding text, so we're scaling them down to better match the
        legacy content, but the callouts should not be scaled down since that made them look too small. */
-    font-size: 0.8em;
+    font-size: 0.7em;
   }
 
   .callout-block,
