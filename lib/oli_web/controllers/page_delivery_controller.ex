@@ -669,6 +669,7 @@ defmodule OliWeb.PageDeliveryController do
         resourceAttemptState: resource_attempt.state,
         resourceAttemptGuid: resource_attempt.attempt_guid,
         activityGuidMapping: context.activities,
+        signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,

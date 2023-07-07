@@ -1104,6 +1104,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
     delete("/signout", SessionController, :signout)
+    get("/signout", SessionController, :signout)
   end
 
   scope "/course", OliWeb do
