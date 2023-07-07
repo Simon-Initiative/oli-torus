@@ -97,10 +97,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   defp update_progress({:ok, state}, %ResourceAttempt{
          resource_access_id: resource_access_id
        }) do
-    number_of_activities = Map.keys(state.attempt_hierarchy) |> Enum.count()
+    number_of_scorable_activities = Map.values(state.attempt_hierarchy)
+    |> Enum.map(fn {attempt, _} -> attempt end)
+    |> Enum.filter(fn attempt -> attempt.scoreable end)
+    |> Enum.count()
 
     Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id)
-    |> do_update_progress(number_of_activities)
+    |> do_update_progress(number_of_scorable_activities)
 
     {:ok, state}
   end
