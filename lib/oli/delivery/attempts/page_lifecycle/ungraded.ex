@@ -98,7 +98,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
          resource_access_id: resource_access_id
        }) do
     number_of_scorable_activities = Map.values(state.attempt_hierarchy)
-    |> Enum.map(fn {attempt, _} -> attempt end)
+    |> Enum.map(fn args ->
+      # The adaptive page and basic page have different shapes of their attempt hierarchy
+      # state.  We handle only the basic page here, and the adaptive page state gets mapped
+      # to mimic attempts that are scoreable.  We can do this because we know that it is
+      # impossible for an adaptive page to only have non-scoreable activities.
+      case args do
+        {attempt, _} -> attempt
+        _ -> %{scoreable: true}
+      end
+    end)
     |> Enum.filter(fn attempt -> attempt.scoreable end)
     |> Enum.count()
 
