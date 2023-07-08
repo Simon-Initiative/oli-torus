@@ -11,6 +11,13 @@ export type ImageCodeEditorProps = {
 
 export const ImageCodeEditor = (props: ImageCodeEditorProps) => {
   const value = props.value === null ? '' : props.value;
+  // style edit box border to match other input controls
+  const styles: React.CSSProperties = {
+    border: '1px solid rgb(212,212,212)',
+    borderRadius: '0.375rem',
+  };
+  if (props.disabled) styles.background = '#ECF0F1';
+
   return (
     <AceEditor
       className="form-control"
@@ -22,7 +29,7 @@ export const ImageCodeEditor = (props: ImageCodeEditorProps) => {
       value={value}
       onChange={props.onChange}
       readOnly={props.disabled}
-      style={props.disabled ? { background: '#ECF0F1' } : {}}
+      style={styles}
       setOptions={{
         showLineNumbers: false,
         tabSize: 4,

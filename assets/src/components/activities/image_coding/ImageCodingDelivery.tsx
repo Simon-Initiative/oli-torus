@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { maybe } from 'tsmonad';
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { defaultWriterContext } from 'data/content/writers/context';
 import * as Events from 'data/events';
@@ -264,30 +266,27 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return diff < model.tolerance;
   };
 
-  const evaluationSummary = isEvaluated ? (
-    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
-  ) : null;
-
-  const reset = isEvaluated && !props.context.graded && !props.context.surveyId && (
+  const maybeResetButton = isEvaluated && !props.context.graded && !props.context.surveyId && (
     <div className="d-flex">
       <div className="flex-fill"></div>
       <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
     </div>
   );
 
-  const ungradedDetails = props.context.graded
-    ? null
-    : [
-        evaluationSummary,
-        <Hints
-          key="hints"
-          onClick={onRequestHint}
-          hints={hints}
-          context={writerContext}
-          hasMoreHints={hasMoreHints}
-          isEvaluated={isEvaluated}
-        />,
-      ];
+  const maybeEvaluation = !model.isExample && isEvaluated && (
+    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
+  );
+
+  const maybeHints = !model.isExample && props.context.graded && (
+    <Hints
+      key="hints"
+      onClick={onRequestHint}
+      hints={hints}
+      context={writerContext}
+      hasMoreHints={hasMoreHints}
+      isEvaluated={isEvaluated}
+    />
+  );
 
   const renderOutput = () => {
     if (output === '') {
@@ -328,17 +327,15 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton = !model.isExample &&
-    !props.context.surveyId &&
-    !props.context.graded && (
-      <button
-        className="btn btn-primary mt-2 float-right"
-        disabled={isEvaluated || !ranCode}
-        onClick={onSubmit}
-      >
-        Submit
-      </button>
-    );
+  const maybeSubmitButton = !model.isExample && !props.context.surveyId && (
+    <button
+      className="btn btn-primary mt-2 float-right"
+      disabled={isEvaluated || !ranCode}
+      onClick={onSubmit}
+    >
+      Submit
+    </button>
+  );
 
   const runButton = (
     <button className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>
@@ -350,16 +347,13 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     <div className="activity short-answer-activity">
       <div className="activity-content">
         <Stem stem={stem} context={writerContext} />
-
         <div>
           <ImageCodeEditor value={input} disabled={isEvaluated} onChange={onInputChange} />
           {runButton} {maybeSubmitButton}
         </div>
-
         {/* implementation relies on 2 hidden canvases for image operations */}
         <canvas ref={canvasRef} style={{ display: 'none' }} />
         <canvas ref={canvasRef2} style={{ display: 'none' }} />
-
         <div style={{ whiteSpace: 'pre-wrap' }}>
           <h5>Output:</h5>
           {renderOutput()}
@@ -369,9 +363,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0" />
         </div>
 
-        {!model.isExample && !props.context.surveyId && ungradedDetails}
+        {maybeEvaluation}
+        {maybeHints}
       </div>
-      {reset}
+      {maybeResetButton}
     </div>
   );
 };
