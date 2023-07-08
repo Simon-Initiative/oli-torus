@@ -1,8 +1,8 @@
 <Components.Header.header {assigns} />
 <div class="mx-auto w-10/12 m-5">
   <h1 class="ml-5 mb-5 font-semibold text-3xl font-sans text-primary">Payment Required</h1>
-  <div class="content-center flex flex-row">
-    <div class="rounded-l-md bg-gray-200 basis-1/2 p-10 flex flex-col">
+  <div class="content-center flex flex-column">
+    <div class="rounded-l-md bg-gray-200 basis-1/2 p-10 flex flex-col mb-3">
       <div>There is a fee associated with this course:</div>
       <div class="grid grid-cols-3">
         <div class="font-semibold ">Course Title: </div>
@@ -61,20 +61,20 @@
 
     <div class="rounded-r-md bg-blue-50 basis-1/2 p-10">
       <%= if @pay_by_card? do %>
-        <div>
-            <p class="mt-3">
+        <div class="mb-5">
+            <p class="mt-3 mb-3">
         Credit card payments are processed through our secure payment provider. Visa and MasterCard credit cards, debit cards, and prepaid cards are accepted.
             </p>
-            <%= link "Pay by credit card", to: Routes.payment_path(@conn, :make_payment, @section_slug), class: "btn btn-primary mt-3" %>
+            <%= link "Pay by credit card", to: Routes.payment_path(@conn, :make_payment, @section_slug), class: "btn btn-primary mt-5" %>
         </div>
       <% end %>
       <%= if @pay_by_code? do %>
         <div>
-            <p class="mt-3">
+            <p class="mt-5">
               Pay using an Payment Code, which is available at some campus bookstores or other providers.
               Consult your instructor or your campus bookstore or provider for more information.
             </p>
-            
+
             <%= form_for @conn, Routes.payment_path(@conn, :apply_code, @section_slug), [as: :code], fn f -> %>
                 <div class="form-label-group mt-4">
                   <div class="g-recaptcha" data-sitekey={ Application.fetch_env!(:oli, :recaptcha)[:site_key] }></div>
