@@ -79,8 +79,17 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
     """
   end
 
-  def custom_render(_assigns, row, %ColumnSpec{name: :score}) do
-    if row.type == "Graded" and !is_nil(row.score), do: "#{row.score} / #{row.out_of}", else: ""
+  def custom_render(assigns, row, %ColumnSpec{name: :score}) do
+    if row.type == "Graded" and !is_nil(row.score) do
+      ~F"""
+        <span>{row.score} / {row.out_of}</span>
+        {#if row.was_late}
+          <span class="bg-red-500 text-white text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-red-500 dark:text-white border border-red-500">LATE</span>
+        {/if}
+       """
+    else
+      ""
+    end
   end
 
   def custom_render(_assigns, row, %ColumnSpec{name: :number_accesses}) do

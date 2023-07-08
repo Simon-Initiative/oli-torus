@@ -46,9 +46,15 @@ defmodule OliWeb.Progress.PageAttemptSummary do
           <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
           <span>{Utils.format_score(@attempt.score)} / {@attempt.out_of}</span>
         </div>
-        <p class="mb-1 text-muted">Submitted: {Utils.render_date(@attempt, :date_evaluated, @ctx)} ({Utils.render_relative_date(@attempt, :date_evaluated, @ctx)})</p>
+        <div class="d-flex flex-row">
+          {#if @attempt.was_late}
+            <span class="bg-red-500 text-white text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-red-500 dark:text-white border border-red-500">LATE</span>
+          {/if}
+          <p class="mb-1 text-muted">Submitted: {Utils.render_date(@attempt, :date_evaluated, @ctx)} ({Utils.render_relative_date(@attempt, :date_evaluated, @ctx)})</p>
+        </div>
+
         <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, @attempt.date_evaluated)}.</small>
-      </a>
+        </a>
     </div>
     """
   end
