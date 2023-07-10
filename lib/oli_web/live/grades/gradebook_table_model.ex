@@ -5,6 +5,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Components.Tag
 
   def new(enrollments, graded_pages, resource_accesses, section, show_all_links) do
     by_user =
@@ -90,7 +91,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   def render_grade_score(assigns, row, _) do
     perc = score(row.score) / out_of_score(row.out_of) * 100
     has_score? = row.score != nil
-
+    was_late = row.was_late
     ~F"""
       <a
         class={"ml-8 #{if has_score? and perc < 40, do: "text-red-500", else: "text-black"}"}
@@ -103,6 +104,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
           Not Finished
         {/if}
       </a>
+      {#if was_late}
+        <Tag.render>LATE</Tag.render>
+      {/if}
     """
   end
 
@@ -177,7 +181,8 @@ defmodule OliWeb.Grades.GradebookTableModel do
          resource_id,
          %ResourceAccess{
            score: score,
-           out_of: out_of
+           out_of: out_of,
+           was_late: was_late
          }
        ) do
     if out_of == 0 or out_of == 0.0 do
@@ -207,6 +212,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
         <a class={if perc < 50, do: "text-red-500", else: "text-black"} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
         {safe_score}/{safe_out_of}
         </a>
+        {#if was_late}
+          <Tag.render>LATE</Tag.render>
+        {/if}
       """
     end
   end
