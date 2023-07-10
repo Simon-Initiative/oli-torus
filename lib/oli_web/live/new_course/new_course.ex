@@ -159,7 +159,6 @@ defmodule OliWeb.Delivery.NewCourse do
         <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
           <img src="/images/icons/course-creation-wizard-step-1.svg" />
           <h2>Name your course</h2>
-          <p class="mb-0">We pulled the information we can from your LMS, but feel free to adjust it</p>
           <.render_flash flash={@flash} />
           <NameCourse.render changeset={@changeset} />
         </div>
@@ -173,7 +172,6 @@ defmodule OliWeb.Delivery.NewCourse do
       <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
         <img src="/images/icons/course-creation-wizard-step-2.svg" />
         <h2>Course details</h2>
-        <p>We pulled the information we can from your LMS, but feel free to adjust it</p>
         <.render_flash flash={@flash} />
         <CourseDetails.render on_select={@on_select} changeset={@changeset} />
       </div>
