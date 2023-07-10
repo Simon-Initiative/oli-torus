@@ -18,7 +18,13 @@ import {
   makeFeedback,
 } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
+import {
+  bulkApplyState,
+  defaultGlobalEnv,
+  evalScript,
+  getValue,
+  templatizeText,
+} from 'adaptivity/scripting';
 import * as Extrinsic from 'data/persistence/extrinsic';
 import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
@@ -100,6 +106,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       return;
     }
     const { simId, key, value } = payload;
+    const script = `let {${`app.${simId}.${key}`}} = ${JSON.stringify(value)}`;
+    evalScript(script, defaultGlobalEnv);
     await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
   };
 

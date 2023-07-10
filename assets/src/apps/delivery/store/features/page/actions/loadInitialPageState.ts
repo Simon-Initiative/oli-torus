@@ -85,9 +85,9 @@ export const loadInitialPageState = createAsyncThunk(
 
       if (params.resourceAttemptState) {
         //EverApp state is already up-to date and merged with sessionState at this point. We should not update the Ever App state with params.resourceAttemptState
-        const partAttemptVariables = Object.keys(params.resourceAttemptState).filter(
-          (key) => !key.startsWith('app.'),
-        );
+        const partAttemptVariables = isReviewMode
+          ? Object.keys(params.resourceAttemptState)
+          : Object.keys(params.resourceAttemptState).filter((key) => !key.startsWith('app.'));
         const resourceAttemptStateWithoutEverAppState = partAttemptVariables.reduce(
           (acc: Record<string, any>, entry) => {
             acc[entry] = params.resourceAttemptState[entry];
@@ -102,7 +102,7 @@ export const loadInitialPageState = createAsyncThunk(
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
       const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
-      if (!params.previewMode) {
+      if (!params.previewMode && !isReviewMode) {
         await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
       }
 
@@ -146,7 +146,7 @@ export const loadInitialPageState = createAsyncThunk(
         const updateSessionState = clone(sessionState);
         updateSessionState['session.tutorialScore'] = totalScore;
         updateSessionState['session.currentQuestionScore'] = 0;
-        if (!params.previewMode) {
+        if (!params.previewMode && !isReviewMode) {
           await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, updateSessionState);
         }
 
