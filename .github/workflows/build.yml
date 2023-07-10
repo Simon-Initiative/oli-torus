@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - hotfix-*
+      - prerelease-*
 
 jobs:
   elixir-build-test:

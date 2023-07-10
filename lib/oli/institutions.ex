@@ -73,6 +73,7 @@ defmodule Oli.Institutions do
       limit: ^limit,
       offset: ^offset,
       group_by: u.id,
+      order_by: u.id,
       select: u,
       select_merge: %{total_count: fragment("count(*) OVER()")}
     )

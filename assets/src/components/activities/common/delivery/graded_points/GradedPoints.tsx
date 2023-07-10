@@ -14,7 +14,7 @@ export const GradedPoints: React.FC<Props> = ({ icon, attemptState, shouldShow }
     <div className="text-info font-italic">
       {icon}
       <span>Points: </span>
-      <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
+      <span>{attemptState.score?.toFixed(2) + ' out of ' + attemptState.outOf}</span>
     </div>
   );
 };

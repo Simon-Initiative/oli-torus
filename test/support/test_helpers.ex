@@ -1422,6 +1422,8 @@ defmodule Oli.TestHelpers do
     graded_page_4_resource = insert(:resource)
     graded_page_5_resource = insert(:resource)
     graded_page_6_resource = insert(:resource)
+    unreachable_graded_page_1_resource = insert(:resource)
+    unreachable_graded_page_2_resource = insert(:resource)
 
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_1_resource.id})
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_2_resource.id})
@@ -1430,12 +1432,61 @@ defmodule Oli.TestHelpers do
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_5_resource.id})
     insert(:project_resource, %{project_id: project.id, resource_id: graded_page_6_resource.id})
 
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: unreachable_graded_page_1_resource.id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: unreachable_graded_page_2_resource.id
+    })
+
+    unreachable_graded_page_1_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Unreachable Graded page 1",
+        graded: true,
+        resource: unreachable_graded_page_1_resource
+      )
+
+    unreachable_graded_page_2_revision =
+      insert(
+        :revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Unreachable Graded page 2",
+        graded: true,
+        resource: unreachable_graded_page_2_resource
+      )
+
     graded_page_1_revision =
       insert(
         :revision,
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Graded page 1 - Level 1 (w/ no date)",
         graded: true,
+        content: %{
+          model: [
+            %{
+              id: "3093117657",
+              type: "content",
+              children: [
+                %{id: "2497044625", type: "p", children: [%{text: ""}]},
+                %{
+                  id: "8761552",
+                  type: "page_link",
+                  idref: unreachable_graded_page_2_revision.resource_id,
+                  purpose: "none",
+                  children: [%{text: ""}]
+                },
+                %{id: "1535128821", type: "p", children: [%{text: ""}]}
+              ]
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        },
         resource: graded_page_1_resource
       )
 
@@ -1446,6 +1497,27 @@ defmodule Oli.TestHelpers do
         title: "Graded page 2 - Level 0 (w/ date)",
         graded: true,
         purpose: :application,
+        content: %{
+          model: [
+            %{
+              id: "3093117658",
+              type: "content",
+              children: [
+                %{id: "2497044626", type: "p", children: [%{text: ""}]},
+                %{
+                  id: "8761553",
+                  type: "page_link",
+                  idref: unreachable_graded_page_1_revision.resource_id,
+                  purpose: "none",
+                  children: [%{text: ""}]
+                },
+                %{id: "1535128822", type: "p", children: [%{text: ""}]}
+              ]
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        },
         resource: graded_page_2_resource
       )
 
@@ -1571,6 +1643,18 @@ defmodule Oli.TestHelpers do
 
     insert(:published_resource, %{
       publication: publication,
+      resource: unreachable_graded_page_1_resource,
+      revision: unreachable_graded_page_1_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: unreachable_graded_page_2_resource,
+      revision: unreachable_graded_page_2_revision
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
       resource: graded_page_6_resource,
       revision: graded_page_6_revision
     })
@@ -1597,6 +1681,8 @@ defmodule Oli.TestHelpers do
 
     sr1 = Sections.get_section_resource(section.id, graded_page_4_resource.id)
     sr2 = Sections.get_section_resource(section.id, graded_page_5_resource.id)
+    sr3 = Sections.get_section_resource(section.id, unreachable_graded_page_1_resource.id)
+    sr4 = Sections.get_section_resource(section.id, unreachable_graded_page_2_resource.id)
 
     Sections.update_section_resource(sr1, %{
       scheduling_type: :due_by,
@@ -1606,6 +1692,16 @@ defmodule Oli.TestHelpers do
     Sections.update_section_resource(sr2, %{
       scheduling_type: :due_by,
       end_date: ~U[2023-06-05 14:00:00Z]
+    })
+
+    Sections.update_section_resource(sr3, %{
+      numbering_level: 1,
+      numbering_index: 9
+    })
+
+    Sections.update_section_resource(sr4, %{
+      numbering_level: 1,
+      numbering_index: 8
     })
 
     %{
@@ -2167,7 +2263,12 @@ defmodule Oli.TestHelpers do
       )
       |> Repo.one()
 
-    %{section: section, publication: section_project_publication, project: project, section_page: page_revision}
+    %{
+      section: section,
+      publication: section_project_publication,
+      project: project,
+      section_page: page_revision
+    }
   end
 
   def enroll_user_to_section(user, section, role) do
