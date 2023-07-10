@@ -216,7 +216,7 @@ defmodule OliWeb.Delivery.NewCourse do
   defp next_step_disabled?(assigns) do
     case assigns.current_step do
       0 ->
-        assigns[:source] == nil
+        true
 
       _ ->
         false
