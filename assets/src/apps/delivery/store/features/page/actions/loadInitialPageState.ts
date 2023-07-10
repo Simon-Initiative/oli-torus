@@ -65,7 +65,9 @@ export const loadInitialPageState = createAsyncThunk(
       if (everApps) {
         everAppIds = params.content.custom.everApps.map((everApp: any) => everApp.id);
       }
-      if (everAppIds && Array.isArray(everAppIds)) {
+      //As per the current implementation, the readGlobalUserState gives the Ever App state of the logged in user. However, in review mode, we need to
+      //state of the student whose attempt is being review by the instructor. We get this info from the resource attempt state so no need to call this method in REVIEW mode
+      if (!isReviewMode && everAppIds && Array.isArray(everAppIds)) {
         const userState = await readGlobalUserState(everAppIds, params.previewMode);
         if (typeof userState === 'object') {
           const everAppState = Object.keys(userState).reduce((acc: any, key) => {
@@ -85,9 +87,9 @@ export const loadInitialPageState = createAsyncThunk(
 
       if (params.resourceAttemptState) {
         //EverApp state is already up-to date and merged with sessionState at this point. We should not update the Ever App state with params.resourceAttemptState
-        const partAttemptVariables = Object.keys(params.resourceAttemptState).filter(
-          (key) => !key.startsWith('app.'),
-        );
+        const partAttemptVariables = isReviewMode
+          ? Object.keys(params.resourceAttemptState)
+          : Object.keys(params.resourceAttemptState).filter((key) => !key.startsWith('app.'));
         const resourceAttemptStateWithoutEverAppState = partAttemptVariables.reduce(
           (acc: Record<string, any>, entry) => {
             acc[entry] = params.resourceAttemptState[entry];
@@ -101,8 +103,8 @@ export const loadInitialPageState = createAsyncThunk(
       // update scripting env with session state
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
       const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
-
-      if (!params.previewMode) {
+      //No need to wite anything to server in REVIEW mode
+      if (!params.previewMode && !isReviewMode) {
         await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
       }
 
@@ -146,7 +148,8 @@ export const loadInitialPageState = createAsyncThunk(
         const updateSessionState = clone(sessionState);
         updateSessionState['session.tutorialScore'] = totalScore;
         updateSessionState['session.currentQuestionScore'] = 0;
-        if (!params.previewMode) {
+        //No need to wite anything to server in REVIEW mode
+        if (!params.previewMode && !isReviewMode) {
           await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, updateSessionState);
         }
 

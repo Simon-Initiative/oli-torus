@@ -18,7 +18,7 @@ import {
   makeFeedback,
 } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
+import { defaultGlobalEnv, evalScript, getValue, templatizeText } from 'adaptivity/scripting';
 import * as Extrinsic from 'data/persistence/extrinsic';
 import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
@@ -101,6 +101,15 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
     const { simId, key, value } = payload;
     await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
+    try {
+      // Review mode requires the ever app variable to be fetched from Resourse Attempt state so we need to update the variable in scripting so that
+      // when trigger check happens, the extrinsic state get updated and sent to server. Adding it in try catch to avoid any failure during the scripting update which
+      //might cause the Ever app to not function correctly.
+      const script = `let {${`app.${simId}.${key}`}} = ${JSON.stringify(value)}`;
+      evalScript(script, defaultGlobalEnv);
+    } catch (ex) {
+      //Do nothing
+    }
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
