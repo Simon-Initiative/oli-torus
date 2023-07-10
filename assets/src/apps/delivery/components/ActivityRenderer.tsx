@@ -18,13 +18,7 @@ import {
   makeFeedback,
 } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import {
-  bulkApplyState,
-  defaultGlobalEnv,
-  evalScript,
-  getValue,
-  templatizeText,
-} from 'adaptivity/scripting';
+import { defaultGlobalEnv, evalScript, getValue, templatizeText } from 'adaptivity/scripting';
 import * as Extrinsic from 'data/persistence/extrinsic';
 import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
