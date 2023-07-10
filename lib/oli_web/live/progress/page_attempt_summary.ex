@@ -2,6 +2,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   use OliWeb, :surface_component
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
+  alias OliWeb.Components.Tag
 
   prop(attempt, :struct, required: true)
   prop(section, :struct, required: true)
@@ -48,7 +49,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         </div>
         <div class="d-flex flex-row">
           {#if @attempt.was_late}
-            <span class="bg-red-500 text-white text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-red-500 dark:text-white border border-red-500">LATE</span>
+            <Tag.render>LATE</Tag.render>
           {/if}
           <p class="mb-1 text-muted">Submitted: {Utils.render_date(@attempt, :date_evaluated, @ctx)} ({Utils.render_relative_date(@attempt, :date_evaluated, @ctx)})</p>
         </div>

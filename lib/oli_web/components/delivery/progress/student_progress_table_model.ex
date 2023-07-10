@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Progress.ResourceTitle
+  alias OliWeb.Components.Tag
 
   def new(rows, section_slug, student_id, ctx) do
     SortableTableModel.new(
@@ -84,7 +85,7 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
       ~F"""
         <span>{row.score} / {row.out_of}</span>
         {#if row.was_late}
-          <span class="bg-red-500 text-white text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-red-500 dark:text-white border border-red-500">LATE</span>
+          <Tag.render>LATE</Tag.render>
         {/if}
        """
     else

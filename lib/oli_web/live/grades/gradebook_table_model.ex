@@ -5,6 +5,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Components.Tag
 
   def new(enrollments, graded_pages, resource_accesses, section, show_all_links) do
     by_user =
@@ -104,7 +105,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         {/if}
       </a>
       {#if was_late}
-        <span class="bg-red-500 text-white text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-red-500 dark:text-white border border-red-500">LATE</span>
+        <Tag.render>LATE</Tag.render>
       {/if}
     """
   end
@@ -212,7 +213,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         {safe_score}/{safe_out_of}
         </a>
         {#if was_late}
-          <span class="bg-red-500 text-white text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-red-500 dark:text-white border border-red-500">LATE</span>
+          <Tag.render>LATE</Tag.render>
         {/if}
       """
     end
