@@ -29,6 +29,7 @@ import {
 import {
   selectPageSlug,
   selectReviewMode,
+  selectSectionSlug,
   selectUserName,
   setScore,
 } from '../../store/features/page/slice';
@@ -53,6 +54,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentLesson = useSelector(selectPageSlug);
+  const sectionSlug = useSelector(selectSectionSlug);
+
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const reviewMode = useSelector(selectReviewMode);
@@ -303,6 +306,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           snapshot,
           context: {
             currentLesson,
+            sectionSlug,
             currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
             mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
           },
@@ -318,6 +322,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     [
       currentActivityTree,
       currentLesson,
+      sectionSlug,
       dispatch,
       historyModeNavigation,
       reviewMode,

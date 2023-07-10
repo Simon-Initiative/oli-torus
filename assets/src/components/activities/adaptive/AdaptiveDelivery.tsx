@@ -25,8 +25,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [activityId, _setActivityId] = useState<string>(
     props.model?.id || props.model?.activity_id || `unknown_activity`,
   );
-  const [mode, _setMode] = useState<string>(props.mode);
 
+  const [mode, _setMode] = useState<string>(props.mode);
+  const [sectionSlug, _setSectionSlug] = useState<string>(props.context.sectionSlug);
   const isReviewMode = mode === 'review';
 
   const [partsLayout, _setPartsLayout] = useState(
@@ -186,6 +187,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           partsInitDeferred.resolve({
             snapshot: readyResults.snapshot || {},
             context: {
+              sectionSlug,
               ...readyResults.context,
               host: props.mountPoint,
               domain: domain || adaptivityDomain,
@@ -230,7 +232,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           });
           const context = {
             snapshot,
-            context: { mode: 'REVIEW', host: props.mountPoint },
+            context: { mode: 'REVIEW', host: props.mountPoint, sectionSlug },
             env: scriptEnv,
             domain: adaptivityDomain,
             initStateFacts: {},
@@ -243,7 +245,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }
       return partsInitDeferred.promise;
     },
-    [partsLayout, adaptivityDomain],
+    [partsLayout, adaptivityDomain, sectionSlug],
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
