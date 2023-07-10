@@ -273,8 +273,18 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     </div>
   );
 
-  const maybeEvaluation = !model.isExample && isEvaluated && (
-    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
+  const maybeEvaluation = (
+    <Evaluation
+      shouldShow={
+        !model.isExample &&
+        isEvaluated &&
+        props.context.showFeedback === true &&
+        props.context.surveyId === null
+      }
+      key="evaluation"
+      attemptState={attemptState}
+      context={writerContext}
+    />
   );
 
   const maybeHints = !model.isExample && props.context.graded && (
