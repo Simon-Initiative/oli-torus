@@ -232,7 +232,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           });
           const context = {
             snapshot,
-            context: { mode: 'REVIEW', host: props.mountPoint, sectionSlug },
+            context: { mode: 'REVIEW', host: props.mountPoint },
             env: scriptEnv,
             domain: adaptivityDomain,
             initStateFacts: {},
@@ -245,7 +245,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }
       return partsInitDeferred.promise;
     },
-    [partsLayout, adaptivityDomain, sectionSlug],
+    [partsLayout, adaptivityDomain],
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
