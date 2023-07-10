@@ -370,6 +370,11 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     </button>
   );
 
+  // On return to evaluated activity, regenerate output state by auto-running student code
+  if (isEvaluated && !ranCode) {
+    onRun();
+  }
+
   return (
     <div className="activity short-answer-activity">
       <div className="activity-content">
