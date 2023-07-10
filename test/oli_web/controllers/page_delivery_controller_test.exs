@@ -954,15 +954,27 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "#{user.name}"
-      assert html_response(conn, 200) =~ "Student"
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~ ~s[\"name\":\"#{user.name}"]
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~
+               ~s{\"role\":\"student\",\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
     end
 
-    test "shows role label correctly when user is enrolled as instructor", %{
-      conn: conn,
-      user: user,
-      section: section
-    } do
+    test "shows role label correctly when user is enrolled as student with platform_role=instructor",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
       {:ok, section} = Sections.update_section(section, %{open_and_free: true})
 
       {:ok, instructor} =
@@ -980,8 +992,19 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "#{instructor.name}"
-      assert html_response(conn, 200) =~ "Instructor"
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~ ~s[\"name\":\"#{instructor.name}"]
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~
+               ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
     end
 
     test "timer will not be shown if revision is ungraded", %{
@@ -1719,7 +1742,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
         )
 
-        assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
+      assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
     end
   end
 
