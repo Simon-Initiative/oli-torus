@@ -1,8 +1,8 @@
 <Components.Header.header {assigns} />
 <div class="mx-auto w-10/12 m-5">
   <h1 class="ml-5 mb-5 font-semibold text-3xl font-sans text-primary">Payment Required</h1>
-  <div class="content-center flex flex-row">
-    <div class="rounded-l-md bg-gray-200 basis-1/2 p-10 flex flex-col">
+  <div class="content-center flex flex-col gap-3 lg:flex-row md:gap-0">
+    <div class="rounded lg:rounded-none lg:rounded-l-md bg-gray-200 dark:bg-neutral-800 basis-1/2 p-10 flex flex-col">
       <div>There is a fee associated with this course:</div>
       <div class="grid grid-cols-3">
         <div class="font-semibold ">Course Title: </div>
@@ -37,20 +37,20 @@
       <table class="w-full mb-8">
         <tbody>
             <tr>
-                <td class="text-left text-gray-700">Price</td>
-                <td class="text-right text-gray-700"><%= @amount %></td>
+                <td class="text-left text-gray-700 dark:text-white">Price</td>
+                <td class="text-right text-gray-700 dark:text-white"><%= @amount %></td>
             </tr>
 
         </tbody>
         <tfoot>
             <tr>
-                <td class="text-left font-bold text-gray-700">Total</td>
-                <td class="text-right font-bold text-gray-700"><%= @amount %></td>
+                <td class="text-left font-bold text-gray-700 dark:text-white">Total</td>
+                <td class="text-right font-bold text-gray-700 dark:text-white"><%= @amount %></td>
             </tr>
         </tfoot>
       </table>
 
-      <div class="mt-4 border-gray-300 border-t-2 pt-2 text-gray-600">
+      <div class="mt-4 border-gray-300 border-t-2 pt-2 text-gray-600 dark:text-white">
         <%= if @grace_period_days  do %>
           <span class="font-semibold">You have preview access to this course until
           <%= OliWeb.Common.Utils.render_date_with_opts(@payment_due_date, :payment_due_date, [context: @context, precision: :date]) %>.</span>
@@ -59,22 +59,22 @@
       </div>
     </div>
 
-    <div class="rounded-r-md bg-blue-50 basis-1/2 p-10">
+    <div class="rounded lg:rounded-none lg:rounded-r-md bg-blue-50 dark:bg-blue-500/40 basis-1/2 p-10">
       <%= if @pay_by_card? do %>
-        <div>
-            <p class="mt-3">
+        <div class="mb-5">
+            <p class="mt-3 mb-3">
         Credit card payments are processed through our secure payment provider. Visa and MasterCard credit cards, debit cards, and prepaid cards are accepted.
             </p>
-            <%= link "Pay by credit card", to: Routes.payment_path(@conn, :make_payment, @section_slug), class: "btn btn-primary mt-3" %>
+            <%= link "Pay by credit card", to: Routes.payment_path(@conn, :make_payment, @section_slug), class: "btn btn-primary mt-5" %>
         </div>
       <% end %>
       <%= if @pay_by_code? do %>
         <div>
-            <p class="mt-3">
+            <p class="mt-5">
               Pay using an Payment Code, which is available at some campus bookstores or other providers.
               Consult your instructor or your campus bookstore or provider for more information.
             </p>
-            
+
             <%= form_for @conn, Routes.payment_path(@conn, :apply_code, @section_slug), [as: :code], fn f -> %>
                 <div class="form-label-group mt-4">
                   <div class="g-recaptcha" data-sitekey={ Application.fetch_env!(:oli, :recaptcha)[:site_key] }></div>
