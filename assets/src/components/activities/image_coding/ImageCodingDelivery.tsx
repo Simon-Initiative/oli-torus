@@ -2,9 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { maybe } from 'tsmonad';
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import { isCorrect } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import * as Events from 'data/events';
 import { configureStore } from 'state/store';
@@ -20,6 +22,7 @@ import { Hints } from '../common/DisplayedHints';
 import { Stem } from '../common/DisplayedStem';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/delivery/evaluation/Evaluation';
+import { GradedPoints } from '../common/delivery/graded_points/GradedPoints';
 import * as ActivityTypes from '../types';
 import { EvalContext, Evaluator } from './Evaluator';
 import { ImageCodingModelSchema } from './schema';
@@ -86,6 +89,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   let currentOutput = output;
 
   const isEvaluated = attemptState.score !== null;
+  const isSubmitted = attemptState.dateSubmitted != undefined && attemptState.dateSubmitted != null;
 
   const writerContext = defaultWriterContext({
     graded: props.context.graded,
@@ -287,6 +291,20 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     />
   );
 
+  const maybeGradedPoints = (
+    <GradedPoints
+      shouldShow={
+        !model.isExample &&
+        isEvaluated &&
+        (!props.context.graded || isSubmitted) &&
+        props.context.showFeedback === true &&
+        props.context.surveyId === null
+      }
+      icon={isCorrect(attemptState) ? <Checkmark /> : <Cross />}
+      attemptState={attemptState}
+    />
+  );
+
   const maybeHints = !model.isExample && props.context.graded && (
     <Hints
       key="hints"
@@ -357,6 +375,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     <div className="activity short-answer-activity">
       <div className="activity-content">
         <Stem stem={stem} context={writerContext} />
+        {maybeGradedPoints}
         <div>
           <ImageCodeEditor value={input} disabled={isEvaluated} onChange={onInputChange} />
           {runButton} {maybeSubmitButton}
