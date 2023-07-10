@@ -2783,6 +2783,15 @@ defmodule Oli.Delivery.Sections do
         )
       )
 
+
+    # This is map used to get the name of a module's parent unit title
+    # so that we can display a module as "Unit Title / Module Title"
+    # instead of just "Module Title"
+
+    parent_title_map = Enum.reduce(all, %{}, fn %{children: children} = elem, map ->
+      Enum.reduce(children, map, fn child, map -> Map.put(map, child, elem.title) end)
+    end)
+
     Enum.map(all, fn %{children: children} = elem ->
       children_from_children =
         all
@@ -2794,10 +2803,15 @@ defmodule Oli.Delivery.Sections do
       elem = %{elem | children: children ++ children_from_children}
 
       if elem.level == 2 do
+
+        # Determine the parent unit title, in a robust way that works even if the
+        # somehow the module is not contained in a unit
+        parent_title = Map.get(parent_title_map, elem.container_id, "Unknown")
+
         Map.put(
           elem,
           :title,
-          "#{Map.get(Enum.find(all, fn %{children: children} -> Enum.member?(children, elem.container_id) end), :title)} / #{elem.title}"
+          "#{parent_title} / #{elem.title}"
         )
       else
         elem
