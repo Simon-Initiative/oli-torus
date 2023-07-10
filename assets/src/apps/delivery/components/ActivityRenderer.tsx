@@ -38,6 +38,7 @@ import {
   selectPageSlug,
   selectPreviewMode,
   selectReviewMode,
+  selectSectionSlug,
   selectUserId,
 } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
@@ -94,7 +95,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const isReviewMode = useSelector(selectReviewMode);
   const currentUserId = useSelector(selectUserId);
   const currentLessonId = useSelector(selectPageSlug);
-
+  const sectionSlug = useSelector(selectSectionSlug);
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     if (isReviewMode) {
       return;
@@ -557,6 +558,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
       currentLessonId,
+      sectionSlug,
       mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot || {},
@@ -566,7 +568,14 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (lastCheckResults.timestamp > 0) {
       notifyCheckComplete(lastCheckResults);
     }
-  }, [historyModeNavigation, reviewMode, lastCheckResults, currentActivityId, currentLessonId]);
+  }, [
+    historyModeNavigation,
+    reviewMode,
+    lastCheckResults,
+    currentActivityId,
+    currentLessonId,
+    sectionSlug,
+  ]);
 
   const [lastInitPhaseHandledTimestamp, setLastInitPhaseHandledTimestamp] = useState(Date.now());
 
@@ -657,7 +666,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref,
     context: JSON.stringify({
       graded: false, // TODO: currently only the page (lesson) has this distinction
-      sectionSlug: currentLessonId,
+      sectionSlug,
       userId: currentUserId,
       groupId: null,
       surveyId: null,

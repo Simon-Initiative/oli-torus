@@ -49,8 +49,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
-
   const [questionId, setQuestionId] = useState('');
+  const [sectionSlug, setSectionSlug] = useState('');
   const [lessonId, setLessonId] = useState('');
 
   // these rely on being set every render and the "model" useState value being set
@@ -160,7 +160,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     });
     setLessonId(initResult.context.currentLesson);
     setQuestionId(initResult.context.currentActivity);
-
+    setSectionSlug(initResult.context.sectionSlug);
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
@@ -547,6 +547,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               simLife.handshake.config = {
                 context: payload.mode,
                 questionId: payload.currentActivityId,
+                sectionSlug: payload.sectionSlug,
                 lessonId: payload.currentLessonId,
               };
               notifyConfigChange();
@@ -555,7 +556,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
               setLessonId(payload.currentLessonId);
               setQuestionId(payload.currentActivityId);
-
+              setSectionSlug(payload.sectionSlug);
               setInitStateBindToFacts(payload.initStateBindToFacts);
               setScreenContext(NotificationType.CONTEXT_CHANGED);
               const interestedSnapshot = getInterestedVariable(
@@ -667,6 +668,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       context: context,
       lessonId,
       questionId,
+      sectionSlug,
     };
 
     // TODO: here in the handshake response we should send come config...
