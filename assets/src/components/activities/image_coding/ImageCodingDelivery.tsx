@@ -295,7 +295,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       shouldShow={
         !model.isExample &&
         isEvaluated &&
-        (!props.context.graded || props.mode === 'review') &&
+        props.context.graded &&
+        props.mode === 'review' &&
         props.context.showFeedback === true &&
         props.context.surveyId === null
       }
