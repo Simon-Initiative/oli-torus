@@ -220,7 +220,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
         %{
           "resource_slug" => resource_slug,
           "resource_type" => resource_type,
-          "preview" => "true"
+          "preview" => true
         },
         socket
       ) do
