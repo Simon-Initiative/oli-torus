@@ -455,7 +455,7 @@ defmodule OliWeb.Delivery.NewCourse do
       |> Section.changeset(section)
 
     case current_step do
-      1 ->
+      step when step == 0 or step == 1 ->
         {:noreply, assign(socket, changeset: changeset, current_step: current_step)}
 
       2 ->
