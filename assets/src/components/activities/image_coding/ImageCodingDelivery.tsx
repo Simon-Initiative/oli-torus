@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
+import { Provider, useSelector } from 'react-redux';
 import { maybe } from 'tsmonad';
-import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
@@ -89,7 +88,6 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   let currentOutput = output;
 
   const isEvaluated = attemptState.score !== null;
-  const isSubmitted = attemptState.dateSubmitted != undefined && attemptState.dateSubmitted != null;
 
   const writerContext = defaultWriterContext({
     graded: props.context.graded,
@@ -282,6 +280,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       shouldShow={
         !model.isExample &&
         isEvaluated &&
+        (!props.context.graded || props.mode === 'review') &&
         props.context.showFeedback === true &&
         props.context.surveyId === null
       }
@@ -296,7 +295,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       shouldShow={
         !model.isExample &&
         isEvaluated &&
-        (!props.context.graded || isSubmitted) &&
+        (!props.context.graded || props.mode === 'review') &&
         props.context.showFeedback === true &&
         props.context.surveyId === null
       }
