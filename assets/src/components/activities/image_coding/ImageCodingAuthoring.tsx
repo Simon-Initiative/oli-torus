@@ -189,9 +189,17 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
       {!model.isExample && (
         <div>
-          {solutionParameters()}
-
           <TabbedNavigation.Tabs>
+            <TabbedNavigation.Tab label="Answer Key">
+              {solutionParameters()}
+              <Feedback
+                {...sharedProps}
+                projectSlug={props.projectSlug}
+                onEditResponse={(score, content) =>
+                  dispatch(ICActions.editFeedback(score, content))
+                }
+              />
+            </TabbedNavigation.Tab>
             <TabbedNavigation.Tab label="Hints">
               <HintsAuthoring partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
@@ -199,12 +207,6 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
               <Explanation partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
           </TabbedNavigation.Tabs>
-
-          <Feedback
-            {...sharedProps}
-            projectSlug={props.projectSlug}
-            onEditResponse={(score, content) => dispatch(ICActions.editFeedback(score, content))}
-          />
         </div>
       )}
     </React.Fragment>
