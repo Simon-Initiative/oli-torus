@@ -32,7 +32,8 @@ defmodule OliWeb.Grades.GradebookTableModel do
           name: :name,
           label: "STUDENT NAME",
           render_fn: &__MODULE__.render_student/3,
-          th_class: "pl-10 instructor_dashboard_th"
+          th_class: "pl-10 whitespace-nowrap !sticky left-0 z-10",
+          td_class: "sticky left-0 z-10"
         }
       ] ++
         Enum.map(graded_pages, fn revision ->
@@ -40,7 +41,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
             name: revision.resource_id,
             label: String.upcase(revision.title),
             render_fn: &__MODULE__.render_score/3,
-            th_class: "instructor_dashboard_th",
+            th_class: "whitespace-nowrap",
             sortable: false
           }
         end)
@@ -60,13 +61,13 @@ defmodule OliWeb.Grades.GradebookTableModel do
         name: :name,
         label: "Quiz",
         render_fn: &__MODULE__.render_grade/3,
-        th_class: "pl-10 instructor_dashboard_th"
+        th_class: "pl-10"
       },
       %ColumnSpec{
         name: :score,
         label: "Score",
         render_fn: &__MODULE__.render_grade_score/3,
-        th_class: "pl-10 instructor_dashboard_th",
+        th_class: "pl-10",
         sortable: false
       }
     ]
@@ -92,6 +93,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     perc = score(row.score) / out_of_score(row.out_of) * 100
     has_score? = row.score != nil
     was_late = row.was_late
+
     ~F"""
       <a
         class={"ml-8 #{if has_score? and perc < 40, do: "text-red-500", else: "text-black"}"}

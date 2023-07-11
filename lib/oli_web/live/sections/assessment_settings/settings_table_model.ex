@@ -9,82 +9,81 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       %ColumnSpec{
         name: :index,
         label: "#",
-        th_class:
-          "pl-10 instructor_dashboard_th !sticky left-0 bg-white z-10 whitespace-nowrap w-20",
+        th_class: "pl-10 !sticky left-0 bg-white z-10 whitespace-nowrap w-20",
         td_class: "sticky pl-11 left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap w-20"
       },
       %ColumnSpec{
         name: :name,
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
-        th_class: "instructor_dashboard_th !sticky left-20 bg-white z-10",
+        th_class: "!sticky left-20 bg-white z-10",
         td_class: "sticky left-20 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :due_date,
         label: "DUE DATE",
         render_fn: &__MODULE__.render_due_date_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :max_attempts,
         label: "# ATTEMPTS",
         render_fn: &__MODULE__.render_attempts_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :time_limit,
         label: "TIME LIMIT",
         render_fn: &__MODULE__.render_time_limit_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :late_submit,
         label: "LATE SUBMIT",
         render_fn: &__MODULE__.render_late_submit_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :late_start,
         label: "LATE START",
         render_fn: &__MODULE__.render_late_start_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
         label: "SCORING",
         render_fn: &__MODULE__.render_scoring_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :grace_period,
         label: "GRACE PERIOD",
         render_fn: &__MODULE__.render_grace_period_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :retake_mode,
         label: "RETAKE MODE",
         render_fn: &__MODULE__.render_retake_mode_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :review_submission,
         label: "VIEW ANSWERS",
         render_fn: &__MODULE__.render_view_answers_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :exceptions_count,
         label: "EXCEPTIONS",
         render_fn: &__MODULE__.render_exceptions_column/3,
-        th_class: "instructor_dashboard_th whitespace-nowrap"
+        th_class: "whitespace-nowrap"
       }
     ]
 

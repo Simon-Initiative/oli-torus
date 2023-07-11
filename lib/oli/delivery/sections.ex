@@ -149,10 +149,20 @@ defmodule Oli.Delivery.Sections do
       })
 
     case field do
-      :enrollment_date -> order_by(query, [_, e, _], {^direction, e.inserted_at})
-      :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
-      :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
-      _ -> order_by(query, [u, _, _], {^direction, field(u, ^field)})
+      :enrollment_date ->
+        order_by(query, [_, e, _], {^direction, e.inserted_at})
+
+      :payment_date ->
+        order_by(query, [_, _, p], {^direction, p.application_date})
+
+      :payment_id ->
+        order_by(query, [_, _, p], {^direction, p.id})
+
+      :name ->
+        order_by(query, [u, _, _], [{^direction, u.family_name}, {^direction, u.given_name}])
+
+      _ ->
+        order_by(query, [u, _, _], {^direction, field(u, ^field)})
     end
   end
 

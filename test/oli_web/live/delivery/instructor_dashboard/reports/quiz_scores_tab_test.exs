@@ -149,10 +149,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       instructor: instructor,
       section: section
     } do
-      student = insert(:user, %{family_name: "Example", given_name: "Student1"})
-      student_2 = insert(:user, %{family_name: "Example", given_name: "Student2"})
-      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      student_1 = insert(:user, %{family_name: "Smith", given_name: "Adam"})
+      student_2 = insert(:user, %{family_name: "Lee", given_name: "Bob"})
+      student_3 = insert(:user, %{family_name: "Zisk", given_name: "Tom"})
+      Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student_3.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       params = %{
@@ -162,12 +164,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug, params))
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ student_2.family_name
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(1)")
+             |> render() =~ student_3.family_name
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ student.family_name
+             |> render() =~ student_1.family_name
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
+             |> render() =~ student_2.family_name
     end
 
     test "applies pagination", %{
