@@ -19,6 +19,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           name: :name,
           label: "STUDENT NAME",
           render_fn: &__MODULE__.render_name_column/3,
+          sort_fn: &__MODULE__.sort_name_column/2,
           th_class: "pl-10 instructor_dashboard_th"
         },
         %ColumnSpec{
@@ -63,6 +64,15 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         section: section
       }
     )
+  end
+
+  def sort_name_column(_sort_order, _sort_spec) do
+    {
+      fn item -> item end,
+      fn row1, row2 ->
+        Utils.name(row1.name, row1.given_name, row1.family_name) <= Utils.name(row2.name, row2.given_name, row2.family_name)
+      end
+    }
   end
 
   def render_name_column(
