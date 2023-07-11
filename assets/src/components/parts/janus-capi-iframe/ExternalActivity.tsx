@@ -50,6 +50,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
   const [questionId, setQuestionId] = useState('');
+  const [currentUserId, setCurrentUserId] = useState('');
   const [sectionSlug, setSectionSlug] = useState('');
   const [lessonId, setLessonId] = useState('');
 
@@ -161,6 +162,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     setLessonId(initResult.context.currentLesson);
     setQuestionId(initResult.context.currentActivity);
     setSectionSlug(initResult.context.sectionSlug);
+    setCurrentUserId(initResult.context.currentUserId);
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
@@ -549,6 +551,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 questionId: payload.currentActivityId,
                 sectionSlug: payload.sectionSlug,
                 lessonId: payload.currentLessonId,
+                userId: payload.currentUserId,
               };
               notifyConfigChange();
               // we only send the Init state variables.
@@ -557,6 +560,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               setLessonId(payload.currentLessonId);
               setQuestionId(payload.currentActivityId);
               setSectionSlug(payload.sectionSlug);
+              setCurrentUserId(payload.currentUserId);
               setInitStateBindToFacts(payload.initStateBindToFacts);
               setScreenContext(NotificationType.CONTEXT_CHANGED);
               const interestedSnapshot = getInterestedVariable(
@@ -669,6 +673,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       lessonId,
       questionId,
       sectionSlug,
+      userId: currentUserId,
     };
 
     // TODO: here in the handshake response we should send come config...
