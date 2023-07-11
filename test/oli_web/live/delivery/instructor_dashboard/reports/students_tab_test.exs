@@ -172,7 +172,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ### sorting by student
       params = %{
-        sort_order: :asc,
+        sort_order: :desc,
         sort_by: :name
       }
 
@@ -185,10 +185,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr a})
         |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
 
-      assert student_for_tr_1 =~ "Di Maria, Angelito"
-      assert student_for_tr_2 =~ "Jr, Neymar"
-      assert student_for_tr_3 =~ "Messi, Lionel"
-      assert student_for_tr_4 =~ "Suarez, Luis"
+      assert student_for_tr_4 =~ "Di Maria, Angelito"
+      assert student_for_tr_3 =~ "Jr, Neymar"
+      assert student_for_tr_2 =~ "Messi, Lionel"
+      assert student_for_tr_1 =~ "Suarez, Luis"
 
       ### text filtering
       params = %{

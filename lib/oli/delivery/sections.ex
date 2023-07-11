@@ -149,10 +149,20 @@ defmodule Oli.Delivery.Sections do
       })
 
     case field do
-      :enrollment_date -> order_by(query, [_, e, _], {^direction, e.inserted_at})
-      :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
-      :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
-      _ -> order_by(query, [u, _, _], {^direction, field(u, ^field)})
+      :enrollment_date ->
+        order_by(query, [_, e, _], {^direction, e.inserted_at})
+
+      :payment_date ->
+        order_by(query, [_, _, p], {^direction, p.application_date})
+
+      :payment_id ->
+        order_by(query, [_, _, p], {^direction, p.id})
+
+      :name ->
+        order_by(query, [u, _, _], [{^direction, u.family_name}, {^direction, u.given_name}])
+
+      _ ->
+        order_by(query, [u, _, _], {^direction, field(u, ^field)})
     end
   end
 
@@ -2674,7 +2684,6 @@ defmodule Oli.Delivery.Sections do
         # If the current objective has one or more parents, render their parents
         parent_objectives ++ acc
       end
-
     end)
     |> Enum.uniq_by(&{&1.objective_resource_id, &1.subobjective_resource_id})
     |> Enum.map(fn obj ->
@@ -2783,14 +2792,14 @@ defmodule Oli.Delivery.Sections do
         )
       )
 
-
     # This is map used to get the name of a module's parent unit title
     # so that we can display a module as "Unit Title / Module Title"
     # instead of just "Module Title"
 
-    parent_title_map = Enum.reduce(all, %{}, fn %{children: children} = elem, map ->
-      Enum.reduce(children, map, fn child, map -> Map.put(map, child, elem.title) end)
-    end)
+    parent_title_map =
+      Enum.reduce(all, %{}, fn %{children: children} = elem, map ->
+        Enum.reduce(children, map, fn child, map -> Map.put(map, child, elem.title) end)
+      end)
 
     Enum.map(all, fn %{children: children} = elem ->
       children_from_children =
@@ -2803,7 +2812,6 @@ defmodule Oli.Delivery.Sections do
       elem = %{elem | children: children ++ children_from_children}
 
       if elem.level == 2 do
-
         # Determine the parent unit title, in a robust way that works even if the
         # somehow the module is not contained in a unit
         parent_title = Map.get(parent_title_map, elem.container_id, "Unknown")
