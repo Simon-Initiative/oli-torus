@@ -543,38 +543,6 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
-  @doc """
-  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
-  for every learning objective of a given section
-
-    It returns a map:
-
-    %{objective_id_1 => "High",
-      ...
-      objective_id_n => "Low"
-    }
-  """
-  def proficiency_per_learning_objective(section_slug) do
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
-        group_by: sn.objective_id,
-        select:
-          {sn.objective_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           )}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, proficiency} ->
-      {objective_id, proficiency_range(proficiency)}
-    end)
-  end
-
   def raw_proficiency_per_learning_objective(section_slug) do
     query =
       from(sn in Snapshot,
@@ -584,16 +552,14 @@ defmodule Oli.Delivery.Metrics do
         group_by: sn.objective_id,
         select:
           {sn.objective_id,
-            fragment(
+           {fragment(
               "CAST(COUNT(CASE WHEN ? THEN 1 END) as float)",
               sn.correct
-            ),
-           fragment(
-             "CAST(COUNT(*) as float)"
-           )}
+            ), fragment("CAST(COUNT(*) as float)")}}
       )
 
     Repo.all(query)
+    |> Enum.into(%{})
   end
 
   def raw_proficiency_for_student_per_learning_objective(section_slug, student_id) do
@@ -607,38 +573,14 @@ defmodule Oli.Delivery.Metrics do
         group_by: sn.objective_id,
         select:
           {sn.objective_id,
-            fragment(
+           {fragment(
               "CAST(COUNT(CASE WHEN ? THEN 1 END) as float)",
               sn.correct
-            ),
-          fragment(
-            "CAST(COUNT(*) as float)"
-          )}
+            ), fragment("CAST(COUNT(*) as float)")}}
       )
 
     Repo.all(query)
-  end
-  def proficiency_for_student_per_learning_objective(section_slug, student_id) do
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
-            sn.user_id == ^student_id,
-        group_by: sn.objective_id,
-        select:
-          {sn.objective_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           )}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, proficiency} ->
-      {objective_id, proficiency_range(proficiency)}
-    end)
+    |> Enum.into(%{})
   end
 
   @doc """

@@ -2649,7 +2649,6 @@ defmodule Oli.Delivery.Sections do
   directly attached to them.
   """
   def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
-
     calc = fn count, total ->
       case total do
         0 -> nil
@@ -2665,12 +2664,10 @@ defmodule Oli.Delivery.Sections do
         student_id ->
           Metrics.raw_proficiency_for_student_per_learning_objective(section_slug, student_id)
       end
-      |> Enum.reduce(%{}, fn {lo_id, correct, total}, acc ->
-        Map.put(acc, lo_id, {correct, total})
-      end)
 
     # get the minimal fields for all objectives from the database
     objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
     objectives =
       from([rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where: rev.deleted == false and rev.resource_type_id == ^objective_id,
@@ -2682,72 +2679,85 @@ defmodule Oli.Delivery.Sections do
       )
       |> Repo.all()
 
-    lookup_map = Enum.reduce(objectives, %{}, fn obj, acc ->
-      Map.put(acc, obj.resource_id, obj)
-    end)
+    lookup_map =
+      Enum.reduce(objectives, %{}, fn obj, acc ->
+        Map.put(acc, obj.resource_id, obj)
+      end)
 
     # identify top level objectives (those that don't have a parent)
-    parent_map = Enum.reduce(objectives, %{}, fn obj, acc ->
-      Enum.reduce(obj.children, acc, fn child, acc ->
-        Map.put(acc, child, obj.resource_id)
+    parent_map =
+      Enum.reduce(objectives, %{}, fn obj, acc ->
+        Enum.reduce(obj.children, acc, fn child, acc ->
+          Map.put(acc, child, obj.resource_id)
+        end)
       end)
-    end)
 
-    top_level_objectives = Enum.filter(objectives, fn obj ->
-      !Map.has_key?(parent_map, obj.resource_id)
-    end)
+    top_level_objectives =
+      Enum.filter(objectives, fn obj ->
+        !Map.has_key?(parent_map, obj.resource_id)
+      end)
 
     # Now calculate the aggregate proficiency for each top level objective
-    top_level_aggregation = Enum.reduce(top_level_objectives, %{}, fn obj, map ->
+    top_level_aggregation =
+      Enum.reduce(top_level_objectives, %{}, fn obj, map ->
+        aggregation =
+          Enum.reduce(obj.children, {0, 0}, fn child, {correct, total} ->
+            {child_correct, child_total} =
+              Map.get(proficiency_per_learning_objective, child, {0, 0})
 
-      aggregation = Enum.reduce(obj.children, {0, 0}, fn child, {correct, total} ->
-        {child_correct, child_total} = Map.get(proficiency_per_learning_objective, child, {0, 0})
-        {correct + child_correct, total + child_total}
+            {correct + child_correct, total + child_total}
+          end)
+
+        Map.put(map, obj.resource_id, aggregation)
       end)
-
-      Map.put(map, obj.resource_id, aggregation)
-    end)
 
     # Now make a pass over top level objectives, and for each one, pull in its subobjectives.
     # We have to take this approach to account for the fact that a sub objective can have
     # multiple parents.
     Enum.reduce(objectives, [], fn objective, all ->
-
       case Map.has_key?(parent_map, objective.resource_id) do
-        false -> # this is a top-level objective
+        # this is a top-level objective
+        false ->
+          {correct, total} =
+            Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0})
 
-          {correct, total} = Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0})
-
-          objective = Map.merge(objective, %{
-            objective: objective.title,
-            objective_resource_id: objective.resource_id,
-            student_proficiency_obj: calc.(correct, total) |> Metrics.proficiency_range(),
-            subobjective: "",
-            subobjective_resource_id: nil,
-            student_proficiency_subobj: ""
-          })
-
-          {parent_correct, parent_total} = Map.get(top_level_aggregation, objective.resource_id, {0, 0})
-
-          sub_objectives = Enum.map(objective.children, fn child ->
-            sub_objective = Map.get(lookup_map, child)
-            {correct, total} = Map.get(proficiency_per_learning_objective, sub_objective.resource_id, {0, 0})
-
-            Map.merge(sub_objective, %{
+          objective =
+            Map.merge(objective, %{
               objective: objective.title,
               objective_resource_id: objective.resource_id,
-              student_proficiency_obj: calc.(parent_correct, parent_total) |> Metrics.proficiency_range(),
-              subobjective: sub_objective.title,
-              subobjective_resource_id: sub_objective.resource_id,
-              student_proficiency_subobj: calc.(correct, total) |> Metrics.proficiency_range()
+              student_proficiency_obj: calc.(correct, total) |> Metrics.proficiency_range(),
+              subobjective: "",
+              subobjective_resource_id: nil,
+              student_proficiency_subobj: ""
             })
-          end)
+
+          {parent_correct, parent_total} =
+            Map.get(top_level_aggregation, objective.resource_id, {0, 0})
+
+          sub_objectives =
+            Enum.map(objective.children, fn child ->
+              sub_objective = Map.get(lookup_map, child)
+
+              {correct, total} =
+                Map.get(proficiency_per_learning_objective, sub_objective.resource_id, {0, 0})
+
+              Map.merge(sub_objective, %{
+                objective: objective.title,
+                objective_resource_id: objective.resource_id,
+                student_proficiency_obj:
+                  calc.(parent_correct, parent_total) |> Metrics.proficiency_range(),
+                subobjective: sub_objective.title,
+                subobjective_resource_id: sub_objective.resource_id,
+                student_proficiency_subobj: calc.(correct, total) |> Metrics.proficiency_range()
+              })
+            end)
 
           [objective | sub_objectives] ++ all
 
-        _ -> # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
-            all
-        end
+        # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
+        _ ->
+          all
+      end
     end)
   end
 
@@ -2826,14 +2836,14 @@ defmodule Oli.Delivery.Sections do
         )
       )
 
-
     # This is map used to get the name of a module's parent unit title
     # so that we can display a module as "Unit Title / Module Title"
     # instead of just "Module Title"
 
-    parent_title_map = Enum.reduce(all, %{}, fn %{children: children} = elem, map ->
-      Enum.reduce(children, map, fn child, map -> Map.put(map, child, elem.title) end)
-    end)
+    parent_title_map =
+      Enum.reduce(all, %{}, fn %{children: children} = elem, map ->
+        Enum.reduce(children, map, fn child, map -> Map.put(map, child, elem.title) end)
+      end)
 
     Enum.map(all, fn %{children: children} = elem ->
       children_from_children =
@@ -2846,7 +2856,6 @@ defmodule Oli.Delivery.Sections do
       elem = %{elem | children: children ++ children_from_children}
 
       if elem.level == 2 do
-
         # Determine the parent unit title, in a robust way that works even if the
         # somehow the module is not contained in a unit
         parent_title = Map.get(parent_title_map, elem.container_id, "Unknown")
