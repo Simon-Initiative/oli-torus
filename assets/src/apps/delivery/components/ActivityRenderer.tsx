@@ -559,6 +559,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       currentActivityId,
       currentLessonId,
       sectionSlug,
+      currentUserId,
       mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot || {},
@@ -575,6 +576,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     currentActivityId,
     currentLessonId,
     sectionSlug,
+    currentUserId,
   ]);
 
   const [lastInitPhaseHandledTimestamp, setLastInitPhaseHandledTimestamp] = useState(Date.now());
