@@ -2631,57 +2631,133 @@ defmodule Oli.Delivery.Sections do
       get_flatten_hierarchy(rest, resources)
   end
 
+  @doc """
+  Returns all objectives and subobjectives for a given section, with associated proficiency
+  results generally available in the form:
+  %{
+    objective: "Parent Objective Title"
+    objective_resource_id: 231,
+    student_proficiency_obj: "High"
+    subobjective: "Subobjective Title",
+    subobjective_resource_id: 388,
+    student_proficiency_subobj: "Low"
+  }
+
+  For objectives that are subobjectives, the objective is shown as the `subobjective` like the
+  above example, with the aggregated proficiency for its parent shown.  For objectives that are
+  top level objectives, they appear with their proficiency for only those activities that
+  directly attached to them.
+  """
   def get_objectives_and_subobjectives(section_slug, student_id \\ nil) do
-    objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+    calc = fn count, total ->
+      case total do
+        0 -> nil
+        _ -> count / total
+      end
+    end
 
     proficiency_per_learning_objective =
       case student_id do
         nil ->
-          Metrics.proficiency_per_learning_objective(section_slug)
+          Metrics.raw_proficiency_per_learning_objective(section_slug)
 
         student_id ->
-          Metrics.proficiency_for_student_per_learning_objective(section_slug, student_id)
+          Metrics.raw_proficiency_for_student_per_learning_objective(section_slug, student_id)
       end
 
-    ### get all objectives from the database
+    # get the minimal fields for all objectives from the database
+    objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
     objectives =
-      from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        left_join: rev2 in Revision,
-        on: rev2.resource_id in rev.children,
+      from([rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where: rev.deleted == false and rev.resource_type_id == ^objective_id,
-        group_by: [rev2.title, rev.resource_id, rev.title, rev2.resource_id, rev.children],
         select: %{
-          objective: rev.title,
-          objective_resource_id: rev.resource_id,
-          subobjective: rev2.title,
-          subobjective_resource_id: rev2.resource_id,
+          title: rev.title,
+          resource_id: rev.resource_id,
           children: rev.children
         }
       )
       |> Repo.all()
 
-    Enum.reduce(objectives, [], fn objective, acc ->
-      # Get all the parent objectives of the current objective
-      parent_objectives =
-        Enum.filter(objectives, fn obj ->
-          obj.subobjective_resource_id == objective.objective_resource_id
+    lookup_map =
+      Enum.reduce(objectives, %{}, fn obj, acc ->
+        Map.put(acc, obj.resource_id, obj)
+      end)
+
+    # identify top level objectives (those that don't have a parent)
+    parent_map =
+      Enum.reduce(objectives, %{}, fn obj, acc ->
+        Enum.reduce(obj.children, acc, fn child, acc ->
+          Map.put(acc, child, obj.resource_id)
         end)
+      end)
 
-      if Enum.empty?(parent_objectives) do
-        # If the current objective doesn't have a parent, just render it
-        [objective | acc]
-      else
-        # If the current objective has one or more parents, render their parents
-        parent_objectives ++ acc
+    top_level_objectives =
+      Enum.filter(objectives, fn obj ->
+        !Map.has_key?(parent_map, obj.resource_id)
+      end)
+
+    # Now calculate the aggregate proficiency for each top level objective
+    top_level_aggregation =
+      Enum.reduce(top_level_objectives, %{}, fn obj, map ->
+        aggregation =
+          Enum.reduce(obj.children, {0, 0}, fn child, {correct, total} ->
+            {child_correct, child_total} =
+              Map.get(proficiency_per_learning_objective, child, {0, 0})
+
+            {correct + child_correct, total + child_total}
+          end)
+
+        Map.put(map, obj.resource_id, aggregation)
+      end)
+
+    # Now make a pass over top level objectives, and for each one, pull in its subobjectives.
+    # We have to take this approach to account for the fact that a sub objective can have
+    # multiple parents.
+    Enum.reduce(objectives, [], fn objective, all ->
+      case Map.has_key?(parent_map, objective.resource_id) do
+        # this is a top-level objective
+        false ->
+          {correct, total} =
+            Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0})
+
+          objective =
+            Map.merge(objective, %{
+              objective: objective.title,
+              objective_resource_id: objective.resource_id,
+              student_proficiency_obj: calc.(correct, total) |> Metrics.proficiency_range(),
+              subobjective: "",
+              subobjective_resource_id: nil,
+              student_proficiency_subobj: ""
+            })
+
+          {parent_correct, parent_total} =
+            Map.get(top_level_aggregation, objective.resource_id, {0, 0})
+
+          sub_objectives =
+            Enum.map(objective.children, fn child ->
+              sub_objective = Map.get(lookup_map, child)
+
+              {correct, total} =
+                Map.get(proficiency_per_learning_objective, sub_objective.resource_id, {0, 0})
+
+              Map.merge(sub_objective, %{
+                objective: objective.title,
+                objective_resource_id: objective.resource_id,
+                student_proficiency_obj:
+                  calc.(parent_correct, parent_total) |> Metrics.proficiency_range(),
+                subobjective: sub_objective.title,
+                subobjective_resource_id: sub_objective.resource_id,
+                student_proficiency_subobj: calc.(correct, total) |> Metrics.proficiency_range()
+              })
+            end)
+
+          [objective | sub_objectives] ++ all
+
+        # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
+        _ ->
+          all
       end
-
-    end)
-    |> Enum.uniq_by(&{&1.objective_resource_id, &1.subobjective_resource_id})
-    |> Enum.map(fn obj ->
-      add_necessary_fields_to_objectives(
-        obj,
-        proficiency_per_learning_objective
-      )
     end)
   end
 
@@ -2741,29 +2817,6 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
-  defp add_necessary_fields_to_objectives(
-         obj,
-         proficiency_per_learning_objective
-       ) do
-    obj
-    |> Map.put(
-      :student_proficiency_obj,
-      Map.get(
-        proficiency_per_learning_objective,
-        obj.objective_resource_id,
-        "Not enough data"
-      )
-    )
-    |> Map.put(
-      :student_proficiency_subobj,
-      Map.get(
-        proficiency_per_learning_objective,
-        obj.subobjective_resource_id,
-        "Not enough data"
-      )
-    )
-  end
-
   def get_units_and_modules_from_a_section(section_slug) do
     all =
       Repo.all(
@@ -2783,14 +2836,14 @@ defmodule Oli.Delivery.Sections do
         )
       )
 
-
     # This is map used to get the name of a module's parent unit title
     # so that we can display a module as "Unit Title / Module Title"
     # instead of just "Module Title"
 
-    parent_title_map = Enum.reduce(all, %{}, fn %{children: children} = elem, map ->
-      Enum.reduce(children, map, fn child, map -> Map.put(map, child, elem.title) end)
-    end)
+    parent_title_map =
+      Enum.reduce(all, %{}, fn %{children: children} = elem, map ->
+        Enum.reduce(children, map, fn child, map -> Map.put(map, child, elem.title) end)
+      end)
 
     Enum.map(all, fn %{children: children} = elem ->
       children_from_children =
@@ -2803,7 +2856,6 @@ defmodule Oli.Delivery.Sections do
       elem = %{elem | children: children ++ children_from_children}
 
       if elem.level == 2 do
-
         # Determine the parent unit title, in a robust way that works even if the
         # somehow the module is not contained in a unit
         parent_title = Map.get(parent_title_map, elem.container_id, "Unknown")
