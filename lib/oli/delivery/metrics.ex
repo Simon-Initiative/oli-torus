@@ -575,6 +575,49 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  def raw_proficiency_per_learning_objective(section_slug) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
+        group_by: sn.objective_id,
+        select:
+          {sn.objective_id,
+            fragment(
+              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float)",
+              sn.correct
+            ),
+           fragment(
+             "CAST(COUNT(*) as float)"
+           )}
+      )
+
+    Repo.all(query)
+  end
+
+  def raw_proficiency_for_student_per_learning_objective(section_slug, student_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: sn.objective_id,
+        select:
+          {sn.objective_id,
+            fragment(
+              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float)",
+              sn.correct
+            ),
+          fragment(
+            "CAST(COUNT(*) as float)"
+          )}
+      )
+
+    Repo.all(query)
+  end
   def proficiency_for_student_per_learning_objective(section_slug, student_id) do
     query =
       from(sn in Snapshot,
@@ -787,10 +830,10 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
-  defp proficiency_range(nil), do: "Not enough data"
-  defp proficiency_range(proficiency) when proficiency <= 0.5, do: "Low"
-  defp proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
-  defp proficiency_range(_proficiency), do: "High"
+  def proficiency_range(nil), do: "Not enough data"
+  def proficiency_range(proficiency) when proficiency <= 0.5, do: "Low"
+  def proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
+  def proficiency_range(_proficiency), do: "High"
 
   @doc """
   Updates page progress to be 100% complete.
