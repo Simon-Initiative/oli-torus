@@ -576,7 +576,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     currentActivityId,
     currentLessonId,
     sectionSlug,
-    currentUserId
+    currentUserId,
   ]);
 
   const [lastInitPhaseHandledTimestamp, setLastInitPhaseHandledTimestamp] = useState(Date.now());
