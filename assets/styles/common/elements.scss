@@ -63,7 +63,6 @@ $element-margin-bottom: 1.5em;
   blockquote {
     margin-top: 12px;
     font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
-    color: var(--color-body-color);
     border-left: 3px solid var(--color-gray-400);
     padding-left: 20px;
     padding-bottom: 2px;
@@ -320,7 +319,6 @@ $element-margin-bottom: 1.5em;
 
   .callout-inline,
   .callout {
-    background-color: var(--color-body);
     margin-bottom: $element-margin-bottom;
   }
 
@@ -378,7 +376,9 @@ $element-margin-bottom: 1.5em;
       flex-direction: row;
       margin-bottom: 0.5rem;
       align-items: center;
-      background-color: var(--color-body);
+
+      color: var(--color-delivery-body);
+
       .dialog-content {
         flex-grow: 1;
       }
