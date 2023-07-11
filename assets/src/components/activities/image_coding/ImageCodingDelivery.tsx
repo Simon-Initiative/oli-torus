@@ -80,6 +80,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const [input, setInput] = useState(
     attemptState.parts[0].response ? attemptState.parts[0].response.input : model.starterCode,
   );
+
   const { stem, resourceURLs } = model;
   // runtime evaluation state:
   const [output, setOutput] = useState('');
@@ -96,11 +97,27 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   });
 
   // tslint:disable-next-line:prefer-array-literal
-  const resourceRefs = useRef<(HTMLImageElement | string)[]>(new Array(resourceURLs.length));
+  const resourceRefs = useRef<(HTMLImageElement | string)[]>(
+    new Array(resourceURLs.length).fill(null),
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
   const solnRef = useRef<HTMLCanvasElement>(null);
+
+  // for tracking when all resource are loaded
+  const [resourcesLoaded, setResourcesLoaded] = useState(false);
+  const updateResourceState = () => {
+    if (
+      resourceRefs.current &&
+      // note every returns true on empty list
+      resourceRefs.current.every((ref) => {
+        // ref is either image element or holds downloaded spreadsheet file text
+        return ref instanceof HTMLImageElement ? (ref as HTMLImageElement).complete : ref != null;
+      })
+    )
+      setResourcesLoaded(true);
+  };
 
   const loadCSV = (url: string, i: number) => {
     fetch(url, { mode: 'cors' })
@@ -110,7 +127,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
         }
         return resp.text();
       })
-      .then((text) => (resourceRefs.current[i] = text))
+      .then((text) => {
+        resourceRefs.current[i] = text;
+        updateResourceState();
+      })
       .catch((e) => {
         throw new Error('failed to load ' + lastPart(url) + ': ' + e);
       });
@@ -123,6 +143,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     // a simple hack to force fresh load.
     img.src = url + '?t=' + new Date().getTime();
     img.crossOrigin = 'anonymous';
+    img.onload = updateResourceState;
 
     // save references in parallel array. Elements never need to be attached to DOM.
     resourceRefs.current[i] = img;
@@ -136,7 +157,16 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     resourceURLs.map((url, i) => {
       url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
     });
+
+    // For non-resource-using problems, will be ready right now
+    updateResourceState();
   }, []);
+
+  // On a return to evaluated activity not run by this instance, regenerate output state by
+  // simulating Run button click to execute student code. Requires that all resources have loaded.
+  useEffect(() => {
+    if (isEvaluated && !ranCode && resourcesLoaded) onRun();
+  }, [resourcesLoaded]);
 
   const onInputChange = (input: string) => {
     setInput(input);
@@ -305,7 +335,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     />
   );
 
-  const maybeHints = !model.isExample && props.context.graded && (
+  const maybeHints = !model.isExample && !props.context.graded && (
     <Hints
       key="hints"
       onClick={onRequestHint}
@@ -370,11 +400,6 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       Run
     </button>
   );
-
-  // On return to evaluated activity, regenerate output state by auto-running student code
-  if (isEvaluated && !ranCode) {
-    onRun();
-  }
 
   return (
     <div className="activity short-answer-activity">
