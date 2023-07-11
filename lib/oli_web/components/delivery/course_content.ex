@@ -64,7 +64,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
               <Buttons.button_with_options
                 id={"open-resource-button-#{index}"}
                 type="submit"
-                onclick={JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"], preview: true})}
+                onclick={JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"], preview: "true"})}
                 options={[
                   %{
                     text: "Open as student",
@@ -220,7 +220,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
         %{
           "resource_slug" => resource_slug,
           "resource_type" => resource_type,
-          "preview" => true
+          "preview" => "true"
         },
         socket
       ) do
