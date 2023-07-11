@@ -105,7 +105,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const resultRef = useRef<HTMLCanvasElement>(null);
   const solnRef = useRef<HTMLCanvasElement>(null);
 
-  // for tracking when all resource are loaded
+  // for tracking when all resource are loaded, used for regenerating output on return to evaluated page
   const [resourcesLoaded, setResourcesLoaded] = useState(false);
   const updateResourceState = () => {
     if (
@@ -160,12 +160,24 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
     // For non-resource-using problems, will be ready right now
     updateResourceState();
+    /*
+    // On graded page, page-wide submit can be used w/starter code unedited, comparable to submitting
+    // assessment w/unanswered short answers. Following would auto-save the starter code as the
+    // user input on first render, so it shows up on review in this case. However, now opting to
+    // leave blank in this case to show that question was never even answered.
+    if (props.context.graded) {
+      props.onSaveActivity(attemptState.attemptGuid, [
+        { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
+      ]);
+    }
+    */
   }, []);
 
   // On a return to evaluated activity not run by this instance, regenerate output state by
   // simulating Run button click to execute student code. Requires that all resources have loaded.
+  // input will be null in case where starter code never edited.
   useEffect(() => {
-    if (isEvaluated && !ranCode && resourcesLoaded) onRun();
+    if (isEvaluated && !ranCode && resourcesLoaded && input != null) onRun();
   }, [resourcesLoaded]);
 
   const onInputChange = (input: string) => {
