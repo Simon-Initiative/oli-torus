@@ -20,25 +20,22 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           label: "STUDENT NAME",
           render_fn: &__MODULE__.render_name_column/3,
           sort_fn: &__MODULE__.sort_name_column/2,
-          th_class: "pl-10 instructor_dashboard_th"
+          th_class: "pl-10"
         },
         %ColumnSpec{
           name: :last_interaction,
           label: "LAST INTERACTED",
-          render_fn: &__MODULE__.render_last_interaction_column/3,
-          th_class: "instructor_dashboard_th"
+          render_fn: &__MODULE__.render_last_interaction_column/3
         },
         %ColumnSpec{
           name: :progress,
           label: "COURSE PROGRESS",
-          render_fn: &__MODULE__.render_progress_column/3,
-          th_class: "instructor_dashboard_th"
+          render_fn: &__MODULE__.render_progress_column/3
         },
         %ColumnSpec{
           name: :overall_proficiency,
           label: "OVERALL COURSE PROFICIENCY",
-          render_fn: &__MODULE__.render_overall_proficiency_column/3,
-          th_class: "instructor_dashboard_th"
+          render_fn: &__MODULE__.render_overall_proficiency_column/3
         }
       ] ++
         if section.requires_payment do
@@ -46,8 +43,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             %ColumnSpec{
               name: :payment_status,
               label: "PAYMENT STATUS",
-              render_fn: &__MODULE__.render_payment_status/3,
-              th_class: "instructor_dashboard_th"
+              render_fn: &__MODULE__.render_payment_status/3
             }
           ]
         else
@@ -70,7 +66,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     {
       fn item -> item end,
       fn row1, row2 ->
-        Utils.name(row1.name, row1.given_name, row1.family_name) <= Utils.name(row2.name, row2.given_name, row2.family_name)
+        Utils.name(row1.name, row1.given_name, row1.family_name) <=
+          Utils.name(row2.name, row2.given_name, row2.family_name)
       end
     }
   end
