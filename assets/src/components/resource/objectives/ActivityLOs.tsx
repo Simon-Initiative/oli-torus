@@ -45,9 +45,9 @@ const MultiPartSelection = (props: Props & { id: string; index: number }) => {
         {...props}
         selected={props.objectives[props.id] || []}
         objectives={props.allObjectives}
-        onEdit={(objectives) =>
-          props.onEdit({ ...props.objectives, ...{ [props.id]: objectives } })
-        }
+        onEdit={(objectives) => {
+          return props.onEdit({ ...props.objectives, [props.id]: objectives });
+        }}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { ObjectiveMap } from '../content/activity';
+import { ActivityUpdate } from '../../../../../data/persistence/activity';
 
 /**
  * In the backend data model, objectives are attached to parts.
@@ -17,11 +17,8 @@ import { ObjectiveMap } from '../content/activity';
  * the __default part is added/removed. This function does just that.
  *
  */
-interface UpdateParam {
-  objectives?: ObjectiveMap;
-  authoring?: any;
-}
-export const fixObjectiveParts = (activity: UpdateParam): UpdateParam => {
+
+export const fixObjectiveParts = (activity: ActivityUpdate): ActivityUpdate => {
   if (!activity.objectives) {
     console.info('fixObjectiveParts - No activity.objectives');
     return activity;
@@ -34,19 +31,20 @@ export const fixObjectiveParts = (activity: UpdateParam): UpdateParam => {
     return activity;
   }
 
-  if (!Array.isArray(activity?.authoring?.parts)) {
+  const parts = activity.content?.authoring?.parts;
+  if (!Array.isArray(parts)) {
     console.info('fixObjectiveParts - Parts not an array');
     return activity;
   }
 
-  if (activity.authoring.parts.length === 0) {
+  if (parts.length === 0) {
     // This really should never happen since the __default part would be generated beforehand
     console.error('fixObjectiveParts - No parts were present in the activity');
     return activity;
   }
 
   const targetKey =
-    Object.values(activity.authoring.parts)
+    Object.values(parts)
       .map((p: { id: string }) => p.id)
       .filter((k) => k !== '__default')[0] || '__default';
 
