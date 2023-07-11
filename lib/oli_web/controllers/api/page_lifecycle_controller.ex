@@ -24,20 +24,35 @@ defmodule OliWeb.Api.PageLifecycleController do
         section = Sections.get_section_by(slug: section_slug)
         PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
-        redirectTo = case effective_settings.review_submission do
-          :allow -> Routes.page_delivery_path(conn, :review_attempt, section_slug, revision_slug, attempt_guid)
-          _ ->  Routes.page_delivery_path(
+        restart_url =
+          Routes.page_delivery_path(
             conn,
             :page,
             section_slug,
             revision_slug
           )
-        end
+
+        redirectTo =
+          case effective_settings.review_submission do
+            :allow ->
+              Routes.page_delivery_path(
+                conn,
+                :review_attempt,
+                section_slug,
+                revision_slug,
+                attempt_guid
+              )
+
+            _ ->
+              restart_url
+          end
 
         json(conn, %{
           result: "success",
           commandResult: "success",
-          redirectTo: redirectTo
+          redirectTo: redirectTo,
+          # Adaptive lessons will use restartUrl when the user is explicitly choosing the "restart" option
+          restartUrl: restart_url
         })
 
       {:ok, %FinalizationSummary{graded: false}} ->
