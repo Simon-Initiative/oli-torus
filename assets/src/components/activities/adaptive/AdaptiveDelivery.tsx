@@ -25,8 +25,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [activityId, _setActivityId] = useState<string>(
     props.model?.id || props.model?.activity_id || `unknown_activity`,
   );
-  console.log({ props });
-
   const [mode, _setMode] = useState<string>(props.mode);
   const [sectionSlug, _setSectionSlug] = useState<string>(props.context.sectionSlug);
   const [currentUserId, _setCurrentUserId] = useState<number>(props.context.userId);
