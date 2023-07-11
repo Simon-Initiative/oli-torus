@@ -607,15 +607,18 @@ defmodule Oli.PublishingTest do
       # mappings should be retained in the original published publication
       unpublished_mappings =
         Publishing.get_published_resources_by_publication(unpublished_publication.id)
+        |> Enum.sort_by(& &1.id)
 
       published_mappings =
         Publishing.get_published_resources_by_publication(published_publication.id)
+        |> Enum.sort_by(& &1.id)
 
       assert unpublished_mappings == published_mappings
 
       # mappings should now be replaced with new mappings in the new publication
       assert unpublished_mappings !=
                Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
+               |> Enum.sort_by(& &1.id)
     end
 
     test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision for both pages and activities",

@@ -36,13 +36,6 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
             [ContextRoles.get_role(:context_learner), ContextRoles.get_role(:context_instructor)]
         end
 
-      # Between the first two enrollments, delay enough that we get distinctly different
-      # enrollment times
-      case index do
-        1 -> :timer.sleep(1500)
-        _ -> true
-      end
-
       {:ok, enrollment} = Sections.enroll(user.id, section.id, roles)
 
       # Have the first enrolled student also have made a payment for this section
@@ -75,7 +68,11 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
       {:ok, _view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug))
 
-      [e | _] = Oli.Delivery.Sections.list_enrollments(section.slug)
+      [e | _] =
+        Oli.Delivery.Sections.list_enrollments(section.slug)
+        |> Enum.sort_by(fn e ->
+          OliWeb.Common.Utils.name(e.user.name, e.user.given_name, e.user.family_name)
+        end)
 
       assert html =~ "Admin"
       assert html =~ "Enrollments"
@@ -127,5 +124,4 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
       admin: admin
     })
   end
-  
 end

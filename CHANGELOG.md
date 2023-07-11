@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.24 (unreleased)
+## 0.25.0 (unreleased)
+
+### Bug Fixes
+
+### Enhancements
+
+### Configs
+
+## 0.24.0 (prerelease)
 
 ### Bug Fixes
 
@@ -29,11 +37,14 @@
 - Allow payment bypass for a particular student
 - Enable selection of all pages including ones outside the hierarchy in remix
 - Add ability to jump to a specific page in delivery
+- Add system configurable persistent login sessions
 
 ### Environment Configs
 
 ```
-VENDOR_PROPERTY_SUPPORT_EMAIL    (optional) specify an email address where users can contact the support team
+VENDOR_PROPERTY_SUPPORT_EMAIL         (optional) specify an email address where users can contact the support team
+ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS  (optional) when set to 'true', the system will always login authors and users as
+                                                 a persistent session i.e. "Remember me" (expires after 30 days inactivity)
 ```
 
 ## 0.23.0 (2023-3-30)

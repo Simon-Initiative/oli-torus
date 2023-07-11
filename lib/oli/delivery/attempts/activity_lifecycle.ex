@@ -159,7 +159,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             new_part_attempts = get_latest_part_attempts(new_activity_attempt.attempt_guid)
 
             {ActivityState.from_attempt(
-               new_activity_attempt,
+               new_activity_attempt |> Repo.preload(:part_attempts),
                new_part_attempts,
                model,
                resource_attempt,

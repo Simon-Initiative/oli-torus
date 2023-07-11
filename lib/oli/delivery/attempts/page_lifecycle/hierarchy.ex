@@ -476,7 +476,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
             pa1.activity_attempt_id == pa2.activity_attempt_id,
         where:
           aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and is_nil(pa2.id),
-        preload: [revision: r],
+        preload: [revision: r, part_attempts: pa1],
         select: {pa1, aa1}
       )
     )
