@@ -107,8 +107,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             total_count: total_count,
             students_with_attempts_count: Enum.count(students_with_attempts),
             student_emails_without_attempts: student_emails_without_attempts,
-            total_attempts_count:
-              Enum.reduce(activities, 0, fn a, acc -> a.total_attempts + acc end),
+            total_attempts_count: count_attempts(current_assessment, assigns.section),
             rendered_activity_id: UUID.uuid4()
           )
       end
@@ -526,17 +525,27 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     )
   end
 
+  defp count_attempts(current_assessment, section) do
+    from(ra in ResourceAttempt,
+      join: access in ResourceAccess,
+      on: access.id == ra.resource_access_id,
+      where:
+        ra.lifecycle_state == :evaluated and access.section_id == ^section.id and access.resource_id == ^current_assessment.resource_id,
+      select: count(ra.id)
+    )
+    |> Repo.one()
+  end
+
   defp get_activities(current_assessment, section) do
     activities =
       from(aa in ActivityAttempt,
         join: res_attempt in ResourceAttempt,
         on: aa.resource_attempt_id == res_attempt.id,
         where:
-          res_attempt.revision_id == ^current_assessment.id and
-            res_attempt.lifecycle_state == :evaluated,
+          res_attempt.lifecycle_state == :evaluated,
         join: res_access in ResourceAccess,
         on: res_attempt.resource_access_id == res_access.id,
-        where: res_access.section_id == ^section.id,
+        where: res_access.section_id == ^section.id and res_access.resource_id == ^current_assessment.resource_id,
         join: rev in Revision,
         on: aa.revision_id == rev.id,
         join: pr in PublishedResource,
