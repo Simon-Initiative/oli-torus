@@ -41,6 +41,19 @@ defmodule Oli.Delivery.SettingsTest do
 
   end
 
+  test "was_late/2 determines lateness correctly when no effective due date" do
+
+    ra = %ResourceAttempt{
+      inserted_at: ~U[2020-01-01 01:00:00Z],
+    }
+    settings_with_no_end_date = %Combined{
+      end_date: nil
+    }
+
+    refute Settings.was_late?(ra, settings_with_no_end_date, DateTime.add(ra.inserted_at, 1, :minute))
+
+  end
+
   test "was_late/2 determines lateness correctly when only a due date" do
 
     ra = %ResourceAttempt{
