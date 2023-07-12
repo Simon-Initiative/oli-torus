@@ -93,7 +93,9 @@ defmodule Oli.Delivery.Settings do
     |> Repo.one()
   end
 
-  def was_late?(%ResourceAttempt{} = resource_attempt, %Combined{} = effective_settings, now) do
+  def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
+  def was_late?(%ResourceAttempt{} = resource_attempt, %Combined{late_submit: :allow} = effective_settings, now) do
+
     case determine_effective_deadline(resource_attempt, effective_settings) do
       nil -> false
       effective_deadline -> DateTime.compare(now, effective_deadline) == :gt
