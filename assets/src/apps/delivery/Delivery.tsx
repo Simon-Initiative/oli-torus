@@ -40,6 +40,7 @@ export interface DeliveryProps {
   finalizeGradedURL: string;
   screenIdleTimeOutInSeconds?: number;
   reviewMode?: boolean;
+  signoutUrl?: string;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -53,6 +54,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   resourceAttemptGuid,
   resourceAttemptState,
   activityGuidMapping,
+  signoutUrl,
   activityTypes = [],
   previewMode = false,
   isInstructor = false,
@@ -153,7 +155,9 @@ const Delivery: React.FC<DeliveryProps> = ({
           hideCloseButton={!fullscreen}
         />
       ) : null}
-      {screenIdleTimeOutTriggered ? <ScreenIdleTimeOutDialog remainingTime={2} /> : null}
+      {screenIdleTimeOutTriggered ? (
+        <ScreenIdleTimeOutDialog remainingTime={5} signoutUrl={signoutUrl} />
+      ) : null}
     </div>
   );
 };

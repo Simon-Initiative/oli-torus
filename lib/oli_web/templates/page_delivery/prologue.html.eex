@@ -59,13 +59,13 @@
       <form method="POST" action="<%= Routes.page_delivery_path(@conn, :start_attempt_protected, @section_slug, @slug) %>">
         <%= csrf_input_tag(Routes.page_delivery_path(@conn, :start_attempt_protected, @section_slug, @slug)) %>
         <input type="password" class="w-100 mt-3 mb-3" name="password" id="password" placeholder="Password">
-        <p class="lead">
+        <p class="lead p-5">
           <button type="submit" class="btn btn-primary btn-lg">Start Attempt</button>
         </p>
       </form>
     <% else %>
       <p>When you are ready to begin, you may <strong>Start Attempt</strong>.</p>
-      <p class="lead">
+      <p class="lead p-5">
         <%= link "Start Attempt", class: "btn btn-primary btn-lg", to: Routes.page_delivery_path(@conn, :start_attempt, @section_slug, @slug) %>
       </p>
     <% end %>

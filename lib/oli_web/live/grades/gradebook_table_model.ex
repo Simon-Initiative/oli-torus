@@ -5,6 +5,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Components.Tag
 
   def new(enrollments, graded_pages, resource_accesses, section, show_all_links) do
     by_user =
@@ -31,7 +32,8 @@ defmodule OliWeb.Grades.GradebookTableModel do
           name: :name,
           label: "STUDENT NAME",
           render_fn: &__MODULE__.render_student/3,
-          th_class: "pl-10 instructor_dashboard_th"
+          th_class: "pl-10 whitespace-nowrap !sticky left-0 z-10",
+          td_class: "sticky left-0 z-10"
         }
       ] ++
         Enum.map(graded_pages, fn revision ->
@@ -39,7 +41,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
             name: revision.resource_id,
             label: String.upcase(revision.title),
             render_fn: &__MODULE__.render_score/3,
-            th_class: "instructor_dashboard_th",
+            th_class: "whitespace-nowrap",
             sortable: false
           }
         end)
@@ -59,13 +61,13 @@ defmodule OliWeb.Grades.GradebookTableModel do
         name: :name,
         label: "Quiz",
         render_fn: &__MODULE__.render_grade/3,
-        th_class: "pl-10 instructor_dashboard_th"
+        th_class: "pl-10"
       },
       %ColumnSpec{
         name: :score,
         label: "Score",
         render_fn: &__MODULE__.render_grade_score/3,
-        th_class: "pl-10 instructor_dashboard_th",
+        th_class: "pl-10",
         sortable: false
       }
     ]
@@ -90,6 +92,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   def render_grade_score(assigns, row, _) do
     perc = score(row.score) / out_of_score(row.out_of) * 100
     has_score? = row.score != nil
+    was_late = row.was_late
 
     ~F"""
       <a
@@ -103,6 +106,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
           Not Finished
         {/if}
       </a>
+      {#if was_late}
+        <Tag.render>LATE</Tag.render>
+      {/if}
     """
   end
 
@@ -177,7 +183,8 @@ defmodule OliWeb.Grades.GradebookTableModel do
          resource_id,
          %ResourceAccess{
            score: score,
-           out_of: out_of
+           out_of: out_of,
+           was_late: was_late
          }
        ) do
     if out_of == 0 or out_of == 0.0 do
@@ -207,6 +214,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
         <a class={if perc < 50, do: "text-red-500", else: "text-black"} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
         {safe_score}/{safe_out_of}
         </a>
+        {#if was_late}
+          <Tag.render>LATE</Tag.render>
+        {/if}
       """
     end
   end

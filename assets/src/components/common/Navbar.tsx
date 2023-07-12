@@ -75,7 +75,7 @@ export const Navbar = ({
     <div ref={ref}>
       <nav className="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-800 relative shadow-lg lg:flex select-none z-30">
         <div className="w-full">
-          <a className="block w-[200px] lg:mb-14 mx-auto" href={logo.href}>
+          <a className="block w-[200px] lg:p-2 lg:mb-14 mx-auto" href={logo.href}>
             <img src={logo.src.light} className="inline-block dark:hidden" alt="logo" />
             <img src={logo.src.dark} className="hidden dark:inline-block" alt="logo dark" />
           </a>
@@ -85,10 +85,9 @@ export const Navbar = ({
             lg:hidden
             text-gray-500
             border-0
-            absolute right-2 top-2
+            absolute right-0 top-0
             hover:shadow-none hover:no-underline
-            py-2
-            px-2.5
+            p-2.5
             bg-transparent
             focus:outline-none focus:ring-0 focus:shadow-none focus:no-underline
           "

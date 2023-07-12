@@ -13,9 +13,13 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   alias Oli.Repo
   alias Oli.Delivery.Gating
 
-  defp isolated_live_view_course_content(conn, section_slug, user_id) do
+  defp isolated_live_view_course_content(conn, section_slug, user_id, preview_mode \\ false) do
     live_isolated(conn, CourseContentLive,
-      session: %{"section_slug" => section_slug, "current_user_id" => user_id}
+      session: %{
+        "section_slug" => section_slug,
+        "current_user_id" => user_id,
+        "preview_mode" => preview_mode
+      }
     )
   end
 
@@ -320,6 +324,35 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       )
     end
 
+    test "can open a container resource in preview mode", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id, true)
+
+      navigate_to_unit_1(view)
+
+      # open module 1
+      resource_slug = "module_1"
+
+      view
+      |> element(
+        ~s{button[phx-click="open_resource"][phx-value-resource_slug="#{resource_slug}"]}
+      )
+      |> render_click()
+
+      assert_redirected(
+        view,
+        Routes.page_delivery_path(
+          OliWeb.Endpoint,
+          :container_preview,
+          section.slug,
+          resource_slug
+        )
+      )
+    end
+
     test "can open a page resource", %{conn: conn, user: user, section: section} do
       {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
 
@@ -341,6 +374,33 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
         Routes.page_delivery_path(
           OliWeb.Endpoint,
           :page,
+          section.slug,
+          resource_slug
+        )
+      )
+    end
+
+    test "can open a page resource in preview mode", %{conn: conn, user: user, section: section} do
+      {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id, true)
+
+      view
+      |> navigate_to_unit_1()
+      |> drill_down_to_module_1()
+
+      # open page 2
+      resource_slug = "page_2"
+
+      view
+      |> element(
+        ~s{button[phx-click="open_resource"][phx-value-resource_slug="#{resource_slug}"]}
+      )
+      |> render_click()
+
+      assert_redirected(
+        view,
+        Routes.page_delivery_path(
+          OliWeb.Endpoint,
+          :page_preview,
           section.slug,
           resource_slug
         )
@@ -384,8 +444,9 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
   defp update_section_resource(section_id, resource_id, params) do
     query =
-      from sr in SectionResource,
+      from(sr in SectionResource,
         where: sr.section_id == ^section_id and sr.resource_id == ^resource_id
+      )
 
     Repo.one(query)
     |> Oli.Delivery.Sections.SectionResource.changeset(params)

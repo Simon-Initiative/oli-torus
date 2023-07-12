@@ -954,15 +954,27 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "#{user.name}"
-      assert html_response(conn, 200) =~ "Student"
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~ ~s[\"name\":\"#{user.name}"]
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~
+               ~s{\"role\":\"student\",\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
     end
 
-    test "shows role label correctly when user is enrolled as instructor", %{
-      conn: conn,
-      user: user,
-      section: section
-    } do
+    test "shows role label correctly when user is enrolled as student with platform_role=instructor",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
       {:ok, section} = Sections.update_section(section, %{open_and_free: true})
 
       {:ok, instructor} =
@@ -980,8 +992,103 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "#{instructor.name}"
-      assert html_response(conn, 200) =~ "Instructor"
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~ ~s[\"name\":\"#{instructor.name}"]
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.Navbar"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~
+               ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
+    end
+
+    test "timer will not be shown if revision is ungraded", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      %{ungraded_page: ungraded_page} = map
+
+      enroll_as_student(%{section: section, user: user})
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(ungraded_page.revision, section.id, user.id)
+
+      datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+      Oli.Delivery.Sections.get_section_resource(section.id, ungraded_page.resource.id)
+      |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: ungraded_page.resource
+      )
+
+      Oli.Delivery.Attempts.PageLifecycle.start(
+        ungraded_page.revision.slug,
+        section.slug,
+        datashop_session_id,
+        user,
+        effective_settings,
+        activity_provider
+      )
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, ungraded_page.revision.slug))
+
+      assert html_response(conn, 200) =~ ungraded_page.revision.title
+      refute html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
+    end
+
+    test "timer will be shown it if revision is graded", %{
+      conn: conn,
+      user: user,
+      section: section,
+      map: map
+    } do
+      %{page: page} = map
+
+      enroll_as_student(%{section: section, user: user})
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(page.revision, section.id, user.id)
+
+      datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+      Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
+      |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page.resource
+      )
+
+      Oli.Delivery.Attempts.PageLifecycle.start(
+        page.revision.slug,
+        section.slug,
+        datashop_session_id,
+        user,
+        effective_settings,
+        activity_provider
+      )
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, page.revision.slug))
+
+      assert html_response(conn, 200) =~ page.revision.title
+      assert html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
     end
   end
 
@@ -1635,7 +1742,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
         )
 
-        assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
+      assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
     end
   end
 

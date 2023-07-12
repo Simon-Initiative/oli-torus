@@ -190,7 +190,7 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_role(section, user) do
     case section do
-      %Section{open_and_free: true, slug: section_slug} ->
+      %Section{slug: section_slug} ->
         cond do
           PlatformRoles.has_roles?(user, @admin_roles, :any) ||
               ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
@@ -216,12 +216,12 @@ defmodule OliWeb.Components.Delivery.Utils do
 
       _ ->
         case user do
-          %User{guest: _is_guest?} = user ->
+          %User{can_create_sections: can_create_sections} ->
             cond do
               PlatformRoles.has_roles?(user, @admin_roles, :any) ->
                 :administrator
 
-              PlatformRoles.has_roles?(user, @instructor_roles, :any) ->
+              PlatformRoles.has_roles?(user, @instructor_roles, :any) || can_create_sections ->
                 :instructor
 
               PlatformRoles.has_roles?(user, @student_roles, :any) ->

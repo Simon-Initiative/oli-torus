@@ -494,7 +494,8 @@ defmodule OliWeb.RemixSectionLiveTest do
         unit1_container: unit1_container,
         latest1: latest1,
         latest2: latest2
-      }
+      },
+      orphan_revision_publication: orphan_revision_publication
     } do
       {:ok, view, _html} =
         live(
@@ -535,6 +536,17 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view
              |> has_element?(".remix_materials_table td", "An Orphan Page")
+
+      assert view
+             |> has_element?(".remix_materials_table th", "Published on")
+
+      assert view
+             |> has_element?(
+               ".remix_materials_table td",
+               OliWeb.Common.FormatDateTime.format_datetime(orphan_revision_publication.published,
+                 show_timezone: false
+               )
+             )
     end
 
     test "remix section items - add materials - all pages view can be sorted", %{
@@ -771,7 +783,8 @@ defmodule OliWeb.RemixSectionLiveTest do
      author: map.author,
      institution: map.institution,
      project: map.project,
-     publication: map.publication}
+     publication: map.publication,
+     orphan_revision_publication: map.pub2}
   end
 
   defp setup_instructor_session(%{conn: conn}) do

@@ -26,7 +26,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     props.model?.id || props.model?.activity_id || `unknown_activity`,
   );
   const [mode, _setMode] = useState<string>(props.mode);
-
+  const [sectionSlug, _setSectionSlug] = useState<string>(props.context.sectionSlug);
+  const [currentUserId, _setCurrentUserId] = useState<number>(props.context.userId);
   const isReviewMode = mode === 'review';
 
   const [partsLayout, _setPartsLayout] = useState(
@@ -186,6 +187,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           partsInitDeferred.resolve({
             snapshot: readyResults.snapshot || {},
             context: {
+              sectionSlug,
+              currentUserId,
               ...readyResults.context,
               host: props.mountPoint,
               domain: domain || adaptivityDomain,

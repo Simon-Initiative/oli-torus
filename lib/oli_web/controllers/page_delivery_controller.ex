@@ -669,6 +669,7 @@ defmodule OliWeb.PageDeliveryController do
         resourceAttemptState: resource_attempt.state,
         resourceAttemptGuid: resource_attempt.attempt_guid,
         activityGuidMapping: context.activities,
+        signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
@@ -791,6 +792,21 @@ defmodule OliWeb.PageDeliveryController do
       preview_mode: true,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+    )
+  end
+
+  def assignments_preview(conn, %{"section_slug" => section_slug}) do
+    section = conn.assigns.section
+    user = conn.assigns.current_user
+
+    render(
+      conn,
+      "assignments.html",
+      title: section.title,
+      assignments: Sections.get_graded_pages(section_slug, user.id),
+      section_slug: section_slug,
+      preview_mode: true,
+      format_datetime_fn: format_datetime_fn(conn)
     )
   end
 

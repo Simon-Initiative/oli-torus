@@ -254,9 +254,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   defp get_assessments(section_slug, student_exceptions) do
     DeliveryResolver.graded_pages_revisions_and_section_resources(section_slug)
-    |> Enum.map(fn {rev, sr} ->
+    |> Enum.with_index()
+    |> Enum.map(fn {{rev, sr}, index} ->
       Settings.combine(rev, sr, nil)
       |> Map.merge(%{
+        index: index + 1,
         name: rev.title,
         scheduling_type: sr.scheduling_type,
         exceptions_count:

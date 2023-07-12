@@ -29,12 +29,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   data(total_count, :integer)
   data(form_id, :string)
   data(bulk_apply_selected_assessment_id, :integer)
+  data(selected_assessment, :map)
 
   @default_params %{
     offset: 0,
     limit: 10,
     sort_order: :asc,
-    sort_by: :name,
+    sort_by: :index,
     text_search: nil
   }
 
@@ -51,7 +52,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
     {total_count, rows} = apply_filters(assigns.assessments, params)
 
-    {:ok, table_model} = SettingsTableModel.new(rows, assigns.section.slug, assigns.ctx)
+    {:ok, table_model} =
+      SettingsTableModel.new(
+        rows,
+        assigns.section.slug,
+        assigns.ctx,
+        JS.push("edit_date", target: socket.assigns.myself)
+        |> JS.push("open", target: "#assessment_due_date_modal")
+      )
 
     table_model =
       Map.merge(table_model, %{
@@ -73,15 +81,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        assessments: assigns.assessments,
        form_id: UUID.uuid4(),
        bulk_apply_selected_assessment_id:
-         if(assigns.assessments != [], do: hd(assigns.assessments).resource_id, else: nil)
+         if(assigns.assessments != [], do: hd(assigns.assessments).resource_id, else: nil),
+       selected_assessment: nil
      )}
   end
 
   def render(assigns) do
     ~F"""
-    <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+    <div id="settings_table" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
+      {due_date_modal(assigns)}
       {modal(@modal_assigns)}
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6">
+      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
         <div class="flex flex-col pl-9">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>
@@ -127,6 +137,28 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         />
       </form>
     </div>
+    """
+  end
+
+  def due_date_modal(assigns) do
+    ~H"""
+      <.live_component
+        id="assessment_due_date_modal"
+        title={if @selected_assessment, do: "#{@selected_assessment.name} due date"}
+        module={OliWeb.Components.Modal}
+        on_confirm={JS.dispatch("submit", to: "#assessment-due-date-form") |> JS.push("close", target: "#assessment_due_date_modal")}
+        on_confirm_label="Save"
+      >
+        <div class="p-4">
+          <form id="assessment-due-date-form" for="settings_table" phx-target={@myself} phx-submit="edit_date">
+            <label for="end_date_input">Please pick a due date for the selected assessment</label>
+            <div class="flex gap-2 items-center mt-2">
+              <input id="end_date_input" name="end_date" type="datetime-local" phx-debounce={500} value={value_from_datetime(@selected_assessment.end_date, @ctx)}/>
+              <button class="torus-button primary" type="button" phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}>Clear</button>
+            </div>
+          </form>
+        </div>
+      </.live_component>
     """
   end
 
@@ -247,6 +279,60 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   def modal(%{show: false}), do: nil
+
+  def handle_event("edit_date", %{"assessment_id" => assessment_id}, socket) do
+    base_assessment =
+      Enum.find(socket.assigns.assessments, fn a ->
+        a.resource_id == String.to_integer(assessment_id)
+      end)
+
+    {:noreply, assign(socket, selected_assessment: base_assessment)}
+  end
+
+  def handle_event("edit_date", %{"end_date" => end_date}, socket) do
+    assessment = socket.assigns.selected_assessment
+
+    end_date =
+      if String.length(end_date) > 0 do
+        FormatDateTime.datestring_to_utc_datetime(
+          end_date,
+          socket.assigns.ctx
+        )
+      else
+        nil
+      end
+
+    scheduling_type = if !is_nil(end_date), do: :due_by, else: :read_by
+
+    Sections.get_section_resource(
+      socket.assigns.section.id,
+      assessment.resource_id
+    )
+    |> SectionResource.changeset(%{
+      end_date: end_date,
+      scheduling_type: scheduling_type
+    })
+    |> Repo.update()
+    |> case do
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
+
+      {:ok, _section_resource} ->
+        {:noreply,
+         socket
+         |> update_assessments(
+           assessment.resource_id,
+           [
+             {:end_date, end_date},
+             {:scheduling_type, :scheduling_type}
+           ],
+           false
+         )
+         |> flash_to_liveview(:info, "Setting updated!")}
+    end
+  end
 
   def handle_event("hide_modal", _params, socket) do
     {:noreply,

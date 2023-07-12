@@ -167,6 +167,7 @@ defmodule OliWeb.Components.Delivery.Actions do
     case Paywall.create_payment(%{
            type: :bypass,
            generation_date: DateTime.utc_now(),
+           application_date: DateTime.utc_now(),
            amount: Money.new(0, "USD"),
            section_id: socket.assigns.section.id,
            enrollment_id: enrollment_id,

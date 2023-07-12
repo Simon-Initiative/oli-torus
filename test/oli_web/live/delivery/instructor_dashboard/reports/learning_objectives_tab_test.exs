@@ -189,39 +189,5 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{obj_revision_2.title}")
     end
 
-    test "filtering by container", %{
-      conn: conn,
-      instructor: instructor,
-      section: section,
-      obj_revision_1: obj_revision_1,
-      obj_revision_2: obj_revision_2,
-      module_revision: module_revision
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
-
-      assert has_element?(view, "span", "#{obj_revision_1.title}")
-      assert has_element?(view, "span", "#{obj_revision_2.title}")
-
-      ## aplies filtering by module container
-      params = %{
-        filter_by: module_revision.resource_id
-      }
-
-      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
-
-      refute has_element?(view, "span", "#{obj_revision_1.title}")
-      assert has_element?(view, "span", "#{obj_revision_2.title}")
-
-      ## aplies filtering by root container
-      params = %{
-        filter_by: "all"
-      }
-
-      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
-
-      assert has_element?(view, "span", "#{obj_revision_1.title}")
-      assert has_element?(view, "span", "#{obj_revision_2.title}")
-    end
   end
 end

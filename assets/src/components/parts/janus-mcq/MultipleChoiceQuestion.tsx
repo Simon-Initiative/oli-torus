@@ -95,7 +95,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
 
   return (
     <React.Fragment>
-      <div style={mcqItemStyles}>
+      <div style={mcqItemStyles} className="mcq-item">
         {configureMode && (
           <>
             <button

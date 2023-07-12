@@ -12,6 +12,10 @@ defmodule Oli.Rendering.Activity.Html do
 
   @behaviour Oli.Rendering.Activity
 
+  defp get_activity_model("oli-adaptive-delivery", nil, _, _, model) do
+    model
+  end
+
   defp get_activity_model(tag, resource_attempt, activity_id, activity_map, model) do
     case tag do
       "oli-adaptive-delivery" ->

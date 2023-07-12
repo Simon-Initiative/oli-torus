@@ -140,13 +140,8 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         }
       )
 
-    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-
-    graded_pages =
-      hierarchy
-      |> Oli.Delivery.Hierarchy.flatten()
-      |> Enum.filter(fn node -> node.revision.graded end)
-      |> Enum.map(fn node -> node.revision end)
+    graded_pages = Oli.Publishing.DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
+    |> Enum.map(fn {rev, _sr} -> rev end)
 
     resource_accesses = fetch_resource_accesses(enrollments, section)
 

@@ -406,6 +406,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       case tab_name do
         :settings ->
           [
+            :index,
             :name,
             :due_date,
             :max_attempts,
@@ -589,7 +590,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
         |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
 
       assert view
@@ -783,7 +784,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_submit(%{})
       |> follow_redirect(
         conn,
-        "/sections/#{section.slug}/assessment_settings/settings/all?limit=10&offset=0&sort_by=name&sort_order=asc&text_search="
+        "/sections/#{section.slug}/assessment_settings/settings/all?limit=10&offset=0&sort_by=index&sort_order=asc&text_search="
       )
 
       # after being redirected, we validate all changes were applied
@@ -798,10 +799,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4.late_submit == "Disallow"
 
       assert Enum.uniq([
-               Map.drop(assessment_1, [:name]),
-               Map.drop(assessment_2, [:name]),
-               Map.drop(assessment_3, [:name]),
-               Map.drop(assessment_4, [:name])
+               Map.drop(assessment_1, [:name, :index]),
+               Map.drop(assessment_2, [:name, :index]),
+               Map.drop(assessment_3, [:name, :index]),
+               Map.drop(assessment_4, [:name, :index])
              ])
              |> length() == 1
     end
@@ -878,7 +879,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       [initial_a1, initial_a2, initial_a3, initial_a4] = table_as_list_of_maps(view, :settings)
 
       view
-      |> element("th[phx-value-sort_by=name]")
+      |> element("th[phx-value-sort_by=index]")
       |> render_click()
 
       [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
@@ -1101,6 +1102,35 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert page_1_assessment_settings.feedback_mode == :allow
       assert page_1_assessment_settings.feedback_scheduled_date == nil
+    end
+
+    test "schedule date can be changed by clicking the due date in the table",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#settings_table")
+      |> render_click("edit_date", %{assessment_id: "#{page_1.resource_id}"})
+
+      view
+      |> with_target("#assessment_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Page 1 due date")
+      assert has_element?(view, "label", "Please pick a due date for the selected assessment")
+
+      new_date = ~U[2023-10-10 16:00:00Z]
+
+      view
+      |> element("#assessment-due-date-form")
+      |> render_submit(%{end_date: new_date})
+
+      assert has_element?(view, "button", "October 10, 2023")
     end
   end
 
@@ -1447,6 +1477,46 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                "p",
                "Current exceptions: 2 students, 2 exceptions"
              )
+    end
+
+    test "schedule date can be changed by clicking the due date in the table",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      # LiveViewTest doesn't support testing two or more JS.push chained so I need to trigger two events separatedly
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_due_date_modal")
+      |> render_click("open", %{})
+
+      assert has_element?(view, "h5", "Due date for #{student_1.name}")
+      assert has_element?(view, "label", "Please pick a due date for the selected student")
+
+      new_date = ~U[2023-10-10 16:00:00Z]
+
+      view
+      |> element("#student-due-date-form")
+      |> render_submit(%{end_date: new_date})
+
+      assert has_element?(view, "button", "October 10, 2023")
     end
   end
 end

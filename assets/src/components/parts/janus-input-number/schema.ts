@@ -34,6 +34,11 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     description: 'text label for the input field',
   },
+  prompt: {
+    type: 'string',
+    title: 'Student Action Prompt',
+    description: 'placeholder for the input field',
+  },
   unitsLabel: {
     title: 'Unit Label',
     type: 'string',
@@ -51,11 +56,6 @@ export const simpleSchema: JSONSchema7Object = {
     default: '',
   },
   advancedFeedback: numericAdvancedFeedback.schema,
-
-  // Should it be this instead of label?
-  // prompt: {
-  //   type: 'string',
-  // },
 };
 
 export const schema: JSONSchema7Object = {

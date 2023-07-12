@@ -70,11 +70,6 @@ export const schema: JSONSchema7Object = {
 };
 
 export const simpleSchema: JSONSchema7Object = {
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
   layoutType: {
     title: 'Layout',
     type: 'string',
@@ -98,7 +93,7 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'MCQ Items',
     type: 'array',
     items: {
-      type: 'string',
+      type: 'object',
     },
   },
   anyCorrectAnswer: {
@@ -152,7 +147,6 @@ export const simpleSchema: JSONSchema7Object = {
 
 export const simpleUiSchema = {
   'ui:order': [
-    'fontSize',
     'layoutType',
     'mcqItems',
     'multipleSelection',

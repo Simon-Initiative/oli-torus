@@ -8,7 +8,7 @@ export const FlowchartTopToolbar: React.FC<FlowchartTopToolbarProps> = () => {
       <div className="left-header">Basic</div>
       <div className="right-header">Screen with choices component</div>
 
-      <ToolbarItem label="Blank screen" screenType="blank_screen" />
+      <ToolbarItem label="Instructional screen" screenType="blank_screen" />
 
       {/* <ToolbarItem label="Welcome screen" border={true} screenType="welcome_screen"  /> */}
       <ToolbarItem label="Multiple choice" screenType="multiple_choice" />
