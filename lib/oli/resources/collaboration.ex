@@ -446,7 +446,7 @@ defmodule Oli.Resources.Collaboration do
       0,
       nil
     )
-    |> where([p], p.status == :submitted)
+    |> where([_s, p], p.status == :submitted)
     |> Repo.all()
   end
 
@@ -470,7 +470,7 @@ defmodule Oli.Resources.Collaboration do
       Keyword.get(opts, :offset, 0),
       Keyword.get(opts, :limit)
     )
-    |> where([p], p.status == :submitted)
+    |> where([_s, p], p.status == :submitted)
     |> Repo.all()
     |> return_results_with_count()
   end
@@ -481,11 +481,11 @@ defmodule Oli.Resources.Collaboration do
       Keyword.get(opts, :offset, 0),
       Keyword.get(opts, :limit)
     )
-    |> join(:left, [p, s, sr, spp, pr, rev, u], p2 in Post,
+    |> join(:left, [_s, p, _spp, _pr, _r, _u], p2 in Post,
       on: p2.parent_post_id == p.id or p2.thread_root_id == p.id
     )
     |> where(
-      [p, s, sr, spp, pr, rev, u, p2],
+      [_s, p, _spp, _pr, _r, _u, p2],
       is_nil(p2) and is_nil(p.parent_post_id) and is_nil(p.thread_root_id)
     )
     |> Repo.all()
@@ -511,27 +511,19 @@ defmodule Oli.Resources.Collaboration do
   defp do_list_posts_in_section_for_instructor(section_id_or_slug, offset, limit) do
     section_join =
       case is_number(section_id_or_slug) do
-        true -> dynamic([_, s], s.id == ^section_id_or_slug)
-        false -> dynamic([_, s], s.slug == ^section_id_or_slug)
+        true -> dynamic([s], s.id == ^section_id_or_slug)
+        false -> dynamic([s], s.slug == ^section_id_or_slug)
       end
 
-    Post
-    |> join(:inner, [p], s in Section, on: ^section_join)
-    |> join(:inner, [p], sr in SectionResource,
-      on:
-        sr.resource_id == p.resource_id and sr.section_id == p.section_id
-    )
-    |> join(:inner, [p, s, sr], spp in SectionsProjectsPublications,
-      on: spp.section_id == p.section_id and spp.project_id == sr.project_id
-    )
-    |> join(:inner, [p, s, sr, spp], pr in PublishedResource,
-      on: pr.publication_id == spp.publication_id and pr.resource_id == p.resource_id
-    )
-    |> join(:inner, [p, s, sr, spp, pr], r in Revision, on: r.id == pr.revision_id)
-    |> join(:inner, [p], u in User, on: p.user_id == u.id)
-    |> where([p, s, sr], sr.section_id == s.id)
-    |> where([p], p.status != :deleted)
-    |> select([p, s, sr, spp, pr, r, u], %{
+    Section
+    |> join(:inner, [s], p in Post, on: p.section_id == s.id)
+    |> join(:inner, [s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
+    |> join(:inner, [s, p, spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id and pr.resource_id == p.resource_id)
+    |> join(:inner, [_s, _p, _spp, pr], r in Revision, on: r.id == pr.revision_id)
+    |> join(:inner, [_s, p, _spp], u in User, on: p.user_id == u.id)
+    |> where(^section_join)
+    |> where([_s, p], p.status != :deleted)
+    |> select([s, p, spp, pr, r, u], %{
       id: p.id,
       content: p.content,
       user_name: u.name,
