@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
 
   import OliWeb.Components.Delivery.Utils
 
+  alias Oli.Accounts.{Author, SystemRole}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
   alias OliWeb.Common.SessionContext
@@ -57,7 +58,7 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
       %{
         signin:
           Routes.delivery_path(OliWeb.Endpoint, :signin, section: maybe_section_slug(assigns)),
-        signout: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
+        signout: signout_path(assigns.ctx),
         projects: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive),
         linkAccount: Routes.delivery_path(OliWeb.Endpoint, :link_account),
         editAccount: Routes.pow_registration_path(OliWeb.Endpoint, :edit),
@@ -105,5 +106,17 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
         </button>
       </div>
     """
+  end
+
+  defp signout_path(%SessionContext{user: user_or_admin}) do
+    admin_role_id = SystemRole.role_id().admin
+
+    case user_or_admin do
+      %Author{system_role_id: ^admin_role_id} ->
+        Routes.authoring_session_path(OliWeb.Endpoint, :signout, type: :author)
+
+      _ ->
+        Routes.session_path(OliWeb.Endpoint, :signout, type: :user)
+    end
   end
 end
