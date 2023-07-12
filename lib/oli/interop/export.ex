@@ -101,6 +101,7 @@ defmodule Oli.Interop.Export do
     end)
   end
 
+  defp rewire_activity_elements(nil, _), do: nil
   defp rewire_activity_elements(content_as_list, project) when is_map(content_as_list) do
 
     case Map.get(content_as_list, "content") do
