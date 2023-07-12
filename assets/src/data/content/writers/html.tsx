@@ -315,12 +315,30 @@ export class HtmlParser implements WriterImpl {
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
     if (!attrs.src) return <></>;
+    const dimensions: { width?: number; height?: number } = {};
+    if (attrs.width) {
+      dimensions['width'] = attrs.width;
+    }
+    if (attrs.height) {
+      dimensions['height'] = attrs.height;
+    } else if (attrs.width) {
+      // If we have a width, but no height, set the height to the same as width.
+      dimensions['height'] = attrs.width;
+    }
+
+    const iframeClass = attrs.width ? '' : 'embed-responsive-item';
+    const containerClass = attrs.width ? '' : 'embed-responsive embed-responsive-16by9';
 
     return this.captioned_content(
       context,
       attrs,
-      <div className="embed-responsive embed-responsive-16by9">
-        <iframe className="embed-responsive-item" allowFullScreen src={this.escapeXml(attrs.src)} />
+      <div className={containerClass}>
+        <iframe
+          className={iframeClass}
+          {...dimensions}
+          allowFullScreen
+          src={this.escapeXml(attrs.src)}
+        />
       </div>,
     );
   }
