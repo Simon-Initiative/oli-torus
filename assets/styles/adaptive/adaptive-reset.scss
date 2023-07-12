@@ -41,6 +41,11 @@ ul {
   list-style-type: disc;
 }
 
+input[type='checkbox'],
+input[type='radio'] {
+  min-width: 1rem;
+}
+
 [type='text'],
 [type='email'],
 [type='url'],
@@ -60,6 +65,10 @@ select {
   border: 1px solid var(--grayDark20);
   box-sizing: border-box;
   border-radius: 2px;
+  min-height: 1.5em;
+}
+
+textarea {
   min-height: 44px;
 }
 
