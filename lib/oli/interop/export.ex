@@ -101,7 +101,7 @@ defmodule Oli.Interop.Export do
     end)
   end
 
-  defp rewire_activity_elements(content_as_list, project) do
+  defp rewire_activity_elements(content_as_list, project) when is_map(content_as_list) do
 
     case Map.get(content_as_list, "content") do
 
@@ -119,9 +119,9 @@ defmodule Oli.Interop.Export do
         Map.put(content_as_list, "content", content)
 
     end
-
-
   end
+
+  defp rewire_activity_elements(other, _), do: other
 
   defp rewire_elements(content, project) do
     Oli.Resources.PageContent.visit_children(content, {:ok, []}, fn c, {status, []}, _tr_context ->
