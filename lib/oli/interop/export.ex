@@ -61,8 +61,8 @@ defmodule Oli.Interop.Export do
         tags: transform_tags(r),
         unresolvedReferences: [],
         content: %{},
-        objectives: [],
-        children: Enum.map(r.children, fn id -> "#{id}" end)
+        objectives: Enum.map(r.children, fn id -> "#{id}" end),
+        children: []
       }
       |> entry("#{r.resource_id}.json")
     end)
