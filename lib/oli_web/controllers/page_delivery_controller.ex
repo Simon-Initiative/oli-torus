@@ -839,8 +839,7 @@ defmodule OliWeb.PageDeliveryController do
             effective_settings =
               Oli.Delivery.Settings.get_combined_settings(
                 revision,
-                section.id,
-                conn.assigns.current_user.id
+                section.id
               )
 
             numbered_revisions = Sections.get_revision_indexes(section.slug)
@@ -856,6 +855,9 @@ defmodule OliWeb.PageDeliveryController do
                 preview_mode: true,
                 previous_page: previous,
                 next_page: next,
+                page_number: 1,
+                graded: false,
+                review_mode: false,
                 numbered_revisions: numbered_revisions,
                 current_page: current,
                 title: revision.title,
