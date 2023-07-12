@@ -997,7 +997,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    live("/:section_slug", Sections.OverviewView)
+    get("/:section_slug", PageDeliveryController, :index)
 
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)

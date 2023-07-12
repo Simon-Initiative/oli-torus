@@ -151,7 +151,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             <a
               href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}
               target="_blank"
-              class="btn btn-primary link-account"
+              class="btn btn-primary link-account inline-block my-2"
             >Link Authoring Account</a>
           </div>
         </div>
