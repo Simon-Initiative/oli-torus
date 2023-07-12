@@ -180,14 +180,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :overview)}\"]",
+               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
                "Preview Course as Instructor"
-             )
-
-      assert has_element?(
-               view,
-               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}\"]",
-               "Enter Course as a Student"
              )
 
       assert has_element?(
@@ -414,7 +408,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, section.slug, :overview)}\"]",
+               "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, section.slug)}\"]",
                "Preview Course as Instructor"
              )
     end
