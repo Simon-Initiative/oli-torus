@@ -85,8 +85,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   end
 
   def mount(
-        params,
-        %{"section_slug" => section_slug} = session,
+        %{"section_slug" => section_slug} = params,
+        session,
         socket
       ) do
     {parent_gate, title} =
