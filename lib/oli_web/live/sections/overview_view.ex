@@ -49,7 +49,7 @@ defmodule OliWeb.Sections.OverviewView do
       ]
   end
 
-  def mount(_params, %{"section_slug" => section_slug} = session, socket) do
+  def mount(%{"section_slug" => section_slug}, session, socket) do
     case Mount.for(section_slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})

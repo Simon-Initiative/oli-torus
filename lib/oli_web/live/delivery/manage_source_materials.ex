@@ -36,8 +36,8 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   end
 
   def mount(
-        _params,
-        %{"section_slug" => section_slug} = session,
+        %{"section_slug" => section_slug},
+        session,
         socket
       ) do
     case Mount.for(section_slug, session) do
