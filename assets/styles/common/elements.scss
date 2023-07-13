@@ -405,6 +405,9 @@ $element-margin-bottom: 1.5em;
     margin-bottom: $element-margin-bottom;
 
     figure {
+      figcaption {
+        color: var(--color-primary);
+      }
       padding: 1rem;
     }
   }
