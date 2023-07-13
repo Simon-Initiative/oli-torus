@@ -193,6 +193,7 @@ defmodule Oli.Delivery.Sections do
       sorting,
       options
     )
+    |> where([_, e], e.status != :suspended)
     |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
     |> group_by([_, _, _, ecr], [ecr.context_role_id])
     |> preload([u], :platform_roles)
