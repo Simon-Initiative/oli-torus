@@ -36,10 +36,16 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   end
 
   def mount(
-        %{"section_slug" => section_slug},
+        params,
         session,
         socket
       ) do
+
+    section_slug = case params do
+      :not_mounted_at_router -> Map.get(session, "section_slug")
+      _ -> Map.get(params, "section_slug")
+    end
+
     case Mount.for(section_slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
