@@ -71,9 +71,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               a.id == assessment_id
             end)
 
-          activities = get_activities(current_assessment, assigns.section)
-
           student_ids = Enum.map(assigns.students, & &1.id)
+
+          activities = get_activities(current_assessment, assigns.section, student_ids)
 
           students_with_attempts =
             DeliveryResolver.students_with_attempts_for_page(
@@ -541,7 +541,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     |> Repo.one()
   end
 
-  defp get_activities(current_assessment, section) do
+  defp get_activities(current_assessment, section, student_ids) do
     activities =
       from(aa in ActivityAttempt,
         join: res_attempt in ResourceAttempt,
@@ -551,7 +551,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         on: res_attempt.resource_access_id == res_access.id,
         where:
           res_access.section_id == ^section.id and
-            res_access.resource_id == ^current_assessment.resource_id,
+            res_access.resource_id == ^current_assessment.resource_id and
+            res_access.user_id in ^student_ids,
         join: rev in Revision,
         on: aa.revision_id == rev.id,
         join: pr in PublishedResource,
