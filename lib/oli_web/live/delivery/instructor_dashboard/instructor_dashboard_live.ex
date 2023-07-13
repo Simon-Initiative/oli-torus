@@ -173,7 +173,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = params, _, socket) do
-    IO.inspect params["active_tab"]
+
     socket =
       case params["active_tab"] do
         value when value in [nil, "course_content"] ->
