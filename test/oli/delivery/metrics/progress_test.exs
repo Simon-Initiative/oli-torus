@@ -272,7 +272,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       assert this_user_progress == 0.5
     end
 
-    test "progress_across_for_pages/4 calculates correctly", %{
+    test "progress_across_for_pages/3 calculates correctly", %{
       mod1_pages: mod1_pages,
       this_user: this_user,
       section: section
@@ -299,18 +299,20 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       )
 
       progress =
-        Metrics.progress_across_for_pages(section.id, [p1.resource.id, p2.resource.id], [], 2)
+        Metrics.progress_across_for_pages(section.id, [p1.resource.id, p2.resource.id], [
+          this_user.id,
+          another_user.id
+        ])
 
       assert progress[p1.resource.id] == (0.5 + 0.75) / 2
       assert progress[p2.resource.id] == (1.0 + 0.5) / 2
 
-      # excluding one user...
+      # excluding 'this user'...
       progress_2 =
         Metrics.progress_across_for_pages(
           section.id,
           [p1.resource.id, p2.resource.id],
-          [this_user.id],
-          1
+          another_user.id
         )
 
       assert progress_2[p1.resource.id] == 0.75

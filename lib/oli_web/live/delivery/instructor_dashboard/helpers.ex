@@ -7,12 +7,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       {0, pages} ->
         page_ids = Enum.map(pages, & &1.id)
 
+        students =
+          Sections.enrolled_students(section.slug)
+          |> Enum.reject(fn user -> user.user_role_id != 4 end)
+
         student_progress =
           Metrics.progress_across_for_pages(
             section.id,
             page_ids,
-            [],
-            Sections.count_enrollments(section.slug)
+            Enum.map(students, & &1.id)
           )
 
         proficiency_per_page = Metrics.proficiency_per_page(section.slug, page_ids)
@@ -52,6 +55,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   end
 
   def get_assessments(section, students) do
+    student_ids = Enum.map(students, & &1.id)
+
     graded_pages_and_section_resources =
       DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
 
@@ -61,21 +66,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       Metrics.progress_across_for_pages(
         section.id,
         page_ids,
-        [],
-        Enum.count(students)
+        student_ids
       )
 
     avg_score_across_for_pages =
       Metrics.avg_score_across_for_pages(
         section.id,
         page_ids,
-        []
+        student_ids
       )
 
     attempts_across_for_pages =
       Metrics.attempts_across_for_pages(
         section.id,
-        page_ids
+        page_ids,
+        student_ids
       )
 
     container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
