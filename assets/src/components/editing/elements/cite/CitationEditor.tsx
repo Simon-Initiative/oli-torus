@@ -66,13 +66,12 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
           });
         };
 
-        const classes = selected.bibref === bibEntry.id
-          ? 'w-full px-4 py-2 text-left bg-gray-200 border-b border-gray-200 cursor-pointer focus:outline-none dark:bg-gray-800 dark:border-gray-600'
-          : 'w-full px-4 py-2 text-left border-b border-gray-200 cursor-pointer hover:bg-gray-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-gray-500 dark:focus:text-white';
+        const classes =
+          selected.bibref === bibEntry.id
+            ? 'w-full px-4 py-2 text-left bg-gray-200 border-b border-gray-200 cursor-pointer focus:outline-none dark:bg-gray-800 dark:border-gray-600'
+            : 'w-full px-4 py-2 text-left border-b border-gray-200 cursor-pointer hover:bg-gray-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-gray-500 dark:focus:text-white';
 
-        const r = selected.bibref === bibEntry.id
-          ? { ref: inputEl }
-          : {};
+        const r = selected.bibref === bibEntry.id ? { ref: inputEl } : {};
 
         return (
           <button
@@ -100,7 +99,10 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
         e.stopPropagation();
       }}
     >
-      <div className="text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white" style={{ maxHeight: '460px' }}>
+      <div
+        className="text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        style={{ maxHeight: '460px' }}
+      >
         {bibEditors}
       </div>
     </div>
