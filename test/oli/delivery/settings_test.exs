@@ -15,6 +15,20 @@ defmodule Oli.Delivery.SettingsTest do
     assert {:allowed} == Settings.new_attempt_allowed(%Combined{max_attempts: 5, late_start: :allow, end_date: ~U[2020-01-01 00:00:00Z]}, 1, [])
   end
 
+  test "was_late/2 never returns true when late submissions disallowed" do
+
+    ra = %ResourceAttempt{
+      inserted_at: ~U[2020-01-01 00:00:00Z],
+    }
+    settings = %Combined{
+      late_submit: :disallow,
+      time_limit: 1
+    }
+
+    refute Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
+
+  end
+
   test "was_late/2 determines lateness correctly when only a time limit" do
 
     ra = %ResourceAttempt{

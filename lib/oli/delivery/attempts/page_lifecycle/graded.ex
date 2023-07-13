@@ -93,8 +93,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
     case Oli.Delivery.Settings.check_end_date(effective_settings) do
       {:allowed} ->
-        case {page_revision.max_attempts > length(resource_attempts) or
-            page_revision.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
+        case {effective_settings.max_attempts > length(resource_attempts) or
+          effective_settings.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
           {true, false} ->
 
             {:ok, resource_attempt} = Hierarchy.create(context)
@@ -148,7 +148,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  resource_attempt.was_late
                ) do
             {:ok, resource_access} ->
-              {:ok, _} = Oli.Delivery.Metrics.mark_progress_completed(resource_access)
+              {:ok, resource_access} = Oli.Delivery.Metrics.mark_progress_completed(resource_access)
 
               {:ok,
                %FinalizationSummary{
