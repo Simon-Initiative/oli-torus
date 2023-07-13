@@ -21,6 +21,9 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLive do
     current_position = 0
     current_level = 0
 
+    # Adjust the hierarchy in the case that there are only pages in the course, no containers
+    hierarchy = OliWeb.Components.Delivery.CourseContent.adjust_hierarchy_for_only_pages(hierarchy)
+
     {:ok,
      assign(socket,
        hierarchy: hierarchy,

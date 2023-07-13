@@ -17,6 +17,30 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   attr(:is_instructor, :boolean, default: false)
   attr(:preview_mode, :boolean, default: false)
 
+  def adjust_hierarchy_for_only_pages(hierarchy) do
+    case Enum.all?(hierarchy["children"], fn child -> child["type"] == "page" end) do
+      true ->
+        %{
+          "children" => [
+            %{
+              "graded" => "false",
+              "id" => "0",
+              "index" => "0",
+              "level" => "-1", # The course content browser handles case of the special level of -1
+              "next" => nil,
+              "prev" => nil,
+              "slug" => nil,
+              "title" => "Curriculum",
+              "type" => "container",
+              "children" => hierarchy["children"]
+            }
+          ]
+        }
+
+      _ -> hierarchy
+    end
+  end
+
   def render(assigns) do
     ~H"""
     <div class="bg-white dark:bg-gray-800 shadow-sm">
@@ -25,6 +49,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
           <h4 class="text-base font-semibold mr-auto tracking-wide text-gray-800 dark:text-white h-8">Course Content</h4>
           <span class="text-sm font-normal tracking-wide text-gray-800 dark:text-white mt-2">Find all your course content, material, assignments and class activities here.</span>
         </section>
+        <%= if get_current_node(@current_level_nodes, @current_position)["level"] != "-1" do %>
         <section class="flex flex-row justify-between p-8">
           <div class="text-xs absolute -mt-5"><%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree, myself: @myself}) %></div>
           <button phx-click="previous_node" phx-target={@myself} class={if @current_position == 0, do: "grayscale pointer-events-none"}>
@@ -45,6 +70,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             <i class="fa-regular fa-circle-right text-primary text-xl"></i>
           </button>
         </section>
+        <% end %>
         <%= for {resource, index} <- get_current_node(@current_level_nodes, @current_position)["children"] |> Enum.with_index() do %>
           <section class="flex flex-row justify-between items-center w-full p-8">
             <h4

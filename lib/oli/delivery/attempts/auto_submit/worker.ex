@@ -2,11 +2,13 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
   use Oban.Worker, queue: :auto_submit, max_attempts: 5
 
   alias Oli.Delivery.Attempts.AutoSubmit.Worker
-  alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
-  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
+  alias Oli.Delivery.Attempts.PageLifecycle.{FinalizationSummary, FinalizationContext}
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.PageLifecycle.Graded
+
+  require Logger
 
   @moduledoc """
   An Oban worker driven page attempts auto submission creator.
@@ -14,22 +16,104 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"attempt_guid" => attempt_guid, "section_slug" => section_slug, "datashop_session_id" => datashop_session_id}
+        args: %{"attempt_guid" => resource_attempt_guid, "section_slug" => section_slug, "datashop_session_id" => datashop_session_id}
       }) do
-    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
 
-      {:ok, %FinalizationSummary{
-        graded: true,
-        resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id}
-      }} ->
-        # graded resource finalization success
-        section = Sections.get_section_by(slug: section_slug)
-        PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-      _ ->
-        :ok
+    Oli.Repo.transaction(fn _ ->
+      case Oli.Delivery.Attempts.Core.get_resource_attempt_by(attempt_guid: resource_attempt_guid) do
+        nil ->
+          Oli.Repo.rollback({:not_found})
 
-    end
+        resource_attempt ->
+
+          resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)
+
+          context = %FinalizationContext{
+            resource_attempt: resource_attempt,
+            section_slug: section_slug,
+            datashop_session_id: datashop_session_id,
+            effective_settings: Oli.Delivery.Settings.get_combined_settings(
+                resource_attempt.revision,
+                resource_access.section_id,
+                resource_access.user_id
+              )
+          }
+
+          Logger.info("Auto submit: got resource attempt for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+          case Graded.finalize(context) do
+            {:ok, %FinalizationSummary{resource_access: resource_access, part_attempt_guids: part_attempt_guids, lifecycle_state: :evaluated}} ->
+
+              Logger.info("Auto submit: finalized as :evaluated for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+              section = Sections.get_section_by(slug: section_slug)
+              user = Oli.Accounts.get_user!(resource_access.user_id)
+
+              Oli.Delivery.Snapshots.Worker.perform_now(part_attempt_guids, section_slug)
+
+              Logger.info("Auto submit: snapshots created for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+              if section.grade_passback_enabled do
+                Logger.info("Auto submit: gradepassback STARTED for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+                result = Oli.Grading.send_score_to_lms(
+                  section,
+                  user,
+                  resource_access,
+                  Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.access_token_provider(section)
+                )
+                Logger.info("Auto submit: gradepassback FINISHED for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+                result
+              else
+                Logger.info("Auto submit: gradepassback NOT ENABLED for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+                :ok
+              end
+
+            {:ok, _} ->
+              Logger.info("Auto submit: finalized not as :evaluated for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+              :ok
+
+            {:error, :already_submitted} ->
+
+              Logger.info("Auto submit: was already finalized for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+              section = Sections.get_section_by(slug: section_slug)
+              user = Oli.Accounts.get_user!(resource_access.user_id)
+
+              if section.grade_passback_enabled do
+
+                Logger.info("Auto submit: gradepassback STARTED for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+                result = Oli.Grading.send_score_to_lms(
+                  section,
+                  user,
+                  resource_access,
+                  Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.access_token_provider(section)
+                )
+
+                Logger.info("Auto submit: gradepassback FINISHED for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+                result
+              else
+                Logger.info("Auto submit: gradepassback NOT ENABLED for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+                :ok
+              end
+
+            {:error, error} ->
+              Logger.info("Auto submit: error #{inspect(error)} during finalization for guid #{resource_attempt_guid} and section slug #{section_slug}")
+
+              Oli.Repo.rollback(error)
+          end
+      end
+    end)
+
   end
+
+
 
   @doc """
   Possibly schedules a finalization auto submit for a resource attempt. If the resource attempt
