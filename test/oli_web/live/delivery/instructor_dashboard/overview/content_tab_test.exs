@@ -47,7 +47,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.Content do
                "Find all your course content, material, assignments and class activities here."
              )
 
-      assert has_element?(view, "button", "Open as instructor")
+      assert has_element?(view, "a", "Open as instructor")
     end
   end
 end
