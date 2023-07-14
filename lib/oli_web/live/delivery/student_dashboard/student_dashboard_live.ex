@@ -11,6 +11,8 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
+    enrollment = Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id)
+
     survey_responses =
       case socket.assigns.section do
         %{required_survey_resource_id: nil} ->
@@ -23,7 +25,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
           )
       end
 
-    {:ok, assign(socket, survey_responses: survey_responses)}
+    {:ok, assign(socket, survey_responses: survey_responses, enrollment: enrollment)}
   end
 
   @impl Phoenix.LiveView
@@ -120,7 +122,13 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     ~H"""
       <%= render_modal(assigns) %>
       <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
-      <Helpers.tabs active_tab={@active_tab} section_slug={@section.slug} student_id={@student.id} preview_mode={@preview_mode} />
+      <Helpers.tabs
+        hidden_tabs={if !@enrollment, do: [:actions], else: []}
+        active_tab={@active_tab}
+        section_slug={@section.slug}
+        student_id={@student.id}
+        preview_mode={@preview_mode}
+      />
       <%= render_tab(assigns) %>
     """
   end
