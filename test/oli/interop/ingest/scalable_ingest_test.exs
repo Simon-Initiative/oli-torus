@@ -4,6 +4,7 @@ defmodule Oli.Interop.Ingest.ScalableIngestTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
   alias Oli.Repo
+  alias Oli.Authoring.Editing.ObjectiveEditor
   use Oli.DataCase
 
   def by_title(project, title) do
@@ -93,6 +94,16 @@ defmodule Oli.Interop.Ingest.ScalableIngestTest do
       # verify that the tags were created
       tags = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "tag")
       assert length(tags) == 2
+
+      # verify that the objectives were created
+      objectives = ObjectiveEditor.fetch_objective_mappings(project)
+      assert length(objectives) == 7
+
+      # we have 2 objectives that have children so we check that it's correct
+      assert Enum.reduce(objectives, 0, fn obj, acc ->
+               if length(obj.revision.children) > 0, do: acc + 1, else: acc
+             end)
+             |> Kernel.===(2)
 
       # verify correct number of hierarchy elements were created
       containers = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "container")

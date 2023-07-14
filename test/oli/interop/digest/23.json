@@ -1,11 +1,8 @@
 {
-  "children": [
-    "28",
-    "27"
-  ],
+  "children": [],
   "content": {},
   "id": "23",
-  "objectives": [],
+  "objectives": ["28", "27"],
   "originalFile": "",
   "tags": [],
   "title": "Identify the primary dishes and typical drinks of Asturias",

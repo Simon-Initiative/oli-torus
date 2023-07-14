@@ -7,14 +7,12 @@
   }
 }
 
-.oli-radio {
-  width: 20px;
-  height: 20px;
+.oli-radio[type='radio'] {
+  color: var(--color-delivery-primary);
 }
 
-.oli-checkbox {
-  width: 20px;
-  height: 20px;
+.oli-checkbox[type='checkbox'] {
+  color: var(--color-delivery-primary);
 }
 
 .dragHandle {

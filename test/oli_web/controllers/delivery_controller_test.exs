@@ -487,6 +487,58 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~
                ~s|src="#{cover_image}"|
     end
+
+    test "gets the 'instructor' label role in the user account menu if the user with platform_role=student can create sections",
+         %{conn: conn} do
+      user = insert(:user, %{can_create_sections: true})
+
+      Accounts.update_user_platform_roles(
+        user,
+        [
+          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
+        ]
+      )
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.UserAccountMenu"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~
+               ~s{\"role\":\"instructor\",\"roleColor\":\"#2ecc71\",\"roleLabel\":\"Instructor\"}
+    end
+
+    test "gets the 'student' label role in the user account menu if the user with platform_role=student can not create sections",
+         %{
+           conn: conn
+         } do
+      user = insert(:user, %{can_create_sections: false})
+
+      Accounts.update_user_platform_roles(
+        user,
+        [
+          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
+        ]
+      )
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
+
+      assert html_response(conn, 200)
+             |> Floki.parse_document!()
+             |> Floki.find(~s{div[data-react-class="Components.UserAccountMenu"]})
+             |> Floki.attribute("data-react-props")
+             |> hd =~
+               ~s{\"role\":\"student\",\"roleColor\":\"#3498db\",\"roleLabel\":\"Student\"}
+    end
   end
 
   @moduletag :capture_log

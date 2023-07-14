@@ -26,6 +26,12 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
         name: :updated_at,
         label: "Updated at",
         render_fn: &__MODULE__.custom_render/3,
+        th_class: "pl-2"
+      },
+      %ColumnSpec{
+        name: :publication_date,
+        label: "Published on",
+        render_fn: &__MODULE__.custom_render/3,
         th_class: "pl-2 text-right",
         td_class: "text-right"
       }
@@ -114,6 +120,14 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
 
     ~H"""
       <%= OliWeb.Common.FormatDateTime.format_datetime(@updated_at, show_timezone: false) %>
+    """
+  end
+
+  def custom_render(assigns, data, %ColumnSpec{name: :publication_date}) do
+    assigns = assign(assigns, :publication_date, data.revision.publication_date)
+
+    ~H"""
+      <%= OliWeb.Common.FormatDateTime.format_datetime(@publication_date, show_timezone: false) %>
     """
   end
 end

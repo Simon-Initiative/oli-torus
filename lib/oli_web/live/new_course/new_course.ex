@@ -22,9 +22,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
     steps = [
       %Step{
-        title: "Select your base course project or course product",
+        title: "Select your source materials",
         description:
-          "Select a course project or product on which to base your course curriculum.",
+          "Select the source of materials to base your course curriculum on.",
         render_fn: fn assigns -> render_step(:select_source, assigns) end,
         on_next_step: JS.push("change_step", value: %{current_step: 1})
       },
@@ -138,7 +138,6 @@ defmodule OliWeb.Delivery.NewCourse do
       <.header>
         <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
           <h2>Select source</h2>
-          <p>We pulled the information we can from your LMS, but feel free to adjust it</p>
           <.live_component
             id="select_source_step"
             module={SelectSource}
@@ -160,7 +159,6 @@ defmodule OliWeb.Delivery.NewCourse do
         <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
           <img src="/images/icons/course-creation-wizard-step-1.svg" />
           <h2>Name your course</h2>
-          <p class="mb-0">We pulled the information we can from your LMS, but feel free to adjust it</p>
           <.render_flash flash={@flash} />
           <NameCourse.render changeset={@changeset} />
         </div>
@@ -174,7 +172,6 @@ defmodule OliWeb.Delivery.NewCourse do
       <div class="flex flex-col items-center gap-3 pl-9 pr-16 py-4">
         <img src="/images/icons/course-creation-wizard-step-2.svg" />
         <h2>Course details</h2>
-        <p>We pulled the information we can from your LMS, but feel free to adjust it</p>
         <.render_flash flash={@flash} />
         <CourseDetails.render on_select={@on_select} changeset={@changeset} />
       </div>
@@ -217,7 +214,7 @@ defmodule OliWeb.Delivery.NewCourse do
   defp next_step_disabled?(assigns) do
     case assigns.current_step do
       0 ->
-        assigns[:source] == nil
+        true
 
       _ ->
         false
@@ -310,6 +307,14 @@ defmodule OliWeb.Delivery.NewCourse do
           |> Map.from_struct()
           |> Map.merge(%{
             blueprint_id: blueprint.id,
+            requires_payment: blueprint.requires_payment,
+            payment_options: blueprint.payment_options,
+            pay_by_institution: blueprint.pay_by_institution,
+            amount: blueprint.amount,
+            has_grace_period: blueprint.has_grace_period,
+            grace_period_days: blueprint.grace_period_days,
+            grace_period_strategy: blueprint.grace_period_strategy,
+            required_survey_resource_id: project.required_survey_resource_id,
             type: :enrollable,
             open_and_free: true,
             has_experiments: project.has_experiments,
@@ -402,7 +407,7 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do
-    {:noreply, assign(socket, source: source)}
+    {:noreply, assign(socket, source: source, current_step: 1)}
   end
 
   def handle_event("day_selection", %{"class_days" => class_days}, socket) do
@@ -456,7 +461,7 @@ defmodule OliWeb.Delivery.NewCourse do
       |> Section.changeset(section)
 
     case current_step do
-      1 ->
+      step when step == 0 or step == 1 ->
         {:noreply, assign(socket, changeset: changeset, current_step: current_step)}
 
       2 ->

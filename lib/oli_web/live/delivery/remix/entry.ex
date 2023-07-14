@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
             <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="set_active" phx-value-uuid={@node.uuid}><%= @node.revision.title %></button>
           <% else %>
             <span class="ml-1 mr-1 entry-title"><%= @node.revision.title %></span>
-            <%= if @is_product do %>
+            <%= if @is_product and !is_nil(@node.project_slug) do %>
               <a
                 id={"product-page-#{@node.revision.slug}"}
                 class="entry-title mx-3"

@@ -1,7 +1,7 @@
 defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
-
+  import Ecto.Query, warn: false
   import OliWeb.Common.Utils
 
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
@@ -266,6 +266,8 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     end
   end
 
+
+
   defp get_page_nodes(section_slug, student_id) do
     resource_accesses =
       Oli.Delivery.Attempts.Core.get_resource_accesses(
@@ -283,6 +285,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         Map.put(m, r.resource_id, r)
       end)
 
+
     hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section_slug)
 
     page_nodes =
@@ -293,7 +296,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
           Oli.Resources.ResourceType.get_id_by_type("page")
       end)
 
-    Enum.with_index(page_nodes, fn node, index ->
+    ordered_pages = Enum.with_index(page_nodes, fn node, index ->
       ra = Map.get(resource_accesses, node.revision.resource_id)
 
       %{
@@ -302,6 +305,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         index: index,
         title: node.revision.title,
         type: if(node.revision.graded, do: "Graded", else: "Practice"),
+        was_late: if(is_nil(ra), do: false, else: ra.was_late),
         score: if(is_nil(ra), do: nil, else: ra.score),
         out_of: if(is_nil(ra), do: nil, else: ra.out_of),
         number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
@@ -310,5 +314,41 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
       }
     end)
+
+    ordered_pages_set = Enum.into(ordered_pages, MapSet.new(), fn page -> page.resource_id end)
+
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    unordered = from([s: s, sr: sr, rev: rev] in Oli.Publishing.DeliveryResolver.section_resource_revisions(section_slug),
+      where: rev.resource_type_id == ^page_id,
+      select: %{
+        title: rev.title,
+        graded: rev.graded,
+        resource_id: rev.resource_id
+      }
+    )
+    |> Oli.Repo.all()
+    |> Enum.filter(fn row -> !MapSet.member?(ordered_pages_set, row.resource_id) end)
+    |> Enum.map(fn row ->
+      ra = Map.get(resource_accesses, row.resource_id)
+
+      %{
+        resource_id: row.resource_id,
+        node: %{ancestors: [], revision: %{title: row.title}, numbering: %{}},
+        index: nil,
+        title: row.title,
+        type: if(row.graded, do: "Graded", else: "Practice"),
+        was_late: if(is_nil(ra), do: false, else: ra.was_late),
+        score: if(is_nil(ra), do: nil, else: ra.score),
+        out_of: if(is_nil(ra), do: nil, else: ra.out_of),
+        number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
+        number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
+        updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
+        inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
+      }
+    end)
+
+    ordered_pages ++ unordered
+
   end
 end

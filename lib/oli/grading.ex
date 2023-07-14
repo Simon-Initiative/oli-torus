@@ -188,12 +188,13 @@ defmodule Oli.Grading do
               case resource_accesses[revision.resource_id] do
                 %{^user_id => student_resource_accesses} ->
                   case student_resource_accesses do
-                    %ResourceAccess{score: score, out_of: out_of} ->
+                    %ResourceAccess{score: score, out_of: out_of, was_late: was_late} ->
                       %GradebookScore{
                         resource_id: revision.resource_id,
                         label: revision.title,
                         score: score,
-                        out_of: out_of
+                        out_of: out_of,
+                        was_late: was_late
                       }
 
                     _ ->

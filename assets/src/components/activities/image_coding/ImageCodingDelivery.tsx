@@ -2,7 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { maybe } from 'tsmonad';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import { isCorrect } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import * as Events from 'data/events';
 import { configureStore } from 'state/store';
@@ -18,6 +21,7 @@ import { Hints } from '../common/DisplayedHints';
 import { Stem } from '../common/DisplayedStem';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/delivery/evaluation/Evaluation';
+import { GradedPoints } from '../common/delivery/graded_points/GradedPoints';
 import * as ActivityTypes from '../types';
 import { EvalContext, Evaluator } from './Evaluator';
 import { ImageCodingModelSchema } from './schema';
@@ -76,6 +80,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const [input, setInput] = useState(
     attemptState.parts[0].response ? attemptState.parts[0].response.input : model.starterCode,
   );
+
   const { stem, resourceURLs } = model;
   // runtime evaluation state:
   const [output, setOutput] = useState('');
@@ -92,11 +97,27 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   });
 
   // tslint:disable-next-line:prefer-array-literal
-  const resourceRefs = useRef<(HTMLImageElement | string)[]>(new Array(resourceURLs.length));
+  const resourceRefs = useRef<(HTMLImageElement | string)[]>(
+    new Array(resourceURLs.length).fill(null),
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
   const solnRef = useRef<HTMLCanvasElement>(null);
+
+  // for tracking when all resource are loaded, used for regenerating output on return to evaluated page
+  const [resourcesLoaded, setResourcesLoaded] = useState(false);
+  const updateResourceState = () => {
+    if (
+      resourceRefs.current &&
+      // note every returns true on empty list
+      resourceRefs.current.every((ref) => {
+        // ref is either image element or holds downloaded spreadsheet file text
+        return ref instanceof HTMLImageElement ? (ref as HTMLImageElement).complete : ref != null;
+      })
+    )
+      setResourcesLoaded(true);
+  };
 
   const loadCSV = (url: string, i: number) => {
     fetch(url, { mode: 'cors' })
@@ -106,7 +127,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
         }
         return resp.text();
       })
-      .then((text) => (resourceRefs.current[i] = text))
+      .then((text) => {
+        resourceRefs.current[i] = text;
+        updateResourceState();
+      })
       .catch((e) => {
         throw new Error('failed to load ' + lastPart(url) + ': ' + e);
       });
@@ -119,6 +143,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     // a simple hack to force fresh load.
     img.src = url + '?t=' + new Date().getTime();
     img.crossOrigin = 'anonymous';
+    img.onload = updateResourceState;
 
     // save references in parallel array. Elements never need to be attached to DOM.
     resourceRefs.current[i] = img;
@@ -132,7 +157,28 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     resourceURLs.map((url, i) => {
       url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
     });
+
+    // For non-resource-using problems, will be ready right now
+    updateResourceState();
+    /*
+    // On graded page, page-wide submit can be used w/starter code unedited, comparable to submitting
+    // assessment w/unanswered short answers. Following would auto-save the starter code as the
+    // user input on first render, so it shows up on review in this case. However, now opting to
+    // leave blank in this case to show that question was never even answered.
+    if (props.context.graded) {
+      props.onSaveActivity(attemptState.attemptGuid, [
+        { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
+      ]);
+    }
+    */
   }, []);
+
+  // On a return to evaluated activity not run by this instance, regenerate output state by
+  // simulating Run button click to execute student code. Requires that all resources have loaded.
+  // input will be null in case where starter code never edited.
+  useEffect(() => {
+    if (isEvaluated && !ranCode && resourcesLoaded && input != null) onRun();
+  }, [resourcesLoaded]);
 
   const onInputChange = (input: string) => {
     setInput(input);
@@ -264,30 +310,53 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return diff < model.tolerance;
   };
 
-  const evaluationSummary = isEvaluated ? (
-    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
-  ) : null;
-
-  const reset = isEvaluated && !props.context.graded && !props.context.surveyId && (
+  const maybeResetButton = isEvaluated && !props.context.graded && !props.context.surveyId && (
     <div className="d-flex">
       <div className="flex-fill"></div>
       <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
     </div>
   );
 
-  const ungradedDetails = props.context.graded
-    ? null
-    : [
-        evaluationSummary,
-        <Hints
-          key="hints"
-          onClick={onRequestHint}
-          hints={hints}
-          context={writerContext}
-          hasMoreHints={hasMoreHints}
-          isEvaluated={isEvaluated}
-        />,
-      ];
+  const maybeEvaluation = (
+    <Evaluation
+      shouldShow={
+        !model.isExample &&
+        isEvaluated &&
+        (!props.context.graded || props.mode === 'review') &&
+        props.context.showFeedback === true &&
+        props.context.surveyId === null
+      }
+      key="evaluation"
+      attemptState={attemptState}
+      context={writerContext}
+    />
+  );
+
+  const maybeGradedPoints = (
+    <GradedPoints
+      shouldShow={
+        !model.isExample &&
+        isEvaluated &&
+        props.context.graded &&
+        props.mode === 'review' &&
+        props.context.showFeedback === true &&
+        props.context.surveyId === null
+      }
+      icon={isCorrect(attemptState) ? <Checkmark /> : <Cross />}
+      attemptState={attemptState}
+    />
+  );
+
+  const maybeHints = !model.isExample && !props.context.graded && (
+    <Hints
+      key="hints"
+      onClick={onRequestHint}
+      hints={hints}
+      context={writerContext}
+      hasMoreHints={hasMoreHints}
+      isEvaluated={isEvaluated}
+    />
+  );
 
   const renderOutput = () => {
     if (output === '') {
@@ -328,17 +397,15 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton = !model.isExample &&
-    !props.context.surveyId &&
-    !props.context.graded && (
-      <button
-        className="btn btn-primary mt-2 float-right"
-        disabled={isEvaluated || !ranCode}
-        onClick={onSubmit}
-      >
-        Submit
-      </button>
-    );
+  const maybeSubmitButton = !model.isExample && !props.context.surveyId && (
+    <button
+      className="btn btn-primary mt-2 float-right"
+      disabled={isEvaluated || !ranCode}
+      onClick={onSubmit}
+    >
+      Submit
+    </button>
+  );
 
   const runButton = (
     <button className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>
@@ -350,16 +417,14 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     <div className="activity short-answer-activity">
       <div className="activity-content">
         <Stem stem={stem} context={writerContext} />
-
+        {maybeGradedPoints}
         <div>
           <ImageCodeEditor value={input} disabled={isEvaluated} onChange={onInputChange} />
           {runButton} {maybeSubmitButton}
         </div>
-
         {/* implementation relies on 2 hidden canvases for image operations */}
         <canvas ref={canvasRef} style={{ display: 'none' }} />
         <canvas ref={canvasRef2} style={{ display: 'none' }} />
-
         <div style={{ whiteSpace: 'pre-wrap' }}>
           <h5>Output:</h5>
           {renderOutput()}
@@ -369,9 +434,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0" />
         </div>
 
-        {!model.isExample && !props.context.surveyId && ungradedDetails}
+        {maybeEvaluation}
+        {maybeHints}
       </div>
-      {reset}
+      {maybeResetButton}
     </div>
   );
 };

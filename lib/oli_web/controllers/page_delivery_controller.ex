@@ -669,6 +669,7 @@ defmodule OliWeb.PageDeliveryController do
         resourceAttemptState: resource_attempt.state,
         resourceAttemptGuid: resource_attempt.attempt_guid,
         activityGuidMapping: context.activities,
+        signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
@@ -794,6 +795,21 @@ defmodule OliWeb.PageDeliveryController do
     )
   end
 
+  def assignments_preview(conn, %{"section_slug" => section_slug}) do
+    section = conn.assigns.section
+    user = conn.assigns.current_user
+
+    render(
+      conn,
+      "assignments.html",
+      title: section.title,
+      assignments: Sections.get_graded_pages(section_slug, user.id),
+      section_slug: section_slug,
+      preview_mode: true,
+      format_datetime_fn: format_datetime_fn(conn)
+    )
+  end
+
   def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     conn
     |> assign(:preview_mode, true)
@@ -823,8 +839,7 @@ defmodule OliWeb.PageDeliveryController do
             effective_settings =
               Oli.Delivery.Settings.get_combined_settings(
                 revision,
-                section.id,
-                conn.assigns.current_user.id
+                section.id
               )
 
             numbered_revisions = Sections.get_revision_indexes(section.slug)
@@ -840,6 +855,9 @@ defmodule OliWeb.PageDeliveryController do
                 preview_mode: true,
                 previous_page: previous,
                 next_page: next,
+                page_number: 1,
+                graded: false,
+                review_mode: false,
                 numbered_revisions: numbered_revisions,
                 current_page: current,
                 title: revision.title,

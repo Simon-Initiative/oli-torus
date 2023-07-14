@@ -8,26 +8,23 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       %ColumnSpec{
         name: :numbering_index,
         label: "ORDER",
-        th_class: "pl-10 instructor_dashboard_th",
+        th_class: "pl-10",
         td_class: "pl-10"
       },
       %ColumnSpec{
         name: :container_name,
         label: container_column_name,
-        render_fn: &__MODULE__.render_name_column/3,
-        th_class: "instructor_dashboard_th"
+        render_fn: &__MODULE__.render_name_column/3
       },
       %ColumnSpec{
         name: :student_completion,
         label: "STUDENT COMPLETION",
-        render_fn: &__MODULE__.render_student_completion/3,
-        th_class: "instructor_dashboard_th"
+        render_fn: &__MODULE__.render_student_completion/3
       },
       %ColumnSpec{
         name: :student_proficiency,
         label: "STUDENT PROFICIENCY",
-        render_fn: &__MODULE__.render_student_proficiency/3,
-        th_class: "instructor_dashboard_th"
+        render_fn: &__MODULE__.render_student_proficiency/3
       }
     ]
 

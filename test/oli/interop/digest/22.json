@@ -1,11 +1,8 @@
 {
-  "children": [
-    "26",
-    "25"
-  ],
+  "children": [],
   "content": {},
   "id": "22",
-  "objectives": [],
+  "objectives": ["26", "25"],
   "originalFile": "",
   "tags": [],
   "title": "Identify the primary dishes and typical drinks of Galicia",

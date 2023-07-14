@@ -146,10 +146,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
             RecommendedActions.section_has_scheduled_resources?(section.id)
 
           scoring_pending_activities_count =
-            RecommendedActions.section_scoring_pending_activities(section.id) |> length()
+            RecommendedActions.section_scoring_pending_activities_count(section.id)
 
           approval_pending_posts_count =
-            RecommendedActions.section_approval_pending_posts(section.id) |> length()
+            RecommendedActions.section_approval_pending_posts_count(section.id)
 
           has_pending_updates = RecommendedActions.section_has_pending_updates?(section.id)
 

@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   use Phoenix.LiveComponent
 
   import Ecto.Query
+  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
   alias Oli.Publishing.DeliveryResolver
@@ -19,6 +20,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.ManualGrading.RenderedActivity
   alias Oli.Repo
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -69,10 +71,16 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               a.id == assessment_id
             end)
 
-          activities = get_activities(current_assessment, assigns.section.slug)
+          student_ids = Enum.map(assigns.students, & &1.id)
+
+          activities = get_activities(current_assessment, assigns.section, student_ids)
 
           students_with_attempts =
-            DeliveryResolver.students_with_attempts_for_page(current_assessment.id)
+            DeliveryResolver.students_with_attempts_for_page(
+              current_assessment,
+              assigns.section.id,
+              student_ids
+            )
 
           student_emails_without_attempts =
             Enum.reduce(assigns.students, [], fn s, acc ->
@@ -103,7 +111,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             students_with_attempts_count: Enum.count(students_with_attempts),
             student_emails_without_attempts: student_emails_without_attempts,
             total_attempts_count:
-              Enum.reduce(activities, 0, fn a, acc -> a.total_attempts + acc end)
+              count_attempts(current_assessment, assigns.section, student_ids),
+            rendered_activity_id: UUID.uuid4()
           )
       end
 
@@ -229,7 +238,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           <div class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4">Question details</div>
           <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5" id="activity_detail" phx-hook="LoadSurveyScripts">
             <%= if @preview_rendered != nil do %>
-             <RenderedActivity.render id="selected_activity" rendered_activity={@preview_rendered} myself={@myself} />
+             <RenderedActivity.render id={@rendered_activity_id} rendered_activity={@preview_rendered} myself={@myself} />
             <% else %>
               <p class="pt-9 pb-5">No attempt registered for this question</p>
             <% end %>
@@ -370,7 +379,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       })
 
     case get_activity_attempt(selected_activity_id, socket.assigns.section.id) do
-      [] ->
+      nil ->
         socket
         |> assign(table_model: table_model)
 
@@ -520,51 +529,70 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     )
   end
 
-  defp get_activities(%{content: content} = _current_assessment, _section_slug)
-       when content == %{},
-       do: []
+  defp count_attempts(current_assessment, section, student_ids) do
+    from(ra in ResourceAttempt,
+      join: access in ResourceAccess,
+      on: access.id == ra.resource_access_id,
+      where:
+        ra.lifecycle_state == :evaluated and access.section_id == ^section.id and
+          access.resource_id == ^current_assessment.resource_id and access.user_id in ^student_ids,
+      select: count(ra.id)
+    )
+    |> Repo.one()
+  end
 
-  defp get_activities(current_assessment, section_slug) do
-    current_assessment.content["model"]
-    |> Enum.filter(fn element -> element["type"] == "activity-reference" end)
-    |> Enum.map(fn activity -> activity["activity_id"] end)
-    |> case do
-      [] ->
-        []
+  defp get_activities(current_assessment, section, student_ids) do
+    activities =
+      from(aa in ActivityAttempt,
+        join: res_attempt in ResourceAttempt,
+        on: aa.resource_attempt_id == res_attempt.id,
+        where: res_attempt.lifecycle_state == :evaluated,
+        join: res_access in ResourceAccess,
+        on: res_attempt.resource_access_id == res_access.id,
+        where:
+          res_access.section_id == ^section.id and
+            res_access.resource_id == ^current_assessment.resource_id and
+            res_access.user_id in ^student_ids,
+        join: rev in Revision,
+        on: aa.revision_id == rev.id,
+        join: pr in PublishedResource,
+        on: rev.id == pr.revision_id,
+        join: spp in SectionsProjectsPublications,
+        on: pr.publication_id == spp.publication_id,
+        where: spp.section_id == ^section.id,
+        group_by: [rev.resource_id, rev.id],
+        select: {rev, count(aa.id), sum(aa.score) / sum(aa.out_of)}
+      )
+      |> Repo.all()
+      |> Enum.map(fn {rev, total_attempts, avg_score} ->
+        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+      end)
 
-      activity_ids ->
-        activities =
-          DeliveryResolver.activities_by_resource_ids(
-            activity_ids,
-            section_slug
+    objectives_mapper =
+      Enum.reduce(activities, [], fn activity, acc ->
+        (Map.values(activity.objectives) |> List.flatten()) ++ acc
+      end)
+      |> Enum.uniq()
+      |> DeliveryResolver.objectives_by_resource_ids(section.slug)
+      |> Enum.map(fn objective -> {objective.resource_id, objective} end)
+      |> Enum.into(%{})
+
+    activities
+    |> Enum.map(fn activity ->
+      case Map.values(activity.objectives) |> List.flatten() do
+        [] ->
+          Map.put(activity, :objectives, [])
+
+        objective_ids ->
+          Map.put(
+            activity,
+            :objectives,
+            Enum.map(objective_ids, fn id ->
+              Map.get(objectives_mapper, id)
+            end)
           )
-
-        objectives_mapper =
-          Enum.reduce(activities, [], fn activity, acc ->
-            activity.objectives["1"] ++ acc
-          end)
-          |> Enum.uniq()
-          |> DeliveryResolver.objectives_by_resource_ids(section_slug)
-          |> Enum.map(fn objective -> {objective.resource_id, objective} end)
-          |> Enum.into(%{})
-
-        activities
-        |> Enum.map(fn activity ->
-          case activity.objectives["1"] do
-            [] ->
-              Map.put(activity, :objectives, [])
-
-            objective_ids ->
-              Map.put(
-                activity,
-                :objectives,
-                Enum.map(objective_ids, fn id ->
-                  Map.get(objectives_mapper, id)
-                end)
-              )
-          end
-        end)
-    end
+      end
+    end)
   end
 
   defp get_activity_attempt(selected_activity_id, section_id) do
@@ -588,6 +616,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         resource_access.section_id == ^section_id and
           activity_revision.resource_id == ^selected_activity_id
       )
+      |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
+      |> limit(1)
       |> select([aa, _, _, _, _, _], aa)
       |> select_merge(
         [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
@@ -605,7 +635,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         }
       )
 
-    Repo.all(query)
-    |> hd
+    Repo.one(query)
   end
 end

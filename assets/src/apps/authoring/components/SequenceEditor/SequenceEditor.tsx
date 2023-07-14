@@ -555,7 +555,7 @@ const SequenceEditor: React.FC = () => {
                   {itemToRename && itemToRename?.custom.sequenceId === item.custom.sequenceId && (
                     <input
                       ref={inputToFocus}
-                      className="form-control form-control-sm"
+                      className="form-control form-control-sm rename-sequence-input"
                       type="text"
                       placeholder={item.custom.isLayer ? 'Layer name' : 'Screen name'}
                       value={itemToRename.custom.sequenceName}

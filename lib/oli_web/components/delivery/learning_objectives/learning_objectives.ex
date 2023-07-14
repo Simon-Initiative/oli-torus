@@ -75,20 +75,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             <a href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)} class="self-end"><i class="fa-solid fa-download ml-1" /> Download</a>
           </div>
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
-            <div class="flex w-full sm:w-auto sm:items-end gap-2">
-              <form style="max-width: 176px;" class="w-full" phx-change="filter_by" phx-target={@myself}>
-                <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
-                  <small class="torus-small uppercase">Filter by</small>
-                  <select class="torus-select" name="filter">
-                    <option selected={@params.filter_by == "all"} value={"all"}>All</option>
-                    {#for elem <- @units_modules}
-                      <option selected={@params.filter_by == Integer.to_string(elem.container_id)} value={elem.container_id}>{elem.title}</option>
-                    {/for}
-                  </select>
-                </label>
-              </form>
-            </div>
-
             <form for="search" phx-target={@myself} phx-change="search_objective" class="w-44">
               <SearchInput.render id="objective_search_input" name="objective_name" text={@params.text_search} />
             </form>

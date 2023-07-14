@@ -5,6 +5,7 @@ export type ActionSuccess = {
   result: 'success';
   commandResult: 'success';
   redirectTo: string;
+  restartUrl?: string;
 };
 
 export type ActionFailure = {
@@ -12,6 +13,7 @@ export type ActionFailure = {
   commandResult: 'failure';
   reason: string;
   redirectTo: string;
+  restartUrl?: string;
 };
 
 export type ActionResult = ActionSuccess | ActionFailure;

@@ -140,13 +140,6 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("button[phx-click=\"source_selection\"]")
       |> render_click(%{id: "product:#{section.id}"})
 
-      refute has_element?(view, "button[disabled]", "Next step")
-      assert has_element?(view, "tbody tr:first-child.bg-delivery-primary-100")
-
-      view
-      |> element("button", "Next step")
-      |> render_click(%{current_step: 1})
-
       refute has_element?(view, "h2", "Select source")
       assert has_element?(view, "h2", "Name your course")
     end
@@ -288,13 +281,6 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       view
       |> element(".card-deck a:first-child")
       |> render_click(id: "publication:#{section.id}")
-
-      refute has_element?(view, "button[disabled]", "Next step")
-      assert has_element?(view, ".card-deck a:first-child .card.shadow-inner")
-
-      view
-      |> element("button", "Next step")
-      |> render_click(%{current_step: 1})
 
       refute has_element?(view, "h2", "Select source")
       assert has_element?(view, "h2", "Name your course")
@@ -441,12 +427,6 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> render_click(id: "publication:#{section.id}")
 
       refute has_element?(view, "button[disabled]", "Next step")
-      assert has_element?(view, ".card-deck a:first-child .card.shadow-inner")
-
-      view
-      |> element("button", "Next step")
-      |> render_click(%{current_step: 1})
-
       refute has_element?(view, "h2", "Select source")
       assert has_element?(view, "h2", "Name your course")
     end

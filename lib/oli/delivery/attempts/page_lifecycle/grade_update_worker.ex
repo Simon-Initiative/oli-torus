@@ -120,7 +120,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     |> Keyword.get(:host)
   end
 
-  defp access_token_provider(section) do
+  def access_token_provider(section) do
     fn ->
       {_deployment, registration} =
         Oli.Delivery.Sections.get_deployment_registration_from_section(section)

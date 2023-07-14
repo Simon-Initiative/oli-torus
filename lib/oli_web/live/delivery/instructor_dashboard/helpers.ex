@@ -3,32 +3,60 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   alias Oli.Publishing.DeliveryResolver
 
   def get_containers(section) do
-    {total_count, containers} = Sections.get_units_and_modules_containers(section.slug)
+    case Sections.get_units_and_modules_containers(section.slug) do
+      {0, pages} ->
+        page_ids = Enum.map(pages, & &1.id)
 
-    student_progress =
-      get_students_progress(
-        total_count,
-        containers,
-        section.id,
-        Sections.count_enrollments(section.slug)
-      )
+        students =
+          Sections.enrolled_students(section.slug)
+          |> Enum.reject(fn user -> user.user_role_id != 4 end)
 
-    proficiency_per_container = Metrics.proficiency_per_container(section.slug)
+        student_progress =
+          Metrics.progress_across_for_pages(
+            section.id,
+            page_ids,
+            Enum.map(students, & &1.id)
+          )
 
-    # when those metrics are ready (see Oli.Delivery.Metrics)
+        proficiency_per_page = Metrics.proficiency_per_page(section.slug, page_ids)
 
-    containers_with_metrics =
-      Enum.map(containers, fn container ->
-        Map.merge(container, %{
-          progress: student_progress[container.id] || 0.0,
-          student_proficiency: Map.get(proficiency_per_container, container.id, "Not enough data")
-        })
-      end)
+        pages_with_metrics =
+          Enum.map(pages, fn page ->
+            Map.merge(page, %{
+              progress: student_progress[page.id] || 0.0,
+              student_proficiency: Map.get(proficiency_per_page, page.id, "Not enough data")
+            })
+          end)
 
-    {total_count, containers_with_metrics}
+        {0, pages_with_metrics}
+
+      {total_count, containers} ->
+        student_progress =
+          Metrics.progress_across(
+            section.id,
+            Enum.map(containers, & &1.id),
+            [],
+            Sections.count_enrollments(section.slug)
+          )
+
+        proficiency_per_container = Metrics.proficiency_per_container(section.slug)
+
+        containers_with_metrics =
+          Enum.map(containers, fn container ->
+            Map.merge(container, %{
+              progress: student_progress[container.id] || 0.0,
+              student_proficiency:
+                Map.get(proficiency_per_container, container.id, "Not enough data")
+            })
+          end)
+
+        {total_count, containers_with_metrics}
+    end
   end
 
   def get_assessments(section, students) do
+    student_ids = Enum.map(students, & &1.id)
+
     graded_pages_and_section_resources =
       DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
 
@@ -38,21 +66,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       Metrics.progress_across_for_pages(
         section.id,
         page_ids,
-        [],
-        Enum.count(students)
+        student_ids
       )
 
     avg_score_across_for_pages =
       Metrics.avg_score_across_for_pages(
         section.id,
         page_ids,
-        []
+        student_ids
       )
 
     attempts_across_for_pages =
       Metrics.attempts_across_for_pages(
         section.id,
-        page_ids
+        page_ids,
+        student_ids
       )
 
     container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
@@ -70,30 +98,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     end)
   end
 
-  defp get_students_progress(0, pages, section_id, students_count) do
-    page_ids = Enum.map(pages, fn p -> p.id end)
-
-    Metrics.progress_across_for_pages(
-      section_id,
-      page_ids,
-      [],
-      students_count
-    )
-  end
-
-  defp get_students_progress(_total_count, containers, section_id, students_count) do
-    container_ids = Enum.map(containers, fn c -> c.id end)
-
-    Metrics.progress_across(
-      section_id,
-      container_ids,
-      [],
-      students_count
-    )
-  end
-
   def get_students(section, params \\ %{container_id: nil}) do
-    # when that metric is ready (see Oli.Delivery.Metrics)
     case params[:page_id] do
       nil ->
         Sections.enrolled_students(section.slug)
