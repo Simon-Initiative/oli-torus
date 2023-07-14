@@ -1611,15 +1611,17 @@ defmodule Oli.Delivery.Sections do
   this relation from a container to then all of its contained pages - to power calculations like
   aggregating progress complete across all pages within a container.
   """
-  def rebuild_contained_pages(%Section{id: section_id} = section) do
+  def rebuild_contained_pages(%{id: section_id} = section) do
     section_resources =
       from(sr in SectionResource, where: sr.section_id == ^section_id)
+      |> select([sr], %{id: sr.id, resource_id: sr.resource_id, children: sr.children})
       |> Repo.all()
 
     rebuild_contained_pages(section, section_resources)
   end
 
-  def rebuild_contained_pages(%Section{slug: slug, id: section_id} = section, section_resources) do
+  def rebuild_contained_pages(%{slug: slug, id: section_id, root_section_resource_id: root_section_resource_id}, section_resources) do
+
     # First start be deleting all existing contained pages for this section.
     from(cp in ContainedPage, where: cp.section_id == ^section_id)
     |> Repo.delete_all()
@@ -1627,14 +1629,15 @@ defmodule Oli.Delivery.Sections do
     # We will need the set of resource ids for all containers in the hierarchy.
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
-    container_ids =
-      DeliveryResolver.revisions_of_type(slug, container_type_id)
-      |> Enum.map(fn rev -> rev.resource_id end)
+    container_ids = from([rev: rev] in Oli.Publishing.DeliveryResolver.section_resource_revisions(slug),
+      where: rev.resource_type_id == ^container_type_id and rev.deleted == false,
+      select: rev.resource_id)
+      |> Repo.all()
       |> MapSet.new()
 
     # From the section resources, locate the root section resource, and also create a lookup map
     # from section_resource id to each section resource.
-    root = Enum.find(section_resources, fn sr -> sr.id == section.root_section_resource_id end)
+    root = Enum.find(section_resources, fn sr -> sr.id == root_section_resource_id end)
     map = Enum.reduce(section_resources, %{}, fn sr, map -> Map.put(map, sr.id, sr) end)
 
     # Now recursively traverse the containers within the course section hierarchy, starting with the root
