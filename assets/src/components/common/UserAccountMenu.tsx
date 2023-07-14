@@ -66,7 +66,7 @@ export const UserAccountMenu = ({
       onClickOutside={() => setIsPopoverOpen(false)}
       positions={['top', 'bottom', 'left', 'right']}
       containerClassName="flex"
-      containerStyle={{zIndex: '200'}}
+      containerStyle={{ zIndex: '200' }}
       content={
         <Dropdown>
           <>
