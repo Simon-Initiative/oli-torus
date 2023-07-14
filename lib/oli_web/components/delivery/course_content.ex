@@ -4,7 +4,6 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   alias Oli.Delivery.Metrics
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.Buttons
-  alias Phoenix.LiveView.JS
 
   attr(:breadcrumbs_tree, :map, required: true)
   attr(:current_position, :integer, required: true)
