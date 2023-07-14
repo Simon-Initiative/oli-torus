@@ -29,7 +29,7 @@ defmodule OliWeb.Projects.VersioningDetails do
   def render(assigns) do
     ~F"""
       <div class="my-4 border-t pt-3">
-        <Form for={@changeset} submit={@publish_active} change="form_changed">
+        <Form id="versioning-details-form" for={@changeset} submit={@publish_active} change="form_changed">
 
           {#if @has_changes && @active_publication_changes}
             <h5>Versioning Details</h5>
