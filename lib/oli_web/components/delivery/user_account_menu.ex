@@ -6,10 +6,12 @@ defmodule OliWeb.Components.Delivery.UserAccountMenu do
   alias Oli.Accounts.{Author, SystemRole}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
 
   attr(:ctx, SessionContext)
+  attr(:section, Section)
 
   def menu(assigns) do
     assigns = user_account_menu_assigns(assigns)

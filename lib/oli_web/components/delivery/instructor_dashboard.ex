@@ -165,7 +165,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           <%= if @preview_mode do %>
             <UserAccountMenu.preview_user />
           <% else %>
-            <UserAccountMenu.menu ctx={@ctx} />
+            <UserAccountMenu.menu ctx={@ctx} section={@section}/>
           <% end %>
 
           <div class="flex items-center border-l border-slate-300 my-2">
