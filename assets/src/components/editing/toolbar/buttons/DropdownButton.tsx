@@ -30,6 +30,14 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
     [toolbar, thisDropdown],
   );
 
+  const multiColumn =
+    props.children &&
+    // eslint-disable-next-line no-prototype-builtins
+    (props.children as any).hasOwnProperty('length') &&
+    (props.children as { length: number }).length > 6;
+
+  const classname = multiColumn ? styles.multiDropdownGroup : styles.dropdownGroup;
+
   return (
     <Popover
       ref={thisDropdown}
@@ -40,7 +48,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       reposition={true}
       align={'start'}
       containerStyle={{ zIndex: '100000' }}
-      content={<div className={styles.dropdownGroup}>{props.children}</div>}
+      content={<div className={classname}>{props.children}</div>}
     >
       <button
         className={classNames(
