@@ -85,6 +85,7 @@ defmodule Oli.Interop.Export do
         title: r.title,
         tags: transform_tags(r),
         unresolvedReferences: [],
+        scope: r.scope,
         content: rewire_activity_content(r.content, project),
         objectives: to_string_ids(r.objectives),
         subType: Map.get(registrations, r.activity_type_id).slug
