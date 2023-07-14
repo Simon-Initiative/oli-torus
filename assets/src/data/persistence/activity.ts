@@ -8,7 +8,6 @@ import { ObjectiveMap } from 'data/content/activity';
 import { ActivityTypeSlug, ProjectSlug, ResourceId } from 'data/types';
 import { clone } from 'utils/common';
 import { makeRequest } from './common';
-import { fixObjectiveParts } from './objectives';
 
 export type ActivityUpdate = {
   title: string;
@@ -195,12 +194,12 @@ export function bulkEdit(
     if (u.authoring) {
       indexBibrefs(u.authoring, citationRefs);
     }
-    const { objectives } = fixObjectiveParts(u);
+
     // make content mutable
     const contentClone = clone(u.content);
     contentClone.bibrefs = citationRefs;
     u.content = contentClone;
-    u.objectives = objectives || {};
+    u.objectives = u.objectives || {};
   });
 
   const params = {
@@ -228,7 +227,7 @@ export function edit(
   pendingUpdate: ActivityUpdate,
   releaseLock: boolean,
 ) {
-  let update = Object.assign({}, pendingUpdate, { releaseLock });
+  const update = Object.assign({}, pendingUpdate, { releaseLock });
   try {
     update.content = Object.assign({}, update.content);
 
@@ -246,7 +245,6 @@ export function edit(
       indexBibrefs(update.authoring, citationRefs);
     }
     update.content.bibrefs = citationRefs;
-    update = fixObjectiveParts(update) as ActivityUpdate & { releaseLock: boolean };
   } catch (e) {
     console.error('activity::edit failed', e);
     throw e;
