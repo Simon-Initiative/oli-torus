@@ -209,6 +209,7 @@ defmodule Oli.Delivery.Metrics.AvgScoreTest do
     test "avg_score_across_for_pages/3 calculates correctly",
          %{
            section: section,
+           user_1: user_1,
            user_2: user_2,
            mod1_pages: mod1_pages,
            mod2_pages: mod2_pages,
@@ -219,18 +220,22 @@ defmodule Oli.Delivery.Metrics.AvgScoreTest do
       [p7, p8, p9, p10] = mod3_pages
 
       pages_avg_score =
-        Metrics.avg_score_across_for_pages(section.id, [
-          p1.published_resource.resource_id,
-          p2.published_resource.resource_id,
-          p3.published_resource.resource_id,
-          p4.published_resource.resource_id,
-          p5.published_resource.resource_id,
-          p6.published_resource.resource_id,
-          p7.published_resource.resource_id,
-          p8.published_resource.resource_id,
-          p9.published_resource.resource_id,
-          p10.published_resource.resource_id
-        ])
+        Metrics.avg_score_across_for_pages(
+          section.id,
+          [
+            p1.published_resource.resource_id,
+            p2.published_resource.resource_id,
+            p3.published_resource.resource_id,
+            p4.published_resource.resource_id,
+            p5.published_resource.resource_id,
+            p6.published_resource.resource_id,
+            p7.published_resource.resource_id,
+            p8.published_resource.resource_id,
+            p9.published_resource.resource_id,
+            p10.published_resource.resource_id
+          ],
+          [user_1.id, user_2.id]
+        )
 
       pages_avg_score_excluding_user_2 =
         Metrics.avg_score_across_for_pages(
@@ -247,7 +252,7 @@ defmodule Oli.Delivery.Metrics.AvgScoreTest do
             p9.published_resource.resource_id,
             p10.published_resource.resource_id
           ],
-          [user_2.id]
+          [user_1.id]
         )
 
       assert_in_delta 0.5,
