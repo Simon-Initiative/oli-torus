@@ -36,7 +36,7 @@ defmodule OliWeb.Grades.GradesLive do
       {type, _, section} ->
         {_d, registration} = Sections.get_deployment_registration_from_section(section)
         line_items_url = section.line_items_service_url
-        graded_pages = Grading.fetch_graded_pages(section.slug)
+        graded_pages = Sections.fetch_scored_pages(section.slug)
 
         selected_page =
           if length(graded_pages) > 0 do
@@ -176,7 +176,7 @@ defmodule OliWeb.Grades.GradesLive do
 
   defp fetch_students(access_token, section) do
     # Query the db to find all enrolled students
-    students = Grading.fetch_students(section.slug)
+    students = Sections.fetch_students(section.slug)
 
     # If NRPS is enabled, request the latest view of the course membership
     # and filter our enrolled students to that list.  This step avoids us
@@ -211,7 +211,7 @@ defmodule OliWeb.Grades.GradesLive do
 
     case fetch_line_items(registration, socket.assigns.line_items_url) do
       {:ok, line_items, access_token} ->
-        graded_pages = Grading.fetch_graded_pages(socket.assigns.section.slug)
+        graded_pages = Sections.fetch_scored_pages(socket.assigns.section.slug)
 
         case determine_line_item_tasks(graded_pages, line_items, socket.assigns.section) do
           [] ->

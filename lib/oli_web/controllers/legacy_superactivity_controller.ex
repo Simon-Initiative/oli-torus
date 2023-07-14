@@ -14,7 +14,6 @@ defmodule OliWeb.LegacySuperactivityController do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
-  alias Oli.Grading
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
@@ -121,7 +120,7 @@ defmodule OliWeb.LegacySuperactivityController do
       Sections.get_section_preloaded!(resource_access.section_id)
       |> Repo.preload([:institution, :section_project_publications])
 
-    instructors = Grading.fetch_instructors(section.slug)
+    instructors = Sections.fetch_instructors(section.slug)
 
     enrollment =
       Sections.get_enrollment(section.slug, user.id)
