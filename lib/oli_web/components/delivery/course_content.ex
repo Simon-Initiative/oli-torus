@@ -26,7 +26,8 @@ defmodule OliWeb.Components.Delivery.CourseContent do
               "graded" => "false",
               "id" => "0",
               "index" => "0",
-              "level" => "-1", # The course content browser handles case of the special level of -1
+              # The course content browser handles case of the special level of -1
+              "level" => "-1",
               "next" => nil,
               "prev" => nil,
               "slug" => nil,
@@ -37,7 +38,8 @@ defmodule OliWeb.Components.Delivery.CourseContent do
           ]
         }
 
-      _ -> hierarchy
+      _ ->
+        hierarchy
     end
   end
 
@@ -89,12 +91,23 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             <% else %>
               <Buttons.button_with_options
                 id={"open-resource-button-#{index}"}
-                type="submit"
-                onclick={JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"], preview: "true"})}
+                href={Routes.page_delivery_path(
+                  OliWeb.Endpoint,
+                  preview_resource_type(resource["type"]),
+                  @section.slug,
+                  resource["slug"]
+                )}
+                target={"_blank"}
                 options={[
                   %{
                     text: "Open as student",
-                    on_click: JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"]})
+                    href: Routes.page_delivery_path(
+                      OliWeb.Endpoint,
+                      String.to_existing_atom(resource["type"]),
+                      @section.slug,
+                      resource["slug"]
+                    ),
+                    target: "_blank"
                   }
                 ]}
               >
@@ -280,18 +293,19 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   end
 
   defp get_page_preview_delivery_path(socket, section_slug, resource_slug, resource_type) do
-    resource_type =
-      case resource_type do
-        "page" -> :page_preview
-        "container" -> :container_preview
-      end
-
     Routes.page_delivery_path(
       socket,
-      resource_type,
+      preview_resource_type(resource_type),
       section_slug,
       resource_slug
     )
+  end
+
+  defp preview_resource_type(resource_type) do
+    case resource_type do
+      "page" -> :page_preview
+      "container" -> :container_preview
+    end
   end
 
   defp update_breadcrumbs_tree(breadcrumbs_tree, 0, _target_position),
