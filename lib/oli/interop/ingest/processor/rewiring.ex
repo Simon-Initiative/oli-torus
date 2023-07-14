@@ -62,6 +62,28 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                     {ref, {status, invalid_ids ++ invalid_refs}}
                 end
 
+
+              %{"conditions" => %{"fact" => "tags", "value" => originals}} ->
+                Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
+                  case retrieve(tag_map, o) do
+                    nil ->
+                      {ids, {:error, [o | invalid_ids]}}
+
+                    retrieved ->
+                      {[retrieved | ids], {status, invalid_ids}}
+                  end
+                end)
+                |> case do
+                  {ids, {:ok, _}} ->
+                    updated = %{"fact" => "tags", "value" => ids, "operator" => "equals"}
+                    logic = Map.put(logic, "conditions", updated)
+
+                    {Map.put(ref, "logic", logic), {status, invalid_refs}}
+
+                  {_, {:error, invalid_ids}} ->
+                    {ref, {status, invalid_ids ++ invalid_refs}}
+                end
+
               _ ->
                 {ref, {status, invalid_refs}}
             end
