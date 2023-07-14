@@ -1,5 +1,5 @@
 defmodule OliWeb.Projects.VersioningDetails do
-  use Surface.Component
+  use Surface.LiveComponent
 
   alias OliWeb.Common.Utils
 
@@ -13,22 +13,23 @@ defmodule OliWeb.Projects.VersioningDetails do
     TextArea
   }
 
-  prop active_publication, :any, required: true
-  prop active_publication_changes, :any, required: true
-  prop changeset, :any, required: true
-  prop force_push, :event, required: true
-  prop has_changes, :boolean, required: true
-  prop is_force_push, :boolean, default: false
-  prop latest_published_publication, :any, required: true
-  prop project, :struct, required: true
-  prop publish_active, :event, required: true
-  prop push_affected, :map, required: true
-  prop version_change, :tuple, required: true
+  prop(active_publication, :any, required: true)
+  prop(active_publication_changes, :any, required: true)
+  prop(changeset, :any, required: true)
+  prop(has_changes, :boolean, required: true)
+  prop(latest_published_publication, :any, required: true)
+  prop(project, :struct, required: true)
+  prop(publish_active, :event, required: true)
+  prop(push_affected, :map, required: true)
+  prop(version_change, :tuple, required: true)
+
+  data(auto_update_sections, :boolean, default: false)
+  data(description, :string, default: "")
 
   def render(assigns) do
     ~F"""
       <div class="my-4 border-t pt-3">
-        <Form for={@changeset} submit={@publish_active}>
+        <Form for={@changeset} submit={@publish_active} change="form_changed">
 
           {#if @has_changes && @active_publication_changes}
             <h5>Versioning Details</h5>
@@ -91,7 +92,7 @@ defmodule OliWeb.Projects.VersioningDetails do
               {#match {:no_changes, _}}
             {/case}
             <Field name={:description} class="form-group">
-              <TextArea class="form-control" rows="3" opts={placeholder: "Enter a short description of these changes...", required: true} />
+              <TextArea class="form-control" rows="3" value={@description} opts={placeholder: "Enter a short description of these changes...", required: true} />
             </Field>
           {#else}
             {#if is_nil(@active_publication_changes)}
@@ -99,6 +100,29 @@ defmodule OliWeb.Projects.VersioningDetails do
                 <HiddenInput value="Initial publish" />
               </Field>
             {/if}
+          {/if}
+
+          {#if @active_publication_changes}
+            <div class="my-3">
+              <Field name={:auto_push_update}>
+                <Checkbox value={@auto_update_sections} />
+                <Label>Automatically push this publication update to all products and sections</Label>
+              </Field>
+            </div>
+          {/if}
+
+          {#if @auto_update_sections}
+            <div class="alert alert-warning" role="alert">
+              {#if @push_affected.section_count > 0 or @push_affected.product_count > 0}
+                <h6>This force push update will affect:</h6>
+                <ul class="mb-0">
+                  <li>{@push_affected.section_count} course section(s)</li>
+                  <li>{@push_affected.product_count} product(s)</li>
+                </ul>
+              {#else}
+                This force push update will not affect any product or course section.
+              {/if}
+            </div>
           {/if}
 
           <div class="form-group">
@@ -116,30 +140,25 @@ defmodule OliWeb.Projects.VersioningDetails do
             {/case}
           </div>
 
-          {#if @active_publication_changes}
-            <div class="my-3">
-              <Field name={:auto_push_update}>
-                <Checkbox click={@force_push} value={@is_force_push}/>
-                <Label>Automatically push this publication update to all products and sections</Label>
-              </Field>
-            </div>
-          {/if}
-          {#if @is_force_push}
-            <div class="alert alert-warning" role="alert">
-              {#if @push_affected.section_count > 0 or @push_affected.product_count > 0}
-                <h6>This force push update will affect:</h6>
-                <ul class="mb-0">
-                  <li>{@push_affected.section_count} course section(s)</li>
-                  <li>{@push_affected.product_count} product(s)</li>
-                </ul>
-              {#else}
-                This force push update will not affect any product or course section.
-              {/if}
-            </div>
-          {/if}
-
         </Form>
       </div>
     """
   end
+
+  def handle_event(
+        "form_changed",
+        %{
+          "publication" => %{"auto_push_update" => auto_push_update, "description" => description}
+        },
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       auto_update_sections: string_to_bool(auto_push_update),
+       description: description
+     )}
+  end
+
+  defp string_to_bool("true"), do: true
+  defp string_to_bool(_), do: false
 end
