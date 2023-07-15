@@ -52,7 +52,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<pre><code class=\"language-python\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
-               ~r/<iframe class=".*" allowfullscreen src="https:\/\/www.wikipedia.org"><\/iframe>/
+               ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org"><\/iframe>/
 
       assert rendered_html_string =~ "<span class=\"callout-block\">a richtext callout</span>"
 
