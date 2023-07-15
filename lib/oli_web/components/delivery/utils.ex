@@ -189,55 +189,59 @@ defmodule OliWeb.Components.Delivery.Utils do
   @system_admin_role_id SystemRole.role_id().admin
 
   def user_role(section, user) do
-    case section do
-      %Section{slug: section_slug} ->
-        cond do
-          PlatformRoles.has_roles?(user, @admin_roles, :any) ||
-              ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
-            :administrator
+    case user do
 
-          PlatformRoles.has_roles?(user, @instructor_roles, :any) ||
-              ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
-            :instructor
+      %Author{system_role_id: @system_admin_role_id} ->
+        :system_admin
 
-          PlatformRoles.has_roles?(user, @student_roles, :any) ||
-              ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
-            :student
+      %Author{} ->
+        :other
 
-          true ->
+      _ ->
+
+        case section do
+          %Section{slug: section_slug} ->
+            cond do
+              PlatformRoles.has_roles?(user, @admin_roles, :any) ||
+                  ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
+                :administrator
+
+              PlatformRoles.has_roles?(user, @instructor_roles, :any) ||
+                  ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
+                :instructor
+
+              PlatformRoles.has_roles?(user, @student_roles, :any) ||
+                  ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
+                :student
+
+              true ->
+                :other
+              end
+
+          _ ->
             case user do
-              %Author{system_role_id: @system_admin_role_id} ->
-                :system_admin
+              %User{can_create_sections: can_create_sections} ->
+                cond do
+                  PlatformRoles.has_roles?(user, @admin_roles, :any) ->
+                    :administrator
+
+                  PlatformRoles.has_roles?(user, @instructor_roles, :any) || can_create_sections ->
+                    :instructor
+
+                  PlatformRoles.has_roles?(user, @student_roles, :any) ->
+                    :student
+
+                  true ->
+                    :other
+                end
 
               _ ->
                 :other
             end
         end
 
-      _ ->
-        case user do
-          %User{can_create_sections: can_create_sections} ->
-            cond do
-              PlatformRoles.has_roles?(user, @admin_roles, :any) ->
-                :administrator
-
-              PlatformRoles.has_roles?(user, @instructor_roles, :any) || can_create_sections ->
-                :instructor
-
-              PlatformRoles.has_roles?(user, @student_roles, :any) ->
-                :student
-
-              true ->
-                :other
-            end
-
-          %Author{system_role_id: @system_admin_role_id} ->
-            :system_admin
-
-          _ ->
-            :other
-        end
     end
+
   end
 
   def account_linked?(user) do
