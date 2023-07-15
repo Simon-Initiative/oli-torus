@@ -315,7 +315,7 @@ export class HtmlParser implements WriterImpl {
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
     if (!attrs.src) return <></>;
-    const dimensions: { width?: number; height?: number } = {};
+    const dimensions: { width?: string | number; height?: string | number } = {};
     if (attrs.width) {
       dimensions['width'] = attrs.width;
     }
