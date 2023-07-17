@@ -45,20 +45,8 @@
   @apply h-14 text-gray-500 dark:text-white font-semibold text-xs sm:text-sm;
 }
 
-.instructor_dashboard_table tr:has(div[data-progress-check='false']) {
-  @apply bg-red-200 bg-opacity-20 dark:bg-opacity-100 dark:text-gray-800;
-}
-
-.instructor_dashboard_table tr:has(div[data-proficiency-check='false']) {
-  @apply bg-red-200 bg-opacity-20 dark:bg-opacity-100 dark:text-gray-800;
-}
-
 .instructor_dashboard_table td {
   @apply border-r-0 border-l-0;
-}
-
-.instructor_dashboard_table tr:has(div[data-score-check='false']) td {
-  @apply bg-red-100 dark:bg-opacity-100 dark:text-gray-800;
 }
 
 .instructor_dashboard_table tr:has(div[data-score-check='true']) td {
@@ -67,10 +55,6 @@
 
 .instructor_dashboard_table tr:has(div[data-score-check='true']) td a {
   @apply bg-white dark:bg-neutral-800 dark:text-white;
-}
-
-.instructor_dashboard_table tr:has(a[data-score-check='false']) td {
-  @apply bg-red-100 dark:bg-opacity-100 dark:text-gray-800;
 }
 
 .instructor_dashboard_table tr:has(a[data-score-check='true']) td {
