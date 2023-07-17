@@ -39,9 +39,9 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          is_instructor = Sections.is_instructor?(user, section_slug)
+          user_roles = Sections.get_user_roles(user, section_slug)
 
-          if is_instructor do
+          if user_roles.is_instructor? do
             conn
             |> redirect(
               to:
@@ -79,7 +79,8 @@ defmodule OliWeb.PageDeliveryController do
               container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
               collab_space_config: effective_settings.collab_space_config,
               revision_slug: revision.slug,
-              is_instructor: is_instructor,
+              is_instructor: user_roles.is_instructor?,
+              is_student: user_roles.is_student?,
               progress: learner_progress(section.id, user.id),
               next_activities: next_activities,
               independent_learner: user.independent_learner,
@@ -756,6 +757,7 @@ defmodule OliWeb.PageDeliveryController do
       collab_space_config: effective_settings.collab_space_config,
       revision_slug: revision.slug,
       is_instructor: false,
+      is_student: false,
       current_user_id: current_user.id
     )
   end
