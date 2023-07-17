@@ -141,13 +141,15 @@ defmodule Oli.GradingTest do
                 label: "Page one",
                 out_of: 20,
                 resource_id: revision1.resource_id,
-                score: 12
+                score: 12,
+                was_late: false
               },
               %Grading.GradebookScore{
                 label: "Page two",
                 out_of: 5,
                 resource_id: revision2.resource_id,
-                score: 0
+                score: 0,
+                was_late: false
               }
             ],
             user: user1
@@ -158,13 +160,15 @@ defmodule Oli.GradingTest do
                 label: "Page one",
                 out_of: 20,
                 resource_id: revision1.resource_id,
-                score: 20
+                score: 20,
+                was_late: false
               },
               %Grading.GradebookScore{
                 label: "Page two",
                 out_of: 5,
                 resource_id: revision2.resource_id,
-                score: 3
+                score: 3,
+                was_late: false
               }
             ],
             user: user2
@@ -175,13 +179,15 @@ defmodule Oli.GradingTest do
                 label: "Page one",
                 out_of: 20,
                 resource_id: revision1.resource_id,
-                score: 19
+                score: 19,
+                was_late: false
               },
               %Grading.GradebookScore{
                 label: "Page two",
                 out_of: 5,
                 resource_id: revision2.resource_id,
-                score: 5
+                score: 5,
+                was_late: false
               }
             ],
             user: user3

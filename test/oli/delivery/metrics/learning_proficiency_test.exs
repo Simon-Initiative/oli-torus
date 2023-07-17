@@ -354,7 +354,7 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
   describe "learning proficiency calculations" do
     setup [:create_project]
 
-    test "proficiency_per_learning_objective/1 calculates correctly", %{
+    test "raw_proficiency_per_learning_objective/1 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
@@ -384,22 +384,25 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_4, false)
 
       proficiency_per_learning_objective =
-        Metrics.proficiency_per_learning_objective(section.slug)
+        Metrics.raw_proficiency_per_learning_objective(section.slug)
 
+      # "High"
       assert proficiency_per_learning_objective[page_1_obj.resource.id] ==
-               "High"
+               {4.0, 4.0}
 
+      # "Medium"
       assert proficiency_per_learning_objective[page_2_obj.resource.id] ==
-               "Medium"
+               {3.0, 4.0}
 
+      # "Low"
       assert proficiency_per_learning_objective[page_3_obj.resource.id] ==
-               "Low"
+               {1.0, 4.0}
 
       assert proficiency_per_learning_objective[page_4_obj.resource.id] ==
                nil
     end
 
-    test "proficiency_for_student_per_learning_objective/2 calculates correctly", %{
+    test "raw_proficiency_for_student_per_learning_objective/2 calculates correctly", %{
       section: section,
       student_1: student_1,
       student_2: student_2,
@@ -421,20 +424,26 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       set_snapshot(section, page_4.resource, page_4_obj.resource, student_2, true)
 
       student_1_proficiency_per_learning_objective =
-        Metrics.proficiency_for_student_per_learning_objective(section.slug, student_1.id)
+        Metrics.raw_proficiency_for_student_per_learning_objective(section.slug, student_1.id)
 
       student_2_proficiency_per_learning_objective =
-        Metrics.proficiency_for_student_per_learning_objective(section.slug, student_2.id)
+        Metrics.raw_proficiency_for_student_per_learning_objective(section.slug, student_2.id)
 
-      assert student_1_proficiency_per_learning_objective[page_1_obj.resource.id] == "High"
-      assert student_1_proficiency_per_learning_objective[page_2_obj.resource.id] == "Low"
-      assert student_1_proficiency_per_learning_objective[page_3_obj.resource.id] == "High"
+      # "High"
+      assert student_1_proficiency_per_learning_objective[page_1_obj.resource.id] == {1.0, 1.0}
+      # "Low"
+      assert student_1_proficiency_per_learning_objective[page_2_obj.resource.id] == {0.0, 1.0}
+      # "High"
+      assert student_1_proficiency_per_learning_objective[page_3_obj.resource.id] == {1.0, 1.0}
       assert student_1_proficiency_per_learning_objective[page_4_obj.resource.id] == nil
 
-      assert student_2_proficiency_per_learning_objective[page_1_obj.resource.id] == "Low"
+      # "Low"
+      assert student_2_proficiency_per_learning_objective[page_1_obj.resource.id] == {0.0, 1.0}
       assert student_2_proficiency_per_learning_objective[page_2_obj.resource.id] == nil
-      assert student_2_proficiency_per_learning_objective[page_3_obj.resource.id] == "Low"
-      assert student_2_proficiency_per_learning_objective[page_4_obj.resource.id] == "High"
+      # "Low"
+      assert student_2_proficiency_per_learning_objective[page_3_obj.resource.id] == {0.0, 1.0}
+      # "High"
+      assert student_2_proficiency_per_learning_objective[page_4_obj.resource.id] == {1.0, 1.0}
     end
 
     test "proficiency_per_container/1 calculates correctly", %{
@@ -585,6 +594,40 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
 
       assert page_1_proficiency[student_2.id] == nil
       assert page_2_proficiency[student_2.id] == nil
+    end
+
+    test "proficiency_per_page/2 calculates correctly", %{
+      section: section,
+      student_1: student_1,
+      student_2: student_2,
+      student_3: student_3,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_1_objective: page_1_obj,
+      page_2_objective: page_2_obj,
+      page_3_objective: page_3_obj
+    } do
+      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshot(section, page_1.resource, page_1_obj.resource, student_2, true)
+      set_snapshot(section, page_1.resource, page_1_obj.resource, student_3, true)
+      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
+      set_snapshot(section, page_2.resource, page_2_obj.resource, student_2, true)
+      set_snapshot(section, page_2.resource, page_2_obj.resource, student_3, true)
+      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
+      set_snapshot(section, page_3.resource, page_3_obj.resource, student_2, false)
+      set_snapshot(section, page_3.resource, page_3_obj.resource, student_3, true)
+
+      proficiency_per_page =
+        Metrics.proficiency_per_page(section.slug, [
+          page_1.resource_id,
+          page_2.resource_id,
+          page_3.resource_id
+        ])
+
+      assert proficiency_per_page[page_1.resource_id] == "High"
+      assert proficiency_per_page[page_2.resource_id] == "Medium"
+      assert proficiency_per_page[page_3.resource_id] == "Low"
     end
   end
 end

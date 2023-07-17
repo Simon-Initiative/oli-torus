@@ -49,7 +49,13 @@ defmodule OliWeb.Sections.OverviewView do
       ]
   end
 
-  def mount(_params, %{"section_slug" => section_slug} = session, socket) do
+  def mount(params, session, socket) do
+
+    section_slug = case params do
+      :not_mounted_at_router -> Map.get(session, "section_slug")
+      _ -> Map.get(params, "section_slug")
+    end
+
     case Mount.for(section_slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
@@ -119,7 +125,7 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly label="Course Section ID" value={@section.slug} />
         <ReadOnly label="Title" value={@section.title} />
         <ReadOnly label="Course Section Type" value={type_to_string(@section)} />
-        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)} />
+        <ReadOnly label="URL" show_copy_btn={true} value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)} />
         {#unless is_nil(deployment)}
           <ReadOnly
             label="Institution"
@@ -155,15 +161,10 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               target="_blank"
-              href={Routes.instructor_dashboard_path(OliWeb.Endpoint, :preview, @section.slug, :overview)}
+              href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)}
               class="btn btn-link"
             ><span>Preview Course as Instructor</span> <i class="fas fa-external-link-alt self-center ml-1" /></a>
           </li>
-          <li><a
-              href={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}
-              class="btn btn-link"
-              target="_blank"
-            ><span>Enter Course as a Student</span> <i class="fas fa-external-link-alt self-center ml-1" /></a></li>
           <li><a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}
               class="btn btn-link"

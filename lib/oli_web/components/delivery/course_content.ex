@@ -6,15 +6,16 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   alias OliWeb.Components.Delivery.Buttons
   alias Phoenix.LiveView.JS
 
-  attr :breadcrumbs_tree, :map, required: true
-  attr :current_position, :integer, required: true
-  attr :current_level_nodes, :list, required: true
-  attr :section, :map, required: true
-  attr :current_user_id, :integer
-  attr :current_level, :integer
-  attr :scheduled_dates, :list, required: true
-  attr :event_target, :string, default: nil
-  attr :is_instructor, :boolean, default: false
+  attr(:breadcrumbs_tree, :map, required: true)
+  attr(:current_position, :integer, required: true)
+  attr(:current_level_nodes, :list, required: true)
+  attr(:section, :map, required: true)
+  attr(:current_user_id, :integer)
+  attr(:current_level, :integer)
+  attr(:scheduled_dates, :list, required: true)
+  attr(:event_target, :string, default: nil)
+  attr(:is_instructor, :boolean, default: false)
+  attr(:preview_mode, :boolean, default: false)
 
   def render(assigns) do
     ~H"""
@@ -58,12 +59,12 @@ defmodule OliWeb.Components.Delivery.CourseContent do
 
             <%= if !assigns[:is_instructor] do %>
               <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
-              <button class="torus-button primary h-10" phx-target={@myself} phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]}>Open</button>
+              <button class="torus-button primary h-10" phx-target={@myself} phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]} phx-value-preview={"#{@preview_mode}"}>Open</button>
             <% else %>
               <Buttons.button_with_options
                 id={"open-resource-button-#{index}"}
                 type="submit"
-                onclick={JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"], preview: true})}
+                onclick={JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"], preview: "true"})}
                 options={[
                   %{
                     text: "Open as student",
@@ -216,7 +217,11 @@ defmodule OliWeb.Components.Delivery.CourseContent do
 
   def handle_event(
         "open_resource",
-        %{"resource_slug" => resource_slug, "resource_type" => resource_type, "preview" => _},
+        %{
+          "resource_slug" => resource_slug,
+          "resource_type" => resource_type,
+          "preview" => "true"
+        },
         socket
       ) do
     {:noreply,

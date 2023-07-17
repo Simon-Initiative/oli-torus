@@ -4,13 +4,11 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
   alias OliWeb.Router.Helpers, as: Routes
 
   defp due_date_label(assignment) do
-
     case assignment.scheduled_type do
       :due_by -> "Due by"
       :read_by -> "Read by"
       _ -> "In class activity"
     end
-
   end
 
   def render(assigns) do
@@ -32,7 +30,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
                 No due date
               <% end %>
             </span>
-          <a class="torus-button primary px-2" href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, @assignment.slug)}>Open</a>
+          <a class="torus-button primary px-2" href={get_path(@section_slug, @assignment.slug, @preview_mode)}>Open</a>
           </div>
         </div>
 
@@ -48,7 +46,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
                 <table class="border-none">
                 <tbody>
                   <%= for page <- @assignment.relates_to |> Enum.filter(&(&1.purpose == :foundation)) do %>
-                    <.render_related_page_info section_slug={@section_slug} page={page} />
+                    <.render_related_page_info section_slug={@section_slug} page={page} preview_mode={@preview_mode}/>
                   <% end %>
                   </tbody>
                 </table>
@@ -61,7 +59,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
                 <table class="border-none">
                 <tbody>
                   <%= for page <- @assignment.relates_to |> Enum.filter(&(&1.purpose == :application)) do %>
-                    <.render_related_page_info section_slug={@section_slug} page={page} />
+                    <.render_related_page_info section_slug={@section_slug} page={page} preview_mode={@preview_mode}/>
                   <% end %>
                   </tbody>
                 </table>
@@ -85,7 +83,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
           <% end %>
         </td>
         <td class="w-1/3 border-none text-right">
-          <a href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, @page.slug)}>Open</a>
+          <a href={get_path(@section_slug, @page.slug, @preview_mode)}>Open</a>
         </td>
       </tr>
     """
@@ -98,4 +96,16 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
   defp has_foundational_pages?(assignment) do
     Enum.find(assignment.relates_to, &(&1.purpose == :foundation))
   end
+
+  defp get_path(section_slug, page_or_assignment_slug, true),
+    do:
+      Routes.page_delivery_path(
+        OliWeb.Endpoint,
+        :page_preview,
+        section_slug,
+        page_or_assignment_slug
+      )
+
+  defp get_path(section_slug, page_or_assignment_slug, _),
+    do: Routes.page_delivery_path(OliWeb.Endpoint, :page, section_slug, page_or_assignment_slug)
 end

@@ -9,75 +9,76 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         selected_assessment,
         target,
         selected_student_exceptions,
-        ctx
+        ctx,
+        on_edit_date
       ) do
     column_specs = [
       %ColumnSpec{
         name: :student,
         label: "STUDENT",
         render_fn: &__MODULE__.render_student_column/3,
-        th_class: "pl-10 instructor_dashboard_th sticky left-0 bg-white dark:bg-neutral-800 z-10",
+        th_class: "pl-10 !sticky left-0 bg-white dark:bg-neutral-800 z-10",
         td_class: "sticky left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :due_date,
         label: "DUE DATE",
         render_fn: &__MODULE__.render_due_date_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :max_attempts,
         label: "# ATTEMPTS",
         render_fn: &__MODULE__.render_attempts_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :time_limit,
         label: "TIME LIMIT",
         render_fn: &__MODULE__.render_time_limit_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :late_submit,
         label: "LATE SUBMIT",
         render_fn: &__MODULE__.render_late_submit_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :late_start,
         label: "LATE START",
         render_fn: &__MODULE__.render_late_start_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
         label: "SCORING",
         render_fn: &__MODULE__.render_scoring_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :grace_period,
         label: "GRACE PERIOD",
         render_fn: &__MODULE__.render_grace_period_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :retake_mode,
         label: "RETAKE MODE",
         render_fn: &__MODULE__.render_retake_mode_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :review_submission,
         label: "VIEW ANSWERS",
         render_fn: &__MODULE__.render_view_answers_column/3,
-        th_class: "instructor_dashboard_th"
+        th_class: "whitespace-nowrap"
       }
     ]
 
@@ -91,7 +92,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         selected_assessment: selected_assessment,
         target: target,
         selected_student_exceptions: selected_student_exceptions,
-        ctx: ctx
+        ctx: ctx,
+        on_edit_date: on_edit_date
       }
     )
   end
@@ -116,13 +118,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-    <div class={data_class(@selected_assessment.end_date, @due_date)}>
-      <%= if @selected_assessment.scheduling_type == :due_by do %>
-        <input name={"end_date-#{@id}"} type="datetime-local" phx-debounce={500} value={value_from_datetime(@due_date, @ctx)} placeholder="-" />
-      <% else %>
-        No due date
-      <% end %>
-    </div>
+      <button class="hover:underline whitespace-nowrap" type="button" phx-click={@on_edit_date} phx-value-user_id={@id}>
+        <%= if @due_date do %>
+          <%= value_from_datetime(@due_date, @ctx) %>
+        <% else %>
+          No due date
+        <% end %>
+      </button>
     """
   end
 
@@ -298,8 +300,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
 
   defp value_from_datetime(datetime, ctx) do
     datetime
-    |> FormatDateTime.convert_datetime(ctx)
-    |> DateTime.to_iso8601()
-    |> String.slice(0, 16)
+    |> FormatDateTime.date(ctx: ctx, show_timezone: false)
   end
 end

@@ -13,7 +13,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Branding.CustomLabels
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt, ResourceAccess}
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Oli.Authoring.Course.Project
 
   defp section_resources(section_slug) do
@@ -45,34 +45,24 @@ defmodule Oli.Publishing.DeliveryResolver do
   def graded_pages_revisions_and_section_resources(section_slug) do
     from([sr, s, _spp, _pr, rev] in section_resource_revisions(section_slug),
       where: rev.resource_type_id == 1 and rev.graded == true,
-      select: {rev, sr}
+      select: {rev, sr},
+      order_by: [asc: sr.numbering_level, asc: sr.numbering_index]
     )
     |> Repo.all()
   end
 
-  def activities_by_resource_ids(resource_ids, section_slug) do
-    from([_sr, _s, _spp, _pr, rev] in section_resource_revisions(section_slug),
-      where: rev.resource_id in ^resource_ids,
-      join: aa in ActivityAttempt,
-      on: rev.id == aa.revision_id and rev.resource_id == aa.resource_id,
-      group_by: rev.id,
-      select: {rev, count(aa.id), sum(aa.score) / sum(aa.out_of)}
-    )
-    |> Repo.all()
-    |> Enum.map(fn {rev, total_attempts, avg_score} ->
-      Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
-    end)
-  end
-
-  def students_with_attempts_for_page(page_revision_id) do
+  def students_with_attempts_for_page(page, section_id, student_ids) do
     from(ra in ResourceAttempt,
       join: rac in ResourceAccess,
       on: ra.resource_access_id == rac.id,
-      where: ra.revision_id == ^page_revision_id and not is_nil(ra.date_evaluated),
+      where:
+        ra.lifecycle_state == :evaluated and
+          rac.section_id == ^section_id and rac.user_id in ^student_ids and
+          rac.resource_id == ^page.resource_id,
+      group_by: rac.user_id,
       select: rac.user_id
     )
     |> Repo.all()
-    |> Enum.uniq()
   end
 
   def objectives_by_resource_ids(resource_ids, section_slug) do

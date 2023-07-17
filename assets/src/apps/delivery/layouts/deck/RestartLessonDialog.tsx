@@ -16,8 +16,29 @@ import {
 interface RestartLessonDialogProps {
   onRestart: () => void;
 }
+
+const sendUserTo = (url: string) => {
+  // If we want to send the user to the current URL, just reload, otherwise set the
+  // topmost url we can to the target (to avoid our "Display Torus Navigation" iframe inside itself)
+
+  if (window.location.pathname === url || window.location.href === url) {
+    window.location.reload();
+    return;
+  }
+  if (window.top) {
+    try {
+      window.top.location = url;
+    } catch (e) {
+      window.location.href = url;
+    }
+  } else {
+    window.location.href = url;
+  }
+};
+
 const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const revisionSlug = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
@@ -34,6 +55,8 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
   const isPreviewMode = useSelector(selectPreviewMode);
 
   const handleRestart = async () => {
+    console.info('Restarting lesson...', onRestart);
+    setIsLoading(true);
     if (onRestart) {
       onRestart();
     }
@@ -44,6 +67,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         revisionSlug,
         resourceAttemptGuid,
       );
+
       console.log('finalize attempt result: ', finalizeResult);
       if (finalizeResult.result === 'success') {
         if ((finalizeResult as ActionResult).commandResult === 'failure') {
@@ -51,7 +75,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           // try again the other way
           redirectTo = finalizeGradedURL;
         } else {
-          redirectTo = finalizeResult.redirectTo;
+          redirectTo = finalizeResult.restartUrl || finalizeResult.redirectTo;
         }
       } else {
         console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);
@@ -64,10 +88,8 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
     }
     if (isPreviewMode) {
       window.location.reload();
-    } else if (window.top) {
-      window.top.location.href = redirectTo;
     } else {
-      window.location.href = redirectTo;
+      sendUserTo(redirectTo);
     }
   };
 
@@ -87,6 +109,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           top: '20%',
           left: '50%',
           height: 'max-content',
+          width: '80%',
         }}
       >
         <div className="modal-header">
@@ -114,15 +137,14 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           </div>
         </div>
         <div className="modal-footer">
-          <button className="btn">
+          <button className="btn" onClick={handleRestart}>
             <a
-              onClick={handleRestart}
               style={{ color: 'inherit', textDecoration: 'none' }}
               title="OK, Restart Lesson"
               aria-label="OK, Restart Lesson"
               data-dismiss="modal"
             >
-              OK
+              {isLoading ? 'Restarting...' : 'OK'}
             </a>
           </button>
           <button className="btn " name="CANCEL" onClick={handleCloseModalClick}>

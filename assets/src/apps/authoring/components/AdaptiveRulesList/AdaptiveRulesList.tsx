@@ -446,7 +446,7 @@ const IRulesList: React.FC = () => {
                     {ruleToEdit && ruleToEdit?.id === rule.id && (
                       <input
                         ref={inputToFocus}
-                        className="form-control form-control-sm text-black"
+                        className="form-control form-control-sm text-black rename-rule-input"
                         type="text"
                         placeholder="Rule name"
                         value={ruleToEdit.name}

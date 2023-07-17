@@ -4,7 +4,7 @@
 
   .survey-label {
     text-transform: uppercase;
-    background: #222439;
+    background: var(--color-delivery-purpose-label-bg);
     padding: 4px 0;
     color: var(--color-white);
 
@@ -20,5 +20,15 @@
 
   .survey-content {
     padding: 20px;
+  }
+}
+
+html.dark {
+  .survey {
+    border-color: var(--color-delivery-purpose-label-bg-dark);
+
+    & > .survey-label {
+      background: var(--color-delivery-purpose-label-bg-dark);
+    }
   }
 }

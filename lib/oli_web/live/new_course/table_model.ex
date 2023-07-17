@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.NewCourse.TableModel do
     id = if is_product?(item), do: "product:#{item.id}", else: "publication:#{item.id}"
 
     ~F"""
-    <button class="btn btn-primary" phx-click="source_selection" phx-value-id={id}>Select</button>
+    <button class="btn btn-primary btn-sm" phx-click="source_selection" phx-value-id={id}>Select</button>
     """
   end
 

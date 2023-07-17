@@ -617,6 +617,17 @@ $font-family-sans-serif: var(--font-sans);
       }
     }
   }
+
+  .rename-sequence-input,
+  .rename-rule-input {
+    color: black;
+  }
+  .dark {
+    .rename-sequence-input,
+    .rename-rule-input {
+      color: #fff;
+    }
+  }
   .dropdown-toggle:after {
     display: none;
   }

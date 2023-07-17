@@ -15,23 +15,20 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         name: :objective,
         label: "LEARNING OBJECTIVE",
         render_fn: &__MODULE__.custom_render/3,
-        th_class: "pl-10 instructor_dashboard_th"
+        th_class: "pl-10"
       },
       %ColumnSpec{
         name: :subobjective,
         label: "SUB LEARNING OBJ.",
-        render_fn: &__MODULE__.custom_render/3,
-        th_class: "instructor_dashboard_th"
+        render_fn: &__MODULE__.custom_render/3
       },
       %ColumnSpec{
         name: :student_proficiency_obj,
-        label: "STUDENT PROFICIENCY OBJ.",
-        th_class: "instructor_dashboard_th"
+        label: "STUDENT PROFICIENCY OBJ."
       },
       %ColumnSpec{
         name: :student_proficiency_subobj,
-        label: "STUDENT PROFICIENCY (SUB OBJ.)",
-        th_class: "instructor_dashboard_th"
+        label: "STUDENT PROFICIENCY (SUB OBJ.)"
       }
     ]
 

@@ -113,6 +113,32 @@
   text-align: center;
 }
 
+.multiDropdownGroup {
+  width: 580px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 8px;
+  overflow-y: auto;
+  background: #f8f9fb;
+  border: 2px solid var(--color-toolbar-border);
+
+  .toolbarButton {
+    width: 185px;
+    display: inline-flex;
+    align-items: center;
+    text-align: left;
+    border-radius: 6px;
+
+    &:first-of-type,
+    &:last-of-type {
+      margin-left: 0px;
+      margin-right: 0px;
+      border-radius: 6px;
+    }
+  }
+}
+
 .dropdownGroup {
   display: flex;
   flex-direction: column;

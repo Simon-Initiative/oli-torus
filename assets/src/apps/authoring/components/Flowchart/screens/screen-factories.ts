@@ -17,7 +17,7 @@ export const screenTypes = [
 ];
 
 export const screenTypeToTitle: Record<string, string> = {
-  blank_screen: 'Blank Screen',
+  blank_screen: 'Instructional Screen',
   welcome_screen: 'Welcome Screen',
   multiple_choice: 'Multiple Choice',
   multiline_text: 'Multiline Text',

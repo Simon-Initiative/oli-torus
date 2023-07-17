@@ -8,8 +8,8 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
   alias OliWeb.Common.SessionContext
 
   def mount(
-        params,
-        %{"section_slug" => section_slug} = session,
+        %{"section_slug" => section_slug} =params,
+        session,
         socket
       ) do
     case Mount.for(section_slug, session) do
