@@ -12,14 +12,14 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
 
   alias Phoenix.LiveView.JS
 
-  prop limit, :number, default: 10
-  prop filter, :string, required: true
-  prop offset, :number, required: true
-  prop count, :number, required: true
-  prop collab_space_table_model, :struct, required: true
-  prop discussion_table_model, :struct, required: true
-  prop parent_component_id, :string, required: true
-  prop section_slug, :string, required: true
+  prop(limit, :number, default: 10)
+  prop(filter, :string, required: true)
+  prop(offset, :number, required: true)
+  prop(count, :number, required: true)
+  prop(collab_space_table_model, :struct, required: true)
+  prop(discussion_table_model, :struct, required: true)
+  prop(parent_component_id, :string, required: true)
+  prop(section_slug, :string, required: true)
 
   @default_params %{
     offset: 0,
@@ -108,7 +108,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   def handle_event("display_accept_modal", %{"post_id" => post_id}, socket) do
     modal_assigns = %{
       title: "Accept Post",
-      id: "accept_post_modal",
+      id: "accept_post_modal_#{UUID.uuid4()}",
       ok: JS.push("accept_post", target: socket.assigns.myself),
       cancel: JS.push("cancel_confirm_modal", target: socket.assigns.myself)
     }
@@ -140,7 +140,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
   def handle_event("display_reject_modal", %{"post_id" => post_id}, socket) do
     modal_assigns = %{
       title: "Reject Post",
-      id: "reject_post_modal",
+      id: "reject_post_modal_#{UUID.uuid4()}",
       ok: JS.push("reject_post", target: socket.assigns.myself),
       cancel: JS.push("cancel_confirm_modal", target: socket.assigns.myself)
     }
@@ -207,7 +207,8 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
         )
 
       _ ->
-        {:ok, discussion_table_model} = DiscussionTableModel.new([], section_slug, socket.assigns.myself)
+        {:ok, discussion_table_model} =
+          DiscussionTableModel.new([], section_slug, socket.assigns.myself)
 
         {count, rows} =
           Collaboration.list_posts_in_section_for_instructor(section_slug, filter,
