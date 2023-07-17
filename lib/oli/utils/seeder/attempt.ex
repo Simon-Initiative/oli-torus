@@ -23,8 +23,14 @@ defmodule Oli.Utils.Seeder.Attempt do
     page_context =
       PageContext.create_for_visit(section, page_revision.slug, user, datashop_session_id)
 
+    resource_attempt =
+      case page_context.resource_attempts do
+        [resource_attempt | _] -> resource_attempt
+        _ -> nil
+      end
+
     seeds
-    |> tag(tags[:resource_attempt_tag], hd(page_context.resource_attempts))
+    |> tag(tags[:resource_attempt_tag], resource_attempt)
     |> tag(tags[:attempt_hierarchy_tag], page_context.latest_attempts)
     |> tag(tags[:page_context_tag], page_context)
   end
