@@ -63,7 +63,6 @@ defmodule OliWeb.Components.Delivery.Actions do
           module={OliWeb.Components.Modal}
           id="unenroll_user_modal"
           title="Unenroll student"
-          on_cancel={JS.push("close", target: "unenroll_user_modal")}
           on_confirm={JS.push("unenroll", target: @myself)}
         >
           <div class="px-4">
