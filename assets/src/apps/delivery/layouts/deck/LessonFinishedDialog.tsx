@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
   selectIsGraded,
-  selectOverviewURL,
   selectPageSlug,
   selectPreviewMode,
   selectResourceAttemptGuid,
