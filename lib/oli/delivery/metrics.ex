@@ -253,27 +253,23 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Calculate the progress for all students in a collection of pages.
+  Calculate the progress for a given list of students in a collection of pages.
 
-  The last two parameters gives flexibility into excluding specific users
-  from the calculation. This exists primarily to exclude instructors.
-  `user_ids_to_ignore` can be an empty list, but `user_count` should always be the total
-  number of enrolled students (excluding the count of those in the exlusion parameter).
+  The last parameter gives flexibility for including specific users in the calculation.
+  This exists primarily to exclude instructors.
   """
-  def progress_across_for_pages(section_id, pages_ids, user_ids_to_ignore, user_count) do
-    user_count = max(user_count, 1)
-
+  def progress_across_for_pages(section_id, pages_ids, user_ids) when is_list(user_ids) do
     from(ra in ResourceAccess,
       where:
         ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
-          ra.user_id not in ^user_ids_to_ignore,
+          ra.user_id in ^user_ids,
       group_by: ra.resource_id,
       select: {
         ra.resource_id,
         fragment(
           "SUM(?) / (?)",
           ra.progress,
-          ^user_count
+          ^Enum.count(user_ids)
         )
       }
     )
@@ -281,28 +277,8 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
-  @doc """
-  Calculate the progress for a specific student in a collection of pages.
-  """
-  def progress_across_for_pages(section_id, pages_ids, student_id) do
-    query =
-      from(ra in ResourceAccess,
-        where:
-          ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
-            ra.user_id == ^student_id,
-        group_by: ra.resource_id,
-        select: {
-          ra.resource_id,
-          fragment(
-            "SUM(?) / COUNT(*)",
-            ra.progress
-          )
-        }
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{})
-  end
+  def progress_across_for_pages(section_id, pages_ids, student_id),
+    do: progress_across_for_pages(section_id, pages_ids, [student_id])
 
   @doc """
   Calculate the average score for a specific student (or a list of students),
@@ -364,15 +340,14 @@ defmodule Oli.Delivery.Metrics do
   Calculates the average score for all students in a collection of pages
   (only considering finished attempts).
 
-  The last parameter gives flexibility into excluding specific users
-  from the calculation. This exists primarily to exclude instructors.
-  `user_ids_to_ignore` can be an empty list.
+  The last parameter gives flexibility for including specific users in the calculation.
+  This exists primarily to exclude instructors.
   """
-  def avg_score_across_for_pages(section_id, pages_ids, user_ids_to_ignore \\ []) do
+  def avg_score_across_for_pages(section_id, pages_ids, user_ids) do
     from(ra in ResourceAccess,
       where:
         ra.resource_id in ^pages_ids and ra.section_id == ^section_id and
-          ra.user_id not in ^user_ids_to_ignore and not is_nil(ra.score),
+          ra.user_id in ^user_ids and not is_nil(ra.score),
       group_by: ra.resource_id,
       select: {
         ra.resource_id,
@@ -389,6 +364,9 @@ defmodule Oli.Delivery.Metrics do
 
   @doc """
   Returns the number of attempts for a given list of pages.
+  The last parameter gives flexibility for including specific users in the calculation.
+  This exists primarily to exclude instructors.
+
   It only considers submitted attempts.
 
   It returns a map:
@@ -398,13 +376,13 @@ defmodule Oli.Delivery.Metrics do
       page_id_n => number_of_attempts_for_page_n
     }
   """
-  def attempts_across_for_pages(section_id, pages_ids) do
+  def attempts_across_for_pages(section_id, pages_ids, user_ids) do
     from(ra in ResourceAttempt,
       join: access in ResourceAccess,
       on: access.id == ra.resource_access_id,
       where:
         ra.lifecycle_state == :evaluated and access.section_id == ^section_id and
-          access.resource_id in ^pages_ids,
+          access.resource_id in ^pages_ids and access.user_id in ^user_ids,
       group_by: access.resource_id,
       select: {
         access.resource_id,
@@ -657,6 +635,42 @@ defmodule Oli.Delivery.Metrics do
         group_by: cp.container_id,
         select:
           {cp.container_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
+    end)
+  end
+
+  @doc """
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
+  for every page of a given section for a given student
+
+    It returns a map:
+
+    %{page_id_1 => "High",
+      ...
+      page_id_n => "Low"
+    }
+  """
+  def proficiency_for_student_per_page(section_slug, student_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        join: cp in ContainedPage,
+        on: sn.resource_id == cp.page_id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: cp.page_id,
+        select:
+          {cp.page_id,
            fragment(
              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
              sn.correct

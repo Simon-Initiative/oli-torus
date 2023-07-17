@@ -173,6 +173,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = params, _, socket) do
+
     socket =
       case params["active_tab"] do
         value when value in [nil, "course_content"] ->
@@ -182,7 +183,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
                 socket.assigns.section
                 |> Oli.Repo.preload([:base_project, :root_section_resource])
 
-              %{"children" => Sections.build_hierarchy(section).children}
+              hierarchy = %{"children" => Sections.build_hierarchy(section).children}
+              OliWeb.Components.Delivery.CourseContent.adjust_hierarchy_for_only_pages(hierarchy)
             end)
 
           socket

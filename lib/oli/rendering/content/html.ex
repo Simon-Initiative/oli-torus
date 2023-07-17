@@ -107,18 +107,43 @@ defmodule Oli.Rendering.Content.Html do
   def youtube(%Context{} = _context, _, _e), do: ""
 
   def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
-    iframe_width =
-      if attrs["width"] do
-        " style=\"width: #{escape_xml!(attrs["width"])}px\""
+    has_width = not is_nil(attrs["width"])
+    has_height = not is_nil(attrs["height"])
+
+    dimensions =
+      cond do
+        has_width and has_height ->
+          # Both dimensions specified
+          " width=\"#{attrs["width"]}\" height=\"#{attrs["height"]}\" "
+
+        has_width ->
+          # Width with no height, default to a square size
+          " width=\"#{attrs["width"]}\" height=\"#{attrs["width"]}\" "
+
+        true ->
+          ""
+      end
+
+    # With no dimensions set, we rely on the responsive CSS classes to set dimensions
+    iframe_class =
+      if has_width do
+        "mx-auto"
       else
+        "embed-responsive-item"
+      end
+
+    container_class =
+      if has_width do
         ""
+      else
+        "embed-responsive embed-responsive-16by9"
       end
 
     captioned_content(context, attrs, [
       """
-      <div class="embed-responsive embed-responsive-16by9"#{iframe_width}>
+      <div class="#{container_class}">
         <div class="embed-wrapper">
-          <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+          <iframe#{maybeAlt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"></iframe>
         </div>
       </div>
       """

@@ -51,17 +51,18 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> Repo.all()
   end
 
-  def students_with_attempts_for_page(page_revision_id, section_id) do
+  def students_with_attempts_for_page(page, section_id, student_ids) do
     from(ra in ResourceAttempt,
       join: rac in ResourceAccess,
       on: ra.resource_access_id == rac.id,
       where:
-        ra.revision_id == ^page_revision_id and not is_nil(ra.date_evaluated) and
-          rac.section_id == ^section_id,
+        ra.lifecycle_state == :evaluated and
+          rac.section_id == ^section_id and rac.user_id in ^student_ids and
+          rac.resource_id == ^page.resource_id,
+      group_by: rac.user_id,
       select: rac.user_id
     )
     |> Repo.all()
-    |> Enum.uniq()
   end
 
   def objectives_by_resource_ids(resource_ids, section_slug) do

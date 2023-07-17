@@ -279,6 +279,7 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
         }
         line.insert('\n', attrs);
       }
+      if (node.tag === 'p' && index == 0) line.insert('\n');
     }
     const childLine = processJanusChildren(node, new Delta(), parentAttrs);
     doc = line.compose(childLine).compose(doc);

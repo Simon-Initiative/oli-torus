@@ -296,8 +296,10 @@ defmodule OliWeb.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
-      |> element("input[phx-click=\"force_push\"]")
-      |> render_click()
+      |> element("form#versioning-details-form")
+      |> render_change(%{
+        "publication" => %{"auto_push_update" => "true", "description" => "some description"}
+      })
 
       assert has_element?(view, "li", "#{push_affected.product_count} product(s)")
       assert has_element?(view, "li", "#{push_affected.section_count} course section(s)")
@@ -309,11 +311,14 @@ defmodule OliWeb.PublishLiveTest do
            project: project
          } do
       insert(:publication, project: project, published: yesterday())
+
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
-      |> element("input[phx-click=\"force_push\"]")
-      |> render_click()
+      |> element("form#versioning-details-form")
+      |> render_change(%{
+        "publication" => %{"auto_push_update" => "true", "description" => "some description"}
+      })
 
       assert view
              |> element("div.alert.alert-warning")

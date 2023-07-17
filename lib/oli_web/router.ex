@@ -887,10 +887,16 @@ defmodule OliWeb.Router do
       :download_quiz_scores
     )
 
+    get(
+      "/",
+      DeliveryController,
+      :instructor_dashboard
+    )
+
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
       root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
-      live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
+
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 

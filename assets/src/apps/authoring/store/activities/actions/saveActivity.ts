@@ -25,6 +25,7 @@ import { createUndoAction } from '../../history/slice';
 import { savePage } from '../../page/actions/savePage';
 import { selectState as selectCurrentPage, selectResourceId } from '../../page/slice';
 import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
+import { fixObjectiveParts } from './objectives';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
@@ -163,6 +164,9 @@ const wrapEdit = (activityId: string) =>
         pendingUpdate,
         releaseLock,
       });
+
+      pendingUpdate = fixObjectiveParts(pendingUpdate);
+
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const editResults = await edit(project, resource, activity, pendingUpdate, releaseLock);
       console.log('EDIT SAVE RESULTS', { editResults });
