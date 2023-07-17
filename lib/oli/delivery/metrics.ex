@@ -649,6 +649,42 @@ defmodule Oli.Delivery.Metrics do
 
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
+  for every page of a given section for a given student
+
+    It returns a map:
+
+    %{page_id_1 => "High",
+      ...
+      page_id_n => "Low"
+    }
+  """
+  def proficiency_for_student_per_page(section_slug, student_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        join: cp in ContainedPage,
+        on: sn.resource_id == cp.page_id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: cp.page_id,
+        select:
+          {cp.page_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
+    end)
+  end
+
+  @doc """
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for each student of a given section for a specific page
 
     It returns a map:
