@@ -1686,7 +1686,7 @@ defmodule Oli.Delivery.Sections do
           sr = Map.get(all, sr_id)
 
           case sr do
-            nil -> []
+            nil -> nil
             _ -> case MapSet.member?(container_ids, sr.resource_id) do
               true ->
                 rebuild_contained_pages_helper(
