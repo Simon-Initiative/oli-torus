@@ -49,7 +49,6 @@ const ScreenIdleTimeOutDialog: React.FC<any> = (props) => {
           display: 'block',
           top: '20%',
           left: '50%',
-          width: '75%',
           height: 'max-content',
         }}
       >

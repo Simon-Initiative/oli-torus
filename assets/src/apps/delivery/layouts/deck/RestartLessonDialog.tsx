@@ -109,10 +109,10 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           top: '20%',
           left: '50%',
           height: 'max-content',
-          width: '80%',
         }}
       >
         <div className="modal-header">
+          <h3>Restart Lesson</h3>
           <button
             type="button"
             className="close"
@@ -123,7 +123,6 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           >
             ×
           </button>
-          <h3>Restart Lesson</h3>
         </div>
 
         <div className="modal-body">
