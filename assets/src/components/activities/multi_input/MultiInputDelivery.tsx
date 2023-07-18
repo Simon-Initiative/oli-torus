@@ -51,6 +51,15 @@ export const MultiInputComponent: React.FC = () => {
   const { surveyId, sectionSlug, bibParams } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
+
+  const [isInputDirty, setInputDirty] = React.useState(
+    activityState.parts
+    .reduce((acc: any, part) => {
+      acc[part.partId] = false;
+      return acc;
+    },
+    {}));
+
   const deferredSaves = useRef(
     model.inputs.reduce((m: any, input: MultiInput) => {
       const p = initializePersistence();
@@ -231,6 +240,10 @@ export const MultiInputComponent: React.FC = () => {
           deferredSaves.current[id].save(fn);
         }
       }
+
+      if (!isInputDirty[id]) {
+        setInputDirty(Object.assign({}, isInputDirty, { [id]: true }));
+      }
     }
   };
 
@@ -249,8 +262,9 @@ export const MultiInputComponent: React.FC = () => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
     if (input.inputType !== 'dropdown' && hasActualInput(id)) {
       deferredSaves.current[id].flushPendingChanges(false);
-      if ((uiState.model as MultiInputSchema).submitPerPart && !context.graded) {
+      if ((uiState.model as MultiInputSchema).submitPerPart && !context.graded && isInputDirty[id as any]) {
         handlePerPartSubmission(input.partId);
+        setInputDirty(Object.assign({}, isInputDirty, { [id]: false }));
       }
     }
   };
@@ -261,6 +275,7 @@ export const MultiInputComponent: React.FC = () => {
       deferredSaves.current[id].flushPendingChanges(false);
       if ((uiState.model as MultiInputSchema).submitPerPart && !context.graded) {
         handlePerPartSubmission(input.partId);
+        setInputDirty(Object.assign({}, isInputDirty, { [id]: false }));
       }
     }
   };
