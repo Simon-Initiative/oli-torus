@@ -105,6 +105,7 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         data-keyboard="false"
         aria-hidden={!isOpen}
         style={{
+          maxWidth: '600px',
           display: isOpen ? 'block' : 'none',
           top: '20%',
           left: '50%',
