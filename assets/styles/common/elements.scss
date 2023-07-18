@@ -51,7 +51,7 @@ $element-margin-bottom: 1.5em;
     margin-bottom: $element-margin-bottom;
   }
 
-  a,
+  a:not(.btn),
   a.btn.btn-link {
     color: var(--color-delivery-primary);
 
