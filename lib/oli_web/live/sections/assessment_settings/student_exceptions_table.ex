@@ -62,7 +62,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         socket.assigns.selected_student_exceptions,
         assigns.ctx,
         JS.push("edit_date", target: socket.assigns.myself)
-        |> JS.push("open", target: "#student_due_date_modal")
+        |> JS.push("open", target: "#student_due_date_modal"),
+        JS.push("edit_password", target: socket.assigns.myself),
+        JS.push("no_edit_password", target: socket.assigns.myself)
       )
 
     table_model =
@@ -87,7 +89,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        form_id: UUID.uuid4(),
        assessment_student_exceptions: assessment_student_exceptions,
        options_for_select: Enum.map(assigns.assessments, fn a -> {a.name, a.resource_id} end),
-       selected_setting: socket.assigns[:selected_setting] || nil
+       selected_setting: socket.assigns[:selected_setting] || nil,
+       selected_assessment: selected_assessment
      )}
   end
 
@@ -341,6 +344,37 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     """
   end
 
+  def handle_event(event, params, socket) when event in ["no_edit_password", "edit_password"] do
+    IO.inspect(event, label: "editing password")
+    IO.inspect(params, label: "editing password params")
+
+    edit_password_id =
+      case params["user_id"] do
+        nil -> nil
+        user_id -> String.to_integer(user_id)
+      end
+
+    {:ok, table_model} =
+      StudentExceptionsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.section.slug,
+        socket.assigns.selected_assessment,
+        socket.assigns.myself,
+        socket.assigns.selected_student_exceptions,
+        socket.assigns.ctx,
+        JS.push("edit_date", target: socket.assigns.myself)
+        |> JS.push("open", target: "#student_due_date_modal"),
+        JS.push("edit_password", target: socket.assigns.myself),
+        JS.push("no_edit_password", target: socket.assigns.myself),
+        edit_password_id
+      )
+
+    {:noreply,
+     assign(socket,
+       table_model: table_model
+     )}
+  end
+
   def handle_event("edit_date", %{"user_id" => user_id}, socket) do
     selected_setting =
       Enum.find(socket.assigns.table_model.rows, fn s ->
@@ -466,30 +500,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
            table_model: Map.merge(socket.assigns.table_model, %{data: table_model_data})
          )}
 
+      {:password, user_id, new_value} ->
+        do_update(:password, user_id, new_value, socket)
+
       {key, user_id, new_value} when new_value != "" ->
-        Delivery.get_delivery_setting_by(%{
-          resource_id: socket.assigns.params.selected_assessment_id,
-          user_id: user_id
-        })
-        |> StudentException.changeset(Map.new([{key, new_value}]))
-        |> Repo.update()
-        |> case do
-          {:error, _changeset} ->
-            {:noreply,
-             socket
-             |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
-
-          {:ok, updated_student_exception} ->
-            update_liveview_student_exceptions(
-              :updated,
-              [Repo.preload(updated_student_exception, :user)],
-              false
-            )
-
-            {:noreply,
-             socket
-             |> flash_to_liveview(:info, "Student Exception updated!")}
-        end
+        do_update(key, user_id, new_value, socket)
 
       _ ->
         {:noreply, socket}
@@ -697,6 +712,32 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         ),
       selected_assessment_id: Params.get_int_param(params, "assessment_id", 0)
     }
+  end
+
+  defp do_update(key, user_id, new_value, socket) do
+    Delivery.get_delivery_setting_by(%{
+      resource_id: socket.assigns.params.selected_assessment_id,
+      user_id: user_id
+    })
+    |> StudentException.changeset(Map.new([{key, new_value}]))
+    |> Repo.update()
+    |> case do
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
+
+      {:ok, updated_student_exception} ->
+        update_liveview_student_exceptions(
+          :updated,
+          [Repo.preload(updated_student_exception, :user)],
+          false
+        )
+
+        {:noreply,
+         socket
+         |> flash_to_liveview(:info, "Student Exception updated!")}
+    end
   end
 
   defp apply_filters(student_exceptions, params) do
