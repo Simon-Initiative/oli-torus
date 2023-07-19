@@ -345,9 +345,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   def handle_event(event, params, socket) when event in ["no_edit_password", "edit_password"] do
-    IO.inspect(event, label: "editing password")
-    IO.inspect(params, label: "editing password params")
-
     edit_password_id =
       case params["user_id"] do
         nil -> nil
