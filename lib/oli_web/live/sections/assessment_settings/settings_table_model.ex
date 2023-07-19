@@ -4,7 +4,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.FormatDateTime
   use Phoenix.Component
 
-  def new(assessments, section_slug, ctx, on_edit_date) do
+  def new(
+        assessments,
+        section_slug,
+        ctx,
+        on_edit_date,
+        on_edit_password,
+        on_no_edit_password,
+        edit_password_id \\ nil
+      ) do
     column_specs = [
       %ColumnSpec{
         name: :index,
@@ -80,6 +88,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
+        name: :password,
+        label: "PASSWORD",
+        render_fn: &__MODULE__.render_password_column/3,
+        th_class: "pt-3 whitespace-nowrap",
+        sortable: false
+      },
+      %ColumnSpec{
         name: :exceptions_count,
         label: "EXCEPTIONS",
         render_fn: &__MODULE__.render_exceptions_column/3,
@@ -95,7 +110,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       data: %{
         section_slug: section_slug,
         ctx: ctx,
-        on_edit_date: on_edit_date
+        on_edit_date: on_edit_date,
+        on_edit_password: on_edit_password,
+        on_no_edit_password: on_no_edit_password,
+        edit_password_id: edit_password_id
       }
     )
   end
@@ -240,6 +258,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
       </select>
     """
+  end
+
+  def render_password_column(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        password: assessment.password,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+      <%= if @password in ["", nil] do %>
+        <input class="w-40" type="text" placeholder={"Enter password"} phx-debounce={800} name={"password-#{@id}"}/>
+      <% else %>
+        <%= if @id == @edit_password_id do %>
+          <input id={"password_input#{@id}"} class="w-40" type="text" value={@password} phx-hook="InputAutoSelect" phx-click-away={@on_no_edit_password} phx-debounce={800} name={"password-#{@id}"}/>
+        <% else %>
+          <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id}>
+            <input class="w-40" type="password" value={hide_password(@password)}/>
+          </button>
+        <% end %>
+      <% end %>
+    """
+  end
+
+  defp hide_password(password) do
+    String.replace(password, ~r/./, "*")
   end
 
   def render_exceptions_column(assigns, assessment, _) do
