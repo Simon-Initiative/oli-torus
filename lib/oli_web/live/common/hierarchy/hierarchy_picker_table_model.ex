@@ -33,7 +33,8 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
         label: "Published on",
         render_fn: &__MODULE__.custom_render/3,
         th_class: "pl-2 text-right",
-        td_class: "text-right"
+        td_class: "text-right",
+        sortable: false
       }
     ]
 
