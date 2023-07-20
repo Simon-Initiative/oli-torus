@@ -191,10 +191,10 @@ defmodule OliWeb.Common.FormatDateTime do
         Timex.format!(datetime, "{Mfull} {D}, {YYYY}#{maybe_timezone}")
 
       :minutes ->
-        Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM}#{maybe_timezone}")
+        Timex.format!(datetime, "{Mfull} {D}, {YYYY} {h12}:{m} {AM}#{maybe_timezone}")
 
       :seconds ->
-        Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m}:{s} {AM}#{maybe_timezone}")
+        Timex.format!(datetime, "{Mfull} {D}, {YYYY} {h12}:{m}:{s} {AM}#{maybe_timezone}")
 
       :relative ->
         Timex.format!(datetime, "{relative}", :relative)
