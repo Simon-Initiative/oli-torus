@@ -544,6 +544,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       <.live_component
         id="discussion_activity_table"
         module={OliWeb.Components.Delivery.DiscussionActivity}
+        ctx={@ctx}
         params={@params}
         section={@section}
         />

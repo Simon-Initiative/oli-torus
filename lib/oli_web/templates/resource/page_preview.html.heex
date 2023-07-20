@@ -11,7 +11,7 @@
       <Components.Delivery.PageDelivery.header title={@context.title} page_number={0} review_mode={false} />
     <% end %>
 
-    <Components.Delivery.PageDelivery.details />
+    <Components.Delivery.PageDelivery.details ctx={@ctx} />
 
     <div id="eventIntercept" class="content">
       <%= raw(@content_html) %>

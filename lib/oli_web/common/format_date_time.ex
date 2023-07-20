@@ -71,6 +71,7 @@ defmodule OliWeb.Common.FormatDateTime do
       Keyword.get(opts, :ctx)
       |> value_or(Keyword.get(opts, :conn))
       |> value_or(Keyword.get(opts, :local_tz))
+      |> value_or(nil)
 
     case maybe_ctx_conn_or_local_tz do
       %Plug.Conn{} = conn ->
@@ -122,6 +123,10 @@ defmodule OliWeb.Common.FormatDateTime do
     else
       datetime
     end
+  end
+
+  def maybe_localized_datetime(%Date{} = date, opts) do
+    maybe_localized_datetime(Timex.to_datetime(date), opts)
   end
 
   @doc """

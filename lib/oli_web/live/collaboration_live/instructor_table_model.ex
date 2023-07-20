@@ -70,15 +70,14 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
   end
 
   def render_collab_space(
-        assigns,
+        %{ctx: ctx} = assigns,
         %{
           page: %{title: title, slug: page_revision_slug},
           section: %{slug: section_slug},
           collab_space_config: %{"status" => status},
           most_recent_post: most_recent_post,
           number_of_posts: number_of_posts,
-          number_of_posts_pending_approval: number_of_posts_pending_approval,
-          ctx: ctx
+          number_of_posts_pending_approval: number_of_posts_pending_approval
         },
         _spec
       ) do
