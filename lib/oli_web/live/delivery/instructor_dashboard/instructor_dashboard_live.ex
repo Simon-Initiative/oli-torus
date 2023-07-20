@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
@@ -11,8 +12,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(_params, session, socket) do
+    ctx = SessionContext.init(socket, session)
+
+    {:ok, assign(socket, ctx: ctx)}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
@@ -173,7 +176,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = params, _, socket) do
-
     socket =
       case params["active_tab"] do
         value when value in [nil, "course_content"] ->
@@ -390,6 +392,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         <.live_component
           module={OliWeb.Components.Delivery.CourseContent}
           id="course_content_tab"
+          ctx={assigns.ctx}
           hierarchy={assigns.hierarchy}
           current_position={assigns.current_position}
           current_level={assigns.current_level}

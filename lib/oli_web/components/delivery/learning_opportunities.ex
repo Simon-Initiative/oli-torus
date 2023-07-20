@@ -2,6 +2,9 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
   use Phoenix.Component
 
   import OliWeb.Components.Delivery.Utils
+  import OliWeb.Common.FormatDateTime
+
+  alias OliWeb.Common.SessionContext
 
   defmodule LearningOpportunity do
     @enforce_keys [:type, :title, :progress, :complete_by_date, :open_href]
@@ -26,6 +29,8 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
           }
   end
 
+  attr(:ctx, SessionContext, required: true)
+
   def opportunities(assigns) do
     ~H"""
       <div class="bg-white dark:bg-gray-800 shadow">
@@ -40,21 +45,21 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
             type: :course_content,
             title: "1.0 Intro to Chemistry 101: Foundational Content",
             progress: {:percent_complete, 20},
-            complete_by_date: format_date(~D[2020-10-03]),
+            complete_by_date: date(DateTime.from_naive!(~D[2020-10-03], "Etc/UTC"), @ctx),
             open_href: "#"
           },
           %LearningOpportunity{
             type: :graded_assignment,
             title: "1.0 Intro to Chemistry 101: Chemistry Assignment",
             progress: {:score, 3, 10},
-            complete_by_date: format_date(~D[2020-10-03]),
+            complete_by_date: date(DateTime.from_naive!(~D[2020-10-03], "Etc/UTC"), @ctx),
             open_href: "#"
           },
           %LearningOpportunity{
             type: :mission_activities,
             title: "Mission Activity: Water Pollution on Planet Earth",
             progress: {:activities_completed, 5, 10},
-            complete_by_date: format_date(~D[2020-10-03]),
+            complete_by_date: date(DateTime.from_naive!(~D[2020-10-03], "Etc/UTC"), @ctx),
             open_href: "#"
           }
         ] do %>

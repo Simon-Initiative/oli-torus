@@ -9,6 +9,10 @@ defmodule OliWeb.Common.FormatDateTime do
   @doc """
   Returns a human readable formatted duration
   """
+  def duration(%Timex.Duration{} = duration) do
+    Timex.format_duration(duration, :humanized)
+  end
+
   def duration(from, to) do
     Timex.diff(from, to, :milliseconds)
     |> Timex.Duration.from_milliseconds()
@@ -175,6 +179,8 @@ defmodule OliWeb.Common.FormatDateTime do
         ""
       end
 
+    # TODO: we likely want to be using Oli.Cldr.Date.to_string/2 here instead
+    # once we have a way to pass in the locale
     case precision do
       :date ->
         Timex.format!(datetime, "{Mfull} {D}, {YYYY}#{maybe_timezone}")

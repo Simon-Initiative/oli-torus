@@ -77,7 +77,8 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
           collab_space_config: %{"status" => status},
           most_recent_post: most_recent_post,
           number_of_posts: number_of_posts,
-          number_of_posts_pending_approval: number_of_posts_pending_approval
+          number_of_posts_pending_approval: number_of_posts_pending_approval,
+          ctx: ctx
         },
         _spec
       ) do
@@ -93,7 +94,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
             _ -> "info"
           end}"}>{status}</span>
         </div>
-        <span class="torus-span">Most recent post: {FormatDateTime.format_datetime(most_recent_post, show_timezone: false)}</span>
+        <span class="torus-span">Most recent post: {FormatDateTime.date(most_recent_post, ctx)}</span>
       </div>
       <div class="flex justify-between">
         <p class="torus-p">
