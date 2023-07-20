@@ -8676,6 +8676,10 @@ body {
     display: inline;
   }
 
+  .md\:grid {
+    display: grid;
+  }
+
   .md\:h-full {
     height: 100%;
   }
@@ -8730,6 +8734,11 @@ body {
 
   .md\:p-0 {
     padding: 0px;
+  }
+
+  .md\:px-0 {
+    padding-left: 0px;
+    padding-right: 0px;
   }
 
   .md\:px-10 {
