@@ -217,6 +217,20 @@ defmodule OliWeb.AdminLiveTest do
                "#{user.family_name}, #{user.given_name}"
     end
 
+    test "links to linked author", %{conn: conn} do
+      author =
+        insert(:author, %{given_name: "Lionel", family_name: "Messi", email: "lio@messi.com"})
+
+      insert(:user, %{author: author})
+
+      {:ok, view, _html} = live(conn, @live_view_users_route)
+
+      assert view
+             |> element("a[href=\"#{live_view_author_detail_route(author.id)}\"]")
+             |> render() =~
+               "lio@messi.com"
+    end
+
     test "applies filtering", %{conn: conn} do
       user_1 = insert(:user)
       user_2 = insert(:user, guest: true)
