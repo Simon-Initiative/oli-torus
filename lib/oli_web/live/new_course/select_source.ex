@@ -199,7 +199,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
                 :blueprint -> source.title
               end
 
-            String.contains?(String.downcase(title), query)
+            String.contains?(
+              String.downcase(title),
+              String.downcase(query)
+            )
           end)
 
         Map.put(table_model, :rows, rows)
