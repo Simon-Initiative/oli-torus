@@ -2536,7 +2536,7 @@ defmodule Oli.Delivery.Sections do
         if is_nil(sr.end_date) do
           nil
         else
-          OliWeb.Common.FormatDateTime.date(sr.end_date,)
+          OliWeb.Common.FormatDateTime.date(sr.end_date, session_context)
         end
       )
     end)
