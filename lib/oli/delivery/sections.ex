@@ -2502,13 +2502,17 @@ defmodule Oli.Delivery.Sections do
       section_id: s.id,
       relates_to: rev.relates_to
     })
-    |> order_by([{:asc_nulls_last, fragment("end_date")}])
+    |> order_by([
+      {:asc_nulls_last, fragment("end_date")},
+      {:asc_nulls_last, fragment("numbering_level")},
+      {:asc_nulls_last, fragment("numbering_index")}
+    ])
   end
 
   @doc """
     Returns the activities that a student need to complete next.
   """
-  def get_next_activities_for_student(section_slug, user_id) do
+  def get_next_activities_for_student(section_slug, user_id, session_context) do
     student_pages_query = get_student_pages(section_slug, user_id)
 
     query =
@@ -2532,7 +2536,7 @@ defmodule Oli.Delivery.Sections do
         if is_nil(sr.end_date) do
           nil
         else
-          to_datetime(sr.end_date)
+          OliWeb.Common.FormatDateTime.date(sr.end_date,)
         end
       )
     end)
