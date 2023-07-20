@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EditView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Branding
   alias OliWeb.Sections.StartEnd

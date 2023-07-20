@@ -50,7 +50,7 @@ defmodule OliWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {OliWeb.LayoutView, "live.html"}
+        layout: {OliWeb.LayoutView, :live}
 
       unquote(view_helpers())
     end
@@ -67,7 +67,7 @@ defmodule OliWeb do
   def surface_view do
     quote do
       use Surface.LiveView,
-        layout: {OliWeb.LayoutView, "live.html"}
+        layout: {OliWeb.LayoutView, :live}
 
       import Oli.Utils.Surface
 
@@ -119,7 +119,7 @@ defmodule OliWeb do
 
       # Import LiveView helpers (live_render, live_component, live_patch, etc)
       import Phoenix.LiveView.Helpers
-      import OliWeb.LiveHelpers
+      # import OliWeb.LiveHelpers
 
       # Import basic rendering functionality (render, render_layout, etc)
       import Phoenix.View

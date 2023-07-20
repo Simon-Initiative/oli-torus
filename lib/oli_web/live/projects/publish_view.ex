@@ -1,5 +1,5 @@
 defmodule OliWeb.Projects.PublishView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.SortableTable.TableHandlers
   use OliWeb.Common.Modal
 

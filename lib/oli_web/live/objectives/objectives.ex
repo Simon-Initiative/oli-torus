@@ -2,7 +2,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   @moduledoc """
     LiveView implementation of an objective editor.
   """
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.SortableTable.TableHandlers
   use OliWeb.Common.Modal
 

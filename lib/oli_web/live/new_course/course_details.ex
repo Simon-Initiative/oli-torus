@@ -22,13 +22,14 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
         assigns,
         %{
           class_days: Ecto.Changeset.fetch_field(assigns.changeset, :class_days) |> elem(1),
-          class_modality: Ecto.Changeset.fetch_field(assigns.changeset, :class_modality) |> elem(1),
+          class_modality:
+            Ecto.Changeset.fetch_field(assigns.changeset, :class_modality) |> elem(1),
           days: @days
         }
       )
 
     ~H"""
-    <.form id="course-details-form" class="w-full" for={@changeset} let={f} >
+    <.form id="course-details-form" class="w-full" for={@changeset} :let={f} >
       <div class="flex flex-col gap-8">
         <%= if @class_modality != :never do %>
           <div class="flex flex-col gap-1 flex-1">

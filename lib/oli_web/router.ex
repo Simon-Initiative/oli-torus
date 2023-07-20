@@ -20,8 +20,8 @@ defmodule OliWeb.Router do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_live_flash)
-    plug(:put_root_layout, {OliWeb.LayoutView, "default.html"})
-    plug(:put_layout, {OliWeb.LayoutView, "app.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :default})
+    plug(:put_layout, {OliWeb.LayoutView, :app})
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
@@ -45,7 +45,7 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug(:fetch_session)
     plug(:fetch_live_flash)
-    plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :lti})
     plug(OliWeb.Plugs.SessionContext)
   end
 
@@ -94,11 +94,11 @@ defmodule OliWeb.Router do
 
   # set the layout to be workspace
   pipeline :workspace do
-    plug(:put_root_layout, {OliWeb.LayoutView, "workspace.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :workspace})
   end
 
   pipeline :delivery_layout do
-    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
+    plug(:put_root_layout, {OliWeb.LayoutView, :delivery})
   end
 
   pipeline :maybe_gated_resource do
@@ -811,7 +811,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
-      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
       live("/:active_tab", Delivery.StudentDashboard.StudentDashboardLive,
         metadata: %{route_name: :student_dashboard}
       )
@@ -822,7 +822,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
-      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
       live(
         "/preview/:active_tab",
         Delivery.StudentDashboard.StudentDashboardLive,
@@ -843,7 +843,7 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard_preview,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive, :preview)
@@ -889,7 +889,7 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard,
       on_mount: OliWeb.Delivery.InstructorDashboard.InitialAssigns,
-      root_layout: {OliWeb.LayoutView, "delivery_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_dashboard} do
       live("/", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view", Delivery.InstructorDashboard.InstructorDashboardLive)
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
@@ -1019,7 +1019,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],
-      root_layout: {OliWeb.LayoutView, "delivery_student_dashboard.html"} do
+      root_layout: {OliWeb.LayoutView, :delivery_student_dashboard} do
       live(
         "/:section_slug/enrollments/students/:student_id/:active_tab",
         Delivery.StudentDashboard.StudentDashboardLive,

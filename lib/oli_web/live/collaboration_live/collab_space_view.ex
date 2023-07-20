@@ -1,5 +1,5 @@
 defmodule OliWeb.CollaborationLive.CollabSpaceView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Phoenix.LiveView.JS
 

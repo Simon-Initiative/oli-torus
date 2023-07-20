@@ -1,5 +1,5 @@
 defmodule OliWeb.Resources.PagesView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]

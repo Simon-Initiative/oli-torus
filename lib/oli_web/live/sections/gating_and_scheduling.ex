@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.GatingAndScheduling do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 

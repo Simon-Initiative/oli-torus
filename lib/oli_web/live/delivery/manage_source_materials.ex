@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.ManageSourceMaterials do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.Modal
 
   alias Oli.Authoring.Course
@@ -40,11 +40,11 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
         session,
         socket
       ) do
-
-    section_slug = case params do
-      :not_mounted_at_router -> Map.get(session, "section_slug")
-      _ -> Map.get(params, "section_slug")
-    end
+    section_slug =
+      case params do
+        :not_mounted_at_router -> Map.get(session, "section_slug")
+        _ -> Map.get(params, "section_slug")
+      end
 
     case Mount.for(section_slug, session) do
       {:error, e} ->
