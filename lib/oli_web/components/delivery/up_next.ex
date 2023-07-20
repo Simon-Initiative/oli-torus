@@ -46,7 +46,6 @@ defmodule OliWeb.Components.Delivery.UpNext do
   attr(:request_extension_href, :string)
   attr(:scheduling_type, :string)
 
-
   def card(assigns) do
     ~H"""
     <div class={"flex-1 rounded p-8 py-4 mb-2 last:mb-0 md:last:mb-2 md:mr-2 bg-delivery-header-800"}>

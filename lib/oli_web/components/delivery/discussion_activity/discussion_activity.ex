@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
 
   alias Phoenix.LiveView.JS
 
+  prop(ctx, :any, required: true)
   prop(limit, :number, default: 10)
   prop(filter, :string, required: true)
   prop(offset, :number, required: true)
@@ -36,7 +37,8 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
         limit: safe_to_integer(assigns.params["limit"] || @default_params.limit),
         filter: safe_to_atom(assigns.params["filter"] || @default_params.filter),
         offset: safe_to_integer(assigns.params["offset"] || @default_params.offset),
-        section_slug: assigns.section.slug
+        section_slug: assigns.section.slug,
+        ctx: assigns.ctx
       )
       |> do_filter()
 
@@ -180,12 +182,13 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
       :section_slug => section_slug,
       :filter => filter,
       :limit => limit,
-      :offset => offset
+      :offset => offset,
+      :ctx => ctx
     } = socket.assigns
 
     case filter do
       :by_discussion ->
-        {:ok, collab_space_table_model} = CollabSpaceTableModel.new([], %{}, is_listing: false)
+        {:ok, collab_space_table_model} = CollabSpaceTableModel.new([], ctx, is_listing: false)
 
         {count, rows} =
           Collaboration.list_collaborative_spaces_in_section(section_slug,

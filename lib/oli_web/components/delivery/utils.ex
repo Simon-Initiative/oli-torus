@@ -190,7 +190,6 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def user_role(section, user) do
     case user do
-
       %Author{system_role_id: @system_admin_role_id} ->
         :system_admin
 
@@ -198,7 +197,6 @@ defmodule OliWeb.Components.Delivery.Utils do
         :other
 
       _ ->
-
         case section do
           %Section{slug: section_slug} ->
             cond do
@@ -216,7 +214,7 @@ defmodule OliWeb.Components.Delivery.Utils do
 
               true ->
                 :other
-              end
+            end
 
           _ ->
             case user do
@@ -239,9 +237,7 @@ defmodule OliWeb.Components.Delivery.Utils do
                 :other
             end
         end
-
     end
-
   end
 
   def account_linked?(user) do
@@ -293,9 +289,4 @@ defmodule OliWeb.Components.Delivery.Utils do
       </div>
     """
   end
-
-  def format_date(date), do: Oli.Cldr.Date.to_string(date) |> elem(1)
-
-  def format_duration(%Timex.Duration{} = duration),
-    do: Timex.format_duration(duration, :humanized)
 end
