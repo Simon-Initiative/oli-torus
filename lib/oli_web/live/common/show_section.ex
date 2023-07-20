@@ -7,7 +7,7 @@ defmodule OliWeb.Common.ShowSection do
 
   def render(assigns) do
     ~F"""
-    <div class="grid grid-cols-12 py-5 border-b">
+    <div class="flex md:grid grid-cols-12 py-5 border-b">
       <div class="md:col-span-4">
         <h4>{@section_title}</h4>
         {#unless is_nil(@section_description)}
