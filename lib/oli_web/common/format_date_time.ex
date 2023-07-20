@@ -175,7 +175,7 @@ defmodule OliWeb.Common.FormatDateTime do
       |> value_or(author_format_preference(author))
       |> value_or(:minutes)
 
-    show_timezone = Keyword.get(opts, :show_timezone, true)
+    show_timezone = Keyword.get(opts, :show_timezone, false)
 
     maybe_timezone =
       if show_timezone do
