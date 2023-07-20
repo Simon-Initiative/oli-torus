@@ -579,7 +579,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view
              |> has_element?(
                ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
-               "Another orph. Page"
+               "Elixir Page"
              )
 
       view

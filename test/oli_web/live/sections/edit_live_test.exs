@@ -289,8 +289,6 @@ defmodule OliWeb.Sections.EditLiveTest do
       |> element("form[phx-submit=\"save\"")
       |> render_submit(%{section: %{start_date: today, end_date: yesterday}})
 
-      open_browser(view)
-
       assert has_element?(view, "span.help-block", "must be before the end date")
       assert has_element?(view, "span.help-block", "must be after the start date")
     end
