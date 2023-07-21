@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.Actions do
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Paywall.Payment
+  alias OliWeb.Router.Helpers, as: Routes
 
   prop(enrollment_info, :map, required: true)
   prop(section, :map, required: true)
@@ -57,12 +58,23 @@ defmodule OliWeb.Components.Delivery.Actions do
 
   def render(assigns) do
     ~F"""
-      <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
-          <h4 class="pl-9 !py-2 torus-h4 mr-auto dark:text-white">Actions</h4>
+      <div id="student_actions" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm px-14 py-7 flex flex-col gap-6">
+        <.live_component
+          module={OliWeb.Components.Modal}
+          id="unenroll_user_modal"
+          title="Unenroll student"
+          on_confirm={JS.push("unenroll", target: @myself)}
+        >
+          <div class="px-4">
+            <p>Are you sure you want to unenroll "{@user.name}" from the course "{@section.title}"?</p>
+          </div>
+        </.live_component>
+
+        <div class="flex flex-col sm:flex-row sm:items-end instructor_dashboard_table">
+          <h4 class="torus-h4 !py-0 mr-auto dark:text-white">Actions</h4>
         </div>
 
-        <div class="flex justify-between items-center px-14 py-8">
+        <div class="flex justify-between items-center">
           <div class="flex flex-col">
             <span class="dark:text-white">Change enrolled user role</span>
             <span class="text-xs text-gray-400 dark:text-gray-950">Select the role to change for the user in this section.</span>
@@ -92,8 +104,33 @@ defmodule OliWeb.Components.Delivery.Actions do
               </button>
           </div>
         {/if}
+
+        <div class="ml-auto">
+          <button phx-click={JS.push("open", target: "#unenroll_user_modal")} class="btn btn-danger">Unenroll</button>
+        </div>
       </div>
     """
+  end
+
+  def handle_event("unenroll", _params, socket) do
+    %{section: section, user: user} = socket.assigns
+
+    case Oli.Delivery.Sections.unenroll_learner(user.id, section.id) do
+      {:ok, _} ->
+        {:noreply,
+         redirect(socket,
+           to:
+             Routes.live_path(
+               OliWeb.Endpoint,
+               OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+               socket.assigns.section.slug,
+               :manage
+             )
+         )}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   # Change user role

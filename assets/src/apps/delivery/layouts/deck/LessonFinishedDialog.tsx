@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
   selectIsGraded,
-  selectOverviewURL,
   selectPageSlug,
   selectPreviewMode,
   selectResourceAttemptGuid,
@@ -22,9 +21,9 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
   hideCloseButton,
 }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [redirectURL, setRedirectURL] = useState('');
   const isPreviewMode = useSelector(selectPreviewMode);
   const graded = useSelector(selectIsGraded);
-  const overviewURL = useSelector(selectOverviewURL);
   const revisionSlug = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
@@ -42,9 +41,9 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
     if (!graded || isPreviewMode) {
       window.location.reload();
     } else {
-      window.location.href = overviewURL;
+      window.location.href = redirectURL;
     }
-  }, [isFinalized, isPreviewMode, overviewURL]);
+  }, [isFinalized, isPreviewMode, redirectURL]);
 
   const handleFinalization = useCallback(async () => {
     setFinalizationCalled(true);
@@ -62,6 +61,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
             console.error('failed to finalize attempt', finalizeResult);
             return;
           }
+          setRedirectURL(finalizeResult.redirectTo);
         } else {
           console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);
           return;

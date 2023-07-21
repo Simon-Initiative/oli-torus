@@ -308,29 +308,30 @@ defmodule Oli.Delivery.Metrics do
   def avg_score_for(section_id, user_id, container_id \\ nil) do
     user_id_list = if is_list(user_id), do: user_id, else: [user_id]
 
-    filter_by_container =
-      case container_id do
-        nil ->
-          dynamic([cp, _], is_nil(cp.container_id))
+    query = case container_id do
+      nil ->
+        ResourceAccess
+        |> where([ra], ra.section_id == ^section_id and ra.user_id in ^user_id_list and not is_nil(ra.score))
+        |> group_by([ra], ra.user_id)
+        |> select(
+          [ra],
+          {ra.user_id, fragment("SUM(?)", ra.score) / fragment("SUM(?)", ra.out_of)}
+        )
 
-        _ ->
-          dynamic([cp, _], cp.container_id == ^container_id)
-      end
-
-    query =
-      ContainedPage
-      |> join(:inner, [cp], ra in ResourceAccess,
-        on:
-          cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
-            ra.user_id in ^user_id_list
-      )
-      |> where([cp, ra], cp.section_id == ^section_id and not is_nil(ra.score))
-      |> where(^filter_by_container)
-      |> group_by([_cp, ra], ra.user_id)
-      |> select(
-        [cp, ra],
-        {ra.user_id, fragment("SUM(?)", ra.score) / fragment("SUM(?)", ra.out_of)}
-      )
+      container_id ->
+        ContainedPage
+        |> join(:inner, [cp], ra in ResourceAccess,
+          on:
+            cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
+              ra.user_id in ^user_id_list
+        )
+        |> where([cp, ra], cp.section_id == ^section_id and not is_nil(ra.score) and cp.container_id == ^container_id)
+        |> group_by([_cp, ra], ra.user_id)
+        |> select(
+          [cp, ra],
+          {ra.user_id, fragment("SUM(?)", ra.score) / fragment("SUM(?)", ra.out_of)}
+        )
+    end
 
     Repo.all(query)
     |> Enum.into(%{})
@@ -635,6 +636,42 @@ defmodule Oli.Delivery.Metrics do
         group_by: cp.container_id,
         select:
           {cp.container_id,
+           fragment(
+             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
+             sn.correct
+           )}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, proficiency} ->
+      {student_id, proficiency_range(proficiency)}
+    end)
+  end
+
+  @doc """
+  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
+  for every page of a given section for a given student
+
+    It returns a map:
+
+    %{page_id_1 => "High",
+      ...
+      page_id_n => "Low"
+    }
+  """
+  def proficiency_for_student_per_page(section_slug, student_id) do
+    query =
+      from(sn in Snapshot,
+        join: s in Section,
+        on: sn.section_id == s.id,
+        join: cp in ContainedPage,
+        on: sn.resource_id == cp.page_id,
+        where:
+          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
+            sn.user_id == ^student_id,
+        group_by: cp.page_id,
+        select:
+          {cp.page_id,
            fragment(
              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
              sn.correct

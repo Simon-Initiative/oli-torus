@@ -32,6 +32,8 @@ defmodule OliWeb.PageDeliveryController do
     user = conn.assigns.current_user
     section = conn.assigns.section
 
+    context = conn.assigns[:ctx]
+
     if Sections.is_enrolled?(user.id, section_slug) do
       case section
            |> Oli.Repo.preload([:base_project, :root_section_resource]) do
@@ -39,9 +41,9 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          is_instructor = Sections.is_instructor?(user, section_slug)
+          user_roles = Sections.get_user_roles(user, section_slug)
 
-          if is_instructor do
+          if user_roles.is_instructor? do
             conn
             |> redirect(
               to:
@@ -59,7 +61,7 @@ defmodule OliWeb.PageDeliveryController do
               Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
             next_activities =
-              Sections.get_next_activities_for_student(section_slug, user.id)
+              Sections.get_next_activities_for_student(section_slug, user.id, context)
               |> Enum.map(fn sr ->
                 case sr.scheduling_type do
                   :read_by -> Map.put(sr, :scheduling_type, "Read by")
@@ -79,7 +81,8 @@ defmodule OliWeb.PageDeliveryController do
               container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
               collab_space_config: effective_settings.collab_space_config,
               revision_slug: revision.slug,
-              is_instructor: is_instructor,
+              is_instructor: user_roles.is_instructor?,
+              is_student: user_roles.is_student?,
               progress: learner_progress(section.id, user.id),
               next_activities: next_activities,
               independent_learner: user.independent_learner,
@@ -756,6 +759,7 @@ defmodule OliWeb.PageDeliveryController do
       collab_space_config: effective_settings.collab_space_config,
       revision_slug: revision.slug,
       is_instructor: false,
+      is_student: false,
       current_user_id: current_user.id
     )
   end

@@ -132,7 +132,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = assign(assigns, payment_status: payment_status, payment_date: payment_date)
 
     ~H"""
-      <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}><%= render_label(@payment_status, @payment_date, @section) %></div>
+      <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}><%= render_label(@payment_status, @payment_date, @section, @ctx) %></div>
     """
   end
 
@@ -188,9 +188,9 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
   end
 
-  defp render_label(:not_paid, _, _), do: "Not Paid"
+  defp render_label(:not_paid, _, _, _), do: "Not Paid"
 
-  defp render_label(:within_grace_period, _, section) do
+  defp render_label(:within_grace_period, _, section, _) do
     grace_period_days = section.grace_period_days
     start_date = section.start_date
 
@@ -200,6 +200,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     "Grace Period: #{days_remaining}d remaining"
   end
 
-  defp render_label(:paid, date, _), do: "Paid on #{Timex.format!(date, "{0M}/{0D}/{YYYY}")}"
-  defp render_label(_, _, _), do: "-"
+  defp render_label(:paid, date, _, ctx), do: "Paid on #{FormatDateTime.date(date, ctx)}"
+  defp render_label(_, _, _, _), do: "-"
 end
