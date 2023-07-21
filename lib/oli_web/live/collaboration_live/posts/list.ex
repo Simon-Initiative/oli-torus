@@ -3,13 +3,13 @@ defmodule OliWeb.CollaborationLive.Posts.List do
 
   alias OliWeb.CollaborationLive.Posts.Show
 
-  prop posts, :list, required: true
-  prop collab_space_config, :struct, required: true
-  prop user_id, :string, required: true
-  prop selected, :string, default: ""
-  prop is_instructor, :boolean, required: true
-  prop is_student, :boolean, required: true
-  prop editing_post, :string, default: ""
+  prop(posts, :list, required: true)
+  prop(collab_space_config, :struct, required: true)
+  prop(user_id, :string, required: true)
+  prop(selected, :string, default: "")
+  prop(is_instructor, :boolean, required: true)
+  prop(is_student, :boolean, required: true)
+  prop(editing_post, :string, default: "")
 
   def render(assigns) do
     ~F"""
@@ -34,12 +34,12 @@ defmodule OliWeb.CollaborationLive.Posts.List do
             />
           </div>
           {#if @collab_space_config.threaded and Integer.to_string(post.id) == @selected}
-            <div class="bg-gray-100" id={"post_#{post.id}_replies"}>
+            <div class="bg-gray-100 dark:bg-gray-900" id={"post_#{post.id}_replies"}>
               <div class="flex flex-col gap-4 ml-6">
                 {#for {reply, reply_index} <- post.replies}
                   <div
                     id={"post_reply_#{reply.id}"}
-                    class={"p-5 bg-white show #{if reply_index == 1, do: "mt-4"} #{if reply_index == length(post.replies), do: "mb-4"} #{if reply.status == :archived, do: " readonly"}"}
+                    class={"p-5 bg-white dark:bg-gray-800 show #{if reply_index == 1, do: "mt-4"} #{if reply_index == length(post.replies), do: "mb-4"} #{if reply.status == :archived, do: " readonly"}"}
                     aria-labelledby={"heading_#{post.id}"}
                   >
                     <Show
