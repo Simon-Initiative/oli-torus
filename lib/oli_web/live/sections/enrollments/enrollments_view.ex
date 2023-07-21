@@ -169,20 +169,6 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
      )}
   end
 
-  def handle_event("unenroll", %{"id" => user_id}, socket) do
-    %{section: section, ctx: ctx} = socket.assigns
-
-    case Sections.unenroll_learner(user_id, section.id) do
-      {:ok, _} ->
-        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section, ctx)
-
-        {:noreply, assign(socket, total_count: total_count, table_model: table_model)}
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([

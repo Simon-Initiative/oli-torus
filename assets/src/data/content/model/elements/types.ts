@@ -296,8 +296,8 @@ export interface Webpage extends SlateElement<VoidChildren> {
   type: 'iframe';
   src?: string;
   srcType?: WebpageSrcType;
-  height?: number;
-  width?: number;
+  height?: string | number;
+  width?: string | number;
   alt?: string;
   caption?: Caption;
   // Legacy, unused

@@ -8,7 +8,7 @@
 
 ### Configs
 
-## 0.24.0 (prerelease)
+## 0.24.0 (2023-7-20)
 
 ### Bug Fixes
 

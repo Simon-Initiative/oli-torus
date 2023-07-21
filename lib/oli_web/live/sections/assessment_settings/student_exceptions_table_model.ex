@@ -10,7 +10,10 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         target,
         selected_student_exceptions,
         ctx,
-        on_edit_date
+        on_edit_date,
+        on_edit_password,
+        on_no_edit_password,
+        edit_password_id \\ nil
       ) do
     column_specs = [
       %ColumnSpec{
@@ -79,6 +82,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         label: "VIEW ANSWERS",
         render_fn: &__MODULE__.render_view_answers_column/3,
         th_class: "whitespace-nowrap"
+      },
+      %ColumnSpec{
+        name: :password,
+        label: "PASSWORD",
+        render_fn: &__MODULE__.render_password_column/3,
+        th_class: "pt-3 whitespace-nowrap",
+        sortable: false
       }
     ]
 
@@ -93,7 +103,10 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         target: target,
         selected_student_exceptions: selected_student_exceptions,
         ctx: ctx,
-        on_edit_date: on_edit_date
+        on_edit_date: on_edit_date,
+        on_edit_password: on_edit_password,
+        on_no_edit_password: on_no_edit_password,
+        edit_password_id: edit_password_id
       }
     )
   end
@@ -288,6 +301,34 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       </select>
     </div>
     """
+  end
+
+  def render_password_column(assigns, student_exception, _) do
+    assigns =
+      Map.merge(assigns, %{
+        password: student_exception.password,
+        id: student_exception.user_id
+      })
+
+    ~H"""
+    <div class={data_class(@selected_assessment.password, @password)}>
+      <%= if @password in ["", nil] do %>
+        <input class="w-40" type="text" placeholder={"Enter password"} phx-debounce={800} name={"password-#{@id}"}/>
+      <% else %>
+        <%= if @id == @edit_password_id do %>
+          <input id={"password_input#{@id}"} class="w-40" type="text" value={@password} phx-hook="InputAutoSelect" phx-click-away={@on_no_edit_password} phx-debounce={800} name={"password-#{@id}"}/>
+        <% else %>
+          <button type="button" phx-click={@on_edit_password} phx-value-user_id={@id}>
+            <input class="w-40" type="password" value={hide_password(@password)}/>
+          </button>
+        <% end %>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp hide_password(password) do
+    String.replace(password, ~r/./, "*")
   end
 
   defp data_class(assessment_data, student_exception_data)

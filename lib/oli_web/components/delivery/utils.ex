@@ -189,53 +189,53 @@ defmodule OliWeb.Components.Delivery.Utils do
   @system_admin_role_id SystemRole.role_id().admin
 
   def user_role(section, user) do
-    case section do
-      %Section{slug: section_slug} ->
-        cond do
-          PlatformRoles.has_roles?(user, @admin_roles, :any) ||
-              ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
-            :administrator
+    case user do
+      %Author{system_role_id: @system_admin_role_id} ->
+        :system_admin
 
-          PlatformRoles.has_roles?(user, @instructor_roles, :any) ||
-              ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
-            :instructor
-
-          PlatformRoles.has_roles?(user, @student_roles, :any) ||
-              ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
-            :student
-
-          true ->
-            case user do
-              %Author{system_role_id: @system_admin_role_id} ->
-                :system_admin
-
-              _ ->
-                :other
-            end
-        end
+      %Author{} ->
+        :other
 
       _ ->
-        case user do
-          %User{can_create_sections: can_create_sections} ->
+        case section do
+          %Section{slug: section_slug} ->
             cond do
-              PlatformRoles.has_roles?(user, @admin_roles, :any) ->
+              PlatformRoles.has_roles?(user, @admin_roles, :any) ||
+                  ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
                 :administrator
 
-              PlatformRoles.has_roles?(user, @instructor_roles, :any) || can_create_sections ->
+              PlatformRoles.has_roles?(user, @instructor_roles, :any) ||
+                  ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
                 :instructor
 
-              PlatformRoles.has_roles?(user, @student_roles, :any) ->
+              PlatformRoles.has_roles?(user, @student_roles, :any) ||
+                  ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
                 :student
 
               true ->
                 :other
             end
 
-          %Author{system_role_id: @system_admin_role_id} ->
-            :system_admin
-
           _ ->
-            :other
+            case user do
+              %User{can_create_sections: can_create_sections} ->
+                cond do
+                  PlatformRoles.has_roles?(user, @admin_roles, :any) ->
+                    :administrator
+
+                  PlatformRoles.has_roles?(user, @instructor_roles, :any) || can_create_sections ->
+                    :instructor
+
+                  PlatformRoles.has_roles?(user, @student_roles, :any) ->
+                    :student
+
+                  true ->
+                    :other
+                end
+
+              _ ->
+                :other
+            end
         end
     end
   end
@@ -289,9 +289,4 @@ defmodule OliWeb.Components.Delivery.Utils do
       </div>
     """
   end
-
-  def format_date(date), do: Oli.Cldr.Date.to_string(date) |> elem(1)
-
-  def format_duration(%Timex.Duration{} = duration),
-    do: Timex.format_duration(duration, :humanized)
 end

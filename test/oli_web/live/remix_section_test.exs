@@ -154,6 +154,76 @@ defmodule OliWeb.RemixSectionLiveTest do
       )
     end
 
+    test "cancel button works correctly", %{
+      conn: conn,
+      map: map
+    } do
+      conn =
+        get(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, map.section_1.slug)
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      ## Elixir Page does not exist
+      refute view |> render() =~ "Elixir Page"
+
+      ## add the Elixir Page
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      view
+      |> element(
+        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+      )
+      |> render_click()
+
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> render_click()
+
+      ## Elixir Page exists
+      assert view |> render() =~ "Elixir Page"
+
+      ## click on the cancel button
+      view
+      |> render_hook("cancel")
+
+      ## cancel the modal that shows the cancel button
+      view
+      |> element("button[phx-click=\"cancel_modal\"]")
+      |> render_click()
+
+      ## nothing happens and the Elixir Page still exists
+      assert view |> render() =~ "Elixir Page"
+
+      ## click on the cancel button again
+      view
+      |> render_hook("cancel")
+
+      ## click on the ok that shows the cancel button
+      view
+      |> element("button[phx-click=\"ok_cancel_modal\"]")
+      |> render_click()
+
+      ## expect to be redirected
+      assert_redirect(
+        view,
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          map.section_1.slug,
+          :overview
+        )
+      )
+    end
+
     test "breadcrumbs render correctly", %{
       conn: conn,
       map: %{
@@ -807,13 +877,122 @@ defmodule OliWeb.RemixSectionLiveTest do
       Plug.Test.init_test_session(conn, lti_session: nil, section_slug: map.section_1.slug)
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
+    # Add an orphan page to the section
+    orphan_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "An Orphan Page"
+      })
+
+    insert(:project_resource, %{
+      project_id: map.project.id,
+      resource_id: orphan_revision.resource.id
+    })
+
+    insert(:published_resource, %{
+      publication: map.pub2,
+      resource: orphan_revision.resource,
+      revision: orphan_revision
+    })
+
+    author = insert(:author, %{email: "my_custom@email.com"})
+
+    proj_1 = insert(:project, title: "Project 1", authors: [author])
+    proj_2 = insert(:project, title: "Project 2", authors: [author])
+
+    page_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Elixir Page"
+      })
+
+    orphan_revision_2 =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Another orph. Page"
+      })
+
+    container_revision =
+      insert(:revision, %{
+        resource: insert(:resource),
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_revision.resource_id,
+          orphan_revision_2.resource_id
+        ],
+        content: %{},
+        deleted: false,
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{
+      project_id: proj_1.id,
+      resource_id: page_revision.resource.id
+    })
+
+    insert(:project_resource, %{
+      project_id: proj_1.id,
+      resource_id: orphan_revision_2.resource.id
+    })
+
+    insert(:project_resource, %{
+      project_id: proj_1.id,
+      resource_id: container_revision.resource_id
+    })
+
+    proj_1_publication =
+      insert(:publication, %{
+        project: proj_1,
+        published: ~U[2023-06-25 00:36:38.112566Z],
+        root_resource_id: container_revision.resource_id
+      })
+
+    insert(:published_resource, %{
+      publication: proj_1_publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: proj_1_publication,
+      resource: orphan_revision_2.resource,
+      revision: orphan_revision_2,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: proj_1_publication,
+      resource: container_revision.resource,
+      revision: container_revision,
+      author: author
+    })
+
+    section =
+      insert(:section,
+        base_project: proj_1,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, _section} = Sections.create_section_resources(section, proj_1_publication)
+
+    insert(:publication, %{
+      project: proj_2,
+      published: ~U[2023-06-26 00:36:38.112566Z]
+    })
+
     {:ok,
      conn: conn,
      map: map,
      author: map.author,
      institution: map.institution,
      project: map.project,
-     publication: map.publication}
+     publication: map.publication,
+     orphan_revision_publication: map.pub2}
   end
 
   defp setup_product_manager_session(%{conn: conn}) do

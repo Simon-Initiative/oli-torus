@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   import Phoenix.LiveViewTest
   import Ecto.Query
 
+  alias OliWeb.Common.FormatDateTime
   alias OliWeb.Delivery.StudentDashboard.CourseContentLive
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
@@ -216,13 +217,13 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       assert has_element?(
                view,
                ~s{section:has(h4[phx-click="go_down"]) span},
-               "Read by #{Timex.format!(read_by_end_date, "{YYYY}-{0M}-{0D}")}"
+               "Read by #{FormatDateTime.date(read_by_end_date)}"
              )
 
       assert has_element?(
                view,
                ~s{section:has(h4[phx-click="go_down"]) span},
-               "In class on #{Timex.format!(inclass_end_date, "{YYYY}-{0M}-{0D}")}"
+               "In class on #{FormatDateTime.date(inclass_end_date)}"
              )
 
       assert has_element?(
@@ -241,8 +242,8 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
          } do
       [p1, p2, _p3] = mod1_pages
 
-      read_by_end_date = ~D[2023-10-15]
-      inclass_end_date = ~D[2023-10-01]
+      read_by_end_date = ~U[2023-10-15 12:00:00Z]
+      inclass_end_date = ~U[2023-10-01 12:00:00Z]
 
       update_section_resource(section.id, p1.published_resource.resource_id, %{
         end_date: read_by_end_date,
@@ -289,7 +290,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       assert has_element?(
                view,
                ~s{section:has(h4[phx-click="go_down"]) span},
-               "Due by #{Timex.format!(hard_scheduled_date_1, "{YYYY}-{0M}-{0D}")}"
+               "Due by #{FormatDateTime.date(hard_scheduled_date_1)}"
              )
 
       assert has_element?(

@@ -77,7 +77,7 @@ defmodule OliWeb.ActivityBankController do
           conn = put_root_layout(conn, {OliWeb.LayoutView, "delivery.html"})
 
           render(conn, "preview.html",
-            title: "Actiivty Bank Selection Preview",
+            title: "Activity Bank Selection Preview",
             rendered_selection: rendered_selection,
             paging: paging_params,
             limit: 5,

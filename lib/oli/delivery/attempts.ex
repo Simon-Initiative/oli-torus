@@ -28,21 +28,32 @@ defmodule Oli.Delivery.Attempts do
     )
     |> select([a_att, r_att, r_acc, rev, a_att_2, p_att], %{
       question: rev.title,
-      options: a_att.transformed_model["choices"],
+      raw_model: rev.content,
+      transformed_model: a_att.transformed_model,
       answer: p_att.response
     })
     |> Repo.all()
-    |> Enum.map(fn %{question: question, options: options, answer: answer} ->
+    |> Enum.map(fn %{question: question, transformed_model: transformed_model, raw_model: raw_model, answer: answer} ->
+
+      model_to_use = case transformed_model do
+        nil -> raw_model
+        _ -> transformed_model
+      end
+
       %{
         title: question,
         response:
-          options
-          |> Enum.find(%{}, &(&1["id"] == answer["input"]))
-          |> Map.get("content", %{})
-          |> Enum.at(0, %{})
-          |> Map.get("children", %{})
-          |> Enum.at(0, %{})
-          |> Map.get("text", %{})
+          try do
+            model_to_use["choices"]
+            |> Enum.find(%{}, &(&1["id"] == answer["input"]))
+            |> Map.get("content", %{})
+            |> Enum.at(0, %{})
+            |> Map.get("children", %{})
+            |> Enum.at(0, %{})
+            |> Map.get("text", "")
+          rescue
+            _ -> ""
+          end
       }
     end)
   end

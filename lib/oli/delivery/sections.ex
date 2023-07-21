@@ -193,6 +193,7 @@ defmodule Oli.Delivery.Sections do
       sorting,
       options
     )
+    |> where([_, e], e.status != :suspended)
     |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
     |> group_by([_, _, _, ecr], [ecr.context_role_id])
     |> preload([u], :platform_roles)
@@ -1677,24 +1678,36 @@ defmodule Oli.Delivery.Sections do
   # Recursive helper to traverse the hierarchy of the section resources and create the page to ancestor
   # container map.
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
-    case Enum.map(sr.children, fn sr_id ->
-           sr = Map.get(all, sr_id)
+    case sr do
+      nil -> %{}
 
-           case MapSet.member?(container_ids, sr.resource_id) do
-             true ->
-               rebuild_contained_pages_helper(
-                 sr,
-                 {[sr.resource_id | ancestors], page_map, all, container_ids}
-               )
-               |> Map.merge(page_map)
+      _ ->
+        case Enum.map(sr.children, fn sr_id ->
+          sr = Map.get(all, sr_id)
 
-             false ->
-               Map.put(page_map, sr.resource_id, ancestors)
-           end
-         end) do
-      [] -> %{}
-      other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
+          case sr do
+            nil -> nil
+            _ -> case MapSet.member?(container_ids, sr.resource_id) do
+              true ->
+                rebuild_contained_pages_helper(
+                  sr,
+                  {[sr.resource_id | ancestors], page_map, all, container_ids}
+                )
+                |> Map.merge(page_map)
+
+              false ->
+                Map.put(page_map, sr.resource_id, ancestors)
+            end
+          end
+
+        end)
+        |> Enum.filter(fn m -> !is_nil(m) end) do
+        [] -> %{}
+        other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
+      end
     end
+
+
   end
 
   defp set_contained_page_counts(section_id) do
@@ -2489,13 +2502,17 @@ defmodule Oli.Delivery.Sections do
       section_id: s.id,
       relates_to: rev.relates_to
     })
-    |> order_by([{:asc_nulls_last, fragment("end_date")}])
+    |> order_by([
+      {:asc_nulls_last, fragment("end_date")},
+      {:asc_nulls_last, fragment("numbering_level")},
+      {:asc_nulls_last, fragment("numbering_index")}
+    ])
   end
 
   @doc """
     Returns the activities that a student need to complete next.
   """
-  def get_next_activities_for_student(section_slug, user_id) do
+  def get_next_activities_for_student(section_slug, user_id, session_context) do
     student_pages_query = get_student_pages(section_slug, user_id)
 
     query =
@@ -2519,7 +2536,7 @@ defmodule Oli.Delivery.Sections do
         if is_nil(sr.end_date) do
           nil
         else
-          to_datetime(sr.end_date)
+          OliWeb.Common.FormatDateTime.date(sr.end_date, session_context)
         end
       )
     end)

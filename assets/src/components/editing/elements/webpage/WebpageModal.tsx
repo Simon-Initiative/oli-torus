@@ -11,11 +11,15 @@ interface ModalProps {
   model: ContentModel.Webpage;
   projectSlug: string;
 }
+
+const stringToNumOrUndefined = (v: string): string | undefined => (v === '' ? undefined : v);
+
 export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProps) => {
   const [srcType, setSrcType] = useState<ContentModel.WebpageSrcType>(model.srcType || 'url');
   const [src, setSrc] = useState(model.src);
   const [alt, setAlt] = useState(model.alt ?? '');
-  const [width, _setWidth] = useState(model.width);
+  const [width, setWidth] = useState(model.width ? String(model.width) : '');
+  const [height, setHeight] = useState(model.height ? String(model.height) : '');
 
   const onSrcTypeChange = useCallback(
     (v: ContentModel.WebpageSrcType) => {
@@ -35,7 +39,15 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
-      onOk={() => onDone({ alt, width, src, srcType })}
+      onOk={() =>
+        onDone({
+          alt,
+          width: stringToNumOrUndefined(width),
+          height: stringToNumOrUndefined(height),
+          src,
+          srcType,
+        })
+      }
     >
       <div>
         <h3 className="mb-2">Settings</h3>
@@ -46,6 +58,29 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
         {srcType === 'media_library' && (
           <MediaEntry href={src || ''} setHref={setSrc} projectSlug={projectSlug} />
         )}
+        <h4 className="mb-2">Size (Leave blank for default)</h4>
+        <div className="d-flex flex-row">
+          <div className="mr-2">
+            <span>Width:</span>
+            <input
+              type="text"
+              className="form-control"
+              value={width}
+              onChange={(e) => setWidth(e.target.value)}
+              placeholder="Width"
+            />
+          </div>
+          <div>
+            <span>Height:</span>
+            <input
+              type="text"
+              className="form-control"
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+              placeholder="Height"
+            />
+          </div>
+        </div>
 
         <h4 className="mb-2">Alternative Text</h4>
         <p className="mb-4">

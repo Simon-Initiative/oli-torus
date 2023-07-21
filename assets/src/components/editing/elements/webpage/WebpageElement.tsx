@@ -5,12 +5,27 @@ import { elementBorderStyle, useEditModelCallback } from 'components/editing/ele
 import { WebpageSettings } from 'components/editing/elements/webpage/WebpageSettings';
 import * as ContentModel from 'data/content/model/elements/types';
 import { useElementSelected } from 'data/content/utils';
-import { classNames } from 'utils/classNames';
 
 export interface Props extends EditorProps<ContentModel.Webpage> {}
 export const WebpageEditor = (props: Props) => {
   const selected = useElementSelected();
   const onEdit = useEditModelCallback(props.model);
+
+  const dimensions: { width?: number | string; height?: number | string } = {};
+  if (props.model.width) {
+    dimensions['width'] = props.model.width;
+  }
+  if (props.model.height) {
+    dimensions['height'] = props.model.height;
+  } else if (props.model.width) {
+    // If we have a width, but no height, set the height to the same as width.
+    dimensions['height'] = props.model.width;
+  }
+
+  const iframeClass = props.model.width ? '' : 'embed-responsive-item';
+  const containerClass = props.model.width
+    ? 'img-thumbnail'
+    : 'embed-responsive embed-responsive-16by9 img-thumbnail';
 
   return (
     <div {...props.attributes} className="webpage-editor">
@@ -23,7 +38,7 @@ export const WebpageEditor = (props: Props) => {
           overflow: 'visible',
           ...elementBorderStyle(selected),
         }}
-        className={classNames('embed-responsive', 'embed-responsive-16by9', 'img-thumbnail')}
+        className={containerClass}
       >
         <div
           style={{
@@ -41,7 +56,8 @@ export const WebpageEditor = (props: Props) => {
         </div>
 
         <iframe
-          className="embed-responsive-item"
+          className={iframeClass}
+          {...dimensions}
           src={props.model.src}
           allowFullScreen
           frameBorder={0}
