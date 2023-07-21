@@ -4,6 +4,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   alias Phoenix.LiveView.JS
 
   alias Oli.Accounts
+  alias Oli.Accounts.{User}
   alias Oli.Delivery.Sections
   alias Oli.Resources
   alias Oli.Resources.Collaboration
@@ -58,9 +59,12 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       first_name: user.name,
       email: user.email,
       user_id: user.id,
-      is_guest: user.guest
+      is_guest: is_guest(user)
     }
   end
+
+  defp is_guest(%User{guest: guest}), do: guest
+  defp is_guest(_), do: false
 
   # ----------------
 
