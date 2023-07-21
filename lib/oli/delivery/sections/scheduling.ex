@@ -100,8 +100,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
   end
 
   defp parse_date(nil, _), do: nil
-  defp parse_date(date_time_str, timezone) do
 
+  defp parse_date(date_time_str, timezone) do
     # From the front end we can receive two forms of date time strings:
     # 1. "2019-01-01 00:00:00"
     # 2. "2019-01-01"
@@ -111,11 +111,13 @@ defmodule Oli.Delivery.Sections.Scheduling do
       true ->
         [date_str, time_str] = String.split(date_time_str, " ")
 
-        [y, m, d] = String.split(date_str, "-")
-        |> Enum.map(fn s -> String.to_integer(s) end)
+        [y, m, d] =
+          String.split(date_str, "-")
+          |> Enum.map(fn s -> String.to_integer(s) end)
 
-        [h, n, s] = String.split(time_str, ":")
-        |> Enum.map(fn s -> String.to_integer(s) end)
+        [h, n, s] =
+          String.split(time_str, ":")
+          |> Enum.map(fn s -> String.to_integer(s) end)
 
         {:ok, date} = Date.new(y, m, d)
         {:ok, time} = Time.new(h, n, s)
@@ -125,19 +127,16 @@ defmodule Oli.Delivery.Sections.Scheduling do
         DateTime.truncate(date_time, :second)
 
       false ->
-
-        [y, m, d] = String.split(date_time_str, "-")
-        |> Enum.map(fn s -> String.to_integer(s) end)
+        [y, m, d] =
+          String.split(date_time_str, "-")
+          |> Enum.map(fn s -> String.to_integer(s) end)
 
         {:ok, date} = Date.new(y, m, d)
         {:ok, time} = Time.new(23, 59, 59)
-
         {:ok, date_time} = DateTime.new(date, time, timezone)
         {:ok, date_time} = DateTime.shift_zone(date_time, "Etc/UTC")
         DateTime.truncate(date_time, :second)
-
     end
-
   end
 
   defp build_values_params(updates, timezone) do
