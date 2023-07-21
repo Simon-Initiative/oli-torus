@@ -279,7 +279,10 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert updated_section.title == valid_title
     end
 
-    test "update section with an invalid start/end date shows an error", %{conn: conn, section: section} do
+    test "update section with an invalid start/end date shows an error", %{
+      conn: conn,
+      section: section
+    } do
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
       today = DateTime.utc_now()
@@ -288,8 +291,6 @@ defmodule OliWeb.Sections.EditLiveTest do
       view
       |> element("form[phx-submit=\"save\"")
       |> render_submit(%{section: %{start_date: today, end_date: yesterday}})
-
-      open_browser(view)
 
       assert has_element?(view, "span.help-block", "must be before the end date")
       assert has_element?(view, "span.help-block", "must be after the start date")

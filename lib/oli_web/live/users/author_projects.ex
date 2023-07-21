@@ -48,21 +48,23 @@ defmodule OliWeb.Users.AuthorProjects do
 
   def render(assigns) do
     ~H"""
-    <div>
-      <form
-        for="search"
-        phx-target={@myself}
-        phx-change="search_project"
-        class="pb-6 ml-auto lg:ml-auto lg:pt-7"
-      >
-        <div class="w-44 ml-auto">
-          <SearchInput.render
-            id="projects_search_input"
-            name="project_title"
-            text={@params.text_search}
-          />
-        </div>
-      </form>
+    <div id={@id}>
+      <%= if @projects != [] do %>
+        <form
+          for="search"
+          phx-target={@myself}
+          phx-change="search_project"
+          class="pb-6 ml-auto lg:ml-auto lg:pt-7"
+        >
+          <div class="w-44 ml-auto">
+            <SearchInput.render
+              id="projects_search_input"
+              name="project_title"
+              text={@params.text_search}
+            />
+          </div>
+        </form>
+      <% end %>
       <PagedTable.render
           __context__={assigns[:__context_]}
           table_model={@table_model}
