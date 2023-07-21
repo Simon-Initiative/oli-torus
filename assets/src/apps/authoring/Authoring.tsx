@@ -161,6 +161,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   useEffect(() => {
     if (isAppVisible) {
+       // forced light mode to save on initial dev time
+      document.documentElement.classList.remove('dark');
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
     }
 
@@ -168,7 +170,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       // reset forced light mode
       switch (getModeFromLocalStorage()) {
         case 'dark':
-          document.documentElement.classList.add('dark');
+          document.documentElement.classList.add('light');
           break;
         case 'auto':
           break;
