@@ -42,10 +42,10 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
 
   const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
   const [selectedPage, setSelectedPage] = useState<null | Persistence.Page>(null);
-  const commitValue = useCallback(
-    () => onDone({ linkType: source, href: normalizeHref(href) }),
-    [href, onDone, source],
-  );
+  const commitValue = useCallback(() => {
+    const hrefWithProtocol = source === 'page' ? href : normalizeHref(href);
+    onDone({ linkType: source, href: hrefWithProtocol });
+  }, [href, onDone, source]);
   React.useEffect(() => {
     setPages({ type: 'Waiting' });
 
@@ -132,6 +132,7 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
 
     return (
       <div className="settings-editor">
+        HREF: {href}
         <div className="mb-2 d-flex justify-content-between">{linkOptions}</div>
         {source === 'page' && (
           <PageSelect
