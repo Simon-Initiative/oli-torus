@@ -1,7 +1,7 @@
 defmodule OliWeb.CollaborationLive.ActiveUsers do
   use Surface.Component
 
-  prop users, :list, required: true
+  prop(users, :list, required: true)
 
   def render(assigns) do
     ~F"""
@@ -11,7 +11,7 @@ defmodule OliWeb.CollaborationLive.ActiveUsers do
       <ul class="collab-space__active-users rounded-sm">
         {#for user <- @users}
           <li>
-            {user.first_name}<strong>{if user.typing do
+            {name(user)}<strong>{if user.typing do
                 " is typing..."
               end}</strong>
           </li>
@@ -20,4 +20,7 @@ defmodule OliWeb.CollaborationLive.ActiveUsers do
     </div>
     """
   end
+
+  def name(%{is_guest: true}), do: "Guest"
+  def name(user), do: "#{user.first_name}"
 end

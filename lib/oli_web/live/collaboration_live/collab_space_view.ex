@@ -57,7 +57,8 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
       typing: false,
       first_name: user.name,
       email: user.email,
-      user_id: user.id
+      user_id: user.id,
+      is_guest: user.guest
     }
   end
 
