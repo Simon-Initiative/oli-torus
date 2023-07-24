@@ -58,15 +58,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              |> render() =~ "#{section.title}"
     end
 
-    test "applies searching", %{conn: conn} do
-      s1 = insert(:section, %{title: "Testing", open_and_free: true})
+    test "applies searching (case insensitive)", %{conn: conn} do
+      s1 = insert(:section, %{title: "testing", open_and_free: true})
       s2 = insert(:section, open_and_free: true)
 
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
       |> element("input[placeholder=\"Search...\"]")
-      |> render_blur(%{value: "testing"})
+      |> render_blur(%{value: "Testing"})
 
       view
       |> element("button", "Search")
@@ -181,16 +181,16 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "h5", "#{section.title}")
     end
 
-    test "applies searching", %{conn: conn} do
+    test "applies searching (case insensitive)", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
-      s1 = insert(:section, %{base_project: project, title: "Testing"})
+      s1 = insert(:section, %{base_project: project, title: "testing"})
       s2 = insert(:section, %{base_project: project})
 
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       view
       |> element("input[placeholder=\"Search...\"]")
-      |> render_blur(%{value: "testing"})
+      |> render_blur(%{value: "Testing"})
 
       view
       |> element("button", "Search")

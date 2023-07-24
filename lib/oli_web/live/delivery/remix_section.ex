@@ -30,6 +30,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Sections.Section
+  alias OliWeb.Common.Cancel
 
   alias Phoenix.LiveView.JS
 
@@ -344,6 +345,32 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("cancel", _, socket) do
+    modal_assigns = %{
+      title: "Cancel changes",
+      id: "cancel_modal",
+      ok: "ok_cancel_modal",
+      cancel: "cancel_modal"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+        <Cancel.render {@modal_assigns}>Are you sure you want to cancel?</Cancel.render>
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event("cancel_modal", _, socket) do
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  def handle_event("ok_cancel_modal", _, socket) do
     %{redirect_after_save: redirect_after_save} = socket.assigns
 
     {:noreply,

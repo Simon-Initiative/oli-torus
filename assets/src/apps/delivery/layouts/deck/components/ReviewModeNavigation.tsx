@@ -133,25 +133,12 @@ const ReviewModeNavigation: React.FC = () => {
           </button>
           {
             <div className={['navigationContainer', 'pullLeftInCheckContainer'].join(' ')}>
-              <aside className={`ui-resizable ${showHistory ? undefined : 'minimized'}`}>
-                {
-                  <Fragment>
-                    <button
-                      onClick={minimizeHandler}
-                      className="navigationToggle"
-                      aria-label="Show lesson history"
-                      aria-haspopup="true"
-                      aria-controls="theme-history-panel"
-                      aria-pressed="false"
-                    />
-
-                    <ReviewModeHistoryPanel
-                      items={historyItems}
-                      onMinimize={minimizeHandler}
-                    ></ReviewModeHistoryPanel>
-                  </Fragment>
-                }
-              </aside>
+              {showHistory && (
+                <ReviewModeHistoryPanel
+                  items={historyItems}
+                  onMinimize={minimizeHandler}
+                ></ReviewModeHistoryPanel>
+              )}
             </div>
           }
           <button onClick={prevHandler} aria-label="Previous screen" disabled={isFirst}>

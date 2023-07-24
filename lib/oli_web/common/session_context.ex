@@ -91,7 +91,13 @@ defmodule OliWeb.Common.SessionContext do
             nil
 
           author_id ->
-            AccountLookupCache.get_author!(author_id)
+            case AccountLookupCache.get_author(author_id) do
+              {:ok, author} ->
+                author
+
+              _ ->
+                nil
+            end
         end
       )
 
@@ -104,7 +110,13 @@ defmodule OliWeb.Common.SessionContext do
             nil
 
           user_id ->
-            AccountLookupCache.get_user!(user_id)
+            case AccountLookupCache.get_user(user_id) do
+              {:ok, user} ->
+                user
+
+              _ ->
+                nil
+            end
         end
       )
 

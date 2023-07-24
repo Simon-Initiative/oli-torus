@@ -66,6 +66,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   attr(:section_slug, :string, required: true)
   attr(:student_id, :string, required: true)
   attr(:preview_mode, :boolean, required: true)
+  attr(:hidden_tabs, :list, default: [])
 
   def tabs(assigns) do
     ~H"""
@@ -73,36 +74,38 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
           role="tablist">
 
-          <%= for {label, href, badge, active} <- [
-            {"Content", path_for(:content, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:content, @active_tab)},
-            {"Learning Objectives", path_for(:learning_objectives, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab)},
-            {"Quiz Scores", path_for(:quizz_scores, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:quizz_scores, @active_tab)},
-            {"Progress", path_for(:progress, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:progress, @active_tab)},
-            {"Actions", path_for(:actions, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:actions, @active_tab)},
+          <%= for {label, href, badge, active, hidden} <- [
+            {"Content", path_for(:content, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:content, @active_tab), is_hidden?(:content, @hidden_tabs)},
+            {"Learning Objectives", path_for(:learning_objectives, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab), is_hidden?(:learning_objectives, @hidden_tabs)},
+            {"Quiz Scores", path_for(:quizz_scores, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:quizz_scores, @active_tab), is_hidden?(:quizz_scores, @hidden_tabs)},
+            {"Progress", path_for(:progress, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:progress, @active_tab), is_hidden?(:progress, @hidden_tabs)},
+            {"Actions", path_for(:actions, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:actions, @active_tab), is_hidden?(:actions, @hidden_tabs)},
           ] do %>
-            <li class="nav-item" role="presentation">
-              <.link patch={href}
-                class={"
-                  block
-                  border-x-0 border-t-0 border-b-2
-                  px-1
-                  py-3
-                  m-2
-                  text-body-color
-                  dark:text-body-color-dark
-                  bg-transparent
-                  hover:no-underline
-                  hover:text-body-color
-                  hover:border-delivery-primary-200
-                  focus:border-delivery-primary-200
-                  #{if active, do: "border-delivery-primary", else: "border-transparent"}
-                "}>
-                  <%= label %>
-                  <%= if badge do %>
-                  <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
-                  <% end %>
-              </.link>
-            </li>
+            <%= if !hidden do %>
+              <li class="nav-item" role="presentation">
+                <.link patch={href}
+                  class={"
+                    block
+                    border-x-0 border-t-0 border-b-2
+                    px-1
+                    py-3
+                    m-2
+                    text-body-color
+                    dark:text-body-color-dark
+                    bg-transparent
+                    hover:no-underline
+                    hover:text-body-color
+                    hover:border-delivery-primary-200
+                    focus:border-delivery-primary-200
+                    #{if active, do: "border-delivery-primary", else: "border-transparent"}
+                  "}>
+                    <%= label %>
+                    <%= if badge do %>
+                    <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
+                    <% end %>
+                </.link>
+              </li>
+            <% end %>
           <% end %>
 
         </ul>
@@ -111,6 +114,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   end
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
+  defp is_hidden?(tab, hidden_tabs), do: Enum.member?(hidden_tabs, tab)
 
   defp logo_link(nil, _, _), do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
 

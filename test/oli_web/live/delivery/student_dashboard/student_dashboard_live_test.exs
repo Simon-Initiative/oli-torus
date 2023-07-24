@@ -114,6 +114,25 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       assert render(student_details_card) =~ "A lot"
     end
 
+    test "actions tab is hidden if user is suspended", %{
+      instructor: instructor,
+      student: student,
+      conn: conn
+    } do
+      %{section: section, survey: survey, survey_questions: survey_questions} =
+        section_with_survey()
+
+      complete_student_survey(student, section, survey, survey_questions)
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.unenroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id))
+
+      refute has_element?(view, "li.nav-item a", "Actions")
+    end
+
     test "breadcrumbs get render correctly when coming from the instructor dashboard", %{
       instructor: instructor,
       student: student,

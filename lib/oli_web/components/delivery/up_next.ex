@@ -24,7 +24,7 @@ defmodule OliWeb.Components.Delivery.UpNext do
                 badge_bg_color={if activity.graded, do: "bg-fuchsia-800", else: "bg-green-700"}
                 title={activity.title}
                 percent_complete={activity.progress}
-                complete_by_date={format_date(activity.end_date)}
+                complete_by_date={activity.end_date}
                 scheduling_type={activity.scheduling_type}
                 open_href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, activity.slug)}
                 percent_students_completed={Float.floor(activity.completion_percentage) |> trunc()}
@@ -45,7 +45,6 @@ defmodule OliWeb.Components.Delivery.UpNext do
   attr(:percent_students_completed, :integer, required: true)
   attr(:request_extension_href, :string)
   attr(:scheduling_type, :string)
-
 
   def card(assigns) do
     ~H"""

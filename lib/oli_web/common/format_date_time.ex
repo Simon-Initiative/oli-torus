@@ -9,6 +9,10 @@ defmodule OliWeb.Common.FormatDateTime do
   @doc """
   Returns a human readable formatted duration
   """
+  def duration(%Timex.Duration{} = duration) do
+    Timex.format_duration(duration, :humanized)
+  end
+
   def duration(from, to) do
     Timex.diff(from, to, :milliseconds)
     |> Timex.Duration.from_milliseconds()
@@ -67,6 +71,7 @@ defmodule OliWeb.Common.FormatDateTime do
       Keyword.get(opts, :ctx)
       |> value_or(Keyword.get(opts, :conn))
       |> value_or(Keyword.get(opts, :local_tz))
+      |> value_or(nil)
 
     case maybe_ctx_conn_or_local_tz do
       %Plug.Conn{} = conn ->
@@ -120,6 +125,10 @@ defmodule OliWeb.Common.FormatDateTime do
     end
   end
 
+  def maybe_localized_datetime(%Date{} = date, opts) do
+    maybe_localized_datetime(Timex.to_datetime(date), opts)
+  end
+
   @doc """
   Formats a datetime by converting it to a string. If the timezone attached is UTC, then
   it is assumed this datetime has not been localized and the timezone is included.
@@ -166,7 +175,7 @@ defmodule OliWeb.Common.FormatDateTime do
       |> value_or(author_format_preference(author))
       |> value_or(:minutes)
 
-    show_timezone = Keyword.get(opts, :show_timezone, true)
+    show_timezone = Keyword.get(opts, :show_timezone, false)
 
     maybe_timezone =
       if show_timezone do
@@ -175,15 +184,17 @@ defmodule OliWeb.Common.FormatDateTime do
         ""
       end
 
+    # TODO: we likely want to be using Oli.Cldr.Date.to_string/2 here instead
+    # once we have a way to pass in the locale
     case precision do
       :date ->
         Timex.format!(datetime, "{Mfull} {D}, {YYYY}#{maybe_timezone}")
 
       :minutes ->
-        Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM}#{maybe_timezone}")
+        Timex.format!(datetime, "{Mfull} {D}, {YYYY} {h12}:{m} {AM}#{maybe_timezone}")
 
       :seconds ->
-        Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m}:{s} {AM}#{maybe_timezone}")
+        Timex.format!(datetime, "{Mfull} {D}, {YYYY} {h12}:{m}:{s} {AM}#{maybe_timezone}")
 
       :relative ->
         Timex.format!(datetime, "{relative}", :relative)

@@ -115,7 +115,12 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
               <span className="fa fa-times">&nbsp;</span>
             </a>
           </div>
-          <nav className="review">
+          <div
+            className="fixed top-0 w-72 text-black bg-white p-2 border-gray-500 border-2 max-h-[80vh] overflow-auto"
+            style={{
+              transform: 'translate(-50%, 110px)',
+            }}
+          >
             {items.map((item, index) => (
               <div
                 key={item.id}
@@ -126,7 +131,7 @@ const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }
                 {index + 1}. {item.name}
               </div>
             ))}
-          </nav>
+          </div>
         </>
       }
     </>

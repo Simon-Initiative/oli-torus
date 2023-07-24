@@ -1,10 +1,11 @@
 defmodule OliWeb.Components.Delivery.CourseContent do
   use Phoenix.LiveComponent
 
+  import OliWeb.Common.FormatDateTime
+
   alias Oli.Delivery.Metrics
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.Buttons
-  alias Phoenix.LiveView.JS
 
   attr(:breadcrumbs_tree, :map, required: true)
   attr(:current_position, :integer, required: true)
@@ -17,6 +18,32 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   attr(:is_instructor, :boolean, default: false)
   attr(:preview_mode, :boolean, default: false)
 
+  def adjust_hierarchy_for_only_pages(hierarchy) do
+    case Enum.all?(hierarchy["children"], fn child -> child["type"] == "page" end) do
+      true ->
+        %{
+          "children" => [
+            %{
+              "graded" => "false",
+              "id" => "0",
+              "index" => "0",
+              # The course content browser handles case of the special level of -1
+              "level" => "-1",
+              "next" => nil,
+              "prev" => nil,
+              "slug" => nil,
+              "title" => "Curriculum",
+              "type" => "container",
+              "children" => hierarchy["children"]
+            }
+          ]
+        }
+
+      _ ->
+        hierarchy
+    end
+  end
+
   def render(assigns) do
     ~H"""
     <div class="bg-white dark:bg-gray-800 shadow-sm">
@@ -25,6 +52,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
           <h4 class="text-base font-semibold mr-auto tracking-wide text-gray-800 dark:text-white h-8">Course Content</h4>
           <span class="text-sm font-normal tracking-wide text-gray-800 dark:text-white mt-2">Find all your course content, material, assignments and class activities here.</span>
         </section>
+        <%= if get_current_node(@current_level_nodes, @current_position)["level"] != "-1" do %>
         <section class="flex flex-row justify-between p-8">
           <div class="text-xs absolute -mt-5"><%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree, myself: @myself}) %></div>
           <button phx-click="previous_node" phx-target={@myself} class={if @current_position == 0, do: "grayscale pointer-events-none"}>
@@ -45,6 +73,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             <i class="fa-regular fa-circle-right text-primary text-xl"></i>
           </button>
         </section>
+        <% end %>
         <%= for {resource, index} <- get_current_node(@current_level_nodes, @current_position)["children"] |> Enum.with_index() do %>
           <section class="flex flex-row justify-between items-center w-full p-8">
             <h4
@@ -58,17 +87,28 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             </h4>
 
             <%= if !assigns[:is_instructor] do %>
-              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates) %></span>
+              <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3"><%= get_resource_scheduled_date(resource["id"], @scheduled_dates, @ctx) %></span>
               <button class="torus-button primary h-10" phx-target={@myself} phx-click="open_resource" phx-value-resource_slug={resource["slug"]} phx-value-resource_type={resource["type"]} phx-value-preview={"#{@preview_mode}"}>Open</button>
             <% else %>
               <Buttons.button_with_options
                 id={"open-resource-button-#{index}"}
-                type="submit"
-                onclick={JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"], preview: "true"})}
+                href={Routes.page_delivery_path(
+                  OliWeb.Endpoint,
+                  preview_resource_type(resource["type"]),
+                  @section.slug,
+                  resource["slug"]
+                )}
+                target={"_blank"}
                 options={[
                   %{
                     text: "Open as student",
-                    on_click: JS.push("open_resource", target: @myself, value: %{resource_slug: resource["slug"], resource_type: resource["type"]})
+                    href: Routes.page_delivery_path(
+                      OliWeb.Endpoint,
+                      String.to_existing_atom(resource["type"]),
+                      @section.slug,
+                      resource["slug"]
+                    ),
+                    target: "_blank"
                   }
                 ]}
               >
@@ -254,18 +294,19 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   end
 
   defp get_page_preview_delivery_path(socket, section_slug, resource_slug, resource_type) do
-    resource_type =
-      case resource_type do
-        "page" -> :page_preview
-        "container" -> :container_preview
-      end
-
     Routes.page_delivery_path(
       socket,
-      resource_type,
+      preview_resource_type(resource_type),
       section_slug,
       resource_slug
     )
+  end
+
+  defp preview_resource_type(resource_type) do
+    case resource_type do
+      "page" -> :page_preview
+      "container" -> :container_preview
+    end
   end
 
   defp update_breadcrumbs_tree(breadcrumbs_tree, 0, _target_position),
@@ -329,13 +370,13 @@ defmodule OliWeb.Components.Delivery.CourseContent do
     end
   end
 
-  defp get_resource_scheduled_date(resource_id, scheduled_dates) do
+  defp get_resource_scheduled_date(resource_id, scheduled_dates, ctx) do
     case scheduled_dates[String.to_integer(resource_id)] do
       %{end_date: nil} ->
         "No due date"
 
       data ->
-        "#{scheduled_date_type(data.scheduled_type)} #{Timex.format!(data.end_date, "{YYYY}-{0M}-{0D}")}"
+        "#{scheduled_date_type(data.scheduled_type)} #{date(data.end_date, ctx)}"
     end
   end
 

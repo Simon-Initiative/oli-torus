@@ -27,6 +27,11 @@ defmodule OliWeb.DeliveryController do
 
   plug(Oli.Plugs.RegistrationCaptcha when action in [:process_create_and_link_account_user])
 
+  def instructor_dashboard(conn, %{"section_slug" => section_slug}) do
+    # redirect to live view
+    redirect(conn, to: Routes.live_path(conn, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section_slug, "overview"))
+  end
+
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params

@@ -9,7 +9,14 @@
         Customize your curriculum by adding, removing and rearranging course materials.
         <div class="flex-grow-1"></div>
         <div class="flex-shrink-0">
-          <button id="cancel" class="btn btn-outline-primary ml-1" phx-click="cancel">Cancel</button>
+          <button
+            id="cancel"
+            disabled={!@has_unsaved_changes}
+            class="btn btn-outline-primary ml-1"
+            phx-click={JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container") |> JS.push("cancel")}
+          >
+            Cancel
+          </button>
           <button
             id="save"
             disabled={!@has_unsaved_changes}
