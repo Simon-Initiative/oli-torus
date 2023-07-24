@@ -298,7 +298,11 @@ defmodule OliWeb.Admin.IngestV2 do
          activities: Enum.count(state.activities),
          pages: Enum.count(state.pages),
          products: Enum.count(state.products),
-         media_items: Enum.count(state.media_manifest["mediaItems"])
+         media_items:
+           if(not is_nil(state.media_manifest),
+             do: Enum.count(state.media_manifest["mediaItems"]),
+             else: 0
+           )
        },
        total_count: Enum.count(state.errors),
        table_model: table_model,
