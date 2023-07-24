@@ -22,8 +22,8 @@ defmodule OliWeb.Sections.StartEnd do
       |> FormatDateTime.convert_datetime(assigns.ctx)
 
     ~F"""
-      <div class="form-row mt-4">
-        <Field name={:start_date} class="mr-3 form-label-group">
+      <div class="flex flex-col gap-2 mt-4">
+        <Field name={:start_date} class="form-label-group">
           <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
           <DateTimeLocalInput class="form-control" value={start_date} opts={disabled: @disabled}/>
         </Field>
@@ -31,7 +31,9 @@ defmodule OliWeb.Sections.StartEnd do
           <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
           <DateTimeLocalInput class="form-control" value={end_date} opts={disabled: @disabled}/>
         </Field>
-        <button class="btn btn-primary mt-3" type="submit">Save</button>
+        <div class="mt-3">
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
       </div>
     """
   end
