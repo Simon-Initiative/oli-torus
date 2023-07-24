@@ -811,7 +811,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
 
       view
-      |> element("table tbody tr:nth-of-type(1)")
+      |> element("table tbody tr:nth-of-type(1) a")
       |> render_click(%{id: page_5.id})
 
       # we assert that the url was patched correctly after click
