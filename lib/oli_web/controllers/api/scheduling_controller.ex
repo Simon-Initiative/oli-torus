@@ -124,11 +124,12 @@ defmodule OliWeb.Api.SchedulingController do
        }
   def index(conn, _) do
     section = conn.assigns.section
+    ctx = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
       resources =
         Scheduling.retrieve(section)
-        |> serialize_resource()
+        |> serialize_resource(ctx.local_tz)
 
       json(conn, %{"result" => "success", "resources" => resources})
     else
@@ -178,15 +179,21 @@ defmodule OliWeb.Api.SchedulingController do
       Sections.is_admin?(conn.assigns.current_user, section.slug)
   end
 
-  defp serialize_resource(resources) when is_list(resources) do
-    Enum.map(resources, fn p -> serialize_resource(p) end)
+  defp serialize_resource(resources, local_tz) when is_list(resources) do
+    Enum.map(resources, fn p -> serialize_resource(p, local_tz) end)
   end
 
-  defp serialize_resource(%SectionResource{} = sr) do
+  defp serialize_resource(%SectionResource{} = sr, local_tz) do
     just_date = fn datetime ->
       case datetime do
-        nil -> nil
-        _ -> DateTime.to_date(datetime)
+        nil ->
+          nil
+
+        _ ->
+          # The database is in UTC with a time, the UI wants just a date.
+          # Need to make sure to shift that to the user's timezone before truncating off the time portion.
+          {:ok, user_tz_date} = DateTime.shift_zone(datetime, local_tz)
+          DateTime.to_date(user_tz_date)
       end
     end
 

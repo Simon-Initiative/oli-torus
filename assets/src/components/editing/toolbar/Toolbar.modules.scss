@@ -120,7 +120,6 @@
   flex-wrap: wrap;
   padding: 8px;
   overflow-y: auto;
-  background: #f8f9fb;
   border: 2px solid var(--color-toolbar-border);
 
   .toolbarButton {
@@ -144,7 +143,6 @@
   flex-direction: column;
   padding: 8px;
   overflow-y: auto;
-  background: #f8f9fb;
   border: 2px solid var(--color-toolbar-border);
 
   .toolbarButton {
@@ -183,6 +181,7 @@
     color: #dee2f2;
   }
 
+  .multiDropdownGroup,
   .toolbarGroup {
     border-color: var(--color-toolbar-border-dark);
   }
@@ -199,7 +198,7 @@
   }
 
   .dropdownGroup {
-    background: #3e3f44;
+    background: #2a2b2e;
     border-color: var(--color-toolbar-border-dark);
   }
 }

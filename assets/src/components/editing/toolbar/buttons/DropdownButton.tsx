@@ -48,7 +48,11 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       reposition={true}
       align={'start'}
       containerStyle={{ zIndex: '100000' }}
-      content={<div className={classname}>{props.children}</div>}
+      content={
+        <div className={`${classname} bg-body dark:bg-body-dark text-body dark:text-body-dark `}>
+          {props.children}
+        </div>
+      }
     >
       <button
         className={classNames(
