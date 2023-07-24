@@ -3897,12 +3897,20 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 0px;
 }
 
+.bottom-4 {
+  bottom: 1rem;
+}
+
 .left-0 {
   left: 0px;
 }
 
 .left-20 {
   left: 5rem;
+}
+
+.left-4 {
+  left: 1rem;
 }
 
 .right-0 {
@@ -5286,6 +5294,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(64 64 64 / var(--tw-border-opacity));
 }
 
+.border-gray-800 {
+  --tw-border-opacity: 1;
+  border-color: rgb(38 38 38 / var(--tw-border-opacity));
+}
+
 .border-green-500 {
   --tw-border-opacity: 1;
   border-color: rgb(34 197 94 / var(--tw-border-opacity));
@@ -5401,6 +5414,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-body {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.bg-body-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 249 249 / var(--tw-bg-opacity));
 }
 
 .bg-delivery-body {
@@ -6147,6 +6165,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-body {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.text-body-800 {
+  --tw-text-opacity: 1;
+  color: rgb(64 64 64 / var(--tw-text-opacity));
 }
 
 .text-body-color {
