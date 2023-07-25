@@ -2365,4 +2365,19 @@ defmodule Oli.TestHelpers do
       IO.write("\nhtml file rendered to #{filepath}\n")
     end
   end
+
+  @doc """
+    Provides set of helpers to test async events
+  """
+  def wait_until(fun), do: wait_until(fun, 500)
+
+  def wait_until(fun, 0), do: fun.()
+
+  def wait_until(fun, timeout) do
+    fun.()
+  rescue
+    ExUnit.AssertionError ->
+      :timer.sleep(100)
+      wait_until(fun, max(0, timeout - 100))
+  end
 end

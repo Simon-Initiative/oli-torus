@@ -8,6 +8,16 @@
 
 ### Configs
 
+## 0.24.1 (2023-7-21)
+
+### Bug Fixes
+
+- Fix an issue where scheduler can "drift" one day due to incorrect timezone handling
+- Fix an issue where page to page links cannot be created
+- Fix an issue with dark mode rendering of Discussion activity
+- Fix an issue where deleting Learning Objectives can generate an error and reload the LO view in certain circumstances
+- Fix an issue related to dark mode rendering of the block insert menu
+
 ## 0.24.0 (2023-7-20)
 
 ### Bug Fixes

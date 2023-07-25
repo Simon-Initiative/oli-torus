@@ -3,8 +3,9 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
+  alias Phoenix.LiveView.JS
 
-  def new(assessments, ctx) do
+  def new(assessments, ctx, target) do
     column_specs = [
       %ColumnSpec{
         name: :title,
@@ -40,21 +41,26 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        ctx: ctx
+        ctx: ctx,
+        target: target
       }
     )
   end
 
   def render_assessment_column(assigns, assessment, _) do
     assigns =
-      Map.merge(assigns, %{title: assessment.title, container_label: assessment.container_label})
+      Map.merge(assigns, %{
+        title: assessment.title,
+        container_label: assessment.container_label,
+        id: assessment.id
+      })
 
     ~H"""
       <div class="pl-9 pr-4 flex flex-col">
         <%= if @container_label do %>
           <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
         <% end %>
-        <div class="text-base"><%= @title %></div>
+        <a class="text-base" href="#" phx-click={JS.push("paged_table_selection_change", target: @target)} phx-value-id={@id}><%= @title %></a>
       </div>
     """
   end

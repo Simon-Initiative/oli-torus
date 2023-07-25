@@ -656,6 +656,10 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("th[phx-value-sort_by=\"title\"]")
       |> render_click()
 
+      # Can't sort by published date
+      assert view
+             |> has_element?("th[data-sortable=\"false\"]", "Published on")
+
       assert view
              |> has_element?(".remix_materials_table tr:first-of-type td", "Another orph. Page")
     end
