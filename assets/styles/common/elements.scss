@@ -122,7 +122,8 @@ $element-margin-bottom: 1.5em;
 
   ul li,
   ol li {
-    margin-bottom: 0.25rem;
+    line-height: 2em;
+    margin-bottom: $element-margin-bottom;
   }
 
   ul,

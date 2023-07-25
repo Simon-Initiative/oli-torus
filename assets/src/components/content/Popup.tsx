@@ -76,7 +76,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
           </div>
         </ArrowContainer>
       )}
-      containerClassName="react-tiny-popover structured-content"
+      containerClassName="z-50 react-tiny-popover structured-content"
     >
       <span
         className={`popup-anchor${popup.trigger === 'hover' ? '' : ' popup-click'}`}
