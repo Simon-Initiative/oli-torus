@@ -25,7 +25,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
     ResourceAttempt,
-    ActivityAttempt
+    ActivityAttempt,
+    PartAttempt
   }
 
   alias Oli.Resources.Revision
@@ -39,7 +40,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   }
 
   def mount(socket) do
-    {:ok, assign(socket, scripts_loaded: false)}
+    activity_registrations_mapper =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.into(%{}, &{&1.id, &1})
+
+    {:ok,
+     assign(socket,
+       scripts_loaded: false,
+       activity_registrations_mapper: activity_registrations_mapper
+     )}
   end
 
   def update(assigns, socket) do
@@ -264,7 +273,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   def handle_event(
         "paged_table_selection_change",
-        %{"id" => activity_resource_id},
+        %{"id" => activity_id},
         socket
       )
       when not is_nil(socket.assigns.current_assessment) do
@@ -274,7 +283,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          route_to(
            socket,
            update_params(socket.assigns.params, %{
-             selected_activity: activity_resource_id
+             selected_activity: activity_id
            })
          )
      )}
@@ -368,17 +377,32 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         socket
 
       rows ->
-        assign_selected_activity(socket, hd(rows).resource_id |> Integer.to_string())
+        assign_selected_activity(socket, hd(rows).id)
     end
   end
 
   defp assign_selected_activity(socket, selected_activity_id) do
+    selected_activity_id =
+      if is_integer(selected_activity_id),
+        do: selected_activity_id,
+        else: String.to_integer(selected_activity_id)
+
+    selected_activity =
+      Enum.find(socket.assigns.activities, fn a ->
+        a.id == selected_activity_id
+      end)
+
     table_model =
       Map.merge(socket.assigns.table_model, %{
-        selected: selected_activity_id
+        selected: "#{selected_activity_id}"
       })
 
-    case get_activity_attempt(selected_activity_id, socket.assigns.section.id) do
+    case get_activity_details(
+           selected_activity,
+           socket.assigns.section.id,
+           Enum.map(socket.assigns.students, & &1.id),
+           socket.assigns.activity_registrations_mapper
+         ) do
       nil ->
         socket
         |> assign(table_model: table_model)
@@ -598,46 +622,140 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     end)
   end
 
-  defp get_activity_attempt(selected_activity_id, section_id) do
-    query =
-      ActivityAttempt
-      |> join(:left, [aa], resource_attempt in ResourceAttempt,
-        on: aa.resource_attempt_id == resource_attempt.id
-      )
-      |> join(:left, [_, resource_attempt], ra in ResourceAccess,
-        on: resource_attempt.resource_access_id == ra.id
-      )
-      |> join(:left, [_, _, ra], a in assoc(ra, :user))
-      |> join(:left, [aa, _, _, _], activity_revision in Revision,
-        on: activity_revision.id == aa.revision_id
-      )
-      |> join(:left, [_, resource_attempt, _, _, _], resource_revision in Revision,
-        on: resource_revision.id == resource_attempt.revision_id
-      )
-      |> where(
-        [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
-        resource_access.section_id == ^section_id and
-          activity_revision.resource_id == ^selected_activity_id
-      )
-      |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
-      |> limit(1)
-      |> select([aa, _, _, _, _, _], aa)
-      |> select_merge(
-        [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
-        %{
-          activity_type_id: activity_revision.activity_type_id,
-          activity_title: activity_revision.title,
-          page_title: resource_revision.title,
-          page_id: resource_revision.resource_id,
-          resource_attempt_number: resource_attempt.attempt_number,
-          graded: resource_revision.graded,
-          user: user,
-          revision: activity_revision,
-          resource_attempt_guid: resource_attempt.attempt_guid,
-          resource_access_id: resource_access.id
-        }
-      )
+  defp get_activity_details(
+         selected_activity,
+         section_id,
+         student_ids,
+         activity_registrations_mapper
+       ) do
+    case Map.get(activity_registrations_mapper, selected_activity.activity_type_id).title do
+      "Multiple Choice" ->
+        activity_attempts_data =
+          from(pa in PartAttempt,
+            join: aa in ActivityAttempt,
+            on: pa.activity_attempt_id == aa.id,
+            join: resource_attempt in ResourceAttempt,
+            on: aa.resource_attempt_id == resource_attempt.id,
+            where:
+              resource_attempt.lifecycle_state == :evaluated and aa.lifecycle_state == :evaluated,
+            join: resource_access in ResourceAccess,
+            on: resource_attempt.resource_access_id == resource_access.id,
+            where:
+              resource_access.section_id == ^section_id and
+                resource_access.user_id in ^student_ids,
+            join: activity_revision in Revision,
+            on: activity_revision.id == aa.revision_id,
+            where: activity_revision.id == ^selected_activity.id,
+            join: pr in PublishedResource,
+            on: activity_revision.id == pr.revision_id,
+            join: spp in SectionsProjectsPublications,
+            on: pr.publication_id == spp.publication_id,
+            where: spp.section_id == ^section_id,
+            select:
+              {aa,
+               %{
+                 graded: true,
+                 revision: activity_revision,
+                 resource_attempt_guid: resource_attempt.attempt_guid
+               }, pa.response}
+          )
+          |> Repo.all()
+          |> Enum.map(fn {activity_attempt, aditional_data, part_attempt_response} ->
+            {Map.merge(activity_attempt, aditional_data), part_attempt_response}
+          end)
 
-    Repo.one(query)
+        {activity_attempt, _part_attempt_response} = hd(activity_attempts_data)
+
+        transformed_model =
+          activity_attempt.transformed_model
+          |> Map.put("choices", build_choices(activity_attempts_data))
+
+        activity_attempt
+        |> Map.put(:transformed_model, transformed_model)
+
+      _ ->
+        ActivityAttempt
+        |> join(:left, [aa], resource_attempt in ResourceAttempt,
+          on: aa.resource_attempt_id == resource_attempt.id
+        )
+        |> join(:left, [_, resource_attempt], ra in ResourceAccess,
+          on: resource_attempt.resource_access_id == ra.id
+        )
+        |> join(:left, [_, _, ra], a in assoc(ra, :user))
+        |> join(:left, [aa, _, _, _], activity_revision in Revision,
+          on: activity_revision.id == aa.revision_id
+        )
+        |> join(:left, [_, resource_attempt, _, _, _], resource_revision in Revision,
+          on: resource_revision.id == resource_attempt.revision_id
+        )
+        |> where(
+          [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
+          resource_access.section_id == ^section_id and
+            activity_revision.id == ^selected_activity.id
+        )
+        |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
+        |> limit(1)
+        |> select([aa, _, _, _, _, _], aa)
+        |> select_merge(
+          [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
+          %{
+            activity_type_id: activity_revision.activity_type_id,
+            activity_title: activity_revision.title,
+            page_title: resource_revision.title,
+            page_id: resource_revision.resource_id,
+            resource_attempt_number: resource_attempt.attempt_number,
+            graded: resource_revision.graded,
+            user: user,
+            revision: activity_revision,
+            resource_attempt_guid: resource_attempt.attempt_guid,
+            resource_access_id: resource_access.id
+          }
+        )
+        |> Repo.one()
+    end
+  end
+
+  defp build_choices(data) do
+    frequency_per_choice_id =
+      data
+      |> Enum.reduce([], fn {_activity_attempt, part_attempt_reponse}, acc ->
+        # a multiple choice may have been submitted without any response,
+        # so we want to count that response to match the total attempts count
+        # shown for that selected activity
+        if part_attempt_reponse["input"] != nil,
+          do: String.split(part_attempt_reponse["input"], " ", trim: true) ++ acc,
+          else: [:no_response_given] ++ acc
+      end)
+      |> Enum.frequencies()
+
+    {activity_attempt, _part_attempt_response} = hd(data)
+
+    choices =
+      activity_attempt.transformed_model["choices"]
+      |> Enum.map(fn choice ->
+        Map.merge(choice, %{"frequency" => Map.get(frequency_per_choice_id, choice["id"])})
+      end)
+
+    if Map.has_key?(frequency_per_choice_id, :no_response_given) do
+      choices ++
+        [
+          %{
+            "content" => [
+              %{
+                "children" => [
+                  %{
+                    "text" =>
+                      "Blank attempt (user submitted assessment without selecting any choice for this activity)"
+                  }
+                ],
+                "type" => "p"
+              }
+            ],
+            "frequency" => Map.get(frequency_per_choice_id, :no_response_given)
+          }
+        ]
+    else
+      choices
+    end
   end
 end
