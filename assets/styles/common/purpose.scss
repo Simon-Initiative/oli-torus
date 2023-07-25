@@ -9,10 +9,6 @@
     margin-bottom: 1rem;
   }
 
-  & > .content-purpose-content {
-    padding: 0 2em;
-  }
-
   &.none {
     & > .content-purpose-label {
       display: none;
@@ -201,7 +197,6 @@
     text-decoration: none;
 
     .content-purpose-content {
-
       .title {
         font-size: 1.3em;
         color: var(--color-body-color);
