@@ -8,9 +8,16 @@
 
 ### Configs
 
+## 0.24.1 (unreleased)
+
+### Bug Fixes
+
+- Fix an issue where a nil end_datetime in scheduled gate crashes overview page
+
 ## 0.24.1 (2023-7-21)
 
 ### Bug Fixes
+
 - Fix an issue where scheduler can "drift" one day due to incorrect timezone handling
 - Fix an issue where page to page links cannot be created
 - Fix an issue with dark mode rendering of Discussion activity
