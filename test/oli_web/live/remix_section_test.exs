@@ -646,12 +646,6 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("button[phx-value-tab_name=\"all_pages\"]")
       |> render_click()
 
-      assert view
-             |> has_element?(
-               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
-               "Elixir Page"
-             )
-
       view
       |> element("th[phx-value-sort_by=\"title\"]")
       |> render_click()
@@ -661,7 +655,16 @@ defmodule OliWeb.RemixSectionLiveTest do
              |> has_element?("th[data-sortable=\"false\"]", "Published on")
 
       assert view
-             |> has_element?(".remix_materials_table tr:first-of-type td", "Another orph. Page")
+             |> has_element?(
+               ".remix_materials_table tbody tr:nth-of-type(1)",
+               "Another orph. Page"
+             )
+
+      assert view
+             |> has_element?(
+               ".remix_materials_table tbody tr:nth-of-type(2)",
+               "Elixir Page"
+             )
     end
 
     test "remix section items - add materials - all pages view can be filtered by text", %{
