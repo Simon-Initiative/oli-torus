@@ -29,6 +29,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     PartAttempt
   }
 
+  alias Oli.Accounts.User
+
   alias Oli.Resources.Revision
 
   @default_params %{
@@ -666,12 +668,70 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
         {activity_attempt, _part_attempt_response} = hd(activity_attempts_data)
 
-        transformed_model =
-          activity_attempt.transformed_model
-          |> Map.put("choices", build_choices(activity_attempts_data))
+        update_in(
+          activity_attempt,
+          [Access.key!(:transformed_model)],
+          &Map.put(&1, "choices", build_choices(activity_attempts_data))
+        )
 
-        activity_attempt
-        |> Map.put(:transformed_model, transformed_model)
+      "Single Response" ->
+        activity_attempts_data =
+          from(
+            pa in PartAttempt,
+            join: aa in ActivityAttempt,
+            on: pa.activity_attempt_id == aa.id,
+            join: resource_attempt in ResourceAttempt,
+            on: aa.resource_attempt_id == resource_attempt.id,
+            where:
+              resource_attempt.lifecycle_state == :evaluated and aa.lifecycle_state == :evaluated,
+            join: resource_access in ResourceAccess,
+            on: resource_attempt.resource_access_id == resource_access.id,
+            join: u in User,
+            on: resource_access.user_id == u.id,
+            where:
+              resource_access.section_id == ^section_id and
+                resource_access.user_id in ^student_ids,
+            join: activity_revision in Revision,
+            on: activity_revision.id == aa.revision_id,
+            where: activity_revision.id == ^selected_activity.id,
+            join: pr in PublishedResource,
+            on: activity_revision.id == pr.revision_id,
+            join: spp in SectionsProjectsPublications,
+            on: pr.publication_id == spp.publication_id,
+            where: spp.section_id == ^section_id,
+            select:
+              {aa,
+               %{
+                 graded: true,
+                 revision: activity_revision,
+                 resource_attempt_guid: resource_attempt.attempt_guid,
+                 user: u
+               }, pa.response}
+          )
+          |> Repo.all()
+          |> Enum.map(fn {activity_attempt, aditional_data, part_attempt_response} ->
+            {Map.merge(activity_attempt, aditional_data), part_attempt_response}
+          end)
+
+        answers =
+          activity_attempts_data
+          |> Enum.reduce([], fn {activity_attempt, part_attempt_response}, acc ->
+            [
+              %{
+                response: part_attempt_response["input"],
+                user_name: OliWeb.Common.Utils.name(activity_attempt.user)
+              }
+            ] ++
+              acc
+          end)
+
+        {activity_attempt, _part_attempt_response} = hd(activity_attempts_data)
+
+        update_in(
+          activity_attempt,
+          [Access.key!(:revision), Access.key!(:content)],
+          &Map.put(&1, "answers", answers)
+        )
 
       _ ->
         ActivityAttempt
