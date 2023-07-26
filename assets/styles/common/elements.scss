@@ -358,27 +358,12 @@ $element-margin-bottom: 1.5em;
     margin-bottom: $element-margin-bottom;
 
     .dialog-line {
-      &.speaker-1 {
-        background-color: #d1e7dd;
-      }
-      &.speaker-2 {
-        background-color: #f8d7da;
-      }
-      &.speaker-3 {
-        background-color: #cff4fc;
-      }
-      &.speaker-4 {
-        background-color: #fff3cd;
-      }
-      &.speaker-5 {
-        background-color: #ffe5d0;
-      }
+      border-style: solid;
+      border-width: 1px;
       display: flex;
       flex-direction: row;
       margin-bottom: 0.5rem;
       align-items: center;
-
-      color: var(--color-delivery-body);
 
       .dialog-content {
         flex-grow: 1;
