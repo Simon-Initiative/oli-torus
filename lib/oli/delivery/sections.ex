@@ -1620,8 +1620,10 @@ defmodule Oli.Delivery.Sections do
     rebuild_contained_pages(section, section_resources)
   end
 
-  def rebuild_contained_pages(%{slug: slug, id: section_id, root_section_resource_id: root_section_resource_id}, section_resources) do
-
+  def rebuild_contained_pages(
+        %{slug: slug, id: section_id, root_section_resource_id: root_section_resource_id},
+        section_resources
+      ) do
     # First start be deleting all existing contained pages for this section.
     from(cp in ContainedPage, where: cp.section_id == ^section_id)
     |> Repo.delete_all()
@@ -1629,9 +1631,11 @@ defmodule Oli.Delivery.Sections do
     # We will need the set of resource ids for all containers in the hierarchy.
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
-    container_ids = from([rev: rev] in Oli.Publishing.DeliveryResolver.section_resource_revisions(slug),
-      where: rev.resource_type_id == ^container_type_id and rev.deleted == false,
-      select: rev.resource_id)
+    container_ids =
+      from([rev: rev] in Oli.Publishing.DeliveryResolver.section_resource_revisions(slug),
+        where: rev.resource_type_id == ^container_type_id and rev.deleted == false,
+        select: rev.resource_id
+      )
       |> Repo.all()
       |> MapSet.new()
 
@@ -1679,35 +1683,36 @@ defmodule Oli.Delivery.Sections do
   # container map.
   defp rebuild_contained_pages_helper(sr, {ancestors, page_map, all, container_ids}) do
     case sr do
-      nil -> %{}
+      nil ->
+        %{}
 
       _ ->
         case Enum.map(sr.children, fn sr_id ->
-          sr = Map.get(all, sr_id)
+               sr = Map.get(all, sr_id)
 
-          case sr do
-            nil -> nil
-            _ -> case MapSet.member?(container_ids, sr.resource_id) do
-              true ->
-                rebuild_contained_pages_helper(
-                  sr,
-                  {[sr.resource_id | ancestors], page_map, all, container_ids}
-                )
-                |> Map.merge(page_map)
+               case sr do
+                 nil ->
+                   nil
 
-              false ->
-                Map.put(page_map, sr.resource_id, ancestors)
-            end
-          end
+                 _ ->
+                   case MapSet.member?(container_ids, sr.resource_id) do
+                     true ->
+                       rebuild_contained_pages_helper(
+                         sr,
+                         {[sr.resource_id | ancestors], page_map, all, container_ids}
+                       )
+                       |> Map.merge(page_map)
 
-        end)
-        |> Enum.filter(fn m -> !is_nil(m) end) do
-        [] -> %{}
-        other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
-      end
+                     false ->
+                       Map.put(page_map, sr.resource_id, ancestors)
+                   end
+               end
+             end)
+             |> Enum.filter(fn m -> !is_nil(m) end) do
+          [] -> %{}
+          other -> Enum.reduce(other, fn m, a -> Map.merge(m, a) end)
+        end
     end
-
-
   end
 
   defp set_contained_page_counts(section_id) do
@@ -2422,7 +2427,12 @@ defmodule Oli.Delivery.Sections do
         select: {
           gc.resource_id,
           %{
-            end_date: fragment("cast(cast(? as text) as date)", gc.data["end_datetime"]),
+            end_date:
+              fragment(
+                "CASE WHEN ? = 'null' THEN NULL ELSE cast(cast(? as text) as date) END",
+                gc.data["end_datetime"],
+                gc.data["end_datetime"]
+              ),
             scheduled_type: gc.type
           }
         }
