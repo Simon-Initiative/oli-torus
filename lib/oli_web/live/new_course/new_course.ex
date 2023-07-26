@@ -23,8 +23,7 @@ defmodule OliWeb.Delivery.NewCourse do
     steps = [
       %Step{
         title: "Select your source materials",
-        description:
-          "Select the source of materials to base your course curriculum on.",
+        description: "Select the source of materials to base your course curriculum on.",
         render_fn: fn assigns -> render_step(:select_source, assigns) end,
         on_next_step: JS.push("change_step", value: %{current_step: 1})
       },
@@ -319,7 +318,8 @@ defmodule OliWeb.Delivery.NewCourse do
             open_and_free: true,
             has_experiments: project.has_experiments,
             base_project_id: blueprint.base_project_id,
-            context_id: UUID.uuid4()
+            context_id: UUID.uuid4(),
+            cover_image: blueprint.cover_image
           })
 
         case create_from_product(socket, blueprint, section_params) do
