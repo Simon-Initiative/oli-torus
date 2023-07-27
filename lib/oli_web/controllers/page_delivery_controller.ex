@@ -671,6 +671,11 @@ defmodule OliWeb.PageDeliveryController do
         content: context.page.content,
         resourceAttemptState: resource_attempt.state,
         resourceAttemptGuid: resource_attempt.attempt_guid,
+        currentServerTime: DateTime.utc_now() |> to_epoch,
+        effectiveEndTime:
+          Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, context.effective_settings)
+          |> to_epoch,
+        lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
         signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
         previousPageURL: previous_url,
