@@ -1,6 +1,7 @@
 defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Sections.AssessmentSettings.Tooltips
   use Phoenix.Component
 
   def new(
@@ -27,68 +28,79 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         name: :due_date,
         label: "DUE DATE",
         render_fn: &__MODULE__.render_due_date_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:due_date)
       },
       %ColumnSpec{
         name: :max_attempts,
         label: "# ATTEMPTS",
         render_fn: &__MODULE__.render_attempts_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:max_attempts)
       },
       %ColumnSpec{
         name: :time_limit,
         label: "TIME LIMIT",
         render_fn: &__MODULE__.render_time_limit_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:time_limit)
       },
       %ColumnSpec{
         name: :late_submit,
         label: "LATE SUBMIT",
         render_fn: &__MODULE__.render_late_submit_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:late_submit)
       },
       %ColumnSpec{
         name: :late_start,
         label: "LATE START",
         render_fn: &__MODULE__.render_late_start_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:late_start)
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
         label: "SCORING",
         render_fn: &__MODULE__.render_scoring_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:scoring_strategy_id)
       },
       %ColumnSpec{
         name: :grace_period,
         label: "GRACE PERIOD",
         render_fn: &__MODULE__.render_grace_period_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:grace_period)
       },
       %ColumnSpec{
         name: :retake_mode,
         label: "RETAKE MODE",
         render_fn: &__MODULE__.render_retake_mode_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:retake_mode)
       },
       %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:feedback_mode)
       },
       %ColumnSpec{
         name: :review_submission,
         label: "VIEW ANSWERS",
         render_fn: &__MODULE__.render_view_answers_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:review_submission)
       },
       %ColumnSpec{
         name: :password,
         label: "PASSWORD",
         render_fn: &__MODULE__.render_password_column/3,
         th_class: "pt-3 whitespace-nowrap",
-        sortable: false
+        sortable: false,
+        tooltip: Tooltips.for(:password)
       }
     ]
 
