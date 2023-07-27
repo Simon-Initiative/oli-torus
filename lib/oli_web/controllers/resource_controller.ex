@@ -115,7 +115,6 @@ defmodule OliWeb.ResourceController do
       preview_mode: true,
       display_curriculum_item_numbering: true,
       app_params: %{
-        deadline: nil,
         activityTypes: activity_types,
         resourceId: revision.resource_id,
         sectionSlug: project.slug,

@@ -94,12 +94,8 @@ defmodule Oli.Delivery.Settings do
   end
 
   def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
+  def was_late?(%ResourceAttempt{} = resource_attempt, %Combined{late_submit: :allow} = effective_settings, now) do
 
-  def was_late?(
-        %ResourceAttempt{} = resource_attempt,
-        %Combined{late_submit: :allow} = effective_settings,
-        now
-      ) do
     case determine_effective_deadline(resource_attempt, effective_settings) do
       nil -> false
       effective_deadline -> DateTime.compare(now, effective_deadline) == :gt
@@ -143,41 +139,41 @@ defmodule Oli.Delivery.Settings do
     end
   end
 
-
   def determine_effective_deadline(
         %ResourceAttempt{} = resource_attempt,
         %Combined{} = effective_settings
       ) do
-    deadline =
-      case {effective_settings.end_date, effective_settings.time_limit} do
-        # no end date or time limit, no deadline
-        {nil, nil} ->
-          nil
 
-        {nil, 0} ->
-          nil
+    deadline = case {effective_settings.end_date, effective_settings.time_limit} do
+      # no end date or time limit, no deadline
+      {nil, nil} ->
+        nil
 
-        # only a time limit, just add the minutes to the start
-        {nil, time_limit} ->
-          DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+      {nil, 0} ->
+        nil
 
-        # only an end date, use that
-        {end_date, 0} ->
+      # only a time limit, just add the minutes to the start
+      {nil, time_limit} ->
+        DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+
+      # only an end date, use that
+      {end_date, 0} ->
+        end_date
+
+      # both an end date and a time limit, use the earlier of the two
+      {end_date, time_limit} ->
+        if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute) do
           end_date
-
-        # both an end date and a time limit, use the earlier of the two
-        {end_date, time_limit} ->
-          if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute) do
-            end_date
-          else
-            DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
-          end
-      end
+        else
+          DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+        end
+    end
 
     case deadline do
       nil -> nil
       deadline -> DateTime.add(deadline, effective_settings.grace_period, :minute)
     end
+
   end
 
   def show_feedback?(%Combined{feedback_mode: :allow}), do: true
