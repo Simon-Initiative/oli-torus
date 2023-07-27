@@ -1,6 +1,6 @@
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
+import { ActionFailure, ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
   selectIsGraded,
   selectPageSlug,
@@ -22,6 +22,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [redirectURL, setRedirectURL] = useState('');
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const isPreviewMode = useSelector(selectPreviewMode);
   const graded = useSelector(selectIsGraded);
   const revisionSlug = useSelector(selectPageSlug);
@@ -58,9 +59,21 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
         console.log('finalize attempt result: ', finalizeResult);
         if (finalizeResult.result === 'success') {
           if ((finalizeResult as ActionResult).commandResult === 'failure') {
+            switch ((finalizeResult as ActionFailure).reason) {
+              case 'already_submitted':
+                setFinalizeError(
+                  'This assignment was already submitted. This may be due to it being autosubmitted for a deadline.',
+                );
+                setIsFinalized(true);
+                break;
+              default:
+                setFinalizeError('Could not submit assignment: Unknown Reason.');
+                break;
+            }
             console.error('failed to finalize attempt', finalizeResult);
             return;
           }
+
           setRedirectURL(finalizeResult.redirectTo);
         } else {
           console.error('failed to finalize attempt (SERVER ERROR)', finalizeResult);
@@ -100,7 +113,8 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
         aria-hidden={!isOpen}
         style={{
           display: isOpen ? 'block' : 'none',
-          height: '350px',
+          minHeight: '350px',
+          height: 'unset',
           width: '500px',
           top: '20%',
           backgroundImage: imageUrl ? `url('${imageUrl}')` : '',
@@ -125,6 +139,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
           style={{ textAlign: 'center', marginTop: '110px', height: '190px' }}
           dangerouslySetInnerHTML={HTMLMessage()}
         ></div>
+        {finalizeError && <div className="mx-2 alert alert-danger">{finalizeError}</div>}
       </div>
     </Fragment>
   );
