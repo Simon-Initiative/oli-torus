@@ -5,6 +5,7 @@ import { Model } from '../../../../data/content/model/elements/factories';
 import { Speaker } from '../../../Dialog';
 import { CommandContext } from '../commands/interfaces';
 import { InlineEditor } from '../common/settings/InlineEditor';
+import { CursorInput } from './CursorInput';
 import { selectPortrait } from './dialogActions';
 
 export const DialogInlineEditor: React.FC<{
@@ -31,8 +32,8 @@ export const DialogInlineEditor: React.FC<{
 
   const onEditSpeakerName = useCallback(
     // Curried update function. Usage - onEditSpeakerName(index)(changeEvent)
-    (index: number) => (e: ChangeEvent<HTMLInputElement>) => {
-      onSpeakerEdit(index, { name: e.target.value });
+    (index: number) => (name: string) => {
+      onSpeakerEdit(index, { name });
     },
     [onSpeakerEdit],
   );
@@ -153,7 +154,7 @@ export const DialogInlineEditor: React.FC<{
                   </span>
                 )
               )}
-              <input
+              <CursorInput
                 className="form-control form-control-sm"
                 type="text"
                 value={speaker.name}
