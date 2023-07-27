@@ -85,8 +85,8 @@ const LateSubmitAllowedMessage: React.FC = () => {
   return (
     <div>
       {' '}
-      <h1>Submission Deadline Passed</h1>
-      <p>
+      <h1 className="text-2xl">Submission Deadline Passed</h1>
+      <p className="text-base">
         The deadline for this activity has passed. You can still submit your work for grading, but
         it will be marked as late.
       </p>
@@ -97,8 +97,8 @@ const LateSubmitAllowedMessage: React.FC = () => {
 const LateSubmitDisallowedMessage: React.FC = () => {
   return (
     <div>
-      <h1>Submission Deadline Passed</h1>
-      <p>
+      <h1 className="text-2xl">Submission Deadline Passed</h1>
+      <p className="text-base">
         The deadline for this activity has passed. Your work so far has been submitted. You can no
         longer submit additional work for grading.
       </p>

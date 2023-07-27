@@ -56,9 +56,9 @@ export const DeadlineTimer: React.FC<{
   const expandedWidthClass = 'w-48';
   const widthClass = tooltipOpen ? expandedWidthClass : collapsedWidthClass;
   const commonClassName =
-    'cursor-pointer text-sm fixed text-center top-12 right-2 z-[2000] bg-body text-body-900 deadline-timer border-[#d9d9de] border-[1px] transition-[width]';
+    'cursor-pointer box-content text-sm fixed text-center top-12 right-2 z-[2000] bg-body text-body-900 deadline-timer border-[#d9d9de] border-[1px] transition-[width]';
   const timerClassName = `overflow-hidden p-2 ${widthClass} ${commonClassName}`;
-  const collapsedClassName = `overflow-hidden p-1 w-3 opacity-50 ${commonClassName}`;
+  const collapsedClassName = `overflow-hidden p-1 w-3 ${commonClassName}`;
   const className = timerOpen ? timerClassName : collapsedClassName;
   return (
     <div
