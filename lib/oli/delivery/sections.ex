@@ -2451,7 +2451,12 @@ defmodule Oli.Delivery.Sections do
         select: {
           gc.resource_id,
           %{
-            end_date: fragment("cast(cast(? as text) as date)", gc.data["end_datetime"]),
+            end_date:
+              fragment(
+                "CASE WHEN ? = 'null' THEN NULL ELSE cast(cast(? as text) as date) END",
+                gc.data["end_datetime"],
+                gc.data["end_datetime"]
+              ),
             scheduled_type: gc.type
           }
         }
