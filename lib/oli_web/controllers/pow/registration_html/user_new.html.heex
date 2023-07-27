@@ -50,7 +50,7 @@
     <% end %>
 
     <div class="form-label-group">
-      <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+      <div class="g-recaptcha" data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}></div>
       <%= error_tag f, :captcha %>
     </div>
 
