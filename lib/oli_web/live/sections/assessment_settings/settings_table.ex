@@ -588,18 +588,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          )}
 
       {:ok, _section_resource} ->
-        {:noreply,
-         socket
-         |> update_assessments(
-           socket.assigns.modal_assigns.changeset.data.resource_id,
-           [
-             {:feedback_scheduled_date, utc_datetime},
-             {:feedback_mode, :scheduled}
-           ],
-           false
-         )
-         |> flash_to_liveview(:info, "Setting updated!")
-         |> assign(modal_assigns: %{show: false})}
+        {
+          :noreply,
+          socket
+          |> update_assessments(
+            socket.assigns.modal_assigns.changeset.data.resource_id,
+            [
+              {:feedback_scheduled_date, utc_datetime},
+              {:feedback_mode, :scheduled}
+            ],
+            false
+          )
+          |> flash_to_liveview(:info, "Setting updated!")
+          |> assign(modal_assigns: %{show: false})
+          |> assign(form_id: UUID.uuid4())
+        }
     end
   end
 
