@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { v4 } from 'uuid';
 import * as ContentModel from 'data/content/model/elements/types';
 import { Model } from '../../../../data/content/model/elements/factories';
