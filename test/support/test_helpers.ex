@@ -2331,39 +2331,52 @@ defmodule Oli.TestHelpers do
   end
 
   @doc """
-  Renders an html binary to a file in test-results/<module_path>/output.html
-  for easier debugging of tests that verify html content.
+  Inspect the given html content in the browser. Useful for debugging test that produce html.
+  Similar to LiveView test helper, open_browser/1, but does not require a LiveView session.
 
-  Examples:
+  Example:
     ```
-    conn = get(Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, page_revision_slug))
-
-    inspect_html_file(html_response(conn, 200))
-
-    ...
+    open_browser_html(html_response(conn, 200))
     ```
   """
-  defmacro inspect_html_file(html) do
-    quote do
-      path_parts =
-        ["test-results", "html"]
-        |> Enum.concat(
-          Module.split(__MODULE__)
-          |> Enum.map(&String.downcase/1)
-        )
+  def open_browser_html(html) do
+    html
+    |> write_tmp_html_file()
+    |> open_with_system_cmd()
+  end
 
-      dir = Path.join(path_parts)
+  defp write_tmp_html_file(html) do
+    path =
+      Path.join([
+        System.tmp_dir!(),
+        "#{Phoenix.LiveView.Utils.random_id()}.html"
+      ])
 
-      filepath =
-        path_parts
-        |> Enum.concat(["output.html"])
-        |> Path.join()
+    File.write!(path, html)
 
-      File.mkdir_p!(dir)
-      File.write!(filepath, unquote(html))
+    IO.write("\nhtml file rendered to #{path}\n")
 
-      IO.write("\nhtml file rendered to #{filepath}\n")
-    end
+    path
+  end
+
+  defp open_with_system_cmd(path) do
+    {cmd, args} =
+      case :os.type() do
+        {:win32, _} ->
+          {"cmd", ["/c", "start", path]}
+
+        {:unix, :darwin} ->
+          {"open", [path]}
+
+        {:unix, _} ->
+          if System.find_executable("cmd.exe") do
+            {"cmd.exe", ["/c", "start", path]}
+          else
+            {"xdg-open", [path]}
+          end
+      end
+
+    System.cmd(cmd, args)
   end
 
   @doc """

@@ -5,7 +5,6 @@ import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { LikertItem, LikertModelSchema } from '../schema';
 import { getChoiceValue } from '../utils';
-import './LikertTable.scss';
 
 interface Props {
   model: LikertModelSchema;
@@ -30,7 +29,7 @@ export const LikertTable: React.FC<Props> = ({
   const { choices, items } = model;
 
   return (
-    <table className="likertTable">
+    <table className="likert-table">
       <thead>
         <tr>
           {needItemColumn(items) && <th></th>}
@@ -43,7 +42,7 @@ export const LikertTable: React.FC<Props> = ({
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr key={item.id}>
+          <tr key={item.id} className="even:bg-gray-100 dark:even:bg-gray-700">
             {needItemColumn(items) && (
               <td>
                 <HtmlContentModelRenderer content={item.content} context={context} />

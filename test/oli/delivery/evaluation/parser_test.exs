@@ -3,6 +3,11 @@ defmodule Oli.Delivery.Evaluation.ParserTest do
 
   defp parse(input), do: Oli.Delivery.Evaluation.Rule.parse(input)
 
+  test "parses scientific with +" do
+    assert {:ok, {:eq, :input, "[3.0e+5,4.0e+5]"}} ==
+             parse("input = {[3.0e+5,4.0e+5]}")
+  end
+
   test "parses conjunction" do
     assert {:ok, {:&&, {:gt, :attempt_number, "1"}, {:like, :input, "cat.*"}}} ==
              parse("attemptNumber > {1} && input like {cat.*}")

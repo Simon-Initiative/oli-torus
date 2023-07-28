@@ -13,7 +13,13 @@ defmodule OliWeb.Common.Table.SortableTable do
 
     ~H"""
     <th style="cursor: pointer;" phx-click={"sort#{@event_suffix}"} phx-value-sort_by={@column_spec.name}>
-      <%= @column_spec.label %>
+      <%= if @column_spec.tooltip do %>
+        <span data-bs-toggle="tooltip" title={@column_spec.tooltip}>
+          <%= @column_spec.label %>
+        </span>
+      <% else %>
+        <%= @column_spec.label %>
+      <% end %>
       <%= if @sort_by_spec == @column_spec do %>
         <i class={"fas fa-sort-#{if @sort_order == :asc do "up" else "down" end}"}></i>
       <% end %>

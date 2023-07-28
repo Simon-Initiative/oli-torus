@@ -30,6 +30,7 @@ interface ScheduleHeaderProps {
 
 export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeometry }) => {
   const g = weekGeometry(dayGeometry);
+
   return (
     <div className="absolute top-0 left-0 right-0 h-full">
       {g.map((g, i) => (
@@ -38,10 +39,10 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeome
           className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal dark:border-gray-800 "
           style={{ width: g.width }}
         >
-          {labels && g.width > 60 && (
+          {labels && (
             <>
-              <div className="font-bold">{g.label}</div>
-              <div className="text-[11px]">{g.dateLabel}</div>
+              <div className="font-bold text-[11px]">{g.label}</div>
+              <div className="text-[10px]">{g.dateLabel}</div>
             </>
           )}
         </div>
