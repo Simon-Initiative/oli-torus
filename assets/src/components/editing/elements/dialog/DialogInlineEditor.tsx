@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useCallback, useRef } from 'react';
+import React, { ChangeEvent, useCallback } from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
 import { v4 } from 'uuid';
 import * as ContentModel from 'data/content/model/elements/types';
