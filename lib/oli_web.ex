@@ -19,7 +19,7 @@ defmodule OliWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: OliWeb
+      use Phoenix.Controller, layouts: [html: {OliWeb.LayoutView, :app}], namespace: OliWeb
 
       import Plug.Conn
       import OliWeb.Gettext
