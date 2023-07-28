@@ -47,12 +47,6 @@ export const simpleSchema: JSONSchema7Object = {
     description: 'placeholder text for dropdown',
   },
 
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
-
   optionLabels: {
     title: 'Option Labels',
     type: 'array',
