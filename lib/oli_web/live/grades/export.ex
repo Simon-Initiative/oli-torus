@@ -13,7 +13,7 @@ defmodule OliWeb.Grades.Export do
 
       </div>
 
-      <div class="card-footer">
+      <div class="card-footer mt-4">
        <%= link @link_text, to: Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section_slug), class: "btn btn-primary" %>
       </div>
     </div>

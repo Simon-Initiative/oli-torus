@@ -15,7 +15,7 @@ defmodule OliWeb.Api.MediaController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
-  plug :fetch_project when action not in [:index, :create]
+  plug(:fetch_project when action not in [:index, :create])
 
   defmodule MediaItemUpload do
     require OpenApiSpex
@@ -44,7 +44,12 @@ defmodule OliWeb.Api.MediaController do
       description: "An uploaded media item response",
       type: :object,
       properties: %{
-        url: %Schema{type: :string, description: "The URL of the item in the media library"}
+        url: %Schema{type: :string, description: "The URL of the item in the media library"},
+        duplicate: %Schema{type: :boolean, description: "Was this a duplicate file?"},
+        filename: %Schema{
+          type: :string,
+          description: "Name of the file (may differ from requested if there was a duplicate)"
+        }
       },
       required: [:file, :name],
       example: %{
@@ -206,7 +211,15 @@ defmodule OliWeb.Api.MediaController do
       {:ok, contents} ->
         case MediaLibrary.add(project_slug, name, contents) do
           {:ok, %MediaItem{} = item} ->
-            json(conn, %{type: "success", url: item.url})
+            json(conn, %{type: "success", url: item.url, duplicate: false, filename: name})
+
+          {:duplicate, %MediaItem{} = item} ->
+            json(conn, %{
+              type: "success",
+              url: item.url,
+              duplicate: true,
+              filename: item.file_name
+            })
 
           {:error, error} ->
             {_id, err_msg} = Oli.Utils.log_error("failed to add media", error)
