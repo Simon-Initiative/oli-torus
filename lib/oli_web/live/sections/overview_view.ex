@@ -270,7 +270,7 @@ defmodule OliWeb.Sections.OverviewView do
           {/if}
         </div>
       </Group>
-      <Group label="Grading" description="View and manage student grades and progress">
+      <Group label="Grading" description="View and manage student grades and progress"  is_last={not @is_lms_or_system_admin or @section.open_and_free}>
         <ul class="link-list">
           <li><a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, @section.slug)}
@@ -321,7 +321,7 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
 
       {#if @is_lms_or_system_admin and !@section.open_and_free}
-        <Group label="LMS Admin" description="Administrator LMS Connection">
+        <Group label="LMS Admin" description="Administrator LMS Connection" is_last={true}>
           <UnlinkSection unlink="unlink" section={@section} />
         </Group>
       {/if}

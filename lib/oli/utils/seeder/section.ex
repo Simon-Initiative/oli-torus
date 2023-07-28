@@ -1,10 +1,13 @@
 defmodule Oli.Utils.Seeder.Section do
+  import Ecto.Query, warn: false
+
   import Oli.Utils.Seeder.Utils
 
   alias Oli.Repo
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Enrollment
+  alias Oli.Delivery.Gating
   alias Oli.Utils.DataGenerators.NameGenerator
   alias Oli.Utils.Slug
   alias Oli.Publishing.DeliveryResolver
@@ -153,5 +156,49 @@ defmodule Oli.Utils.Seeder.Section do
 
     seeds
     |> tag(tags[:revision_tag], revision)
+  end
+
+  def ensure_user_visit(seeds, user, section) do
+    [user, section] = unpack(seeds, [user, section])
+
+    case Sections.Enrollment
+         |> where([e], e.user_id == ^user.id and e.section_id == ^section.id)
+         |> limit(1)
+         |> Repo.one() do
+      nil ->
+        throw("User #{user.id} is not enrolled in section #{section.id}")
+
+      enrollment ->
+        enrollment
+        |> Sections.Enrollment.changeset(%{state: %{has_visited_once: true}})
+        |> Repo.update()
+    end
+
+    seeds
+  end
+
+  def create_schedule_gating_condition(
+        seeds,
+        section,
+        revision,
+        start_datetime,
+        end_datetime,
+        tags \\ []
+      ) do
+    [section, revision] = unpack(seeds, [section, revision])
+
+    {:ok, gating_condition} =
+      Gating.create_gating_condition(%{
+        type: :schedule,
+        data: %{
+          start_datetime: start_datetime,
+          end_datetime: end_datetime
+        },
+        resource_id: revision.resource_id,
+        section_id: section.id
+      })
+
+    seeds
+    |> tag(tags[:gating_condition_tag], gating_condition)
   end
 end

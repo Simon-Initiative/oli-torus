@@ -24,6 +24,11 @@ defmodule OliWeb.Api.PageLifecycleController do
         section = Sections.get_section_by(slug: section_slug)
         PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
+        is_adaptive_page? = case Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
+          %Oli.Resources.Revision{content: %{"advancedDelivery" => true}} -> true
+          _ -> false
+        end
+
         restart_url =
           Routes.page_delivery_path(
             conn,
@@ -33,8 +38,9 @@ defmodule OliWeb.Api.PageLifecycleController do
           )
 
         redirectTo =
-          case effective_settings.review_submission do
-            :allow ->
+          case {effective_settings.review_submission, is_adaptive_page?} do
+
+            {:allow, false} ->
               Routes.page_delivery_path(
                 conn,
                 :review_attempt,

@@ -70,7 +70,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
   end
 
   def render_collab_space(
-        assigns,
+        %{ctx: ctx} = assigns,
         %{
           page: %{title: title, slug: page_revision_slug},
           section: %{slug: section_slug},
@@ -93,7 +93,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
             _ -> "info"
           end}"}>{status}</span>
         </div>
-        <span class="torus-span">Most recent post: {FormatDateTime.format_datetime(most_recent_post, show_timezone: false)}</span>
+        <span class="torus-span">Most recent post: {FormatDateTime.date(most_recent_post, ctx)}</span>
       </div>
       <div class="flex justify-between">
         <p class="torus-p">

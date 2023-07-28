@@ -21,7 +21,6 @@ defmodule OliWeb.SchedulingControllerTest do
       conn: conn,
       map: map
     } do
-
       user = map.teacher
 
       conn =
@@ -36,46 +35,52 @@ defmodule OliWeb.SchedulingControllerTest do
       # Change the end date for all 3
       updates = Enum.map(resources, fn sr -> Map.put(sr, "end_date", "2024-01-02") end)
 
-      conn = again(conn, user)
-      |> put(Routes.scheduling_path(conn, :update, map.section.slug),
-          %{"updates" => updates})
+      conn =
+        again(conn, user)
+        |> put(
+          Routes.scheduling_path(conn, :update, map.section.slug),
+          %{"updates" => updates}
+        )
 
       assert %{"result" => "success", "count" => 3} = json_response(conn, 200)
 
-      conn = again(conn, user)
+      conn =
+        again(conn, user)
         |> get(Routes.scheduling_path(conn, :index, map.section.slug))
 
       assert %{"result" => "success", "resources" => resources} = json_response(conn, 200)
       assert length(resources) == 3
 
       Enum.each(resources, fn sr -> assert sr["end_date"] == "2024-01-02" end)
-
     end
 
     test "can catch unauthorized user access", %{
       conn: conn,
       map: map
     } do
-
       user = map.someone_else
 
-      conn = again(conn, user)
-      |> get(
-          Routes.scheduling_path(conn, :index, map.section.slug)
-        )
+      conn =
+        again(conn, user)
+        |> get(Routes.scheduling_path(conn, :index, map.section.slug))
 
       assert response(conn, 401)
-
     end
   end
 
   defp setup_session(%{conn: conn}) do
-
-    map = Seeder.base_project_with_resource2()
-    |> Seeder.add_user(%{}, :teacher)
-    |> Seeder.add_user(%{}, :someone_else)
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_user(
+        %{
+          preferences: %{timezone: "America/New_York"}
+        },
+        :teacher
+      )
+      |> Seeder.add_user(%{}, :someone_else)
 
     {:ok, initial_pub} = Publishing.publish_project(map.project, "some changes")
+
     {:ok, section} =
       Sections.create_section(%{
         title: "1",

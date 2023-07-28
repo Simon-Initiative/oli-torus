@@ -20,7 +20,7 @@ defmodule OliWeb.Projects.PublishView do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  data(is_force_push, :boolean, default: false)
+  data(auto_update_sections, :boolean, default: false)
   data(limit, :integer, default: 10)
   data(modal, :any, default: nil)
   data(offset, :integer, default: 0)
@@ -147,12 +147,11 @@ defmodule OliWeb.Projects.PublishView do
 
             {#if @has_changes}
               <VersioningDetails
+                id="versioning-details"
                 active_publication={@active_publication}
                 active_publication_changes={@active_publication_changes}
                 changeset={@changeset}
-                force_push="force_push"
                 has_changes={@has_changes}
-                is_force_push={@is_force_push}
                 latest_published_publication={@latest_published_publication}
                 project={@project}
                 publish_active="publish_active"
@@ -220,10 +219,6 @@ defmodule OliWeb.Projects.PublishView do
            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, project.slug)
          )}
     end
-  end
-
-  def handle_event("force_push", _, socket) do
-    {:noreply, assign(socket, is_force_push: !socket.assigns.is_force_push)}
   end
 
   def handle_event("display_lti_connect_modal", %{}, socket) do

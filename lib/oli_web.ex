@@ -155,6 +155,8 @@ defmodule OliWeb do
 
       alias OliWeb.Components
 
+      import OliWeb.Components.Common
+
       import ReactPhoenix.ClientSide
     end
   end

@@ -261,6 +261,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
         index: index + 1,
         name: rev.title,
         scheduling_type: sr.scheduling_type,
+        password: sr.password,
         exceptions_count:
           Enum.count(student_exceptions, fn se -> se.resource_id == rev.resource_id end)
       })

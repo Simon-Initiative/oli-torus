@@ -416,10 +416,11 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       created_gating_condition =
         Repo.one(
-          from g in GatingCondition,
+          from(g in GatingCondition,
             where: g.section_id == ^section.id,
             order_by: [desc: g.id],
             limit: 1
+          )
         )
 
       assert utc_datetime_to_localized_datestring(
@@ -454,10 +455,11 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       created_gating_condition =
         Repo.one(
-          from g in GatingCondition,
+          from(g in GatingCondition,
             where: g.section_id == ^section.id,
             order_by: [desc: g.id],
             limit: 1
+          )
         )
 
       assert utc_datetime_to_localized_datestring(

@@ -82,7 +82,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       refute has_element?(
                view,
                "li",
-               "Learning about the new 'Exploration' activities that provide real-world examples"
+               "Explorations will bring the course to life, showing its relevance in the real world"
              )
 
       assert has_element?(view, "button", "Go to course")
@@ -101,7 +101,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       assert has_element?(
                view,
                "li",
-               "Learning about the new 'Exploration' activities that provide real-world examples"
+               "Explorations will bring the course to life, showing its relevance in the real world"
              )
 
       assert has_element?(view, "button", "Go to explorations")

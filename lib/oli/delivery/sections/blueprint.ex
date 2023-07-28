@@ -222,7 +222,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
           brand_id: nil,
           delivery_policy_id: nil,
           customizations: custom_labels,
-          contains_explorations: section.contains_explorations
+          contains_explorations: section.contains_explorations,
+          cover_image: section.cover_image
         },
         attrs
       )

@@ -8,7 +8,32 @@
 
 ### Configs
 
-## 0.24.0 (prerelease)
+## 0.24.2 (2023-7-27)
+
+### Bug Fixes
+
+- Improved handling of adaptive pages that have hard deadlines
+- Added explanatory tooltips to the Assessment Settings UX
+- Fixed a bug where Scheduler date/time labels disappeared
+- Fixed a bug with handling gates without end dates
+- Removed the background colors of the Dialog content element rendering
+- Handle scientific notation with an explicit "+" sign in response evaluation
+- Fix styling inconsistencies in Example content groups
+- Ensure that course section creation inherits the cover image from a product
+- Fix styling issues for dark mode rendering of the Likert activity
+- Correct the link to the top-level discussion forum
+
+## 0.24.1 (2023-7-21)
+
+### Bug Fixes
+
+- Fix an issue where scheduler can "drift" one day due to incorrect timezone handling
+- Fix an issue where page to page links cannot be created
+- Fix an issue with dark mode rendering of Discussion activity
+- Fix an issue where deleting Learning Objectives can generate an error and reload the LO view in certain circumstances
+- Fix an issue related to dark mode rendering of the block insert menu
+
+## 0.24.0 (2023-7-20)
 
 ### Bug Fixes
 

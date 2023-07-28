@@ -1,6 +1,6 @@
 a.torus-button,
 button.torus-button {
-  @apply btn inline-flex items-center gap-2 text-sm;
+  @apply btn inline-flex items-center gap-2 text-sm hover:no-underline;
 }
 
 a.torus-button.primary,

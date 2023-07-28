@@ -58,7 +58,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         assigns.section.slug,
         assigns.ctx,
         JS.push("edit_date", target: socket.assigns.myself)
-        |> JS.push("open", target: "#assessment_due_date_modal")
+        |> JS.push("open", target: "#assessment_due_date_modal"),
+        JS.push("edit_password", target: socket.assigns.myself),
+        JS.push("no_edit_password", target: socket.assigns.myself)
       )
 
     table_model =
@@ -396,7 +398,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           grace_period: base_assessment.grace_period,
           scoring_strategy_id: base_assessment.scoring_strategy_id,
           review_submission: base_assessment.review_submission,
-          feedback_mode: base_assessment.feedback_mode
+          feedback_mode: base_assessment.feedback_mode,
+          password: base_assessment.password
         ]
 
     from(
@@ -464,6 +467,31 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
      )}
   end
 
+  def handle_event(event, params, socket) when event in ["no_edit_password", "edit_password"] do
+    edit_password_id =
+      case params["assessment_id"] do
+        nil -> nil
+        assessment_id -> String.to_integer(assessment_id)
+      end
+
+    {:ok, table_model} =
+      SettingsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.section.slug,
+        socket.assigns.ctx,
+        JS.push("edit_date", target: socket.assigns.myself)
+        |> JS.push("open", target: "#assessment_due_date_modal"),
+        JS.push("edit_password", target: socket.assigns.myself),
+        JS.push("no_edit_password", target: socket.assigns.myself),
+        edit_password_id
+      )
+
+    {:noreply,
+     assign(socket,
+       table_model: table_model
+     )}
+  end
+
   def handle_event("update_setting", params, socket) do
     case decode_target(params, socket.assigns.ctx) do
       {:feedback_mode, assessment_setting_id, :scheduled} ->
@@ -493,27 +521,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            }
          )}
 
-      {key, assessment_setting_id, new_value} when new_value != "" ->
-        Sections.get_section_resource(
-          socket.assigns.section.id,
-          assessment_setting_id
-        )
-        |> SectionResource.changeset(Map.new([{key, new_value}]))
-        |> Repo.update()
-        |> case do
-          {:error, _changeset} ->
-            {:noreply,
-             socket
-             |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
+      {:password, assessment_setting_id, new_value} ->
+        do_update(:password, assessment_setting_id, new_value, socket)
 
-          {:ok, _section_resource} ->
-            {
-              :noreply,
-              socket
-              |> update_assessments(assessment_setting_id, [{key, new_value}], false)
-              |> flash_to_liveview(:info, "Setting updated!")
-            }
-        end
+      {key, assessment_setting_id, new_value} when new_value != "" ->
+        do_update(key, assessment_setting_id, new_value, socket)
 
       _ ->
         {:noreply, socket}
@@ -589,6 +601,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          )
          |> flash_to_liveview(:info, "Setting updated!")
          |> assign(modal_assigns: %{show: false})}
+    end
+  end
+
+  defp do_update(key, assessment_setting_id, new_value, socket) do
+    Sections.get_section_resource(
+      socket.assigns.section.id,
+      assessment_setting_id
+    )
+    |> SectionResource.changeset(Map.new([{key, new_value}]))
+    |> Repo.update()
+    |> case do
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
+
+      {:ok, _section_resource} ->
+        {
+          :noreply,
+          socket
+          |> update_assessments(assessment_setting_id, [{key, new_value}], false)
+          |> flash_to_liveview(:info, "Setting updated!")
+        }
     end
   end
 

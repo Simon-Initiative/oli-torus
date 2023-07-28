@@ -12,7 +12,7 @@
     numbered_revisions={assigns[:numbered_revisions]} />
 <% end %>
 
-<Components.Delivery.PageDelivery.details scheduling_type={@scheduling_type} end_date={@end_date} est_reading_time={@est_reading_time} />
+<Components.Delivery.PageDelivery.details ctx={@ctx} scheduling_type={@scheduling_type} end_date={@end_date} est_reading_time={@est_reading_time} />
 
 <script>
 window.userToken = "<%= assigns[:user_token] %>";

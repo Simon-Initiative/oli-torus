@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
@@ -11,8 +12,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(_params, session, socket) do
+    ctx = SessionContext.init(socket, session)
+
+    {:ok, assign(socket, ctx: ctx)}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
@@ -182,7 +185,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
                 socket.assigns.section
                 |> Oli.Repo.preload([:base_project, :root_section_resource])
 
-              %{"children" => Sections.build_hierarchy(section).children}
+              hierarchy = %{"children" => Sections.build_hierarchy(section).children}
+              OliWeb.Components.Delivery.CourseContent.adjust_hierarchy_for_only_pages(hierarchy)
             end)
 
           socket
@@ -388,6 +392,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         <.live_component
           module={OliWeb.Components.Delivery.CourseContent}
           id="course_content_tab"
+          ctx={assigns.ctx}
           hierarchy={assigns.hierarchy}
           current_position={assigns.current_position}
           current_level={assigns.current_level}
@@ -539,6 +544,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       <.live_component
         id="discussion_activity_table"
         module={OliWeb.Components.Delivery.DiscussionActivity}
+        ctx={@ctx}
         params={@params}
         section={@section}
         />

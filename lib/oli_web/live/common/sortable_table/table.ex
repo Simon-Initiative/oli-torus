@@ -46,7 +46,14 @@ defmodule OliWeb.Common.SortableTable.Table do
       data-sort-column={if @model.sort_by_spec == column_spec, do: "true", else: "false"}
       data-sort-order={if @model.sort_by_spec == column_spec, do: to_string(@model.sort_order || :desc), else: "desc"}
     >
-      {column_spec.label}
+      {#if column_spec.tooltip}
+        <span id={column_spec.name} title={column_spec.tooltip} phx-hook="TooltipInit">
+        {column_spec.label}
+        </span>
+      {#else}
+        {column_spec.label}
+      {/if}
+
       {#if column_spec.sortable}
         <i class={"fas fa-sort-" <> sort_direction_cls} />
       {/if}

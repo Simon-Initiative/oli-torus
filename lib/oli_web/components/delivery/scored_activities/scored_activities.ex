@@ -50,7 +50,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         nil ->
           {total_count, rows} = apply_filters(assigns.assessments, params)
 
-          {:ok, table_model} = AssessmentsTableModel.new(rows, assigns.ctx)
+          {:ok, table_model} = AssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)
 
           table_model =
             Map.merge(table_model, %{
@@ -230,7 +230,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           show_top_paging={true}
           show_bottom_paging={false}
           render_top_info={false}
-          allow_selection
+          allow_selection={!is_nil(@current_assessment)}
         />
       </div>
       <%= if @current_assessment != nil and @activities != [] do %>
@@ -546,7 +546,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       from(aa in ActivityAttempt,
         join: res_attempt in ResourceAttempt,
         on: aa.resource_attempt_id == res_attempt.id,
-        where: res_attempt.lifecycle_state == :evaluated,
+        where: res_attempt.lifecycle_state == :evaluated and aa.lifecycle_state == :evaluated,
         join: res_access in ResourceAccess,
         on: res_attempt.resource_access_id == res_access.id,
         where:
@@ -561,7 +561,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         on: pr.publication_id == spp.publication_id,
         where: spp.section_id == ^section.id,
         group_by: [rev.resource_id, rev.id],
-        select: {rev, count(aa.id), sum(aa.score) / sum(aa.out_of)}
+        select:
+          {rev, count(aa.id),
+           sum(aa.score) /
+             fragment("CASE WHEN SUM(?) = 0.0 THEN 1.0 ELSE SUM(?) END", aa.out_of, aa.out_of)}
       )
       |> Repo.all()
       |> Enum.map(fn {rev, total_attempts, avg_score} ->

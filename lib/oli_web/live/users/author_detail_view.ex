@@ -23,15 +23,16 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias OliWeb.Users.Actions
   alias Surface.Components.Form
   alias Surface.Components.Form.{Label, Field, Submit, TextInput}
+  alias OliWeb.Common.SessionContext
 
-  prop author, :any
-  data breadcrumbs, :any
-  data title, :string, default: "Author Details"
-  data user, :struct, default: nil
-  data modal, :any, default: nil
-  data csrf_token, :any
-  data changeset, :changeset
-  data disabled_edit, :boolean, default: true
+  prop(author, :any)
+  data(breadcrumbs, :any)
+  data(title, :string, default: "Author Details")
+  data(user, :struct, default: nil)
+  data(modal, :any, default: nil)
+  data(csrf_token, :any)
+  data(changeset, :changeset)
+  data(disabled_edit, :boolean, default: true)
 
   defp set_breadcrumbs(author) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -53,7 +54,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   def mount(
         %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token, "current_author_id" => author_id},
+        %{"csrf_token" => csrf_token, "current_author_id" => author_id} = session,
         socket
       ) do
     author = Accounts.get_author(author_id)
@@ -70,7 +71,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
            user: user,
            csrf_token: csrf_token,
            changeset: author_changeset(user),
-           disabled_edit: true
+           disabled_edit: true,
+           ctx: SessionContext.init(socket, session)
          )}
     end
   end
@@ -103,6 +105,13 @@ defmodule OliWeb.Users.AuthorsDetailView do
           {#if @disabled_edit}
             <button class={"float-right btn btn-md btn-primary mt-2"} phx-click="start_edit">Edit</button>
           {/if}
+        </Group>
+        <Group label="Projects" description="Projects that the Author has either created or is a collaborator within">
+          {live_component OliWeb.Users.AuthorProjects,
+            id: "author_projects",
+            user: @user,
+            ctx: @ctx
+          }
         </Group>
         <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu")}

@@ -27,8 +27,8 @@ defmodule Oli.Rendering.Content.Selection do
       [render_html(logic, titles, activity_types_map)],
       if include_link? do
         [
-          "<p class=\"lead\">",
-          "<a class=\"btn btn-primary\" href=\"#{url}\">Preview activities</a>",
+          "<p class=\"lead my-3\">",
+          "<a class=\"btn btn-primary\" href=\"#{url}\" target=\"_blank\">Preview activities</a>",
           "</p>"
         ]
       else

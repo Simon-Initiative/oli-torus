@@ -2,88 +2,119 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Sections.AssessmentSettings.Tooltips
   use Phoenix.Component
 
-  def new(assessments, section_slug, ctx, on_edit_date) do
+
+  def new(
+        assessments,
+        section_slug,
+        ctx,
+        on_edit_date,
+        on_edit_password,
+        on_no_edit_password,
+        edit_password_id \\ nil
+      ) do
     column_specs = [
       %ColumnSpec{
         name: :index,
         label: "#",
         th_class: "pl-10 !sticky left-0 bg-white z-10 whitespace-nowrap w-20",
-        td_class: "sticky pl-11 left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap w-20"
+        td_class: "sticky pl-11 left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap w-20",
+        tooltip: Tooltips.for(:index)
       },
       %ColumnSpec{
         name: :name,
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
         th_class: "!sticky left-20 bg-white z-10",
-        td_class: "sticky left-20 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
+        td_class: "sticky left-20 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap",
+        tooltip: Tooltips.for(:name)
       },
       %ColumnSpec{
         name: :due_date,
         label: "DUE DATE",
         render_fn: &__MODULE__.render_due_date_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:due_date)
       },
       %ColumnSpec{
         name: :max_attempts,
         label: "# ATTEMPTS",
         render_fn: &__MODULE__.render_attempts_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:max_attempts)
       },
       %ColumnSpec{
         name: :time_limit,
         label: "TIME LIMIT",
         render_fn: &__MODULE__.render_time_limit_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:time_limit)
       },
       %ColumnSpec{
         name: :late_submit,
         label: "LATE SUBMIT",
         render_fn: &__MODULE__.render_late_submit_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:late_submit)
       },
       %ColumnSpec{
         name: :late_start,
         label: "LATE START",
         render_fn: &__MODULE__.render_late_start_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:late_start)
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
         label: "SCORING",
         render_fn: &__MODULE__.render_scoring_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:scoring_strategy_id)
       },
       %ColumnSpec{
         name: :grace_period,
         label: "GRACE PERIOD",
         render_fn: &__MODULE__.render_grace_period_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:grace_period)
       },
       %ColumnSpec{
         name: :retake_mode,
         label: "RETAKE MODE",
         render_fn: &__MODULE__.render_retake_mode_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:retake_mode)
       },
       %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:feedback_mode)
       },
       %ColumnSpec{
         name: :review_submission,
         label: "VIEW ANSWERS",
         render_fn: &__MODULE__.render_view_answers_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:review_submission)
+      },
+      %ColumnSpec{
+        name: :password,
+        label: "PASSWORD",
+        render_fn: &__MODULE__.render_password_column/3,
+        th_class: "pt-3 whitespace-nowrap",
+        sortable: false,
+        tooltip: Tooltips.for(:password)
       },
       %ColumnSpec{
         name: :exceptions_count,
         label: "EXCEPTIONS",
         render_fn: &__MODULE__.render_exceptions_column/3,
-        th_class: "whitespace-nowrap"
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:exceptions_count)
       }
     ]
 
@@ -95,7 +126,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       data: %{
         section_slug: section_slug,
         ctx: ctx,
-        on_edit_date: on_edit_date
+        on_edit_date: on_edit_date,
+        on_edit_password: on_edit_password,
+        on_no_edit_password: on_no_edit_password,
+        edit_password_id: edit_password_id
       }
     )
   end
@@ -240,6 +274,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
       </select>
     """
+  end
+
+  def render_password_column(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        password: assessment.password,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+      <%= if @password in ["", nil] do %>
+        <input class="w-40" type="text" placeholder={"Enter password"} phx-debounce={800} name={"password-#{@id}"}/>
+      <% else %>
+        <%= if @id == @edit_password_id do %>
+          <input id={"password_input#{@id}"} class="w-40" type="text" value={@password} phx-hook="InputAutoSelect" phx-click-away={@on_no_edit_password} phx-debounce={800} name={"password-#{@id}"}/>
+        <% else %>
+          <button type="button" phx-click={@on_edit_password} phx-value-assessment_id={@id}>
+            <input class="w-40" type="password" value={hide_password(@password)}/>
+          </button>
+        <% end %>
+      <% end %>
+    """
+  end
+
+  defp hide_password(password) do
+    String.replace(password, ~r/./, "*")
   end
 
   def render_exceptions_column(assigns, assessment, _) do
