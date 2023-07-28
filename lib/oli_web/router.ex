@@ -21,7 +21,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :default})
-    plug(:put_layout, {OliWeb.LayoutView, :app})
+    plug(:put_layout, html: {OliWeb.LayoutView, :app})
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
@@ -223,7 +223,7 @@ defmodule OliWeb.Router do
 
   ### HELPERS ###
 
-  defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
+  defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
 
@@ -864,25 +864,25 @@ defmodule OliWeb.Router do
     )
 
     get(
-      "/downloads/course_content/:section_slug",
+      "/downloads/course_content",
       DeliveryController,
       :download_course_content_info
     )
 
     get(
-      "/downloads/students_progress/:section_slug",
+      "/downloads/students_progress",
       DeliveryController,
       :download_students_progress
     )
 
     get(
-      "/downloads/learning_objectives/:section_slug",
+      "/downloads/learning_objectives",
       DeliveryController,
       :download_learning_objectives
     )
 
     get(
-      "/downloads/quiz_scores/:section_slug",
+      "/downloads/quiz_scores",
       DeliveryController,
       :download_quiz_scores
     )

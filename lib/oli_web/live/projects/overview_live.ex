@@ -235,7 +235,7 @@ defmodule OliWeb.Projects.OverviewLive do
               <div>
                 <p>Please type <strong><%= @project.title %></strong> below to confirm.</p>
               </div>
-              <.form :let={f} for={:form} phx-submit="delete">
+              <.form :let={f} for={%{}} as={:form} phx-submit="delete">
                 <div class="mt-2">
                   <%= text_input f, :title, class: "form-control", id: "delete-confirm-title", required: true %>
                 </div>
