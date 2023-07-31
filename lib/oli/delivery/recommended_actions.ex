@@ -19,14 +19,15 @@ defmodule Oli.Delivery.RecommendedActions do
   end
 
   def section_has_scheduled_resources?(section_id) do
-    items = section_resource_query()
-    |> where(
-      [sr],
-      sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
-    )
-    |> select([sr], sr.id)
-    |> limit(1)
-    |> Repo.all()
+    items =
+      section_resource_query()
+      |> where(
+        [sr],
+        sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
+      )
+      |> select([sr], sr.id)
+      |> limit(1)
+      |> Repo.all()
 
     Enum.count(items) > 0
   end
@@ -63,7 +64,11 @@ defmodule Oli.Delivery.RecommendedActions do
       sr.section_id == ^section_id and
         rev.graded == true and
         sr.scheduling_type == :due_by and
-        fragment("? < now() + interval '24 hours'", sr.end_date)
+        fragment(
+          "now() < ? and ? < now() + interval '24 hours'",
+          sr.end_date,
+          sr.end_date
+        )
     )
     |> select([sr], sr)
     |> limit(1)

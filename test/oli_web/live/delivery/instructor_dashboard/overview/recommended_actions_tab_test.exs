@@ -62,7 +62,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       conn: conn,
       section: section
     } do
-
       {:ok, _view, _html} = live(conn, instructor_course_content_path(section.slug))
 
       refute Oli.Delivery.RecommendedActions.section_has_scheduled_resources?(section.id)
@@ -160,21 +159,41 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       |> Ecto.Changeset.change(%{scheduling_type: :due_by, end_date: end_date})
       |> Repo.update()
 
-      Oli.Resources.Revision
-      |> where([rev], rev.resource_id == ^section_page.resource.id)
-      |> select([sr], sr)
-      |> Repo.all()
-
-      Oli.Delivery.Sections.SectionResource
-      |> where([sr], sr.resource_id == ^section_page.resource.id)
-      |> select([sr], sr)
-      |> Repo.all()
-
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
       assert has_element?(view, "h4", "Remind Students of Deadlines")
 
       assert has_element?(
+               view,
+               "span",
+               "There are assessments due soon, review and remind students"
+             )
+    end
+
+    test "does not render the \"remind student of deadlines\" action when not necessary", %{
+      conn: conn,
+      section: section,
+      section_page: section_page
+    } do
+      end_date = DateTime.utc_now() |> DateTime.add(25, :hour) |> DateTime.truncate(:second)
+
+      section_page
+      |> Ecto.Changeset.change(%{graded: true})
+      |> Repo.update()
+
+      Oli.Delivery.Sections.SectionResource
+      |> where([sr], sr.resource_id == ^section_page.resource.id)
+      |> select([sr], sr)
+      |> limit(1)
+      |> Repo.one()
+      |> Ecto.Changeset.change(%{scheduling_type: :due_by, end_date: end_date})
+      |> Repo.update()
+
+      {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
+
+      refute has_element?(view, "h4", "Remind Students of Deadlines")
+
+      refute has_element?(
                view,
                "span",
                "There are assessments due soon, review and remind students"
