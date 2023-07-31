@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Delivery.ExplorationCard do
   attr :dark, :boolean, default: false
   attr :exploration, :map
   attr :section_slug, :string
+  attr :preview_mode, :boolean, default: false
 
   def render(assigns) do
     ~H"""
@@ -15,7 +16,7 @@ defmodule OliWeb.Components.Delivery.ExplorationCard do
             <h6 class="font-semibold text-lg leading-6"><%= @exploration.title %></h6>
             <div class="flex w-full gap-3 justify-end">
               <a
-                href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, @exploration.slug)}
+                href={Routes.page_delivery_path(OliWeb.Endpoint, (if @preview_mode, do: :page_preview, else: :page), @section_slug, @exploration.slug)}
                 class="btn text-white hover:text-white inline-flex bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700">Open</a>
             </div>
           </div>
