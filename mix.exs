@@ -228,7 +228,7 @@ defmodule Oli.MixProject do
       "test.ecto.reset": ["ecto.reset"],
 
       # deploy tailwind assets
-      "assets.deploy": ["tailwind default --minify", "phx.digest"]
+      "assets.deploy": ["tailwind default --minify", "tailwind storybook --minify", "phx.digest"]
     ]
   end
 end
