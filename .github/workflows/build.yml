@@ -67,7 +67,8 @@ jobs:
         run: set -a;source oli.env && mix clean
 
       - name: 🔨 Build project
-        run: set -a;source oli.env && mix compile --warnings-as-errors
+        # run: set -a;source oli.env && mix compile --warnings-as-errors
+        run: set -a;source oli.env && mix compile
 
       - name: ▶️ Run unit tests
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test

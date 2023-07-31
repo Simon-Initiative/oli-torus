@@ -1,5 +1,5 @@
 defmodule OliWeb.Progress.StudentView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   import OliWeb.Common.Utils
   import OliWeb.Common.Params

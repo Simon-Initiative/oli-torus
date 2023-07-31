@@ -1,5 +1,5 @@
 defmodule OliWeb.Grades.GradebookView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Router.Helpers, as: Routes

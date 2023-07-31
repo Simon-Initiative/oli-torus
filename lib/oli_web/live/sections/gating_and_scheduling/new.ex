@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.GatingAndScheduling.New do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.Modal
 
   alias OliWeb.Sections.Mount
@@ -8,7 +8,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
   alias OliWeb.Common.SessionContext
 
   def mount(
-        %{"section_slug" => section_slug} =params,
+        %{"section_slug" => section_slug} = params,
         session,
         socket
       ) do

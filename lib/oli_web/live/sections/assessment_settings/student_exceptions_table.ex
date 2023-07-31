@@ -197,7 +197,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               </div>
               <div class="modal-body">
                 <.form
-                  for={:student_exception}
+                  for={%{}}
+                  as={:student_exception}
                   phx-submit="add_student_exception"
                   phx-target={@myself}
                   :let={f}
@@ -255,7 +256,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               </div>
               <div class="modal-body">
                 <.form
-                  for={:confirm_removal}
+                  for={%{}}
+                  as={:confirm_removal}
                   phx-submit="remove_student_exceptions"
                   phx-target={@myself}
                 >

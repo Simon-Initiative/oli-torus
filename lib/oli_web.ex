@@ -19,7 +19,7 @@ defmodule OliWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: OliWeb
+      use Phoenix.Controller, layouts: [html: {OliWeb.LayoutView, :app}], namespace: OliWeb
 
       import Plug.Conn
       import OliWeb.Gettext
@@ -29,6 +29,20 @@ defmodule OliWeb do
     end
   end
 
+  def html do
+    quote do
+      use Phoenix.Component
+
+      # Import convenience functions from controllers
+      import Phoenix.Controller,
+        only: [get_csrf_token: 0, view_module: 1, view_template: 1]
+
+      # Include general helpers for rendering HTML
+      unquote(html_helpers())
+    end
+  end
+
+  # deprecated view function
   def view do
     quote do
       use Phoenix.View,
@@ -39,20 +53,20 @@ defmodule OliWeb do
 
       # Import convenience functions from controllers
       import Phoenix.Controller,
-        only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
+        only: [view_module: 1, view_template: 1]
 
       import Phoenix.Component
 
-      unquote(view_helpers())
+      unquote(html_helpers())
     end
   end
 
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {OliWeb.LayoutView, "live.html"}
+        layout: {OliWeb.LayoutView, :live}
 
-      unquote(view_helpers())
+      unquote(html_helpers())
     end
   end
 
@@ -60,18 +74,18 @@ defmodule OliWeb do
     quote do
       use Phoenix.LiveComponent
 
-      unquote(view_helpers())
+      unquote(html_helpers())
     end
   end
 
   def surface_view do
     quote do
       use Surface.LiveView,
-        layout: {OliWeb.LayoutView, "live.html"}
+        layout: {OliWeb.LayoutView, :live}
 
       import Oli.Utils.Surface
 
-      unquote(view_helpers())
+      unquote(html_helpers())
     end
   end
 
@@ -81,7 +95,7 @@ defmodule OliWeb do
 
       import Oli.Utils.Surface
 
-      unquote(view_helpers())
+      unquote(html_helpers())
     end
   end
 
@@ -112,14 +126,13 @@ defmodule OliWeb do
     end
   end
 
-  defp view_helpers do
+  defp html_helpers do
     quote do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
       # Import LiveView helpers (live_render, live_component, live_patch, etc)
       import Phoenix.LiveView.Helpers
-      import OliWeb.LiveHelpers
 
       # Import basic rendering functionality (render, render_layout, etc)
       import Phoenix.View

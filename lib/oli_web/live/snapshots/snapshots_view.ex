@@ -1,6 +1,5 @@
 defmodule OliWeb.Snapshots.SnapshotsView do
-
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   import Ecto.Query, warn: false
   alias Oli.Repo
@@ -9,8 +8,9 @@ defmodule OliWeb.Snapshots.SnapshotsView do
     PartAttempt,
     ResourceAccess,
     ResourceAttempt,
-    ActivityAttempt,
+    ActivityAttempt
   }
+
   alias Oli.Delivery.Snapshots.Snapshot
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
@@ -41,7 +41,6 @@ defmodule OliWeb.Snapshots.SnapshotsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-
         missing = get_missing(section)
         count_missing = Enum.count(missing)
 
@@ -54,7 +53,6 @@ defmodule OliWeb.Snapshots.SnapshotsView do
          )}
     end
   end
-
 
   def render(assigns) do
     ~F"""
@@ -83,7 +81,6 @@ defmodule OliWeb.Snapshots.SnapshotsView do
   end
 
   defp get_missing(section) do
-
     section_id = section.id
 
     all_guids =
@@ -111,15 +108,17 @@ defmodule OliWeb.Snapshots.SnapshotsView do
       |> MapSet.new()
 
     MapSet.difference(all_guids, all_snapshots) |> MapSet.to_list()
-
   end
 
   def handle_event("run", _, socket) do
-    case Oli.Delivery.Snapshots.Worker.perform_now(socket.assigns.missing, socket.assigns.section.slug) |> IO.inspect do
-      {:ok, _} ->  {:noreply, assign(socket, missing: [], count_missing: 0, result: :success)}
+    case Oli.Delivery.Snapshots.Worker.perform_now(
+           socket.assigns.missing,
+           socket.assigns.section.slug
+         )
+         |> IO.inspect() do
+      {:ok, _} -> {:noreply, assign(socket, missing: [], count_missing: 0, result: :success)}
       {:error, e} -> {:noreply, assign(socket, result: e)}
       e -> {:noreply, assign(socket, result: e)}
     end
   end
-
 end

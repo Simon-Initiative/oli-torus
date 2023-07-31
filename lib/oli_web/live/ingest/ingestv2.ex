@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.IngestV2 do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Repo
   alias Oli.Accounts.Author

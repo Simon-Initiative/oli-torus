@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.Institutions.ResearchConsentView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Institutions
   alias Oli.Institutions.Institution
@@ -30,13 +30,18 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
   def mount(%{"institution_id" => institution_id}, _session, socket) do
     case Institutions.get_institution_by!(%{id: institution_id}) do
       %Institution{} = institution ->
-        {:ok, assign(socket,
-          breadcrumbs: set_breadcrumbs(institution),
-          institution: institution,
-          changeset: Institutions.change_institution(institution)
-        )}
+        {:ok,
+         assign(socket,
+           breadcrumbs: set_breadcrumbs(institution),
+           institution: institution,
+           changeset: Institutions.change_institution(institution)
+         )}
 
-      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      _ ->
+        {:ok,
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
     end
   end
 
@@ -70,15 +75,18 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
     case Institutions.update_institution(socket.assigns.institution, params) do
       {:ok, %Institution{id: institution_id}} ->
         {:noreply,
-          socket
-          |> put_flash(:info, "Institution successfully updated.")
-          |> redirect(to: institution_route(institution_id))}
+         socket
+         |> put_flash(:info, "Institution successfully updated.")
+         |> redirect(to: institution_route(institution_id))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
-          socket
-          |> put_flash(:error, "Institution couldn't be created/updated. Please check the errors below.")
-          |> assign(changeset: changeset)}
+         socket
+         |> put_flash(
+           :error,
+           "Institution couldn't be created/updated. Please check the errors below."
+         )
+         |> assign(changeset: changeset)}
     end
   end
 end

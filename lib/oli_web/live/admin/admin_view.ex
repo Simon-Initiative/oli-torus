@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.AdminView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   alias Oli.Repo
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Common.Breadcrumb

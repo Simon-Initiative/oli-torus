@@ -319,7 +319,7 @@ module.exports = (env, options) => ({
       outputFilename: '../licenses.json',
       licenseOverrides: {
         'janus-script@1.9.2': 'MIT',
-        'phoenix_html@3.2.0': 'MIT',
+        'phoenix_html@3.3.1': 'MIT',
         'typed-function@2.0.0': 'MIT',
       },
       unacceptableLicenseTest: (licenseIdentifier) => {

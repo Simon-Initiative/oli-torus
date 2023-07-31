@@ -251,7 +251,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
               </div>
               <div class="modal-body">
                 <.form
-                  for={:confirm_bulk_apply}
+                  for={%{}}
+                  as={:confirm_bulk_apply}
                   phx-submit="confirm_bulk_apply"
                   phx-target={@myself}
                 >
