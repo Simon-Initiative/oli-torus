@@ -5,7 +5,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Sections.AssessmentSettings.Tooltips
   use Phoenix.Component
 
-
   def new(
         assessments,
         section_slug,
@@ -152,7 +151,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
       <button class="hover:underline whitespace-nowrap" type="button" phx-click={@on_edit_date} phx-value-assessment_id={@id}>
-        <%= if @due_date do %>
+        <%= if @due_date != nil and @scheduling_type == :due_by do %>
           <%= value_from_datetime(@due_date, @ctx) %>
         <% else %>
           No due date
