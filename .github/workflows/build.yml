@@ -67,8 +67,9 @@ jobs:
         run: set -a;source oli.env && mix clean
 
       - name: 🔨 Build project
-        # run: set -a;source oli.env && mix compile --warnings-as-errors
-        run: set -a;source oli.env && mix compile
+        # TODO: RE-ENABLE ONCE SURFACE DEPENDENCIES ARE REMOVED AND WARNINGS ARE FIXED [MER-2417]
+        # run: set -a; source oli.env && mix compile --warnings-as-errors
+        run: set -a; source oli.env && mix compile
 
       - name: ▶️ Run unit tests
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
