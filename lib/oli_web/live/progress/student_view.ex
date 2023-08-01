@@ -147,7 +147,7 @@ defmodule OliWeb.Progress.StudentView do
         <h3>Progress Details for {name(@user)}</h3>
         <TextSearch id="text_search" text={@text_search}/>
         <div class="mt-4"/>
-        <Table model={@table_model} sort="do_sort"/>
+        <Table.render model={@table_model} sort="do_sort"/>
       </div>
     """
   end

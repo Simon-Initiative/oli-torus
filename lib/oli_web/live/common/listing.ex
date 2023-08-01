@@ -26,10 +26,10 @@ defmodule OliWeb.Common.Listing do
         {/if}
 
         {#if @total_count > 0 and @total_count > @limit}
-          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+          <Paging.render id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
           {render_table(assigns)}
           {#if @show_bottom_paging}
-            <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+            <Paging.render id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
           {/if}
         {#elseif @total_count > 0}
           <div>Showing all results ({@total_count} total)</div>
@@ -49,7 +49,7 @@ defmodule OliWeb.Common.Listing do
       {#elseif @with_body}
         <#slot />
       {#else}
-        <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class} select={nil}/>
+        <Table.render model={@table_model} sort={@sort} additional_table_class={@additional_table_class} select={nil}/>
       {/if}
     """
   end
