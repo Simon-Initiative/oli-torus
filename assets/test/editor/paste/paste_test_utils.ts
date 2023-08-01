@@ -20,6 +20,9 @@ export const simulateEvent = (
 export const mockInsertNodes = () =>
   jest.spyOn(Transforms, 'insertNodes').mockImplementation(() => true);
 
+export const mockInsertFragment = () =>
+  jest.spyOn(Transforms, 'insertFragment').mockImplementation(() => true);
+
 export const mockEditor = () =>
   ({
     children: [],
