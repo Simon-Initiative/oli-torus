@@ -114,17 +114,12 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
         </form>
       </div>
       <PagedTable.render
-        __context__={assigns[:__context_]}
         total_count={@total_count}
-        filter=""
         limit={@params.limit}
         offset={@params.offset}
         table_model={@table_model}
-        allow_selection={false}
         sort="paged_table_sort"
         page_change="paged_table_page_change"
-        selection_change=""
-        show_top_paging={true}
         show_bottom_paging={false}
         additional_table_class="instructor_dashboard_table"
         render_top_info={false}
@@ -140,10 +135,12 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
 
   def tabs(assigns) do
     ~H"""
-      <div class="container mx-auto my-4">
-        <ul class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4" id="tabs-tab"
-          role="tablist">
-
+    <div class="container mx-auto my-4">
+      <ul
+        class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4"
+        id="tabs-tab"
+        role="tablist"
+      >
         <%= for %{label: label, path: path, badge: badge, active: active} <- [
         %{
           label: "Sections",
@@ -170,9 +167,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
           active: is_active_tab?(:students, @active_tab)
         }
       ] do %>
-            <li class="nav-item" role="presentation">
-              <.link patch={path}
-                class={"
+          <li class="nav-item" role="presentation">
+            <.link
+              patch={path}
+              class={"
                   block
                   border-x-0 border-t-0 border-b-2
                   px-3
@@ -186,16 +184,19 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
                   hover:border-delivery-primary-200
                   focus:border-delivery-primary-200
                   #{if active, do: "!border-delivery-primary active", else: "border-transparent"}
-                "}>
-                <%= if is_function(label), do: label.(), else: label %>
-                  <%= if badge do %>
-                  <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"><%= badge %></span>
-                  <% end %>
-              </.link>
-            </li>
-          <% end %>
-        </ul>
-      </div>
+                "}
+            >
+              <%= if is_function(label), do: label.(), else: label %>
+              <%= if badge do %>
+                <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded">
+                  <%= badge %>
+                </span>
+              <% end %>
+            </.link>
+          </li>
+        <% end %>
+      </ul>
+    </div>
     """
   end
 
@@ -289,66 +290,74 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
 
   def modal(%{modal_assigns: %{show: "edit_institution_for_section"}} = assigns) do
     ~H"""
-      <div
-          id="edit_institution_for_section_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#modal_cancel_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Assign institution for <%= @modal_assigns.changeset.data.title %></h5>
+    <div
+      id="edit_institution_for_section_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#modal_cancel_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              Assign institution for <%= @modal_assigns.changeset.data.title %>
+            </h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#modal_cancel_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form for={@modal_assigns.changeset} phx-submit="submit_modal">
+              <div class="flex flex-col space-y-2">
+                <div class="flex flex-col space-y-1">
+                  <label
+                    for="institution_id"
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Institution
+                  </label>
+                  <select
+                    id="institution_id"
+                    name="institution_id"
+                    class="form-select block w-full mt-1"
+                  >
+                    <%= for {label, value} <- @modal_assigns.options_for_select do %>
+                      <option
+                        value={value}
+                        selected={value == @modal_assigns.changeset.data.institution_id}
+                      >
+                        <%= label %>
+                      </option>
+                    <% end %>
+                  </select>
+                </div>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#modal_cancel_button")}
+                  id="modal_cancel_button"
+                  class="btn btn-link"
+                  phx-click="hide_modal"
                 >
-                  <i class="fa-solid fa-xmark fa-xl" />
+                  Cancel
                 </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={@modal_assigns.changeset}
-                  phx-submit="submit_modal"
-                >
-                  <div class="flex flex-col space-y-2">
-                    <div class="flex flex-col space-y-1">
-                      <label for="institution_id" class="text-sm font-medium text-gray-700 dark:text-gray-300">Institution</label>
-                      <select
-                        id="institution_id"
-                        name="institution_id"
-                        class="form-select block w-full mt-1"
-                      >
-                        <%= for {label, value} <- @modal_assigns.options_for_select do %>
-                        <option value={value} selected={value == @modal_assigns.changeset.data.institution_id}><%= label %></option>
-                        <% end %>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="modal_cancel_button"
-                      class="btn btn-link"
-                      phx-click="hide_modal"
-                    >Cancel</button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Save</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Save</button>
               </div>
-            </div>
+            </.form>
           </div>
+        </div>
       </div>
+    </div>
     """
   end
 

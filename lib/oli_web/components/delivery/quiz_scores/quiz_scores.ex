@@ -75,7 +75,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
 
           {#if @total_count > 0}
-            <PagedTable
+            <PagedTable.render
               table_model={@grades_table_model}
               total_count={@total_count}
               offset={@params.offset}
@@ -140,8 +140,9 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         }
       )
 
-    graded_pages = Oli.Publishing.DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
-    |> Enum.map(fn {rev, _sr} -> rev end)
+    graded_pages =
+      Oli.Publishing.DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
+      |> Enum.map(fn {rev, _sr} -> rev end)
 
     resource_accesses = fetch_resource_accesses(enrollments, section)
 

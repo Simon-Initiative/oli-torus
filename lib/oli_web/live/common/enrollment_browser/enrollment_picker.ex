@@ -56,7 +56,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
 
       <div class="mb-3"/>
 
-      <PagedTable
+      <PagedTable.render
         sort="paged_table_sort"
         page_change="paged_table_page_change"
         filter={@options.text_search}

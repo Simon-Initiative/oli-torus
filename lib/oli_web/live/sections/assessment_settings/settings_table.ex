@@ -126,7 +126,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         </form>
       </div>
       <form id={"form-#{@form_id}"} for="settings_table" phx-target={@myself} phx-change="update_setting">
-        <PagedTable
+        <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
@@ -144,140 +144,161 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   def due_date_modal(assigns) do
     ~H"""
-      <.live_component
-        id="assessment_due_date_modal"
-        title={if @selected_assessment, do: "#{@selected_assessment.name} due date"}
-        module={OliWeb.Components.LiveModal}
-        on_confirm={JS.dispatch("submit", to: "#assessment-due-date-form") |> JS.push("close", target: "#assessment_due_date_modal")}
-        on_confirm_label="Save"
-      >
-        <div class="p-4">
-          <form id="assessment-due-date-form" for="settings_table" phx-target={@myself} phx-submit="edit_date">
-            <label for="end_date_input">Please pick a due date for the selected assessment</label>
-            <div class="flex gap-2 items-center mt-2">
-              <input id="end_date_input" name="end_date" type="datetime-local" phx-debounce={500} value={value_from_datetime(@selected_assessment.end_date, @ctx)}/>
-              <button class="torus-button primary" type="button" phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}>Clear</button>
-            </div>
-          </form>
-        </div>
-      </.live_component>
+    <.live_component
+      id="assessment_due_date_modal"
+      title={if @selected_assessment, do: "#{@selected_assessment.name} due date"}
+      module={OliWeb.Components.LiveModal}
+      on_confirm={
+        JS.dispatch("submit", to: "#assessment-due-date-form")
+        |> JS.push("close", target: "#assessment_due_date_modal")
+      }
+      on_confirm_label="Save"
+    >
+      <div class="p-4">
+        <form
+          id="assessment-due-date-form"
+          for="settings_table"
+          phx-target={@myself}
+          phx-submit="edit_date"
+        >
+          <label for="end_date_input">Please pick a due date for the selected assessment</label>
+          <div class="flex gap-2 items-center mt-2">
+            <input
+              id="end_date_input"
+              name="end_date"
+              type="datetime-local"
+              phx-debounce={500}
+              value={value_from_datetime(@selected_assessment.end_date, @ctx)}
+            />
+            <button
+              class="torus-button primary"
+              type="button"
+              phx-click={JS.set_attribute({"value", ""}, to: "#end_date_input")}
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+    </.live_component>
     """
   end
 
   def modal(%{show: "scheduled_feedback"} = assigns) do
     ~H"""
-     <div
-          id="scheduled_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">View Feedback</h5>
+    <div
+      id="scheduled_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#scheduled_cancel_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">View Feedback</h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#scheduled_cancel_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form
+              :let={f}
+              for={@changeset}
+              phx-submit="submit_scheduled_date"
+              phx-change="validate_scheduled_date"
+              phx-target={@myself}
+            >
+              <div class="flex flex-col space-y-2">
+                <%= label(f, :feedback_scheduled_date, "Scheduled Date", class: "control-label") %>
+                <%= datetime_local_input(f, :feedback_scheduled_date, class: "mr-auto") %>
+                <%= error_tag(f, :feedback_scheduled_date, true) %>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#scheduled_cancel_button")}
-                >
-                  <i class="fa-solid fa-xmark fa-xl" />
-                </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={@changeset}
-                  phx-submit="submit_scheduled_date"
-                  phx-change="validate_scheduled_date"
+                  id="scheduled_cancel_button"
+                  class="btn btn-link"
+                  phx-click="cancel_scheduled_modal"
                   phx-target={@myself}
-                  :let={f}
                 >
-                  <div class="flex flex-col space-y-2">
-                    <%= label f, :feedback_scheduled_date, "Scheduled Date", class: "control-label" %>
-                    <%= datetime_local_input f, :feedback_scheduled_date, class: "mr-auto" %>
-                    <%= error_tag f, :feedback_scheduled_date, true %>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="scheduled_cancel_button"
-                      class="btn btn-link"
-                      phx-click="cancel_scheduled_modal"
-                      phx-target={@myself}
-                    >Cancel</button>
+                  Cancel
+                </button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Save</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Save</button>
               </div>
-            </div>
+            </.form>
           </div>
         </div>
+      </div>
+    </div>
     """
   end
 
   def modal(%{show: "confirm_bulk_apply"} = assigns) do
     ~H"""
-     <div
-          id="confirm_bulk_apply_modal"
-          class="modal fade show bg-gray-900 bg-opacity-50"
-          tabindex="-1"
-          role="dialog"
-          aria-hidden="true"
-          style="display: block;"
-          phx-window-keydown={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
-          phx-key="Escape"
-        >
-          <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Confirm Bulk Apply</h5>
+    <div
+      id="confirm_bulk_apply_modal"
+      class="modal fade show bg-gray-900 bg-opacity-50"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="true"
+      style="display: block;"
+      phx-window-keydown={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
+      phx-key="Escape"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Bulk Apply</h5>
+            <button
+              type="button"
+              class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
+              aria-label="Close"
+              phx-click={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
+            >
+              <i class="fa-solid fa-xmark fa-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <.form
+              for={%{}}
+              as={:confirm_bulk_apply}
+              phx-submit="confirm_bulk_apply"
+              phx-target={@myself}
+            >
+              <div class="flex flex-col space-y-2">
+                <p>
+                  Are you sure you want to apply the <strong><%= @base_assessment.name %></strong>
+                  settings to all other assessments?
+                </p>
+              </div>
+              <div class="flex space-x-3 mt-6 justify-end">
                 <button
                   type="button"
-                  class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
-                  aria-label="Close"
-                  phx-click={JS.dispatch("click", to: "#cancel_bulk_apply_button")}
-                >
-                  <i class="fa-solid fa-xmark fa-xl" />
-                </button>
-              </div>
-              <div class="modal-body">
-                <.form
-                  for={%{}}
-                  as={:confirm_bulk_apply}
-                  phx-submit="confirm_bulk_apply"
+                  id="cancel_bulk_apply_button"
+                  class="btn btn-link"
+                  phx-click="hide_modal"
                   phx-target={@myself}
                 >
-                  <div class="flex flex-col space-y-2">
-                    <p>Are you sure you want to apply the <strong><%= @base_assessment.name %></strong> settings to all other assessments?</p>
-                  </div>
-                  <div class="flex space-x-3 mt-6 justify-end">
-                    <button
-                      type="button"
-                      id="cancel_bulk_apply_button"
-                      class="btn btn-link"
-                      phx-click="hide_modal"
-                      phx-target={@myself}
-                    >Cancel</button>
+                  Cancel
+                </button>
 
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                    >Confirm</button>
-                  </div>
-                </.form>
+                <button type="submit" class="btn btn-primary">Confirm</button>
               </div>
-            </div>
+            </.form>
           </div>
         </div>
+      </div>
+    </div>
     """
   end
 

@@ -111,7 +111,7 @@ defmodule OliWeb.Users.UsersView do
 
       <div class="mb-3"/>
 
-      <PagedTable
+      <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}

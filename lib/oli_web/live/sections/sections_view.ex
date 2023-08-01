@@ -147,7 +147,7 @@ defmodule OliWeb.Sections.SectionsView do
         <div class="mb-5"/>
 
         <div class="sections-table">
-          <PagedTable
+          <PagedTable.render
             filter={@options.text_search}
             table_model={@table_model}
             total_count={@total_count}

@@ -66,21 +66,17 @@ defmodule OliWeb.Users.AuthorProjects do
         </form>
       <% end %>
       <PagedTable.render
-          __context__={assigns[:__context_]}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@params.offset}
-          limit={@params.limit}
-          page_change={JS.push("paged_table_page_change", target: @myself)}
-          selection_change={JS.push("paged_table_selection_change", target: @myself)}
-          sort={JS.push("paged_table_sort", target: @myself)}
-          additional_table_class="instructor_dashboard_table"
-          filter=""
-          show_top_paging={true}
-          show_bottom_paging={false}
-          render_top_info={false}
-          allow_selection={false}
-        />
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@params.offset}
+        limit={@params.limit}
+        page_change={JS.push("paged_table_page_change", target: @myself)}
+        selection_change={JS.push("paged_table_selection_change", target: @myself)}
+        sort={JS.push("paged_table_sort", target: @myself)}
+        additional_table_class="instructor_dashboard_table"
+        show_bottom_paging={false}
+        render_top_info={false}
+      />
     </div>
     """
   end

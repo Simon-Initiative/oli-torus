@@ -60,7 +60,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
 
           {#if @total_count > 0}
             <div id="sections-enrolled-table">
-              <PagedTable
+              <PagedTable.render
                 table_model={@table_model}
                 total_count={@total_count}
                 offset={@params.offset}

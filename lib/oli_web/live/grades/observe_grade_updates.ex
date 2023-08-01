@@ -56,7 +56,7 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
   def render(assigns) do
     ~F"""
     <div class="container mx-auto">
-      <PagedTable
+      <PagedTable.render
         filter={""}
         table_model={@table_model}
         total_count={@total_count}

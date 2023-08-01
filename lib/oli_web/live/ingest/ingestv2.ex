@@ -100,7 +100,7 @@ defmodule OliWeb.Admin.IngestV2 do
         <ReadOnly label="Media Items" value={@resource_counts.media_items}/>
       </Group>
       <Group label="Errors" description="Errors encountered during preprocessing">
-        <PagedTable
+        <PagedTable.render
           allow_selection={false}
           filter={nil}
           table_model={@table_model}

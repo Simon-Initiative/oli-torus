@@ -87,7 +87,7 @@ defmodule OliWeb.Components.Delivery.Content do
           </form>
         </div>
 
-        <PagedTable
+        <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}

@@ -83,7 +83,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
         {#if @total_count > 0}
           <div id="objectives-table">
-            <PagedTable
+            <PagedTable.render
               table_model={@table_model}
               page_change={JS.push("paged_table_page_change", target: @myself)}
               sort={JS.push("paged_table_sort", target: @myself)}

@@ -200,7 +200,7 @@ defmodule OliWeb.Components.Delivery.Students do
           </div>
         </div>
 
-        <PagedTable
+        <PagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}

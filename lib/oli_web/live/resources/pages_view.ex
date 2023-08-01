@@ -196,7 +196,7 @@ defmodule OliWeb.Resources.PagesView do
           </div>
       </div>
 
-      <PagedTable
+      <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}

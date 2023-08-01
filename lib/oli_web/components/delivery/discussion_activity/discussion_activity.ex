@@ -70,7 +70,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
 
         <div id="discussion_activity_table">
           {#if @filter == :by_discussion}
-            <PagedTable
+            <PagedTable.render
               table_model={@collab_space_table_model}
               filter=""
               page_change={JS.push("paged_table_page_change", target: @myself)}
@@ -80,7 +80,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
               additional_table_class="border-0"
             />
           {#else}
-            <PagedTable
+            <PagedTable.render
               table_model={@discussion_table_model}
               filter=""
               page_change={JS.push("paged_table_page_change", target: @myself)}

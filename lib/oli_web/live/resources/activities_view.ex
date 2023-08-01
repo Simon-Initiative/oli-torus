@@ -248,7 +248,7 @@ defmodule OliWeb.Resources.ActivitiesView do
 
       <div class="mb-3"/>
 
-      <PagedTable
+      <PagedTable.render
         allow_selection={true}
         filter={@options.text_search}
         table_model={@table_model}
