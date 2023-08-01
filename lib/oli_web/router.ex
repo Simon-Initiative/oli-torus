@@ -7,6 +7,7 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
+  import PhoenixStorybook.Router
 
   @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
   @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
@@ -226,6 +227,10 @@ defmodule OliWeb.Router do
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
+
+  scope "/" do
+    storybook_assets()
+  end
 
   scope "/" do
     pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
@@ -1362,12 +1367,11 @@ defmodule OliWeb.Router do
     end
 
     scope "/dev", OliWeb do
-      pipe_through([
-        :browser,
-        :admin
-      ])
+      pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+
+      live_storybook "/storybook", backend_module: OliWeb.Storybook
     end
   end
 end

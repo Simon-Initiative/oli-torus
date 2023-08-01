@@ -147,7 +147,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       <.live_component
         id="assessment_due_date_modal"
         title={if @selected_assessment, do: "#{@selected_assessment.name} due date"}
-        module={OliWeb.Components.Modal}
+        module={OliWeb.Components.LiveModal}
         on_confirm={JS.dispatch("submit", to: "#assessment-due-date-form") |> JS.push("close", target: "#assessment_due_date_modal")}
         on_confirm_label="Save"
       >
