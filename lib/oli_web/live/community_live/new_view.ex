@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.NewView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Groups
   alias Oli.Groups.Community

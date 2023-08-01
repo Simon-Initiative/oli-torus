@@ -16,7 +16,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   """
 
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, SessionContext}

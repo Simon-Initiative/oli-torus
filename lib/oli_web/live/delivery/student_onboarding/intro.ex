@@ -18,7 +18,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
               <li>A 5 minute survey to help shape learning your experience and let your instructor get to know you</li>
             <% end %>
             <%= if has_explorations(@section) do %>
-              <li>Learning about the new 'Exploration' activities that provide real-world examples</li>
+              <li>Explorations will bring the course to life, showing its relevance in the real world</li>
             <% end %>
             <li>A personalized <%= @section.title %> experience based on your skillsets</li>
           </ul>

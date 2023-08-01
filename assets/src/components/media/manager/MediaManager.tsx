@@ -15,7 +15,7 @@ import { VideoUploadWarning } from './VideoUploadWarning';
 import { uploadFiles } from './upload';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
-const MAX_NAME_LENGTH = 26;
+const MAX_NAME_LENGTH = 30;
 const PAGE_LOADING_MESSAGE = 'Hang on while we load your items...';
 
 export const MIMETYPE_FILTERS = {
@@ -127,6 +127,26 @@ export interface MediaManagerState {
   duplicateWarning: string[];
 }
 
+const setMediaManagerLayoutSetting = (layout: LAYOUTS) => {
+  window.localStorage.setItem('media-manager-layout', layout === LAYOUTS.LIST ? 'list' : 'grid');
+};
+
+const getMediaManagerLayoutSetting = (): LAYOUTS => {
+  const layout = window.localStorage.getItem('media-manager-layout');
+  switch (layout) {
+    case 'list':
+      return LAYOUTS.LIST;
+    case 'grid':
+    default:
+      return LAYOUTS.GRID;
+  }
+};
+
+const formatDate = (date: string) => {
+  const d = new Date(date);
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+};
+
 /**
  * MediaManager React Component
  */
@@ -142,7 +162,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       searchText: undefined,
       orderBy: SORT_MAPPINGS.Newest.orderBy,
       order: SORT_MAPPINGS.Newest.order,
-      layout: LAYOUTS.GRID,
+      layout: getMediaManagerLayoutSetting(),
       showDetails: true,
       error: Maybe.nothing<string>(),
       filteredMimeTypes: props.mimeFilter,
@@ -291,6 +311,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               }
             });
           })
+
           .then(() => this.setState({ error: Maybe.nothing<string>() }));
       })
       .catch((e: Error | string) => {
@@ -304,6 +325,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   onChangeLayout(newLayout: LAYOUTS) {
+    setMediaManagerLayoutSetting(newLayout);
     this.setState({
       layout: newLayout,
     });
@@ -443,7 +465,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 <div className="refs-col">
                   {mediaItemRefs.get(item.guid) && (mediaItemRefs.get(item.guid) as any).size}
                 </div>
-                <div className="date-col">{item.dateUpdated}</div>
+                <div className="date-col">{formatDate(item.dateUpdated)}</div>
                 <div className="size-col">{convert.toByteNotation(item.fileSize)}</div>
               </div>
             ))}
@@ -496,7 +518,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               />
               <MediaIcon filename={item.fileName} mimeType={item.mimeType} url={item.url} />
               <div className="name">
-                {stringFormat.ellipsize(item.fileName, MAX_NAME_LENGTH, 5)}
+                {stringFormat.ellipsize(item.fileName, MAX_NAME_LENGTH, 12)}
               </div>
             </div>
           ))}

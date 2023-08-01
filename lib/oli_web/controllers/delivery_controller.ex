@@ -131,7 +131,7 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, Routes.pow_registration_path(conn, :create))
     |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
     |> assign(:cancel_path, Routes.delivery_path(conn, :index))
-    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationView)
+    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationHTML)
     |> Phoenix.Controller.render("new.html")
   end
 
@@ -156,8 +156,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:create_account_path, create_account_path)
     |> assign(:cancel_path, cancel_path)
     |> assign(:link_account, true)
-    |> put_view(OliWeb.Pow.SessionView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.SessionHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def process_link_account_provider(conn, %{"provider" => provider}) do
@@ -282,8 +282,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, action)
     |> assign(:sign_in_path, sign_in_path)
     |> assign(:cancel_path, cancel_path)
-    |> put_view(OliWeb.Pow.RegistrationView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.RegistrationHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def render_create_and_link_form(conn, opts \\ []) do
@@ -307,8 +307,8 @@ defmodule OliWeb.DeliveryController do
     |> assign(:sign_in_path, sign_in_path)
     |> assign(:cancel_path, cancel_path)
     |> assign(:link_account, true)
-    |> put_view(OliWeb.Pow.RegistrationView)
-    |> render("new.html")
+    |> put_view(OliWeb.Pow.RegistrationHTML)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def signin(conn, %{"section" => section}) do

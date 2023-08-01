@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.Payments.Discounts.ShowView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Paywall.Discount
@@ -43,12 +43,12 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
           link: Routes.institution_path(OliWeb.Endpoint, :show, institution.id)
         })
       ] ++
-        [
-          Breadcrumb.new(%{
-            full_title: "Discount",
-            link: Routes.discount_path(OliWeb.Endpoint, :institution, institution.id)
-          })
-        ]
+      [
+        Breadcrumb.new(%{
+          full_title: "Discount",
+          link: Routes.discount_path(OliWeb.Endpoint, :institution, institution.id)
+        })
+      ]
   end
 
   defp mount_for(:product_new = live_action, %{"product_id" => product_slug}, socket) do
@@ -56,38 +56,57 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
       %Section{type: :blueprint} = product ->
         institutions = Institutions.list_institutions()
 
-        {:ok, assign(socket,
-          title: "New Discount",
-          breadcrumbs: set_breadcrumbs(live_action, product),
-          institutions: institutions,
-          product: product,
-          discount: nil,
-          changeset: Paywall.change_discount(%Discount{}),
-          live_action: live_action
-        )}
+        {:ok,
+         assign(socket,
+           title: "New Discount",
+           breadcrumbs: set_breadcrumbs(live_action, product),
+           institutions: institutions,
+           product: product,
+           discount: nil,
+           changeset: Paywall.change_discount(%Discount{}),
+           live_action: live_action
+         )}
 
-      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      _ ->
+        {:ok,
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
     end
   end
 
-  defp mount_for(:product = live_action, %{"product_id" => product_slug, "discount_id" => discount_id}, socket) do
+  defp mount_for(
+         :product = live_action,
+         %{"product_id" => product_slug, "discount_id" => discount_id},
+         socket
+       ) do
     case Sections.get_section_by_slug(product_slug) do
       %Section{type: :blueprint} = product ->
-          case Paywall.get_discount_by!(%{id: discount_id}) do
-            nil -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
-            discount ->
-              {:ok, assign(socket,
-                breadcrumbs: set_breadcrumbs(live_action, product, discount.id),
-                institution: discount.institution,
-                institution_name: discount.institution.name,
-                product: product,
-                discount: discount,
-                changeset: Paywall.change_discount(discount),
-                live_action: live_action
-              )}
-          end
+        case Paywall.get_discount_by!(%{id: discount_id}) do
+          nil ->
+            {:ok,
+             Phoenix.LiveView.redirect(socket,
+               to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+             )}
 
-      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+          discount ->
+            {:ok,
+             assign(socket,
+               breadcrumbs: set_breadcrumbs(live_action, product, discount.id),
+               institution: discount.institution,
+               institution_name: discount.institution.name,
+               product: product,
+               discount: discount,
+               changeset: Paywall.change_discount(discount),
+               live_action: live_action
+             )}
+        end
+
+      _ ->
+        {:ok,
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
     end
   end
 
@@ -100,16 +119,21 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
             discount -> {discount, Paywall.change_discount(discount)}
           end
 
-        {:ok, assign(socket,
-          breadcrumbs: set_breadcrumbs(live_action, institution),
-          institution_name: name,
-          institution: institution,
-          discount: discount,
-          changeset: changeset,
-          live_action: live_action
-        )}
+        {:ok,
+         assign(socket,
+           breadcrumbs: set_breadcrumbs(live_action, institution),
+           institution_name: name,
+           institution: institution,
+           discount: discount,
+           changeset: changeset,
+           live_action: live_action
+         )}
 
-      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      _ ->
+        {:ok,
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
     end
   end
 
@@ -141,8 +165,13 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
     socket = clear_flash(socket)
 
     attrs = %{
-      section_id: (if socket.assigns.live_action == :institution, do: nil, else: socket.assigns.product.id),
-      institution_id: (if socket.assigns.live_action == :product_new, do: get_institution_id(params["institution_id"]), else: socket.assigns.institution.id),
+      section_id:
+        if(socket.assigns.live_action == :institution, do: nil, else: socket.assigns.product.id),
+      institution_id:
+        if(socket.assigns.live_action == :product_new,
+          do: get_institution_id(params["institution_id"]),
+          else: socket.assigns.institution.id
+        ),
       percentage: params["percentage"],
       amount: params["amount"],
       type: params["type"]
@@ -151,15 +180,18 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
     case Paywall.create_or_update_discount(attrs) do
       {:ok, _discount} ->
         {:noreply,
-          socket
-          |> put_flash(:info, "Discount successfully created/updated.")
-          |> push_redirect(to: index_view(socket.assigns))}
+         socket
+         |> put_flash(:info, "Discount successfully created/updated.")
+         |> push_redirect(to: index_view(socket.assigns))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
-          socket
-          |> put_flash(:error, "Discount couldn't be created/updated. Please check the errors below.")
-          |> assign(changeset: changeset)}
+         socket
+         |> put_flash(
+           :error,
+           "Discount couldn't be created/updated. Please check the errors below."
+         )
+         |> assign(changeset: changeset)}
     end
   end
 
@@ -169,25 +201,29 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
     case Paywall.delete_discount(socket.assigns.discount) do
       {:ok, _discount} ->
         {:noreply,
-          socket
-          |> put_flash(:info, "Discount successfully cleared.")
-          |> assign(discount: nil, changeset: Paywall.change_discount(%Discount{}))}
+         socket
+         |> put_flash(:info, "Discount successfully cleared.")
+         |> assign(discount: nil, changeset: Paywall.change_discount(%Discount{}))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
-          socket
-          |> put_flash(:error, "Discount couldn't be cleared.")
-          |> assign(changeset: changeset)}
+         socket
+         |> put_flash(:error, "Discount couldn't be cleared.")
+         |> assign(changeset: changeset)}
     end
   end
 
   def handle_event("change", %{"discount" => params}, socket) do
     params =
       params
-      |> Map.put("percentage", (if params["type"] == "percentage", do: params["percentage"], else: nil))
-      |> Map.put("amount", (if params["type"] == "fixed_amount", do: params["amount"], else: nil))
+      |> Map.put(
+        "percentage",
+        if(params["type"] == "percentage", do: params["percentage"], else: nil)
+      )
+      |> Map.put("amount", if(params["type"] == "fixed_amount", do: params["amount"], else: nil))
 
-    {:noreply, assign(socket, changeset: Paywall.change_discount(socket.assigns.changeset.data, params))}
+    {:noreply,
+     assign(socket, changeset: Paywall.change_discount(socket.assigns.changeset.data, params))}
   end
 
   defp get_institution_id(""), do: nil
@@ -197,5 +233,10 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
     do: Routes.institution_path(OliWeb.Endpoint, :show, assigns.institution.id)
 
   defp index_view(assigns),
-    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, assigns.product.slug)
+    do:
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Products.Payments.Discounts.ProductsIndexView,
+        assigns.product.slug
+      )
 end

@@ -1,6 +1,6 @@
 defmodule OliWeb.Grades.FailedGradeSyncLive do
   use OliWeb.Common.SortableTable.TableHandlers
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   import Oli.Utils, only: [trap_nil: 2]
 
