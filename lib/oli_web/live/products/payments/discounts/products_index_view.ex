@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Delivery.{Sections, Paywall}

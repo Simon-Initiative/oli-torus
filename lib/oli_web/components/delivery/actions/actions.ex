@@ -60,7 +60,7 @@ defmodule OliWeb.Components.Delivery.Actions do
     ~F"""
       <div id="student_actions" class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm px-14 py-7 flex flex-col gap-6">
         <.live_component
-          module={OliWeb.Components.Modal}
+          module={OliWeb.Components.LiveModal}
           id="unenroll_user_modal"
           title="Unenroll student"
           on_confirm={JS.push("unenroll", target: @myself)}

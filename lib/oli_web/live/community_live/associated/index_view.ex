@@ -1,5 +1,5 @@
 defmodule OliWeb.CommunityLive.Associated.IndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Groups

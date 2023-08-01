@@ -151,7 +151,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       <.live_component
         id="student_due_date_modal"
         title={if @selected_setting, do: "Due date for #{@selected_setting.user.name}"}
-        module={OliWeb.Components.Modal}
+        module={OliWeb.Components.LiveModal}
         on_confirm={JS.dispatch("submit", to: "#student-due-date-form") |> JS.push("close", target: "#student_due_date_modal")}
         on_confirm_label="Save"
       >
@@ -197,7 +197,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               </div>
               <div class="modal-body">
                 <.form
-                  for={:student_exception}
+                  for={%{}}
+                  as={:student_exception}
                   phx-submit="add_student_exception"
                   phx-target={@myself}
                   :let={f}
@@ -255,7 +256,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               </div>
               <div class="modal-body">
                 <.form
-                  for={:confirm_removal}
+                  for={%{}}
+                  as={:confirm_removal}
                   phx-submit="remove_student_exceptions"
                   phx-target={@myself}
                 >

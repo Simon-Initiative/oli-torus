@@ -1,5 +1,5 @@
 defmodule OliWeb.Users.AuthorsDetailView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.Modal
 
   import OliWeb.Common.Utils

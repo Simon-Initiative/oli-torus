@@ -106,7 +106,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         {/if}
       </a>
       {#if was_late}
-        <.badge>LATE</.badge>
+        <.badge variant={:danger}>LATE</.badge>
       {/if}
     """
   end
@@ -214,7 +214,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         {safe_score}/{safe_out_of}
         </a>
         {#if was_late}
-          <.badge>LATE</.badge>
+          <.badge variant={:danger}>LATE</.badge>
         {/if}
       """
     end

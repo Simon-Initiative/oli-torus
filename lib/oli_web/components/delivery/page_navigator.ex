@@ -52,7 +52,8 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
       </script>
 
       <.form
-        for={:page_number}
+        for={%{}}
+        as={:page_number}
         action={Routes.page_delivery_path(OliWeb.Endpoint, :navigate_by_index, @section_slug)}
         id={@id} class="flex text-base hover:shadow-md rounded group relative"
       >

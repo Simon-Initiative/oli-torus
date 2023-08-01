@@ -1,0 +1,102 @@
+<%= if OliWeb.Pow.PowHelpers.current_pow_config(@conn) == Oli.Accounts.Author do %>
+  <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Authoring Sign In"), bs_col_class: "mx-auto mt-10"}) do %>
+    <%# social media sign in links %>
+    <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
+    <hr class="my-4">
+
+    <%= form_for @changeset, @action, [as: :user], fn f -> %>
+      <div class="form-label-group">
+        <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control", placeholder: "Email", required: true, autofocus: true %>
+        <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
+        <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+      </div>
+      <div class="form-label-group">
+        <%= password_input f, :password, class: "form-control", placeholder: "Password", required: true %>
+        <%= label f, :password, class: "control-label" %>
+        <%= error_tag f, :password %>
+      </div>
+      <div class="mb-4 d-flex flex-row justify-between">
+        <%= unless Application.fetch_env!(:oli, :always_use_persistent_login_sessions) do %>
+          <div class="custom-control custom-checkbox">
+            <%= checkbox f, :persistent_session, class: "custom-control-input" %>
+            <%= label f, :persistent_session, "Remember me", class: "custom-control-label" %>
+          </div>
+        <% else %>
+          <div></div>
+        <% end %>
+        <div class="custom-control">
+          <%= link "Forgot password?", to: Routes.authoring_pow_reset_password_reset_password_path(@conn, :new), tabindex: "1" %>
+        </div>
+      </div>
+      <%= if assigns[:link_account] do %>
+        <%= hidden_input f, :link_account, value: @link_account %>
+      <% end %>
+      <%= submit "Sign In", class: "btn btn-md btn-primary btn-block" %>
+      <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+      <%= link "Create an Account", to: value_or(assigns[:create_account_path], Routes.authoring_pow_registration_path(@conn, :new)), class: "btn btn-md btn-link btn-block mt-3" %>
+    <% end %>
+  <% end %>
+<% else %>
+  <div class="container mx-auto">
+    <div class="callout callout-primary max-w-lg">
+      <h4><i class="fas fa-info-circle mr-2"></i>Looking for Authoring or your LMS?</h4>
+      <p>This sign in page is for <b>Independent Learner and Educator</b> accounts.</p>
+      <p>If your institution uses an LMS such as Canvas or Blackboard to access your course, please sign in through your LMS.</p>
+      <p>If you are trying to sign in as an author, please use the Authoring Sign In page.</p>
+      <p class="my-2 text-right">
+        <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-sm btn-outline-primary" do %>
+          Go to Authoring Sign In <i class="fa fa-arrow-right"></i>
+        <% end %>
+      </p>
+    </div>
+  </div>
+
+  <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Learner/Educator Sign In"), bs_col_class: "sm:col-span-10 md:col-span-8 lg:col-span-6 col-xl-5 mx-auto mt-4"}) do %>
+    <%# social media sign in links %>
+    <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
+      <hr class="my-4">
+      <%= form_for @changeset, @action, [as: :user], fn f -> %>
+      <div class="form-label-group">
+        <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control", placeholder: "Email", required: true, autofocus: true %>
+        <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
+        <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+      </div>
+      <div class="form-label-group">
+        <%= password_input f, :password, class: "form-control", placeholder: "Password", required: true %>
+        <%= label f, :password, class: "control-label" %>
+        <%= error_tag f, :password %>
+      </div>
+      <div class="mb-4 d-flex flex-row justify-between">
+        <%= unless Application.fetch_env!(:oli, :always_use_persistent_login_sessions) do %>
+          <div class="custom-control custom-checkbox">
+            <%= checkbox f, :persistent_session, class: "custom-control-input" %>
+            <%= label f, :persistent_session, "Remember me", class: "custom-control-label" %>
+          </div>
+        <% else %>
+          <div></div>
+        <% end %>
+        <div class="custom-control">
+          <%= link "Forgot password?", to: Routes.pow_reset_password_reset_password_path(@conn, :new), tabindex: "1" %>
+        </div>
+      </div>
+
+      <%= if @conn.params["section"] do %>
+        <%= hidden_input f, :section, value: @conn.params["section"] %>
+      <% end %>
+
+      <%= submit "Sign In", class: "btn btn-md btn-primary btn-block" %>
+      <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+
+      <% registration_path = case @conn.params["section"] do
+            nil ->
+              Routes.pow_registration_path(@conn, :new)
+            section ->
+              Routes.pow_registration_path(@conn, :new, section: section)
+          end
+      %>
+      <%= link "Create an Account", to: registration_path, class: "btn btn-md btn-link btn-block" %>
+
+    <% end %>
+  <% end %>
+
+<% end %>

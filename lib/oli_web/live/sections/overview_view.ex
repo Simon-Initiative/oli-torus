@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.OverviewView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.Modal
 
   alias Oli.Repo.{Paging, Sorting}

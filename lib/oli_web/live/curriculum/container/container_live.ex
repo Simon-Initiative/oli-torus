@@ -3,7 +3,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   LiveView implementation of a container editor.
   """
 
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   # use OliWeb, :live_view
   use OliWeb.Common.Modal
 

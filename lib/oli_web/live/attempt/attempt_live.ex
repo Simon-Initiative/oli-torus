@@ -2,7 +2,7 @@ defmodule OliWeb.Attempt.AttemptLive do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.SortableTable.Table
@@ -48,22 +48,23 @@ defmodule OliWeb.Attempt.AttemptLive do
       {type, _, section} ->
         Broadcaster.subscribe_to_attempt(attempt_guid)
 
-        attempts = get_attempts(attempt_guid)
-        |> Enum.map(fn a -> Map.put(a, :updated, false)
-        end)
+        attempts =
+          get_attempts(attempt_guid)
+          |> Enum.map(fn a -> Map.put(a, :updated, false) end)
+
         {:ok, model} = TableModel.new(attempts)
         model = Map.put(model, :rows, attempts)
 
         {:ok,
-          assign(socket,
-            attempt_guid: attempt_guid,
-            breadcrumbs: set_breadcrumbs(type, section, attempt_guid),
-            table_model: model,
-            total_count: Enum.count(attempts),
-            updates: [],
-            section: section,
-            attempts: attempts
-          )}
+         assign(socket,
+           attempt_guid: attempt_guid,
+           breadcrumbs: set_breadcrumbs(type, section, attempt_guid),
+           table_model: model,
+           total_count: Enum.count(attempts),
+           updates: [],
+           section: section,
+           attempts: attempts
+         )}
     end
   end
 
@@ -87,96 +88,92 @@ defmodule OliWeb.Attempt.AttemptLive do
     """
   end
 
-
   def render_content(assigns) do
     case assigns.content do
       nil -> ""
-      _ -> Jason.encode!(assigns.content, [pretty: true])
+      _ -> Jason.encode!(assigns.content, pretty: true)
     end
   end
 
   def render_parts(assigns) do
     case assigns.selected do
-      nil -> ""
+      nil ->
+        ""
+
       _ ->
-    ~F"""
+        ~F"""
 
-    <table>
-      <tr>
-        <th>Part id</th>
-        <th>Attempt#</th>
-        <th>State</th>
-        <th>Score</th>
-        <th>Out of</th>
-      </tr>
-      {#for p <- @selected.part_attempts}
-        <tr>
-          <td>{p.part_id}</td>
-          <td>{p.attempt_number}</td>
-          <td>{p.lifecycle_state}</td>
-          <td>{p.score}</td>
-          <td>{p.out_of}</td>
-        </tr>
-      {/for}
-    </table>
+            <table>
+              <tr>
+                <th>Part id</th>
+                <th>Attempt#</th>
+                <th>State</th>
+                <th>Score</th>
+                <th>Out of</th>
+              </tr>
+              {#for p <- @selected.part_attempts}
+                <tr>
+                  <td>{p.part_id}</td>
+                  <td>{p.attempt_number}</td>
+                  <td>{p.lifecycle_state}</td>
+                  <td>{p.score}</td>
+                  <td>{p.out_of}</td>
+                </tr>
+              {/for}
+            </table>
 
-"""
+        """
     end
-
   end
-
 
   def handle_event("select", %{"id" => id} = _p, socket) do
     {id, _} = Integer.parse(id)
 
     attempt = Core.get_activity_attempt_by(id: id)
 
-    content = case attempt.transformed_model do
-      nil -> attempt.revision.content
-      _ -> attempt.transformed_model
-    end
+    content =
+      case attempt.transformed_model do
+        nil -> attempt.revision.content
+        _ -> attempt.transformed_model
+      end
 
     table_model = Map.put(socket.assigns.table_model, :selected, id)
 
     {:noreply,
-    assign(socket,
-      table_model: table_model,
-      content: content,
-      selected: Enum.find(socket.assigns.attempts, fn a -> a.id == id end)
-    )}
+     assign(socket,
+       table_model: table_model,
+       content: content,
+       selected: Enum.find(socket.assigns.attempts, fn a -> a.id == id end)
+     )}
   end
 
-
   def handle_info({_, guid}, socket) do
-
-    attempts = get_attempts(socket.assigns.attempt_guid)
-    |> Enum.map(fn a ->
-      case a.attempt_guid do
-        ^guid -> Map.put(a, :updated, true)
-        _ -> Map.put(a, :updated, false)
-      end
-    end)
-
+    attempts =
+      get_attempts(socket.assigns.attempt_guid)
+      |> Enum.map(fn a ->
+        case a.attempt_guid do
+          ^guid -> Map.put(a, :updated, true)
+          _ -> Map.put(a, :updated, false)
+        end
+      end)
 
     {:ok, table_model} = TableModel.new(attempts)
     table_model = Map.put(table_model, :rows, attempts)
 
     {:noreply,
-      assign(socket,
-        table_model: table_model,
-        total_count: Enum.count(attempts)
-      )}
+     assign(socket,
+       table_model: table_model,
+       total_count: Enum.count(attempts)
+     )}
   end
 
   defp get_attempts(resource_attempt_guid) do
     Repo.all(
       from(aa in ActivityAttempt,
         left_join: ra in ResourceAttempt,
-        on:
-          aa.resource_attempt_id == ra.id,
+        on: aa.resource_attempt_id == ra.id,
         left_join: r in Oli.Resources.Revision,
-          on:
-            aa.revision_id == r.id,
+        on: aa.revision_id == r.id,
         where: ra.attempt_guid == ^resource_attempt_guid,
         select_merge: %{
           activity_title: r.title
@@ -186,5 +183,4 @@ defmodule OliWeb.Attempt.AttemptLive do
       )
     )
   end
-
 end

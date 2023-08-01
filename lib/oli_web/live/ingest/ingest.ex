@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.Ingest do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Repo
   alias Oli.Accounts.Author
@@ -65,7 +65,10 @@ defmodule OliWeb.Admin.Ingest do
              List.first(path_upload),
              author
            ) do
-      {:noreply, redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug))}
+      {:noreply,
+       redirect(socket,
+         to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+       )}
     else
       error ->
         {:noreply, assign(socket, error: error)}

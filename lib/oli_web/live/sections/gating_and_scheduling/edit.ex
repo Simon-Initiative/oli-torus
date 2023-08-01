@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.GatingAndScheduling.Edit do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.Modal
 
   alias OliWeb.Sections.Mount

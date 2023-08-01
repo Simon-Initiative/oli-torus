@@ -1,5 +1,5 @@
 defmodule OliWeb.PublisherLive.NewView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Inventories
   alias Oli.Inventories.Publisher
