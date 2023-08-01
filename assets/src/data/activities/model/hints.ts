@@ -62,7 +62,11 @@ export const Hints: Hints = {
       const hint = Hints.byPart(model, partId)[index];
 
       List<Hint>(HINTS_BY_PART_PATH(partId)).removeOne(id)(model);
-      post(makeUndoable('Removed a hint', [Operations.insert(HINTS_BY_PART_PATH(partId), clone(hint), index)]));
+      post(
+        makeUndoable('Removed a hint', [
+          Operations.insert(HINTS_BY_PART_PATH(partId), clone(hint), index),
+        ]),
+      );
     };
   },
 };
