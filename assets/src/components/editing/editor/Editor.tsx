@@ -19,6 +19,7 @@ import { withInlines } from './overrides/inlines';
 import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
+import { createOnPaste } from './paste/onPaste';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor
@@ -35,8 +36,8 @@ export type EditorProps = {
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
-  children?: React.ReactNode;
   onPaste?: React.ClipboardEventHandler<HTMLDivElement>;
+  children?: React.ReactNode;
   editorOverride?: SlateEditor;
   onFocus?: FocusEventHandler | undefined;
   onBlur?: FocusEventHandler | undefined;
@@ -79,6 +80,10 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     return editor;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const onPaste = useMemo(() => {
+    return props.onPaste || createOnPaste(editor);
+  }, [editor, props.onPaste]);
 
   const renderElement = useCallback(
     (renderProps: RenderElementProps) =>
@@ -147,21 +152,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           onKeyDown={onKeyDown}
           onFocus={props.onFocus || emptyOnFocus}
           onBlur={props.onBlur}
-          onPaste={(e: React.ClipboardEvent<HTMLDivElement>) => {
-            if (props.onPaste) return props.onPaste(e);
-
-            const pastedText = e.clipboardData?.getData('text')?.trim();
-            const youtubeRegex =
-              /^(?:(?:https?:)?\/\/)?(?:(?:www|m)\.)?(?:(?:youtube\.com|youtu.be))(?:\/(?:[\w-]+\?v=|embed\/|v\/)?)([\w-]+)(?:\S+)?$/;
-            const matches = pastedText.match(youtubeRegex);
-            if (matches != null) {
-              // matches[0] === the entire url
-              // matches[1] === video id
-              const [, videoId] = matches;
-              e.preventDefault();
-              Transforms.insertNodes(editor, [Model.youtube(videoId)]);
-            }
-          }}
+          onPaste={onPaste}
         />
       </Slate>
     </React.Fragment>
