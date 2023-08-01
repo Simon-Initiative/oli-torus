@@ -1161,6 +1161,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(view, "button", "October 10, 2023")
     end
+
+    test "due date renders 'No due date' if scheduling type != due_by, and renders the date if scheduling type = due_by",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_2: page_2
+         } do
+      Sections.get_section_resource(section.id, page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        end_date: ~U[2023-10-10 16:00:00Z],
+        scheduling_type: :due_by
+      })
+
+      Sections.get_section_resource(section.id, page_2.resource.id)
+      |> Sections.update_section_resource(%{
+        end_date: ~U[2023-10-10 16:00:00Z],
+        scheduling_type: :read_by
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      [assessment_1, assessment_2, _assessment_3, _assessment_4] =
+        table_as_list_of_maps(view, :settings)
+
+      assert assessment_1.due_date =~ "October 10, 2023"
+      assert assessment_2.due_date =~ "No due date"
+    end
   end
 
   describe "student exceptions tab" do
