@@ -17,7 +17,7 @@ export const HintsEditor: React.FC<Props> = (props) => {
       hints={Hints.byPart(model, props.partId)}
       updateOne={(id, content) => dispatch(Hints.setContent(id, content as RichText))}
       addOne={() => dispatch(Hints.addOne(makeHint(''), props.partId))}
-      removeOne={(id) => dispatch(Hints.removeOne(id))}
+      removeOne={(id) => dispatch(Hints.removeOne(id, props.partId))}
       placeholder="Hint"
       title={props.partId}
     />
