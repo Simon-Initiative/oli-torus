@@ -888,3 +888,18 @@ $font-family-sans-serif: var(--font-sans);
   --tw-text-opacity: 0;
   color: rgb(55, 58, 68);
 }
+.dark .aa-sequence-item .aa-sequence-details-wrapper:hover,
+.dark .aa-rules-list-item .aa-rules-list-details-wrapper:hover
+
+{
+  background-color: #333 !important;
+}
+.dark .aa-sequence-item,
+.dark .aa-rules-list-item{
+  .dropdown-item {
+    &:hover{
+      border: 1px solid white;
+      color: white;
+    }
+  }
+}
