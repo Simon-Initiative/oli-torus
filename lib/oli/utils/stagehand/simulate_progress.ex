@@ -123,9 +123,12 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
       unpack(seeds, [section, activity_attempt, part_attempts_map, datashop_session_id])
 
     part_inputs =
-      Enum.map(part_attempts_map, fn {_id, part_attempt} ->
+      part_attempts_map
+      |> Enum.map(fn {_id, part_attempt} ->
         %{part_id: part_attempt.part_id, attempt_guid: part_attempt.attempt_guid, input: create_part_input_fn.(part_attempt)}
       end)
+      # only include parts with valid inputs, ignore parts with nil inputs (unsupported part types)
+      |> Enum.filter(fn %{input: input} -> input != nil end)
 
     evaluation_result =
       Evaluate.evaluate_activity(
@@ -158,7 +161,7 @@ defmodule Oli.Utils.Stagehand.SimulateProgress do
         part_response_for_like_rule(part_id, activity.content["authoring"]["parts"], pct_correct)
 
       _ ->
-        %StudentInput{input: "incorrect"}
+        nil
     end
   end
 
