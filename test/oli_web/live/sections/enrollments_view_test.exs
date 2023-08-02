@@ -65,7 +65,7 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
     setup [:setup_enrollments_view]
 
     test "mount enrollments for admin", %{section: section, conn: conn} do
-      {:ok, _view, html} =
+      {:ok, view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsViewLive, section.slug))
 
       [e | _] =
@@ -77,6 +77,7 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
       assert html =~ "Admin"
       assert html =~ "Enrollments"
       assert html =~ "Download as .CSV"
+      assert html =~ "Add Enrollments"
       assert html =~ OliWeb.Common.Utils.name(e.user.name, e.user.given_name, e.user.family_name)
     end
   end

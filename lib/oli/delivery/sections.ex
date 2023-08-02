@@ -89,6 +89,9 @@ defmodule Oli.Delivery.Sections do
 
     filter_by_role =
       case options do
+        %EnrollmentBrowseOptions{is_instructor: true, is_student: true} ->
+          true
+
         %EnrollmentBrowseOptions{is_student: true} ->
           dynamic(
             [u, e],
@@ -193,7 +196,7 @@ defmodule Oli.Delivery.Sections do
       sorting,
       options
     )
-    |> where([_, e], e.status != :suspended)
+    |> where([u, e], e.status != :suspended)
     |> join(:left, [_, e, p], ecr in EnrollmentContextRole, on: ecr.enrollment_id == e.id)
     |> group_by([_, _, _, ecr], [ecr.context_role_id])
     |> preload([u], :platform_roles)

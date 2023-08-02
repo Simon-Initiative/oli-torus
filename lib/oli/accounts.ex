@@ -77,6 +77,17 @@ defmodule Oli.Accounts do
     Repo.all(query)
   end
 
+  @spec get_users_by_email(list(String.t())) :: list(User.t())
+  def get_users_by_email(email_list) do
+    User
+    |> where([u], u.independent_learner == true and u.email in ^email_list)
+    |> select([u], %{
+      id: u.id,
+      email: u.email
+    })
+    |> Repo.all()
+  end
+
   def browse_authors(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
