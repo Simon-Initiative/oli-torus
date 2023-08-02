@@ -26,7 +26,6 @@ export const ResponseCard: React.FC<Props> = (props) => {
           value={!!props.response.score}
           onChange={(value) => props.updateCorrectness(props.response.id, value)}
         />
-
         <RemoveButtonConnected onClick={() => props.removeResponse(props.response.id)} />
       </Card.Title>
       <Card.Content>
