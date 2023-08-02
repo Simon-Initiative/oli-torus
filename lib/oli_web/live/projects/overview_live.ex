@@ -49,7 +49,7 @@ defmodule OliWeb.Projects.OverviewLive do
   def render(assigns) do
     ~H"""
     <div class="overview container mx-auto">
-      <.form let={f} for={@changeset} phx-submit="update" >
+      <.form :let={f} for={@changeset} phx-submit="update" >
         <OverviewSection.render title="Details" description="Your project title and description will be shown to students when you publish this project.">
           <div class="form-label-group mb-3">
             <%= label f, :title, "Project ID", class: "control-label" %>
@@ -78,8 +78,11 @@ defmodule OliWeb.Projects.OverviewLive do
           </div>
           <%= if @can_enable_experiments do %>
             <div class="form-label-group mb-3">
-              <%= label f, :has_experiments, "Enable Upgrade-based Experiments", class: "control-label" %>
-              <%= checkbox f, :has_experiments, class: "form-control w-50", required: false %>
+              <div class="form-label-group mb-3 form-check">
+                <%= checkbox f, :has_experiments, required: false %>
+                <%= label f, :has_experiments, "Enable Upgrade-based Experiments" %>
+              </div>
+
               <%= if @project.has_experiments do %>
                 <a type="button" class="btn btn-link pl-0" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Experiments.ExperimentsView, @project.slug)}>Manage Experiments</a>
               <% end %>
@@ -235,7 +238,7 @@ defmodule OliWeb.Projects.OverviewLive do
               <div>
                 <p>Please type <strong><%= @project.title %></strong> below to confirm.</p>
               </div>
-              <.form let={f} for={:form} phx-submit="delete">
+              <.form :let={f} for={%{}} as={:form} phx-submit="delete">
                 <div class="mt-2">
                   <%= text_input f, :title, class: "form-control", id: "delete-confirm-title", required: true %>
                 </div>

@@ -28,7 +28,7 @@ defmodule OliWeb.Projects.VisibilityLive do
 
   def render(assigns) do
     ~H"""
-    <div class="grid grid-cols-12 py-5 border-b">
+    <div class="grid grid-cols-12 py-5 border-b dark:border-gray-700">
       <div class="md:col-span-4">
         <h4>Allow Duplication</h4>
         <div class="text-muted">Control whether other users can create duplicates of your projects for their own development.</div>
@@ -47,7 +47,7 @@ defmodule OliWeb.Projects.VisibilityLive do
         </div>
       </div>
     </div>
-    <div class="grid grid-cols-12 py-5 border-b">
+    <div class="grid grid-cols-12 py-5 border-b dark:border-gray-700">
       <div class="md:col-span-4">
         <h4>Publishing Visibility</h4>
         <div class="text-muted">Control who can create course sections for this project once it is published.</div>

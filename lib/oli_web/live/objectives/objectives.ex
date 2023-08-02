@@ -2,7 +2,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   @moduledoc """
     LiveView implementation of an objective editor.
   """
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   use OliWeb.Common.SortableTable.TableHandlers
   use OliWeb.Common.Modal
 
@@ -421,7 +421,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     {parents, parent_to_detach_slug} =
       Enum.reduce(objectives, {[], ""}, fn objective, {parents, parent_to_detach_slug} ->
-        case Enum.find(objective.children, fn child -> child.slug == slug end) do
+        case Enum.find(objective.children, fn child -> !is_nil(child) && child.slug == slug end) do
           nil ->
             {parents, parent_to_detach_slug}
 

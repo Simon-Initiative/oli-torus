@@ -1,5 +1,5 @@
 defmodule OliWeb.SystemMessageLive.IndexView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   import OliWeb.ErrorHelpers
 

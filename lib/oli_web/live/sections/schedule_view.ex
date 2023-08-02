@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.ScheduleView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb, SessionContext}

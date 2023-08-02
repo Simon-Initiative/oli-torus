@@ -32,6 +32,8 @@ defmodule OliWeb.PageDeliveryController do
     user = conn.assigns.current_user
     section = conn.assigns.section
 
+    context = conn.assigns[:ctx]
+
     if Sections.is_enrolled?(user.id, section_slug) do
       case section
            |> Oli.Repo.preload([:base_project, :root_section_resource]) do
@@ -59,7 +61,7 @@ defmodule OliWeb.PageDeliveryController do
               Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
             next_activities =
-              Sections.get_next_activities_for_student(section_slug, user.id)
+              Sections.get_next_activities_for_student(section_slug, user.id, context)
               |> Enum.map(fn sr ->
                 case sr.scheduling_type do
                   :read_by -> Map.put(sr, :scheduling_type, "Read by")
@@ -669,6 +671,11 @@ defmodule OliWeb.PageDeliveryController do
         content: context.page.content,
         resourceAttemptState: resource_attempt.state,
         resourceAttemptGuid: resource_attempt.attempt_guid,
+        currentServerTime: DateTime.utc_now() |> to_epoch,
+        effectiveEndTime:
+          Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, context.effective_settings)
+          |> to_epoch,
+        lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
         signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
         previousPageURL: previous_url,

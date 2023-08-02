@@ -27,7 +27,7 @@ defmodule OliWeb.Grades.LineItems do
 
       </div>
 
-      <div class="card-footer">
+      <div class="card-footer mt-4">
         <a class="btn btn-primary" phx-click="send_line_items" {@disabled}><%= dgettext("grades", "Update LMS Line Items") %></a>
       </div>
     </div>

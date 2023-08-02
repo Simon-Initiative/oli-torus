@@ -48,9 +48,11 @@ defmodule OliWeb.Users.UsersTableModel do
           <span class="text-secondary"><em>None</em></span>
         """
 
-      _author_id ->
+      author_id ->
         ~F"""
-          <span class="badge badge-dark">{author.email}</span>
+          <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)}>
+            <span class="badge badge-dark">{author.email}</span>
+          </a>
         """
     end
   end

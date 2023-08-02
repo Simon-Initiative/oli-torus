@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import useWindowSize from 'components/hooks/useWindowSize';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import PreviewTools from './components/PreviewTools';
+import { DeadlineTimer } from './layouts/deck/DeadlineTimer';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
 import ScreenIdleTimeOutDialog from './layouts/deck/IdleTimeOutDialog';
 import LessonFinishedDialog from './layouts/deck/LessonFinishedDialog';
@@ -41,6 +42,9 @@ export interface DeliveryProps {
   screenIdleTimeOutInSeconds?: number;
   reviewMode?: boolean;
   signoutUrl?: string;
+  currentServerTime?: number;
+  effectiveEndTime?: number;
+  lateSubmit?: 'allow' | 'disallow';
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -64,12 +68,26 @@ const Delivery: React.FC<DeliveryProps> = ({
   finalizeGradedURL = '',
   screenIdleTimeOutInSeconds = 1800,
   reviewMode = false,
+  currentServerTime = 0,
+  effectiveEndTime = 0,
+  lateSubmit = 'allow',
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
   const restartLesson = useSelector(selectRestartLesson);
   const screenIdleExpirationTime = useSelector(selectScreenIdleExpirationTime);
   const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
+
+  // Gives us the deadline for this assessment to be completed by.
+  // We subtract out the server time and add in our local time in case the client system clock is off.
+  // Measured in milliseconds-epoch to match Date.now()
+  const localDeadline = useMemo(() => {
+    if (!effectiveEndTime) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+    return effectiveEndTime - currentServerTime + Date.now();
+  }, [currentServerTime, effectiveEndTime]);
+
   let LayoutView: React.FC<LayoutProps> = () => <div>Unknown Layout</div>;
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
@@ -155,6 +173,7 @@ const Delivery: React.FC<DeliveryProps> = ({
           hideCloseButton={!fullscreen}
         />
       ) : null}
+      <DeadlineTimer deadline={localDeadline} lateSubmit={lateSubmit} overviewURL={overviewURL} />
       {screenIdleTimeOutTriggered ? (
         <ScreenIdleTimeOutDialog remainingTime={5} signoutUrl={signoutUrl} />
       ) : null}

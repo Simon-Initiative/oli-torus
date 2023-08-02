@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.InviteView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   import Oli.Utils.Time
 

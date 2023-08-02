@@ -6,6 +6,7 @@ import {
   ICondition,
 } from '../../../../delivery/store/features/activities/slice';
 import {
+  DEFAULT_BLANK_FEEDBACK,
   DEFAULT_FILLED_IN_FEEDBACK,
   IConditionWithFeedback,
   generateRule,
@@ -88,7 +89,7 @@ export const generateThreeTryWorkflow = (
   // [A rule to catch an empty response]
   blankCondition &&
     rules.push(
-      generateRule('blank', [newId(blankCondition)], null, false, 20, 'Please choose an answer.', [
+      generateRule('blank', [newId(blankCondition)], null, false, 20, DEFAULT_BLANK_FEEDBACK, [
         resetTries(),
       ]),
     );

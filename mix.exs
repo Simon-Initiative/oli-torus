@@ -4,11 +4,11 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.24.0",
+      version: "0.25.0",
       elixir: "~> 1.14.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
-      compilers: [:phoenix] ++ Mix.compilers(),
+      compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -122,7 +122,10 @@ defmodule Oli.MixProject do
 
   defp elixirc_options(:dev), do: []
   defp elixirc_options(:test), do: []
-  defp elixirc_options(_), do: [warnings_as_errors: true]
+
+  # TODO: RE-ENABLE ONCE SURFACE DEPENDENCIES ARE REMOVED AND WARNINGS ARE FIXED [MER-2417]
+  # defp elixirc_options(_), do: [warnings_as_errors: true]
+  defp elixirc_options(_), do: []
 
   # Specifies your project dependencies.
   #
@@ -173,27 +176,29 @@ defmodule Oli.MixProject do
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mox, "~> 0.5", only: [:test, :hound]},
-      {:nimble_parsec, "~> 0.5"},
+      {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.6.1"},
       {:open_api_spex, "~> 3.9"},
-      {:phoenix, "~> 1.6"},
+      {:phoenix, "~> 1.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
-      {:phoenix_live_dashboard, "~> 0.7.0"},
+      {:phoenix_live_dashboard, "~> 0.8.0"},
       {:phoenix_live_react, "~> 0.4"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
-      {:phoenix_live_view, "~> 0.18"},
+      {:phoenix_live_view, "~> 0.19.5"},
       {:phoenix_pubsub, "~> 2.0"},
+      {:phoenix_storybook, "~> 0.5.0"},
+      {:phoenix_view, "~> 2.0"},
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
-      {:pow, "~> 1.0.21"},
-      {:pow_assent, "~> 0.4.9"},
+      {:pow, "~> 1.0.31"},
+      {:pow_assent, "~> 0.4.17"},
       {:react_phoenix, "~> 1.3"},
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},
-      {:surface, "~> 0.9.1"},
+      {:surface, "~> 0.11.0"},
       {:premailex, "~> 0.3.0"},
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
@@ -226,7 +231,7 @@ defmodule Oli.MixProject do
       "test.ecto.reset": ["ecto.reset"],
 
       # deploy tailwind assets
-      "assets.deploy": ["tailwind default --minify", "phx.digest"]
+      "assets.deploy": ["tailwind default --minify", "tailwind storybook --minify", "phx.digest"]
     ]
   end
 end

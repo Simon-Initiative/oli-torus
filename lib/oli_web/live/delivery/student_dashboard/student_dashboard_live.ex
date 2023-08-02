@@ -4,13 +4,16 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   import Ecto.Query, warn: false
   import OliWeb.Common.Utils
 
+  alias OliWeb.Common.SessionContext
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
   alias Oli.Grading.GradebookRow
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    ctx = SessionContext.init(socket, session)
+
     enrollment = Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id)
 
     survey_responses =
@@ -25,7 +28,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
           )
       end
 
-    {:ok, assign(socket, survey_responses: survey_responses, enrollment: enrollment)}
+    {:ok, assign(socket, ctx: ctx, survey_responses: survey_responses, enrollment: enrollment)}
   end
 
   @impl Phoenix.LiveView

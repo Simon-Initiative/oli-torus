@@ -336,7 +336,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
     [student_1, student_2] = insert_pair(:user)
     [student_3, student_4] = insert_pair(:user)
-    # instructor = insert(:user)
 
     Sections.enroll(student_1.id, section.id, [
       ContextRoles.get_role(:context_learner)
@@ -418,6 +417,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :retake_mode,
             :feedback_mode,
             :review_submission,
+            :password,
             :exceptions_count
           ]
 
@@ -434,6 +434,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :retake_mode,
             :feedback_mode,
             :review_submission,
+            :password,
             :exceptions_count
           ]
       end
@@ -661,6 +662,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_2.exceptions_count =~ "3"
       assert assessment_3.exceptions_count =~ "2"
       assert assessment_4.exceptions_count =~ "1"
+    end
+
+    test "password is not shown until the user clicks the input", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      # set a password to page 1
+      page_1_section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
+
+      Sections.update_section_resource(page_1_section_resource, %{
+        password: "a_very_strong_password!"
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> element("input[type=password][value='***********************']")
+      |> has_element?()
+
+      # click on the password input to edit it
+      view
+      |> element(~s{button[phx-click='[["push",\{"event":"edit_password","target":1\}]]']})
+      |> render_click()
+
+      view
+      |> element("input[type=password][value='a_very_strong_password!']")
+      |> has_element?()
     end
 
     test "exception count links to corresponding student exceptions for that assessment",
@@ -1032,6 +1061,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert page_1_assessment_settings.feedback_mode == :allow
       assert page_1_assessment_settings.feedback_scheduled_date == nil
 
+      [form_id] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{form[for="settings_table"]})
+        |> Floki.attribute("id")
+
       view
       |> form(~s{form[for="settings_table"]})
       |> render_change(%{
@@ -1047,6 +1083,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         }
       })
 
+      [updated_form_id] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{form[for="settings_table"]})
+        |> Floki.attribute("id")
+
       page_1_assessment_settings =
         get_assessments(section.slug, [])
         |> Enum.find(fn assessment ->
@@ -1060,6 +1103,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert page_1_assessment_settings.feedback_scheduled_date ==
                ~U[2023-05-29 21:50:00Z]
+
+      # we update the form id to guarantee the selected value in the dropdown gets updated in the UI
+      assert updated_form_id != form_id
     end
 
     test "feedback_mode value is not set to :scheduled when the modal is cancelled and the modal closes",

@@ -308,29 +308,30 @@ defmodule Oli.Delivery.Metrics do
   def avg_score_for(section_id, user_id, container_id \\ nil) do
     user_id_list = if is_list(user_id), do: user_id, else: [user_id]
 
-    filter_by_container =
-      case container_id do
-        nil ->
-          dynamic([cp, _], is_nil(cp.container_id))
+    query = case container_id do
+      nil ->
+        ResourceAccess
+        |> where([ra], ra.section_id == ^section_id and ra.user_id in ^user_id_list and not is_nil(ra.score))
+        |> group_by([ra], ra.user_id)
+        |> select(
+          [ra],
+          {ra.user_id, fragment("SUM(?)", ra.score) / fragment("SUM(?)", ra.out_of)}
+        )
 
-        _ ->
-          dynamic([cp, _], cp.container_id == ^container_id)
-      end
-
-    query =
-      ContainedPage
-      |> join(:inner, [cp], ra in ResourceAccess,
-        on:
-          cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
-            ra.user_id in ^user_id_list
-      )
-      |> where([cp, ra], cp.section_id == ^section_id and not is_nil(ra.score))
-      |> where(^filter_by_container)
-      |> group_by([_cp, ra], ra.user_id)
-      |> select(
-        [cp, ra],
-        {ra.user_id, fragment("SUM(?)", ra.score) / fragment("SUM(?)", ra.out_of)}
-      )
+      container_id ->
+        ContainedPage
+        |> join(:inner, [cp], ra in ResourceAccess,
+          on:
+            cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
+              ra.user_id in ^user_id_list
+        )
+        |> where([cp, ra], cp.section_id == ^section_id and not is_nil(ra.score) and cp.container_id == ^container_id)
+        |> group_by([_cp, ra], ra.user_id)
+        |> select(
+          [cp, ra],
+          {ra.user_id, fragment("SUM(?)", ra.score) / fragment("SUM(?)", ra.out_of)}
+        )
+    end
 
     Repo.all(query)
     |> Enum.into(%{})

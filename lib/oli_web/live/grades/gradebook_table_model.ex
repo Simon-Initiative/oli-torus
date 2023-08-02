@@ -1,11 +1,10 @@
 defmodule OliWeb.Grades.GradebookTableModel do
-  use Surface.LiveComponent
+  use OliWeb, :surface_component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Components.Tag
 
   def new(enrollments, graded_pages, resource_accesses, section, show_all_links) do
     by_user =
@@ -107,7 +106,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         {/if}
       </a>
       {#if was_late}
-        <Tag.render>LATE</Tag.render>
+        <.badge variant={:danger}>LATE</.badge>
       {/if}
     """
   end
@@ -215,7 +214,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         {safe_score}/{safe_out_of}
         </a>
         {#if was_late}
-          <Tag.render>LATE</Tag.render>
+          <.badge variant={:danger}>LATE</.badge>
         {/if}
       """
     end

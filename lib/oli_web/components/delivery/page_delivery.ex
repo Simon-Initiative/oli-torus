@@ -1,7 +1,9 @@
 defmodule OliWeb.Components.Delivery.PageDelivery do
   use Phoenix.Component
 
-  import OliWeb.Components.Delivery.Utils
+  import OliWeb.Common.FormatDateTime
+
+  alias OliWeb.Common.SessionContext
   alias OliWeb.Components.Delivery.PageNavigator
 
   attr(:title, :string, required: true)
@@ -35,6 +37,7 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
     """
   end
 
+  attr(:ctx, SessionContext, required: true)
   attr(:scheduling_type, :atom, values: [:read_by, :inclass_activity])
   attr(:end_date, Date, default: nil)
   attr(:est_reading_time, Timex.Duration, default: nil)
@@ -44,12 +47,12 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
       <div class="flex flex-row my-2">
         <%= if @end_date do %>
           <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded">
-            <%= scheduling_type_label(@scheduling_type) %> <%= format_date(@end_date) %>
+            <%= scheduling_type_label(@scheduling_type) %> <%= date(@end_date, @ctx) %>
           </div>
         <% end %>
         <%= if @est_reading_time do %>
           <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded ml-1">
-            Estimated reading time: <%= format_duration(@est_reading_time) %>
+            Estimated reading time: <%= duration(@est_reading_time) %>
           </div>
         <% end %>
       </div>

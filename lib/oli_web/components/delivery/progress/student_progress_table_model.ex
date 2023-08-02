@@ -1,9 +1,8 @@
 defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
-  use Surface.LiveComponent
+  use OliWeb, :surface_component
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Progress.ResourceTitle
-  alias OliWeb.Components.Tag
 
   def new(rows, section_slug, student_id, ctx) do
     SortableTableModel.new(
@@ -83,11 +82,11 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
   def custom_render(assigns, row, %ColumnSpec{name: :score}) do
     if row.type == "Graded" and !is_nil(row.score) do
       ~F"""
-        <span>{row.score} / {row.out_of}</span>
-        {#if row.was_late}
-          <Tag.render>LATE</Tag.render>
-        {/if}
-       """
+       <span>{row.score} / {row.out_of}</span>
+       {#if row.was_late}
+         <.badge variant={:danger}>LATE</.badge>
+       {/if}
+      """
     else
       ""
     end
