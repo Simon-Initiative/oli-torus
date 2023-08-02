@@ -22,6 +22,68 @@ defmodule OliWeb.InviteController do
     end
   end
 
+  def create_bulk(conn, %{"emails" => users, "role" => role, "section_slug" => section_slug}) do
+    existing_users = Oli.Accounts.get_users_by_email(users)
+    non_found_users = users -- Enum.map(existing_users, & &1.email)
+    inviter_user = conn.assigns.current_author
+    section = conn.assigns.section
+
+    # Enroll users
+    Oli.Repo.transaction(fn ->
+      {_count, new_users} = Oli.Accounts.bulk_invite_users(non_found_users, inviter_user)
+
+      users_ids = Enum.map(new_users, & &1.id) ++ Enum.map(existing_users, & &1.id)
+
+      Oli.Delivery.Sections.enroll(users_ids, section.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(
+          if role == "instructor", do: :context_instructor, else: :context_learner
+        )
+      ])
+
+      # Send emails to users
+      users =
+        Enum.map(existing_users, &Map.put(&1, :status, :existing_user)) ++
+          Enum.map(new_users, &Map.put(&1, :status, :new_user))
+
+      emails =
+        Enum.map(
+          users,
+          fn user ->
+            {button_label, url} =
+              case user.status do
+                :new_user ->
+                  token = PowInvitation.Plug.sign_invitation_token(conn, user)
+                  {"Join now", Routes.delivery_pow_invitation_invitation_path(conn, :edit, token)}
+
+                :existing_user ->
+                  {"Go to the course",
+                   Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)}
+              end
+
+            Oli.Email.invitation_email(
+              user.email,
+              :enrollment_invitation,
+              %{
+                inviter: inviter_user.name,
+                url: Routes.url(conn) <> url,
+                role: role,
+                section_title: section.title,
+                button_label: button_label
+              }
+            )
+          end
+        )
+
+      Enum.each(emails, fn email -> Oli.Mailer.deliver_now(email) end)
+    end)
+
+    conn
+    |> put_flash(:info, "Users were enrolled successfully")
+    |> redirect(
+      to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsViewLive, section_slug)
+    )
+  end
+
   defp render_invite_page(conn, page, keywords) do
     render(conn, page, Keyword.put_new(keywords, :active, :invite))
   end

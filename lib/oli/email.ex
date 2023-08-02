@@ -3,6 +3,16 @@ defmodule Oli.Email do
   use Bamboo.Phoenix, view: OliWeb.EmailView
 
   @spec invitation_email(String.t(), atom(), map()) :: Bamboo.Email.t()
+  def invitation_email(recipient_email, :enrollment_invitation, assigns) do
+    base_email()
+    |> to(recipient_email)
+    |> subject(
+      "You were invited as #{if assigns.role == "instructor", do: "an instructor", else: "a student"} to \"#{assigns.section_title}\""
+    )
+    |> render(:enrollment_invitation, assigns)
+    |> html_text_body()
+  end
+
   def invitation_email(recipient_email, view, assigns) do
     base_email()
     |> to(recipient_email)

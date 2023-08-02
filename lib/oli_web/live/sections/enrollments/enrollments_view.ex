@@ -143,7 +143,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
             case @add_enrollments_step do
               :step_1 -> JS.push("add_enrollments_go_to_step_2")
               :step_2 -> JS.push("add_enrollments_go_to_step_3")
-              :step_3 -> nil # Add enrollments and send invitations
+              :step_3 -> JS.dispatch("click", to: "#add_enrollments_form button")
             end
           }
           on_confirm_label={if @add_enrollments_step == :step_3, do: "Confirm", else: "Next"}
@@ -263,6 +263,19 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
 
   def add_enrollments(%{add_enrollments_step: :step_3} = assigns) do
     ~H"""
+      <.form
+        for={:enrollments}
+        id="add_enrollments_form"
+        class="hidden"
+        method="POST"
+        action="http://localhost/sections/lorem_ipsum_course/enrollments">
+          <%= for email <- @add_enrollments_emails do %>
+            <input name="emails[]" value={email} hidden />
+          <% end %>
+          <input name="role" value={@add_enrollments_selected_role} />
+          <input name="section_slug" value={@section_slug} />
+          <button type="submit" class="hidden" />
+      </.form>
       <div class="px-4">
         <p>
           Are you sure you want to enroll

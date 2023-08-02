@@ -169,6 +169,12 @@ defmodule Oli.Accounts.User do
     |> maybe_name_from_given_and_family()
   end
 
+  def invite_changeset(user_or_changeset, invited_by, attrs) do
+    user_or_changeset
+    |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name])
+    |> pow_invite_changeset(invited_by, attrs)
+  end
+
   @doc """
   Creates a changeset that if configured, runs the age check validation.
   Used on user creation through frontend form.
