@@ -23,7 +23,7 @@ export const TestEditorComponent = () => {
   };
 
   return (
-    <Slate editor={testEditor} value={value} onChange={setValue}>
+    <Slate editor={testEditor} initialValue={value} onChange={setValue}>
       <Editable
         renderElement={(props) =>
           editorFor(props.element as ModelElement, props, { projectSlug: '' })
