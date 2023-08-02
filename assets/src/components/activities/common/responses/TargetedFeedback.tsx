@@ -34,6 +34,8 @@ export const useTargetedFeedback = () => {
     targetedMappings: getTargetedResponseMappings(model),
     updateFeedback: (responseId: string, content: RichText) =>
       dispatch(ResponseActions.editResponseFeedback(responseId, content)),
+    updateCorrectness: (responseId: string, correct: boolean) =>
+      dispatch(ResponseActions.editResponseCorrectness(responseId, correct)),
     removeFeedback: (responseId: string) =>
       dispatch(ResponseActions.removeTargetedFeedback(responseId)),
     updateShowPage: (responseId: string, showPage: number | undefined) =>
@@ -75,6 +77,7 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
           title="Targeted feedback"
           response={mapping.response}
           updateFeedback={hook.updateFeedback}
+          updateCorrectness={hook.updateCorrectness}
           removeResponse={hook.removeFeedback}
         >
           <ChoicesDelivery
