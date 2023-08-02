@@ -895,7 +895,8 @@ $font-family-sans-serif: var(--font-sans);
   background-color: #333 !important;
 }
 .dark .aa-sequence-item,
-.dark .aa-rules-list-item{
+.dark .aa-rules-list-item,
+.dark .aa-adaptivity-editor{
   .dropdown-item {
     &:hover{
       border: 1px solid white;
