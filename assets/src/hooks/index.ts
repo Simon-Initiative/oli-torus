@@ -4,6 +4,7 @@ import { CheckboxListener } from './checkbox_listener';
 import { CopyListener } from './copy_listener';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DragSource, DropTarget } from './dragdrop';
+import { EmailList } from './email_list';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
@@ -47,4 +48,5 @@ export const Hooks = {
   SubmitForm,
   LoadSurveyScripts,
   LiveModal,
+  EmailList
 };
