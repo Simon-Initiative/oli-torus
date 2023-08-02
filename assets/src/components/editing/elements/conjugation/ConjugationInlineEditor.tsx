@@ -26,6 +26,22 @@ export const ConjugationInlineEditor: React.FC<Props> = ({ model, onEdit, comman
     [commandContext],
   );
 
+  const resetTableFocus = useCallback((force = false) => {
+    /* On some operations, like deleting a row, focus is moved outside the editor. For those operations, we
+       manually focus the table editor again so things like ctrl-z to undo work. MER-2282 */
+    setTimeout(() => {
+      if (
+        force ||
+        !window.document.activeElement ||
+        window.document.activeElement.tagName === 'BODY' ||
+        window.document.activeElement.tagName === 'BUTTON'
+      ) {
+        console.info('Resetting focus to table editor');
+        ReactEditor.focus(tableEditorOverride);
+      }
+    }, 0);
+  }, []);
+
   const onTableEdit = useCallback(
     (newVal) => {
       const table = newVal.find((n: { type: string }) => n.type === 'table');
@@ -33,6 +49,8 @@ export const ConjugationInlineEditor: React.FC<Props> = ({ model, onEdit, comman
         ...model,
         table,
       });
+
+      resetTableFocus();
     },
     [model, onEdit],
   );
@@ -67,6 +85,7 @@ export const ConjugationInlineEditor: React.FC<Props> = ({ model, onEdit, comman
       }
     }
     Transforms.insertNodes(tableEditorOverride, row, { at: destination });
+    resetTableFocus(true);
   }, [model.table, tableEditorOverride]);
 
   const onAddColumn = useCallback(() => {
@@ -80,6 +99,7 @@ export const ConjugationInlineEditor: React.FC<Props> = ({ model, onEdit, comman
         Transforms.insertNodes(tableEditorOverride, cell, { at: destination });
       }
     });
+    resetTableFocus(true);
   }, [model.table, tableEditorOverride]);
 
   return (

@@ -40,7 +40,7 @@ export const TcEditor = (props: EditorProps<ContentModel.TableConjugation>) => {
       <div contentEditable={false}>
         <input
           type="text"
-          value={props.model.pronouns}
+          value={props.model.pronouns || ''}
           onChange={onEditPronouns}
           placeholder="Pronouns (optional)"
           className="form-control"
