@@ -73,6 +73,10 @@ export interface AppState {
   readonly: boolean;
   showDiagnosticsWindow: boolean;
   showScoringOverview: boolean;
+  sequenceEditorHeight: string;
+  topLeftPanel: boolean;
+  bottomLeftPanel: boolean;
+  sequenceEditorExpanded: false;
 }
 
 const initialState: AppState = {
@@ -97,6 +101,10 @@ const initialState: AppState = {
   readonly: true,
   showDiagnosticsWindow: false,
   showScoringOverview: false,
+  sequenceEditorHeight: '100vh',
+  topLeftPanel: true,
+  bottomLeftPanel: true,
+  sequenceEditorExpanded: false,
 };
 
 export interface AppConfig {
@@ -156,6 +164,28 @@ const slice: Slice<AppState> = createSlice({
       }
       if (action.payload.bottom !== undefined) {
         state.bottomPanel = !!action.payload.bottom;
+      }
+    },
+    setLeftPanelState(
+      state,
+      action: PayloadAction<{
+        sequenceEditorHeight?: string;
+        top?: boolean;
+        bottom?: boolean;
+        sequenceEditorExpanded?: boolean;
+      }>,
+    ) {
+      if (action.payload.sequenceEditorHeight !== undefined) {
+        state.sequenceEditorHeight = action.payload.sequenceEditorHeight;
+      }
+      if (action.payload.top !== undefined) {
+        state.topLeftPanel = !!action.payload.top;
+      }
+      if (action.payload.bottom !== undefined) {
+        state.bottomLeftPanel = !!action.payload.bottom;
+      }
+      if (action.payload.sequenceEditorExpanded !== undefined) {
+        state.sequenceEditorExpanded = !!action.payload.sequenceEditorExpanded;
       }
     },
     setVisible(state, action: PayloadAction<{ visible: boolean }>) {
@@ -223,6 +253,7 @@ export const {
   changeAppMode,
   setShowScoringOverview,
   changeEditMode,
+  setLeftPanelState,
 } = slice.actions;
 
 export const selectState = (state: AuthoringRootState): AppState => state[AppSlice] as AppState;
@@ -256,12 +287,29 @@ export const selectAllObjectivesMap = createSelector(
     ),
 );
 
+export const selectTopLeftPanel = createSelector(
+  selectState,
+  (state: AppState) => state.topLeftPanel,
+);
+export const selectBottomLeftPanel = createSelector(
+  selectState,
+  (state: AppState) => state.bottomLeftPanel,
+);
+export const selectSequenceEditorHeight = createSelector(
+  selectState,
+  (state: AppState) => state.sequenceEditorHeight,
+);
+
 export const selectLeftPanel = createSelector(selectState, (state: AppState) => state.leftPanel);
 export const selectRightPanel = createSelector(selectState, (state: AppState) => state.rightPanel);
 export const selectTopPanel = createSelector(selectState, (state: AppState) => state.topPanel);
 export const selectBottomPanel = createSelector(
   selectState,
   (state: AppState) => state.bottomPanel,
+);
+export const selectSequenceEditorExpanded = createSelector(
+  selectState,
+  (state: AppState) => state.sequenceEditorExpanded,
 );
 export const selectRightPanelActiveTab = createSelector(
   selectState,

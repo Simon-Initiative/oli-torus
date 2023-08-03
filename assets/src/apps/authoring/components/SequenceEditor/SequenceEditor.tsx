@@ -7,9 +7,11 @@ import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
+  selectBottomLeftPanel,
   selectIsAdmin,
   selectProjectSlug,
   setCurrentRule,
+  setLeftPanelState,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
 import {
@@ -52,13 +54,14 @@ const SequenceEditor: React.FC = () => {
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
-
   const isAdmin = useSelector(selectIsAdmin);
+  const bottomLeftPanel = useSelector(selectBottomLeftPanel);
   const projectSlug = useSelector(selectProjectSlug);
 
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
+  const ref = useRef<HTMLDivElement>(null);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
@@ -74,6 +77,7 @@ const SequenceEditor: React.FC = () => {
         },
       }),
     );
+    sequenceItemToggleClick();
   };
 
   const addNewSequence = async (newSequenceEntry: any, siblingId: any) => {
@@ -369,6 +373,20 @@ const SequenceEditor: React.FC = () => {
 
   const inputToFocus = useRef<HTMLInputElement>(null);
 
+  const sequenceItemToggleClick = () => {
+    setTimeout(() => {
+      const scrollHeight = ref.current?.scrollHeight || 0;
+      const clientHeight = ref.current?.clientHeight || 0;
+      console.log({ scrollHeight, clientHeight });
+
+      dispatch(
+        setLeftPanelState({
+          sequenceEditorHeight: ref.current?.clientHeight,
+          sequenceEditorExpanded: scrollHeight > clientHeight ? true : false,
+        }),
+      );
+    }, 1000);
+  };
   useEffect(() => {
     if (!itemToRename) return;
     inputToFocus.current?.focus();
@@ -543,6 +561,7 @@ const SequenceEditor: React.FC = () => {
                     <ContextAwareToggle
                       eventKey={`toggle_${item.custom.sequenceId}`}
                       className={`aa-sequence-item-toggle`}
+                      callback={sequenceItemToggleClick}
                     />
                   ) : null}
                   {!itemToRename ? (
@@ -601,9 +620,22 @@ const SequenceEditor: React.FC = () => {
         );
       },
     );
+  useEffect(() => {
+    if (!(!bottomLeftPanel && open)) dispatch(setLeftPanelState({ sequenceEditorExpanded: true }));
+  }, [bottomLeftPanel, open]);
 
   return (
-    <Accordion className="aa-sequence-editor" defaultActiveKey="0" activeKey={open ? '0' : '-1'}>
+    <Accordion
+      className="aa-sequence-editor"
+      ref={ref}
+      defaultActiveKey="0"
+      activeKey={open ? '0' : '-1'}
+      style={{
+        height: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : 'auto',
+        maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '60vh',
+        overflow: 'hidden',
+      }}
+    >
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
           <ContextAwareToggle eventKey="0" onClick={toggleOpen} />
@@ -649,7 +681,13 @@ const SequenceEditor: React.FC = () => {
           </Dropdown>
         </OverlayTrigger>
       </div>
-      <Accordion.Collapse eventKey="0">
+      <Accordion.Collapse
+        eventKey="0"
+        style={{
+          overflowY: 'auto',
+          maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '60vh',
+        }}
+      >
         <ListGroup as="ol" className="aa-sequence">
           {getHierarchyList(hierarchy)}
         </ListGroup>

@@ -27,13 +27,22 @@ import {
   duplicateRule,
 } from '../../store/activities/actions/rules';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
-import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
+import {
+  selectCurrentRule,
+  selectSequenceEditorExpanded,
+  selectSequenceEditorHeight,
+  setCurrentRule,
+  setLeftPanelState,
+} from '../../store/app/slice';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 const IRulesList: React.FC = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
+  const sequenceEditorHeight = useSelector(selectSequenceEditorHeight);
+  const sequenceEditorExpanded = useSelector(selectSequenceEditorExpanded);
+
   const [open, toggleOpen] = useToggle(true);
   const rules = currentActivity?.authoring?.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
@@ -41,6 +50,8 @@ const IRulesList: React.FC = () => {
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
   const isLayer = getIsLayer();
   const isBank = getIsBank();
+  const ref = useRef<HTMLDivElement>(null);
+
   let sequenceTypeLabel = '';
   if (isLayer) {
     sequenceTypeLabel = 'layer';
@@ -329,6 +340,10 @@ const IRulesList: React.FC = () => {
     );
   };
 
+  useEffect(() => {
+    dispatch(setLeftPanelState({ bottom: open }));
+  }, [open]);
+
   const RuleName = ({ rule }: any) => {
     return (
       <span>
@@ -344,9 +359,16 @@ const IRulesList: React.FC = () => {
       </span>
     );
   };
-
   return (
-    <Accordion className="aa-adaptivity-rules" defaultActiveKey="0" activeKey={open ? '0' : '-1'}>
+    <Accordion
+      ref={ref}
+      className="aa-adaptivity-rules"
+      defaultActiveKey="0"
+      activeKey={open ? '0' : '-1'}
+      style={{
+        maxHeight: sequenceEditorExpanded ? '25vh' : `calc(100vh - ${sequenceEditorHeight}px)`,
+      }}
+    >
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
           <button className="btn btn-link p-0 ml-1" onClick={toggleOpen}>
@@ -405,7 +427,13 @@ const IRulesList: React.FC = () => {
           </OverlayTrigger>
         )}
       </div>
-      <Accordion.Collapse eventKey="0">
+      <Accordion.Collapse
+        eventKey="0"
+        style={{
+          maxHeight: sequenceEditorExpanded ? '25vh' : `calc(100vh - ${sequenceEditorHeight}px)`,
+          overflowY: 'auto',
+        }}
+      >
         <ListGroup className="aa-rules-list" as="ol">
           {currentRule && !isLayer && !isBank && (
             <ListGroup.Item
