@@ -17,20 +17,21 @@ interface Props {
 export const AuthoringCheckbox: React.FC<Props> = (props: Props) => {
   return (
     <div>
-      <label className="form-check-label" htmlFor={props.id}>
-        {props.label}
-      </label>
-      &nbsp;
       <input
         id={props.id}
         aria-label={props.ariaLabel || ''}
         style={props.style}
-        className={classNames('form-check-input', props.className)}
+        className={classNames('my-auto', props.className)}
         disabled={props.disabled || !props.editMode}
         type="checkbox"
         checked={props.value}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => props.onChange(e.target.checked)}
       ></input>
+      &nbsp;
+      <label className="form-check-label" htmlFor={props.id}>
+        {props.label}
+      </label>
+      &nbsp;
     </div>
   );
 };
