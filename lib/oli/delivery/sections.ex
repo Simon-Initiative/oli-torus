@@ -346,7 +346,7 @@ defmodule Oli.Delivery.Sections do
           }
         )
 
-      {_cont, enrollments} = Repo.insert_all(Enrollment, enrollments, returning: [:id])
+      {_cont, enrollments} = Repo.insert_all(Enrollment, enrollments, returning: [:id], conflict_target: [:user_id, :section_id], on_conflict: {:replace, [:user_id]})
 
       # Insert the enrollment context roles at the same time based on the previously created enrollments
       enrollment_context_roles =
@@ -355,7 +355,7 @@ defmodule Oli.Delivery.Sections do
             enrollment_context_roles
         end)
 
-      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles)
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
 
       {:ok, enrollments}
     end)

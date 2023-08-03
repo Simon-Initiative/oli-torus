@@ -107,11 +107,11 @@ defmodule Oli.Accounts do
             email: email
           })
           |> Map.get(:changes)
+          |> Map.delete(:invited_by_id)
           |> Map.merge(%{
             state: %{},
             inserted_at: date,
-            updated_at: date,
-            invited_by_id: inviter_user.id
+            updated_at: date
           })
         end
       )
