@@ -207,5 +207,14 @@ defmodule Oli.Utils.SlugTest do
 
       refute Repo.exists?(from sr in SectionResource, where: sr.slug == ^slug)
     end
+
+    test "generate/2 generates a list of unique slugs using the titles provided", %{
+      revision1: r1,
+      revision2: r2
+    } do
+      slugs = Slug.generate("section_resources", [r1.title, r2.title])
+
+      refute Repo.exists?(from sr in SectionResource, where: sr.slug in ^slugs)
+    end
   end
 end
