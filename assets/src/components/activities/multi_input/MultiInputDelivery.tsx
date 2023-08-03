@@ -126,6 +126,9 @@ export const MultiInputComponent: React.FC = () => {
     // safeguard against null/undefined studentInput
     if (!studentInput) return '';
 
+    // safeguard against studentInput of type string
+    if (typeof studentInput === 'string') return studentInput;
+
     if (input.inputType === 'text') {
       return uiState.partState[input.partId].studentInput.join(' ');
     }
