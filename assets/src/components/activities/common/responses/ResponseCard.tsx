@@ -4,8 +4,8 @@ import { RemoveButtonConnected } from 'components/activities/common/authoring/Re
 import { Response } from 'components/activities/types';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { Card } from 'components/misc/Card';
-import CustomCheckbox from 'apps/authoring/components/PropertyEditor/custom/CustomCheckbox';
 import { ID } from 'data/content/model/other';
+import { AuthoringCheckboxConnected } from '../authoring/AuthoringCheckbox';
 
 interface Props {
   title: React.ReactNode;
@@ -20,8 +20,8 @@ export const ResponseCard: React.FC<Props> = (props) => {
       <Card.Title>
         <div className="d-flex justify-content-between w-100">{props.title}</div>
         <div className="flex-grow-1"></div>
-        <CustomCheckbox
-          label="Correct&nbsp;"
+        <AuthoringCheckboxConnected
+          label="Correct"
           id={props.response.id + '-correct'}
           value={!!props.response.score}
           onChange={(value) => props.updateCorrectness(props.response.id, value)}
