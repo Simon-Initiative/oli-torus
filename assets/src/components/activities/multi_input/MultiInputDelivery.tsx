@@ -121,7 +121,7 @@ export const MultiInputComponent: React.FC = () => {
   );
 
   const inputValue = (input: MultiInput) => {
-    const studentInput = uiState.partState[input.partId].studentInput;
+    const studentInput = uiState.partState[input.partId]?.studentInput;
 
     // safeguard against null/undefined studentInput
     if (!studentInput) return '';
