@@ -133,11 +133,11 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
 
   def render(assigns) do
     ~F"""
-    <div class="container mx-auto">
+    <div id="enrollments_view" class="container mx-auto">
       {#if @is_admin}
         <.live_component
           module={OliWeb.Components.LiveModal}
-          id="my_cool_modal"
+          id="enrollments_view_add_enrollments_modal"
           title="Add enrollments"
           on_confirm={
             case @add_enrollments_step do
@@ -172,7 +172,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
             class="btn btn-outline-primary"
             method={:post} />
 
-            <button phx-click="open" phx-target="#my_cool_modal" class="torus-button primary">
+            <button phx-click="open" phx-target="#enrollments_view_add_enrollments_modal" class="torus-button primary">
               Add Enrollments
             </button>
         {/if}
@@ -268,7 +268,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
         id="add_enrollments_form"
         class="hidden"
         method="POST"
-        action="http://localhost/sections/lorem_ipsum_course/enrollments">
+        action={Routes.invite_path(OliWeb.Endpoint, :create_bulk, @section_slug)}>
           <%= for email <- @add_enrollments_emails do %>
             <input name="emails[]" value={email} hidden />
           <% end %>
@@ -278,9 +278,7 @@ defmodule OliWeb.Sections.EnrollmentsViewLive do
       </.form>
       <div class="px-4">
         <p>
-          Are you sure you want to enroll
-          <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}" %>
-          ?
+          Are you sure you want to enroll <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}"%>?
         </p>
       </div>
     """
