@@ -8,11 +8,26 @@
 
 ### Configs
 
-## 0.24.1 (unreleased)
+## 0.24.3 (unreleased)
 
 ### Bug Fixes
 
-- Fix an issue where a nil end_datetime in scheduled gate crashes overview page
+- Fix an issue in assessment review of multi inputs where text was being truncated
+
+## 0.24.2 (2023-7-27)
+
+### Bug Fixes
+
+- Improved handling of adaptive pages that have hard deadlines
+- Added explanatory tooltips to the Assessment Settings UX
+- Fixed a bug where Scheduler date/time labels disappeared
+- Fixed a bug with handling gates without end dates
+- Removed the background colors of the Dialog content element rendering
+- Handle scientific notation with an explicit "+" sign in response evaluation
+- Fix styling inconsistencies in Example content groups
+- Ensure that course section creation inherits the cover image from a product
+- Fix styling issues for dark mode rendering of the Likert activity
+- Correct the link to the top-level discussion forum
 
 ## 0.24.1 (2023-7-21)
 

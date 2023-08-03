@@ -120,6 +120,19 @@ export const MultiInputComponent: React.FC = () => {
     {},
   );
 
+  const inputValue = (input: MultiInput) => {
+    const studentInput = uiState.partState[input.partId].studentInput
+
+    // safeguard against null/undefined studentInput
+    if (!studentInput) return '';
+
+    if (input.inputType === 'text') {
+      return uiState.partState[input.partId].studentInput.join(' ');
+    }
+
+    return uiState.partState[input.partId].studentInput[0];
+  };
+
   const inputs = new Map(
     (uiState.model as MultiInputSchema).inputs.map((input) => [
       input.id,
@@ -136,7 +149,7 @@ export const MultiInputComponent: React.FC = () => {
                 size: input.size,
               }
             : { id: input.id, inputType: input.inputType, size: input.size },
-        value: (uiState.partState[input.partId]?.studentInput || [''])[0],
+        value: inputValue(input),
         hasHints: uiState.partState[input.partId].hasMoreHints,
       },
     ]),
