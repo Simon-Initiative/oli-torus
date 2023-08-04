@@ -1,5 +1,5 @@
 defmodule OliWeb.Experiments.ExperimentsView do
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -8,11 +8,12 @@ defmodule OliWeb.Experiments.ExperimentsView do
         _session,
         socket
       ) do
+    {:ok, decision_points} =
+      Oli.Resources.alternatives_groups(project_slug, Oli.Publishing.AuthoringResolver)
 
-    {:ok, decision_points} = Oli.Resources.alternatives_groups(project_slug, Oli.Publishing.AuthoringResolver)
-
-    has_decision_point = Enum.filter(decision_points, fn a -> a.strategy == "upgrade_decision_point" end)
-    |> Enum.count() == 1
+    has_decision_point =
+      Enum.filter(decision_points, fn a -> a.strategy == "upgrade_decision_point" end)
+      |> Enum.count() == 1
 
     user_url = Application.fetch_env!(:oli, :upgrade_experiment_provider)[:user_url]
 
@@ -58,5 +59,4 @@ defmodule OliWeb.Experiments.ExperimentsView do
     </div>
     """
   end
-
 end

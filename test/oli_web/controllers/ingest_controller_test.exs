@@ -44,7 +44,7 @@ defmodule OliWeb.IngestControllerTest do
 
       assert redirected_to(conn, 302) == Routes.ingest_path(conn, :index)
 
-      assert get_flash(conn, :error) =~ "A valid file must be attached"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "A valid file must be attached"
     end
   end
 end

@@ -831,6 +831,20 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Creates multiple section resources.
+  ## Examples
+      iex> bulk_create_section_resource([%{slug: slug_value_1, ...}, %{slug: slug_value_2, ...}])
+      {2, [%SectionResource{}, %SectionResource{}]}
+  """
+  def bulk_create_section_resource(_section_resource_rows, _opts \\ [])
+
+  def bulk_create_section_resource([], _opts), do: {0, []}
+
+  def bulk_create_section_resource(section_resource_rows, opts) do
+    Repo.insert_all(SectionResource, section_resource_rows, returning: opts[:returning] || true)
+  end
+
+  @doc """
   Updates a section resource.
   ## Examples
       iex> update_section_resource(section, %{field: new_value})
@@ -842,6 +856,24 @@ defmodule Oli.Delivery.Sections do
     section
     |> SectionResource.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Updates multiple section resources.
+  ## Examples
+      iex> bulk_update_section_resource(section, %{field: new_value})
+      {2, [%SectionResource{}, %SectionResource{}]}
+  """
+  def bulk_update_section_resource(_section_resource_rows, _opts \\ [])
+
+  def bulk_update_section_resource([], _), do: {0, []}
+
+  def bulk_update_section_resource(section_resource_rows, opts) do
+    Repo.insert_all(SectionResource, section_resource_rows,
+      returning: opts[:returning] || true,
+      on_conflict: {:replace, [:children]},
+      conflict_target: [:id]
+    )
   end
 
   @doc """
@@ -1167,19 +1199,81 @@ defmodule Oli.Delivery.Sections do
       level = 0
       processed_ids = []
 
-      {root_section_resource_id, _numbering_tracker, processed_ids} =
-        create_section_resource(
-          section,
-          publication,
-          published_resources_by_resource_id,
-          processed_ids,
-          root_revision,
-          level,
-          numbering_tracker,
-          hierarchy_definition
+      # Generate all the section resource slugs at the same time
+      titles =
+        published_resources_by_resource_id
+        |> Map.values()
+        |> Enum.map(fn %PublishedResource{revision: revision} ->
+          revision.title
+        end)
+
+      section_resource_slugs =
+        Enum.zip(
+          titles,
+          Slug.generate(
+            :section_resources,
+            titles
+          )
+        )
+        |> Enum.into(%{})
+
+      # Transverse the hierarchy and create a list containing the SectionResource maps to be inserted
+      {section_resources, _, _} =
+        build_section_resource_insertion(%{
+          section: section,
+          publication: publication,
+          published_resources_by_resource_id: published_resources_by_resource_id,
+          processed_ids: processed_ids,
+          revision: root_revision,
+          level: level,
+          numbering_tracker: numbering_tracker,
+          hierarchy_definition: hierarchy_definition,
+          date: DateTime.utc_now() |> DateTime.truncate(:second),
+          slugs: section_resource_slugs
+        })
+
+      # Insert all the section resources without their children
+      {_count, section_resources} =
+        Repo.insert_all(SectionResource, section_resources,
+          returning: [:id, :resource_id, :inserted_at, :updated_at]
         )
 
-      processed_ids = [root_resource_id | processed_ids]
+      processed_ids = Enum.map(section_resources, & &1.resource_id)
+
+      # Rebuild the section resources (with the id they have in the database) and add their children
+      section_resources_by_resource_id =
+        Enum.reduce(section_resources, %{}, fn sr, map ->
+          Map.put(map, sr.resource_id, sr)
+        end)
+
+      section_resources =
+        Enum.reduce(section_resources, [], fn sr, section_resources ->
+          children = hierarchy_definition[sr.resource_id]
+
+          if !is_nil(children) and length(children) > 0 do
+            sr =
+              Map.put(
+                sr,
+                :children,
+                Enum.map(hierarchy_definition[sr.resource_id] || [], fn child_resource_id ->
+                  section_resources_by_resource_id[child_resource_id].id
+                end)
+              )
+              |> Map.take([:id, :children, :inserted_at, :updated_at])
+
+            [sr | section_resources]
+          else
+            section_resources
+          end
+        end)
+
+      # Update children for the section resources that were just created in the database
+      # (only when it's necessary to do so)
+      Repo.insert_all(SectionResource, section_resources,
+        returning: [:id, :resource_id, :children],
+        on_conflict: {:replace, [:children]},
+        conflict_target: [:id]
+      )
 
       survey_id =
         Project
@@ -1192,6 +1286,8 @@ defmodule Oli.Delivery.Sections do
         skip_resource_ids: processed_ids,
         required_survey_resource_id: survey_id
       )
+
+      root_section_resource_id = section_resources_by_resource_id[root_resource_id].id
 
       update_section(section, %{root_section_resource_id: root_section_resource_id})
       |> case do
@@ -1206,69 +1302,96 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  # This function constructs a section resource record by recursively calling itself on all the
-  # children for the revision, then inserting the resulting struct into the database and returning its id.
-  # This may not be the most efficient way of doing this but it seems to be the only way to create the records
-  # in one go, otherwise section record creation then constructing relationships by updating the children
-  # for each record would have to be two separate traversals
-  defp create_section_resource(
-         section,
-         publication,
-         published_resources_by_resource_id,
-         processed_ids,
-         revision,
-         level,
-         numbering_tracker,
-         hierarchy_definition
-       ) do
+  # The following function receives a hierarchy and recursively builds a list with the
+  # SectionResource maps that will be inserted in the database.
+  defp build_section_resource_insertion(%{
+         section: section,
+         publication: publication,
+         published_resources_by_resource_id: published_resources_by_resource_id,
+         processed_ids: processed_ids,
+         revision: revision,
+         level: level,
+         numbering_tracker: numbering_tracker,
+         hierarchy_definition: hierarchy_definition,
+         date: date,
+         slugs: slugs
+       }) do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 
     children = Map.get(hierarchy_definition, revision.resource_id, [])
 
-    {children, numbering_tracker, processed_ids} =
+    # Transform each child of the revision into a section resource
+    {children, numbering_tracker, slugs} =
       Enum.reduce(
         children,
-        {[], numbering_tracker, processed_ids},
-        fn resource_id, {children_ids, numbering_tracker, processed_ids} ->
+        {[], numbering_tracker, slugs},
+        fn resource_id, {processed_children, numbering_tracker, slugs} ->
           %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
 
-          {id, numbering_tracker, processed_ids} =
-            create_section_resource(
-              section,
-              publication,
-              published_resources_by_resource_id,
-              processed_ids,
-              child,
-              level + 1,
-              numbering_tracker,
-              hierarchy_definition
-            )
+          {section_resources, numbering_tracker, slugs} =
+            build_section_resource_insertion(%{
+              section: section,
+              publication: publication,
+              published_resources_by_resource_id: published_resources_by_resource_id,
+              processed_ids: processed_ids,
+              revision: child,
+              level: level + 1,
+              numbering_tracker: numbering_tracker,
+              hierarchy_definition: hierarchy_definition,
+              date: date,
+              slugs: slugs
+            })
 
-          {[id | children_ids], numbering_tracker, [resource_id | processed_ids]}
+          {section_resources ++ processed_children, numbering_tracker, slugs}
         end
       )
-      # it's more efficient to append to list using [id | children_ids] and
-      # then reverse than to concat on every reduce call using ++
-      |> then(fn {children, numbering_tracker, processed_ids} ->
-        {Enum.reverse(children), numbering_tracker, processed_ids}
-      end)
 
-    %SectionResource{id: section_resource_id} =
-      Oli.Repo.insert!(%SectionResource{
+    slug = Map.get(slugs, revision.title)
+
+    # If the slug is a list it's because other resources in the hierarchy have the same title, so
+    # we need to remove that slug from the list so it doesn't get used again
+    {slug, slugs} =
+      if is_list(slug) do
+        slug = List.first(slug)
+
+        slugs =
+          Map.update(slugs, revision.title, [], fn slug_list ->
+            Enum.filter(slug_list, &(&1 != slug))
+          end)
+
+        {slug, slugs}
+      else
+        {slug, slugs}
+      end
+
+    # Return the section resource for the revision along with all the section resources
+    # for the revision's children
+    section_resources = [
+      # The below is necessary because Repo.insert_all/3 receives a map, not a struct
+      # The below is necessary because Repo.insert_all/3 doesn't autogenerate values
+      # TODO: CAMBIAR ESTO
+      %SectionResource{
         numbering_index: numbering_index,
         numbering_level: level,
-        children: children,
-        slug: Slug.generate(:section_resources, revision.title),
+        slug: slug,
         collab_space_config: revision.collab_space_config,
         max_attempts: revision.max_attempts,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
         section_id: section.id
+      }
+      |> SectionResource.to_map()
+      |> Map.delete(:id)
+      |> Map.merge(%{
+        inserted_at: date,
+        updated_at: date
       })
+      | children
+    ]
 
-    {section_resource_id, numbering_tracker, processed_ids}
+    {section_resources, numbering_tracker, slugs}
   end
 
   def get_project_by_section_resource(section_id, resource_id) do

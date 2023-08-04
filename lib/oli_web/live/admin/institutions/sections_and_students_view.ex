@@ -1,5 +1,5 @@
 defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live}
 
   import OliWeb.DelegatedEvents
 

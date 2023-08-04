@@ -1,75 +1,180 @@
 defmodule OliWeb.Components.Modal do
-  use Phoenix.LiveComponent
+  use Phoenix.Component
 
-  def mount(socket) do
-    {:ok, assign(socket, :show, false)}
-  end
+  import OliWeb.Components.Common
+  import OliWeb.Gettext
 
-  def update(assigns, socket) do
-    {:ok,
-     assign(
-       socket,
-       Map.merge(assigns, %{
-         title: assigns[:title] || nil,
-         class: assigns[:class] || "",
-         on_confirm: assigns[:on_confirm],
-         on_confirm_label: assigns[:on_confirm_label] || "Confirm",
-         on_cancel: assigns[:on_cancel],
-         on_cancel_label: assigns[:on_cancel_label] || "Cancel",
-         show_actions: !is_nil(assigns[:on_confirm]) || !is_nil(assigns[:on_cancel])
-       })
-     )}
-  end
+  alias Phoenix.LiveView.JS
 
-  attr :title, :string
-  attr :class, :string, default: ""
-  attr :on_confirm, :string
-  attr :on_confirm_label, :string, default: "Confirm"
-  attr :on_cancel, :string
-  attr :on_cancel_label, :string, default: "Cancel"
-  attr :show_actions, :boolean, default: false
 
-  def render(assigns) do
+  @doc """
+  Renders a modal.
+
+  ## Examples
+
+      <.modal id="confirm-modal">
+        Are you sure?
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </.modal>
+
+  JS commands may be passed to the `:on_cancel` and `on_confirm` attributes
+  for the caller to react to each button press, for example:
+
+      <.modal id="confirm" on_confirm={JS.push("delete")} on_cancel={JS.navigate(~p"/posts")}>
+        Are you sure you?
+        <:confirm>OK</:confirm>
+        <:cancel>Cancel</:cancel>
+      </.modal>
+  """
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :on_cancel, JS, default: %JS{}
+  attr :on_confirm, JS, default: %JS{}
+
+  slot :inner_block, required: true
+  slot :title
+  slot :subtitle
+  slot :confirm
+  slot :cancel
+
+  def modal(assigns) do
     ~H"""
-      <div phx-hook="LiveModal" id={@id}>
-        <%= if @show do %>
-          <div id={"#{@id}_backdrop"} class="fixed h-full w-full z-50 bg-black/20 left-0 top-0 flex items-center justify-center">
-            <div class={"bg-white rounded max-w-xl w-full p-4 #{@class}"}>
-              <div class={"flex items-cent #{if assigns[:title], do: "justify-between", else: "justify-end"} p-4"}>
-                <%= if @title do %>
-                  <h5><%= @title %></h5>
-                <% end %>
-                <button phx-target={@myself} phx-click="close">
-                  <i class="fa-solid fa-xmark" />
+    <div
+      id={@id}
+      phx-mounted={@show && show_modal(@id)}
+      phx-remove={hide_modal(@id)}
+      class="relative z-50 hidden"
+    >
+      <div id={"#{@id}-bg"} class="fixed inset-0 bg-zinc-50/90 transition-opacity backdrop-blur-sm" aria-hidden="true" />
+      <div
+        class="fixed inset-0 overflow-y-auto"
+        aria-labelledby={"#{@id}-title"}
+        aria-describedby={"#{@id}-description"}
+        role="dialog"
+        aria-modal="true"
+        tabindex="0"
+      >
+        <div class="flex min-h-full items-center justify-center">
+          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
+            <.focus_wrap
+              id={"#{@id}-container"}
+              phx-mounted={@show && show_modal(@id)}
+              phx-window-keydown={hide_modal(@on_cancel, @id)}
+              phx-key="escape"
+              phx-click-away={hide_modal(@on_cancel, @id)}
+              class="hidden relative rounded-lg bg-white shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+            >
+              <!-- Modal header -->
+              <div class="flex items-start justify-between p-4">
+                <div>
+                  <div :if={@title != []}>
+                    <h1 id={"#{@id}-title"} class="text-xl font-semibold text-gray-900 dark:text-white">
+                      <%= render_slot(@title) %>
+                    </h1>
+                    <p
+                      :if={@subtitle != []}
+                      id={"#{@id}-description"}
+                      class="mt-2 text-sm leading-6 text-zinc-600"
+                    >
+                      <%= render_slot(@subtitle) %>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  phx-click={hide_modal(@on_cancel, @id)}
+                  aria-label={gettext("close")}
+                  >
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
                 </button>
               </div>
-              <%= render_slot(@inner_block) %>
-              <%= if @show_actions do %>
-                <div class="flex items-center justify-end gap-2 mt-12">
-                  <%= if @on_cancel do %>
-                    <button phx-click={@on_cancel} class="torus-button secondary">
-                      <%= @on_cancel_label %>
-                    </button>
-                  <% end %>
-                  <%= if @on_confirm do %>
-                    <button phx-click={@on_confirm} class="torus-button primary">
-                      <%= @on_confirm_label %>
-                    </button>
-                  <% end %>
+
+              <!-- Modal body -->
+              <div class="p-6 space-y-6">
+                <%= render_slot(@inner_block) %>
+              </div>
+
+              <!-- Modal footer -->
+              <div :if={@confirm != [] or @cancel != []}>
+                <div class="flex justify-end p-6 space-x-2">
+                  <.button
+                    :for={cancel <- @cancel}
+                    phx-click={hide_modal(@on_cancel, @id)}
+                    class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
+                  >
+                    <%= render_slot(cancel) %>
+                  </.button>
+
+                  <.button
+                    :for={confirm <- @confirm}
+                    id={"#{@id}-confirm"}
+                    phx-click={@on_confirm}
+                    phx-disable-with
+                    class="py-2 px-3"
+                    variant={:primary}
+                  >
+                    <%= render_slot(confirm) %>
+                  </.button>
                 </div>
-              <% end %>
-            </div>
+              </div>
+            </.focus_wrap>
           </div>
-        <% end %>
+        </div>
       </div>
+    </div>
     """
   end
 
-  def handle_event("open", _, socket) do
-    {:noreply, assign(socket, :show, true)}
+  ## JS Commands
+
+  def show(js \\ %JS{}, selector) do
+    JS.show(js,
+      to: selector,
+      transition:
+        {"transition-all transform ease-out duration-300",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+         "opacity-100 translate-y-0 sm:scale-100"}
+    )
   end
 
-  def handle_event("close", _, socket) do
-    {:noreply, assign(socket, :show, false)}
+  def hide(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: selector,
+      time: 200,
+      transition:
+        {"transition-all transform ease-in duration-200",
+         "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+    )
   end
+
+  def show_modal(js \\ %JS{}, id) when is_binary(id) do
+    js
+    |> JS.show(to: "##{id}")
+    |> JS.show(
+      to: "##{id}-bg",
+      transition: {"transition-all transform ease-out duration-300", "opacity-0", "opacity-100"}
+    )
+    |> show("##{id}-container")
+    |> JS.add_class("overflow-hidden", to: "body")
+    |> JS.focus_first(to: "##{id}-content")
+  end
+
+  def hide_modal(js \\ %JS{}, id) do
+    js
+    |> JS.hide(
+      to: "##{id}-bg",
+      transition: {"transition-all transform ease-in duration-200", "opacity-100", "opacity-0"}
+    )
+    |> hide("##{id}-container")
+    |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
+    |> JS.remove_class("overflow-hidden", to: "body")
+    |> JS.pop_focus()
+  end
+
 end

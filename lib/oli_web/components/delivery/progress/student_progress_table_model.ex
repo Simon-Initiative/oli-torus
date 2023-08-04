@@ -84,7 +84,7 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
       ~F"""
        <span>{row.score} / {row.out_of}</span>
        {#if row.was_late}
-         <.badge>LATE</.badge>
+         <.badge variant={:danger}>LATE</.badge>
        {/if}
       """
     else

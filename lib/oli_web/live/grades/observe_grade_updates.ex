@@ -1,5 +1,5 @@
 defmodule OliWeb.Grades.ObserveGradeUpdatesView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias OliWeb.Common.{Breadcrumb, PagedTable}
   alias Oli.Delivery.Attempts.Core

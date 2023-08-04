@@ -1,5 +1,5 @@
 defmodule OliWeb.Progress.StudentResourceView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   alias Oli.Repo
   import Ecto.Query, warn: false

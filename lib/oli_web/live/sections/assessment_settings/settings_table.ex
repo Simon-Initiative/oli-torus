@@ -147,7 +147,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       <.live_component
         id="assessment_due_date_modal"
         title={if @selected_assessment, do: "#{@selected_assessment.name} due date"}
-        module={OliWeb.Components.Modal}
+        module={OliWeb.Components.LiveModal}
         on_confirm={JS.dispatch("submit", to: "#assessment-due-date-form") |> JS.push("close", target: "#assessment_due_date_modal")}
         on_confirm_label="Save"
       >
@@ -251,7 +251,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
               </div>
               <div class="modal-body">
                 <.form
-                  for={:confirm_bulk_apply}
+                  for={%{}}
+                  as={:confirm_bulk_apply}
                   phx-submit="confirm_bulk_apply"
                   phx-target={@myself}
                 >
@@ -588,18 +589,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          )}
 
       {:ok, _section_resource} ->
-        {:noreply,
-         socket
-         |> update_assessments(
-           socket.assigns.modal_assigns.changeset.data.resource_id,
-           [
-             {:feedback_scheduled_date, utc_datetime},
-             {:feedback_mode, :scheduled}
-           ],
-           false
-         )
-         |> flash_to_liveview(:info, "Setting updated!")
-         |> assign(modal_assigns: %{show: false})}
+        {
+          :noreply,
+          socket
+          |> update_assessments(
+            socket.assigns.modal_assigns.changeset.data.resource_id,
+            [
+              {:feedback_scheduled_date, utc_datetime},
+              {:feedback_mode, :scheduled}
+            ],
+            false
+          )
+          |> flash_to_liveview(:info, "Setting updated!")
+          |> assign(modal_assigns: %{show: false})
+          |> assign(form_id: UUID.uuid4())
+        }
     end
   end
 

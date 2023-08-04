@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.InvalidSectionInviteView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   def mount(_, _session, socket) do
     {:ok, socket}

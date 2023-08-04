@@ -38,6 +38,10 @@ janus-multi-line-text textarea {
   @include control-border;
 }
 
+janus-multi-line-text textarea {
+  line-height: 1em;
+}
+
 janus-input-text input::placeholder,
 janus-input-number input::placeholder,
 janus-multi-line-text textarea::placeholder {

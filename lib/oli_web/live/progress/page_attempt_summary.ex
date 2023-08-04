@@ -48,7 +48,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         </div>
         <div class="d-flex flex-row">
           {#if @attempt.was_late}
-            <.badge>LATE</.badge>
+            <.badge variant={:danger}>LATE</.badge>
           {/if}
           <p class="mb-1 text-muted">Submitted: {Utils.render_date(@attempt, :date_evaluated, @ctx)} ({Utils.render_relative_date(@attempt, :date_evaluated, @ctx)})</p>
         </div>

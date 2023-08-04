@@ -1,5 +1,5 @@
 defmodule OliWeb.Resources.ActivitiesView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, :live}
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
