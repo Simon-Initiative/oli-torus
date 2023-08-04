@@ -75,7 +75,7 @@ defmodule OliWeb.PublisherLive.IndexView do
       </div>
 
       <div id="publishers-table" class="p-4">
-        <Listing
+        <Listing.render
           filter={@query}
           table_model={@table_model}
           total_count={@total_count}

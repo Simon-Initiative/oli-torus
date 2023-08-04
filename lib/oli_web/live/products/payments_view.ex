@@ -82,7 +82,7 @@ defmodule OliWeb.Products.PaymentsView do
 
       <div class="mb-3"/>
 
-      <Listing
+      <Listing.render
         filter={@applied_query}
         table_model={@table_model}
         total_count={@total_count}

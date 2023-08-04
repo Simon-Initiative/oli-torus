@@ -1,56 +1,80 @@
 defmodule OliWeb.Common.Listing do
-  use Surface.Component
+  use Phoenix.Component
   alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Common.{CardListing, Paging}
 
-  prop total_count, :integer, required: true
-  prop filter, :string, required: true
-  prop limit, :integer, required: true
-  prop offset, :integer, required: true
-  prop table_model, :struct, required: true
-  prop sort, :event, required: true
-  prop page_change, :event, required: true
-  prop show_bottom_paging, :boolean, default: true
-  prop additional_table_class, :string, default: "table-sm"
-  prop cards_view, :boolean, default: false
-  prop selected, :event
-  prop selected_target, :any, default: nil
-  prop with_body, :boolean, default: false
-  slot default
+  attr :total_count, :integer, required: true
+  attr :filter, :string, required: true
+  attr :limit, :integer, required: true
+  attr :offset, :integer, required: true
+  attr :table_model, :map, required: true
+  attr :sort, :string, required: true
+  attr :page_change, :string, required: true
+  attr :show_bottom_paging, :boolean, default: true
+  attr :additional_table_class, :string, default: "table-sm"
+  attr :cards_view, :boolean, default: false
+  attr :selected, :string
+  attr :selected_target, :any, default: nil
+  attr :with_body, :boolean, default: false
+  slot :inner_block
 
   def render(assigns) do
-    ~F"""
-      <div class="pb-5">
-        {#if @filter != ""}
-          <strong>Results filtered on &quot;{@filter}&quot;</strong>
-        {/if}
+    ~H"""
+    <div class="pb-5">
+      <%= if @filter != "" do %>
+        <strong><%= ~s[Results filtered on "#{@filter}"] %></strong>
+      <% end %>
 
-        {#if @total_count > 0 and @total_count > @limit}
-          <Paging.render id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-          {render_table(assigns)}
-          {#if @show_bottom_paging}
-            <Paging.render id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-          {/if}
-        {#elseif @total_count > 0}
-          <div>Showing all results ({@total_count} total)</div>
-          <br>
-          {render_table(assigns)}
-        {#else}
+      <%= if @total_count > 0 and @total_count > @limit do %>
+        <Paging.render
+          id="header_paging"
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          click={@page_change}
+        /> <%= render_table(assigns) %>
+        <%= if @show_bottom_paging do %>
+          <Paging.render
+            id="footer_paging"
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            click={@page_change}
+          />
+        <% end %>
+      <% else %>
+        <%= if @total_count > 0 do %>
+          <div><%= "Showing all results (#{@total_count} total)" %></div>
+          <br /> <%= render_table(assigns) %>
+        <% else %>
           <p>None exist</p>
-        {/if}
-      </div>
+        <% end %>
+      <% end %>
+    </div>
     """
   end
 
   defp render_table(assigns) do
-    ~F"""
-      {#if @cards_view}
-        <CardListing model={@table_model} selected={@selected} selected_target={@selected_target} />
-      {#elseif @with_body}
-        <#slot />
-      {#else}
-        <Table.render model={@table_model} sort={@sort} additional_table_class={@additional_table_class} select={nil}/>
-      {/if}
+    ~H"""
+    <%= if @cards_view do %>
+      <CardListing.render
+        model={@table_model}
+        selected={@selected}
+        selected_target={@selected_target}
+        ctx={@table_model.data.ctx}
+      />
+    <% else %>
+      <%= if @with_body do %>
+        <%= render_slot(@inner_block) %>
+      <% else %>
+        <Table.render
+          model={@table_model}
+          sort={@sort}
+          additional_table_class={@additional_table_class}
+          select={nil}
+        />
+      <% end %>
+    <% end %>
     """
   end
 end

@@ -73,7 +73,7 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
       </Link>
 
       <div id="discounts-table" class="p-4">
-        <Listing
+        <Listing.render
           filter={@query}
           table_model={@table_model}
           total_count={@total_count}

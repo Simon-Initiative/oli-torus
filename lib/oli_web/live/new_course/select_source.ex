@@ -129,7 +129,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         </:extra_opts>
       </FilterBox>
 
-      <Listing
+      <Listing.render
         filter={@params[:applied_query]}
         table_model={@table_model}
         total_count={@total_count}

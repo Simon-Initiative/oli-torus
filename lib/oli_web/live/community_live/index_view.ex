@@ -101,7 +101,7 @@ defmodule OliWeb.CommunityLive.IndexView do
       </div>
 
       <div id="communities-table" class="p-4">
-        <Listing
+        <Listing.render
           filter={@query}
           table_model={@table_model}
           total_count={@total_count}

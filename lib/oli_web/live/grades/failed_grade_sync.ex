@@ -98,7 +98,7 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
       </div>
 
       <div id="failed-sync-grades-table" class="p-4">
-        <Listing
+        <Listing.render
           filter={@query}
           table_model={@table_model}
           total_count={@total_count}

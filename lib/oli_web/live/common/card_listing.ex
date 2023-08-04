@@ -1,35 +1,49 @@
 defmodule OliWeb.Common.CardListing do
-  use Surface.Component
+  use Phoenix.Component
 
   import OliWeb.Common.SourceImage
 
   alias OliWeb.Common.Utils
   alias OliWeb.Delivery.NewCourse.TableModel
 
-  prop model, :struct, required: true
-  prop selected, :event, required: true
-  prop selected_target, :any, default: nil
-  prop ctx, :struct, required: true
+  attr :model, :map, required: true
+  attr :selected, :string, required: true
+  attr :selected_target, :any, default: nil
+  attr :ctx, :map, required: true
 
   def render(assigns) do
-    ~F"""
+    ~H"""
     <div class="select-sources">
       <div class="card-deck mr-0 ml-0 inline-flex flex-wrap">
-        {#for item <- @model.rows}
-          <a :on-click={if @selected_target, do: Map.put(@selected, :target, @selected_target), else: @selected} class="course-card-link mb-2 no-underline hover:no-underline" phx-value-id={action_id(item)}>
+        <%= for item <- @model.rows do %>
+          <a
+            phx-click={
+              if @selected_target, do: Map.put(@selected, :target, @selected_target), else: @selected
+            }
+            class="course-card-link mb-2 no-underline hover:no-underline"
+            phx-value-id={action_id(item)}
+          >
             <div class={"card mb-2 mr-1 ml-1 h-100 " <> if Map.get(item, :selected), do: "!bg-delivery-primary-100 shadow-inner !border-none", else: ""}>
-              <img src={cover_image(item)} class="card-img-top" alt="course image">
+              <img src={cover_image(item)} class="card-img-top" alt="course image" />
               <div class="card-body">
-                <h5 class="card-title mb-1 !whitespace-normal" title={render_title_column(item)}>{render_title_column(item)}</h5>
-                <div class="fade-text"><p class="card-text text-sm">{render_description(item)}</p></div>
+                <h5 class="card-title mb-1 !whitespace-normal" title={render_title_column(item)}>
+                  <%= render_title_column(item) %>
+                </h5>
+                <div class="fade-text">
+                  <p class="card-text text-sm"><%= render_description(item) %></p>
+                </div>
               </div>
               <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
-                <div class="badge badge-success mr-5">{TableModel.render_payment_column(assigns, item, nil)}</div>
-                <div class="small-date text-muted">{render_date(item, Map.merge(assigns, @model.data))}</div>
+                <div class="badge badge-success mr-5">
+                  <%= TableModel.render_payment_column(%{}, item, nil) %>
+                </div>
+                <div class="small-date text-muted">
+                  <%= render_date(item, @ctx) %>
+                </div>
               </div>
             </div>
           </a>
-        {/for}
+        <% end %>
       </div>
     </div>
     """
@@ -47,8 +61,8 @@ defmodule OliWeb.Common.CardListing do
       else: item.project.description
   end
 
-  defp render_date(item, assigns) do
-    Utils.render_date(item, :inserted_at, Map.get(assigns, :ctx))
+  defp render_date(item, ctx) do
+    Utils.render_date(item, :inserted_at, ctx)
   end
 
   defp action_id(item) do

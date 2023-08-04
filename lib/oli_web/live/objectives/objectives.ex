@@ -175,7 +175,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         </div>
 
         <div id="objectives-table" class="my-4">
-          <Table
+          <Table.render
             filter={@query}
             table_model={@table_model}
             total_count={@total_count}
@@ -187,11 +187,11 @@ defmodule OliWeb.ObjectivesLive.Objectives do
             additional_table_class={@additional_table_class}
             with_body={true}>
 
-            <Listing
+            <Listing.render
               rows={@table_model.rows}
               selected={@selected}
               project_slug={@project.slug} />
-          </Table>
+          </Table.render>
         </div>
       </div>
     """

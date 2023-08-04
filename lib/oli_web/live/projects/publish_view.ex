@@ -164,7 +164,7 @@ defmodule OliWeb.Projects.PublishView do
             {#if length(@active_sections) > 0}
               <h5>This project has {length(@active_sections)} active course sections</h5>
               <div id="active-course-sections-table">
-                <Listing
+                <Listing.render
                   filter={@query}
                   limit={@limit}
                   offset={@offset}

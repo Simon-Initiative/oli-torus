@@ -141,7 +141,7 @@ defmodule OliWeb.Products.ProductsView do
 
         <div class="mb-3"/>
 
-        <Listing
+        <Listing.render
           filter={@query}
           table_model={@table_model}
           total_count={@total_count}
