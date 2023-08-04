@@ -83,10 +83,12 @@ export const MultiInputComponent: React.FC = () => {
       initializeState(
         activityState,
         safelySelectStringInputs(activityState).caseOf({
-          just: (input) => input,
-          nothing: () => ({
-            [castPartId(activityState.parts[0].partId)]: [''],
-          }),
+          just: (inputs) => inputs,
+          nothing: () =>
+            model.inputs.reduce((acc, input) => {
+              acc[input.partId] = [''];
+              return acc;
+            }, {} as PartInputs),
         }),
         model,
         context,
