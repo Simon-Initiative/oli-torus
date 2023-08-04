@@ -178,7 +178,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr [data-progress-check]})
-        |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
       assert progress == ["30%", "0%", "0%"]
     end
@@ -198,7 +198,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr [data-progress-check]})
-        |> Enum.map(fn div_tag -> Floki.text(div_tag) end)
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
       assert progress == ["15%", "0%"]
     end

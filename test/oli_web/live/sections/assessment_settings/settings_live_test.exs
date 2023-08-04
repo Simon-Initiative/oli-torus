@@ -449,11 +449,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> Enum.map(fn data ->
           case Floki.find(data, "select") do
             [] ->
-              Floki.text(data)
+              Floki.text(data) |> String.trim()
 
             select ->
-              Floki.find(select, "option[selected]")
-              |> Floki.text()
+              Floki.find(select, "option[selected]") |> Floki.text() |> String.trim()
           end
         end)
       end)
@@ -776,7 +775,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert element(view, "#confirm_bulk_apply_modal")
              |> render() =~
-               "<p>Are you sure you want to apply the <strong>Page 2</strong> settings to all other assessments?</p>"
+               "Are you sure you want to apply the <strong>Page 2</strong>"
     end
 
     test "confirming the bulk apply modal applies the selected setting to all other assessments",

@@ -224,7 +224,10 @@ defmodule OliWeb.ObjectivesLiveTest do
       refute has_element?(view, "##{last_obj.slug}")
 
       view
-      |> element("a[phx-click=\"page_change\"]", "2")
+      |> element(
+        "#header_paging > nav > ul > li:nth-child(4) > a",
+        "2"
+      )
       |> render_click()
 
       refute has_element?(view, "##{first_obj.slug}")

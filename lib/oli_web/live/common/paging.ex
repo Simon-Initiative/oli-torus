@@ -11,7 +11,7 @@ defmodule OliWeb.Common.Paging do
   def render(assigns) do
     params = PagingParams.calculate(assigns.total_count, assigns.offset, assigns.limit, 5)
 
-    assigns = Map.merge(assigns, %{params: params})
+    assigns = assign(assigns, :params, params)
 
     ~H"""
     <div id={@id} class="d-flex justify-content-between items-center px-5 py-2">

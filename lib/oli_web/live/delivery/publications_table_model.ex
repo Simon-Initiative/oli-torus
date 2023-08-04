@@ -24,7 +24,7 @@ defmodule OliWeb.Common.Hierarchy.Publications.TableModel do
   end
 
   def custom_render(assigns, publication, _) do
-    assigns = assign(assigns, publication: publication)
+    assigns = Map.merge(assigns, %{publication: publication})
 
     ~H"""
     <div id={"hierarchy_item_#{@publication.id}"}>

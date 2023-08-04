@@ -142,11 +142,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
         |> Enum.map(fn data ->
           case Floki.find(data, "select") do
             [] ->
-              Floki.text(data)
+              Floki.text(data) |> String.trim()
 
             select ->
-              Floki.find(select, "option[selected]")
-              |> Floki.text()
+              Floki.find(select, "option[selected]") |> Floki.text()
           end
         end)
       end)
